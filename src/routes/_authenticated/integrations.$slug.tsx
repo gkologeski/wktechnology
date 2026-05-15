@@ -177,6 +177,16 @@ function IntegrationDetail() {
             </section>
           )}
 
+          {isConnected && provider.slug === "hubspot" && (
+            <section className="rounded-lg border bg-card p-5">
+              <h2 className="font-semibold mb-1">Importar do HubSpot</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Importação respeitando árvore de dependências (empresas → contatos → negócios → atividades).
+              </p>
+              <HubspotImportWizard />
+            </section>
+          )}
+
           {isConnected && provider.authMode === "api_key" && (
             <section className="rounded-lg border bg-card p-5">
               <h2 className="font-semibold mb-3">Créditos e limites</h2>
