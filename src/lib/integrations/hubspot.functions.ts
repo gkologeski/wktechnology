@@ -253,6 +253,24 @@ export const startHubspotImport = createServerFn({ method: "POST" })
       await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
     };
 
+    // Throttled progress writer — updates `before.running_succeeded/_failed/_discovered`
+    // so the UI can animate counters in real time without thrashing the DB.
+    const lastProgressAt: Record<string, number> = {};
+    const bumpProgress = async (
+      step: StepName,
+      running_succeeded: number,
+      running_failed: number,
+      discovered?: number,
+      force = false,
+    ) => {
+      const now = Date.now();
+      if (!force && now - (lastProgressAt[step] ?? 0) < 600) return;
+      lastProgressAt[step] = now;
+      await updateItem(step, {
+        before: { running_succeeded, running_failed, ...(discovered !== undefined ? { discovered } : {}) },
+      });
+    };
+
     const updateItem = async (
       step: StepName,
       patch: { status?: string; before?: Record<string, unknown>; after?: Record<string, unknown> }
