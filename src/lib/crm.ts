@@ -1,0 +1,55 @@
+export const DEAL_STAGES = [
+  { value: "new", label: "Novo" },
+  { value: "qualified", label: "Qualificado" },
+  { value: "proposal", label: "Proposta" },
+  { value: "negotiation", label: "Negociação" },
+  { value: "won", label: "Ganho" },
+  { value: "lost", label: "Perdido" },
+] as const;
+
+export type DealStage = (typeof DEAL_STAGES)[number]["value"];
+
+export const LEAD_STATUSES = [
+  { value: "new", label: "Novo" },
+  { value: "contacted", label: "Contatado" },
+  { value: "qualified", label: "Qualificado" },
+  { value: "disqualified", label: "Desqualificado" },
+] as const;
+
+export type LeadStatus = (typeof LEAD_STATUSES)[number]["value"];
+
+export const ACTIVITY_TYPES = [
+  { value: "note", label: "Nota" },
+  { value: "task", label: "Tarefa" },
+  { value: "call", label: "Ligação" },
+  { value: "email", label: "Email" },
+  { value: "meeting", label: "Reunião" },
+] as const;
+
+export type ActivityType = (typeof ACTIVITY_TYPES)[number]["value"];
+
+export function formatCurrency(v: number, currency = "BRL") {
+  try {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v ?? 0);
+  } catch {
+    return `${currency} ${(v ?? 0).toFixed(2)}`;
+  }
+}
+
+export function formatDate(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(d));
+  } catch {
+    return "—";
+  }
+}
+
+export function formatDateTime(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(d));
+  } catch {
+    return "—";
+  }
+}
