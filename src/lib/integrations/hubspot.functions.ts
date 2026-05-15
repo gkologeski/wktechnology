@@ -641,31 +641,54 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 stepFail++;
                 continue;
               }
-              const { data: row, error } = await supabase
-                .from("companies")
-                .insert({
-                  owner_id: userId,
-                  name: p.name,
-                  domain: p.domain ?? null,
-                  industry: p.industry ?? null,
-                  size: p.numberofemployees ?? null,
-                  phone: p.phone ?? null,
-                  city: p.city ?? null,
-                  state: p.state ?? null,
-                  cep: p.zip ?? null,
-                  address: p.address ?? null,
-                  website: p.website ?? null,
-                  external_ids: { hubspot: c.id } as never,
-                })
-                .select("id")
-                .single();
-              if (error || !row) {
-                stepFail++;
-                await appendLog({ level: "warn", step, message: `Falha empresa ${p.name}: ${error?.message}` });
+              const companyData = {
+                name: p.name,
+                domain: p.domain ?? null,
+                industry: p.industry ?? null,
+                size: p.numberofemployees ?? null,
+                phone: p.phone ?? null,
+                city: p.city ?? null,
+                state: p.state ?? null,
+                cep: p.zip ?? null,
+                address: p.address ?? null,
+                website: p.website ?? null,
+              };
+              const existingId = await findExistingId("companies", c.id, [
+                { column: "domain", value: p.domain },
+                { column: "name", value: p.name },
+              ]);
+              if (existingId) {
+                const ext = await mergeExternalIds("companies", existingId, { hubspot: c.id });
+                const { error } = await supabase
+                  .from("companies")
+                  .update({ ...companyData, external_ids: ext as never })
+                  .eq("id", existingId);
+                if (error) {
+                  stepFail++;
+                  await appendLog({ level: "warn", step, message: `Falha empresa (update) ${p.name}: ${error.message}` });
+                } else {
+                  companyMap.set(c.id, existingId);
+                  stepOk++;
+                }
               } else {
-                companyMap.set(c.id, row.id);
-                stepOk++;
+                const { data: row, error } = await supabase
+                  .from("companies")
+                  .insert({
+                    owner_id: userId,
+                    ...companyData,
+                    external_ids: { hubspot: c.id } as never,
+                  })
+                  .select("id")
+                  .single();
+                if (error || !row) {
+                  stepFail++;
+                  await appendLog({ level: "warn", step, message: `Falha empresa ${p.name}: ${error?.message}` });
+                } else {
+                  companyMap.set(c.id, row.id);
+                  stepOk++;
+                }
               }
+
             }
             await bumpProgress(step, stepOk, stepFail, scope.maxCompanies);
             after = res.paging?.next?.after;
