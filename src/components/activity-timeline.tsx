@@ -50,14 +50,16 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       toast.error("Adicione um assunto ou texto.");
       return;
     }
-    const { error } = await supabase.from("activities").insert({
+    const payload: Record<string, unknown> = {
       owner_id: user.id,
       type,
       subject: subject || null,
       body: body || null,
       due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
-      [relatedKey]: relatedId,
-    });
+    };
+    payload[relatedKey] = relatedId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase.from("activities").insert(payload as any);
     if (error) return toast.error(error.message);
     setSubject(""); setBody(""); setDueDate("");
     void load();
