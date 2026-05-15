@@ -21,6 +21,8 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          outcome: string | null
+          outcome_set_at: string | null
           owner_id: string
           related_company_id: string | null
           related_contact_id: string | null
@@ -36,6 +38,8 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          outcome?: string | null
+          outcome_set_at?: string | null
           owner_id: string
           related_company_id?: string | null
           related_contact_id?: string | null
@@ -51,6 +55,8 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          outcome?: string | null
+          outcome_set_at?: string | null
           owner_id?: string
           related_company_id?: string | null
           related_contact_id?: string | null
@@ -100,12 +106,14 @@ export type Database = {
           domain: string | null
           id: string
           industry: string | null
+          is_target_account: boolean
           name: string
           notes: string | null
           owner_id: string
           phone: string | null
           size: string | null
           state: string | null
+          target_account_tier: string | null
           updated_at: string
           website: string | null
         }
@@ -117,12 +125,14 @@ export type Database = {
           domain?: string | null
           id?: string
           industry?: string | null
+          is_target_account?: boolean
           name: string
           notes?: string | null
           owner_id: string
           phone?: string | null
           size?: string | null
           state?: string | null
+          target_account_tier?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -134,55 +144,110 @@ export type Database = {
           domain?: string | null
           id?: string
           industry?: string | null
+          is_target_account?: boolean
           name?: string
           notes?: string | null
           owner_id?: string
           phone?: string | null
           size?: string | null
           state?: string | null
+          target_account_tier?: string | null
           updated_at?: string
           website?: string | null
         }
         Relationships: []
       }
+      contact_subscriptions: {
+        Row: {
+          contact_id: string
+          id: string
+          opted_in: boolean
+          owner_id: string
+          source: string | null
+          subscription_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          id?: string
+          opted_in?: boolean
+          owner_id?: string
+          source?: string | null
+          subscription_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          id?: string
+          opted_in?: boolean
+          owner_id?: string
+          source?: string | null
+          subscription_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_subscriptions_subscription_type_id_fkey"
+            columns: ["subscription_type_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           company_id: string | null
+          consent_date: string | null
           created_at: string
           email: string | null
           first_name: string
           id: string
           job_title: string | null
+          label: string | null
           last_name: string | null
+          legal_basis: string | null
+          marketing_status: string | null
           notes: string | null
           owner_id: string
           phone: string | null
+          score: number
           updated_at: string
         }
         Insert: {
           company_id?: string | null
+          consent_date?: string | null
           created_at?: string
           email?: string | null
           first_name: string
           id?: string
           job_title?: string | null
+          label?: string | null
           last_name?: string | null
+          legal_basis?: string | null
+          marketing_status?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
+          score?: number
           updated_at?: string
         }
         Update: {
           company_id?: string | null
+          consent_date?: string | null
           created_at?: string
           email?: string | null
           first_name?: string
           id?: string
           job_title?: string | null
+          label?: string | null
           last_name?: string | null
+          legal_basis?: string | null
+          marketing_status?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          score?: number
           updated_at?: string
         }
         Relationships: [
@@ -324,6 +389,7 @@ export type Database = {
           name: string
           notes: string | null
           owner_id: string
+          pipeline_id: string | null
           primary_contact_id: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           updated_at: string
@@ -338,6 +404,7 @@ export type Database = {
           name: string
           notes?: string | null
           owner_id: string
+          pipeline_id?: string | null
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
@@ -352,6 +419,7 @@ export type Database = {
           name?: string
           notes?: string | null
           owner_id?: string
+          pipeline_id?: string | null
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
@@ -535,10 +603,13 @@ export type Database = {
           email: string | null
           first_name: string
           id: string
+          label: string | null
           last_name: string | null
           notes: string | null
           owner_id: string
           phone: string | null
+          pipeline_id: string | null
+          score: number
           source: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
@@ -552,10 +623,13 @@ export type Database = {
           email?: string | null
           first_name: string
           id?: string
+          label?: string | null
           last_name?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
+          pipeline_id?: string | null
+          score?: number
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
@@ -569,12 +643,125 @@ export type Database = {
           email?: string | null
           first_name?: string
           id?: string
+          label?: string | null
           last_name?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          pipeline_id?: string | null
+          score?: number
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pipelines: {
+        Row: {
+          config: Json
+          created_at: string
+          entity: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          stages: Json
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          entity: string
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id?: string
+          stages?: Json
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          entity?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          stages?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      playbook_responses: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          owner_id: string
+          playbook_id: string
+          responses: Json
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entity: string
+          entity_id: string
+          id?: string
+          owner_id?: string
+          playbook_id: string
+          responses?: Json
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          owner_id?: string
+          playbook_id?: string
+          responses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_responses_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbooks: {
+        Row: {
+          content: Json
+          created_at: string
+          enabled: boolean
+          entity: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          id?: string
+          name: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          id?: string
+          name?: string
+          owner_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -603,6 +790,373 @@ export type Database = {
         }
         Relationships: []
       }
+      property_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          entity: string
+          entity_id: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          owner_id: string
+          property: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          entity: string
+          entity_id: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          owner_id: string
+          property: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          entity?: string
+          entity_id?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          owner_id?: string
+          property?: string
+        }
+        Relationships: []
+      }
+      record_layouts: {
+        Row: {
+          created_at: string
+          entity: string
+          id: string
+          owner_id: string
+          sections: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          id?: string
+          owner_id?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          id?: string
+          owner_id?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_views: {
+        Row: {
+          column_order: string[] | null
+          created_at: string
+          entity: string
+          filters: Json
+          id: string
+          is_default: boolean
+          is_shared: boolean
+          name: string
+          owner_id: string
+          quick_filters: Json
+          sort_by: string | null
+          sort_dir: string | null
+          updated_at: string
+        }
+        Insert: {
+          column_order?: string[] | null
+          created_at?: string
+          entity: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name: string
+          owner_id?: string
+          quick_filters?: Json
+          sort_by?: string | null
+          sort_dir?: string | null
+          updated_at?: string
+        }
+        Update: {
+          column_order?: string[] | null
+          created_at?: string
+          entity?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name?: string
+          owner_id?: string
+          quick_filters?: Json
+          sort_by?: string | null
+          sort_dir?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scoring_rules: {
+        Row: {
+          condition: Json
+          created_at: string
+          enabled: boolean
+          entity: string
+          id: string
+          name: string
+          owner_id: string
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          condition?: Json
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          id?: string
+          name: string
+          owner_id?: string
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          condition?: Json
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      segment_members: {
+        Row: {
+          added_at: string
+          entity_id: string
+          segment_id: string
+        }
+        Insert: {
+          added_at?: string
+          entity_id: string
+          segment_id: string
+        }
+        Update: {
+          added_at?: string
+          entity_id?: string
+          segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_members_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      segments: {
+        Row: {
+          created_at: string
+          entity: string
+          filters: Json
+          id: string
+          kind: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          filters?: Json
+          id?: string
+          kind?: string
+          name: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          filters?: Json
+          id?: string
+          kind?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sequence_enrollments: {
+        Row: {
+          current_step: number
+          enrolled_at: string
+          entity_id: string
+          finished_at: string | null
+          id: string
+          next_run_at: string | null
+          owner_id: string
+          sequence_id: string
+          status: string
+        }
+        Insert: {
+          current_step?: number
+          enrolled_at?: string
+          entity_id: string
+          finished_at?: string | null
+          id?: string
+          next_run_at?: string | null
+          owner_id?: string
+          sequence_id: string
+          status?: string
+        }
+        Update: {
+          current_step?: number
+          enrolled_at?: string
+          entity_id?: string
+          finished_at?: string | null
+          id?: string
+          next_run_at?: string | null
+          owner_id?: string
+          sequence_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sequence_enrollments_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sequences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          entity: string
+          id: string
+          name: string
+          owner_id: string
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          id?: string
+          name: string
+          owner_id?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_user_id: string
+          role: Database["public"]["Enums"]["team_role"]
+          workspace_owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_user_id: string
+          role?: Database["public"]["Enums"]["team_role"]
+          workspace_owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_user_id?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          workspace_owner_id?: string
+        }
+        Relationships: []
+      }
+      workflows: {
+        Row: {
+          actions: Json
+          created_at: string
+          enabled: boolean
+          entity: string
+          id: string
+          name: string
+          owner_id: string
+          trigger: Json
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          id?: string
+          name: string
+          owner_id?: string
+          trigger?: Json
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          trigger?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -624,6 +1178,7 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      team_role: "owner" | "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -765,6 +1320,7 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      team_role: ["owner", "admin", "member"],
     },
   },
 } as const
