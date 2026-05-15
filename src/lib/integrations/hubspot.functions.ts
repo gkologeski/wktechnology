@@ -880,7 +880,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               }
 
             }
-            await bumpProgress(step, stepOk, stepFail, scope.maxCompanies);
+            await bumpProgress(step, stepOk, stepFail, Number.isFinite(companyCap) ? companyCap : undefined);
             after = res.paging?.next?.after;
             page++;
             if (!after) break;
