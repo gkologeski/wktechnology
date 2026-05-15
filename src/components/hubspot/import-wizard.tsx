@@ -72,7 +72,10 @@ const OBJECTS: {
 
 type Counts = Partial<Record<Obj, { planned: number; remote: number }>>;
 
+type Mode = "linked" | "full";
+
 export function HubspotImportWizard() {
+  const [mode, setMode] = useState<Mode>("linked");
   const [scope, setScope] = useState<Record<Obj, boolean>>({
     companies: true,
     contacts: true,
@@ -94,13 +97,19 @@ export function HubspotImportWizard() {
   function toggle(key: Obj, value: boolean) {
     setScope((prev) => {
       const next = { ...prev, [key]: value };
-      if (value) {
+      // Em modo "linked" os filhos forçam pais; em "full" cada objeto é independente.
+      if (value && mode === "linked") {
         const deps = OBJECTS.find((o) => o.key === key)!.deps;
         for (const d of deps) next[d] = true;
       }
       return next;
     });
-    // Qualquer mudança de escopo invalida a contagem
+    setCountsReady(false);
+    setCounts({});
+  }
+
+  function changeMode(next: Mode) {
+    setMode(next);
     setCountsReady(false);
     setCounts({});
   }
@@ -118,7 +127,7 @@ export function HubspotImportWizard() {
     try {
       for (const o of planned) {
         setCountingKey(o.key);
-        const res = await countFn({ data: { objects: [o.key], maxCompanies } });
+        const res = await countFn({ data: { objects: [o.key], mode, maxCompanies } });
         const part = (res as Counts)[o.key];
         if (part) {
           next[o.key] = part;
@@ -139,6 +148,7 @@ export function HubspotImportWizard() {
       setStage("running");
       const r = await startFn({
         data: {
+          mode,
           companies: scope.companies,
           contacts: scope.contacts,
           deals: scope.deals,
