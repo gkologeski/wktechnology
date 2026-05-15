@@ -140,10 +140,10 @@ function DealDialog({
       value: Number(v.value || 0),
       currency: String(v.currency || "BRL"),
       stage: (v.stage as DealStage) ?? "new",
-      company_id: v.company_id || null,
-      primary_contact_id: v.primary_contact_id || null,
-      expected_close_date: v.expected_close_date || null,
-      notes: v.notes || null,
+      company_id: (v.company_id as string) || null,
+      primary_contact_id: (v.primary_contact_id as string) || null,
+      expected_close_date: (v.expected_close_date as string) || null,
+      notes: (v.notes as string) || null,
     };
     if (!payload.name) return toast.error("Nome obrigatório");
     const { error } = editing
