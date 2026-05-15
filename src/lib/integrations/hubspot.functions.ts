@@ -289,10 +289,15 @@ const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads
 export const countHubspotObjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ objects: z.array(ObjectKey).min(1) }).parse(input)
+    z
+      .object({
+        objects: z.array(ObjectKey).min(1),
+        maxCompanies: z.number().min(1).max(2000).default(200),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase: _supabase, userId: _userId } = context;
 
     async function remoteCount(key: ObjectKey): Promise<number> {
       if (key === "companies") return searchTotal("companies");
