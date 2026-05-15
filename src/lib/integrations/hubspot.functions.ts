@@ -741,27 +741,49 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               continue;
             }
             const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
-            const { data: row, error } = await supabase
-              .from("contacts")
-              .insert({
-                owner_id: userId,
-                first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-                last_name: p.lastname ?? null,
-                email: p.email ?? null,
-                phone: p.phone ?? null,
-                job_title: p.jobtitle ?? null,
-                company_id: localCompanyId,
-                external_ids: { hubspot: c.id } as never,
-              })
-              .select("id")
-              .single();
-            if (error || !row) {
-              stepFail++;
-              await appendLog({ level: "warn", step, message: `Falha contato: ${error?.message}` });
+            const contactData = {
+              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+              last_name: p.lastname ?? null,
+              email: p.email ?? null,
+              phone: p.phone ?? null,
+              job_title: p.jobtitle ?? null,
+              company_id: localCompanyId,
+            };
+            const existingId = await findExistingId("contacts", c.id, [
+              { column: "email", value: p.email },
+            ]);
+            if (existingId) {
+              const ext = await mergeExternalIds("contacts", existingId, { hubspot: c.id });
+              const { error } = await supabase
+                .from("contacts")
+                .update({ ...contactData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) {
+                stepFail++;
+                await appendLog({ level: "warn", step, message: `Falha contato (update): ${error.message}` });
+              } else {
+                contactMap.set(c.id, existingId);
+                stepOk++;
+              }
             } else {
-              contactMap.set(c.id, row.id);
-              stepOk++;
+              const { data: row, error } = await supabase
+                .from("contacts")
+                .insert({
+                  owner_id: userId,
+                  ...contactData,
+                  external_ids: { hubspot: c.id } as never,
+                })
+                .select("id")
+                .single();
+              if (error || !row) {
+                stepFail++;
+                await appendLog({ level: "warn", step, message: `Falha contato: ${error?.message}` });
+              } else {
+                contactMap.set(c.id, row.id);
+                stepOk++;
+              }
             }
+
             await bumpProgress(step, stepOk, stepFail, contactToCompany.size);
           }
         } else if (step === "deals") {
