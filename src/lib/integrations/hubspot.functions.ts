@@ -141,7 +141,7 @@ function mapLeadStatusEnum(label: string | undefined): string {
 }
 
 async function syncDealPipelines(
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
   userId: string,
 ): Promise<PipelineMaps> {
   const res = (await hsFetch("/crm/v3/pipelines/deals")) as { results: HSPipeline[] };
