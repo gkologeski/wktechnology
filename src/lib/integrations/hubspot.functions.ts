@@ -1331,18 +1331,31 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               string,
               { contactId?: string; companyId?: string; dealId?: string }
             >();
-            for (const ent of entities) {
-              for (const fid of ent.ids) {
-                const ids = await getAssoc(ent.fromObj, fid, t.obj);
-                for (const eid of ids) {
-                  seen.add(eid);
-                  const cur = engagementToParents.get(eid) ?? {};
-                  if (ent.fromObj === "contacts") cur.contactId = fid;
-                  if (ent.fromObj === "companies") cur.companyId = fid;
-                  if (ent.fromObj === "deals") cur.dealId = fid;
-                  engagementToParents.set(eid, cur);
+            if (scope.mode === "full") {
+              // Modo total: lista TODOS os engagements desse tipo, com parents best-effort.
+              const recsAll = await listAll(t.obj, t.props, ["companies", "contacts", "deals"]);
+              for (const a of recsAll) {
+                seen.add(a.id);
+                engagementToParents.set(a.id, {
+                  companyId: firstAssocId(a, "companies") ?? undefined,
+                  contactId: firstAssocId(a, "contacts") ?? undefined,
+                  dealId: firstAssocId(a, "deals") ?? undefined,
+                });
+              }
+            } else {
+              for (const ent of entities) {
+                for (const fid of ent.ids) {
+                  const ids = await getAssoc(ent.fromObj, fid, t.obj);
+                  for (const eid of ids) {
+                    seen.add(eid);
+                    const cur = engagementToParents.get(eid) ?? {};
+                    if (ent.fromObj === "contacts") cur.contactId = fid;
+                    if (ent.fromObj === "companies") cur.companyId = fid;
+                    if (ent.fromObj === "deals") cur.dealId = fid;
+                    engagementToParents.set(eid, cur);
+                  }
+                  await sleep(40);
                 }
-                await sleep(40);
               }
             }
             if (!seen.size) continue;
