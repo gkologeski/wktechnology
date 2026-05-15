@@ -41,10 +41,35 @@ async function hsPost(path: string, body: object) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// ─────────────────────────── Cache em memória (TTL) ──────────────────────────
+// Persiste entre chamadas do server function dentro do mesmo Worker, reduzindo
+// drasticamente o nº de requests ao HubSpot quando o wizard conta os objetos
+// um a um. TTL curto para refletir mudanças recentes na conta.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+type CacheEntry<T> = { value: T; expires: number };
+const memCache = new Map<string, CacheEntry<unknown>>();
+function cacheGet<T>(key: string): T | undefined {
+  const e = memCache.get(key);
+  if (!e) return undefined;
+  if (e.expires < Date.now()) {
+    memCache.delete(key);
+    return undefined;
+  }
+  return e.value as T;
+}
+function cacheSet<T>(key: string, value: T) {
+  memCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
+}
+
 async function searchTotal(obj: string, body: object = {}): Promise<number> {
+  const key = `searchTotal:${obj}:${JSON.stringify(body)}`;
+  const hit = cacheGet<number>(key);
+  if (hit !== undefined) return hit;
   try {
     const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1, ...body })) as { total?: number };
-    return r.total ?? 0;
+    const total = r.total ?? 0;
+    cacheSet(key, total);
+    return total;
   } catch {
     return 0;
   }
