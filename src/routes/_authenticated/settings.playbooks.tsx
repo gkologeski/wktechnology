@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/settings/playbooks")({
       columns={[
         { key: "name", label: "Nome" },
         { key: "entity", label: "Entidade" },
-        { key: "enabled", label: "Ativo", render: (r) => (r as { enabled: boolean }).enabled ? "Sim" : "Não" },
+        { key: "enabled", label: "Ativo", render: (r) => (r as unknown as { enabled: boolean }).enabled ? "Sim" : "Não" },
       ]}
     />
   ),

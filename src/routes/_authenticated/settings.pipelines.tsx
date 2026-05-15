@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/settings/pipelines")({
       columns={[
         { key: "name", label: "Nome" },
         { key: "entity", label: "Entidade" },
-        { key: "is_default", label: "Padrão", render: (r) => (r as { is_default: boolean }).is_default ? "Sim" : "Não" },
+        { key: "is_default", label: "Padrão", render: (r) => (r as unknown as { is_default: boolean }).is_default ? "Sim" : "Não" },
       ]}
     />
   ),

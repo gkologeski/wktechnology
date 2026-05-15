@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/settings/workflows")({
       columns={[
         { key: "name", label: "Nome" },
         { key: "entity", label: "Entidade" },
-        { key: "enabled", label: "Ativa", render: (r) => (r as { enabled: boolean }).enabled ? "Sim" : "Não" },
+        { key: "enabled", label: "Ativa", render: (r) => (r as unknown as { enabled: boolean }).enabled ? "Sim" : "Não" },
       ]}
     />
   ),

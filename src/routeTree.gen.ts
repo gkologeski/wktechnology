@@ -23,6 +23,13 @@ import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
+import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
+import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
+import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
+import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
+import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
+import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
+import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -99,6 +106,48 @@ const AuthenticatedIntegrationsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedIntegrationsRoute,
   } as any)
+const AuthenticatedSettingsWorkflowsRoute =
+  AuthenticatedSettingsWorkflowsRouteImport.update({
+    id: '/workflows',
+    path: '/workflows',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSubscriptionsRoute =
+  AuthenticatedSettingsSubscriptionsRouteImport.update({
+    id: '/subscriptions',
+    path: '/subscriptions',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSequencesRoute =
+  AuthenticatedSettingsSequencesRouteImport.update({
+    id: '/sequences',
+    path: '/sequences',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSegmentsRoute =
+  AuthenticatedSettingsSegmentsRouteImport.update({
+    id: '/segments',
+    path: '/segments',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsScoringRoute =
+  AuthenticatedSettingsScoringRouteImport.update({
+    id: '/scoring',
+    path: '/scoring',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPlaybooksRoute =
+  AuthenticatedSettingsPlaybooksRouteImport.update({
+    id: '/playbooks',
+    path: '/playbooks',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPipelinesRoute =
+  AuthenticatedSettingsPipelinesRouteImport.update({
+    id: '/pipelines',
+    path: '/pipelines',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
     id: '/import-hubspot',
@@ -132,6 +181,13 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
+  '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
+  '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
@@ -148,6 +204,13 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
+  '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
+  '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
 }
@@ -168,6 +231,13 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
+  '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
+  '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
@@ -188,6 +258,13 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/settings/pipelines'
+    | '/settings/playbooks'
+    | '/settings/scoring'
+    | '/settings/segments'
+    | '/settings/sequences'
+    | '/settings/subscriptions'
+    | '/settings/workflows'
     | '/integrations/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -204,6 +281,13 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/settings/pipelines'
+    | '/settings/playbooks'
+    | '/settings/scoring'
+    | '/settings/segments'
+    | '/settings/sequences'
+    | '/settings/subscriptions'
+    | '/settings/workflows'
     | '/integrations'
     | '/settings'
   id:
@@ -223,6 +307,13 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
+    | '/_authenticated/settings/pipelines'
+    | '/_authenticated/settings/playbooks'
+    | '/_authenticated/settings/scoring'
+    | '/_authenticated/settings/segments'
+    | '/_authenticated/settings/sequences'
+    | '/_authenticated/settings/subscriptions'
+    | '/_authenticated/settings/workflows'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
@@ -335,6 +426,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsIndexRouteImport
       parentRoute: typeof AuthenticatedIntegrationsRoute
     }
+    '/_authenticated/settings/workflows': {
+      id: '/_authenticated/settings/workflows'
+      path: '/workflows'
+      fullPath: '/settings/workflows'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/subscriptions': {
+      id: '/_authenticated/settings/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/settings/subscriptions'
+      preLoaderRoute: typeof AuthenticatedSettingsSubscriptionsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/sequences': {
+      id: '/_authenticated/settings/sequences'
+      path: '/sequences'
+      fullPath: '/settings/sequences'
+      preLoaderRoute: typeof AuthenticatedSettingsSequencesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/segments': {
+      id: '/_authenticated/settings/segments'
+      path: '/segments'
+      fullPath: '/settings/segments'
+      preLoaderRoute: typeof AuthenticatedSettingsSegmentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/scoring': {
+      id: '/_authenticated/settings/scoring'
+      path: '/scoring'
+      fullPath: '/settings/scoring'
+      preLoaderRoute: typeof AuthenticatedSettingsScoringRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/playbooks': {
+      id: '/_authenticated/settings/playbooks'
+      path: '/playbooks'
+      fullPath: '/settings/playbooks'
+      preLoaderRoute: typeof AuthenticatedSettingsPlaybooksRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/pipelines': {
+      id: '/_authenticated/settings/pipelines'
+      path: '/pipelines'
+      fullPath: '/settings/pipelines'
+      preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
       path: '/import-hubspot'
@@ -389,10 +529,25 @@ const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
+  AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
+  AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
+  AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
+  AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
+  AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
+  AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
+  AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
+  AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
+  AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
+  AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,
+  AuthenticatedSettingsSubscriptionsRoute:
+    AuthenticatedSettingsSubscriptionsRoute,
+  AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
