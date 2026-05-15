@@ -21,6 +21,7 @@ import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -86,6 +87,12 @@ const AuthenticatedCompaniesRoute = AuthenticatedCompaniesRouteImport.update({
   path: '/companies',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedIntegrationsIndexRoute =
   AuthenticatedIntegrationsIndexRouteImport.update({
     id: '/',
@@ -121,11 +128,12 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRoute
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -137,11 +145,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
-  '/settings': typeof AuthenticatedSettingsRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,11 +164,12 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/integrations/'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -191,11 +201,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/deals'
     | '/leads'
-    | '/settings'
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/integrations'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/integrations/'
+    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -310,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompaniesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/integrations/': {
       id: '/_authenticated/integrations/'
       path: '/'
@@ -370,6 +388,19 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
@@ -377,7 +408,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -387,7 +418,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -404,3 +435,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

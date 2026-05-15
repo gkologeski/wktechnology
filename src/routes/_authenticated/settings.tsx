@@ -1,47 +1,42 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  component: SettingsPage,
+  component: SettingsLayout,
 });
 
-function SettingsPage() {
-  const { user } = useAuth();
-  const [fullName, setFullName] = useState("");
-  const [loading, setLoading] = useState(false);
+const tabs = [
+  { to: "/settings", label: "Perfil" },
+  { to: "/settings/pipelines", label: "Pipelines" },
+  { to: "/settings/scoring", label: "Lead Scoring" },
+  { to: "/settings/playbooks", label: "Playbooks" },
+  { to: "/settings/segments", label: "Segmentos" },
+  { to: "/settings/sequences", label: "Sequências" },
+  { to: "/settings/workflows", label: "Workflows" },
+  { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
+] as const;
 
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("profiles").select("full_name").eq("id", user.id).single()
-      .then(({ data }) => setFullName(data?.full_name ?? ""));
-  }, [user]);
-
-  const save = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { error } = await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
-    setLoading(false);
-    if (error) toast.error(error.message); else toast.success("Salvo");
-  };
-
+function SettingsLayout() {
+  const path = useLocation({ select: (l) => l.pathname });
   return (
-    <div>
-      <PageHeader title="Configurações" description="Atualize seu perfil." />
-      <Card className="max-w-lg">
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2"><Label>Email</Label><Input value={user?.email ?? ""} disabled /></div>
-          <div className="space-y-2"><Label>Nome completo</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
-          <Button onClick={save} disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <PageHeader title="Configurações" description="Personalize a operação do CRM." />
+      <nav className="flex flex-wrap gap-1 border-b">
+        {tabs.map((t) => {
+          const active = t.to === "/settings" ? path === "/settings" : path.startsWith(t.to);
+          return (
+            <Link key={t.to} to={t.to}
+              className={cn(
+                "px-3 py-2 text-sm border-b-2 -mb-px",
+                active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              )}>
+              {t.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <Outlet />
     </div>
   );
 }
