@@ -82,6 +82,198 @@ async function batchRead(obj: string, ids: string[], properties: string[]): Prom
   return out;
 }
 
+// ─────────────────────────── Pipelines (estrutura) ───────────────────────────
+type HSStage = {
+  id: string;
+  label: string;
+  displayOrder?: number;
+  metadata?: { probability?: string; isClosed?: string };
+};
+type HSPipeline = {
+  id: string;
+  label: string;
+  displayOrder?: number;
+  stages: HSStage[];
+};
+
+type LocalStage = {
+  id: string; // local stable id (= hubspot stage id)
+  hubspot_id: string;
+  label: string;
+  order: number;
+  probability: number | null;
+  is_closed: boolean;
+};
+
+type PipelineMaps = {
+  // hubspotPipelineId → { localPipelineId, defaultStageId }
+  pipelines: Map<string, { localId: string; defaultStageId: string | null }>;
+  // hubspotStageId → { localPipelineId, stageId, label, probability }
+  stages: Map<string, { localPipelineId: string; stageId: string; label: string; probability: number | null }>;
+};
+
+// Heurística: mapeia label/probabilidade do estágio HubSpot para o enum local deal_stage.
+function mapDealStageEnum(label: string | undefined, probability: number | null, isClosed: boolean): string {
+  const l = (label ?? "").toLowerCase();
+  if (isClosed) {
+    if (probability !== null && probability >= 1) return "won";
+    if (l.includes("won") || l.includes("ganho")) return "won";
+    return "lost";
+  }
+  if (l.includes("propos")) return "proposal";
+  if (l.includes("negocia") || l.includes("negotia")) return "negotiation";
+  if (l.includes("qualif")) return "qualified";
+  if (probability !== null) {
+    if (probability >= 0.75) return "negotiation";
+    if (probability >= 0.5) return "proposal";
+    if (probability >= 0.25) return "qualified";
+  }
+  return "new";
+}
+
+function mapLeadStatusEnum(label: string | undefined): string {
+  const l = (label ?? "").toLowerCase();
+  if (l.includes("qualif")) return "qualified";
+  if (l.includes("contat") || l.includes("contact")) return "contacted";
+  if (l.includes("unqual") || l.includes("descart") || l.includes("perdid") || l.includes("lost"))
+    return "unqualified";
+  return "new";
+}
+
+async function syncDealPipelines(
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  userId: string,
+): Promise<PipelineMaps> {
+  const res = (await hsFetch("/crm/v3/pipelines/deals")) as { results: HSPipeline[] };
+  const maps: PipelineMaps = { pipelines: new Map(), stages: new Map() };
+  for (const p of res.results ?? []) {
+    const stages: LocalStage[] = (p.stages ?? [])
+      .slice()
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+      .map((s) => ({
+        id: s.id,
+        hubspot_id: s.id,
+        label: s.label,
+        order: s.displayOrder ?? 0,
+        probability: s.metadata?.probability ? Number(s.metadata.probability) : null,
+        is_closed: s.metadata?.isClosed === "true",
+      }));
+
+    // Procura pipeline local pelo hubspot_id em config
+    const { data: existing } = await supabase
+      .from("pipelines")
+      .select("id, config, stages")
+      .eq("owner_id", userId)
+      .eq("entity", "deal")
+      .eq("config->>hubspot_id", p.id)
+      .maybeSingle();
+
+    let localId: string;
+    if (existing?.id) {
+      localId = existing.id as string;
+      await supabase
+        .from("pipelines")
+        .update({
+          name: p.label,
+          stages: stages as never,
+          config: { hubspot_id: p.id, hubspot_display_order: p.displayOrder ?? 0 } as never,
+        })
+        .eq("id", localId);
+    } else {
+      const { data: ins } = await supabase
+        .from("pipelines")
+        .insert({
+          owner_id: userId,
+          entity: "deal",
+          name: p.label,
+          stages: stages as never,
+          is_default: p.id === "default",
+          config: { hubspot_id: p.id, hubspot_display_order: p.displayOrder ?? 0 } as never,
+        })
+        .select("id")
+        .single();
+      localId = ins!.id as string;
+    }
+
+    maps.pipelines.set(p.id, { localId, defaultStageId: stages[0]?.id ?? null });
+    for (const s of stages) {
+      maps.stages.set(s.id, {
+        localPipelineId: localId,
+        stageId: s.id,
+        label: s.label,
+        probability: s.probability,
+      });
+    }
+  }
+  return maps;
+}
+
+async function syncLeadPipeline(
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  userId: string,
+): Promise<{ localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> }> {
+  // HubSpot não tem pipeline de leads — usa as opções da propriedade hs_lead_status
+  type Opt = { label: string; value: string; displayOrder?: number };
+  let options: Opt[] = [];
+  try {
+    const r = (await hsFetch("/crm/v3/properties/contacts/hs_lead_status")) as { options?: Opt[] };
+    options = (r.options ?? []).slice().sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+  } catch {
+    /* ignore */
+  }
+  if (!options.length) {
+    options = [
+      { label: "Novo", value: "NEW" },
+      { label: "Tentativa de contato", value: "ATTEMPTED" },
+      { label: "Em contato", value: "CONNECTED" },
+      { label: "Boa oportunidade", value: "OPEN_DEAL" },
+      { label: "Sem qualificação", value: "UNQUALIFIED" },
+    ];
+  }
+  const stages: LocalStage[] = options.map((o, i) => ({
+    id: o.value,
+    hubspot_id: o.value,
+    label: o.label,
+    order: o.displayOrder ?? i,
+    probability: null,
+    is_closed: o.value.toUpperCase().includes("UNQUAL") || o.value.toUpperCase().includes("LOST"),
+  }));
+
+  const { data: existing } = await supabase
+    .from("pipelines")
+    .select("id")
+    .eq("owner_id", userId)
+    .eq("entity", "lead")
+    .eq("config->>hubspot_source", "hs_lead_status")
+    .maybeSingle();
+
+  let localId: string;
+  if (existing?.id) {
+    localId = existing.id as string;
+    await supabase
+      .from("pipelines")
+      .update({ stages: stages as never, name: "HubSpot Leads" })
+      .eq("id", localId);
+  } else {
+    const { data: ins } = await supabase
+      .from("pipelines")
+      .insert({
+        owner_id: userId,
+        entity: "lead",
+        name: "HubSpot Leads",
+        stages: stages as never,
+        is_default: true,
+        config: { hubspot_source: "hs_lead_status" } as never,
+      })
+      .select("id")
+      .single();
+    localId = ins!.id as string;
+  }
+  const stageByValue = new Map<string, { stageId: string; label: string }>();
+  for (const s of stages) stageByValue.set(s.id, { stageId: s.id, label: s.label });
+  return { localPipelineId: localId, stageByValue };
+}
+
 // ─────────────────────────── Counts (preview) ─────────────────────────────────
 const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "activities"]);
 type ObjectKey = z.infer<typeof ObjectKey>;
@@ -294,6 +486,9 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     const dealMap = new Map<string, string>();
     // Lifecycle by contact for leads step
     const contactLifecycle = new Map<string, string | null | undefined>();
+    // Pipelines/estágios espelhados do HubSpot
+    let dealPipelines: PipelineMaps = { pipelines: new Map(), stages: new Map() };
+    let leadPipeline: { localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> } | null = null;
 
     let totalSucceeded = 0;
     let totalFailed = 0;
@@ -324,6 +519,44 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     };
 
     try {
+      // 0) Espelhar pipelines/estágios do HubSpot ANTES de qualquer importação,
+      // para que deals/leads referenciem o pipeline e estágio corretos.
+      if (steps.includes("deals")) {
+        await appendLog({ level: "info", step: "pipelines", message: "Sincronizando pipelines de deals do HubSpot" });
+        try {
+          dealPipelines = await syncDealPipelines(supabase, userId);
+          await appendLog({
+            level: "info",
+            step: "pipelines",
+            message: `Pipelines de deals sincronizados: ${dealPipelines.pipelines.size} pipeline(s), ${dealPipelines.stages.size} estágio(s)`,
+            count: dealPipelines.pipelines.size,
+          });
+        } catch (e) {
+          await appendLog({
+            level: "warn",
+            step: "pipelines",
+            message: `Falha ao sincronizar pipelines de deals: ${e instanceof Error ? e.message : String(e)}`,
+          });
+        }
+      }
+      if (steps.includes("leads")) {
+        try {
+          leadPipeline = await syncLeadPipeline(supabase, userId);
+          await appendLog({
+            level: "info",
+            step: "pipelines",
+            message: `Pipeline de leads sincronizado: ${leadPipeline.stageByValue.size} estágio(s)`,
+            count: leadPipeline.stageByValue.size,
+          });
+        } catch (e) {
+          await appendLog({
+            level: "warn",
+            step: "pipelines",
+            message: `Falha ao sincronizar pipeline de leads: ${e instanceof Error ? e.message : String(e)}`,
+          });
+        }
+      }
+
       for (const step of steps) {
         await updateItem(step, { status: "running", before: { started_at: new Date().toISOString() } });
         await appendLog({ level: "info", step, message: `Iniciando etapa ${step}` });
@@ -488,6 +721,16 @@ export const startHubspotImport = createServerFn({ method: "POST" })
           for (const d of dealRecs) {
             const p = d.properties;
             const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
+            // Resolver pipeline e estágio espelhados do HubSpot
+            const pipelineEntry = p.pipeline ? dealPipelines.pipelines.get(p.pipeline) : undefined;
+            const stageEntry = p.dealstage ? dealPipelines.stages.get(p.dealstage) : undefined;
+            const localPipelineId = pipelineEntry?.localId ?? stageEntry?.localPipelineId ?? null;
+            const localStageId = stageEntry?.stageId ?? pipelineEntry?.defaultStageId ?? null;
+            const stageEnum = mapDealStageEnum(
+              stageEntry?.label,
+              stageEntry?.probability ?? null,
+              stageEntry ? (stageEntry.probability !== null && stageEntry.probability >= 1) || /lost|perdid|won|ganho|closed/i.test(stageEntry.label) : false,
+            );
             const { data: row, error } = await supabase
               .from("deals")
               .insert({
@@ -495,7 +738,9 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 name: p.dealname ?? "Sem nome",
                 value: p.amount ? Number(p.amount) : 0,
                 currency: "BRL",
-                stage: "new",
+                stage: stageEnum as never,
+                stage_id: localStageId,
+                pipeline_id: localPipelineId,
                 company_id: localCompanyId,
                 expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
                 external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
@@ -540,6 +785,8 @@ export const startHubspotImport = createServerFn({ method: "POST" })
           ]);
           for (const c of recs) {
             const p = c.properties;
+            const hsStatus = p.hs_lead_status ?? "";
+            const stageEntry = hsStatus ? leadPipeline?.stageByValue.get(hsStatus) : undefined;
             const { error } = await supabase.from("leads").insert({
               owner_id: userId,
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
@@ -548,8 +795,10 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               phone: p.phone ?? null,
               company_name: p.company ?? null,
               source: p.hs_analytics_source ?? "hubspot",
-              status: "new",
-              external_ids: { hubspot: c.id } as never,
+              status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
+              stage_id: stageEntry?.stageId ?? hsStatus ?? null,
+              pipeline_id: leadPipeline?.localPipelineId ?? null,
+              external_ids: { hubspot: c.id, hs_lead_status: hsStatus || null } as never,
             });
             if (error) stepFail++;
             else stepOk++;

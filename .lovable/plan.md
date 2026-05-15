@@ -1,65 +1,62 @@
-# Contadores em tempo real durante a importação
+# Importação espelhando estrutura do HubSpot
 
-Substituir, na tela de execução (`ImportTimeline`), o sumário textual atual ("X/Y etapas · N registros importados") por um painel de **contadores ao vivo, um por objeto**, com animação de número subindo, anel de progresso e ícone do objeto. O usuário acompanha visualmente quantos registros de cada tipo já foram importados em tempo real.
+## Objetivo
+Em vez de jogar todos os registros importados em valores genéricos (ex: deals no estágio "new" de um pipeline padrão), replicar fielmente a estrutura do HubSpot no sistema: pipelines, estágios, tipos de atividade, owners e — quando aplicável — propriedades customizadas. Se a estrutura não existir localmente, criar antes de importar os registros.
 
-## Layout proposto
+## Escopo por objeto
 
-Logo acima do bloco "Etapas", um grid responsivo de cards — um para cada objeto presente no escopo (Empresas, Contatos, Negócios, Leads, Atividades). Cada card é um `LiveCounter`:
+### 1. Pipelines e estágios (Deals)
+- Antes de importar deals, chamar `GET /crm/v3/pipelines/deals` no HubSpot.
+- Para cada pipeline retornado:
+  - Procurar em `pipelines` (entity='deal') por um registro com `external_ids->>'hubspot' = <pipelineId>`.
+  - Se não existir, criar com `name`, `stages` (array com `{id, label, displayOrder, probability, hubspot_id}`), `is_default` conforme HubSpot.
+  - Se existir, atualizar `stages` para refletir mudanças.
+- Manter um mapa `hubspotPipelineId → localPipelineId` e `hubspotStageId → {pipelineId, stageId}` no estado da importação.
+- Ao importar cada deal:
+  - Resolver `pipeline_id` via mapa.
+  - Resolver `stage` (campo enum atual `deal_stage`) — **ver "Mudança de schema" abaixo**.
+
+### 2. Pipelines de Leads
+- HubSpot tem pipelines de "tickets" e estágios de lead status. Replicar o mesmo padrão para `pipelines` (entity='lead') usando os lifecycle stages / lead status do HubSpot.
+
+### 3. Tipos de atividade
+- `activity_type` hoje é enum fixo (`note|call|email|meeting|task`). HubSpot já bate com isso, manter sem mudança estrutural.
+- Outcomes de call (`hs_call_disposition`) — preservar como texto em `outcome`, sem normalizar.
+
+### 4. Owners (responsáveis)
+- HubSpot tem `hubspot_owner_id` em quase todo objeto. Hoje gravamos tudo com `owner_id = usuário que disparou a importação`.
+- **Decisão:** manter `owner_id` = dono do workspace (RLS depende disso). Salvar o owner original do HubSpot em `external_ids.hubspot_owner_id` para referência futura.
+
+### 5. Propriedades customizadas
+- **Fora do escopo desta entrega.** Estrutura de custom fields exigiria nova tabela (`custom_properties`) e UI nova. Vou apenas guardar o JSON bruto das propriedades customizadas em `external_ids.raw_properties` para não perder dado, e abrir como tarefa separada se você quiser.
+
+## Mudança de schema necessária
+
+O campo `deals.stage` hoje é um enum (`deal_stage`) com valores fixos. Isso impede armazenar estágios arbitrários do HubSpot. Proposta:
+
+- Adicionar coluna `stage_id text` em `deals` (id do estágio dentro do `stages` jsonb do pipeline).
+- Manter `stage` enum por compatibilidade, mapeando o estágio HubSpot mais próximo (`new`, `qualified`, `proposal`, `negotiation`, `won`, `lost`) por heurística sobre `label` / `probability`.
+- Mesma lógica para `leads.status` (manter enum + adicionar `stage_id`).
+
+## Fluxo da importação atualizado
 
 ```text
-┌─────────────────────────┐
-│ 🏢  Empresas    ◐ 62%   │
-│                         │
-│      127 / 200          │   ← número grande animado (rolagem)
-│   ──────────────        │   ← barra/anel de progresso
-│   ✓ 125 ok · ✗ 2 falhas │
-└─────────────────────────┘
+[Descobrir pipelines] → [Criar/atualizar pipelines locais]
+        ↓
+[Companies] → [Contacts] → [Deals (usa pipelineMap+stageMap)] → [Leads] → [Activities]
 ```
 
-Estados visuais:
-- **pending**: card em opacidade baixa, ring `border-muted`, número `0`.
-- **running**: ring com gradiente animado (`from-primary to-primary/60`), pulso suave no ícone, número crescendo via tween.
-- **done**: ring `border-emerald-500`, ícone `CheckCircle2`, badge "concluído".
-- **failed**: ring `border-destructive`, ícone `XCircle`.
+A descoberta de pipelines vira uma nova etapa **antes** de Companies no `STEP_DEPS` em `hubspot-steps.server.ts`, chamada `pipelines`.
 
-O número grande usa **tween** (CSS transition em `--n` via `@property` ou pequeno hook `useAnimatedNumber` com `requestAnimationFrame`) — sem libs externas. Quando o valor sobe, anima de `prev` até o novo valor em ~600ms com `ease-out`.
+## Arquivos afetados
 
-Para Empresas, o denominador é `maxCompanies` (vem do `scope` do job). Para os filhos (Contatos/Negócios/Leads/Atividades), o denominador não é conhecido a priori (a cascata descobre em runtime); o card mostra apenas o numerador grande + um indicador "descobrindo…" (chips com counts parciais extraídos dos `step_logs`, ex.: `2.1k contatos descobertos · 850 importados`). Quando a etapa termina, o denominador passa a ser o próprio total final.
+- `src/lib/integrations/hubspot-steps.server.ts` — adicionar step `pipelines`, função `syncPipelines()`, expor `pipelineMap`/`stageMap` no estado, ajustar `runStepDeals` e `runStepLeads`.
+- `src/lib/integrations/hubspot.functions.ts` — incluir `pipelines` em `STEPS` e na contagem inicial (total = nº de pipelines descobertos).
+- `src/components/hubspot/live-counter.tsx` / `import-timeline.tsx` — adicionar card "Pipelines" no grid.
+- Migração: `ALTER TABLE deals ADD COLUMN stage_id text; ALTER TABLE leads ADD COLUMN stage_id text;` (+ índices).
 
-Faixa inferior global (logo abaixo do grid) mantém o `Progress` por etapas + tempo decorrido (HH:MM:SS) e ETA estimado.
+## Confirmação necessária
 
-## Como os contadores se atualizam
-
-O componente já está assinado em Realtime (`enrichment_jobs` + `enrichment_job_items`). Vou derivar por objeto:
-- `succeeded` / `failed` por etapa: lê `enrichment_job_items.after.{succeeded,failed}` quando a etapa fecha; durante a execução, extrai o último `count` do `step_logs` filtrado por `step` para alimentar o numerador "descoberto" (`discovered`).
-- `imported` durante execução: o item ainda está `running`, então o `after` é null. Para contar em tempo real, vou adicionar `running_succeeded`/`running_failed` no `before` do item e atualizar a cada inserção (já temos `appendLog` por página/lote — basta atualizar 1 campo do item junto). Isso evita alterar schema.
-
-### Pequeno ajuste no backend
-
-`startHubspotImport` já atualiza `step_logs` e o `enrichment_jobs.succeeded` global. Para granularidade por etapa em tempo real, vou:
-- Após cada `insert` bem-sucedido em uma etapa, atualizar `enrichment_job_items.before.running_succeeded` e `running_failed` (já gravamos `before` como JSON livre). Throttle: a cada 5 inserts ou no fim de cada lote/página para não bater no banco a cada linha.
-- Frontend lê `it.before.running_succeeded` enquanto `status='running'` e `it.after.succeeded` quando `status='done'`.
-
-## Componente novo
-
-`src/components/hubspot/live-counter.tsx` — recebe `{ icon, label, value, target?, status, failed }`, anima o número, renderiza o ring + barra. Reutiliza `lucide-react` e tokens do design system (`text-primary`, `bg-card`, `border-emerald-500`, etc.).
-
-Hook auxiliar `useAnimatedNumber(value, duration=600)` em `src/hooks/use-animated-number.ts`.
-
-## Edição em `import-timeline.tsx`
-
-- Logo após o card de status, renderizar `<LiveCountersGrid items={items} scope={job?.scope} />`.
-- Mantém a seção "Etapas" (lista vertical) e o "Log" como estão — a função delas é detalhar; os contadores são o destaque novo.
-
-## Entregáveis
-
-1. `src/hooks/use-animated-number.ts` — tween simples por rAF.
-2. `src/components/hubspot/live-counter.tsx` — card individual + grid.
-3. `src/components/hubspot/import-timeline.tsx` — incluir o grid no topo.
-4. `src/lib/integrations/hubspot.functions.ts` — pequena atualização para gravar `running_succeeded/failed` por item durante a execução (throttled).
-
-## Fora de escopo
-
-- ETA preciso (mostro só tempo decorrido + estimativa linear).
-- Sons/notificação ao concluir.
-- Persistência histórica de jobs anteriores nessa tela.
+1. OK criar a migração adicionando `stage_id` em `deals` e `leads`?
+2. OK manter custom properties como JSON bruto por enquanto (sem UI), ou prefere que eu já modele uma tabela `custom_properties`?
+3. OK manter `owner_id` local = dono do workspace e guardar `hubspot_owner_id` como referência?
