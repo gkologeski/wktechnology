@@ -286,6 +286,45 @@ const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads
   activities: "activities",
 };
 
+// Busca os primeiros N IDs de empresas no HubSpot (mesma ordem usada na importação).
+async function fetchCompanyIdsCount(limit: number): Promise<string[]> {
+  const ids: string[] = [];
+  let after: string | undefined;
+  while (ids.length < limit) {
+    const remaining = limit - ids.length;
+    const body: Record<string, unknown> = {
+      limit: Math.min(100, remaining),
+      properties: ["hs_object_id"],
+      sorts: [{ propertyName: "hs_object_id", direction: "ASCENDING" }],
+    };
+    if (after) body.after = after;
+    try {
+      const r = (await hsPost("/crm/v3/objects/companies/search", body)) as {
+        results?: { id: string }[];
+        paging?: { next?: { after: string } };
+      };
+      for (const x of r.results ?? []) ids.push(x.id);
+      after = r.paging?.next?.after;
+      if (!after) break;
+    } catch {
+      break;
+    }
+  }
+  return ids.slice(0, limit);
+}
+
+// União de IDs associados a uma lista de origens. Limita concorrência para não estourar rate-limit.
+async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
+  const out = new Set<string>();
+  const concurrency = 5;
+  for (let i = 0; i < fromIds.length; i += concurrency) {
+    const slice = fromIds.slice(i, i + concurrency);
+    const results = await Promise.all(slice.map((id) => getAssoc(fromObj, id, toObj)));
+    for (const arr of results) for (const x of arr) out.add(x);
+  }
+  return out;
+}
+
 export const countHubspotObjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -306,9 +345,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       if (key === "leads") {
         return searchTotal("contacts", {
           filterGroups: [
-            {
-              filters: [{ propertyName: "lifecyclestage", operator: "EQ", value: "lead" }],
-            },
+            { filters: [{ propertyName: "lifecyclestage", operator: "EQ", value: "lead" }] },
           ],
         });
       }
@@ -322,16 +359,62 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return parts.reduce((a, b) => a + b, 0);
     }
 
+    // Para os filhos, "planned" considera apenas o que está vinculado às
+    // empresas que efetivamente serão importadas (respeitando maxCompanies).
+    let companyIdsPromise: Promise<string[]> | null = null;
+    const getCompanyIds = () => {
+      if (!companyIdsPromise) companyIdsPromise = fetchCompanyIdsCount(data.maxCompanies);
+      return companyIdsPromise;
+    };
+
+    async function plannedCount(key: ObjectKey, remote: number): Promise<number> {
+      if (key === "companies") return Math.min(remote, data.maxCompanies);
+      const companyIds = await getCompanyIds();
+      if (companyIds.length === 0) return 0;
+
+      if (key === "contacts") {
+        const set = await unionAssocIds("companies", companyIds, "contacts");
+        return set.size;
+      }
+      if (key === "deals") {
+        const set = await unionAssocIds("companies", companyIds, "deals");
+        return set.size;
+      }
+      if (key === "leads") {
+        const contacts = await unionAssocIds("companies", companyIds, "contacts");
+        if (contacts.size === 0) return 0;
+        const recs = await batchRead("contacts", [...contacts], ["lifecyclestage"]);
+        return recs.filter((r) => (r.properties?.lifecyclestage ?? "") === "lead").length;
+      }
+      // activities: união de notes/calls/meetings/tasks/emails ligados a companies, contatos e deals do escopo.
+      const [contacts, deals] = await Promise.all([
+        unionAssocIds("companies", companyIds, "contacts"),
+        unionAssocIds("companies", companyIds, "deals"),
+      ]);
+      const types = ["notes", "calls", "meetings", "tasks", "emails"] as const;
+      let total = 0;
+      for (const t of types) {
+        const [a, b, c] = await Promise.all([
+          unionAssocIds("companies", companyIds, t),
+          unionAssocIds("contacts", [...contacts], t),
+          unionAssocIds("deals", [...deals], t),
+        ]);
+        const merged = new Set<string>();
+        for (const x of a) merged.add(x);
+        for (const x of b) merged.add(x);
+        for (const x of c) merged.add(x);
+        total += merged.size;
+      }
+      return total;
+    }
+
     const out: Record<string, { planned: number; remote: number }> = {};
-    await Promise.all(
-      data.objects.map(async (k) => {
-        const remote = await remoteCount(k);
-        // "planned" = quantos serão efetivamente puxados nesta importação.
-        // Apenas Empresas têm um teto explícito; os filhos vinculados vêm sem limite.
-        const planned = k === "companies" ? Math.min(remote, data.maxCompanies) : remote;
-        out[k] = { planned, remote };
-      })
-    );
+    // Sequencial para reaproveitar getCompanyIds() entre chamadas e evitar rate-limit.
+    for (const k of data.objects) {
+      const remote = await remoteCount(k);
+      const planned = Math.min(await plannedCount(k, remote), remote);
+      out[k] = { planned, remote };
+    }
     return out as Record<ObjectKey, { planned: number; remote: number }>;
   });
 
