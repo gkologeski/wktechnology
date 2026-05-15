@@ -470,7 +470,15 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       .parse(input)
   )
   .handler(async ({ data, context }) => {
-    void context;
+    const { supabase } = context;
+
+    async function localCount(key: ObjectKey): Promise<number> {
+      const table = key === "activities" ? "activities" : key;
+      const { count } = await supabase
+        .from(table)
+        .select("*", { count: "exact", head: true });
+      return count ?? 0;
+    }
 
     async function remoteCount(key: ObjectKey): Promise<number> {
       if (key === "companies") return searchTotal("companies");
@@ -493,15 +501,15 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return parts.reduce((a, b) => a + b, 0);
     }
 
-    const out: Record<string, { planned: number; remote: number }> = {};
+    const out: Record<string, { planned: number; remote: number; local: number }> = {};
 
     // Modo "full": planned = remote para todos os objetos (sem cap, sem filtro de vínculo).
     if (data.mode === "full") {
       for (const k of data.objects) {
-        const remote = await remoteCount(k);
-        out[k] = { planned: remote, remote };
+        const [remote, local] = await Promise.all([remoteCount(k), localCount(k)]);
+        out[k] = { planned: remote, remote, local };
       }
-      return out as Record<ObjectKey, { planned: number; remote: number }>;
+      return out as Record<ObjectKey, { planned: number; remote: number; local: number }>;
     }
 
     // Modo "linked": filhos respeitam vínculo com as empresas dentro de maxCompanies.
@@ -519,11 +527,11 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
     };
 
     for (const k of data.objects) {
-      const remote = await remoteCount(k);
+      const [remote, local] = await Promise.all([remoteCount(k), localCount(k)]);
       const planned = await computePlannedCapped(k, remote, data.maxCompanies, deps);
-      out[k] = { planned, remote };
+      out[k] = { planned, remote, local };
     }
-    return out as Record<ObjectKey, { planned: number; remote: number }>;
+    return out as Record<ObjectKey, { planned: number; remote: number; local: number }>;
   });
 
 // Mantido para compat
