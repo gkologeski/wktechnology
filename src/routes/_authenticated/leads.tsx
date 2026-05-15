@@ -69,6 +69,11 @@ function LeadsPage() {
       title="Leads"
       description="Capture e qualifique novos contatos."
       csvEnabled
+      toolbar={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/leads/import-hubspot"><Settings className="h-4 w-4 mr-1" /> HubSpot</Link>
+        </Button>
+      }
       searchKeys={["first_name", "last_name", "email", "company_name"]}
       columns={[
         { key: "first_name", label: "Nome", render: (r) => `${r.first_name} ${r.last_name ?? ""}`.trim() },
