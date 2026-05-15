@@ -1,205 +1,225 @@
 
-# Parte 1 — Seleção múltipla nas listas
+# Plano: Paridade HubSpot completa (Listagem + Detalhe)
 
-## Onde aplica
-Leads, Contatos, Empresas, Negócios (visão tabela). O Kanban de Negócios continua sem checkbox; ações em lote ficam apenas na visão tabela.
+Implementa as 35 funcionalidades mapeadas. Itens já existentes (1, 9, 18, 19) ficam fora do escopo. Itens reaproveitam a infra existente: `EntityList`, `BulkActionBar`, `BulkEditDialog`, registry de integrações.
 
-## UX
-- Coluna de checkbox como primeira coluna da tabela; checkbox no header marca/desmarca todos os filtrados (não a base inteira).
-- Quando há ≥1 selecionado, o `PageHeader` é substituído por uma **barra de ações em lote** sticky com:
-  - contador "X selecionados" + "Limpar seleção"
-  - **Excluir** (confirma com diálogo, mostra quantidade)
-  - **Exportar selecionados** (CSV gerado só com as linhas marcadas)
-  - **Editar em massa** (abre dialog com lista de campos editáveis daquela entidade — ex: status/source para Leads, stage/owner para Negócios, industry para Empresas; só os campos preenchidos são aplicados)
-  - **Ações de integração** (dropdown dinâmico — só aparecem integrações conectadas que suportam ação de lote para a entidade atual: ex. "Enriquecer com Apollo", "Enriquecer com Lusha", "Sincronizar com HubSpot", "Criar tarefa no ClickUp")
-- Atalho `Shift+click` para selecionar intervalo.
-- Estado de seleção é local à página (não persiste entre rotas).
-
-## Implementação técnica
-- Refatorar `src/components/entity-list.tsx`:
-  - Novo prop `selectable?: boolean` (default `true`) e `bulkActions?: BulkAction<T>[]` (extensível por página).
-  - Estado `selectedIds: Set<string>` com helpers `toggle/selectAll/clear/range`.
-  - Render condicional da `<BulkActionBar>` no lugar do header quando `selectedIds.size > 0`.
-- Novo componente `src/components/bulk-action-bar.tsx`.
-- Novo componente `src/components/bulk-edit-dialog.tsx` recebendo `fields` (mesma definição usada no dialog de edição) e aplicando `update().in("id", ids)` apenas nos campos marcados como "alterar".
-- Exclusão: `delete().in("id", ids)` — RLS já garante owner-only, sem risco de vazar dados de outros usuários.
-- Export CSV usa `papaparse.unparse(rows.filter(r => selectedIds.has(r.id)))`.
-- Ações de integração: cada conector registra seus `bulkActions` num `src/lib/integrations/registry.ts` (ver Parte 2). A `EntityList` consulta o registry filtrando por entidade + integrações conectadas.
+Tudo aplica a **leads, contacts, companies, deals** simultaneamente (entidades reutilizam `EntityList`).
 
 ---
 
-# Parte 2 — Hub de Integrações
+## Sprint 1 — Refinos da seleção em massa (#2, #3, #4, #5)
 
-## Estrutura de navegação
-- Novo item na sidebar: **Integrações** (`/integrations`).
-- Rotas:
-  - `/integrations` → catálogo (cards de todas as integrações; status: Disponível / Conectado / Em breve).
-  - `/integrations/$slug` → tela do conector (status, configurações, ações como "Enriquecer tudo", logs recentes, botão Desconectar).
-  - `/integrations/$slug/connect` → **wizard** de conexão (passos por conector).
-- A tela atual `/leads/import-hubspot` é movida para `/integrations/hubspot` como uma das ações do conector. O botão "HubSpot" da tela de Leads passa a abrir essa rota (ou some, e a importação é feita via "Ações de integração" no bulk bar / dentro do conector).
+**#2 Bulk Edit avançado (append / replace / remove)**
+- Estender `BulkEditDialog`: detectar tipo do campo (text, single-select, multi-select, array).
+- Para multi-select: 3 modos (`Append`, `Replace`, `Remove`).
+- Aplicar via `update().in("id", ids)` calculando o novo array no client antes do update (Postgres não tem operador atômico genérico para "append único"; vamos buscar valores atuais → mesclar → escrever em transação curta por chunk de 50).
 
-## Modelo de dados (nova migration)
+**#3 Bulk Delete com confirmação digitada**
+- Substituir `confirm()` por dialog que pede ao usuário **digitar o número exato** de registros para liberar o botão "Excluir".
+- Componente novo: `<ConfirmCountDialog count={n} entity="leads" />`.
 
-```text
-integration_providers       -- catálogo estático em código (não em DB), só referência
-integrations                -- conexão configurada por usuário
-  id, owner_id, provider (text: 'hubspot'|'apollo'|...), status ('connected'|'error'|'pending'),
-  config jsonb               -- credenciais não-secret, IDs de workspace, defaults
-  credentials_secret_ref text -- nome da secret no Cloud (quando aplicável)
-  oauth_tokens jsonb         -- access/refresh + expiração (criptografar com pgsodium futuramente)
-  created_at, updated_at, last_used_at
+**#4 Bulk Assign (reatribuir owner)**
+- Hoje `owner_id` é fixo do usuário logado (RLS). Para suportar reatribuição, precisa de **organizações/times**.
+- Decisão: criar tabela `team_members` (workspace_owner_id, member_user_id, role) + ajustar RLS de leads/contacts/companies/deals para `owner_id IN (members of team)`.
+- Bulk Assign vira dropdown com membros do time.
 
-enrichment_jobs             -- toda execução de enriquecimento/sync
-  id, owner_id, integration_id, kind ('enrich'|'import'|'export'|'sync'),
-  entity ('lead'|'contact'|'company'|'deal'),
-  scope jsonb                -- ids selecionados OU filtros para "tudo"
-  status ('queued'|'running'|'done'|'failed'|'partial'),
-  total int, processed int, succeeded int, failed int,
-  credits_used int default 0,
-  error text,
-  started_at, finished_at, created_at
+**#5 Bulk Create Tasks**
+- Ação "Criar tarefa" no `BulkActionBar` → dialog com campos `subject`, `due_date`, `type=task`, `body`.
+- Insere N rows em `activities` com `related_lead_id`/`related_contact_id`/`related_deal_id` por record.
 
-enrichment_job_items        -- linha por registro processado (auditoria + retry)
-  id, job_id, entity_id, status, before jsonb, after jsonb, error text
+---
 
-credit_ledger               -- consumo de créditos das APIs externas
-  id, owner_id, integration_id, job_id?, delta int, balance_after int, reason text, created_at
+## Sprint 2 — Views, filtros e colunas (#10, #11, #12, #13, #14)
 
-credit_limits               -- limites configurados pelo usuário
-  owner_id, integration_id, monthly_limit int, per_run_confirm_above int
+**Tabelas novas:**
+```
+saved_views (id, owner_id, entity, name, is_shared, filters jsonb,
+             column_order text[], sort_by, sort_dir, quick_filters jsonb)
 ```
 
-Todas com RLS `owner_id = auth.uid()` (`enrichment_job_items` via subquery em `enrichment_jobs`).
+**#10 Quick filters configuráveis**
+- Barra de chips no topo da `EntityList` (até 10).
+- Botão "+" abre dropdown listando todas as colunas/propriedades da entidade.
+- Cada chip vira um popover com critérios apropriados ao tipo (texto: contém/igual; select: lista; data: range; número: operadores).
 
-## Wizard de conexão (`/integrations/$slug/connect`)
-Componente genérico `<ConnectionWizard steps={...} />` que cada conector configura. Passos típicos:
-1. **Visão geral** — o que a integração faz, quais entidades afeta, custo estimado.
-2. **Autenticação** — varia por conector (ver tabela abaixo).
-3. **Mapeamento de campos** — dropdowns para mapear campos da API externa → tabelas do CRM (com defaults sensatos).
-4. **Defaults de uso** — frequência, auto-enriquecer ao criar (sim/não), entidades alvo.
-5. **Confirmação** — testa a credencial chamando um endpoint leve do conector e grava `integrations.status='connected'`.
+**#11 Advanced filters (AND/OR aninhado)**
+- Construtor de filtros recursivo (`FilterNode = Group | Condition`).
+- UI estilo HubSpot: grupos colapsáveis com switch AND/OR.
+- Compilador `filtersToSupabase(node)` → encadeia `.eq/.ilike/.in/.gte` no query builder.
 
-## Padrões de enriquecimento (todos os 4 disponíveis quando aplicável)
-- **Tela de detalhe** — botão "Enriquecer com {provider}" no header do registro. Cria `enrichment_jobs` com 1 item e abre dialog mostrando antes/depois antes de gravar.
-- **Em lote na lista** — via `BulkActionBar` (Parte 1). Confirma com contagem + créditos estimados.
-- **"Enriquecer tudo"** — botão na tela do conector. Aceita filtros (ex: "leads sem telefone, criados nos últimos 30 dias"). Roda em background via server function streaming progresso, persistindo em `enrichment_jobs`.
-- **Automático ao criar** — toggle por conector em `integrations.config.auto_enrich_on_create`. Implementado por server function chamada após `insert` de Lead/Contact (não trigger no DB para não bloquear inserts e não acoplar Postgres a APIs externas).
+**#12 Saved views (preset + customizadas)**
+- Sidebar lateral na `EntityList` listando: "Todas", "Minhas views", "Compartilhadas".
+- Ações: criar, renomear, duplicar, excluir, definir como padrão, compartilhar (`is_shared=true`).
+- View armazena filtros + colunas + sort + quick_filters.
 
-## Controle de créditos (resposta do usuário: completo)
-- Tela do conector mostra: saldo restante (quando a API expõe — Apollo/Lusha expõem), consumo do mês, gráfico simples.
-- `credit_limits.monthly_limit` bloqueia novos jobs quando atingido.
-- `per_run_confirm_above` (default 10) força diálogo de confirmação antes de rodar.
-- Cada execução grava em `credit_ledger` com link para o job.
-- Tela `/integrations/$slug` tem aba "Histórico" listando jobs + créditos consumidos.
+**#13 Preset views por entidade**
+- Hardcoded no registry de cada entidade (não vai pra DB):
+  - Leads: Open / Recent activity / Not in sequence / All / My leads
+  - Deals: Open / Closing this month / My deals / Won / Lost
+  - Contacts: All / Recently created / My contacts
+  - Companies: All / Target accounts / Recently active
 
----
-
-## Parte 2.1 — Detalhes por conector
-
-Todos os conectores rodam **server-side** via `createServerFn` em `src/lib/integrations/{provider}.functions.ts`, com `requireSupabaseAuth`. Conectores OAuth precisam de uma server route pública para callback em `src/routes/api/public/integrations.{provider}.callback.ts`.
-
-### HubSpot (já parcialmente implementado)
-- **Autenticação**: já conectado via Lovable Connector Gateway (`HUBSPOT_API_KEY` + `LOVABLE_API_KEY`).
-- **Wizard**: passo de auth resolvido pelo connector; resta mapeamento (firstname/lastname/email/phone/company/hs_lead_status → leads).
-- **Endpoints usados** (gateway `https://connector-gateway.lovable.dev/hubspot`):
-  - `GET /crm/v3/objects/contacts?limit&after&properties=...` — listar/importar (já existe).
-  - `POST /crm/v3/objects/contacts/batch/read` — enriquecer (input por email).
-  - `POST /crm/v3/objects/contacts` — push reverso (criar contato no HubSpot a partir de Lead/Contato do CRM).
-- **Ações**: Importar (já existe, refatorar para `enrichment_jobs`), Sincronizar selecionados (push), "Enriquecer tudo" buscando emails dos leads na base e batendo no batch/read.
-
-### Apollo.io (enriquecimento)
-- **Autenticação**: API Key estática. Wizard pede a chave e a salva via `add_secret` (`APOLLO_API_KEY`). Header: `X-Api-Key: <key>` (também aceita `api_key` no body — usar header).
-- **Endpoints** (base `https://api.apollo.io`):
-  - `POST /api/v1/people/match` — People Enrichment (1 pessoa). Body aceita `email`, `first_name`+`last_name`+`organization_name`, `linkedin_url`, etc. Retorna pessoa + organização.
-  - `POST /api/v1/people/bulk_match` — até 10 por chamada. Usar para lote/“tudo".
-  - Waterfall: parâmetros `reveal_personal_emails=true`, `reveal_phone_number=true` (consomem créditos extras).
-- **Mapeamento sugerido**: `email`, `phone_numbers[0].sanitized_number → phone`, `title → job_title`, `organization.name → company_name`/`companies.name`, `organization.website_url → companies.domain`, `linkedin_url → notes` (ou nova coluna futura).
-- **Ações**: enriquecer (4 padrões), nada de import inicial (não é fonte de leads próprios do usuário).
-
-### Lusha (enriquecimento)
-- **Autenticação**: API Key estática. Wizard pede a chave (`LUSHA_API_KEY`). Header: `api_key: <key>`.
-- **Endpoints** (base `https://api.lusha.com`):
-  - `GET /v2/person` — single contact. Aceita `personId` OU `email` OU `linkedinUrl` OU `firstName`+`lastName`+(`companyName` OU `companyDomain`).
-  - `POST /v2/person` — bulk até 100.
-  - `GET /v2/company` — enriquecer empresa (`domain` ou `companyId`).
-- **Mapeamento**: `emailAddresses[].email`, `phoneNumbers[].number → phone`, `jobTitle → job_title`, `companyName/companyDomain → company_name/domain`.
-- **Ações**: enriquecer (4 padrões) para Contatos e Empresas. "Enriquecer tudo" usa o endpoint POST batch.
-
-### ViaCEP (auto-preenchimento de endereço)
-- **Autenticação**: nenhuma (público). Sem wizard de auth — só toggle "Ativar".
-- **Endpoint**: `GET https://viacep.com.br/ws/{cep}/json/`. Resposta: `logradouro`, `bairro`, `localidade`, `uf`, `cep`. Erro: `{ "erro": true }`.
-- **Uso**: hook `useCepLookup` no formulário de Empresa: ao digitar 8 dígitos no campo `address` (ou um novo campo `cep` dedicado — sugerir ao usuário criar coluna `cep`/`city`/`state`/`address_line` em migration futura), chama o endpoint **direto do navegador** (sem proxy) e preenche os campos. Também disponível como ação em lote: "Enriquecer endereço" varrendo empresas com CEP preenchido.
-
-### Conta Azul (sync de clientes/financeiro)
-- **Autenticação**: OAuth 2.0 Authorization Code. Wizard:
-  1. Pede `client_id` e `client_secret` do app criado no portal Conta Azul (`add_secret` `CONTA_AZUL_CLIENT_ID`/`CONTA_AZUL_CLIENT_SECRET`).
-  2. Redireciona para `https://auth.contaazul.com/oauth2/authorize?response_type=code&client_id=...&redirect_uri=https://project--{id}.lovable.app/api/public/integrations/contaazul/callback&scope=...&state=<owner_id>`.
-  3. Callback troca `code` por `access_token`/`refresh_token` em `https://auth.contaazul.com/oauth2/token` e grava em `integrations.oauth_tokens`.
-  4. Refresh automático via helper `getValidContaAzulToken(integration)` que renova quando expira.
-- **Endpoints** (base `https://api-v2.contaazul.com` — confirmar na doc oficial após conexão; dev pode listar com `GET /v1/customers`, `POST /v1/customers`, `GET /v1/sales`).
-- **Ações**: "Enviar empresa para Conta Azul como cliente" (bulk), "Importar clientes" (job batch).
-
-### ClickUp (tarefas a partir de Atividades/Negócios)
-- **Autenticação**: 2 modos no wizard:
-  - **Personal Token** (mais simples): usuário cola `pk_xxx`, salvo como `CLICKUP_API_TOKEN`.
-  - **OAuth 2.0** (multi-workspace): `client_id`/`client_secret` + callback `/api/public/integrations/clickup/callback`.
-- Header: `Authorization: <token>` (sem `Bearer`).
-- **Endpoints** (base `https://api.clickup.com/api/v2`):
-  - `GET /team` — listar workspaces (passo do wizard).
-  - `GET /team/{team_id}/space`, `GET /space/{space_id}/list` — escolher lista padrão para criação de tasks.
-  - `POST /list/{list_id}/task` — criar task. Body: `name`, `description`, `assignees`, `due_date` (ms), `tags`.
-- **Ações**: 
-  - Botão "Criar task no ClickUp" no `<ActivityTimeline>` (cria a partir de uma activity).
-  - Bulk "Criar tasks" em Negócios selecionados (uma task por deal, com link de volta no `description`).
-  - "Sincronizar conclusão" opcional — fora deste plano (cron futuro).
+**#14 Edit columns**
+- Botão "Editar colunas" abre dialog com checkboxes + drag-to-reorder (`@dnd-kit/sortable`).
+- Persiste em `saved_views.column_order` da view ativa.
 
 ---
 
-# Estrutura de arquivos nova
+## Sprint 3 — Inline edit, Kanban e pipelines (#15, #16, #17)
+
+**#15 Edit inline na tabela**
+- `EntityList` recebe prop `inlineEditableFields`.
+- Célula vira input/select/datepicker no clique; salva onBlur ou Enter via `update().eq("id", id)`.
+- Validação otimista: roll-back visual em caso de erro.
+
+**#16 Board view (Kanban)**
+- Toggle Tabela/Board no header da `EntityList`.
+- Componente novo `EntityBoard`: colunas = stages/status, cards arrastáveis com `@dnd-kit`.
+- Aplicável a: Deals (por `stage`), Leads (por `status`).
+- Drag entre colunas = `update({ stage: newStage })`.
+
+**#17 Multi-pipeline**
+- Tabela nova: `pipelines (id, owner_id, entity, name, is_default, stages jsonb)` (stages = array ordenado de `{value, label, color, probability}`).
+- Adicionar coluna `pipeline_id` em `deals` e `leads` (nullable, default = pipeline padrão).
+- Migrar `DEAL_STAGES`/`LEAD_STATUSES` (constantes em `src/lib/crm.ts`) para serem **stages padrão** copiados na criação da pipeline default por usuário.
+- Dropdown "Pipeline" no header → filtra registros e muda colunas do Kanban.
+- Settings → Pipelines: CRUD de pipelines e stages.
+
+---
+
+## Sprint 4 — Tela de detalhe do Lead (#22, #23, #24, #25, #26, #27, #28)
+
+Criar rota `_authenticated/leads.$id.tsx` (e equivalentes para contacts/companies/deals).
+
+**#22 Lead stage tracker (linha do tempo visual)**
+- Componente `<StageTracker stages={...} current={...} />` — barra horizontal com ícones por stage.
+
+**#23 Atualização automática de stage**
+- Trigger Postgres `auto_advance_lead_stage()`: ao inserir em `activities` com `related_lead_id` e tipo email/call/meeting/task, se `lead.status='new'` → `'contacted'` (≈ Attempting). Ao registrar atividade com outcome=Connected → `'qualified-prep'` (novo valor enum) ou similar.
+- Tabela de mapeamento `activity_type → stage_transition` configurável em `pipelines.config.auto_advance_rules`.
+
+**#24 Activity quick icons**
+- Painel direito do detalhe com 5 botões: Note · Email · Call · Task · Meeting.
+- Clique abre dialog específico (compor email não envia de verdade — só registra; integração de envio fica fora de escopo).
+
+**#25 Recent communications**
+- Card "Comunicações recentes" com últimas 3 atividades de tipo email/call.
+
+**#26 Previous / Recent / Upcoming activities (tabs)**
+- Refatorar `ActivityTimeline` para aceitar `mode="grouped"`, agrupando em 3 abas + filtro por tipo.
+
+**#27 Schedule next activity**
+- Botão "Agendar próxima atividade" no painel direito → cria activity com `due_date` futuro.
+- Card "Próximas atividades" lista as 3 mais próximas.
+
+**#28 Call/Meeting outcomes**
+- Adicionar colunas em `activities`: `outcome text`, `outcome_set_at timestamptz`.
+- Outcomes padrão: Connected, No answer, Left voicemail, Bad number, Wrong contact, Meeting completed, No-show.
+- Dropdown na atividade após criação.
+
+---
+
+## Sprint 5 — Customização do painel direito (#29, #30, #31)
+
+**#29 Customize Properties (right panel)**
+- Tabela nova: `record_layouts (id, owner_id, entity, sections jsonb)` — `sections=[{title, properties:[fieldNames]}]`.
+- Drawer "Customizar painel" → drag-and-drop de campos entre seções.
+- Painel direito do detalhe lê esse layout para renderizar.
+
+**#30 View all properties**
+- Modal com lista completa de todos os campos da entidade (usar metadata do registry).
+
+**#31 Property history (audit log)**
+- Tabela nova: `property_history (id, entity, entity_id, owner_id, property, old_value jsonb, new_value jsonb, changed_by, changed_at)`.
+- Trigger genérico `log_property_changes()` em leads/contacts/companies/deals que escreve diff por coluna alterada.
+- UI: botão "Ver histórico" por campo no painel direito → drawer com timeline.
+
+---
+
+## Sprint 6 — Associações, scoring e ABM (#32, #33, #34, #35)
+
+**#32 Associated records melhorados**
+- Cards de relacionamento no detalhe: Contatos · Empresas · Negócios · Atividades · Leads convertidos.
+- Botões "Associar existente" / "Criar novo" inline.
+- Para deals: usar `deal_contacts` (já existe) + criar `deal_companies` análogo se necessário.
+
+**#33 Playbooks**
+- Tabela `playbooks (id, owner_id, name, entity, content jsonb)` — content = lista de perguntas/seções markdown.
+- Tabela `playbook_responses (id, playbook_id, entity_id, responses jsonb, completed_at)`.
+- Painel "Playbooks" no detalhe lista os aplicáveis; clicar abre drawer com formulário das perguntas.
+
+**#34 Lead scoring + label**
+- Adicionar colunas `score int default 0`, `label text` em `leads` e `contacts`.
+- Tabela `scoring_rules (id, owner_id, entity, name, condition jsonb, points int)`.
+- Função SQL `recalc_score(entity, id)` chamada por trigger em activities/contacts/leads.
+- Badge colorido (Hot/Warm/Cold) baseado em faixas configuráveis.
+
+**#35 Target Accounts (ABM)**
+- Adicionar `is_target_account boolean default false` em `companies`.
+- Adicionar `target_account_tier text` (Tier 1/2/3).
+- Filtro/preset view "Target Accounts" usa esse flag.
+- Indicador visual (estrela) em listagem e detalhe.
+
+---
+
+## Sprint 7 — Workflows, sequences, segmentos, GDPR (#6, #7, #8, #20, #21)
+
+**#6 Static segments (listas)**
+- Tabela `segments (id, owner_id, entity, name, kind 'static'|'dynamic', filters jsonb)`.
+- Tabela `segment_members (segment_id, entity_id)` — para listas estáticas.
+- Bulk action "Adicionar à lista" no `BulkActionBar`.
+
+**#7 Sequences (cadências)**
+- Tabela `sequences (id, owner_id, name, entity, steps jsonb)` — steps = `[{day_offset, type:'email'|'task'|'call', template}]`.
+- Tabela `sequence_enrollments (id, sequence_id, entity_id, current_step, status, enrolled_at)`.
+- Bulk action "Inscrever em sequência".
+- Worker (server fn agendado) processa steps; envio de email real fica como TODO (depende de connector Resend/Mailgun).
+
+**#8 Workflows (automação)**
+- Tabela `workflows (id, owner_id, name, trigger jsonb, actions jsonb, entity)`.
+- Triggers suportados: created, updated (campo X), enrolled in segment, score crossed threshold.
+- Actions: update field, create task, add to segment, send notification, call webhook, enrich via integração.
+- Editor visual fica fora de escopo desta sprint — UI apenas JSON editor + presets.
+
+**#20 GDPR / subscriptions / marketing flag**
+- Adicionar colunas em `contacts`: `marketing_status` (marketing/non-marketing), `legal_basis` (consent/legitimate-interest/...), `consent_date`.
+- Tabela `subscription_types (id, owner_id, name)` + `contact_subscriptions (contact_id, subscription_type_id, opted_in, source, updated_at)`.
+- Bulk actions: Set marketing / non-marketing / Add legal basis / Edit subscriptions.
+
+**#21 CSV import genérico**
+- Tela `_authenticated/$entity.import.tsx` (parametrizada).
+- Upload CSV → parser (`papaparse`) → mapeamento de colunas → preview 10 linhas → execução com `enrichment_jobs(kind='import')`.
+- Atualiza existing por chave única (email/domain) + insere novos.
+
+---
+
+## Decisões técnicas
+
+- **Tipagem**: campos `jsonb` (filters, sections, steps) tipados via Zod schemas em `src/lib/schemas/`.
+- **Reuso**: TODO refactor — `EntityList` já é genérico, novas props (`viewsEnabled`, `quickFiltersEnabled`, `boardEnabled`, `pipelineKey`, `inlineEditableFields`, `customColumnsEnabled`) entram com defaults `false` para não quebrar telas atuais.
+- **RLS**: toda tabela nova com `owner_id = auth.uid()`. Tabelas com escopo de time (saved_views compartilhada, sequences, workflows) ganham policy adicional `is_shared = true OR owner_id = auth.uid()`.
+- **Performance**: views listas com filtros compilados aplicam `.range()` para paginação server-side (substituir paginação client atual quando filtros viram server-side).
+
+## Ordem de migrações (8 grupos)
 
 ```text
-src/components/
-  bulk-action-bar.tsx
-  bulk-edit-dialog.tsx
-src/lib/integrations/
-  registry.ts                  # catálogo + bulkActions por entidade
-  types.ts                     # tipos compartilhados
-  hubspot.functions.ts         # (mover de src/lib/hubspot.functions.ts)
-  apollo.functions.ts
-  lusha.functions.ts
-  viacep.ts                    # client-side, sem server fn
-  contaazul.functions.ts
-  clickup.functions.ts
-  oauth-helpers.server.ts      # token refresh, encrypt
-src/routes/
-  _authenticated/integrations.tsx              # layout + catálogo
-  _authenticated/integrations.$slug.tsx        # tela do conector
-  _authenticated/integrations.$slug.connect.tsx # wizard
-  api/public/integrations.contaazul.callback.ts
-  api/public/integrations.clickup.callback.ts
-src/components/integrations/
-  connection-wizard.tsx
-  provider-card.tsx
-  job-history.tsx
-  credit-meter.tsx
+1. saved_views, record_layouts, property_history (+ trigger genérico)
+2. pipelines + leads.pipeline_id + deals.pipeline_id
+3. activities.outcome, leads.score/label, contacts.score/label, companies.is_target_account/tier
+4. team_members + reescrita de RLS de leads/contacts/companies/deals
+5. segments + segment_members
+6. sequences + sequence_enrollments
+7. workflows
+8. subscription_types + contact_subscriptions + contacts.marketing_status/legal_basis
 ```
 
-# Migrations
-1. Criar `integrations`, `enrichment_jobs`, `enrichment_job_items`, `credit_ledger`, `credit_limits` com RLS.
-2. (Opcional, perguntar antes) Adicionar colunas `cep`, `city`, `state` em `companies` para ViaCEP funcionar limpo.
+## O que fica de fora (e por quê)
 
-# Ordem de entrega sugerida
-1. Seleção múltipla + bulk bar (Excluir, Exportar, Editar em massa) — Parte 1 inteira.
-2. Migration de `integrations` + catálogo `/integrations` + tela de conector + wizard genérico.
-3. Migrar HubSpot para o novo hub (refatorar import existente como job).
-4. ViaCEP (mais simples, valida o padrão de "ação no formulário").
-5. Apollo + Lusha (enriquecimento — implementam os 4 padrões).
-6. ClickUp (Personal Token primeiro, OAuth depois).
-7. Conta Azul (OAuth completo).
-8. Créditos: ledger + limites + UI do meter.
+- **Envio real de email/SMS/WhatsApp** nas sequences → depende de connector externo (Resend/Twilio); estrutura fica pronta, envio vira TODO.
+- **Editor visual de workflows (drag-n-drop tipo Zapier)** → escopo de produto inteiro; entregamos JSON-editor + presets nesta fase.
+- **Multi-tenant real (orgs/workspaces)** → `team_members` cobre o caso de Bulk Assign, mas não substitui workspace completo.
+- **Permissões granulares (Super Admin, View as user, Bulk delete)** → adicionar role `admin`/`member` em `team_members` é suficiente; UI de permissions detalhada fica fora.
 
-# Fora deste plano
-- Webhooks de entrada dos provedores (HubSpot/ClickUp suportam, fica para v2).
-- Workflows/automações multi-step.
-- Apollo/Lusha enrichment de empresas via domínio (foco em pessoas primeiro).
-- Criptografia at-rest de `oauth_tokens` com pgsodium (recomendado depois).
+## Estimativa
+
+7 sprints. Cada sprint é entregável independente — você pode pausar entre sprints e usar o CRM normalmente. Recomendo aprovar sprint a sprint após ver o resultado da anterior.
