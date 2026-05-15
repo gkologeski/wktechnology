@@ -289,10 +289,15 @@ const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads
 export const countHubspotObjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ objects: z.array(ObjectKey).min(1) }).parse(input)
+    z
+      .object({
+        objects: z.array(ObjectKey).min(1),
+        maxCompanies: z.number().min(1).max(2000).default(200),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    void context;
 
     async function remoteCount(key: ObjectKey): Promise<number> {
       if (key === "companies") return searchTotal("companies");
@@ -307,7 +312,6 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
           ],
         });
       }
-      // activities = notes + calls + meetings + tasks + emails
       const parts = await Promise.all([
         searchTotal("notes"),
         searchTotal("calls"),
@@ -318,24 +322,17 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return parts.reduce((a, b) => a + b, 0);
     }
 
-    async function localCount(key: ObjectKey): Promise<number> {
-      const table = LOCAL_TABLE[key];
-      const { count } = await supabase
-        .from(table)
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", userId)
-        .not("external_ids->hubspot", "is", null);
-      return count ?? 0;
-    }
-
-    const out: Record<string, { local: number; remote: number }> = {};
+    const out: Record<string, { planned: number; remote: number }> = {};
     await Promise.all(
       data.objects.map(async (k) => {
-        const [local, remote] = await Promise.all([localCount(k), remoteCount(k)]);
-        out[k] = { local, remote };
+        const remote = await remoteCount(k);
+        // "planned" = quantos serão efetivamente puxados nesta importação.
+        // Apenas Empresas têm um teto explícito; os filhos vinculados vêm sem limite.
+        const planned = k === "companies" ? Math.min(remote, data.maxCompanies) : remote;
+        out[k] = { planned, remote };
       })
     );
-    return out as Record<ObjectKey, { local: number; remote: number }>;
+    return out as Record<ObjectKey, { planned: number; remote: number }>;
   });
 
 // Mantido para compat

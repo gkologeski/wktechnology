@@ -69,7 +69,7 @@ const OBJECTS: {
   },
 ];
 
-type Counts = Partial<Record<Obj, { local: number; remote: number }>>;
+type Counts = Partial<Record<Obj, { planned: number; remote: number }>>;
 
 export function HubspotImportWizard() {
   const [scope, setScope] = useState<Record<Obj, boolean>>({
@@ -117,7 +117,7 @@ export function HubspotImportWizard() {
     try {
       for (const o of planned) {
         setCountingKey(o.key);
-        const res = await countFn({ data: { objects: [o.key] } });
+        const res = await countFn({ data: { objects: [o.key], maxCompanies } });
         const part = (res as Counts)[o.key];
         if (part) {
           next[o.key] = part;
@@ -289,7 +289,7 @@ export function HubspotImportWizard() {
                           <Loader2 className="h-3 w-3 animate-spin" /> contando…
                         </span>
                       ) : c ? (
-                        `${c.local.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
+                        `${c.planned.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
                       ) : (
                         "— / —"
                       )}
@@ -308,7 +308,7 @@ export function HubspotImportWizard() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            Formato: <span className="font-mono">local / HubSpot</span> — quanto já existe na sua base e o total no HubSpot.
+            Formato: <span className="font-mono">a importar / total no HubSpot</span> — quantos registros serão puxados nesta importação e o total existente no HubSpot.
           </p>
           <Button
             variant="outline"
