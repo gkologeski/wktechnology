@@ -486,6 +486,9 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     const dealMap = new Map<string, string>();
     // Lifecycle by contact for leads step
     const contactLifecycle = new Map<string, string | null | undefined>();
+    // Pipelines/estágios espelhados do HubSpot
+    let dealPipelines: PipelineMaps = { pipelines: new Map(), stages: new Map() };
+    let leadPipeline: { localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> } | null = null;
 
     let totalSucceeded = 0;
     let totalFailed = 0;
