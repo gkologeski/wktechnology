@@ -553,6 +553,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             });
             if (error) stepFail++;
             else stepOk++;
+            await bumpProgress(step, stepOk, stepFail, leadIds.length);
           }
         } else if (step === "activities") {
           const types: { obj: string; type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }[] = [
