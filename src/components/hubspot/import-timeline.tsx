@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { StatusIcon } from "./import-wizard";
+import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
+
+type StepLog = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
 
 type Job = {
   id: string;
@@ -13,19 +16,43 @@ type Job = {
   processed: number;
   total: number;
   error: string | null;
-  step_logs: { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number }[];
+  step_logs: StepLog[];
   finished_at: string | null;
+  started_at: string | null;
+  scope: { maxCompanies?: number; maxPerObject?: number } | null;
 };
 type Item = {
   id: string;
   status: string;
-  before: { step: string; order: number; depends_on?: string[]; started_at?: string } | null;
+  before: {
+    step: string;
+    order: number;
+    depends_on?: string[];
+    started_at?: string;
+    running_succeeded?: number;
+    running_failed?: number;
+    discovered?: number;
+  } | null;
   after: { succeeded?: number; failed?: number; finished_at?: string } | null;
 };
+
+const KNOWN_STEPS: CounterStep[] = ["companies", "contacts", "deals", "leads", "activities"];
+
+function fmtElapsed(startedAt: string | null, finishedAt: string | null): string {
+  if (!startedAt) return "00:00:00";
+  const start = new Date(startedAt).getTime();
+  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now();
+  const s = Math.max(0, Math.floor((end - start) / 1000));
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
 
 export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () => void }) {
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -36,40 +63,76 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         .from("enrichment_job_items")
         .select("*")
         .eq("job_id", jobId);
-      if (active && its) setItems((its as unknown as Item[]).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
+      if (active && its)
+        setItems((its as unknown as Item[]).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
     })();
 
     const ch = supabase
       .channel(`job-${jobId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "enrichment_jobs", filter: `id=eq.${jobId}` }, (payload) => {
-        setJob(payload.new as unknown as Job);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "enrichment_job_items", filter: `job_id=eq.${jobId}` }, (payload) => {
-        setItems((prev) => {
-          const next = [...prev];
-          const row = payload.new as unknown as Item;
-          const idx = next.findIndex((i) => i.id === row.id);
-          if (idx >= 0) next[idx] = row;
-          else next.push(row);
-          return next.sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0));
-        });
-      })
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "enrichment_jobs", filter: `id=eq.${jobId}` },
+        (payload) => {
+          setJob(payload.new as unknown as Job);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "enrichment_job_items", filter: `job_id=eq.${jobId}` },
+        (payload) => {
+          setItems((prev) => {
+            const next = [...prev];
+            const row = payload.new as unknown as Item;
+            const idx = next.findIndex((i) => i.id === row.id);
+            if (idx >= 0) next[idx] = row;
+            else next.push(row);
+            return next.sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0));
+          });
+        },
+      )
       .subscribe();
+
+    // tick every second so elapsed time updates
+    const interval = window.setInterval(() => setTick((t) => t + 1), 1000);
 
     return () => {
       active = false;
       supabase.removeChannel(ch);
+      window.clearInterval(interval);
     };
   }, [jobId]);
 
   const finished = job?.status === "done" || job?.status === "failed";
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+  const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
+
+  // Build counter cards in the canonical order — only for steps present in the plan
+  const counters: LiveCounterProps[] = useMemo(() => {
+    const byStep = new Map<string, Item>();
+    for (const it of items) if (it.before?.step) byStep.set(it.before.step, it);
+    const maxCompanies = job?.scope?.maxCompanies ?? job?.scope?.maxPerObject;
+
+    return KNOWN_STEPS.filter((s) => byStep.has(s)).map((s) => {
+      const it = byStep.get(s)!;
+      const status = (it.status as LiveCounterProps["status"]) ?? "pending";
+      const succeeded = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
+      const failed = it.after?.failed ?? it.before?.running_failed ?? 0;
+      const target = s === "companies" ? maxCompanies : undefined;
+      const discovered = it.before?.discovered;
+      return { step: s, status, succeeded, failed, target, discovered };
+    });
+  }, [items, job?.scope]);
 
   return (
     <div className="space-y-6">
       <section className="rounded-lg border bg-card p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">Execução em tempo real</h2>
+          <div>
+            <h2 className="font-semibold">Execução em tempo real</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 font-mono tabular-nums">
+              tempo decorrido: {elapsed}
+            </p>
+          </div>
           <Badge
             variant={
               job?.status === "done" ? "default" : job?.status === "failed" ? "destructive" : "secondary"
@@ -93,12 +156,14 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         {job?.error && <p className="mt-3 text-sm text-destructive">{job.error}</p>}
       </section>
 
+      <LiveCountersGrid steps={counters} />
+
       <section className="rounded-lg border bg-card p-5">
         <h3 className="font-semibold mb-3">Etapas</h3>
         <ol className="space-y-2">
           {items.map((it) => {
-            const ok = it.after?.succeeded ?? 0;
-            const fail = it.after?.failed ?? 0;
+            const ok = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
+            const fail = it.after?.failed ?? it.before?.running_failed ?? 0;
             return (
               <li key={it.id} className="flex items-center gap-3 p-3 rounded-md border bg-background">
                 <StatusIcon status={it.status} />
@@ -110,7 +175,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
                     </p>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground tabular-nums">
                   {ok > 0 || fail > 0 ? `${ok} ok · ${fail} falhas` : ""}
                 </span>
               </li>
@@ -122,21 +187,24 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       <section className="rounded-lg border bg-card p-5">
         <h3 className="font-semibold mb-3">Log</h3>
         <div className="max-h-72 overflow-y-auto space-y-1 font-mono text-xs">
-          {(job?.step_logs ?? []).slice().reverse().map((l, i) => (
-            <div
-              key={i}
-              className={
-                l.level === "error"
-                  ? "text-destructive"
-                  : l.level === "warn"
-                    ? "text-amber-600"
-                    : "text-muted-foreground"
-              }
-            >
-              <span className="opacity-60">{new Date(l.ts).toLocaleTimeString("pt-BR")}</span>{" "}
-              <span className="font-semibold">[{l.step}]</span> {l.message}
-            </div>
-          ))}
+          {(job?.step_logs ?? [])
+            .slice()
+            .reverse()
+            .map((l, i) => (
+              <div
+                key={i}
+                className={
+                  l.level === "error"
+                    ? "text-destructive"
+                    : l.level === "warn"
+                      ? "text-amber-600"
+                      : "text-muted-foreground"
+                }
+              >
+                <span className="opacity-60">{new Date(l.ts).toLocaleTimeString("pt-BR")}</span>{" "}
+                <span className="font-semibold">[{l.step}]</span> {l.message}
+              </div>
+            ))}
           {(!job?.step_logs || job.step_logs.length === 0) && (
             <p className="text-muted-foreground italic">Aguardando eventos…</p>
           )}

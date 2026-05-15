@@ -253,6 +253,24 @@ export const startHubspotImport = createServerFn({ method: "POST" })
       await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
     };
 
+    // Throttled progress writer — updates `before.running_succeeded/_failed/_discovered`
+    // so the UI can animate counters in real time without thrashing the DB.
+    const lastProgressAt: Record<string, number> = {};
+    const bumpProgress = async (
+      step: StepName,
+      running_succeeded: number,
+      running_failed: number,
+      discovered?: number,
+      force = false,
+    ) => {
+      const now = Date.now();
+      if (!force && now - (lastProgressAt[step] ?? 0) < 600) return;
+      lastProgressAt[step] = now;
+      await updateItem(step, {
+        before: { running_succeeded, running_failed, ...(discovered !== undefined ? { discovered } : {}) },
+      });
+    };
+
     const updateItem = async (
       step: StepName,
       patch: { status?: string; before?: Record<string, unknown>; after?: Record<string, unknown> }
@@ -367,6 +385,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 stepOk++;
               }
             }
+            await bumpProgress(step, stepOk, stepFail, scope.maxCompanies);
             after = res.paging?.next?.after;
             page++;
             if (!after) break;
@@ -394,6 +413,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             }
             await sleep(80);
           }
+          await bumpProgress(step, 0, 0, contactToCompany.size, true);
           await appendLog({
             level: "info",
             step,
@@ -437,6 +457,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               contactMap.set(c.id, row.id);
               stepOk++;
             }
+            await bumpProgress(step, stepOk, stepFail, contactToCompany.size);
           }
         } else if (step === "deals") {
           await appendLog({
@@ -450,6 +471,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             for (const id of ids) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCompanyId);
             await sleep(80);
           }
+          await bumpProgress(step, 0, 0, dealToCompany.size, true);
           await appendLog({
             level: "info",
             step,
@@ -494,6 +516,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               }
               await sleep(60);
             }
+            await bumpProgress(step, stepOk, stepFail, dealToCompany.size);
           }
         } else if (step === "leads") {
           // Contatos importados que tinham lifecyclestage = lead
@@ -530,6 +553,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             });
             if (error) stepFail++;
             else stepOk++;
+            await bumpProgress(step, stepOk, stepFail, leadIds.length);
           }
         } else if (step === "activities") {
           const types: { obj: string; type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }[] = [
@@ -600,6 +624,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               });
               if (error) stepFail++;
               else stepOk++;
+              await bumpProgress(step, stepOk, stepFail);
             }
           }
         }
