@@ -1029,6 +1029,106 @@ export const startHubspotImport = createServerFn({ method: "POST" })
 
             await bumpProgress(step, stepOk, stepFail, contactToCompany.size);
           }
+        } else if (step === "deals" && scope.mode === "full") {
+          // Modo total: lista TODOS os deals; vínculo best-effort para company/contacts.
+          await appendLog({ level: "info", step, message: "Listando todos os negócios do HubSpot" });
+          const recs = await listAll(
+            "deals",
+            ["dealname", "amount", "dealstage", "closedate", "pipeline"],
+            ["companies", "contacts"],
+          );
+          await bumpProgress(step, 0, 0, recs.length, true);
+          await appendLog({ level: "info", step, message: `Lendo ${recs.length} negócios`, count: recs.length });
+          for (const d of recs) {
+            const p = d.properties;
+            const hsCo = firstAssocId(d, "companies");
+            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const pipelineEntry = p.pipeline ? dealPipelines.pipelines.get(p.pipeline) : undefined;
+            const stageEntry = p.dealstage ? dealPipelines.stages.get(p.dealstage) : undefined;
+            const localPipelineId = pipelineEntry?.localId ?? stageEntry?.localPipelineId ?? null;
+            const localStageId = stageEntry?.stageId ?? pipelineEntry?.defaultStageId ?? null;
+            const stageEnum = mapDealStageEnum(
+              stageEntry?.label,
+              stageEntry?.probability ?? null,
+              stageEntry
+                ? (stageEntry.probability !== null && stageEntry.probability >= 1) ||
+                  /lost|perdid|won|ganho|closed/i.test(stageEntry.label)
+                : false,
+            );
+            const dealData = {
+              name: p.dealname ?? "Sem nome",
+              value: p.amount ? Number(p.amount) : 0,
+              currency: "BRL",
+              stage: stageEnum as never,
+              stage_id: localStageId,
+              pipeline_id: localPipelineId,
+              company_id: localCompanyId,
+              expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            };
+            let existingId = await findExistingId("deals", d.id);
+            if (!existingId && p.dealname && localCompanyId) {
+              const { data: byNat } = await supabase
+                .from("deals")
+                .select("id")
+                .eq("owner_id", userId)
+                .eq("company_id", localCompanyId)
+                .ilike("name", p.dealname)
+                .limit(1)
+                .maybeSingle();
+              existingId = byNat?.id ?? null;
+            }
+            let localDealId: string | null = null;
+            if (existingId) {
+              const ext = await mergeExternalIds("deals", existingId, {
+                hubspot: d.id,
+                hs_stage: p.dealstage,
+                hs_pipeline: p.pipeline,
+              });
+              const { error } = await supabase
+                .from("deals")
+                .update({ ...dealData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) stepFail++;
+              else {
+                localDealId = existingId;
+                dealMap.set(d.id, existingId);
+                stepOk++;
+              }
+            } else {
+              const { data: row, error } = await supabase
+                .from("deals")
+                .insert({
+                  owner_id: userId,
+                  ...dealData,
+                  external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+                })
+                .select("id")
+                .single();
+              if (error || !row) stepFail++;
+              else {
+                localDealId = row.id;
+                dealMap.set(d.id, row.id);
+                stepOk++;
+              }
+            }
+            if (localDealId) {
+              const contactIds = allAssocIds(d, "contacts");
+              for (const cid of contactIds) {
+                const lc = contactMap.get(cid);
+                if (!lc) continue;
+                const { data: existsLink } = await supabase
+                  .from("deal_contacts")
+                  .select("deal_id")
+                  .eq("deal_id", localDealId)
+                  .eq("contact_id", lc)
+                  .maybeSingle();
+                if (!existsLink) {
+                  await supabase.from("deal_contacts").insert({ deal_id: localDealId, contact_id: lc });
+                }
+              }
+            }
+            await bumpProgress(step, stepOk, stepFail, recs.length);
+          }
         } else if (step === "deals") {
           await appendLog({
             level: "info",
