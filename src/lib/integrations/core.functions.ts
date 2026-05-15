@@ -1,0 +1,134 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { ProviderSlug } from "./registry";
+
+// List integrations of the current user
+export const listIntegrations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("integrations")
+      .select("id, provider, status, config, last_used_at, created_at, updated_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { items: data ?? [] };
+  });
+
+export const getIntegration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40) }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase
+      .from("integrations")
+      .select("*")
+      .eq("provider", data.provider)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { integration: row };
+  });
+
+export const upsertIntegration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      provider: z.string().min(1).max(40),
+      status: z.enum(["connected", "pending", "error", "disconnected"]).optional(),
+      config: z.record(z.string(), z.unknown()).optional(),
+      credentials_secret_ref: z.string().max(120).nullish(),
+    }).parse(input)
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("integrations")
+      .upsert(
+        {
+          owner_id: userId,
+          provider: data.provider,
+          status: data.status ?? "connected",
+          config: (data.config ?? {}) as never,
+          credentials_secret_ref: data.credentials_secret_ref ?? null,
+        },
+        { onConflict: "owner_id,provider" }
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { integration: row };
+  });
+
+export const disconnectIntegration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40) }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { error } = await supabase.from("integrations").delete().eq("provider", data.provider);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listJobs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40).optional() }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    let q = supabase.from("enrichment_jobs").select("*").order("created_at", { ascending: false }).limit(50);
+    if (data.provider) q = q.eq("provider", data.provider);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [] };
+  });
+
+export const getCreditUsage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40) }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const since = new Date();
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+    const { data: rows, error } = await supabase
+      .from("credit_ledger")
+      .select("delta")
+      .eq("provider", data.provider)
+      .gte("created_at", since.toISOString());
+    if (error) throw new Error(error.message);
+    const used = (rows ?? []).reduce((s, r) => s + Number(r.delta || 0), 0);
+    const { data: limit } = await supabase
+      .from("credit_limits")
+      .select("monthly_limit, per_run_confirm_above")
+      .eq("provider", data.provider)
+      .maybeSingle();
+    return { used, monthly_limit: limit?.monthly_limit ?? null, per_run_confirm_above: limit?.per_run_confirm_above ?? 10 };
+  });
+
+export const setCreditLimit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      provider: z.string().min(1).max(40),
+      monthly_limit: z.number().int().min(0).max(1_000_000).nullable(),
+      per_run_confirm_above: z.number().int().min(0).max(10_000),
+    }).parse(input)
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("credit_limits")
+      .upsert(
+        {
+          owner_id: userId,
+          provider: data.provider,
+          monthly_limit: data.monthly_limit,
+          per_run_confirm_above: data.per_run_confirm_above,
+        },
+        { onConflict: "owner_id,provider" }
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export type ProviderSlugType = ProviderSlug;
