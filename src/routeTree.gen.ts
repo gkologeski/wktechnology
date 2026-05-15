@@ -23,6 +23,7 @@ import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
+import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 
 const SignupRoute = SignupRouteImport.update({
@@ -97,6 +98,11 @@ const AuthenticatedLeadsImportHubspotRoute =
     path: '/import-hubspot',
     getParentRoute: () => AuthenticatedLeadsRoute,
   } as any)
+const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedLeadsRoute,
+} as any)
 const AuthenticatedIntegrationsSlugRoute =
   AuthenticatedIntegrationsSlugRouteImport.update({
     id: '/$slug',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
 }
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
 }
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
 }
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/settings'
     | '/integrations/$slug'
+    | '/leads/$id'
     | '/leads/import-hubspot'
     | '/integrations/'
   fileRoutesByTo: FileRoutesByTo
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/settings'
     | '/integrations/$slug'
+    | '/leads/$id'
     | '/leads/import-hubspot'
     | '/integrations'
   id:
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/settings'
     | '/_authenticated/integrations/$slug'
+    | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/integrations/'
   fileRoutesById: FileRoutesById
@@ -312,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsImportHubspotRouteImport
       parentRoute: typeof AuthenticatedLeadsRoute
     }
+    '/_authenticated/leads/$id': {
+      id: '/_authenticated/leads/$id'
+      path: '/$id'
+      fullPath: '/leads/$id'
+      preLoaderRoute: typeof AuthenticatedLeadsIdRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
+    }
     '/_authenticated/integrations/$slug': {
       id: '/_authenticated/integrations/$slug'
       path: '/$slug'
@@ -339,10 +358,12 @@ const AuthenticatedIntegrationsRouteWithChildren =
   )
 
 interface AuthenticatedLeadsRouteChildren {
+  AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
   AuthenticatedLeadsImportHubspotRoute: typeof AuthenticatedLeadsImportHubspotRoute
 }
 
 const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
+  AuthenticatedLeadsIdRoute: AuthenticatedLeadsIdRoute,
   AuthenticatedLeadsImportHubspotRoute: AuthenticatedLeadsImportHubspotRoute,
 }
 
