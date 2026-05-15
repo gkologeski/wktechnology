@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowDown,
   Building2,
@@ -283,17 +284,38 @@ export function HubspotImportWizard() {
                         </p>
                       )}
                     </div>
-                    <Badge variant="outline" className="font-mono">
-                      {isCounting ? (
-                        <span className="flex items-center gap-1">
-                          <Loader2 className="h-3 w-3 animate-spin" /> contando…
-                        </span>
-                      ) : c ? (
-                        `${c.planned.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
-                      ) : (
-                        "— / —"
-                      )}
-                    </Badge>
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="font-mono cursor-help">
+                            {isCounting ? (
+                              <span className="flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin" /> contando…
+                              </span>
+                            ) : c ? (
+                              `${c.planned.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
+                            ) : (
+                              "— / —"
+                            )}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          {o.key === "companies" ? (
+                            <p className="text-xs">
+                              <strong>Total de registros contados</strong>: respeita o limite definido em "Máximo de empresas".
+                              <br />
+                              <strong>Total no HubSpot</strong>: total de empresas existentes na sua conta HubSpot.
+                            </p>
+                          ) : (
+                            <p className="text-xs">
+                              <strong>Total de registros contados</strong>: apenas {o.label.toLowerCase()} vinculados às empresas dentro do limite de importação.
+                              <br />
+                              <strong>Total no HubSpot</strong>: total de {o.label.toLowerCase()} existentes na sua conta HubSpot (sem filtro de vínculo).
+                            </p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   {i < planned.length - 1 && (
                     <div className="flex justify-center my-1">
