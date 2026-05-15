@@ -308,7 +308,7 @@ export function HubspotImportWizard() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            Formato: <span className="font-mono">local / HubSpot</span> — quanto já existe na sua base e o total no HubSpot.
+            Formato: <span className="font-mono">a importar / total no HubSpot</span> — quantos registros serão puxados nesta importação e o total existente no HubSpot.
           </p>
           <Button
             variant="outline"
