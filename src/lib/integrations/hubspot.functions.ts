@@ -312,7 +312,12 @@ const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads
 };
 
 // Busca os primeiros N IDs de empresas no HubSpot (mesma ordem usada na importação).
+// Resultado cacheado por `limit` — chamadas subsequentes do wizard reaproveitam.
 async function fetchCompanyIdsCount(limit: number): Promise<string[]> {
+  const cacheKey = `companyIds:${limit}`;
+  const hit = cacheGet<string[]>(cacheKey);
+  if (hit) return hit;
+
   const ids: string[] = [];
   let after: string | undefined;
   while (ids.length < limit) {
@@ -335,18 +340,42 @@ async function fetchCompanyIdsCount(limit: number): Promise<string[]> {
       break;
     }
   }
-  return ids.slice(0, limit);
+  const result = ids.slice(0, limit);
+  cacheSet(cacheKey, result);
+  return result;
 }
 
-// União de IDs associados a uma lista de origens. Limita concorrência para não estourar rate-limit.
-async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
-  const out = new Set<string>();
-  const concurrency = 5;
-  for (let i = 0; i < fromIds.length; i += concurrency) {
-    const slice = fromIds.slice(i, i + concurrency);
-    const results = await Promise.all(slice.map((id) => getAssoc(fromObj, id, toObj)));
-    for (const arr of results) for (const x of arr) out.add(x);
+// Assinatura estável do escopo de origem (independente da ordem) — usada como
+// chave de cache da união de associações.
+function scopeSig(ids: string[]): string {
+  if (ids.length === 0) return "∅";
+  if (ids.length <= 50) return [...ids].sort().join(",");
+  // Para escopos maiores, hash simples (FNV-1a 32-bit) sobre IDs ordenados.
+  let h = 0x811c9dc5;
+  for (const id of [...ids].sort()) {
+    for (let i = 0; i < id.length; i++) {
+      h ^= id.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    h ^= 44;
   }
+  return `${ids.length}:${h.toString(16)}`;
+}
+
+// União de IDs associados a uma lista de origens.
+// Otimizações:
+//  • Cache por (fromObj→toObj, escopo) — evita recomputar entre chamadas do wizard.
+//  • Lote v4 (até 1000 inputs por request) — 100× menos chamadas vs. per-ID.
+async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
+  if (fromIds.length === 0) return new Set();
+  const cacheKey = `union:${fromObj}→${toObj}:${scopeSig(fromIds)}`;
+  const hit = cacheGet<string[]>(cacheKey);
+  if (hit) return new Set(hit);
+
+  const batched = await assocBatchRead(fromObj, fromIds, toObj);
+  const out = new Set<string>();
+  for (const arr of batched.values()) for (const x of arr) out.add(x);
+  cacheSet(cacheKey, [...out]);
   return out;
 }
 
