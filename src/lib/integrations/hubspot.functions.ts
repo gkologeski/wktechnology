@@ -886,6 +886,59 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             if (!after) break;
             await sleep(150);
           }
+        } else if (step === "contacts" && scope.mode === "full") {
+          // Modo total: lista TODOS os contatos, vínculo com empresa best-effort.
+          await appendLog({ level: "info", step, message: "Listando todos os contatos do HubSpot" });
+          const recs = await listAll(
+            "contacts",
+            ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"],
+            ["companies"],
+          );
+          await bumpProgress(step, 0, 0, recs.length, true);
+          await appendLog({ level: "info", step, message: `Lendo ${recs.length} contatos`, count: recs.length });
+          for (const c of recs) {
+            const p = c.properties;
+            contactLifecycle.set(c.id, p.lifecyclestage);
+            if (!p.firstname && !p.email) {
+              stepFail++;
+              continue;
+            }
+            const hsCo = firstAssocId(c, "companies");
+            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const contactData = {
+              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+              last_name: p.lastname ?? null,
+              email: p.email ?? null,
+              phone: p.phone ?? null,
+              job_title: p.jobtitle ?? null,
+              company_id: localCompanyId,
+            };
+            const existingId = await findExistingId("contacts", c.id, [{ column: "email", value: p.email }]);
+            if (existingId) {
+              const ext = await mergeExternalIds("contacts", existingId, { hubspot: c.id });
+              const { error } = await supabase
+                .from("contacts")
+                .update({ ...contactData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) stepFail++;
+              else {
+                contactMap.set(c.id, existingId);
+                stepOk++;
+              }
+            } else {
+              const { data: row, error } = await supabase
+                .from("contacts")
+                .insert({ owner_id: userId, ...contactData, external_ids: { hubspot: c.id } as never })
+                .select("id")
+                .single();
+              if (error || !row) stepFail++;
+              else {
+                contactMap.set(c.id, row.id);
+                stepOk++;
+              }
+            }
+            await bumpProgress(step, stepOk, stepFail, recs.length);
+          }
         } else if (step === "contacts") {
           // Cascata: contatos vinculados às empresas importadas
           await appendLog({
