@@ -516,6 +516,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               }
               await sleep(60);
             }
+            await bumpProgress(step, stepOk, stepFail, dealToCompany.size);
           }
         } else if (step === "leads") {
           // Contatos importados que tinham lifecyclestage = lead
