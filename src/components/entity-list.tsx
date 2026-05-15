@@ -5,10 +5,13 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
+import { BulkActionBar } from "@/components/bulk-action-bar";
+import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import Papa from "papaparse";
@@ -33,16 +36,20 @@ export type EntityListProps<T extends { id: string }> = {
   csvEnabled?: boolean;
   toolbar?: ReactNode;
   rowActions?: (row: T) => ReactNode;
+  bulkEditFields?: BulkField[];
+  bulkActions?: (ids: string[], rows: T[]) => ReactNode;
 };
 
 export function EntityList<T extends { id: string; owner_id?: string }>({
-  table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions,
+  table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions,
 }: EntityListProps<T>) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [table, "list"],
@@ -60,6 +67,30 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
     return (searchKeys ?? []).some((k) => String((r as Record<string, unknown>)[k as string] ?? "").toLowerCase().includes(q));
   });
 
+  const allFilteredSelected = filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id));
+  const someFilteredSelected = filtered.some((r) => selectedIds.has(r.id));
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        for (const r of filtered) next.delete(r.id);
+      } else {
+        for (const r of filtered) next.add(r.id);
+      }
+      return next;
+    });
+  };
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearSel = () => setSelectedIds(new Set());
+
   const openNew = () => { setEditing(null); setOpen(true); };
   const openEdit = (row: T) => { setEditing(row); setOpen(true); };
 
@@ -72,8 +103,22 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
     qc.invalidateQueries({ queryKey: [table] });
   };
 
-  const exportCsv = () => {
-    const csv = Papa.unparse(filtered as unknown as Record<string, unknown>[]);
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Excluir ${ids.length} registro(s)? Esta ação não pode ser desfeita.`)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} excluído(s)`);
+    clearSel();
+    qc.invalidateQueries({ queryKey: [table] });
+  };
+
+  const exportCsv = (rowsToExport?: T[]) => {
+    const out = rowsToExport ?? filtered;
+    if (!out.length) return toast.error("Nada para exportar");
+    const csv = Papa.unparse(out as unknown as Record<string, unknown>[]);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -100,6 +145,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
     });
   };
 
+  const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
+  const ids = Array.from(selectedIds);
+  const hasSelection = ids.length > 0;
+
   return (
     <div>
       <PageHeader
@@ -109,7 +158,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
           <>
             {csvEnabled && (
               <>
-                <Button variant="outline" size="sm" onClick={exportCsv}>Exportar CSV</Button>
+                <Button variant="outline" size="sm" onClick={() => exportCsv()}>Exportar CSV</Button>
                 <label className="inline-flex">
                   <input type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && importCsv(e.target.files[0])} />
                   <span className="inline-flex items-center justify-center rounded-md border bg-background px-3 h-9 text-sm cursor-pointer hover:bg-muted">Importar CSV</span>
@@ -122,6 +171,17 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
         }
       />
 
+      {hasSelection && (
+        <BulkActionBar count={ids.length} onClear={clearSel}>
+          <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>Exportar selecionados</Button>
+          {bulkEditFields && bulkEditFields.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>Editar em massa</Button>
+          )}
+          {bulkActions?.(ids, selectedRows)}
+          <Button variant="destructive" size="sm" onClick={bulkDelete}>Excluir</Button>
+        </BulkActionBar>
+      )}
+
       <div className="mb-4">
         <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
       </div>
@@ -130,30 +190,46 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleAll}
+                  aria-label="Selecionar todos"
+                />
+              </TableHead>
               {columns.map((c) => <TableHead key={String(c.key)}>{c.label}</TableHead>)}
               <TableHead className="w-24 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={columns.length + 1} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={columns.length + 2} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length + 1} className="text-center text-muted-foreground py-8">Nenhum registro.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={columns.length + 2} className="text-center text-muted-foreground py-8">Nenhum registro.</TableCell></TableRow>
             ) : (
-              filtered.map((row) => (
-                <TableRow key={row.id} className={detailPath ? "cursor-pointer" : ""} onClick={() => detailPath && (window.location.href = detailPath(row.id))}>
-                  {columns.map((c) => (
-                    <TableCell key={String(c.key)}>
-                      {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
+              filtered.map((row) => {
+                const sel = selectedIds.has(row.id);
+                return (
+                  <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={detailPath ? "cursor-pointer" : ""} onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
+                    if (detailPath) window.location.href = detailPath(row.id);
+                  }}>
+                    <TableCell data-no-row-click onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} aria-label="Selecionar" />
                     </TableCell>
-                  ))}
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    {rowActions?.(row)}
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(row.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))
+                    {columns.map((c) => (
+                      <TableCell key={String(c.key)}>
+                        {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right" data-no-row-click onClick={(e) => e.stopPropagation()}>
+                      {rowActions?.(row)}
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -164,6 +240,17 @@ export function EntityList<T extends { id: string; owner_id?: string }>({
         open={open} setOpen={setOpen} table={table} fields={fields} editing={editing} defaults={defaults}
         onSaved={() => qc.invalidateQueries({ queryKey: [table] })}
       />
+
+      {bulkEditFields && (
+        <BulkEditDialog
+          open={bulkEditOpen}
+          setOpen={setBulkEditOpen}
+          table={table}
+          ids={ids}
+          fields={bulkEditFields}
+          onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: [table] }); }}
+        />
+      )}
     </div>
   );
 }
