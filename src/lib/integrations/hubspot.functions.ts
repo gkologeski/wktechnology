@@ -385,6 +385,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 stepOk++;
               }
             }
+            await bumpProgress(step, stepOk, stepFail, scope.maxCompanies);
             after = res.paging?.next?.after;
             page++;
             if (!after) break;
