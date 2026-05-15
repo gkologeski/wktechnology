@@ -124,6 +124,20 @@ function LeadsPage() {
         { name: "notes", label: "Notas", type: "textarea" },
       ]}
       defaults={{ status: "new" }}
+      bulkEditFields={[
+        { name: "status", label: "Status", type: "select", options: LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label })) },
+        { name: "source", label: "Fonte" },
+      ]}
+      bulkActions={(ids) => (
+        <>
+          <Button variant="outline" size="sm" onClick={() => runApollo(ids)}>
+            <Sparkles className="h-4 w-4 mr-1" /> Apollo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => runLusha(ids)}>
+            <UsersIcon className="h-4 w-4 mr-1" /> Lusha
+          </Button>
+        </>
+      )}
       rowActions={(row) => (
         row.status !== "qualified" && row.status !== "disqualified" ? (
           <Button variant="ghost" size="icon" title="Converter" onClick={() => convert(row)}>
