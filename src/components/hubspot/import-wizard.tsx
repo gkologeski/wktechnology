@@ -317,7 +317,7 @@ export function HubspotImportWizard() {
       </section>
 
       <section className="rounded-lg border bg-card p-5">
-        <h2 className="font-semibold mb-1">2. Pré-visualização da árvore</h2>
+        <h2 className="font-semibold mb-1">3. Pré-visualização da árvore</h2>
         <p className="text-sm text-muted-foreground mb-4">Ordem de execução respeitando dependências:</p>
         {planned.length === 0 ? (
           <p className="text-sm text-muted-foreground">Selecione ao menos um objeto.</p>
