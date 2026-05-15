@@ -471,6 +471,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             for (const id of ids) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCompanyId);
             await sleep(80);
           }
+          await bumpProgress(step, 0, 0, dealToCompany.size, true);
           await appendLog({
             level: "info",
             step,
