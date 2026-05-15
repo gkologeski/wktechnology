@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,14 @@ function ImportHubspotPage() {
       setLoadingPreview(false);
     }
   };
+
+  const didAutoLoad = useRef(false);
+  useEffect(() => {
+    if (didAutoLoad.current) return;
+    didAutoLoad.current = true;
+    doPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const doImport = async () => {
     if (!confirm(`Importar até ${maxRecords} contatos do HubSpot como Leads?`)) return;
