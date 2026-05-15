@@ -5,20 +5,71 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDown, Building2, Users, Target, UserPlus, Activity, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import {
+  ArrowDown,
+  Building2,
+  Users,
+  Target,
+  UserPlus,
+  Activity,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
-import { startHubspotImport } from "@/lib/integrations/hubspot.functions";
+import { startHubspotImport, countHubspotObjects } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
 type Obj = "companies" | "contacts" | "deals" | "leads" | "activities";
 
-const OBJECTS: { key: Obj; label: string; icon: typeof Building2; deps: Obj[]; description: string }[] = [
-  { key: "companies", label: "Empresas", icon: Building2, deps: [], description: "Raiz da árvore de dependências." },
-  { key: "contacts", label: "Contatos", icon: Users, deps: ["companies"], description: "Vínculo automático com empresas se importadas." },
-  { key: "deals", label: "Negócios", icon: Target, deps: ["companies", "contacts"], description: "Inclui vínculos deal↔contact." },
-  { key: "leads", label: "Leads", icon: UserPlus, deps: [], description: "Contatos com lifecyclestage=lead no HubSpot." },
-  { key: "activities", label: "Atividades", icon: Activity, deps: ["contacts", "companies", "deals"], description: "Notas, calls, meetings, tasks e e-mails." },
+const OBJECTS: {
+  key: Obj;
+  label: string;
+  icon: typeof Building2;
+  deps: Obj[];
+  description: string;
+  required?: boolean;
+}[] = [
+  {
+    key: "companies",
+    label: "Empresas",
+    icon: Building2,
+    deps: [],
+    description: "Raiz da árvore — define o escopo de todos os filhos.",
+    required: true,
+  },
+  {
+    key: "contacts",
+    label: "Contatos",
+    icon: Users,
+    deps: ["companies"],
+    description: "Todos os contatos vinculados às empresas importadas.",
+  },
+  {
+    key: "deals",
+    label: "Negócios",
+    icon: Target,
+    deps: ["companies", "contacts"],
+    description: "Todos os negócios vinculados às empresas importadas.",
+  },
+  {
+    key: "leads",
+    label: "Leads",
+    icon: UserPlus,
+    deps: ["contacts"],
+    description: "Contatos importados com lifecyclestage = lead.",
+  },
+  {
+    key: "activities",
+    label: "Atividades",
+    icon: Activity,
+    deps: ["contacts", "companies", "deals"],
+    description: "Notas, calls, meetings, tasks e e-mails das entidades acima.",
+  },
 ];
+
+type Counts = Partial<Record<Obj, { local: number; remote: number }>>;
 
 export function HubspotImportWizard() {
   const [scope, setScope] = useState<Record<Obj, boolean>>({
@@ -28,13 +79,17 @@ export function HubspotImportWizard() {
     leads: false,
     activities: false,
   });
-  const [maxPerObject, setMaxPerObject] = useState(200);
+  const [maxCompanies, setMaxCompanies] = useState(200);
   const [stage, setStage] = useState<"scope" | "running">("scope");
   const [jobId, setJobId] = useState<string | null>(null);
 
-  const startFn = useServerFn(startHubspotImport);
+  const [counts, setCounts] = useState<Counts>({});
+  const [countingKey, setCountingKey] = useState<Obj | null>(null);
+  const [countsReady, setCountsReady] = useState(false);
 
-  // Auto-add parent dependencies when toggling a child on
+  const startFn = useServerFn(startHubspotImport);
+  const countFn = useServerFn(countHubspotObjects);
+
   function toggle(key: Obj, value: boolean) {
     setScope((prev) => {
       const next = { ...prev, [key]: value };
@@ -44,14 +99,39 @@ export function HubspotImportWizard() {
       }
       return next;
     });
+    // Qualquer mudança de escopo invalida a contagem
+    setCountsReady(false);
+    setCounts({});
   }
 
   const planned = useMemo(() => {
-    // Recompute order respecting dependencies
     const wanted = new Set<Obj>();
     for (const o of OBJECTS) if (scope[o.key]) wanted.add(o.key);
     return OBJECTS.filter((o) => wanted.has(o.key));
   }, [scope]);
+
+  async function handleCount() {
+    setCountsReady(false);
+    const next: Counts = {};
+    setCounts(next);
+    try {
+      for (const o of planned) {
+        setCountingKey(o.key);
+        const res = await countFn({ data: { objects: [o.key] } });
+        const part = (res as Counts)[o.key];
+        if (part) {
+          next[o.key] = part;
+          setCounts({ ...next });
+        }
+      }
+      setCountsReady(true);
+      toast.success("Contagem concluída");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao contar registros");
+    } finally {
+      setCountingKey(null);
+    }
+  }
 
   async function handleStart() {
     try {
@@ -63,7 +143,7 @@ export function HubspotImportWizard() {
           deals: scope.deals,
           leads: scope.leads,
           activities: scope.activities,
-          maxPerObject,
+          maxCompanies,
         },
       });
       setJobId(r.jobId);
@@ -74,13 +154,11 @@ export function HubspotImportWizard() {
     }
   }
 
-  // When start kicks off, we don't have jobId yet. Fetch latest running job once via polling.
   useEffect(() => {
     if (stage !== "running" || jobId) return;
     let cancelled = false;
     (async () => {
       const { supabase } = await import("@/integrations/supabase/client");
-      // poll for the most recent running hubspot import job created in the last 30s
       for (let i = 0; i < 20; i++) {
         if (cancelled) return;
         const { data } = await supabase
@@ -106,7 +184,13 @@ export function HubspotImportWizard() {
     return (
       <div className="space-y-4">
         {jobId ? (
-          <ImportTimeline jobId={jobId} onReset={() => { setStage("scope"); setJobId(null); }} />
+          <ImportTimeline
+            jobId={jobId}
+            onReset={() => {
+              setStage("scope");
+              setJobId(null);
+            }}
+          />
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Iniciando importação…
@@ -121,8 +205,26 @@ export function HubspotImportWizard() {
       <section className="rounded-lg border bg-card p-5">
         <h2 className="font-semibold mb-1">1. Escopo da importação</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Selecione quais objetos do HubSpot importar. Selecionar um filho marca automaticamente os pais necessários.
+          A importação começa pelas Empresas; os demais objetos são trazidos conforme o vínculo no HubSpot.
         </p>
+
+        <div className="mb-5 max-w-sm">
+          <Label className="text-xs">Máximo de empresas a ser importado</Label>
+          <Input
+            type="number"
+            min={1}
+            max={2000}
+            value={maxCompanies}
+            onChange={(e) => {
+              setMaxCompanies(Math.max(1, Math.min(2000, Number(e.target.value) || 200)));
+              setCountsReady(false);
+            }}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Esse limite só se aplica a Empresas. Os filhos vinculados são importados sem limite.
+          </p>
+        </div>
+
         <div className="space-y-3">
           {OBJECTS.map((o) => {
             const Icon = o.icon;
@@ -132,36 +234,26 @@ export function HubspotImportWizard() {
                 <Checkbox
                   id={`scope-${o.key}`}
                   checked={scope[o.key]}
+                  disabled={o.required}
                   onCheckedChange={(v) => toggle(o.key, !!v)}
                 />
                 <div className="flex-1">
                   <Label htmlFor={`scope-${o.key}`} className="flex items-center gap-2 cursor-pointer">
                     <Icon className="h-4 w-4" /> {o.label}
+                    {o.required && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        obrigatório
+                      </Badge>
+                    )}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">{o.description}</p>
-                  {forcedBy.length > 0 && scope[o.key] && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      Necessário para: {forcedBy.join(", ")}
-                    </p>
+                  {forcedBy.length > 0 && scope[o.key] && !o.required && (
+                    <p className="text-xs text-amber-600 mt-1">Necessário para: {forcedBy.join(", ")}</p>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-4 flex items-end gap-3">
-          <div className="flex-1 max-w-xs">
-            <Label className="text-xs">Máximo de registros por objeto</Label>
-            <Input
-              type="number"
-              min={1}
-              max={2000}
-              value={maxPerObject}
-              onChange={(e) => setMaxPerObject(Math.max(1, Math.min(2000, Number(e.target.value) || 200)))}
-            />
-            <p className="text-xs text-muted-foreground mt-1">Recomendado &le; 500 por execução.</p>
-          </div>
         </div>
       </section>
 
@@ -174,6 +266,8 @@ export function HubspotImportWizard() {
           <ol className="space-y-2">
             {planned.map((o, i) => {
               const Icon = o.icon;
+              const c = counts[o.key];
+              const isCounting = countingKey === o.key;
               return (
                 <li key={o.key}>
                   <div className="flex items-center gap-3 p-3 rounded-md border bg-background">
@@ -189,7 +283,17 @@ export function HubspotImportWizard() {
                         </p>
                       )}
                     </div>
-                    <Badge variant="outline">até {maxPerObject}</Badge>
+                    <Badge variant="outline" className="font-mono">
+                      {isCounting ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> contando…
+                        </span>
+                      ) : c ? (
+                        `${c.local.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
+                      ) : (
+                        "— / —"
+                      )}
+                    </Badge>
                   </div>
                   {i < planned.length - 1 && (
                     <div className="flex justify-center my-1">
@@ -201,13 +305,37 @@ export function HubspotImportWizard() {
             })}
           </ol>
         )}
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Formato: <span className="font-mono">local / HubSpot</span> — quanto já existe na sua base e o total no HubSpot.
+          </p>
+          <Button
+            variant="outline"
+            onClick={handleCount}
+            disabled={planned.length === 0 || countingKey !== null}
+          >
+            {countingKey ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Contando…
+              </>
+            ) : (
+              "Contar Registros"
+            )}
+          </Button>
+        </div>
       </section>
 
       <div className="flex justify-end gap-2">
-        <Button onClick={handleStart} disabled={planned.length === 0}>
+        <Button onClick={handleStart} disabled={planned.length === 0 || !countsReady}>
           Iniciar importação
         </Button>
       </div>
+      {!countsReady && (
+        <p className="text-xs text-muted-foreground text-right -mt-3">
+          Execute "Contar Registros" para habilitar a importação.
+        </p>
+      )}
     </div>
   );
 }
