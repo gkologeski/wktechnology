@@ -721,6 +721,16 @@ export const startHubspotImport = createServerFn({ method: "POST" })
           for (const d of dealRecs) {
             const p = d.properties;
             const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
+            // Resolver pipeline e estágio espelhados do HubSpot
+            const pipelineEntry = p.pipeline ? dealPipelines.pipelines.get(p.pipeline) : undefined;
+            const stageEntry = p.dealstage ? dealPipelines.stages.get(p.dealstage) : undefined;
+            const localPipelineId = pipelineEntry?.localId ?? stageEntry?.localPipelineId ?? null;
+            const localStageId = stageEntry?.stageId ?? pipelineEntry?.defaultStageId ?? null;
+            const stageEnum = mapDealStageEnum(
+              stageEntry?.label,
+              stageEntry?.probability ?? null,
+              stageEntry ? (stageEntry.probability !== null && stageEntry.probability >= 1) || /lost|perdid|won|ganho|closed/i.test(stageEntry.label) : false,
+            );
             const { data: row, error } = await supabase
               .from("deals")
               .insert({
@@ -728,7 +738,9 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 name: p.dealname ?? "Sem nome",
                 value: p.amount ? Number(p.amount) : 0,
                 currency: "BRL",
-                stage: "new",
+                stage: stageEnum as never,
+                stage_id: localStageId,
+                pipeline_id: localPipelineId,
                 company_id: localCompanyId,
                 expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
                 external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
