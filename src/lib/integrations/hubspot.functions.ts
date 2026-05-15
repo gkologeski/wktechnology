@@ -624,6 +624,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               });
               if (error) stepFail++;
               else stepOk++;
+              await bumpProgress(step, stepOk, stepFail);
             }
           }
         }
