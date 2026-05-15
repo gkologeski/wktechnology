@@ -20,10 +20,33 @@ function LeadsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const location = useLocation();
+  const apollo = useServerFn(enrichWithApollo);
+  const lusha = useServerFn(enrichWithLusha);
 
   if (location.pathname !== "/leads") {
     return <Outlet />;
   }
+
+  const runApollo = async (ids: string[]) => {
+    if (!confirm(`Enriquecer ${ids.length} lead(s) com Apollo? (consome 1 crédito por sucesso)`)) return;
+    try {
+      const r = await apollo({ data: { entity: "lead", ids } });
+      toast.success(`Apollo: ${r.succeeded} ok · ${r.failed} falha(s) · ${r.credits} crédito(s)`);
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro Apollo");
+    }
+  };
+  const runLusha = async (ids: string[]) => {
+    if (!confirm(`Enriquecer ${ids.length} lead(s) com Lusha?`)) return;
+    try {
+      const r = await lusha({ data: { entity: "lead", ids } });
+      toast.success(`Lusha: ${r.succeeded} ok · ${r.failed} falha(s) · ${r.credits} crédito(s)`);
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro Lusha");
+    }
+  };
 
   const convert = async (lead: Lead) => {
     if (!user) return;
