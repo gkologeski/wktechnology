@@ -20,6 +20,7 @@ import {
   setCreditLimit,
 } from "@/lib/integrations/core.functions";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
+import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
