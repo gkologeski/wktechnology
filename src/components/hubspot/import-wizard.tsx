@@ -289,7 +289,7 @@ export function HubspotImportWizard() {
                           <Loader2 className="h-3 w-3 animate-spin" /> contando…
                         </span>
                       ) : c ? (
-                        `${c.local.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
+                        `${c.planned.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
                       ) : (
                         "— / —"
                       )}
