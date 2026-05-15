@@ -1,74 +1,65 @@
-# Importação HubSpot — contagens reais e cascata por Empresas
+# Contadores em tempo real durante a importação
 
-Refatorar o wizard de importação do HubSpot (`/integrations/hubspot`) para que a importação seja conduzida **a partir das empresas** (objeto pai limitado pelo usuário) e cascateie para todos os filhos relacionados, exibindo contagens reais (locais e remotas) por objeto antes de habilitar o botão "Iniciar importação".
+Substituir, na tela de execução (`ImportTimeline`), o sumário textual atual ("X/Y etapas · N registros importados") por um painel de **contadores ao vivo, um por objeto**, com animação de número subindo, anel de progresso e ícone do objeto. O usuário acompanha visualmente quantos registros de cada tipo já foram importados em tempo real.
 
-## 1. UI — `src/components/hubspot/import-wizard.tsx`
+## Layout proposto
 
-**Quadro 1 — Escopo da importação**
-- Mover o campo **"Máximo de registros por objeto"** para o **topo** do quadro e renomeá-lo para **"Máximo de empresas a ser importado"**. Continua sendo `number` (1–2000), default 200.
-- Texto auxiliar passa a deixar claro que esse limite só se aplica a Empresas; os demais objetos serão importados conforme o que estiver vinculado às empresas trazidas.
-- Mantém os checkboxes por objeto (Empresas, Contatos, Negócios, Leads, Atividades) com a regra de auto-marcar pais. **Empresas** vira obrigatório (checkbox marcado e desabilitado) — é a raiz da cascata.
+Logo acima do bloco "Etapas", um grid responsivo de cards — um para cada objeto presente no escopo (Empresas, Contatos, Negócios, Leads, Atividades). Cada card é um `LiveCounter`:
 
-**Quadro 2 — Pré-visualização da árvore**
-- Cada item do passo agora exibe um badge no formato `X / Total`:
-  - `X` = quantidade desse objeto que **já existe na nossa base** com `external_ids->>'hubspot'` definido (escopo do `owner_id` atual).
-  - `Total` = quantidade desse objeto **no HubSpot** (vindo da nova função de contagem).
-  - Enquanto não houver contagem, mostra `—`. Durante a contagem, mostra um spinner inline para o objeto sendo lido.
-- O badge antigo "até 200" some.
+```text
+┌─────────────────────────┐
+│ 🏢  Empresas    ◐ 62%   │
+│                         │
+│      127 / 200          │   ← número grande animado (rolagem)
+│   ──────────────        │   ← barra/anel de progresso
+│   ✓ 125 ok · ✗ 2 falhas │
+└─────────────────────────┘
+```
 
-**Botão "Contar Registros"** (logo abaixo do quadro 2)
-- Dispara `countHubspotObjects` (ver §2) **um objeto por vez**, em sequência, atualizando o badge `X/Total` de cada card assim que cada chamada termina (estado local do componente).
-- Enquanto a contagem está em andamento: botão mostra "Contando…" com spinner; o botão **"Iniciar importação"** fica desabilitado.
-- Ao concluir todas as contagens: botão "Iniciar importação" é **habilitado**.
+Estados visuais:
+- **pending**: card em opacidade baixa, ring `border-muted`, número `0`.
+- **running**: ring com gradiente animado (`from-primary to-primary/60`), pulso suave no ícone, número crescendo via tween.
+- **done**: ring `border-emerald-500`, ícone `CheckCircle2`, badge "concluído".
+- **failed**: ring `border-destructive`, ícone `XCircle`.
 
-**Botão "Iniciar importação"**
-- Estado inicial: **desabilitado**.
-- Habilita somente quando a contagem foi executada com sucesso para todos os objetos selecionados (flag `countsReady` no estado).
-- Se o usuário alterar o escopo após contar, `countsReady` volta a `false` (precisa contar de novo).
+O número grande usa **tween** (CSS transition em `--n` via `@property` ou pequeno hook `useAnimatedNumber` com `requestAnimationFrame`) — sem libs externas. Quando o valor sobe, anima de `prev` até o novo valor em ~600ms com `ease-out`.
 
-## 2. Backend — `src/lib/integrations/hubspot.functions.ts`
+Para Empresas, o denominador é `maxCompanies` (vem do `scope` do job). Para os filhos (Contatos/Negócios/Leads/Atividades), o denominador não é conhecido a priori (a cascata descobre em runtime); o card mostra apenas o numerador grande + um indicador "descobrindo…" (chips com counts parciais extraídos dos `step_logs`, ex.: `2.1k contatos descobertos · 850 importados`). Quando a etapa termina, o denominador passa a ser o próprio total final.
 
-**Nova server fn `countHubspotObjects`** (substitui/expande `previewHubspotCounts`)
-- Input: `{ objects: ("companies"|"contacts"|"deals"|"leads"|"activities")[] }`.
-- Para cada objeto pedido, executa **em paralelo**:
-  - `remote`: `POST /crm/v3/objects/{obj}/search` com body `{ limit: 1 }` para obter `total` real do HubSpot. Para `leads`, usa `contacts/search` com filtro `lifecyclestage = lead`. Para `activities`, soma os totais de `notes + calls + meetings + tasks + emails`.
-  - `local`: `select count(*)` em cada tabela do nosso banco filtrando `owner_id = userId AND external_ids ? 'hubspot'`.
-- Retorna `{ companies: { local, remote }, contacts: {...}, ... }`.
-- A função aceita ser chamada repetidamente (cliente pode chamar uma por vez sequencialmente para feedback em tempo real, OU passar todos os objetos de uma vez — o front fará chamadas individuais para mostrar progresso por objeto).
+Faixa inferior global (logo abaixo do grid) mantém o `Progress` por etapas + tempo decorrido (HH:MM:SS) e ETA estimado.
 
-**Refatorar `startHubspotImport` para cascata real a partir de Empresas**
-- O input passa a se chamar `maxCompanies` (mantém-se compatível aceitando `maxPerObject` como alias deprecado).
-- **Etapa Companies**: importa até `maxCompanies` empresas, popula `companyMap`.
-- **Etapa Contacts**: para cada empresa importada (`companyMap.keys()`), busca contatos vinculados via `GET /crm/v3/objects/companies/{id}/associations/contacts` (paginado, em lotes), depois `POST /crm/v3/objects/contacts/batch/read` com as propriedades necessárias. Importa **todos** os contatos retornados (sem limite). Popula `contactMap`.
-- **Etapa Deals**: idem, partindo de `companies/{id}/associations/deals` + `deals/batch/read` com `associations=companies,contacts`. Importa todos. Popula `dealMap` e `deal_contacts`.
-- **Etapa Leads**: agora limita-se a contatos cuja empresa está no `companyMap` E `lifecyclestage = lead` (filtro client-side já que estamos varrendo via batch). Importa todos os encontrados.
-- **Etapa Activities**: para cada `dealId/contactId/companyId` no escopo, lê `associations/{notes,calls,meetings,tasks,emails}` e batch-read de cada engagement. Importa todos os encontrados.
-- Em todos os passos novos, manter o `appendLog` por página/lote e a atualização de `step_logs` para a timeline em tempo real.
-- Respeitar rate-limit com `sleep(150ms)` entre chamadas (já existe).
+## Como os contadores se atualizam
 
-## 3. Considerações técnicas
+O componente já está assinado em Realtime (`enrichment_jobs` + `enrichment_job_items`). Vou derivar por objeto:
+- `succeeded` / `failed` por etapa: lê `enrichment_job_items.after.{succeeded,failed}` quando a etapa fecha; durante a execução, extrai o último `count` do `step_logs` filtrado por `step` para alimentar o numerador "descoberto" (`discovered`).
+- `imported` durante execução: o item ainda está `running`, então o `after` é null. Para contar em tempo real, vou adicionar `running_succeeded`/`running_failed` no `before` do item e atualizar a cada inserção (já temos `appendLog` por página/lote — basta atualizar 1 campo do item junto). Isso evita alterar schema.
 
-- A pré-visualização não bloqueia a importação por contagem (é só informativa). A regra de habilitar o botão é puramente de UX — segurança e idempotência continuam por `external_ids` (upsert).
-- A contagem local (`X`) usa `head: true, count: 'exact'` no Supabase para evitar trazer linhas.
-- A contagem remota usa `/search` (POST com `limit:1`) porque o endpoint `GET /objects/{type}` não retorna `total` confiável.
-- Atividades no HubSpot são 5 endpoints separados — somar os totais e exibir um único `X/Total` agregado no card "Atividades".
-- Cascata por associações pode gerar muitas requisições; o gateway HubSpot tem 100 req/10s — manter `sleep(150)` entre lotes e usar `batch/read` (lote de 100) sempre que possível.
-- Não removeremos `previewHubspotCounts` para não quebrar eventuais consumidores; passa a ser um wrapper sobre `countHubspotObjects`.
+### Pequeno ajuste no backend
 
-## 4. Entregáveis
+`startHubspotImport` já atualiza `step_logs` e o `enrichment_jobs.succeeded` global. Para granularidade por etapa em tempo real, vou:
+- Após cada `insert` bem-sucedido em uma etapa, atualizar `enrichment_job_items.before.running_succeeded` e `running_failed` (já gravamos `before` como JSON livre). Throttle: a cada 5 inserts ou no fim de cada lote/página para não bater no banco a cada linha.
+- Frontend lê `it.before.running_succeeded` enquanto `status='running'` e `it.after.succeeded` quando `status='done'`.
 
-1. `src/lib/integrations/hubspot.functions.ts`
-   - Nova `countHubspotObjects` (com contagens local + remota por objeto).
-   - `startHubspotImport`: input renomeado para `maxCompanies`; lógica em cascata por associações para Contacts/Deals/Leads/Activities.
-2. `src/components/hubspot/import-wizard.tsx`
-   - Campo de máximo movido para o topo e renomeado.
-   - Empresas obrigatório.
-   - Badge `X/Total` por objeto na pré-visualização.
-   - Botão "Contar Registros" com chamada sequencial e atualização em tempo real.
-   - Botão "Iniciar importação" desabilitado até contagem concluir; reset ao alterar escopo.
+## Componente novo
 
-## Fora do escopo
+`src/components/hubspot/live-counter.tsx` — recebe `{ icon, label, value, target?, status, failed }`, anima o número, renderiza o ring + barra. Reutiliza `lucide-react` e tokens do design system (`text-primary`, `bg-card`, `border-emerald-500`, etc.).
 
-- Mudanças na timeline de execução (`import-timeline.tsx`) — continua igual.
-- Migrações de banco — schema atual já cobre.
-- Botão "Desfazer importação".
+Hook auxiliar `useAnimatedNumber(value, duration=600)` em `src/hooks/use-animated-number.ts`.
+
+## Edição em `import-timeline.tsx`
+
+- Logo após o card de status, renderizar `<LiveCountersGrid items={items} scope={job?.scope} />`.
+- Mantém a seção "Etapas" (lista vertical) e o "Log" como estão — a função delas é detalhar; os contadores são o destaque novo.
+
+## Entregáveis
+
+1. `src/hooks/use-animated-number.ts` — tween simples por rAF.
+2. `src/components/hubspot/live-counter.tsx` — card individual + grid.
+3. `src/components/hubspot/import-timeline.tsx` — incluir o grid no topo.
+4. `src/lib/integrations/hubspot.functions.ts` — pequena atualização para gravar `running_succeeded/failed` por item durante a execução (throttled).
+
+## Fora de escopo
+
+- ETA preciso (mostro só tempo decorrido + estimativa linear).
+- Sons/notificação ao concluir.
+- Persistência histórica de jobs anteriores nessa tela.
