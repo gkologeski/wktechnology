@@ -419,6 +419,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
     z
       .object({
         objects: z.array(ObjectKey).min(1),
+        mode: z.enum(["linked", "full"]).default("linked"),
         maxCompanies: z.number().min(1).max(2000).default(200),
       })
       .parse(input)
@@ -447,8 +448,18 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return parts.reduce((a, b) => a + b, 0);
     }
 
-    // Para os filhos, "planned" considera apenas o que está vinculado às
-    // empresas que efetivamente serão importadas (respeitando maxCompanies).
+    const out: Record<string, { planned: number; remote: number }> = {};
+
+    // Modo "full": planned = remote para todos os objetos (sem cap, sem filtro de vínculo).
+    if (data.mode === "full") {
+      for (const k of data.objects) {
+        const remote = await remoteCount(k);
+        out[k] = { planned: remote, remote };
+      }
+      return out as Record<ObjectKey, { planned: number; remote: number }>;
+    }
+
+    // Modo "linked": filhos respeitam vínculo com as empresas dentro de maxCompanies.
     let companyIdsPromise: Promise<string[]> | null = null;
     const getCompanyIds = () => {
       if (!companyIdsPromise) companyIdsPromise = fetchCompanyIdsCount(data.maxCompanies);
@@ -462,8 +473,6 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       readContactProps: (ids, props) => batchRead("contacts", ids, props),
     };
 
-    const out: Record<string, { planned: number; remote: number }> = {};
-    // Sequencial para reaproveitar getCompanyIds() entre chamadas e evitar rate-limit.
     for (const k of data.objects) {
       const remote = await remoteCount(k);
       const planned = await computePlannedCapped(k, remote, data.maxCompanies, deps);
