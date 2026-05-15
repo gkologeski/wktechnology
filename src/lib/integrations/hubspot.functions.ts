@@ -41,10 +41,35 @@ async function hsPost(path: string, body: object) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// ─────────────────────────── Cache em memória (TTL) ──────────────────────────
+// Persiste entre chamadas do server function dentro do mesmo Worker, reduzindo
+// drasticamente o nº de requests ao HubSpot quando o wizard conta os objetos
+// um a um. TTL curto para refletir mudanças recentes na conta.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+type CacheEntry<T> = { value: T; expires: number };
+const memCache = new Map<string, CacheEntry<unknown>>();
+function cacheGet<T>(key: string): T | undefined {
+  const e = memCache.get(key);
+  if (!e) return undefined;
+  if (e.expires < Date.now()) {
+    memCache.delete(key);
+    return undefined;
+  }
+  return e.value as T;
+}
+function cacheSet<T>(key: string, value: T) {
+  memCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
+}
+
 async function searchTotal(obj: string, body: object = {}): Promise<number> {
+  const key = `searchTotal:${obj}:${JSON.stringify(body)}`;
+  const hit = cacheGet<number>(key);
+  if (hit !== undefined) return hit;
   try {
     const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1, ...body })) as { total?: number };
-    return r.total ?? 0;
+    const total = r.total ?? 0;
+    cacheSet(key, total);
+    return total;
   } catch {
     return 0;
   }
@@ -59,6 +84,39 @@ async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise
   } catch {
     return [];
   }
+}
+
+// Lê associações em lote via v4 (até 1000 inputs por request). Reduz N
+// chamadas (uma por ID) para ceil(N/1000) — peça-chave para evitar rate-limit.
+async function assocBatchRead(
+  fromObj: string,
+  fromIds: string[],
+  toObj: string
+): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  const unique = Array.from(new Set(fromIds));
+  for (let i = 0; i < unique.length; i += 1000) {
+    const chunk = unique.slice(i, i + 1000);
+    try {
+      const r = (await hsPost(`/crm/v4/associations/${fromObj}/${toObj}/batch/read`, {
+        inputs: chunk.map((id) => ({ id })),
+      })) as {
+        results?: { from?: { id?: string | number }; to?: { toObjectId?: string | number }[] }[];
+      };
+      for (const row of r.results ?? []) {
+        const fid = String(row.from?.id ?? "");
+        if (!fid) continue;
+        const ids = (row.to ?? []).map((t) => String(t.toObjectId ?? "")).filter(Boolean);
+        const prev = out.get(fid) ?? [];
+        out.set(fid, prev.concat(ids));
+      }
+    } catch {
+      // Fallback: per-ID v3 só para o chunk que falhou.
+      for (const id of chunk) out.set(id, await getAssoc(fromObj, id, toObj));
+    }
+    await sleep(100);
+  }
+  return out;
 }
 
 type HSRec = { id: string; properties: Record<string, string | null | undefined> };
@@ -287,7 +345,12 @@ const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads
 };
 
 // Busca os primeiros N IDs de empresas no HubSpot (mesma ordem usada na importação).
+// Resultado cacheado por `limit` — chamadas subsequentes do wizard reaproveitam.
 async function fetchCompanyIdsCount(limit: number): Promise<string[]> {
+  const cacheKey = `companyIds:${limit}`;
+  const hit = cacheGet<string[]>(cacheKey);
+  if (hit) return hit;
+
   const ids: string[] = [];
   let after: string | undefined;
   while (ids.length < limit) {
@@ -310,18 +373,42 @@ async function fetchCompanyIdsCount(limit: number): Promise<string[]> {
       break;
     }
   }
-  return ids.slice(0, limit);
+  const result = ids.slice(0, limit);
+  cacheSet(cacheKey, result);
+  return result;
 }
 
-// União de IDs associados a uma lista de origens. Limita concorrência para não estourar rate-limit.
-async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
-  const out = new Set<string>();
-  const concurrency = 5;
-  for (let i = 0; i < fromIds.length; i += concurrency) {
-    const slice = fromIds.slice(i, i + concurrency);
-    const results = await Promise.all(slice.map((id) => getAssoc(fromObj, id, toObj)));
-    for (const arr of results) for (const x of arr) out.add(x);
+// Assinatura estável do escopo de origem (independente da ordem) — usada como
+// chave de cache da união de associações.
+function scopeSig(ids: string[]): string {
+  if (ids.length === 0) return "∅";
+  if (ids.length <= 50) return [...ids].sort().join(",");
+  // Para escopos maiores, hash simples (FNV-1a 32-bit) sobre IDs ordenados.
+  let h = 0x811c9dc5;
+  for (const id of [...ids].sort()) {
+    for (let i = 0; i < id.length; i++) {
+      h ^= id.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    h ^= 44;
   }
+  return `${ids.length}:${h.toString(16)}`;
+}
+
+// União de IDs associados a uma lista de origens.
+// Otimizações:
+//  • Cache por (fromObj→toObj, escopo) — evita recomputar entre chamadas do wizard.
+//  • Lote v4 (até 1000 inputs por request) — 100× menos chamadas vs. per-ID.
+async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
+  if (fromIds.length === 0) return new Set();
+  const cacheKey = `union:${fromObj}→${toObj}:${scopeSig(fromIds)}`;
+  const hit = cacheGet<string[]>(cacheKey);
+  if (hit) return new Set(hit);
+
+  const batched = await assocBatchRead(fromObj, fromIds, toObj);
+  const out = new Set<string>();
+  for (const arr of batched.values()) for (const x of arr) out.add(x);
+  cacheSet(cacheKey, [...out]);
   return out;
 }
 
