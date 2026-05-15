@@ -358,7 +358,13 @@ export function HubspotImportWizard() {
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent side="left" className="max-w-xs">
-                          {o.key === "companies" ? (
+                          {mode === "full" ? (
+                            <p className="text-xs">
+                              <strong>Total de registros contados</strong>: todos os {o.label.toLowerCase()} do HubSpot serão importados.
+                              <br />
+                              <strong>Total no HubSpot</strong>: total existente na sua conta HubSpot.
+                            </p>
+                          ) : o.key === "companies" ? (
                             <p className="text-xs">
                               <strong>Total de registros contados</strong>: respeita o limite definido em "Máximo de empresas".
                               <br />
