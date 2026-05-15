@@ -1,0 +1,661 @@
+// Per-step execution helpers for HubSpot import.
+// Each step runs in its own HTTP request (via /api/public/hubspot-run-step)
+// so the Cloudflare Worker timeout (~30s) is respected.
+// State is rebuilt from DB each call (no in-memory cache between steps).
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
+
+function hsHeaders() {
+  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+  const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY;
+  if (!HUBSPOT_API_KEY) throw new Error("Conecte o HubSpot para continuar");
+  return {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "X-Connection-Api-Key": HUBSPOT_API_KEY,
+    "Content-Type": "application/json",
+  } as Record<string, string>;
+}
+
+async function hsFetch(path: string, params?: Record<string, string>) {
+  const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+  const res = await fetch(`${GATEWAY_URL}${path}${qs}`, { headers: hsHeaders() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`HubSpot [${res.status}]: ${JSON.stringify(data).slice(0, 300)}`);
+  return data;
+}
+
+async function hsPost(path: string, body: object) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    method: "POST",
+    headers: hsHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(`HubSpot POST [${res.status}] ${path}: ${JSON.stringify(data).slice(0, 300)}`);
+  return data;
+}
+
+async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise<string[]> {
+  try {
+    const r = (await hsFetch(`/crm/v3/objects/${fromObj}/${fromId}/associations/${toObj}`)) as {
+      results?: { id?: string | number; toObjectId?: string | number }[];
+    };
+    return (r.results ?? []).map((x) => String(x.id ?? x.toObjectId)).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+// Run getAssoc for many ids in parallel batches (avoids CF subrequest cap of 50).
+async function getAssocMany(
+  fromObj: string,
+  fromIds: string[],
+  toObj: string,
+  concurrency = 20,
+): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  for (let i = 0; i < fromIds.length; i += concurrency) {
+    const batch = fromIds.slice(i, i + concurrency);
+    const results = await Promise.all(batch.map((id) => getAssoc(fromObj, id, toObj)));
+    batch.forEach((id, idx) => out.set(id, results[idx]));
+  }
+  return out;
+}
+
+type HSRec = { id: string; properties: Record<string, string | null | undefined> };
+
+async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
+  const out: HSRec[] = [];
+  const unique = Array.from(new Set(ids));
+  for (let i = 0; i < unique.length; i += 100) {
+    const chunk = unique.slice(i, i + 100);
+    try {
+      const r = (await hsPost(`/crm/v3/objects/${obj}/batch/read`, {
+        properties,
+        inputs: chunk.map((id) => ({ id })),
+      })) as { results?: HSRec[] };
+      out.push(...(r.results ?? []));
+    } catch {
+      // skip chunk
+    }
+  }
+  return out;
+}
+
+// ─────────────────────────── Step framework ──────────────────────────────────
+
+export type StepName =
+  | "companies"
+  | "contacts"
+  | "deals"
+  | "leads"
+  | "activities-notes"
+  | "activities-calls"
+  | "activities-meetings"
+  | "activities-tasks"
+  | "activities-emails";
+
+export const STEP_DEPS: Record<StepName, StepName[]> = {
+  companies: [],
+  contacts: ["companies"],
+  deals: ["companies", "contacts"],
+  leads: ["contacts"],
+  "activities-notes": ["contacts", "companies", "deals"],
+  "activities-calls": ["contacts", "companies", "deals"],
+  "activities-meetings": ["contacts", "companies", "deals"],
+  "activities-tasks": ["contacts", "companies", "deals"],
+  "activities-emails": ["contacts", "companies", "deals"],
+};
+
+const STEP_ORDER: StepName[] = [
+  "companies",
+  "contacts",
+  "deals",
+  "leads",
+  "activities-notes",
+  "activities-calls",
+  "activities-meetings",
+  "activities-tasks",
+  "activities-emails",
+];
+
+export type Scope = {
+  companies: boolean;
+  contacts: boolean;
+  deals: boolean;
+  leads: boolean;
+  activities: boolean;
+  maxCompanies: number;
+};
+
+export function planSteps(scope: Scope): StepName[] {
+  const wanted = new Set<StepName>();
+  wanted.add("companies");
+  if (scope.contacts) wanted.add("contacts");
+  if (scope.deals) {
+    wanted.add("contacts");
+    wanted.add("deals");
+  }
+  if (scope.leads) {
+    wanted.add("contacts");
+    wanted.add("leads");
+  }
+  if (scope.activities) {
+    wanted.add("contacts");
+    wanted.add("activities-notes");
+    wanted.add("activities-calls");
+    wanted.add("activities-meetings");
+    wanted.add("activities-tasks");
+    wanted.add("activities-emails");
+  }
+  return STEP_ORDER.filter((s) => wanted.has(s));
+}
+
+type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+
+type ItemRow = {
+  id: string;
+  status: string;
+  before: { step?: string; order?: number; depends_on?: string[]; [k: string]: unknown } | null;
+  after: { succeeded?: number; failed?: number; imported_hs_ids?: string[]; [k: string]: unknown } | null;
+};
+
+export type StepCtx = {
+  supabase: SupabaseClient;
+  userId: string;
+  jobId: string;
+  step: StepName;
+  itemId: string;
+  scope: Scope;
+};
+
+async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
+  const full: LogEntry = { ...entry, ts: new Date().toISOString() };
+  const { data: cur } = await supabase
+    .from("enrichment_jobs")
+    .select("step_logs")
+    .eq("id", jobId)
+    .single();
+  const arr = Array.isArray(cur?.step_logs) ? (cur!.step_logs as LogEntry[]) : [];
+  const next = [...arr, full].slice(-300);
+  await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
+}
+
+async function patchItemBefore(supabase: SupabaseClient, itemId: string, patch: Record<string, unknown>) {
+  const { data: cur } = await supabase
+    .from("enrichment_job_items")
+    .select("before")
+    .eq("id", itemId)
+    .single();
+  const merged = { ...((cur?.before as object) ?? {}), ...patch };
+  await supabase.from("enrichment_job_items").update({ before: merged as never }).eq("id", itemId);
+}
+
+// Throttled progress writer.
+function makeProgressBumper(supabase: SupabaseClient, itemId: string) {
+  let last = 0;
+  return async (succeeded: number, failed: number, discovered?: number, force = false) => {
+    const now = Date.now();
+    if (!force && now - last < 600) return;
+    last = now;
+    await patchItemBefore(supabase, itemId, {
+      running_succeeded: succeeded,
+      running_failed: failed,
+      ...(discovered !== undefined ? { discovered } : {}),
+    });
+  };
+}
+
+// Load HS-ID → localId map for entities imported earlier IN THIS JOB.
+// Reads imported_hs_ids from the dependency step's `after`.
+async function loadMapForStep(
+  supabase: SupabaseClient,
+  userId: string,
+  jobId: string,
+  table: "companies" | "contacts" | "deals",
+  fromStep: StepName,
+): Promise<Map<string, string>> {
+  const { data: items } = await supabase
+    .from("enrichment_job_items")
+    .select("after, before")
+    .eq("job_id", jobId);
+  const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
+  const ids = (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
+  if (!ids.length) return new Map();
+  const map = new Map<string, string>();
+  // Postgrest .in('external_ids->>hubspot', ids) – use chunking to avoid URL length limits
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const { data } = await supabase
+      .from(table)
+      .select("id, external_ids")
+      .eq("owner_id", userId)
+      .in("external_ids->>hubspot", chunk);
+    for (const r of data ?? []) {
+      const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
+      if (hs) map.set(String(hs), r.id as string);
+    }
+  }
+  return map;
+}
+
+// ─────────────────────────── Step implementations ────────────────────────────
+
+export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed: number; importedHsIds: string[] }> {
+  const { supabase, userId, jobId, step, itemId, scope } = ctx;
+  await supabase
+    .from("enrichment_job_items")
+    .update({ status: "running", before: { step, order: STEP_ORDER.indexOf(step), depends_on: STEP_DEPS[step], started_at: new Date().toISOString() } as never })
+    .eq("id", itemId);
+  await appendLog(supabase, jobId, { level: "info", step, message: `Iniciando etapa ${step}` });
+  const bump = makeProgressBumper(supabase, itemId);
+
+  let ok = 0;
+  let fail = 0;
+  const imported: string[] = [];
+
+  try {
+    if (step === "companies") {
+      let after: string | undefined;
+      let page = 1;
+      while (ok + fail < scope.maxCompanies) {
+        const remaining = scope.maxCompanies - (ok + fail);
+        const limit = Math.min(100, remaining);
+        const params: Record<string, string> = {
+          limit: String(limit),
+          properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
+        };
+        if (after) params.after = after;
+        const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
+          results: HSRec[];
+          paging?: { next?: { after: string } };
+        };
+        if (!res.results.length) break;
+        await appendLog(supabase, jobId, {
+          level: "info",
+          step,
+          message: `Página ${page}: ${res.results.length} empresas`,
+          count: res.results.length,
+        });
+        for (const c of res.results) {
+          const p = c.properties;
+          if (!p.name) {
+            fail++;
+            continue;
+          }
+          const { data: row, error } = await supabase
+            .from("companies")
+            .insert({
+              owner_id: userId,
+              name: p.name,
+              domain: p.domain ?? null,
+              industry: p.industry ?? null,
+              size: p.numberofemployees ?? null,
+              phone: p.phone ?? null,
+              city: p.city ?? null,
+              state: p.state ?? null,
+              cep: p.zip ?? null,
+              address: p.address ?? null,
+              website: p.website ?? null,
+              external_ids: { hubspot: c.id } as never,
+            })
+            .select("id")
+            .single();
+          if (error || !row) {
+            fail++;
+            await appendLog(supabase, jobId, { level: "warn", step, message: `Falha empresa ${p.name}: ${error?.message}` });
+          } else {
+            imported.push(c.id);
+            ok++;
+          }
+        }
+        await bump(ok, fail, scope.maxCompanies);
+        after = res.paging?.next?.after;
+        page++;
+        if (!after) break;
+      }
+    } else if (step === "contacts") {
+      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
+      const hsCompanyIds = [...companyMap.keys()];
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Buscando contatos vinculados a ${hsCompanyIds.length} empresas`,
+      });
+      const assoc = await getAssocMany("companies", hsCompanyIds, "contacts", 20);
+      const contactToCompany = new Map<string, string>();
+      for (const [hsCo, list] of assoc.entries()) {
+        for (const id of list) if (!contactToCompany.has(id)) contactToCompany.set(id, hsCo);
+      }
+      await bump(0, 0, contactToCompany.size, true);
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Lendo ${contactToCompany.size} contatos`,
+        count: contactToCompany.size,
+      });
+      const recs = await batchRead("contacts", [...contactToCompany.keys()], [
+        "firstname",
+        "lastname",
+        "email",
+        "phone",
+        "jobtitle",
+        "lifecyclestage",
+      ]);
+      for (const c of recs) {
+        const p = c.properties;
+        if (!p.firstname && !p.email) {
+          fail++;
+          continue;
+        }
+        const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
+        const { data: row, error } = await supabase
+          .from("contacts")
+          .insert({
+            owner_id: userId,
+            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+            last_name: p.lastname ?? null,
+            email: p.email ?? null,
+            phone: p.phone ?? null,
+            job_title: p.jobtitle ?? null,
+            company_id: localCompanyId,
+            external_ids: {
+              hubspot: c.id,
+              hs_lifecyclestage: p.lifecyclestage ?? null,
+            } as never,
+          })
+          .select("id")
+          .single();
+        if (error || !row) {
+          fail++;
+        } else {
+          imported.push(c.id);
+          ok++;
+        }
+        await bump(ok, fail, contactToCompany.size);
+      }
+    } else if (step === "deals") {
+      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
+      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
+      const hsCompanyIds = [...companyMap.keys()];
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Buscando negócios vinculados a ${hsCompanyIds.length} empresas`,
+      });
+      const assoc = await getAssocMany("companies", hsCompanyIds, "deals", 20);
+      const dealToCompany = new Map<string, string>();
+      for (const [hsCo, list] of assoc.entries()) {
+        for (const id of list) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCo);
+      }
+      await bump(0, 0, dealToCompany.size, true);
+      const recs = await batchRead("deals", [...dealToCompany.keys()], [
+        "dealname",
+        "amount",
+        "dealstage",
+        "closedate",
+        "pipeline",
+      ]);
+      // Pre-fetch deal→contact associations in parallel
+      const dealContactsAssoc = await getAssocMany("deals", recs.map((r) => r.id), "contacts", 20);
+      for (const d of recs) {
+        const p = d.properties;
+        const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
+        const { data: row, error } = await supabase
+          .from("deals")
+          .insert({
+            owner_id: userId,
+            name: p.dealname ?? "Sem nome",
+            value: p.amount ? Number(p.amount) : 0,
+            currency: "BRL",
+            stage: "new",
+            company_id: localCompanyId,
+            expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+          })
+          .select("id")
+          .single();
+        if (error || !row) {
+          fail++;
+        } else {
+          imported.push(d.id);
+          ok++;
+          const contactIds = dealContactsAssoc.get(d.id) ?? [];
+          for (const cid of contactIds) {
+            const lc = contactMap.get(cid);
+            if (lc) await supabase.from("deal_contacts").insert({ deal_id: row.id, contact_id: lc });
+          }
+        }
+        await bump(ok, fail, dealToCompany.size);
+      }
+    } else if (step === "leads") {
+      // Read from contacts imported in this job that had lifecyclestage=lead
+      const { data: items } = await supabase
+        .from("enrichment_job_items")
+        .select("after, before")
+        .eq("job_id", jobId);
+      const contactsItem = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === "contacts");
+      const importedContactHs = (contactsItem?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
+      const leadHsIds: string[] = [];
+      for (let i = 0; i < importedContactHs.length; i += 200) {
+        const chunk = importedContactHs.slice(i, i + 200);
+        const { data } = await supabase
+          .from("contacts")
+          .select("external_ids")
+          .eq("owner_id", userId)
+          .in("external_ids->>hubspot", chunk)
+          .eq("external_ids->>hs_lifecyclestage", "lead");
+        for (const r of data ?? []) {
+          const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
+          if (hs) leadHsIds.push(String(hs));
+        }
+      }
+      await bump(0, 0, leadHsIds.length, true);
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Lendo ${leadHsIds.length} leads (lifecyclestage=lead)`,
+        count: leadHsIds.length,
+      });
+      const recs = await batchRead("contacts", leadHsIds, [
+        "firstname",
+        "lastname",
+        "email",
+        "phone",
+        "company",
+        "hs_lead_status",
+        "hs_analytics_source",
+      ]);
+      for (const c of recs) {
+        const p = c.properties;
+        const { error } = await supabase.from("leads").insert({
+          owner_id: userId,
+          first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+          last_name: p.lastname ?? null,
+          email: p.email ?? null,
+          phone: p.phone ?? null,
+          company_name: p.company ?? null,
+          source: p.hs_analytics_source ?? "hubspot",
+          status: "new",
+          external_ids: { hubspot: c.id } as never,
+        });
+        if (error) fail++;
+        else {
+          imported.push(c.id);
+          ok++;
+        }
+        await bump(ok, fail, leadHsIds.length);
+      }
+    } else if (step.startsWith("activities-")) {
+      const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
+      const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
+        notes: { type: "note", props: ["hs_note_body", "hs_timestamp"] },
+        calls: { type: "call", props: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition"] },
+        meetings: { type: "meeting", props: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp"] },
+        tasks: { type: "task", props: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status"] },
+        emails: { type: "email", props: ["hs_email_subject", "hs_email_text", "hs_timestamp"] },
+      };
+      const t = TYPE_MAP[kind];
+
+      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
+      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
+      const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
+
+      const seen = new Set<string>();
+      const engagementToParents = new Map<
+        string,
+        { contactId?: string; companyId?: string; dealId?: string }
+      >();
+
+      const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
+        { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
+        { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
+        { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
+      ];
+      for (const ent of entities) {
+        const assoc = await getAssocMany(ent.fromObj, ent.ids, kind, 20);
+        for (const [fid, list] of assoc.entries()) {
+          for (const eid of list) {
+            seen.add(eid);
+            const cur = engagementToParents.get(eid) ?? {};
+            cur[ent.key] = fid;
+            engagementToParents.set(eid, cur);
+          }
+        }
+      }
+      if (!seen.size) {
+        await appendLog(supabase, jobId, { level: "info", step, message: `Sem ${kind}` });
+      } else {
+        await bump(0, 0, seen.size, true);
+        await appendLog(supabase, jobId, {
+          level: "info",
+          step,
+          message: `Lendo ${seen.size} ${kind}`,
+          count: seen.size,
+        });
+        const recs = await batchRead(kind, [...seen], t.props);
+        for (const a of recs) {
+          const p = a.properties;
+          const subject =
+            p.hs_note_body?.replace(/<[^>]+>/g, "").slice(0, 100) ??
+            p.hs_call_title ??
+            p.hs_meeting_title ??
+            p.hs_task_subject ??
+            p.hs_email_subject ??
+            t.type;
+          const body =
+            p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
+          const due = p.hs_timestamp ?? null;
+          const parents = engagementToParents.get(a.id) ?? {};
+          const { error } = await supabase.from("activities").insert({
+            owner_id: userId,
+            type: t.type,
+            subject,
+            body,
+            due_date: due,
+            completed: t.type !== "task",
+            related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
+            related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
+            related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
+            external_ids: { hubspot: a.id, hs_kind: kind } as never,
+          });
+          if (error) fail++;
+          else {
+            imported.push(a.id);
+            ok++;
+          }
+          await bump(ok, fail);
+        }
+      }
+    }
+
+    await supabase
+      .from("enrichment_job_items")
+      .update({
+        status: "done",
+        after: {
+          succeeded: ok,
+          failed: fail,
+          finished_at: new Date().toISOString(),
+          imported_hs_ids: imported,
+        } as never,
+      })
+      .eq("id", itemId);
+    await appendLog(supabase, jobId, {
+      level: "info",
+      step,
+      message: `Etapa ${step} concluída: ${ok} ok / ${fail} falhas`,
+    });
+    return { succeeded: ok, failed: fail, importedHsIds: imported };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await supabase
+      .from("enrichment_job_items")
+      .update({ status: "failed", error: msg, after: { succeeded: ok, failed: fail, imported_hs_ids: imported } as never })
+      .eq("id", itemId);
+    await appendLog(supabase, jobId, { level: "error", step, message: msg });
+    throw e;
+  }
+}
+
+// Pick the next pending item in the job whose dependencies are all 'done'.
+export async function pickNextItem(
+  supabase: SupabaseClient,
+  jobId: string,
+): Promise<{ itemId: string; step: StepName } | null> {
+  const { data: rows } = await supabase
+    .from("enrichment_job_items")
+    .select("id, status, before")
+    .eq("job_id", jobId);
+  const items = (rows ?? []) as ItemRow[];
+  const doneSteps = new Set(items.filter((it) => it.status === "done").map((it) => it.before?.step ?? ""));
+  const pending = items
+    .filter((it) => it.status === "pending")
+    .sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0));
+  for (const it of pending) {
+    const deps = it.before?.depends_on ?? [];
+    if (deps.every((d) => doneSteps.has(d))) {
+      return { itemId: it.id, step: (it.before?.step ?? "") as StepName };
+    }
+  }
+  return null;
+}
+
+export async function finalizeJob(supabase: SupabaseClient, jobId: string) {
+  const { data: rows } = await supabase
+    .from("enrichment_job_items")
+    .select("status, after")
+    .eq("job_id", jobId);
+  const items = (rows ?? []) as ItemRow[];
+  const total = items.length;
+  const doneCount = items.filter((it) => it.status === "done").length;
+  const failedCount = items.filter((it) => it.status === "failed").length;
+  let succeeded = 0;
+  let failed = 0;
+  for (const it of items) {
+    succeeded += (it.after?.succeeded as number | undefined) ?? 0;
+    failed += (it.after?.failed as number | undefined) ?? 0;
+  }
+  const allDone = doneCount + failedCount === total;
+  if (!allDone) {
+    await supabase
+      .from("enrichment_jobs")
+      .update({ processed: doneCount + failedCount, succeeded, failed })
+      .eq("id", jobId);
+    return false;
+  }
+  await supabase
+    .from("enrichment_jobs")
+    .update({
+      status: failedCount > 0 && doneCount === 0 ? "failed" : "done",
+      processed: total,
+      succeeded,
+      failed,
+      finished_at: new Date().toISOString(),
+    })
+    .eq("id", jobId);
+  return true;
+}
