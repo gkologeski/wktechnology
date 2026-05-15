@@ -434,7 +434,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: [table] }); }} />
       )}
 
-      <ConfirmCountDialog open={bulkDeleteOpen} setOpen={setBulkDeleteOpen} count={ids.length} entity={table} onConfirm={bulkDelete} />
+      <ConfirmCountDialog open={bulkDeleteOpen} setOpen={setBulkDeleteOpen} count={ids.length} entity={table} onConfirm={async () => { await bulkDelete(); }} />
       <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
         onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
 
