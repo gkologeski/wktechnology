@@ -1,0 +1,97 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { History, Pencil } from "lucide-react";
+import { toast } from "sonner";
+import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
+
+export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
+
+export function PropertiesPanel<T extends Record<string, unknown> & { id: string }>({
+  entity, table, row, props, onSaved,
+}: {
+  entity: string;
+  table: string;
+  row: T;
+  props: PropDef[];
+  onSaved?: () => void;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [value, setValue] = useState<string>("");
+  const [showAll, setShowAll] = useState(false);
+  const [showHist, setShowHist] = useState(false);
+
+  const primary = props.filter((p) => p.primary);
+  const display = primary.length ? primary : props.slice(0, 8);
+
+  const save = async (key: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).update({ [key]: value || null }).eq("id", row.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
+  };
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-sm">Sobre</h3>
+        <Button variant="ghost" size="sm" onClick={() => setShowHist(true)}>
+          <History className="h-3.5 w-3.5 mr-1" /> Histórico
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {display.map((p) => (
+          <div key={p.key} className="text-sm group">
+            <div className="text-xs text-muted-foreground">{p.label}</div>
+            {editing === p.key ? (
+              <div className="flex gap-1 mt-0.5">
+                <Input autoFocus type={p.type ?? "text"} value={value} onChange={(e) => setValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && save(p.key)} className="h-7" />
+                <Button size="sm" className="h-7" onClick={() => save(p.key)}>OK</Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate">{String(row[p.key] ?? "—")}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                  onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={showAll} onOpenChange={setShowAll}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full">Ver todas as propriedades</Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Todas as propriedades</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            {props.map((p) => (
+              <div key={p.key} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">{p.label}</Label>
+                <Input
+                  type={p.type ?? "text"}
+                  defaultValue={String(row[p.key] ?? "")}
+                  onBlur={async (e) => {
+                    if (e.target.value === String(row[p.key] ?? "")) return;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { error } = await (supabase as any).from(table).update({ [p.key]: e.target.value || null }).eq("id", row.id);
+                    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <PropertyHistoryDrawer open={showHist} onOpenChange={setShowHist} entity={entity} entityId={row.id} />
+    </div>
+  );
+}
