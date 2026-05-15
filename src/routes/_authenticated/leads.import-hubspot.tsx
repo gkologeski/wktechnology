@@ -35,14 +35,20 @@ function ImportHubspotPage() {
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const doPreview = async () => {
     setLoadingPreview(true);
+    setError(null);
     try {
       const res = await previewFn({ data: { limit: 10 } });
+      console.log("[hubspot preview]", res);
       setPreview(res.contacts);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao carregar preview");
+      console.error("[hubspot preview] failed", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoadingPreview(false);
     }
@@ -115,6 +121,18 @@ function ImportHubspotPage() {
             Importar agora
           </Button>
         </div>
+
+        {error && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            <strong>Erro:</strong> {error}
+          </div>
+        )}
+
+        {loadingPreview && !preview && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando contatos do HubSpot...
+          </div>
+        )}
 
         {preview && (
           <div className="space-y-2">
