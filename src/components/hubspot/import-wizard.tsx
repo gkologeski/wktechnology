@@ -70,7 +70,7 @@ const OBJECTS: {
   },
 ];
 
-type Counts = Partial<Record<Obj, { planned: number; remote: number }>>;
+type Counts = Partial<Record<Obj, { planned: number; remote: number; local: number }>>;
 
 type Mode = "linked" | "full";
 
