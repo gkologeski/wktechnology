@@ -99,7 +99,11 @@ function LeadsPage() {
       table="leads"
       title="Leads"
       description="Capture e qualifique novos contatos."
+      detailPath={(id) => `/leads/${id}`}
       csvEnabled
+      boardStageField="status"
+      boardStages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+      inlineEditable={["status", "source", "company_name"]}
       toolbar={
         <Button variant="outline" size="sm" asChild>
           <Link to="/leads/import-hubspot"><Settings className="h-4 w-4 mr-1" /> HubSpot</Link>
