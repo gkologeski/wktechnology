@@ -86,6 +86,39 @@ async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise
   }
 }
 
+// Lê associações em lote via v4 (até 1000 inputs por request). Reduz N
+// chamadas (uma por ID) para ceil(N/1000) — peça-chave para evitar rate-limit.
+async function assocBatchRead(
+  fromObj: string,
+  fromIds: string[],
+  toObj: string
+): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  const unique = Array.from(new Set(fromIds));
+  for (let i = 0; i < unique.length; i += 1000) {
+    const chunk = unique.slice(i, i + 1000);
+    try {
+      const r = (await hsPost(`/crm/v4/associations/${fromObj}/${toObj}/batch/read`, {
+        inputs: chunk.map((id) => ({ id })),
+      })) as {
+        results?: { from?: { id?: string | number }; to?: { toObjectId?: string | number }[] }[];
+      };
+      for (const row of r.results ?? []) {
+        const fid = String(row.from?.id ?? "");
+        if (!fid) continue;
+        const ids = (row.to ?? []).map((t) => String(t.toObjectId ?? "")).filter(Boolean);
+        const prev = out.get(fid) ?? [];
+        out.set(fid, prev.concat(ids));
+      }
+    } catch {
+      // Fallback: per-ID v3 só para o chunk que falhou.
+      for (const id of chunk) out.set(id, await getAssoc(fromObj, id, toObj));
+    }
+    await sleep(100);
+  }
+  return out;
+}
+
 type HSRec = { id: string; properties: Record<string, string | null | undefined> };
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
