@@ -141,7 +141,50 @@ async function batchRead(obj: string, ids: string[], properties: string[]): Prom
   return out;
 }
 
-// ─────────────────────────── Pipelines (estrutura) ───────────────────────────
+// Lista TODOS os registros de um objeto, paginando até esgotar.
+// Quando `associations` é informado, cada registro retornado inclui
+// `associations: { <toObj>: { results: [{ id }] } }` (best-effort).
+type HSAssocList = { results?: { id?: string | number; toObjectId?: string | number }[] };
+type HSRecWithAssoc = HSRec & { associations?: Record<string, HSAssocList> };
+async function listAll(
+  obj: string,
+  properties: string[],
+  associations: string[] = [],
+): Promise<HSRecWithAssoc[]> {
+  const out: HSRecWithAssoc[] = [];
+  let after: string | undefined;
+  // safety cap to avoid runaway loops on broken pagination
+  for (let page = 0; page < 2000; page++) {
+    const params: Record<string, string> = {
+      limit: "100",
+      properties: properties.join(","),
+    };
+    if (associations.length) params.associations = associations.join(",");
+    if (after) params.after = after;
+    const r = (await hsFetch(`/crm/v3/objects/${obj}`, params)) as {
+      results: HSRecWithAssoc[];
+      paging?: { next?: { after: string } };
+    };
+    if (r.results?.length) out.push(...r.results);
+    after = r.paging?.next?.after;
+    if (!after) break;
+    await sleep(120);
+  }
+  return out;
+}
+
+function firstAssocId(rec: HSRecWithAssoc, toObj: string): string | null {
+  const list = rec.associations?.[toObj]?.results ?? [];
+  const first = list[0];
+  if (!first) return null;
+  const id = first.id ?? first.toObjectId;
+  return id ? String(id) : null;
+}
+
+function allAssocIds(rec: HSRecWithAssoc, toObj: string): string[] {
+  const list = rec.associations?.[toObj]?.results ?? [];
+  return list.map((x) => String(x.id ?? x.toObjectId)).filter(Boolean);
+}
 type HSStage = {
   id: string;
   label: string;
