@@ -931,8 +931,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             const p = c.properties;
             const hsStatus = p.hs_lead_status ?? "";
             const stageEntry = hsStatus ? leadPipeline?.stageByValue.get(hsStatus) : undefined;
-            const { error } = await supabase.from("leads").insert({
-              owner_id: userId,
+            const leadData = {
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
               last_name: p.lastname ?? null,
               email: p.email ?? null,
@@ -942,12 +941,33 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
-              external_ids: { hubspot: c.id, hs_lead_status: hsStatus || null } as never,
-            });
-            if (error) stepFail++;
-            else stepOk++;
+            };
+            const existingId = await findExistingId("leads", c.id, [
+              { column: "email", value: p.email },
+            ]);
+            if (existingId) {
+              const ext = await mergeExternalIds("leads", existingId, {
+                hubspot: c.id,
+                hs_lead_status: hsStatus || null,
+              });
+              const { error } = await supabase
+                .from("leads")
+                .update({ ...leadData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) stepFail++;
+              else stepOk++;
+            } else {
+              const { error } = await supabase.from("leads").insert({
+                owner_id: userId,
+                ...leadData,
+                external_ids: { hubspot: c.id, hs_lead_status: hsStatus || null } as never,
+              });
+              if (error) stepFail++;
+              else stepOk++;
+            }
             await bumpProgress(step, stepOk, stepFail, leadIds.length);
           }
+
         } else if (step === "activities") {
           const types: { obj: string; type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }[] = [
             { obj: "notes", type: "note", props: ["hs_note_body", "hs_timestamp"] },
