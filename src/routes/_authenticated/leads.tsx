@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import type { Lead } from "@/lib/db-types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/leads")({
   component: LeadsPage,
@@ -69,6 +69,11 @@ function LeadsPage() {
       title="Leads"
       description="Capture e qualifique novos contatos."
       csvEnabled
+      toolbar={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/leads/import-hubspot"><Settings className="h-4 w-4 mr-1" /> HubSpot</Link>
+        </Button>
+      }
       searchKeys={["first_name", "last_name", "email", "company_name"]}
       columns={[
         { key: "first_name", label: "Nome", render: (r) => `${r.first_name} ${r.last_name ?? ""}`.trim() },
