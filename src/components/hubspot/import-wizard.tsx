@@ -214,32 +214,76 @@ export function HubspotImportWizard() {
   return (
     <div className="space-y-6">
       <section className="rounded-lg border bg-card p-5">
-        <h2 className="font-semibold mb-1">1. Escopo da importação</h2>
+        <h2 className="font-semibold mb-1">1. Método de importação</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          A importação começa pelas Empresas; os demais objetos são trazidos conforme o vínculo no HubSpot.
+          Escolha como os registros do HubSpot serão trazidos para o seu CRM.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => changeMode("linked")}
+            className={`text-left rounded-md border p-4 transition-colors ${
+              mode === "linked" ? "border-primary bg-primary/5" : "border-border bg-background hover:bg-muted/50"
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium text-sm">
+              <Building2 className="h-4 w-4" /> Vinculado (a partir de Empresas)
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Importa um conjunto de Empresas e, em cascata, apenas Contatos, Negócios, Leads e Atividades vinculados a elas.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => changeMode("full")}
+            className={`text-left rounded-md border p-4 transition-colors ${
+              mode === "full" ? "border-primary bg-primary/5" : "border-border bg-background hover:bg-muted/50"
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium text-sm">
+              <Activity className="h-4 w-4" /> Total (todos os registros)
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Importa todos os registros de cada objeto sequencialmente (empresas → contatos → negócios → leads → atividades). Vínculos são feitos quando possível.
+            </p>
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-lg border bg-card p-5">
+        <h2 className="font-semibold mb-1">2. Escopo da importação</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          {mode === "linked"
+            ? "A importação começa pelas Empresas; os demais objetos são trazidos conforme o vínculo no HubSpot."
+            : "Cada objeto selecionado será importado integralmente, na ordem abaixo."}
         </p>
 
-        <div className="mb-5 max-w-sm">
-          <Label className="text-xs">Máximo de empresas a ser importado</Label>
-          <Input
-            type="number"
-            min={1}
-            max={2000}
-            value={maxCompanies}
-            onChange={(e) => {
-              setMaxCompanies(Math.max(1, Math.min(2000, Number(e.target.value) || 200)));
-              setCountsReady(false);
-            }}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Esse limite só se aplica a Empresas. Os filhos vinculados são importados sem limite.
-          </p>
-        </div>
+        {mode === "linked" && (
+          <div className="mb-5 max-w-sm">
+            <Label className="text-xs">Máximo de empresas a ser importado</Label>
+            <Input
+              type="number"
+              min={1}
+              max={2000}
+              value={maxCompanies}
+              onChange={(e) => {
+                setMaxCompanies(Math.max(1, Math.min(2000, Number(e.target.value) || 200)));
+                setCountsReady(false);
+              }}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Esse limite só se aplica a Empresas. Os filhos vinculados são importados sem limite.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-3">
           {OBJECTS.map((o) => {
             const Icon = o.icon;
-            const forcedBy = OBJECTS.filter((x) => scope[x.key] && x.deps.includes(o.key)).map((x) => x.label);
+            const forcedBy =
+              mode === "linked"
+                ? OBJECTS.filter((x) => scope[x.key] && x.deps.includes(o.key)).map((x) => x.label)
+                : [];
             return (
               <div key={o.key} className="flex items-start gap-3 p-3 rounded-md border bg-background">
                 <Checkbox
@@ -257,7 +301,11 @@ export function HubspotImportWizard() {
                       </Badge>
                     )}
                   </Label>
-                  <p className="text-xs text-muted-foreground mt-1">{o.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {mode === "full"
+                      ? `Todos os ${o.label.toLowerCase()} do HubSpot. Vínculos com registros já importados são feitos quando possível.`
+                      : o.description}
+                  </p>
                   {forcedBy.length > 0 && scope[o.key] && !o.required && (
                     <p className="text-xs text-amber-600 mt-1">Necessário para: {forcedBy.join(", ")}</p>
                   )}
