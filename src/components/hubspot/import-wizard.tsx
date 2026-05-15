@@ -322,79 +322,89 @@ export function HubspotImportWizard() {
         {planned.length === 0 ? (
           <p className="text-sm text-muted-foreground">Selecione ao menos um objeto.</p>
         ) : (
-          <ol className="space-y-2">
-            {planned.map((o, i) => {
-              const Icon = o.icon;
-              const c = counts[o.key];
-              const isCounting = countingKey === o.key;
-              return (
-                <li key={o.key}>
-                  <div className="flex items-center gap-3 p-3 rounded-md border bg-background">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {i + 1}
-                    </span>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{o.label}</p>
-                      {o.deps.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Depende de: {o.deps.map((d) => OBJECTS.find((x) => x.key === d)!.label).join(", ")}
-                        </p>
-                      )}
-                    </div>
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="font-mono cursor-help">
-                            {isCounting ? (
-                              <span className="flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin" /> contando…
-                              </span>
-                            ) : c ? (
-                              `${c.planned.toLocaleString("pt-BR")} / ${c.remote.toLocaleString("pt-BR")}`
-                            ) : (
-                              "— / —"
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="text-left font-medium px-3 py-2">Objeto</th>
+                  <th className="text-right font-medium px-3 py-2">A importar</th>
+                  <th className="text-right font-medium px-3 py-2">Local</th>
+                  <th className="text-right font-medium px-3 py-2">HubSpot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planned.map((o, i) => {
+                  const Icon = o.icon;
+                  const c = counts[o.key];
+                  const isCounting = countingKey === o.key;
+                  const fmt = (n: number) => n.toLocaleString("pt-BR");
+                  return (
+                    <tr key={o.key} className="border-t">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                            {i + 1}
+                          </span>
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{o.label}</p>
+                            {o.deps.length > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                Depende de: {o.deps.map((d) => OBJECTS.find((x) => x.key === d)!.label).join(", ")}
+                              </p>
                             )}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-xs">
-                          {mode === "full" ? (
-                            <p className="text-xs">
-                              <strong>Total de registros contados</strong>: todos os {o.label.toLowerCase()} do HubSpot serão importados.
-                              <br />
-                              <strong>Total no HubSpot</strong>: total existente na sua conta HubSpot.
-                            </p>
-                          ) : o.key === "companies" ? (
-                            <p className="text-xs">
-                              <strong>Total de registros contados</strong>: respeita o limite definido em "Máximo de empresas".
-                              <br />
-                              <strong>Total no HubSpot</strong>: total de empresas existentes na sua conta HubSpot.
-                            </p>
-                          ) : (
-                            <p className="text-xs">
-                              <strong>Total de registros contados</strong>: apenas {o.label.toLowerCase()} vinculados às empresas dentro do limite de importação.
-                              <br />
-                              <strong>Total no HubSpot</strong>: total de {o.label.toLowerCase()} existentes na sua conta HubSpot (sem filtro de vínculo).
-                            </p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  {i < planned.length - 1 && (
-                    <div className="flex justify-center my-1">
-                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {isCounting ? (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />…
+                          </span>
+                        ) : c ? (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help">{fmt(c.planned)}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs">
+                                {mode === "full" ? (
+                                  <p className="text-xs">
+                                    Todos os {o.label.toLowerCase()} do HubSpot serão importados.
+                                  </p>
+                                ) : o.key === "companies" ? (
+                                  <p className="text-xs">
+                                    Respeita o limite definido em "Máximo de empresas".
+                                  </p>
+                                ) : (
+                                  <p className="text-xs">
+                                    Apenas {o.label.toLowerCase()} vinculados às empresas dentro do limite de importação.
+                                  </p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-muted-foreground">
+                        {isCounting ? "…" : c ? fmt(c.local) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-muted-foreground">
+                        {isCounting ? "…" : c ? fmt(c.remote) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            Formato: <span className="font-mono">a importar / total no HubSpot</span> — quantos registros serão puxados nesta importação e o total existente no HubSpot.
+            <span className="font-medium">A importar</span>: registros que entrarão nesta execução · <span className="font-medium">Local</span>: já existentes no seu banco · <span className="font-medium">HubSpot</span>: total na sua conta HubSpot.
           </p>
           <Button
             variant="outline"
