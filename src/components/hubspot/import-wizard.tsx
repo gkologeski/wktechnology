@@ -117,7 +117,7 @@ export function HubspotImportWizard() {
     try {
       for (const o of planned) {
         setCountingKey(o.key);
-        const res = await countFn({ data: { objects: [o.key] } });
+        const res = await countFn({ data: { objects: [o.key], maxCompanies } });
         const part = (res as Counts)[o.key];
         if (part) {
           next[o.key] = part;
