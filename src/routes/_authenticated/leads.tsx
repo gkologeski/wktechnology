@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,11 @@ export const Route = createFileRoute("/_authenticated/leads")({
 function LeadsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const location = useLocation();
+
+  if (location.pathname !== "/leads") {
+    return <Outlet />;
+  }
 
   const convert = async (lead: Lead) => {
     if (!user) return;
