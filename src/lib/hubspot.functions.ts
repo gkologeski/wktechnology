@@ -36,7 +36,7 @@ async function fetchHubspotContacts(limit: number, after?: string) {
 
 export const previewHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ limit: z.number().min(1).max(100).default(10) }).parse)
+  .inputValidator((input: unknown) => z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input))
   .handler(async ({ data }) => {
     const result = await fetchHubspotContacts(data.limit);
     return {
