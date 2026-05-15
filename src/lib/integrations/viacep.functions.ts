@@ -75,7 +75,8 @@ export const enrichCompaniesAddress = createServerFn({ method: "POST" })
         if (!c.state && r.uf) update.state = r.uf;
         if (!c.address && r.logradouro) update.address = `${r.logradouro}${r.bairro ? `, ${r.bairro}` : ""}`;
         if (Object.keys(update).length > 0) {
-          await supabase.from("companies").update(update).eq("id", c.id);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any).from("companies").update(update).eq("id", c.id);
         }
         succeeded++;
       } catch {
