@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { EntityList } from "@/components/entity-list";
+import { Button } from "@/components/ui/button";
 import type { Contact, Company } from "@/lib/db-types";
+import { toast } from "sonner";
+import { Sparkles, Users as UsersIcon } from "lucide-react";
+import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
+import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
 });
 
 function ContactsPage() {
+  const qc = useQueryClient();
+  const apollo = useServerFn(enrichWithApollo);
+  const lusha = useServerFn(enrichWithLusha);
+
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () => {
@@ -18,6 +28,27 @@ function ContactsPage() {
   });
 
   const companyMap = new Map(companies.map((c) => [c.id, c.name]));
+
+  const runApollo = async (ids: string[]) => {
+    if (!confirm(`Enriquecer ${ids.length} contato(s) com Apollo?`)) return;
+    try {
+      const r = await apollo({ data: { entity: "contact", ids } });
+      toast.success(`Apollo: ${r.succeeded} ok · ${r.failed} falha(s)`);
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro Apollo");
+    }
+  };
+  const runLusha = async (ids: string[]) => {
+    if (!confirm(`Enriquecer ${ids.length} contato(s) com Lusha?`)) return;
+    try {
+      const r = await lusha({ data: { entity: "contact", ids } });
+      toast.success(`Lusha: ${r.succeeded} ok · ${r.failed} falha(s)`);
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro Lusha");
+    }
+  };
 
   return (
     <EntityList<Contact>
@@ -45,6 +76,20 @@ function ContactsPage() {
         },
         { name: "notes", label: "Notas", type: "textarea" },
       ]}
+      bulkEditFields={[
+        { name: "job_title", label: "Cargo" },
+        { name: "company_id", label: "Empresa", type: "select", options: companies.map((c) => ({ value: c.id, label: c.name })) },
+      ]}
+      bulkActions={(ids) => (
+        <>
+          <Button variant="outline" size="sm" onClick={() => runApollo(ids)}>
+            <Sparkles className="h-4 w-4 mr-1" /> Apollo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => runLusha(ids)}>
+            <UsersIcon className="h-4 w-4 mr-1" /> Lusha
+          </Button>
+        </>
+      )}
     />
   );
 }
