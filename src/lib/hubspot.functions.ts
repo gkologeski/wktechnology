@@ -54,7 +54,7 @@ export const previewHubspotLeads = createServerFn({ method: "POST" })
 
 export const importHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ maxRecords: z.number().min(1).max(1000).default(200) }).parse)
+  .inputValidator((input: unknown) => z.object({ maxRecords: z.number().min(1).max(1000).default(200) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let imported = 0;
