@@ -48,6 +48,14 @@ function ImportHubspotPage() {
     }
   };
 
+  const didAutoLoad = useRef(false);
+  useEffect(() => {
+    if (didAutoLoad.current) return;
+    didAutoLoad.current = true;
+    doPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const doImport = async () => {
     if (!confirm(`Importar até ${maxRecords} contatos do HubSpot como Leads?`)) return;
     setImporting(true);
