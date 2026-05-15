@@ -39,7 +39,8 @@ export function BulkCreateActivityDialog({
       owner_id: user.id, type, subject, body: body || null,
       due_date: due ? new Date(due).toISOString() : null, [col]: id,
     }));
-    const { error } = await supabase.from("activities").insert(rows);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("activities").insert(rows);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} atividade(s) criada(s)`);
