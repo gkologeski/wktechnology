@@ -519,6 +519,44 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     };
 
     try {
+      // 0) Espelhar pipelines/estágios do HubSpot ANTES de qualquer importação,
+      // para que deals/leads referenciem o pipeline e estágio corretos.
+      if (steps.includes("deals")) {
+        await appendLog({ level: "info", step: "pipelines", message: "Sincronizando pipelines de deals do HubSpot" });
+        try {
+          dealPipelines = await syncDealPipelines(supabase, userId);
+          await appendLog({
+            level: "info",
+            step: "pipelines",
+            message: `Pipelines de deals sincronizados: ${dealPipelines.pipelines.size} pipeline(s), ${dealPipelines.stages.size} estágio(s)`,
+            count: dealPipelines.pipelines.size,
+          });
+        } catch (e) {
+          await appendLog({
+            level: "warn",
+            step: "pipelines",
+            message: `Falha ao sincronizar pipelines de deals: ${e instanceof Error ? e.message : String(e)}`,
+          });
+        }
+      }
+      if (steps.includes("leads")) {
+        try {
+          leadPipeline = await syncLeadPipeline(supabase, userId);
+          await appendLog({
+            level: "info",
+            step: "pipelines",
+            message: `Pipeline de leads sincronizado: ${leadPipeline.stageByValue.size} estágio(s)`,
+            count: leadPipeline.stageByValue.size,
+          });
+        } catch (e) {
+          await appendLog({
+            level: "warn",
+            step: "pipelines",
+            message: `Falha ao sincronizar pipeline de leads: ${e instanceof Error ? e.message : String(e)}`,
+          });
+        }
+      }
+
       for (const step of steps) {
         await updateItem(step, { status: "running", before: { started_at: new Date().toISOString() } });
         await appendLog({ level: "info", step, message: `Iniciando etapa ${step}` });
