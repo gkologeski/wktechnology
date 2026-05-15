@@ -413,6 +413,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             }
             await sleep(80);
           }
+          await bumpProgress(step, 0, 0, contactToCompany.size, true);
           await appendLog({
             level: "info",
             step,
