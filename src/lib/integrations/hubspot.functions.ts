@@ -1023,8 +1023,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
               const due = p.hs_timestamp ?? null;
               const parents = engagementToParents.get(a.id) ?? {};
-              const { error } = await supabase.from("activities").insert({
-                owner_id: userId,
+              const activityData = {
                 type: t.type,
                 subject,
                 body,
@@ -1033,11 +1032,30 @@ export const startHubspotImport = createServerFn({ method: "POST" })
                 related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
                 related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
                 related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
-                external_ids: { hubspot: a.id, hs_kind: t.obj } as never,
-              });
-              if (error) stepFail++;
-              else stepOk++;
+              };
+              const existingId = await findExistingId("activities", a.id);
+              if (existingId) {
+                const ext = await mergeExternalIds("activities", existingId, {
+                  hubspot: a.id,
+                  hs_kind: t.obj,
+                });
+                const { error } = await supabase
+                  .from("activities")
+                  .update({ ...activityData, external_ids: ext as never })
+                  .eq("id", existingId);
+                if (error) stepFail++;
+                else stepOk++;
+              } else {
+                const { error } = await supabase.from("activities").insert({
+                  owner_id: userId,
+                  ...activityData,
+                  external_ids: { hubspot: a.id, hs_kind: t.obj } as never,
+                });
+                if (error) stepFail++;
+                else stepOk++;
+              }
               await bumpProgress(step, stepOk, stepFail);
+
             }
           }
         }
