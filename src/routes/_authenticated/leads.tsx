@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import { LEAD_STATUSES } from "@/lib/crm";
@@ -7,7 +8,9 @@ import type { Lead } from "@/lib/db-types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowRightLeft, Settings } from "lucide-react";
+import { ArrowRightLeft, Settings, Sparkles, Users as UsersIcon } from "lucide-react";
+import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
+import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
 
 export const Route = createFileRoute("/_authenticated/leads")({
   component: LeadsPage,
