@@ -185,6 +185,8 @@ function allAssocIds(rec: HSRecWithAssoc, toObj: string): string[] {
   const list = rec.associations?.[toObj]?.results ?? [];
   return list.map((x) => String(x.id ?? x.toObjectId)).filter(Boolean);
 }
+
+// ─────────────────────────── Pipelines (estrutura) ───────────────────────────
 type HSStage = {
   id: string;
   label: string;
