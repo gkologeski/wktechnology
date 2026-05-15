@@ -27,7 +27,8 @@ function CompaniesPage() {
     if (!row.state) update.state = r.uf;
     if (!row.address) update.address = `${r.logradouro}${r.bairro ? `, ${r.bairro}` : ""}`;
     if (Object.keys(update).length === 0) return toast.info("Endereço já preenchido");
-    const { error } = await supabase.from("companies").update(update).eq("id", row.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("companies").update(update).eq("id", row.id);
     if (error) return toast.error(error.message);
     toast.success("Endereço preenchido");
     qc.invalidateQueries({ queryKey: ["companies"] });
