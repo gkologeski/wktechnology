@@ -43,11 +43,13 @@ export const enrichWithLusha = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const table = data.entity === "lead" ? "leads" : "contacts";
 
-    const { data: rows, error } = await supabase
-      .from(table)
-      .select("id, first_name, last_name, email, phone, company_name, job_title")
-      .in("id", data.ids);
+    const cols = data.entity === "lead"
+      ? "id, first_name, last_name, email, phone, company_name"
+      : "id, first_name, last_name, email, phone, job_title";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows, error } = await (supabase as any).from(table).select(cols).in("id", data.ids);
     if (error) throw new Error(error.message);
+    const rowList = (rows ?? []) as Array<Record<string, unknown> & { id: string }>;
 
     const { data: job } = await supabase.from("enrichment_jobs").insert({
       owner_id: userId, provider: "lusha", kind: "enrich",
@@ -57,8 +59,8 @@ export const enrichWithLusha = createServerFn({ method: "POST" })
     }).select("id").single();
 
     let succeeded = 0, failed = 0, credits = 0;
-    for (const row of rows ?? []) {
-      const r = row as Record<string, unknown>;
+    for (const row of rowList) {
+      const r = row;
       try {
         if (!r.email) { failed++; continue; }
         const result = (await lushaPersonByEmail(r.email as string)) as LushaPerson;
@@ -69,16 +71,19 @@ export const enrichWithLusha = createServerFn({ method: "POST" })
         if (!r.phone && c.phoneNumbers?.[0]?.number) update.phone = c.phoneNumbers[0].number;
         if (data.entity === "contact" && !r.job_title && c.jobTitle) update.job_title = c.jobTitle;
         if (data.entity === "lead" && !r.company_name && result.data?.company?.name) update.company_name = result.data.company.name;
-        if (Object.keys(update).length > 0) await supabase.from(table).update(update).eq("id", row.id);
+        if (Object.keys(update).length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any).from(table).update(update).eq("id", row.id);
+        }
         await supabase.from("enrichment_job_items").insert({
-          job_id: job!.id, entity_id: row.id as string, status: "ok",
+          job_id: job!.id, entity_id: row.id, status: "ok",
           before: r as never, after: { ...r, ...update } as never,
         });
         succeeded++;
       } catch (e) {
         failed++;
         await supabase.from("enrichment_job_items").insert({
-          job_id: job!.id, entity_id: (row as { id: string }).id, status: "error",
+          job_id: job!.id, entity_id: row.id, status: "error",
           error: e instanceof Error ? e.message : String(e),
         });
       }

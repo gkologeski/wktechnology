@@ -53,11 +53,13 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const table = data.entity === "lead" ? "leads" : "contacts";
 
-    const { data: rows, error } = await supabase
-      .from(table)
-      .select("id, first_name, last_name, email, phone, company_name, job_title")
-      .in("id", data.ids);
+    const cols = data.entity === "lead"
+      ? "id, first_name, last_name, email, phone, company_name"
+      : "id, first_name, last_name, email, phone, job_title";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows, error } = await (supabase as any).from(table).select(cols).in("id", data.ids);
     if (error) throw new Error(error.message);
+    const rowList = (rows ?? []) as Array<Record<string, unknown> & { id: string }>;
 
     const { data: job } = await supabase.from("enrichment_jobs").insert({
       owner_id: userId,
@@ -71,9 +73,9 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
     }).select("id").single();
 
     let succeeded = 0, failed = 0, credits = 0;
-    for (const row of rows ?? []) {
+    for (const row of rowList) {
       try {
-        const r = row as Record<string, unknown>;
+        const r = row;
         const params: Record<string, unknown> = {};
         if (r.email) params.email = r.email;
         else if (r.first_name && r.company_name) {
@@ -95,17 +97,18 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
         if (data.entity === "contact" && !r.job_title && mapped.job_title) update.job_title = mapped.job_title;
         if (data.entity === "lead" && !r.company_name && mapped.company_name) update.company_name = mapped.company_name;
         if (Object.keys(update).length > 0) {
-          await supabase.from(table).update(update).eq("id", row.id);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any).from(table).update(update).eq("id", row.id);
         }
         await supabase.from("enrichment_job_items").insert({
-          job_id: job!.id, entity_id: row.id as string, status: "ok",
+          job_id: job!.id, entity_id: row.id, status: "ok",
           before: r as never, after: { ...r, ...update } as never,
         });
         succeeded++;
       } catch (e) {
         failed++;
         await supabase.from("enrichment_job_items").insert({
-          job_id: job!.id, entity_id: (row as { id: string }).id, status: "error",
+          job_id: job!.id, entity_id: row.id, status: "error",
           error: e instanceof Error ? e.message : String(e),
         });
       }
