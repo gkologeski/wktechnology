@@ -94,6 +94,8 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          cep: string | null
+          city: string | null
           created_at: string
           domain: string | null
           id: string
@@ -103,11 +105,14 @@ export type Database = {
           owner_id: string
           phone: string | null
           size: string | null
+          state: string | null
           updated_at: string
           website: string | null
         }
         Insert: {
           address?: string | null
+          cep?: string | null
+          city?: string | null
           created_at?: string
           domain?: string | null
           id?: string
@@ -117,11 +122,14 @@ export type Database = {
           owner_id: string
           phone?: string | null
           size?: string | null
+          state?: string | null
           updated_at?: string
           website?: string | null
         }
         Update: {
           address?: string | null
+          cep?: string | null
+          city?: string | null
           created_at?: string
           domain?: string | null
           id?: string
@@ -131,6 +139,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           size?: string | null
+          state?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -182,6 +191,95 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          integration_id: string | null
+          job_id: string | null
+          owner_id: string
+          provider: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          integration_id?: string | null
+          job_id?: string | null
+          owner_id: string
+          provider: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          integration_id?: string | null
+          job_id?: string | null
+          owner_id?: string
+          provider?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "enrichment_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_limits: {
+        Row: {
+          created_at: string
+          id: string
+          integration_id: string | null
+          monthly_limit: number | null
+          owner_id: string
+          per_run_confirm_above: number
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integration_id?: string | null
+          monthly_limit?: number | null
+          owner_id: string
+          per_run_confirm_above?: number
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integration_id?: string | null
+          monthly_limit?: number | null
+          owner_id?: string
+          per_run_confirm_above?: number
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_limits_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
             referencedColumns: ["id"]
           },
         ]
@@ -275,6 +373,157 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      enrichment_job_items: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity_id: string | null
+          error: string | null
+          id: string
+          job_id: string
+          status: string
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          error?: string | null
+          id?: string
+          job_id: string
+          status?: string
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          error?: string | null
+          id?: string
+          job_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrichment_job_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "enrichment_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrichment_jobs: {
+        Row: {
+          created_at: string
+          credits_used: number
+          entity: Database["public"]["Enums"]["job_entity"] | null
+          error: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          integration_id: string | null
+          kind: Database["public"]["Enums"]["job_kind"]
+          owner_id: string
+          processed: number
+          provider: string
+          scope: Json
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          succeeded: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits_used?: number
+          entity?: Database["public"]["Enums"]["job_entity"] | null
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          integration_id?: string | null
+          kind: Database["public"]["Enums"]["job_kind"]
+          owner_id: string
+          processed?: number
+          provider: string
+          scope?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits_used?: number
+          entity?: Database["public"]["Enums"]["job_entity"] | null
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          integration_id?: string | null
+          kind?: Database["public"]["Enums"]["job_kind"]
+          owner_id?: string
+          processed?: number
+          provider?: string
+          scope?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          succeeded?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrichment_jobs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          config: Json
+          created_at: string
+          credentials_secret_ref: string | null
+          id: string
+          last_used_at: string | null
+          oauth_tokens: Json | null
+          owner_id: string
+          provider: string
+          status: Database["public"]["Enums"]["integration_status"]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          credentials_secret_ref?: string | null
+          id?: string
+          last_used_at?: string | null
+          oauth_tokens?: Json | null
+          owner_id: string
+          provider: string
+          status?: Database["public"]["Enums"]["integration_status"]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          credentials_secret_ref?: string | null
+          id?: string
+          last_used_at?: string | null
+          oauth_tokens?: Json | null
+          owner_id?: string
+          provider?: string
+          status?: Database["public"]["Enums"]["integration_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       leads: {
         Row: {
@@ -370,6 +619,10 @@ export type Database = {
         | "negotiation"
         | "won"
         | "lost"
+      integration_status: "connected" | "pending" | "error" | "disconnected"
+      job_entity: "lead" | "contact" | "company" | "deal"
+      job_kind: "import" | "enrich" | "export" | "sync"
+      job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
     }
     CompositeTypes: {
@@ -507,6 +760,10 @@ export const Constants = {
         "won",
         "lost",
       ],
+      integration_status: ["connected", "pending", "error", "disconnected"],
+      job_entity: ["lead", "contact", "company", "deal"],
+      job_kind: ["import", "enrich", "export", "sync"],
+      job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
     },
   },
