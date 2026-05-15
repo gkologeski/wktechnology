@@ -35,14 +35,20 @@ function ImportHubspotPage() {
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const doPreview = async () => {
     setLoadingPreview(true);
+    setError(null);
     try {
       const res = await previewFn({ data: { limit: 10 } });
+      console.log("[hubspot preview]", res);
       setPreview(res.contacts);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao carregar preview");
+      console.error("[hubspot preview] failed", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoadingPreview(false);
     }
