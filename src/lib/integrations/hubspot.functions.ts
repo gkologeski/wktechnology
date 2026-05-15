@@ -457,6 +457,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               contactMap.set(c.id, row.id);
               stepOk++;
             }
+            await bumpProgress(step, stepOk, stepFail, contactToCompany.size);
           }
         } else if (step === "deals") {
           await appendLog({
