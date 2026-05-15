@@ -484,6 +484,55 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     const companyMap = new Map<string, string>();
     const contactMap = new Map<string, string>();
     const dealMap = new Map<string, string>();
+
+    // ── Dedup helpers ────────────────────────────────────────────────────────
+    // Procura registro existente do owner por external_ids->>hubspot e, em
+    // fallback, por chaves naturais. Retorna o id local se encontrado.
+    async function findExistingId(
+      table: "companies" | "contacts" | "deals" | "leads" | "activities",
+      hsId: string,
+      fallback?: { column: string; value: string | null | undefined }[],
+    ): Promise<string | null> {
+      // 1) external_ids->>hubspot
+      const { data: byExt } = await supabase
+        .from(table)
+        .select("id")
+        .eq("owner_id", userId)
+        .eq("external_ids->>hubspot", hsId)
+        .limit(1)
+        .maybeSingle();
+      if (byExt?.id) return byExt.id as string;
+      // 2) chaves naturais
+      for (const f of fallback ?? []) {
+        const v = (f.value ?? "").toString().trim();
+        if (!v) continue;
+        const { data: byNat } = await supabase
+          .from(table)
+          .select("id, external_ids")
+          .eq("owner_id", userId)
+          .ilike(f.column, v)
+          .limit(1)
+          .maybeSingle();
+        if (byNat?.id) return byNat.id as string;
+      }
+      return null;
+    }
+
+    // Faz merge do hubspot id no external_ids preservando dados existentes.
+    async function mergeExternalIds(
+      table: "companies" | "contacts" | "deals" | "leads" | "activities",
+      id: string,
+      patch: Record<string, unknown>,
+    ) {
+      const { data: cur } = await supabase
+        .from(table)
+        .select("external_ids")
+        .eq("id", id)
+        .maybeSingle();
+      const next = { ...(cur?.external_ids as object | null ?? {}), ...patch };
+      return next;
+    }
+
     // Lifecycle by contact for leads step
     const contactLifecycle = new Map<string, string | null | undefined>();
     // Pipelines/estágios espelhados do HubSpot
