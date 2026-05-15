@@ -454,52 +454,18 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return companyIdsPromise;
     };
 
-    async function plannedCount(key: ObjectKey, remote: number): Promise<number> {
-      if (key === "companies") return Math.min(remote, data.maxCompanies);
-      const companyIds = await getCompanyIds();
-      if (companyIds.length === 0) return 0;
-
-      if (key === "contacts") {
-        const set = await unionAssocIds("companies", companyIds, "contacts");
-        return set.size;
-      }
-      if (key === "deals") {
-        const set = await unionAssocIds("companies", companyIds, "deals");
-        return set.size;
-      }
-      if (key === "leads") {
-        const contacts = await unionAssocIds("companies", companyIds, "contacts");
-        if (contacts.size === 0) return 0;
-        const recs = await batchRead("contacts", [...contacts], ["lifecyclestage"]);
-        return recs.filter((r) => (r.properties?.lifecyclestage ?? "") === "lead").length;
-      }
-      // activities: união de notes/calls/meetings/tasks/emails ligados a companies, contatos e deals do escopo.
-      const [contacts, deals] = await Promise.all([
-        unionAssocIds("companies", companyIds, "contacts"),
-        unionAssocIds("companies", companyIds, "deals"),
-      ]);
-      const types = ["notes", "calls", "meetings", "tasks", "emails"] as const;
-      let total = 0;
-      for (const t of types) {
-        const [a, b, c] = await Promise.all([
-          unionAssocIds("companies", companyIds, t),
-          unionAssocIds("contacts", [...contacts], t),
-          unionAssocIds("deals", [...deals], t),
-        ]);
-        const merged = new Set<string>();
-        for (const x of a) merged.add(x);
-        for (const x of b) merged.add(x);
-        for (const x of c) merged.add(x);
-        total += merged.size;
-      }
-      return total;
-    }
+    const deps: CountDeps = {
+      remoteCount,
+      getCompanyIds,
+      unionAssocIds,
+      readContactProps: (ids, props) => batchRead("contacts", ids, props),
+    };
 
     const out: Record<string, { planned: number; remote: number }> = {};
     // Sequencial para reaproveitar getCompanyIds() entre chamadas e evitar rate-limit.
     for (const k of data.objects) {
       const remote = await remoteCount(k);
-      const planned = Math.min(await plannedCount(k, remote), remote);
+      const planned = await computePlannedCapped(k, remote, data.maxCompanies, deps);
       out[k] = { planned, remote };
     }
     return out as Record<ObjectKey, { planned: number; remote: number }>;
