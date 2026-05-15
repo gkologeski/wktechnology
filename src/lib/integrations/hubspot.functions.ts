@@ -470,7 +470,15 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       .parse(input)
   )
   .handler(async ({ data, context }) => {
-    void context;
+    const { supabase } = context;
+
+    async function localCount(key: ObjectKey): Promise<number> {
+      const table = key === "activities" ? "activities" : key;
+      const { count } = await supabase
+        .from(table)
+        .select("*", { count: "exact", head: true });
+      return count ?? 0;
+    }
 
     async function remoteCount(key: ObjectKey): Promise<number> {
       if (key === "companies") return searchTotal("companies");
