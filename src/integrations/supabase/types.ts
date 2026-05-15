@@ -20,6 +20,7 @@ export type Database = {
           completed: boolean
           created_at: string
           due_date: string | null
+          external_ids: Json
           id: string
           outcome: string | null
           outcome_set_at: string | null
@@ -37,6 +38,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           due_date?: string | null
+          external_ids?: Json
           id?: string
           outcome?: string | null
           outcome_set_at?: string | null
@@ -54,6 +56,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           due_date?: string | null
+          external_ids?: Json
           id?: string
           outcome?: string | null
           outcome_set_at?: string | null
@@ -104,6 +107,7 @@ export type Database = {
           city: string | null
           created_at: string
           domain: string | null
+          external_ids: Json
           id: string
           industry: string | null
           is_target_account: boolean
@@ -123,6 +127,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           domain?: string | null
+          external_ids?: Json
           id?: string
           industry?: string | null
           is_target_account?: boolean
@@ -142,6 +147,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           domain?: string | null
+          external_ids?: Json
           id?: string
           industry?: string | null
           is_target_account?: boolean
@@ -201,6 +207,7 @@ export type Database = {
           consent_date: string | null
           created_at: string
           email: string | null
+          external_ids: Json
           first_name: string
           id: string
           job_title: string | null
@@ -219,6 +226,7 @@ export type Database = {
           consent_date?: string | null
           created_at?: string
           email?: string | null
+          external_ids?: Json
           first_name: string
           id?: string
           job_title?: string | null
@@ -237,6 +245,7 @@ export type Database = {
           consent_date?: string | null
           created_at?: string
           email?: string | null
+          external_ids?: Json
           first_name?: string
           id?: string
           job_title?: string | null
@@ -385,6 +394,7 @@ export type Database = {
           created_at: string
           currency: string
           expected_close_date: string | null
+          external_ids: Json
           id: string
           name: string
           notes: string | null
@@ -400,6 +410,7 @@ export type Database = {
           created_at?: string
           currency?: string
           expected_close_date?: string | null
+          external_ids?: Json
           id?: string
           name: string
           notes?: string | null
@@ -415,6 +426,7 @@ export type Database = {
           created_at?: string
           currency?: string
           expected_close_date?: string | null
+          external_ids?: Json
           id?: string
           name?: string
           notes?: string | null
@@ -500,6 +512,7 @@ export type Database = {
           scope: Json
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
+          step_logs: Json
           succeeded: number
           total: number
           updated_at: string
@@ -520,6 +533,7 @@ export type Database = {
           scope?: Json
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          step_logs?: Json
           succeeded?: number
           total?: number
           updated_at?: string
@@ -540,6 +554,7 @@ export type Database = {
           scope?: Json
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          step_logs?: Json
           succeeded?: number
           total?: number
           updated_at?: string
@@ -601,6 +616,7 @@ export type Database = {
           converted_deal_id: string | null
           created_at: string
           email: string | null
+          external_ids: Json
           first_name: string
           id: string
           label: string | null
@@ -621,6 +637,7 @@ export type Database = {
           converted_deal_id?: string | null
           created_at?: string
           email?: string | null
+          external_ids?: Json
           first_name: string
           id?: string
           label?: string | null
@@ -641,6 +658,7 @@ export type Database = {
           converted_deal_id?: string | null
           created_at?: string
           email?: string | null
+          external_ids?: Json
           first_name?: string
           id?: string
           label?: string | null

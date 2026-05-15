@@ -20,6 +20,7 @@ import {
   setCreditLimit,
 } from "@/lib/integrations/core.functions";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
+import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
@@ -173,6 +174,16 @@ function IntegrationDetail() {
                 Roda em todas as empresas com CEP preenchido e cidade vazia.
               </p>
               <Button onClick={runEnrichAllAddresses}>Enriquecer endereços (ViaCEP)</Button>
+            </section>
+          )}
+
+          {isConnected && provider.slug === "hubspot" && (
+            <section className="rounded-lg border bg-card p-5">
+              <h2 className="font-semibold mb-1">Importar do HubSpot</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Importação respeitando árvore de dependências (empresas → contatos → negócios → atividades).
+              </p>
+              <HubspotImportWizard />
             </section>
           )}
 
