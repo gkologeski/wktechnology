@@ -805,9 +805,10 @@ export const startHubspotImport = createServerFn({ method: "POST" })
         if (step === "companies") {
           let after: string | undefined;
           let page = 1;
-          while (stepOk + stepFail < scope.maxCompanies) {
-            const remaining = scope.maxCompanies - (stepOk + stepFail);
-            const limit = Math.min(100, remaining);
+          const companyCap = scope.mode === "full" ? Number.POSITIVE_INFINITY : scope.maxCompanies;
+          while (stepOk + stepFail < companyCap) {
+            const remaining = companyCap - (stepOk + stepFail);
+            const limit = Math.min(100, Number.isFinite(remaining) ? remaining : 100);
             const params: Record<string, string> = {
               limit: String(limit),
               properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
