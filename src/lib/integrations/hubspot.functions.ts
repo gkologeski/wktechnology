@@ -141,6 +141,51 @@ async function batchRead(obj: string, ids: string[], properties: string[]): Prom
   return out;
 }
 
+// Lista TODOS os registros de um objeto, paginando até esgotar.
+// Quando `associations` é informado, cada registro retornado inclui
+// `associations: { <toObj>: { results: [{ id }] } }` (best-effort).
+type HSAssocList = { results?: { id?: string | number; toObjectId?: string | number }[] };
+type HSRecWithAssoc = HSRec & { associations?: Record<string, HSAssocList> };
+async function listAll(
+  obj: string,
+  properties: string[],
+  associations: string[] = [],
+): Promise<HSRecWithAssoc[]> {
+  const out: HSRecWithAssoc[] = [];
+  let after: string | undefined;
+  // safety cap to avoid runaway loops on broken pagination
+  for (let page = 0; page < 2000; page++) {
+    const params: Record<string, string> = {
+      limit: "100",
+      properties: properties.join(","),
+    };
+    if (associations.length) params.associations = associations.join(",");
+    if (after) params.after = after;
+    const r = (await hsFetch(`/crm/v3/objects/${obj}`, params)) as {
+      results: HSRecWithAssoc[];
+      paging?: { next?: { after: string } };
+    };
+    if (r.results?.length) out.push(...r.results);
+    after = r.paging?.next?.after;
+    if (!after) break;
+    await sleep(120);
+  }
+  return out;
+}
+
+function firstAssocId(rec: HSRecWithAssoc, toObj: string): string | null {
+  const list = rec.associations?.[toObj]?.results ?? [];
+  const first = list[0];
+  if (!first) return null;
+  const id = first.id ?? first.toObjectId;
+  return id ? String(id) : null;
+}
+
+function allAssocIds(rec: HSRecWithAssoc, toObj: string): string[] {
+  const list = rec.associations?.[toObj]?.results ?? [];
+  return list.map((x) => String(x.id ?? x.toObjectId)).filter(Boolean);
+}
+
 // ─────────────────────────── Pipelines (estrutura) ───────────────────────────
 type HSStage = {
   id: string;
@@ -419,6 +464,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
     z
       .object({
         objects: z.array(ObjectKey).min(1),
+        mode: z.enum(["linked", "full"]).default("linked"),
         maxCompanies: z.number().min(1).max(2000).default(200),
       })
       .parse(input)
@@ -447,8 +493,18 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       return parts.reduce((a, b) => a + b, 0);
     }
 
-    // Para os filhos, "planned" considera apenas o que está vinculado às
-    // empresas que efetivamente serão importadas (respeitando maxCompanies).
+    const out: Record<string, { planned: number; remote: number }> = {};
+
+    // Modo "full": planned = remote para todos os objetos (sem cap, sem filtro de vínculo).
+    if (data.mode === "full") {
+      for (const k of data.objects) {
+        const remote = await remoteCount(k);
+        out[k] = { planned: remote, remote };
+      }
+      return out as Record<ObjectKey, { planned: number; remote: number }>;
+    }
+
+    // Modo "linked": filhos respeitam vínculo com as empresas dentro de maxCompanies.
     let companyIdsPromise: Promise<string[]> | null = null;
     const getCompanyIds = () => {
       if (!companyIdsPromise) companyIdsPromise = fetchCompanyIdsCount(data.maxCompanies);
@@ -462,8 +518,6 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       readContactProps: (ids, props) => batchRead("contacts", ids, props),
     };
 
-    const out: Record<string, { planned: number; remote: number }> = {};
-    // Sequencial para reaproveitar getCompanyIds() entre chamadas e evitar rate-limit.
     for (const k of data.objects) {
       const remote = await remoteCount(k);
       const planned = await computePlannedCapped(k, remote, data.maxCompanies, deps);
@@ -487,6 +541,7 @@ export const previewHubspotCounts = createServerFn({ method: "POST" })
 // ─────────────────────────── Import orchestrator ──────────────────────────────
 const ScopeSchema = z
   .object({
+    mode: z.enum(["linked", "full"]).default("linked"),
     companies: z.boolean().default(true),
     contacts: z.boolean().default(true),
     deals: z.boolean().default(true),
@@ -750,9 +805,10 @@ export const startHubspotImport = createServerFn({ method: "POST" })
         if (step === "companies") {
           let after: string | undefined;
           let page = 1;
-          while (stepOk + stepFail < scope.maxCompanies) {
-            const remaining = scope.maxCompanies - (stepOk + stepFail);
-            const limit = Math.min(100, remaining);
+          const companyCap = scope.mode === "full" ? Number.POSITIVE_INFINITY : scope.maxCompanies;
+          while (stepOk + stepFail < companyCap) {
+            const remaining = companyCap - (stepOk + stepFail);
+            const limit = Math.min(100, Number.isFinite(remaining) ? remaining : 100);
             const params: Record<string, string> = {
               limit: String(limit),
               properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
@@ -824,11 +880,64 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               }
 
             }
-            await bumpProgress(step, stepOk, stepFail, scope.maxCompanies);
+            await bumpProgress(step, stepOk, stepFail, Number.isFinite(companyCap) ? companyCap : undefined);
             after = res.paging?.next?.after;
             page++;
             if (!after) break;
             await sleep(150);
+          }
+        } else if (step === "contacts" && scope.mode === "full") {
+          // Modo total: lista TODOS os contatos, vínculo com empresa best-effort.
+          await appendLog({ level: "info", step, message: "Listando todos os contatos do HubSpot" });
+          const recs = await listAll(
+            "contacts",
+            ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"],
+            ["companies"],
+          );
+          await bumpProgress(step, 0, 0, recs.length, true);
+          await appendLog({ level: "info", step, message: `Lendo ${recs.length} contatos`, count: recs.length });
+          for (const c of recs) {
+            const p = c.properties;
+            contactLifecycle.set(c.id, p.lifecyclestage);
+            if (!p.firstname && !p.email) {
+              stepFail++;
+              continue;
+            }
+            const hsCo = firstAssocId(c, "companies");
+            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const contactData = {
+              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+              last_name: p.lastname ?? null,
+              email: p.email ?? null,
+              phone: p.phone ?? null,
+              job_title: p.jobtitle ?? null,
+              company_id: localCompanyId,
+            };
+            const existingId = await findExistingId("contacts", c.id, [{ column: "email", value: p.email }]);
+            if (existingId) {
+              const ext = await mergeExternalIds("contacts", existingId, { hubspot: c.id });
+              const { error } = await supabase
+                .from("contacts")
+                .update({ ...contactData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) stepFail++;
+              else {
+                contactMap.set(c.id, existingId);
+                stepOk++;
+              }
+            } else {
+              const { data: row, error } = await supabase
+                .from("contacts")
+                .insert({ owner_id: userId, ...contactData, external_ids: { hubspot: c.id } as never })
+                .select("id")
+                .single();
+              if (error || !row) stepFail++;
+              else {
+                contactMap.set(c.id, row.id);
+                stepOk++;
+              }
+            }
+            await bumpProgress(step, stepOk, stepFail, recs.length);
           }
         } else if (step === "contacts") {
           // Cascata: contatos vinculados às empresas importadas
@@ -919,6 +1028,106 @@ export const startHubspotImport = createServerFn({ method: "POST" })
             }
 
             await bumpProgress(step, stepOk, stepFail, contactToCompany.size);
+          }
+        } else if (step === "deals" && scope.mode === "full") {
+          // Modo total: lista TODOS os deals; vínculo best-effort para company/contacts.
+          await appendLog({ level: "info", step, message: "Listando todos os negócios do HubSpot" });
+          const recs = await listAll(
+            "deals",
+            ["dealname", "amount", "dealstage", "closedate", "pipeline"],
+            ["companies", "contacts"],
+          );
+          await bumpProgress(step, 0, 0, recs.length, true);
+          await appendLog({ level: "info", step, message: `Lendo ${recs.length} negócios`, count: recs.length });
+          for (const d of recs) {
+            const p = d.properties;
+            const hsCo = firstAssocId(d, "companies");
+            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const pipelineEntry = p.pipeline ? dealPipelines.pipelines.get(p.pipeline) : undefined;
+            const stageEntry = p.dealstage ? dealPipelines.stages.get(p.dealstage) : undefined;
+            const localPipelineId = pipelineEntry?.localId ?? stageEntry?.localPipelineId ?? null;
+            const localStageId = stageEntry?.stageId ?? pipelineEntry?.defaultStageId ?? null;
+            const stageEnum = mapDealStageEnum(
+              stageEntry?.label,
+              stageEntry?.probability ?? null,
+              stageEntry
+                ? (stageEntry.probability !== null && stageEntry.probability >= 1) ||
+                  /lost|perdid|won|ganho|closed/i.test(stageEntry.label)
+                : false,
+            );
+            const dealData = {
+              name: p.dealname ?? "Sem nome",
+              value: p.amount ? Number(p.amount) : 0,
+              currency: "BRL",
+              stage: stageEnum as never,
+              stage_id: localStageId,
+              pipeline_id: localPipelineId,
+              company_id: localCompanyId,
+              expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            };
+            let existingId = await findExistingId("deals", d.id);
+            if (!existingId && p.dealname && localCompanyId) {
+              const { data: byNat } = await supabase
+                .from("deals")
+                .select("id")
+                .eq("owner_id", userId)
+                .eq("company_id", localCompanyId)
+                .ilike("name", p.dealname)
+                .limit(1)
+                .maybeSingle();
+              existingId = byNat?.id ?? null;
+            }
+            let localDealId: string | null = null;
+            if (existingId) {
+              const ext = await mergeExternalIds("deals", existingId, {
+                hubspot: d.id,
+                hs_stage: p.dealstage,
+                hs_pipeline: p.pipeline,
+              });
+              const { error } = await supabase
+                .from("deals")
+                .update({ ...dealData, external_ids: ext as never })
+                .eq("id", existingId);
+              if (error) stepFail++;
+              else {
+                localDealId = existingId;
+                dealMap.set(d.id, existingId);
+                stepOk++;
+              }
+            } else {
+              const { data: row, error } = await supabase
+                .from("deals")
+                .insert({
+                  owner_id: userId,
+                  ...dealData,
+                  external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+                })
+                .select("id")
+                .single();
+              if (error || !row) stepFail++;
+              else {
+                localDealId = row.id;
+                dealMap.set(d.id, row.id);
+                stepOk++;
+              }
+            }
+            if (localDealId) {
+              const contactIds = allAssocIds(d, "contacts");
+              for (const cid of contactIds) {
+                const lc = contactMap.get(cid);
+                if (!lc) continue;
+                const { data: existsLink } = await supabase
+                  .from("deal_contacts")
+                  .select("deal_id")
+                  .eq("deal_id", localDealId)
+                  .eq("contact_id", lc)
+                  .maybeSingle();
+                if (!existsLink) {
+                  await supabase.from("deal_contacts").insert({ deal_id: localDealId, contact_id: lc });
+                }
+              }
+            }
+            await bumpProgress(step, stepOk, stepFail, recs.length);
           }
         } else if (step === "deals") {
           await appendLog({
@@ -1122,18 +1331,31 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               string,
               { contactId?: string; companyId?: string; dealId?: string }
             >();
-            for (const ent of entities) {
-              for (const fid of ent.ids) {
-                const ids = await getAssoc(ent.fromObj, fid, t.obj);
-                for (const eid of ids) {
-                  seen.add(eid);
-                  const cur = engagementToParents.get(eid) ?? {};
-                  if (ent.fromObj === "contacts") cur.contactId = fid;
-                  if (ent.fromObj === "companies") cur.companyId = fid;
-                  if (ent.fromObj === "deals") cur.dealId = fid;
-                  engagementToParents.set(eid, cur);
+            if (scope.mode === "full") {
+              // Modo total: lista TODOS os engagements desse tipo, com parents best-effort.
+              const recsAll = await listAll(t.obj, t.props, ["companies", "contacts", "deals"]);
+              for (const a of recsAll) {
+                seen.add(a.id);
+                engagementToParents.set(a.id, {
+                  companyId: firstAssocId(a, "companies") ?? undefined,
+                  contactId: firstAssocId(a, "contacts") ?? undefined,
+                  dealId: firstAssocId(a, "deals") ?? undefined,
+                });
+              }
+            } else {
+              for (const ent of entities) {
+                for (const fid of ent.ids) {
+                  const ids = await getAssoc(ent.fromObj, fid, t.obj);
+                  for (const eid of ids) {
+                    seen.add(eid);
+                    const cur = engagementToParents.get(eid) ?? {};
+                    if (ent.fromObj === "contacts") cur.contactId = fid;
+                    if (ent.fromObj === "companies") cur.companyId = fid;
+                    if (ent.fromObj === "deals") cur.dealId = fid;
+                    engagementToParents.set(eid, cur);
+                  }
+                  await sleep(40);
                 }
-                await sleep(40);
               }
             }
             if (!seen.size) continue;
