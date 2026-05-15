@@ -122,6 +122,18 @@ function ImportHubspotPage() {
           </Button>
         </div>
 
+        {error && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            <strong>Erro:</strong> {error}
+          </div>
+        )}
+
+        {loadingPreview && !preview && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando contatos do HubSpot...
+          </div>
+        )}
+
         {preview && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Pré-visualização ({preview.length})</h3>
