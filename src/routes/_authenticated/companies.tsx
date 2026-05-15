@@ -54,6 +54,7 @@ function CompaniesPage() {
         { key: "industry", label: "Indústria" },
         { key: "city", label: "Cidade", render: (r) => (r.city ? `${r.city}${r.state ? `/${r.state}` : ""}` : "—") },
         { key: "phone", label: "Telefone" },
+        { key: "is_target_account", label: "ABM", render: (r) => r.is_target_account ? `★ ${r.target_account_tier ?? ""}` : "—" },
       ]}
       fields={[
         { name: "name", label: "Nome", required: true },
@@ -66,6 +67,7 @@ function CompaniesPage() {
         { name: "address", label: "Endereço" },
         { name: "city", label: "Cidade" },
         { name: "state", label: "UF" },
+        { name: "target_account_tier", label: "Tier ABM (ex: Tier 1)" },
         { name: "notes", label: "Notas", type: "textarea" },
       ]}
       bulkEditFields={[
@@ -73,6 +75,7 @@ function CompaniesPage() {
         { name: "size", label: "Tamanho" },
         { name: "city", label: "Cidade" },
         { name: "state", label: "UF" },
+        { name: "target_account_tier", label: "Tier ABM" },
       ]}
       bulkActions={(ids) => (
         <Button variant="outline" size="sm" onClick={() => runBulkCep(ids)}>
