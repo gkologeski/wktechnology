@@ -496,6 +496,7 @@ export const previewHubspotCounts = createServerFn({ method: "POST" })
 // ─────────────────────────── Import orchestrator ──────────────────────────────
 const ScopeSchema = z
   .object({
+    mode: z.enum(["linked", "full"]).default("linked"),
     companies: z.boolean().default(true),
     contacts: z.boolean().default(true),
     deals: z.boolean().default(true),
