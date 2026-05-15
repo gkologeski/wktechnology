@@ -69,7 +69,7 @@ const OBJECTS: {
   },
 ];
 
-type Counts = Partial<Record<Obj, { local: number; remote: number }>>;
+type Counts = Partial<Record<Obj, { planned: number; remote: number }>>;
 
 export function HubspotImportWizard() {
   const [scope, setScope] = useState<Record<Obj, boolean>>({
