@@ -785,6 +785,8 @@ export const startHubspotImport = createServerFn({ method: "POST" })
           ]);
           for (const c of recs) {
             const p = c.properties;
+            const hsStatus = p.hs_lead_status ?? "";
+            const stageEntry = hsStatus ? leadPipeline?.stageByValue.get(hsStatus) : undefined;
             const { error } = await supabase.from("leads").insert({
               owner_id: userId,
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
@@ -793,8 +795,10 @@ export const startHubspotImport = createServerFn({ method: "POST" })
               phone: p.phone ?? null,
               company_name: p.company ?? null,
               source: p.hs_analytics_source ?? "hubspot",
-              status: "new",
-              external_ids: { hubspot: c.id } as never,
+              status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
+              stage_id: stageEntry?.stageId ?? hsStatus ?? null,
+              pipeline_id: leadPipeline?.localPipelineId ?? null,
+              external_ids: { hubspot: c.id, hs_lead_status: hsStatus || null } as never,
             });
             if (error) stepFail++;
             else stepOk++;
