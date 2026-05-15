@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computePlannedCapped, type CountDeps } from "./hubspot-count";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
