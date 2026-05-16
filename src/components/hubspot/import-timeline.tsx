@@ -109,6 +109,27 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     };
   }, [jobId]);
 
+  useEffect(() => {
+    if (job?.status !== "queued" && job?.status !== "running") return;
+    let cancelled = false;
+    let timer: number | null = null;
+    const loop = async () => {
+      if (cancelled) return;
+      try {
+        const r = await tickFn({ data: { jobId } });
+        if (r.kind === "no_pending" || r.kind === "no_job") return;
+      } catch {
+        // mantém o polling; pode haver outro worker com o item em execução
+      }
+      if (!cancelled) timer = window.setTimeout(loop, 2500);
+    };
+    loop();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [job?.status, jobId, tickFn]);
+
   const finished = job?.status === "done" || job?.status === "failed";
   const canContinue = job?.status === "failed" && items.some((it) => it.status === "failed" || it.status === "running");
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
