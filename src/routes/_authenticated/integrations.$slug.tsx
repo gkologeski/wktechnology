@@ -273,6 +273,7 @@ function IntegrationDetail() {
               <ul className="space-y-2">
                 {jobsData!.items.slice(0, 10).map((j) => {
                   const isRunning = j.status === "running";
+                  const canInspect = slug === "hubspot" && ["running", "failed", "done"].includes(j.status);
                   const stamp = (j.updated_at ?? j.started_at) as string | null;
                   const idleMs = stamp ? Date.now() - new Date(stamp).getTime() : 0;
                   const idleLabel =
@@ -316,16 +317,18 @@ function IntegrationDetail() {
                         >
                           {j.status}
                         </Badge>
+                        {canInspect && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLiveJobId(j.id)}
+                            title="Abrir detalhes da execução"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> {isRunning ? "Acompanhar" : "Detalhes"}
+                          </Button>
+                        )}
                         {isRunning && (
                           <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLiveJobId(j.id)}
-                              title="Acompanhar em tempo real"
-                            >
-                              <Eye className="h-3.5 w-3.5 mr-1" /> Acompanhar
-                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
