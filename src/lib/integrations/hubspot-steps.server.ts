@@ -85,6 +85,151 @@ async function batchRead(obj: string, ids: string[], properties: string[]): Prom
   return out;
 }
 
+// ─── Property discovery + value parsing helpers ──────────────────────────────
+
+// In-request cache (each tick runs one step in one HTTP request, so this is enough).
+const propertyCache = new Map<string, string[]>();
+
+async function loadHsProperties(objectType: string): Promise<string[]> {
+  const cached = propertyCache.get(objectType);
+  if (cached) return cached;
+  try {
+    const r = (await hsFetch(`/crm/v3/properties/${objectType}`)) as {
+      results?: { name: string; hidden?: boolean; calculated?: boolean }[];
+    };
+    const names = (r.results ?? [])
+      .filter((p) => !p.hidden && !p.calculated)
+      .map((p) => p.name)
+      .filter(Boolean);
+    // Cap to avoid HubSpot payload limits (~600 properties is the documented max).
+    const capped = names.slice(0, 400);
+    propertyCache.set(objectType, capped);
+    return capped;
+  } catch {
+    propertyCache.set(objectType, []);
+    return [];
+  }
+}
+
+function parseHsDate(v: string | null | undefined): string | null {
+  if (!v) return null;
+  // HubSpot returns either ISO 8601 or epoch milliseconds as string.
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return new Date(n).toISOString();
+  }
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function parseHsNum(v: string | null | undefined): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+type HsProps = Record<string, string | null | undefined>;
+
+function mapCompany(p: HsProps) {
+  return {
+    annualrevenue: parseHsNum(p.annualrevenue),
+    lifecyclestage: p.lifecyclestage ?? null,
+    hs_lead_status: p.hs_lead_status ?? null,
+    description: p.description ?? null,
+    country: p.country ?? null,
+    timezone: p.timezone ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+    type: p.type ?? null,
+    linkedin_company_page: p.linkedin_company_page ?? null,
+    twitterhandle: p.twitterhandle ?? null,
+    facebook_company_page: p.facebook_company_page ?? null,
+  };
+}
+
+function mapContact(p: HsProps) {
+  return {
+    mobile_phone: p.mobilephone ?? null,
+    country: p.country ?? null,
+    address: p.address ?? null,
+    cep: p.zip ?? null,
+    city: p.city ?? null,
+    state: p.state ?? null,
+    website: p.website ?? null,
+    company_name: p.company ?? null,
+    lifecyclestage: p.lifecyclestage ?? null,
+    hs_lead_status: p.hs_lead_status ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
+    linkedin_url: p.linkedin_url ?? p.linkedinbio ?? null,
+    twitter_handle: p.twitterhandle ?? null,
+  };
+}
+
+function mapDeal(p: HsProps) {
+  return {
+    description: p.description ?? null,
+    dealtype: p.dealtype ?? null,
+    hs_priority: p.hs_priority ?? null,
+    hs_deal_stage_probability: parseHsNum(p.hs_deal_stage_probability),
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
+    closed_lost_reason: p.closed_lost_reason ?? null,
+    closed_won_reason: p.closed_won_reason ?? null,
+    num_associated_contacts: parseHsNum(p.num_associated_contacts) !== null
+      ? Math.trunc(parseHsNum(p.num_associated_contacts) as number)
+      : null,
+  };
+}
+
+function mapLead(p: HsProps) {
+  return {
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
+    hs_lead_source_detail: p.hs_analytics_source_data_1 ?? p.hs_analytics_source ?? null,
+  };
+}
+
+function mapActivity(kind: string, p: HsProps) {
+  const ms =
+    parseHsNum(p.hs_call_duration) ??
+    parseHsNum(p.hs_meeting_duration) ??
+    null;
+  return {
+    duration_ms: ms !== null ? Math.trunc(ms) : null,
+    disposition: p.hs_call_disposition ?? null,
+    recording_url: p.hs_call_recording_url ?? null,
+    meeting_outcome: p.hs_meeting_outcome ?? null,
+    meeting_location: p.hs_meeting_location ?? null,
+    task_status: p.hs_task_status ?? null,
+    task_priority: p.hs_task_priority ?? null,
+    email_direction: p.hs_email_direction ?? null,
+    email_status: p.hs_email_status ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? p.hubspot_owner_id_owner ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.hs_createdate ?? p.createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+  };
+}
+
+function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updatedAt?: string }) {
+  return {
+    id: rec.id,
+    properties: rec.properties,
+    createdAt: rec.createdAt ?? null,
+    updatedAt: rec.updatedAt ?? null,
+  } as never;
+}
+
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
