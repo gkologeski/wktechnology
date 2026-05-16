@@ -366,6 +366,7 @@ function makeProgressBumper(supabase: SupabaseClient, itemId: string, jobId: str
       patchItemBefore(supabase, itemId, {
         running_succeeded: succeeded,
         running_failed: failed,
+        last_heartbeat_at: new Date().toISOString(),
         ...(discovered !== undefined ? { discovered } : {}),
       }),
       supabase
