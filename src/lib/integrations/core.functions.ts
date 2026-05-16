@@ -167,6 +167,15 @@ export const sweepZombieJobs = createServerFn({ method: "POST" })
         finished_at: new Date().toISOString(),
       })
       .in("id", ids);
+    // Também finaliza items "running" órfãos para refletir no timeline.
+    await supabase
+      .from("enrichment_job_items")
+      .update({
+        status: "failed",
+        after: { error: `Interrompido por timeout (>${ZOMBIE_IDLE_SECONDS}s sem progresso).` } as never,
+      })
+      .in("job_id", ids)
+      .eq("status", "running");
     return { swept: ids.length };
   });
 
