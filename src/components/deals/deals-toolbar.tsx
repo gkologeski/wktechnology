@@ -1,0 +1,143 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, X, Settings2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import type { Pipeline } from "@/lib/pipelines";
+
+export type DealFilters = {
+  ownerId: string; // "" = all
+  period: "all" | "overdue" | "this_week" | "this_month" | "this_quarter" | "no_date";
+  minValue: string;
+  search: string;
+};
+
+export const PERIOD_LABELS: Record<DealFilters["period"], string> = {
+  all: "Qualquer data",
+  overdue: "Atrasados",
+  this_week: "Esta semana",
+  this_month: "Este mês",
+  this_quarter: "Este trimestre",
+  no_date: "Sem data",
+};
+
+export function DealsToolbar({
+  pipelines,
+  selectedPipelineId,
+  onSelectPipeline,
+  owners,
+  filters,
+  setFilters,
+}: {
+  pipelines: Pipeline[];
+  selectedPipelineId: string | null;
+  onSelectPipeline: (id: string) => void;
+  owners: { id: string; name: string }[];
+  filters: DealFilters;
+  setFilters: (f: DealFilters) => void;
+}) {
+  const setF = <K extends keyof DealFilters>(k: K, v: DealFilters[K]) =>
+    setFilters({ ...filters, [k]: v });
+
+  const chips: { key: keyof DealFilters; label: string; clear: () => void }[] = [];
+  if (filters.ownerId) {
+    const o = owners.find((x) => x.id === filters.ownerId);
+    chips.push({ key: "ownerId", label: `Owner: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
+  }
+  if (filters.period !== "all") {
+    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "all") });
+  }
+  if (filters.minValue) {
+    chips.push({ key: "minValue", label: `≥ ${filters.minValue}`, clear: () => setF("minValue", "") });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={selectedPipelineId ?? ""} onValueChange={onSelectPipeline}>
+          <SelectTrigger className="h-9 w-[220px] font-medium">
+            <SelectValue placeholder="Selecione pipeline" />
+          </SelectTrigger>
+          <SelectContent>
+            {pipelines.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+                {p.is_default && " · padrão"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button asChild variant="ghost" size="sm" className="h-9 px-2">
+          <Link to="/settings/pipelines">
+            <Settings2 className="h-4 w-4" />
+          </Link>
+        </Button>
+
+        <div className="flex-1" />
+
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={filters.search}
+            onChange={(e) => setF("search", e.target.value)}
+            placeholder="Buscar negócios…"
+            className="pl-8 h-9 w-[240px]"
+          />
+        </div>
+
+        <Select value={filters.ownerId || "all"} onValueChange={(v) => setF("ownerId", v === "all" ? "" : v)}>
+          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Owner" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos owners</SelectItem>
+            {owners.map((o) => (
+              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.period} onValueChange={(v) => setF("period", v as DealFilters["period"])}>
+          <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as DealFilters["period"][]).map((k) => (
+              <SelectItem key={k} value={k}>{PERIOD_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Input
+          value={filters.minValue}
+          onChange={(e) => setF("minValue", e.target.value.replace(/[^0-9.]/g, ""))}
+          placeholder="Valor mínimo"
+          className="h-9 w-[140px]"
+        />
+      </div>
+
+      {chips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {chips.map((c) => (
+            <Badge
+              key={c.key}
+              variant="secondary"
+              className="gap-1 pl-2 pr-1 py-0.5 text-xs"
+            >
+              {c.label}
+              <button onClick={c.clear} className="rounded hover:bg-muted-foreground/20 p-0.5">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => setFilters({ ownerId: "", period: "all", minValue: "", search: filters.search })}
+          >
+            Limpar
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
