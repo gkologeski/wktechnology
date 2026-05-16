@@ -651,6 +651,60 @@ export const tickHubspotImportJob = createServerFn({ method: "POST" })
     return result;
   });
 
+export const resumeHubspotImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: job, error: jobErr } = await supabase
+      .from("enrichment_jobs")
+      .select("id, status")
+      .eq("id", data.jobId)
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (jobErr) throw new Error(jobErr.message);
+    if (!job) throw new Error("Importação não encontrada");
+
+    const { data: items, error: itemsErr } = await supabase
+      .from("enrichment_job_items")
+      .select("id, status, before, after")
+      .eq("job_id", data.jobId);
+    if (itemsErr) throw new Error(itemsErr.message);
+
+    let resumedItems = 0;
+    for (const item of items ?? []) {
+      if (item.status !== "failed" && item.status !== "running") continue;
+      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const mergedBefore = {
+        ...before,
+        running_succeeded: before.running_succeeded ?? after.succeeded ?? 0,
+        running_failed: before.running_failed ?? after.failed ?? 0,
+        imported_hs_ids: before.imported_hs_ids ?? after.imported_hs_ids ?? [],
+      };
+      const { error } = await supabase
+        .from("enrichment_job_items")
+        .update({ status: "pending", before: mergedBefore as never, after: null, error: null })
+        .eq("id", item.id);
+      if (error) throw new Error(error.message);
+      resumedItems++;
+    }
+
+    if (resumedItems === 0) throw new Error("Não há etapas para continuar nesta importação");
+    const doneCount = (items ?? []).filter((it) => it.status === "done").length;
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: "queued",
+        processed: doneCount,
+        error: null,
+        finished_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.jobId);
+    return { ok: true, resumedItems };
+  });
+
 // Stub do antigo handler — mantido apenas para satisfazer referências; o
 // código abaixo está inativo agora que a execução é tick-based.
 const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
