@@ -433,10 +433,11 @@ async function upsertByHsId(
     .maybeSingle();
 
   if (existing) {
-    const localId = (existing as { id: string }).id;
+    const ex = existing as unknown as Record<string, unknown>;
+    const localId = ex.id as string;
     const diff: Record<string, unknown> = {};
     for (const k of compareKeys) {
-      const cur = (existing as Record<string, unknown>)[k];
+      const cur = ex[k];
       const nxt = payload[k];
       if (JSON.stringify(cur ?? null) !== JSON.stringify(nxt ?? null)) diff[k] = nxt;
     }
