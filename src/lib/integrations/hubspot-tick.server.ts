@@ -127,25 +127,59 @@ export async function tickOnce(
   if (await repairPrematureDependents(supabase, job.id, allItems)) {
     return { kind: "busy", jobId: job.id };
   }
+
+  // 2a) Zombie reaper: itens em 'running' sem heartbeat recente (>90s) viram
+  // pausados, permitindo que outro tick os reclame.
+  const ZOMBIE_MS = 90_000;
+  const now = Date.now();
+  for (const it of allItems) {
+    if (it.status !== "running") continue;
+    const before = (it.before as { last_heartbeat_at?: string; started_at?: string; paused?: boolean } | null) ?? {};
+    if (before.paused) continue;
+    const beat = before.last_heartbeat_at ?? before.started_at;
+    const age = beat ? now - new Date(beat).getTime() : Infinity;
+    if (age > ZOMBIE_MS) {
+      await supabase
+        .from("enrichment_job_items")
+        .update({ before: { ...before, paused: true } as never })
+        .eq("id", it.id);
+      await appendLog(supabase, job.id, {
+        level: "warn",
+        step: (before as { step?: string }).step ?? "scheduler",
+        message: `Item travado há ${Math.round(age / 1000)}s → reagendado para próximo tick`,
+      });
+      // Reflete a mudança em memória para o resto deste tick
+      it.before = { ...before, paused: true } as never;
+    }
+  }
+
   const doneSteps = new Set(
     allItems
       .filter((it) => it.status === "done")
       .map((it) => ((it.before as { step?: string } | null)?.step ?? ""))
       .filter(Boolean),
   );
-  const sortedPending = allItems
-    .filter((it) => it.status === "pending")
+  // Pendente = status pending OU running+paused (resumível)
+  const claimable = allItems
+    .filter((it) => {
+      if (it.status === "pending") return true;
+      if (it.status === "running" && (it.before as { paused?: boolean } | null)?.paused) return true;
+      return false;
+    })
     .sort(
       (a, b) =>
         (((a.before as { order?: number } | null)?.order ?? 0) -
           ((b.before as { order?: number } | null)?.order ?? 0)),
     );
-  const pending = sortedPending.find((it) => {
+  const pending = claimable.find((it) => {
     const deps = ((it.before as { depends_on?: string[] } | null)?.depends_on ?? []) as string[];
     return deps.every((d) => doneSteps.has(d));
   });
-  const blockedPending = sortedPending.length > 0 && !pending;
-  const running = allItems.find((it) => it.status === "running");
+  const blockedPending = claimable.length > 0 && !pending;
+  // Considera 'running ativo' apenas itens não-pausados
+  const running = allItems.find(
+    (it) => it.status === "running" && !(it.before as { paused?: boolean } | null)?.paused,
+  );
   const anyUnfinished = pending || running || blockedPending;
 
   // Sem nada pra fazer → finalizar job
@@ -179,7 +213,7 @@ export async function tickOnce(
     return { kind: "no_pending", jobId: job.id, finished: true };
   }
 
-  // Se há item já 'running', outro worker está nele → sair
+  // Se há item já 'running' ativo (não pausado), outro worker está nele → sair
   if (running) {
     return { kind: "busy", jobId: job.id };
   }
@@ -189,12 +223,14 @@ export async function tickOnce(
     return { kind: "busy", jobId: job.id };
   }
 
-  // Claim atômico
+  // Claim atômico: aceita pending OU paused. Atualiza status e limpa paused.
+  const prevBefore = (pending.before as Record<string, unknown> | null) ?? {};
+  const claimedBefore = { ...prevBefore, paused: false, last_heartbeat_at: new Date().toISOString() };
   const { data: claimed, error: claimErr } = await supabase
     .from("enrichment_job_items")
-    .update({ status: "running" })
+    .update({ status: "running", before: claimedBefore as never })
     .eq("id", pending.id)
-    .eq("status", "pending")
+    .in("status", ["pending", "running"])
     .select("id")
     .maybeSingle();
   if (claimErr || !claimed) {
@@ -234,26 +270,34 @@ export async function tickOnce(
     // runStep already updated item status to done/pending/failed and
     // wrote after/before. Do NOT overwrite here.
 
-    // Atualizar contadores do job
+    // Atualizar contadores do job — soma os finalizados + os em execução
+    // para que a UI veja progresso real, não só steps completos.
     const { data: refreshed } = await supabase
       .from("enrichment_job_items")
-      .select("status, after")
+      .select("status, before, after")
       .eq("job_id", job.id);
     const doneCount = (refreshed ?? []).filter((it) => it.status === "done" || it.status === "failed").length;
-    const totalSucc = (refreshed ?? []).reduce(
-      (s, it) => s + ((it.after as { succeeded?: number } | null)?.succeeded ?? 0),
-      0,
-    );
-    const totalFail = (refreshed ?? []).reduce(
-      (s, it) => s + ((it.after as { failed?: number } | null)?.failed ?? 0),
-      0,
-    );
+    const sumSucc = (refreshed ?? []).reduce((s, it) => {
+      const done = (it.after as { succeeded?: number } | null)?.succeeded ?? 0;
+      const running = (it.before as { running_succeeded?: number } | null)?.running_succeeded ?? 0;
+      return s + (it.status === "done" || it.status === "failed" ? done : running);
+    }, 0);
+    const sumFail = (refreshed ?? []).reduce((s, it) => {
+      const done = (it.after as { failed?: number } | null)?.failed ?? 0;
+      const running = (it.before as { running_failed?: number } | null)?.running_failed ?? 0;
+      return s + (it.status === "done" || it.status === "failed" ? done : running);
+    }, 0);
     await supabase
       .from("enrichment_jobs")
-      .update({ processed: doneCount, succeeded: totalSucc, failed: totalFail })
+      .update({ processed: doneCount, succeeded: sumSucc, failed: sumFail })
       .eq("id", job.id);
 
-    const stillPending = (refreshed ?? []).some((it) => it.status === "pending" || it.status === "running");
+    const stillPending = (refreshed ?? []).some(
+      (it) =>
+        it.status === "pending" ||
+        (it.status === "running" && !((it.before as { paused?: boolean } | null)?.paused === false ? false : true)) ||
+        (it.status === "running"),
+    );
     if (!stillPending) {
       const anyFailed = (refreshed ?? []).some((it) => it.status === "failed");
       await supabase
@@ -263,7 +307,7 @@ export async function tickOnce(
       await appendLog(supabase, job.id, {
         level: "info",
         step: "done",
-        message: `Importação finalizada: ${totalSucc} ok / ${totalFail} falhas`,
+        message: `Importação finalizada: ${sumSucc} ok / ${sumFail} falhas`,
       });
     }
 
