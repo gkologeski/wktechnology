@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Play } from "lucide-react";
+import { toast } from "sonner";
+import { resumeHubspotImport, tickHubspotImportJob } from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
@@ -55,6 +58,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const [items, setItems] = useState<Item[]>([]);
   const [continuing, setContinuing] = useState(false);
   const [, setTick] = useState(0);
+  const resumeFn = useServerFn(resumeHubspotImport);
+  const tickFn = useServerFn(tickHubspotImportJob);
 
   useEffect(() => {
     let active = true;
@@ -125,6 +130,20 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       return { step: s, status, succeeded, failed, target, discovered };
     });
   }, [items, job?.scope]);
+
+  async function handleContinue() {
+    setContinuing(true);
+    try {
+      await resumeFn({ data: { jobId } });
+      setJob((prev) => (prev ? { ...prev, status: "queued", error: null, finished_at: null } : prev));
+      void tickFn({ data: { jobId } });
+      toast.success("Importação retomada do último ponto salvo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao continuar importação");
+    } finally {
+      setContinuing(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
