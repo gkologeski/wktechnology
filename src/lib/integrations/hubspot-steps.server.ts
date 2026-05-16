@@ -515,6 +515,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     running_failed: resume.running_failed ?? 0,
     discovered: resume.discovered,
     imported_hs_ids: resume.imported_hs_ids ?? [],
+    last_heartbeat_at: new Date().toISOString(),
+    paused: false,
   };
   await supabase
     .from("enrichment_job_items")
