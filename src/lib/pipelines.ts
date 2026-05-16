@@ -83,10 +83,13 @@ export function usePipelines(entity: "deal" | "lead" = "deal") {
 
   const pipelines = q.data ?? [];
 
-  const [selectedId, setSelectedIdState] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(LS_KEY(entity));
-  });
+  const [selectedId, setSelectedIdState] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem(LS_KEY(entity));
+    if (stored) setSelectedIdState(stored);
+  }, [entity]);
 
   useEffect(() => {
     if (pipelines.length === 0) return;
