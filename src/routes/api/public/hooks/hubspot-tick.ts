@@ -10,14 +10,9 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
     handlers: {
       POST: async () => {
         try {
-          // Executa até 5 ticks em sequência (limite seguro contra timeout do Worker).
-          const results = [];
-          for (let i = 0; i < 5; i++) {
-            const r = await tickOnce(supabaseAdmin);
-            results.push(r);
-            if (r.kind === "no_job") break;
-            if (r.kind === "no_pending") break;
-          }
+          // Executa somente 1 tick por chamada. Cada tick já tem checkpoint,
+          // então encadear vários aqui pode estourar o limite do servidor.
+          const results = [await tickOnce(supabaseAdmin)];
           return Response.json({ ok: true, results });
         } catch (e) {
           console.error("[hubspot-tick] error", e);
