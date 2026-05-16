@@ -492,14 +492,11 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         message: `Lendo ${contactToCompany.size} contatos`,
         count: contactToCompany.size,
       });
-      const recs = await batchRead("contacts", [...contactToCompany.keys()], [
-        "firstname",
-        "lastname",
-        "email",
-        "phone",
-        "jobtitle",
-        "lifecyclestage",
-      ]);
+      const contactProps = await loadHsProperties("contacts");
+      const propsList = contactProps.length
+        ? contactProps
+        : ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"];
+      const recs = await batchRead("contacts", [...contactToCompany.keys()], propsList);
       for (const c of recs) {
         const p = c.properties;
         if (!p.firstname && !p.email) {
@@ -507,6 +504,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           continue;
         }
         const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
+        const mapped = mapContact(p);
         const { data: row, error } = await supabase
           .from("contacts")
           .insert({
@@ -517,10 +515,12 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             phone: p.phone ?? null,
             job_title: p.jobtitle ?? null,
             company_id: localCompanyId,
+            ...mapped,
             external_ids: {
               hubspot: c.id,
               hs_lifecyclestage: p.lifecyclestage ?? null,
             } as never,
+            hs_raw: rawOf(c),
           })
           .select("id")
           .single();
