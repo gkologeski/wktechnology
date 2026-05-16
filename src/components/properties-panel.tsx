@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { History, Pencil } from "lucide-react";
+import { History, Pencil, Database } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 
@@ -23,6 +23,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [value, setValue] = useState<string>("");
   const [showAll, setShowAll] = useState(false);
   const [showHist, setShowHist] = useState(false);
+  const [showHs, setShowHs] = useState(false);
+
+  const hsRaw = (row as Record<string, unknown>).hs_raw as { properties?: Record<string, unknown> } | null | undefined;
+  const hsProps = hsRaw?.properties ?? null;
+  const knownKeys = new Set(props.map((p) => p.key));
+  const extraHsEntries = hsProps
+    ? Object.entries(hsProps).filter(([k, v]) => !knownKeys.has(k) && v !== null && v !== "" && v !== undefined)
+    : [];
 
   const primary = props.filter((p) => p.primary);
   const display = primary.length ? primary : props.slice(0, 8);
@@ -90,6 +98,35 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           </div>
         </DialogContent>
       </Dialog>
+
+      {hsProps && (
+        <Dialog open={showHs} onOpenChange={setShowHs}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full">
+              <Database className="h-3.5 w-3.5 mr-1" />
+              Mais campos (HubSpot) {extraHsEntries.length ? `· ${extraHsEntries.length}` : ""}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Campos do HubSpot</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground">
+              Somente leitura. Dados originais recebidos do HubSpot na última importação.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              {Object.entries(hsProps).map(([k, v]) => (
+                <div key={k} className="space-y-0.5 min-w-0">
+                  <Label className="text-xs text-muted-foreground break-all">{k}</Label>
+                  <div className="text-sm break-words border rounded px-2 py-1 bg-muted/40">
+                    {v === null || v === "" || v === undefined ? "—" : String(v)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <PropertyHistoryDrawer open={showHist} onOpenChange={setShowHist} entity={entity} entityId={row.id} />
     </div>
