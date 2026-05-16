@@ -320,6 +320,16 @@ export type StepCtx = {
   step: StepName;
   itemId: string;
   scope: Scope;
+  /** Absolute epoch ms after which the step must checkpoint and return partial=true */
+  deadlineAt?: number;
+};
+
+export type StepResult = {
+  succeeded: number;
+  failed: number;
+  importedHsIds: string[];
+  /** true means the step persisted a cursor and is waiting to be re-queued */
+  partial?: boolean;
 };
 
 async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
@@ -399,34 +409,143 @@ async function loadMapForStep(
   return map;
 }
 
-// ─────────────────────────── Step implementations ────────────────────────────
+// ─────────────────────── Dedup + resume helpers ──────────────────────────────
 
-export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed: number; importedHsIds: string[] }> {
+type UpsertResult = { status: "inserted" | "updated" | "unchanged" | "failed"; localId?: string; error?: string };
+
+/** Compare existing row vs incoming payload by HS id; insert/update/skip. */
+async function upsertByHsId(
+  supabase: SupabaseClient,
+  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  ownerId: string,
+  hsId: string,
+  payload: Record<string, unknown>,
+): Promise<UpsertResult> {
+  const compareKeys = Object.keys(payload).filter(
+    (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
+  );
+  const selectCols = ["id", ...compareKeys].join(",");
+  const { data: existing } = await supabase
+    .from(table)
+    .select(selectCols)
+    .eq("owner_id", ownerId)
+    .eq("external_ids->>hubspot", hsId)
+    .maybeSingle();
+
+  if (existing) {
+    const ex = existing as unknown as Record<string, unknown>;
+    const localId = ex.id as string;
+    const diff: Record<string, unknown> = {};
+    for (const k of compareKeys) {
+      const cur = ex[k];
+      const nxt = payload[k];
+      if (JSON.stringify(cur ?? null) !== JSON.stringify(nxt ?? null)) diff[k] = nxt;
+    }
+    if (Object.keys(diff).length === 0) return { status: "unchanged", localId };
+    const { error } = await supabase.from(table).update(diff as never).eq("id", localId);
+    if (error) return { status: "failed", error: error.message };
+    return { status: "updated", localId };
+  }
+
+  const { data: row, error } = await supabase
+    .from(table)
+    .insert(payload as never)
+    .select("id")
+    .single();
+  if (error || !row) return { status: "failed", error: error?.message ?? "insert failed" };
+  return { status: "inserted", localId: (row as { id: string }).id };
+}
+
+type ResumeState = {
+  started_at?: string;
+  cursor?: string;
+  read_index?: number;
+  running_succeeded?: number;
+  running_failed?: number;
+  discovered?: number;
+  imported_hs_ids?: string[];
+  step?: string;
+  order?: number;
+  depends_on?: string[];
+  [k: string]: unknown;
+};
+
+async function loadResume(supabase: SupabaseClient, itemId: string): Promise<ResumeState> {
+  const { data } = await supabase
+    .from("enrichment_job_items")
+    .select("before")
+    .eq("id", itemId)
+    .single();
+  return ((data?.before as ResumeState | null) ?? {}) as ResumeState;
+}
+
+
+const DEFAULT_BUDGET_MS = 22_000;
+
+export async function runStep(ctx: StepCtx): Promise<StepResult> {
   const { supabase, userId, jobId, step, itemId, scope } = ctx;
+  const deadlineAt = ctx.deadlineAt ?? Date.now() + DEFAULT_BUDGET_MS;
+  const isExpired = () => Date.now() >= deadlineAt;
+
+  const resume = await loadResume(supabase, itemId);
+  const isResume = Boolean(resume.cursor || resume.read_index || resume.imported_hs_ids?.length);
+
+  // Initialize / preserve before
+  const baseBefore: Record<string, unknown> = {
+    step,
+    order: STEP_ORDER.indexOf(step),
+    depends_on: STEP_DEPS[step],
+    started_at: resume.started_at ?? new Date().toISOString(),
+    cursor: resume.cursor,
+    read_index: resume.read_index ?? 0,
+    running_succeeded: resume.running_succeeded ?? 0,
+    running_failed: resume.running_failed ?? 0,
+    discovered: resume.discovered,
+    imported_hs_ids: resume.imported_hs_ids ?? [],
+  };
   await supabase
     .from("enrichment_job_items")
-    .update({ status: "running", before: { step, order: STEP_ORDER.indexOf(step), depends_on: STEP_DEPS[step], started_at: new Date().toISOString() } as never })
+    .update({ status: "running", before: baseBefore as never })
     .eq("id", itemId);
-  await appendLog(supabase, jobId, { level: "info", step, message: `Iniciando etapa ${step}` });
+  await appendLog(supabase, jobId, {
+    level: "info",
+    step,
+    message: isResume ? `Retomando etapa ${step} (cursor=${resume.cursor ?? "—"}, idx=${resume.read_index ?? 0})` : `Iniciando etapa ${step}`,
+  });
   const bump = makeProgressBumper(supabase, itemId, jobId);
 
-  let ok = 0;
-  let fail = 0;
-  const imported: string[] = [];
+  let ok = (resume.running_succeeded as number) ?? 0;
+  let fail = (resume.running_failed as number) ?? 0;
+  const imported: string[] = [...(resume.imported_hs_ids ?? [])];
+  let partial = false;
+
+  // Persist progress + cursor (used on each pause / page boundary)
+  const persistCursor = async (extra: Record<string, unknown>) => {
+    await patchItemBefore(supabase, itemId, {
+      running_succeeded: ok,
+      running_failed: fail,
+      imported_hs_ids: imported,
+      ...extra,
+    });
+  };
 
   try {
     if (step === "companies") {
       const allProps = await loadHsProperties("companies");
-      const propsParam = allProps.length ? allProps.join(",") : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
-      let after: string | undefined;
+      const propsParam = allProps.length
+        ? allProps.join(",")
+        : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
+      let after: string | undefined = resume.cursor;
       let page = 1;
       while (ok + fail < scope.maxCompanies) {
+        if (isExpired()) {
+          partial = true;
+          await persistCursor({ cursor: after });
+          break;
+        }
         const remaining = scope.maxCompanies - (ok + fail);
         const limit = Math.min(100, remaining);
-        const params: Record<string, string> = {
-          limit: String(limit),
-          properties: propsParam,
-        };
+        const params: Record<string, string> = { limit: String(limit), properties: propsParam };
         if (after) params.after = after;
         const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
           results: (HSRec & { createdAt?: string; updatedAt?: string })[];
@@ -446,36 +565,34 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             continue;
           }
           const mapped = mapCompany(p);
-          const { data: row, error } = await supabase
-            .from("companies")
-            .insert({
-              owner_id: userId,
-              name: p.name,
-              domain: p.domain ?? null,
-              industry: p.industry ?? null,
-              size: p.numberofemployees ?? null,
-              phone: p.phone ?? null,
-              city: p.city ?? null,
-              state: p.state ?? null,
-              cep: p.zip ?? null,
-              address: p.address ?? null,
-              website: p.website ?? null,
-              ...mapped,
-              external_ids: { hubspot: c.id } as never,
-              hs_raw: rawOf(c),
-            })
-            .select("id")
-            .single();
-          if (error || !row) {
+          const payload = {
+            owner_id: userId,
+            name: p.name,
+            domain: p.domain ?? null,
+            industry: p.industry ?? null,
+            size: p.numberofemployees ?? null,
+            phone: p.phone ?? null,
+            city: p.city ?? null,
+            state: p.state ?? null,
+            cep: p.zip ?? null,
+            address: p.address ?? null,
+            website: p.website ?? null,
+            ...mapped,
+            external_ids: { hubspot: c.id } as never,
+            hs_raw: rawOf(c),
+          };
+          const r = await upsertByHsId(supabase, "companies", userId, c.id, payload);
+          if (r.status === "failed") {
             fail++;
-            await appendLog(supabase, jobId, { level: "warn", step, message: `Falha empresa ${p.name}: ${error?.message}` });
+            await appendLog(supabase, jobId, { level: "warn", step, message: `Falha empresa ${p.name}: ${r.error}` });
           } else {
             imported.push(c.id);
             ok++;
           }
         }
-        await bump(ok, fail, scope.maxCompanies);
         after = res.paging?.next?.after;
+        await persistCursor({ cursor: after });
+        await bump(ok, fail, scope.maxCompanies);
         page++;
         if (!after) break;
       }
@@ -493,18 +610,25 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         for (const id of list) if (!contactToCompany.has(id)) contactToCompany.set(id, hsCo);
       }
       await bump(0, 0, contactToCompany.size, true);
-      await appendLog(supabase, jobId, {
-        level: "info",
-        step,
-        message: `Lendo ${contactToCompany.size} contatos`,
-        count: contactToCompany.size,
-      });
       const contactProps = await loadHsProperties("contacts");
       const propsList = contactProps.length
         ? contactProps
         : ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"];
       const recs = await batchRead("contacts", [...contactToCompany.keys()], propsList);
-      for (const c of recs) {
+      let idx = (resume.read_index as number) ?? 0;
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Lendo ${recs.length} contatos (a partir de ${idx})`,
+        count: recs.length,
+      });
+      for (; idx < recs.length; idx++) {
+        if (isExpired()) {
+          partial = true;
+          await persistCursor({ read_index: idx });
+          break;
+        }
+        const c = recs[idx];
         const p = c.properties;
         if (!p.firstname && !p.email) {
           fail++;
@@ -512,33 +636,30 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         }
         const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
         const mapped = mapContact(p);
-        const { data: row, error } = await supabase
-          .from("contacts")
-          .insert({
-            owner_id: userId,
-            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-            last_name: p.lastname ?? null,
-            email: p.email ?? null,
-            phone: p.phone ?? null,
-            job_title: p.jobtitle ?? null,
-            company_id: localCompanyId,
-            ...mapped,
-            external_ids: {
-              hubspot: c.id,
-              hs_lifecyclestage: p.lifecyclestage ?? null,
-            } as never,
-            hs_raw: rawOf(c),
-          })
-          .select("id")
-          .single();
-        if (error || !row) {
-          fail++;
-        } else {
+        const payload = {
+          owner_id: userId,
+          first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+          last_name: p.lastname ?? null,
+          email: p.email ?? null,
+          phone: p.phone ?? null,
+          job_title: p.jobtitle ?? null,
+          company_id: localCompanyId,
+          ...mapped,
+          external_ids: { hubspot: c.id, hs_lifecyclestage: p.lifecyclestage ?? null } as never,
+          hs_raw: rawOf(c),
+        };
+        const r = await upsertByHsId(supabase, "contacts", userId, c.id, payload);
+        if (r.status === "failed") fail++;
+        else {
           imported.push(c.id);
           ok++;
         }
-        await bump(ok, fail, contactToCompany.size);
+        if ((idx + 1) % 25 === 0) {
+          await persistCursor({ read_index: idx + 1 });
+          await bump(ok, fail, recs.length);
+        }
       }
+      if (!partial) await persistCursor({ read_index: recs.length });
     } else if (step === "deals") {
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
@@ -555,47 +676,54 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
       }
       await bump(0, 0, dealToCompany.size, true);
       const dealProps = await loadHsProperties("deals");
-      const dealPropsList = dealProps.length
-        ? dealProps
-        : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
+      const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
       const recs = await batchRead("deals", [...dealToCompany.keys()], dealPropsList);
-      // Pre-fetch deal→contact associations in parallel
       const dealContactsAssoc = await getAssocMany("deals", recs.map((r) => r.id), "contacts", 20);
-      for (const d of recs) {
+      let idx = (resume.read_index as number) ?? 0;
+      for (; idx < recs.length; idx++) {
+        if (isExpired()) {
+          partial = true;
+          await persistCursor({ read_index: idx });
+          break;
+        }
+        const d = recs[idx];
         const p = d.properties;
         const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
         const mapped = mapDeal(p);
-        const { data: row, error } = await supabase
-          .from("deals")
-          .insert({
-            owner_id: userId,
-            name: p.dealname ?? "Sem nome",
-            value: p.amount ? Number(p.amount) : 0,
-            currency: "BRL",
-            stage: "new",
-            company_id: localCompanyId,
-            expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
-            ...mapped,
-            external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
-            hs_raw: rawOf(d),
-          })
-          .select("id")
-          .single();
-        if (error || !row) {
-          fail++;
-        } else {
+        const payload = {
+          owner_id: userId,
+          name: p.dealname ?? "Sem nome",
+          value: p.amount ? Number(p.amount) : 0,
+          currency: "BRL",
+          stage: "new",
+          company_id: localCompanyId,
+          expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+          ...mapped,
+          external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+          hs_raw: rawOf(d),
+        };
+        const r = await upsertByHsId(supabase, "deals", userId, d.id, payload);
+        if (r.status === "failed") fail++;
+        else {
           imported.push(d.id);
           ok++;
-          const contactIds = dealContactsAssoc.get(d.id) ?? [];
-          for (const cid of contactIds) {
-            const lc = contactMap.get(cid);
-            if (lc) await supabase.from("deal_contacts").insert({ deal_id: row.id, contact_id: lc });
+          if (r.status === "inserted") {
+            const contactIds = dealContactsAssoc.get(d.id) ?? [];
+            for (const cid of contactIds) {
+              const lc = contactMap.get(cid);
+              if (lc && r.localId) {
+                await supabase.from("deal_contacts").insert({ deal_id: r.localId, contact_id: lc });
+              }
+            }
           }
         }
-        await bump(ok, fail, dealToCompany.size);
+        if ((idx + 1) % 25 === 0) {
+          await persistCursor({ read_index: idx + 1 });
+          await bump(ok, fail, recs.length);
+        }
       }
+      if (!partial) await persistCursor({ read_index: recs.length });
     } else if (step === "leads") {
-      // Read from contacts imported in this job that had lifecyclestage=lead
       const { data: items } = await supabase
         .from("enrichment_job_items")
         .select("after, before")
@@ -617,21 +745,22 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         }
       }
       await bump(0, 0, leadHsIds.length, true);
-      await appendLog(supabase, jobId, {
-        level: "info",
-        step,
-        message: `Lendo ${leadHsIds.length} leads (lifecyclestage=lead)`,
-        count: leadHsIds.length,
-      });
       const leadProps = await loadHsProperties("contacts");
       const leadPropsList = leadProps.length
         ? leadProps
         : ["firstname", "lastname", "email", "phone", "company", "hs_lead_status", "hs_analytics_source"];
       const recs = await batchRead("contacts", leadHsIds, leadPropsList);
-      for (const c of recs) {
+      let idx = (resume.read_index as number) ?? 0;
+      for (; idx < recs.length; idx++) {
+        if (isExpired()) {
+          partial = true;
+          await persistCursor({ read_index: idx });
+          break;
+        }
+        const c = recs[idx];
         const p = c.properties;
         const mapped = mapLead(p);
-        const { error } = await supabase.from("leads").insert({
+        const payload = {
           owner_id: userId,
           first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
           last_name: p.lastname ?? null,
@@ -643,14 +772,19 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           ...mapped,
           external_ids: { hubspot: c.id } as never,
           hs_raw: rawOf(c),
-        });
-        if (error) fail++;
+        };
+        const r = await upsertByHsId(supabase, "leads", userId, c.id, payload);
+        if (r.status === "failed") fail++;
         else {
           imported.push(c.id);
           ok++;
         }
-        await bump(ok, fail, leadHsIds.length);
+        if ((idx + 1) % 25 === 0) {
+          await persistCursor({ read_index: idx + 1 });
+          await bump(ok, fail, recs.length);
+        }
       }
+      if (!partial) await persistCursor({ read_index: recs.length });
     } else if (step.startsWith("activities-")) {
       const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
       const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
@@ -667,11 +801,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
       const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
 
       const seen = new Set<string>();
-      const engagementToParents = new Map<
-        string,
-        { contactId?: string; companyId?: string; dealId?: string }
-      >();
-
+      const engagementToParents = new Map<string, { contactId?: string; companyId?: string; dealId?: string }>();
       const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
         { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
         { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
@@ -692,16 +822,17 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         await appendLog(supabase, jobId, { level: "info", step, message: `Sem ${kind}` });
       } else {
         await bump(0, 0, seen.size, true);
-        await appendLog(supabase, jobId, {
-          level: "info",
-          step,
-          message: `Lendo ${seen.size} ${kind}`,
-          count: seen.size,
-        });
         const allActProps = await loadHsProperties(kind);
         const actPropsList = allActProps.length ? allActProps : t.props;
         const recs = await batchRead(kind, [...seen], actPropsList);
-        for (const a of recs) {
+        let idx = (resume.read_index as number) ?? 0;
+        for (; idx < recs.length; idx++) {
+          if (isExpired()) {
+            partial = true;
+            await persistCursor({ read_index: idx });
+            break;
+          }
+          const a = recs[idx];
           const p = a.properties;
           const subject =
             p.hs_note_body?.replace(/<[^>]+>/g, "").slice(0, 100) ??
@@ -715,7 +846,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           const due = p.hs_timestamp ?? null;
           const parents = engagementToParents.get(a.id) ?? {};
           const mapped = mapActivity(kind, p);
-          const { error } = await supabase.from("activities").insert({
+          const payload = {
             owner_id: userId,
             type: t.type,
             subject,
@@ -728,15 +859,34 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             ...mapped,
             external_ids: { hubspot: a.id, hs_kind: kind } as never,
             hs_raw: rawOf(a),
-          });
-          if (error) fail++;
+          };
+          const r = await upsertByHsId(supabase, "activities", userId, a.id, payload);
+          if (r.status === "failed") fail++;
           else {
             imported.push(a.id);
             ok++;
           }
-          await bump(ok, fail);
+          if ((idx + 1) % 25 === 0) {
+            await persistCursor({ read_index: idx + 1 });
+            await bump(ok, fail, recs.length);
+          }
         }
+        if (!partial) await persistCursor({ read_index: recs.length });
       }
+    }
+
+    if (partial) {
+      // Re-queue: set back to pending so the next tick claims it from where we stopped.
+      await supabase
+        .from("enrichment_job_items")
+        .update({ status: "pending" })
+        .eq("id", itemId);
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Etapa ${step} pausada para próximo tick (${ok} ok / ${fail} falhas)`,
+      });
+      return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
     }
 
     await supabase
