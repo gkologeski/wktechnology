@@ -320,6 +320,16 @@ export type StepCtx = {
   step: StepName;
   itemId: string;
   scope: Scope;
+  /** Absolute epoch ms after which the step must checkpoint and return partial=true */
+  deadlineAt?: number;
+};
+
+export type StepResult = {
+  succeeded: number;
+  failed: number;
+  importedHsIds: string[];
+  /** true means the step persisted a cursor and is waiting to be re-queued */
+  partial?: boolean;
 };
 
 async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
