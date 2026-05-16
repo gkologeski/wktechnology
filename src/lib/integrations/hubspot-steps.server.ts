@@ -38,6 +38,19 @@ async function hsPost(path: string, body: object) {
   return data;
 }
 
+async function discoverTotal(objectType: string): Promise<number | null> {
+  try {
+    const r = (await hsPost(`/crm/v3/objects/${objectType}/search`, {
+      limit: 1,
+      properties: ["hs_object_id"],
+      filterGroups: [],
+    })) as { total?: number };
+    return typeof r.total === "number" ? r.total : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise<string[]> {
   try {
     const r = (await hsFetch(`/crm/v3/objects/${fromObj}/${fromId}/associations/${toObj}`)) as {
@@ -554,6 +567,19 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const alreadyProcessed = ok + fail;
       let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
       let page = Math.floor(alreadyProcessed / 100) + 1;
+      // Descobre o total real no HubSpot apenas na primeira execução do step
+      if (resume.discovered === undefined) {
+        const total = await discoverTotal("companies");
+        if (total !== null) {
+          const effective = Math.min(total, scope.maxCompanies);
+          await patchItemBefore(supabase, itemId, { discovered: effective });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Total no HubSpot: ${total} · alvo desta execução: ${effective}`,
+          });
+        }
+      }
       while (ok + fail < scope.maxCompanies) {
         if (isExpired()) {
           partial = true;

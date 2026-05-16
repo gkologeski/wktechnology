@@ -156,8 +156,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       const status = (it.status as LiveCounterProps["status"]) ?? "pending";
       const succeeded = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
       const failed = it.after?.failed ?? it.before?.running_failed ?? 0;
-      const target = s === "companies" ? maxCompanies : undefined;
       const discovered = it.before?.discovered;
+      const target = s === "companies" ? (discovered ?? maxCompanies) : discovered;
       return { step: s, status, succeeded, failed, target, discovered };
     });
   }, [items, job?.scope]);
