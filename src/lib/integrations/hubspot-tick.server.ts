@@ -166,7 +166,7 @@ export async function tickOnce(
     return { kind: "error", jobId: job.id, message: "Item sem step" };
   }
 
-  // 3) Executar o step
+  // 3) Executar o step (com orçamento de 22s; runStep gerencia status do item)
   try {
     const result = await runStep({
       supabase,
@@ -175,18 +175,10 @@ export async function tickOnce(
       step,
       itemId: pending.id,
       scope,
+      deadlineAt: Date.now() + 22_000,
     });
-    await supabase
-      .from("enrichment_job_items")
-      .update({
-        status: "done",
-        after: {
-          succeeded: result.succeeded,
-          failed: result.failed,
-          imported_hs_ids: result.importedHsIds,
-        } as never,
-      })
-      .eq("id", pending.id);
+    // runStep already updated item status to done/pending/failed and
+    // wrote after/before. Do NOT overwrite here.
 
     // Atualizar contadores do job
     const { data: refreshed } = await supabase
