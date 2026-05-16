@@ -207,8 +207,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         <Progress value={progress} className="mb-2" />
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {job?.processed ?? 0}/{job?.total ?? 0} etapas · {job?.succeeded ?? 0} registros importados
-            {job?.failed ? ` · ${job.failed} falhas` : ""}
+            {job?.processed ?? 0}/{job?.total ?? 0} etapas · {displaySucceeded} registros importados
+            {displayFailed ? ` · ${displayFailed} falhas` : ""}
           </span>
           {finished && (
             <div className="flex items-center gap-2">
