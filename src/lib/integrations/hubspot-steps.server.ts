@@ -344,18 +344,25 @@ async function patchItemBefore(supabase: SupabaseClient, itemId: string, patch: 
   await supabase.from("enrichment_job_items").update({ before: merged as never }).eq("id", itemId);
 }
 
-// Throttled progress writer.
-function makeProgressBumper(supabase: SupabaseClient, itemId: string) {
+// Throttled progress writer. Also heartbeats enrichment_jobs.updated_at so the
+// zombie-sweeper doesn't kill long-running steps that are actually progressing.
+function makeProgressBumper(supabase: SupabaseClient, itemId: string, jobId: string) {
   let last = 0;
   return async (succeeded: number, failed: number, discovered?: number, force = false) => {
     const now = Date.now();
     if (!force && now - last < 600) return;
     last = now;
-    await patchItemBefore(supabase, itemId, {
-      running_succeeded: succeeded,
-      running_failed: failed,
-      ...(discovered !== undefined ? { discovered } : {}),
-    });
+    await Promise.all([
+      patchItemBefore(supabase, itemId, {
+        running_succeeded: succeeded,
+        running_failed: failed,
+        ...(discovered !== undefined ? { discovered } : {}),
+      }),
+      supabase
+        .from("enrichment_jobs")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", jobId),
+    ]);
   };
 }
 
