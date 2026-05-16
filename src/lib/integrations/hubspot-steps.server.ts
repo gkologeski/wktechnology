@@ -376,8 +376,9 @@ function makeProgressBumper(supabase: SupabaseClient, itemId: string, jobId: str
   };
 }
 
-// Load HS-ID → localId map for entities imported earlier IN THIS JOB.
-// Reads imported_hs_ids from the dependency step's `after`.
+// Load HS-ID → localId map for entities imported earlier. We scan the local
+// database first so a resumed job still sees records imported before a timeout,
+// even if the item checkpoint lost its imported_hs_ids list.
 async function loadMapForStep(
   supabase: SupabaseClient,
   userId: string,
@@ -392,21 +393,18 @@ async function loadMapForStep(
   const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
   const ids = (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
   const map = new Map<string, string>();
-  if (!ids.length) {
-    for (let from = 0; ; from += 1000) {
-      const { data } = await supabase
-        .from(table)
-        .select("id, external_ids")
-        .eq("owner_id", userId)
-        .not("external_ids->>hubspot", "is", null)
-        .range(from, from + 999);
-      for (const r of data ?? []) {
-        const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
-        if (hs) map.set(String(hs), r.id as string);
-      }
-      if (!data || data.length < 1000) break;
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabase
+      .from(table)
+      .select("id, external_ids")
+      .eq("owner_id", userId)
+      .not("external_ids->>hubspot", "is", null)
+      .range(from, from + 999);
+    for (const r of data ?? []) {
+      const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
+      if (hs) map.set(String(hs), r.id as string);
     }
-    return map;
+    if (!data || data.length < 1000) break;
   }
   // Postgrest .in('external_ids->>hubspot', ids) – use chunking to avoid URL length limits
   for (let i = 0; i < ids.length; i += 200) {
