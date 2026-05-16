@@ -547,18 +547,17 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         for (const id of list) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCo);
       }
       await bump(0, 0, dealToCompany.size, true);
-      const recs = await batchRead("deals", [...dealToCompany.keys()], [
-        "dealname",
-        "amount",
-        "dealstage",
-        "closedate",
-        "pipeline",
-      ]);
+      const dealProps = await loadHsProperties("deals");
+      const dealPropsList = dealProps.length
+        ? dealProps
+        : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
+      const recs = await batchRead("deals", [...dealToCompany.keys()], dealPropsList);
       // Pre-fetch deal→contact associations in parallel
       const dealContactsAssoc = await getAssocMany("deals", recs.map((r) => r.id), "contacts", 20);
       for (const d of recs) {
         const p = d.properties;
         const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
+        const mapped = mapDeal(p);
         const { data: row, error } = await supabase
           .from("deals")
           .insert({
@@ -569,7 +568,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             stage: "new",
             company_id: localCompanyId,
             expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            ...mapped,
             external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+            hs_raw: rawOf(d),
           })
           .select("id")
           .single();
