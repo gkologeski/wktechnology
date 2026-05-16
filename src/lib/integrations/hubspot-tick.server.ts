@@ -223,16 +223,24 @@ export async function tickOnce(
     return { kind: "busy", jobId: job.id };
   }
 
-  // Claim atômico: aceita pending OU paused. Atualiza status e limpa paused.
+  // Claim atômico: aceita SOMENTE pending OU running+paused=true.
+  // Sem isso, dois ticks simultâneos (UI + cron) reclamam o mesmo item
+  // ativo, um deles marca a etapa como 'done' por um instante, e os
+  // dependentes disparam vazios antes da etapa-pai realmente terminar.
   const prevBefore = (pending.before as Record<string, unknown> | null) ?? {};
+  const isPaused = (prevBefore as { paused?: boolean }).paused === true;
   const claimedBefore = { ...prevBefore, paused: false, last_heartbeat_at: new Date().toISOString() };
-  const { data: claimed, error: claimErr } = await supabase
+  let claimQuery = supabase
     .from("enrichment_job_items")
     .update({ status: "running", before: claimedBefore as never })
-    .eq("id", pending.id)
-    .in("status", ["pending", "running"])
-    .select("id")
-    .maybeSingle();
+    .eq("id", pending.id);
+  if (isPaused) {
+    // Só reclama se ainda estiver pausado (CAS via JSON flag).
+    claimQuery = claimQuery.eq("status", "running").eq("before->>paused", "true");
+  } else {
+    claimQuery = claimQuery.eq("status", "pending");
+  }
+  const { data: claimed, error: claimErr } = await claimQuery.select("id").maybeSingle();
   if (claimErr || !claimed) {
     return { kind: "busy", jobId: job.id };
   }
