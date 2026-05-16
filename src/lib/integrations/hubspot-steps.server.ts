@@ -616,17 +616,14 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         message: `Lendo ${leadHsIds.length} leads (lifecyclestage=lead)`,
         count: leadHsIds.length,
       });
-      const recs = await batchRead("contacts", leadHsIds, [
-        "firstname",
-        "lastname",
-        "email",
-        "phone",
-        "company",
-        "hs_lead_status",
-        "hs_analytics_source",
-      ]);
+      const leadProps = await loadHsProperties("contacts");
+      const leadPropsList = leadProps.length
+        ? leadProps
+        : ["firstname", "lastname", "email", "phone", "company", "hs_lead_status", "hs_analytics_source"];
+      const recs = await batchRead("contacts", leadHsIds, leadPropsList);
       for (const c of recs) {
         const p = c.properties;
+        const mapped = mapLead(p);
         const { error } = await supabase.from("leads").insert({
           owner_id: userId,
           first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
@@ -636,7 +633,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           company_name: p.company ?? null,
           source: p.hs_analytics_source ?? "hubspot",
           status: "new",
+          ...mapped,
           external_ids: { hubspot: c.id } as never,
+          hs_raw: rawOf(c),
         });
         if (error) fail++;
         else {
