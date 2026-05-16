@@ -567,6 +567,19 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const alreadyProcessed = ok + fail;
       let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
       let page = Math.floor(alreadyProcessed / 100) + 1;
+      // Descobre o total real no HubSpot apenas na primeira execução do step
+      if (resume.discovered === undefined) {
+        const total = await discoverTotal("companies");
+        if (total !== null) {
+          const effective = Math.min(total, scope.maxCompanies);
+          await patchItemBefore(supabase, itemId, { discovered: effective });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Total no HubSpot: ${total} · alvo desta execução: ${effective}`,
+          });
+        }
+      }
       while (ok + fail < scope.maxCompanies) {
         if (isExpired()) {
           partial = true;
