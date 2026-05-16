@@ -50,9 +50,10 @@ function IntegrationDetail() {
     queryKey: ["integrations", "list"],
     queryFn: () => list({}),
   });
-  const { data: jobsData } = useQuery({
+  const { data: jobsData, refetch: refetchJobs } = useQuery({
     queryKey: ["integrations", slug, "jobs"],
     queryFn: () => jobs({ data: { provider: slug } }),
+    refetchInterval: 5000,
   });
   const { data: usageData } = useQuery({
     queryKey: ["integrations", slug, "usage"],
@@ -64,6 +65,38 @@ function IntegrationDetail() {
   const [autoOnCreate, setAutoOnCreate] = useState(false);
   const [monthlyLimit, setMonthlyLimit] = useState("");
   const [confirmAbove, setConfirmAbove] = useState("10");
+  const [liveJobId, setLiveJobId] = useState<string | null>(null);
+
+  // Limpa jobs zumbis (status "running" sem progresso há mais de ~90s) ao
+  // entrar na tela e a cada 30s, para refletir o estado real.
+  useEffect(() => {
+    let alive = true;
+    const run = async () => {
+      try {
+        const r = await sweep({ data: { provider: slug } });
+        if (alive && r.swept > 0) refetchJobs();
+      } catch {
+        /* silencioso */
+      }
+    };
+    run();
+    const t = setInterval(run, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [slug, sweep, refetchJobs]);
+
+  const handleCancelJob = async (jobId: string) => {
+    if (!confirm("Cancelar esta execução? O job será marcado como falho.")) return;
+    try {
+      await cancel({ data: { jobId } });
+      toast.success("Execução cancelada");
+      refetchJobs();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cancelar");
+    }
+  };
 
   if (!provider) {
     return (
