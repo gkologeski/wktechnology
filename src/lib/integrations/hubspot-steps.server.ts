@@ -408,7 +408,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
     .update({ status: "running", before: { step, order: STEP_ORDER.indexOf(step), depends_on: STEP_DEPS[step], started_at: new Date().toISOString() } as never })
     .eq("id", itemId);
   await appendLog(supabase, jobId, { level: "info", step, message: `Iniciando etapa ${step}` });
-  const bump = makeProgressBumper(supabase, itemId);
+  const bump = makeProgressBumper(supabase, itemId, jobId);
 
   let ok = 0;
   let fail = 0;
