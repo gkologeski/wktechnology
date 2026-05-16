@@ -65,7 +65,12 @@ async function getAssocMany(
   return out;
 }
 
-type HSRec = { id: string; properties: Record<string, string | null | undefined> };
+type HSRec = {
+  id: string;
+  properties: Record<string, string | null | undefined>;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
   const out: HSRec[] = [];
@@ -83,6 +88,151 @@ async function batchRead(obj: string, ids: string[], properties: string[]): Prom
     }
   }
   return out;
+}
+
+// ─── Property discovery + value parsing helpers ──────────────────────────────
+
+// In-request cache (each tick runs one step in one HTTP request, so this is enough).
+const propertyCache = new Map<string, string[]>();
+
+async function loadHsProperties(objectType: string): Promise<string[]> {
+  const cached = propertyCache.get(objectType);
+  if (cached) return cached;
+  try {
+    const r = (await hsFetch(`/crm/v3/properties/${objectType}`)) as {
+      results?: { name: string; hidden?: boolean; calculated?: boolean }[];
+    };
+    const names = (r.results ?? [])
+      .filter((p) => !p.hidden && !p.calculated)
+      .map((p) => p.name)
+      .filter(Boolean);
+    // Cap to avoid HubSpot payload limits (~600 properties is the documented max).
+    const capped = names.slice(0, 400);
+    propertyCache.set(objectType, capped);
+    return capped;
+  } catch {
+    propertyCache.set(objectType, []);
+    return [];
+  }
+}
+
+function parseHsDate(v: string | null | undefined): string | null {
+  if (!v) return null;
+  // HubSpot returns either ISO 8601 or epoch milliseconds as string.
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return new Date(n).toISOString();
+  }
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function parseHsNum(v: string | null | undefined): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+type HsProps = Record<string, string | null | undefined>;
+
+function mapCompany(p: HsProps) {
+  return {
+    annualrevenue: parseHsNum(p.annualrevenue),
+    lifecyclestage: p.lifecyclestage ?? null,
+    hs_lead_status: p.hs_lead_status ?? null,
+    description: p.description ?? null,
+    country: p.country ?? null,
+    timezone: p.timezone ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+    type: p.type ?? null,
+    linkedin_company_page: p.linkedin_company_page ?? null,
+    twitterhandle: p.twitterhandle ?? null,
+    facebook_company_page: p.facebook_company_page ?? null,
+  };
+}
+
+function mapContact(p: HsProps) {
+  return {
+    mobile_phone: p.mobilephone ?? null,
+    country: p.country ?? null,
+    address: p.address ?? null,
+    cep: p.zip ?? null,
+    city: p.city ?? null,
+    state: p.state ?? null,
+    website: p.website ?? null,
+    company_name: p.company ?? null,
+    lifecyclestage: p.lifecyclestage ?? null,
+    hs_lead_status: p.hs_lead_status ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
+    linkedin_url: p.linkedin_url ?? p.linkedinbio ?? null,
+    twitter_handle: p.twitterhandle ?? null,
+  };
+}
+
+function mapDeal(p: HsProps) {
+  return {
+    description: p.description ?? null,
+    dealtype: p.dealtype ?? null,
+    hs_priority: p.hs_priority ?? null,
+    hs_deal_stage_probability: parseHsNum(p.hs_deal_stage_probability),
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
+    closed_lost_reason: p.closed_lost_reason ?? null,
+    closed_won_reason: p.closed_won_reason ?? null,
+    num_associated_contacts: parseHsNum(p.num_associated_contacts) !== null
+      ? Math.trunc(parseHsNum(p.num_associated_contacts) as number)
+      : null,
+  };
+}
+
+function mapLead(p: HsProps) {
+  return {
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
+    hs_lead_source_detail: p.hs_analytics_source_data_1 ?? p.hs_analytics_source ?? null,
+  };
+}
+
+function mapActivity(kind: string, p: HsProps) {
+  const ms =
+    parseHsNum(p.hs_call_duration) ??
+    parseHsNum(p.hs_meeting_duration) ??
+    null;
+  return {
+    duration_ms: ms !== null ? Math.trunc(ms) : null,
+    disposition: p.hs_call_disposition ?? null,
+    recording_url: p.hs_call_recording_url ?? null,
+    meeting_outcome: p.hs_meeting_outcome ?? null,
+    meeting_location: p.hs_meeting_location ?? null,
+    task_status: p.hs_task_status ?? null,
+    task_priority: p.hs_task_priority ?? null,
+    email_direction: p.hs_email_direction ?? null,
+    email_status: p.hs_email_status ?? null,
+    hubspot_owner_id: p.hubspot_owner_id ?? p.hubspot_owner_id_owner ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.hs_createdate ?? p.createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+  };
+}
+
+function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updatedAt?: string }) {
+  return {
+    id: rec.id,
+    properties: rec.properties,
+    createdAt: rec.createdAt ?? null,
+    updatedAt: rec.updatedAt ?? null,
+  } as never;
 }
 
 // ─────────────────────────── Step framework ──────────────────────────────────
@@ -259,6 +409,8 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
 
   try {
     if (step === "companies") {
+      const allProps = await loadHsProperties("companies");
+      const propsParam = allProps.length ? allProps.join(",") : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
       let after: string | undefined;
       let page = 1;
       while (ok + fail < scope.maxCompanies) {
@@ -266,11 +418,11 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         const limit = Math.min(100, remaining);
         const params: Record<string, string> = {
           limit: String(limit),
-          properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
+          properties: propsParam,
         };
         if (after) params.after = after;
         const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
-          results: HSRec[];
+          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
           paging?: { next?: { after: string } };
         };
         if (!res.results.length) break;
@@ -286,6 +438,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             fail++;
             continue;
           }
+          const mapped = mapCompany(p);
           const { data: row, error } = await supabase
             .from("companies")
             .insert({
@@ -300,7 +453,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
               cep: p.zip ?? null,
               address: p.address ?? null,
               website: p.website ?? null,
+              ...mapped,
               external_ids: { hubspot: c.id } as never,
+              hs_raw: rawOf(c),
             })
             .select("id")
             .single();
@@ -337,14 +492,11 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         message: `Lendo ${contactToCompany.size} contatos`,
         count: contactToCompany.size,
       });
-      const recs = await batchRead("contacts", [...contactToCompany.keys()], [
-        "firstname",
-        "lastname",
-        "email",
-        "phone",
-        "jobtitle",
-        "lifecyclestage",
-      ]);
+      const contactProps = await loadHsProperties("contacts");
+      const propsList = contactProps.length
+        ? contactProps
+        : ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"];
+      const recs = await batchRead("contacts", [...contactToCompany.keys()], propsList);
       for (const c of recs) {
         const p = c.properties;
         if (!p.firstname && !p.email) {
@@ -352,6 +504,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           continue;
         }
         const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
+        const mapped = mapContact(p);
         const { data: row, error } = await supabase
           .from("contacts")
           .insert({
@@ -362,10 +515,12 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             phone: p.phone ?? null,
             job_title: p.jobtitle ?? null,
             company_id: localCompanyId,
+            ...mapped,
             external_ids: {
               hubspot: c.id,
               hs_lifecyclestage: p.lifecyclestage ?? null,
             } as never,
+            hs_raw: rawOf(c),
           })
           .select("id")
           .single();
@@ -392,18 +547,17 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         for (const id of list) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCo);
       }
       await bump(0, 0, dealToCompany.size, true);
-      const recs = await batchRead("deals", [...dealToCompany.keys()], [
-        "dealname",
-        "amount",
-        "dealstage",
-        "closedate",
-        "pipeline",
-      ]);
+      const dealProps = await loadHsProperties("deals");
+      const dealPropsList = dealProps.length
+        ? dealProps
+        : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
+      const recs = await batchRead("deals", [...dealToCompany.keys()], dealPropsList);
       // Pre-fetch deal→contact associations in parallel
       const dealContactsAssoc = await getAssocMany("deals", recs.map((r) => r.id), "contacts", 20);
       for (const d of recs) {
         const p = d.properties;
         const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
+        const mapped = mapDeal(p);
         const { data: row, error } = await supabase
           .from("deals")
           .insert({
@@ -414,7 +568,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             stage: "new",
             company_id: localCompanyId,
             expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            ...mapped,
             external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+            hs_raw: rawOf(d),
           })
           .select("id")
           .single();
@@ -460,17 +616,14 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         message: `Lendo ${leadHsIds.length} leads (lifecyclestage=lead)`,
         count: leadHsIds.length,
       });
-      const recs = await batchRead("contacts", leadHsIds, [
-        "firstname",
-        "lastname",
-        "email",
-        "phone",
-        "company",
-        "hs_lead_status",
-        "hs_analytics_source",
-      ]);
+      const leadProps = await loadHsProperties("contacts");
+      const leadPropsList = leadProps.length
+        ? leadProps
+        : ["firstname", "lastname", "email", "phone", "company", "hs_lead_status", "hs_analytics_source"];
+      const recs = await batchRead("contacts", leadHsIds, leadPropsList);
       for (const c of recs) {
         const p = c.properties;
+        const mapped = mapLead(p);
         const { error } = await supabase.from("leads").insert({
           owner_id: userId,
           first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
@@ -480,7 +633,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           company_name: p.company ?? null,
           source: p.hs_analytics_source ?? "hubspot",
           status: "new",
+          ...mapped,
           external_ids: { hubspot: c.id } as never,
+          hs_raw: rawOf(c),
         });
         if (error) fail++;
         else {
@@ -536,7 +691,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           message: `Lendo ${seen.size} ${kind}`,
           count: seen.size,
         });
-        const recs = await batchRead(kind, [...seen], t.props);
+        const allActProps = await loadHsProperties(kind);
+        const actPropsList = allActProps.length ? allActProps : t.props;
+        const recs = await batchRead(kind, [...seen], actPropsList);
         for (const a of recs) {
           const p = a.properties;
           const subject =
@@ -550,6 +707,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
           const due = p.hs_timestamp ?? null;
           const parents = engagementToParents.get(a.id) ?? {};
+          const mapped = mapActivity(kind, p);
           const { error } = await supabase.from("activities").insert({
             owner_id: userId,
             type: t.type,
@@ -560,7 +718,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
             related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
             related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
+            ...mapped,
             external_ids: { hubspot: a.id, hs_kind: kind } as never,
+            hs_raw: rawOf(a),
           });
           if (error) fail++;
           else {

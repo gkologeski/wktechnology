@@ -19,17 +19,31 @@ export type Database = {
           body: string | null
           completed: boolean
           created_at: string
+          disposition: string | null
           due_date: string | null
+          duration_ms: number | null
+          email_direction: string | null
+          email_status: string | null
           external_ids: Json
+          hs_createdate: string | null
+          hs_lastmodifieddate: string | null
+          hs_object_id: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
+          meeting_location: string | null
+          meeting_outcome: string | null
           outcome: string | null
           outcome_set_at: string | null
           owner_id: string
+          recording_url: string | null
           related_company_id: string | null
           related_contact_id: string | null
           related_deal_id: string | null
           related_lead_id: string | null
           subject: string | null
+          task_priority: string | null
+          task_status: string | null
           type: Database["public"]["Enums"]["activity_type"]
           updated_at: string
         }
@@ -37,17 +51,31 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          disposition?: string | null
           due_date?: string | null
+          duration_ms?: number | null
+          email_direction?: string | null
+          email_status?: string | null
           external_ids?: Json
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
+          meeting_location?: string | null
+          meeting_outcome?: string | null
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id: string
+          recording_url?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
           subject?: string | null
+          task_priority?: string | null
+          task_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
         }
@@ -55,17 +83,31 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          disposition?: string | null
           due_date?: string | null
+          duration_ms?: number | null
+          email_direction?: string | null
+          email_status?: string | null
           external_ids?: Json
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
+          meeting_location?: string | null
+          meeting_outcome?: string | null
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id?: string
+          recording_url?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
           subject?: string | null
+          task_priority?: string | null
+          task_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
         }
@@ -103,14 +145,26 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          annualrevenue: number | null
           cep: string | null
           city: string | null
+          country: string | null
           created_at: string
+          description: string | null
           domain: string | null
           external_ids: Json
+          facebook_company_page: string | null
+          hs_createdate: string | null
+          hs_lastmodifieddate: string | null
+          hs_lead_status: string | null
+          hs_object_id: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
           industry: string | null
           is_target_account: boolean
+          lifecyclestage: string | null
+          linkedin_company_page: string | null
           name: string
           notes: string | null
           owner_id: string
@@ -118,19 +172,34 @@ export type Database = {
           size: string | null
           state: string | null
           target_account_tier: string | null
+          timezone: string | null
+          twitterhandle: string | null
+          type: string | null
           updated_at: string
           website: string | null
         }
         Insert: {
           address?: string | null
+          annualrevenue?: number | null
           cep?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string
+          description?: string | null
           domain?: string | null
           external_ids?: Json
+          facebook_company_page?: string | null
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_status?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           industry?: string | null
           is_target_account?: boolean
+          lifecyclestage?: string | null
+          linkedin_company_page?: string | null
           name: string
           notes?: string | null
           owner_id: string
@@ -138,19 +207,34 @@ export type Database = {
           size?: string | null
           state?: string | null
           target_account_tier?: string | null
+          timezone?: string | null
+          twitterhandle?: string | null
+          type?: string | null
           updated_at?: string
           website?: string | null
         }
         Update: {
           address?: string | null
+          annualrevenue?: number | null
           cep?: string | null
           city?: string | null
+          country?: string | null
           created_at?: string
+          description?: string | null
           domain?: string | null
           external_ids?: Json
+          facebook_company_page?: string | null
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_status?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           industry?: string | null
           is_target_account?: boolean
+          lifecyclestage?: string | null
+          linkedin_company_page?: string | null
           name?: string
           notes?: string | null
           owner_id?: string
@@ -158,6 +242,9 @@ export type Database = {
           size?: string | null
           state?: string | null
           target_account_tier?: string | null
+          timezone?: string | null
+          twitterhandle?: string | null
+          type?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -203,61 +290,112 @@ export type Database = {
       }
       contacts: {
         Row: {
+          address: string | null
+          cep: string | null
+          city: string | null
           company_id: string | null
+          company_name: string | null
           consent_date: string | null
+          country: string | null
           created_at: string
           email: string | null
           external_ids: Json
           first_name: string
+          hs_createdate: string | null
+          hs_lastmodifieddate: string | null
+          hs_lead_status: string | null
+          hs_object_id: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
           job_title: string | null
           label: string | null
           last_name: string | null
           legal_basis: string | null
+          lifecyclestage: string | null
+          linkedin_url: string | null
           marketing_status: string | null
+          mobile_phone: string | null
           notes: string | null
           owner_id: string
           phone: string | null
           score: number
+          state: string | null
+          twitter_handle: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
+          cep?: string | null
+          city?: string | null
           company_id?: string | null
+          company_name?: string | null
           consent_date?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           external_ids?: Json
           first_name: string
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_status?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           job_title?: string | null
           label?: string | null
           last_name?: string | null
           legal_basis?: string | null
+          lifecyclestage?: string | null
+          linkedin_url?: string | null
           marketing_status?: string | null
+          mobile_phone?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
           score?: number
+          state?: string | null
+          twitter_handle?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
+          cep?: string | null
+          city?: string | null
           company_id?: string | null
+          company_name?: string | null
           consent_date?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           external_ids?: Json
           first_name?: string
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_status?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           job_title?: string | null
           label?: string | null
           last_name?: string | null
           legal_basis?: string | null
+          lifecyclestage?: string | null
+          linkedin_url?: string | null
           marketing_status?: string | null
+          mobile_phone?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
           score?: number
+          state?: string | null
+          twitter_handle?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -390,14 +528,26 @@ export type Database = {
       }
       deals: {
         Row: {
+          closed_lost_reason: string | null
+          closed_won_reason: string | null
           company_id: string | null
           created_at: string
           currency: string
+          dealtype: string | null
+          description: string | null
           expected_close_date: string | null
           external_ids: Json
+          hs_createdate: string | null
+          hs_deal_stage_probability: number | null
+          hs_lastmodifieddate: string | null
+          hs_object_id: string | null
+          hs_priority: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
           name: string
           notes: string | null
+          num_associated_contacts: number | null
           owner_id: string
           pipeline_id: string | null
           primary_contact_id: string | null
@@ -407,14 +557,26 @@ export type Database = {
           value: number
         }
         Insert: {
+          closed_lost_reason?: string | null
+          closed_won_reason?: string | null
           company_id?: string | null
           created_at?: string
           currency?: string
+          dealtype?: string | null
+          description?: string | null
           expected_close_date?: string | null
           external_ids?: Json
+          hs_createdate?: string | null
+          hs_deal_stage_probability?: number | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_priority?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           name: string
           notes?: string | null
+          num_associated_contacts?: number | null
           owner_id: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
@@ -424,14 +586,26 @@ export type Database = {
           value?: number
         }
         Update: {
+          closed_lost_reason?: string | null
+          closed_won_reason?: string | null
           company_id?: string | null
           created_at?: string
           currency?: string
+          dealtype?: string | null
+          description?: string | null
           expected_close_date?: string | null
           external_ids?: Json
+          hs_createdate?: string | null
+          hs_deal_stage_probability?: number | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_priority?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           name?: string
           notes?: string | null
+          num_associated_contacts?: number | null
           owner_id?: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
@@ -621,6 +795,12 @@ export type Database = {
           email: string | null
           external_ids: Json
           first_name: string
+          hs_createdate: string | null
+          hs_lastmodifieddate: string | null
+          hs_lead_source_detail: string | null
+          hs_object_id: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
           label: string | null
           last_name: string | null
@@ -643,6 +823,12 @@ export type Database = {
           email?: string | null
           external_ids?: Json
           first_name: string
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_source_detail?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           label?: string | null
           last_name?: string | null
@@ -665,6 +851,12 @@ export type Database = {
           email?: string | null
           external_ids?: Json
           first_name?: string
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_lead_source_detail?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           label?: string | null
           last_name?: string | null
