@@ -893,11 +893,12 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     }
 
     if (partial) {
-      // Re-queue: set back to pending so the next tick claims it from where we stopped.
-      await supabase
-        .from("enrichment_job_items")
-        .update({ status: "pending" })
-        .eq("id", itemId);
+      // Mantém status='running' para evitar flicker na UI; o próximo tick
+      // reclama itens com (status='pending') OU (status='running' AND before.paused=true).
+      await patchItemBefore(supabase, itemId, {
+        paused: true,
+        last_heartbeat_at: new Date().toISOString(),
+      });
       await appendLog(supabase, jobId, {
         level: "info",
         step,
