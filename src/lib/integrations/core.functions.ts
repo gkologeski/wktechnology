@@ -132,3 +132,62 @@ export const setCreditLimit = createServerFn({ method: "POST" })
   });
 
 export type ProviderSlugType = ProviderSlug;
+
+// Marca como "failed" jobs que estão com status "running" mas não recebem
+// atualização há mais de N segundos (zumbis após timeout do Worker).
+// Considera updated_at e, como fallback, started_at.
+const ZOMBIE_IDLE_SECONDS = 90;
+
+export const sweepZombieJobs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ provider: z.string().min(1).max(40).optional() }).parse(input)
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const cutoff = new Date(Date.now() - ZOMBIE_IDLE_SECONDS * 1000).toISOString();
+    let q = supabase
+      .from("enrichment_jobs")
+      .select("id, started_at, updated_at")
+      .eq("status", "running");
+    if (data.provider) q = q.eq("provider", data.provider);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const zombies = (rows ?? []).filter((r) => {
+      const stamp = (r.updated_at ?? r.started_at) as string | null;
+      return !stamp || stamp < cutoff;
+    });
+    if (zombies.length === 0) return { swept: 0 };
+    const ids = zombies.map((r) => r.id);
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: "failed",
+        error: `Execução interrompida por timeout do servidor (sem progresso por ${ZOMBIE_IDLE_SECONDS}s).`,
+        finished_at: new Date().toISOString(),
+      })
+      .in("id", ids);
+    return { swept: ids.length };
+  });
+
+// Cancela manualmente um job em execução, marcando-o como "failed".
+export const cancelJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ jobId: z.string().uuid() }).parse(input)
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: "failed",
+        error: "Cancelado pelo usuário.",
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", data.jobId)
+      .in("status", ["running", "queued"]);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
