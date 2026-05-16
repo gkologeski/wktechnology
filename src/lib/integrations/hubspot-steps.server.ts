@@ -601,13 +601,16 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           message: `Página ${page}: ${res.results.length} empresas`,
           count: res.results.length,
         });
-        // Monta payloads da página inteira e processa upserts em paralelo
-        const tasks = res.results
-          .map((c) => {
-            const p = c.properties;
-            if (!p.name) return null;
-            const mapped = mapCompany(p);
-            const payload = {
+        type Task = { hsId: string; name: string; payload: Record<string, unknown> };
+        const tasks: Task[] = [];
+        for (const c of res.results) {
+          const p = c.properties;
+          if (!p.name) continue;
+          const mapped = mapCompany(p);
+          tasks.push({
+            hsId: c.id,
+            name: p.name as string,
+            payload: {
               owner_id: userId,
               name: p.name,
               domain: p.domain ?? null,
@@ -622,10 +625,9 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               ...mapped,
               external_ids: { hubspot: c.id } as never,
               hs_raw: rawOf(c),
-            };
-            return { hsId: c.id, name: p.name as string, payload };
-          })
-          .filter((t): t is { hsId: string; name: string; payload: Record<string, unknown> } => t !== null);
+            },
+          });
+        }
 
         // Conta como falha os registros sem nome
         fail += res.results.length - tasks.length;
