@@ -148,7 +148,7 @@ export async function tickOnce(
   }
 
   // Se há item já 'running', outro worker está nele → sair
-  if (running && !pending) {
+  if (running) {
     return { kind: "busy", jobId: job.id };
   }
   if (!pending) return { kind: "busy", jobId: job.id };
