@@ -38,6 +38,19 @@ async function hsPost(path: string, body: object) {
   return data;
 }
 
+async function discoverTotal(objectType: string): Promise<number | null> {
+  try {
+    const r = (await hsPost(`/crm/v3/objects/${objectType}/search`, {
+      limit: 1,
+      properties: ["hs_object_id"],
+      filterGroups: [],
+    })) as { total?: number };
+    return typeof r.total === "number" ? r.total : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise<string[]> {
   try {
     const r = (await hsFetch(`/crm/v3/objects/${fromObj}/${fromId}/associations/${toObj}`)) as {
