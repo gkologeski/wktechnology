@@ -131,7 +131,17 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }, [job?.status, jobId, tickFn]);
 
   const finished = job?.status === "done" || job?.status === "failed";
-  const canContinue = job?.status === "failed" && items.some((it) => it.status === "failed" || it.status === "running");
+  const canContinue =
+    job?.status === "failed" &&
+    items.some((it) => {
+      if (it.status === "failed" || it.status === "running") return true;
+      const hasEmptyResult =
+        it.status === "done" &&
+        (it.after?.succeeded ?? 0) === 0 &&
+        (it.after?.failed ?? 0) === 0 &&
+        (it.before?.depends_on?.length ?? 0) > 0;
+      return hasEmptyResult;
+    });
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 

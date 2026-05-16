@@ -55,6 +55,35 @@ type TickResult =
   | { kind: "busy"; jobId: string }
   | { kind: "error"; jobId: string; message: string };
 
+async function repairPrematureDependents(supabase: SupabaseClient, jobId: string, items: unknown[]) {
+  const rows = items as { id: string; status: string; before: { step?: string; depends_on?: string[]; [k: string]: unknown } | null; after: { succeeded?: number; failed?: number; imported_hs_ids?: string[] } | null }[];
+  const unfinishedSteps = new Set(
+    rows
+      .filter((it) => it.status !== "done")
+      .map((it) => it.before?.step)
+      .filter(Boolean) as string[],
+  );
+  const toReset = rows.filter((it) => {
+    const deps = it.before?.depends_on ?? [];
+    const zeroResult = (it.after?.succeeded ?? 0) === 0 && (it.after?.failed ?? 0) === 0 && (it.after?.imported_hs_ids?.length ?? 0) === 0;
+    return it.status === "done" && zeroResult && deps.some((dep) => unfinishedSteps.has(dep));
+  });
+  for (const item of toReset) {
+    await supabase
+      .from("enrichment_job_items")
+      .update({ status: "pending", after: null, error: null })
+      .eq("id", item.id);
+  }
+  if (toReset.length > 0) {
+    await appendLog(supabase, jobId, {
+      level: "warn",
+      step: "scheduler",
+      message: `Reabrindo ${toReset.length} etapa(s) que haviam concluído antes das dependências`,
+    });
+  }
+  return toReset.length;
+}
+
 // Encontra próximo job HubSpot para executar (queued/running) e processa UM step.
 // Quando ownerId é fornecido, restringe ao owner; quando undefined (cron),
 // pega qualquer job — o supabase client passado deve ser o admin.
@@ -95,6 +124,9 @@ export async function tickOnce(
     .order("created_at", { ascending: true });
 
   const allItems = items ?? [];
+  if (await repairPrematureDependents(supabase, job.id, allItems)) {
+    return { kind: "busy", jobId: job.id };
+  }
   const doneSteps = new Set(
     allItems
       .filter((it) => it.status === "done")

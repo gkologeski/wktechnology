@@ -682,7 +682,18 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
     }
     const resumeSteps = new Set(
       (items ?? [])
-        .filter((item) => item.status === "failed" || item.status === "running")
+        .filter((item) => {
+          if (item.status === "failed" || item.status === "running") return true;
+          const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+          const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+          const deps = Array.isArray(before.depends_on) ? (before.depends_on as string[]) : [];
+          const zeroResult =
+            item.status === "done" &&
+            (Number(after.succeeded ?? 0) === 0) &&
+            (Number(after.failed ?? 0) === 0) &&
+            (!Array.isArray(after.imported_hs_ids) || after.imported_hs_ids.length === 0);
+          return zeroResult && deps.length > 0;
+        })
         .map((item) => stepByItem.get(item.id))
         .filter(Boolean) as string[],
     );
@@ -706,6 +717,7 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
       const keepProgress = item.status === "failed" || item.status === "running";
       const mergedBefore = {
         ...before,
+        cursor: keepProgress ? before.cursor : undefined,
         read_index: keepProgress ? before.read_index : 0,
         running_succeeded: keepProgress ? before.running_succeeded ?? after.succeeded ?? 0 : 0,
         running_failed: keepProgress ? before.running_failed ?? after.failed ?? 0 : 0,
