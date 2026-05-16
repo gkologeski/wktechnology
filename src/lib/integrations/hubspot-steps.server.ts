@@ -601,37 +601,58 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           message: `Página ${page}: ${res.results.length} empresas`,
           count: res.results.length,
         });
+        type Task = { hsId: string; name: string; payload: Record<string, unknown> };
+        const tasks: Task[] = [];
         for (const c of res.results) {
           const p = c.properties;
-          if (!p.name) {
-            fail++;
-            continue;
-          }
+          if (!p.name) continue;
           const mapped = mapCompany(p);
-          const payload = {
-            owner_id: userId,
-            name: p.name,
-            domain: p.domain ?? null,
-            industry: p.industry ?? null,
-            size: p.numberofemployees ?? null,
-            phone: p.phone ?? null,
-            city: p.city ?? null,
-            state: p.state ?? null,
-            cep: p.zip ?? null,
-            address: p.address ?? null,
-            website: p.website ?? null,
-            ...mapped,
-            external_ids: { hubspot: c.id } as never,
-            hs_raw: rawOf(c),
-          };
-          const r = await upsertByHsId(supabase, "companies", userId, c.id, payload);
-          if (r.status === "failed") {
-            fail++;
-            await appendLog(supabase, jobId, { level: "warn", step, message: `Falha empresa ${p.name}: ${r.error}` });
-          } else {
-            imported.push(c.id);
-            ok++;
+          tasks.push({
+            hsId: c.id,
+            name: p.name as string,
+            payload: {
+              owner_id: userId,
+              name: p.name,
+              domain: p.domain ?? null,
+              industry: p.industry ?? null,
+              size: p.numberofemployees ?? null,
+              phone: p.phone ?? null,
+              city: p.city ?? null,
+              state: p.state ?? null,
+              cep: p.zip ?? null,
+              address: p.address ?? null,
+              website: p.website ?? null,
+              ...mapped,
+              external_ids: { hubspot: c.id } as never,
+              hs_raw: rawOf(c),
+            },
+          });
+        }
+
+        // Conta como falha os registros sem nome
+        fail += res.results.length - tasks.length;
+
+        const CONCURRENCY = 12;
+        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+          const batch = tasks.slice(i, i + CONCURRENCY);
+          const results = await Promise.all(
+            batch.map((t) => upsertByHsId(supabase, "companies", userId, t.hsId, t.payload)),
+          );
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            if (r.status === "failed") {
+              fail++;
+              await appendLog(supabase, jobId, {
+                level: "warn",
+                step,
+                message: `Falha empresa ${batch[j].name}: ${r.error}`,
+              });
+            } else {
+              imported.push(batch[j].hsId);
+              ok++;
+            }
           }
+          await bump(ok, fail, scope.maxCompanies);
         }
         after = res.paging?.next?.after;
         await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
