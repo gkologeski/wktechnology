@@ -366,6 +366,7 @@ function makeProgressBumper(supabase: SupabaseClient, itemId: string, jobId: str
       patchItemBefore(supabase, itemId, {
         running_succeeded: succeeded,
         running_failed: failed,
+        last_heartbeat_at: new Date().toISOString(),
         ...(discovered !== undefined ? { discovered } : {}),
       }),
       supabase
@@ -515,6 +516,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     running_failed: resume.running_failed ?? 0,
     discovered: resume.discovered,
     imported_hs_ids: resume.imported_hs_ids ?? [],
+    last_heartbeat_at: new Date().toISOString(),
+    paused: false,
   };
   await supabase
     .from("enrichment_job_items")
@@ -890,11 +893,12 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     }
 
     if (partial) {
-      // Re-queue: set back to pending so the next tick claims it from where we stopped.
-      await supabase
-        .from("enrichment_job_items")
-        .update({ status: "pending" })
-        .eq("id", itemId);
+      // Mantém status='running' para evitar flicker na UI; o próximo tick
+      // reclama itens com (status='pending') OU (status='running' AND before.paused=true).
+      await patchItemBefore(supabase, itemId, {
+        paused: true,
+        last_heartbeat_at: new Date().toISOString(),
+      });
       await appendLog(supabase, jobId, {
         level: "info",
         step,
