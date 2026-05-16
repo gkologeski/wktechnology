@@ -85,6 +85,19 @@
   --sidebar-accent-foreground: oklch(0.28 0.04 250);
   --sidebar-border: oklch(0.92 0.01 250);
   --sidebar-ring: oklch(0.58 0.18 255);
+
+  /* HubSpot-like deals palette */
+  --hs-orange: oklch(0.68 0.18 45);
+  --hs-orange-foreground: oklch(0.99 0.003 250);
+  --hs-surface: oklch(0.975 0.005 250);
+  --hs-divider: oklch(0.9 0.01 250);
+  --hs-text-muted: oklch(0.5 0.02 250);
+  --hs-stage-1: oklch(0.72 0.04 250); /* slate */
+  --hs-stage-2: oklch(0.68 0.12 230); /* blue */
+  --hs-stage-3: oklch(0.72 0.13 200); /* teal */
+  --hs-stage-4: oklch(0.74 0.14 90);  /* amber */
+  --hs-stage-won: oklch(0.65 0.16 150); /* green */
+  --hs-stage-lost: oklch(0.62 0.2 27);  /* red */
 }
 
 .dark {
@@ -124,6 +137,18 @@
   --sidebar-accent-foreground: oklch(0.96 0.005 250);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.68 0.17 255);
+
+  --hs-orange: oklch(0.72 0.18 45);
+  --hs-orange-foreground: oklch(0.18 0.02 250);
+  --hs-surface: oklch(0.2 0.02 250);
+  --hs-divider: oklch(1 0 0 / 10%);
+  --hs-text-muted: oklch(0.72 0.02 250);
+  --hs-stage-1: oklch(0.62 0.04 250);
+  --hs-stage-2: oklch(0.68 0.14 230);
+  --hs-stage-3: oklch(0.7 0.14 200);
+  --hs-stage-4: oklch(0.76 0.16 90);
+  --hs-stage-won: oklch(0.68 0.16 150);
+  --hs-stage-lost: oklch(0.66 0.2 27);
 }
 
 @layer base {
