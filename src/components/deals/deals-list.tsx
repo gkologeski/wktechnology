@@ -48,9 +48,8 @@ export function DealsList({
             const total = rows.reduce((sum, d) => sum + Number(d.value || 0), 0);
             const isCollapsed = collapsed[s.value];
             return (
-              <>
+              <Fragment key={s.value}>
                 <TableRow
-                  key={`g-${s.value}`}
                   className="bg-muted/40 cursor-pointer hover:bg-muted/60"
                   onClick={() => setCollapsed((c) => ({ ...c, [s.value]: !c[s.value] }))}
                 >
@@ -78,7 +77,7 @@ export function DealsList({
                       <TableCell className="text-sm">{d.expected_close_date ? formatDate(d.expected_close_date) : "—"}</TableCell>
                     </TableRow>
                   ))}
-              </>
+              </Fragment>
             );
           })}
         </TableBody>
