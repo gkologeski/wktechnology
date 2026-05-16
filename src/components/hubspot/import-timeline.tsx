@@ -143,6 +143,16 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       return hasEmptyResult;
     });
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+  const liveSucceeded = items.reduce(
+    (acc, it) => acc + (it.after?.succeeded ?? it.before?.running_succeeded ?? 0),
+    0,
+  );
+  const liveFailed = items.reduce(
+    (acc, it) => acc + (it.after?.failed ?? it.before?.running_failed ?? 0),
+    0,
+  );
+  const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded);
+  const displayFailed = Math.max(job?.failed ?? 0, liveFailed);
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 
   // Build counter cards in the canonical order — only for steps present in the plan
@@ -197,8 +207,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         <Progress value={progress} className="mb-2" />
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {job?.processed ?? 0}/{job?.total ?? 0} etapas · {job?.succeeded ?? 0} registros importados
-            {job?.failed ? ` · ${job.failed} falhas` : ""}
+            {job?.processed ?? 0}/{job?.total ?? 0} etapas · {displaySucceeded} registros importados
+            {displayFailed ? ` · ${displayFailed} falhas` : ""}
           </span>
           {finished && (
             <div className="flex items-center gap-2">
