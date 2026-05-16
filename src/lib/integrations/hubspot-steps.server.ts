@@ -691,7 +691,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
           message: `Lendo ${seen.size} ${kind}`,
           count: seen.size,
         });
-        const recs = await batchRead(kind, [...seen], t.props);
+        const allActProps = await loadHsProperties(kind);
+        const actPropsList = allActProps.length ? allActProps : t.props;
+        const recs = await batchRead(kind, [...seen], actPropsList);
         for (const a of recs) {
           const p = a.properties;
           const subject =
@@ -705,6 +707,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
           const due = p.hs_timestamp ?? null;
           const parents = engagementToParents.get(a.id) ?? {};
+          const mapped = mapActivity(kind, p);
           const { error } = await supabase.from("activities").insert({
             owner_id: userId,
             type: t.type,
@@ -715,7 +718,9 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
             related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
             related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
+            ...mapped,
             external_ids: { hubspot: a.id, hs_kind: kind } as never,
+            hs_raw: rawOf(a),
           });
           if (error) fail++;
           else {
