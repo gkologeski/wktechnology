@@ -443,7 +443,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
               industry: p.industry ?? null,
               size: p.numberofemployees ?? null,
               phone: p.phone ?? null,
-              city: p.city ?? mapped.city,
+              city: p.city ?? null,
               state: p.state ?? null,
               cep: p.zip ?? null,
               address: p.address ?? null,
