@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/page-header";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Trash2, Eye, XCircle } from "lucide-react";
 import { getProvider } from "@/lib/integrations/registry";
 import {
   listIntegrations,
@@ -18,9 +19,12 @@ import {
   listJobs,
   getCreditUsage,
   setCreditLimit,
+  sweepZombieJobs,
+  cancelJob,
 } from "@/lib/integrations/core.functions";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
+import { ImportTimeline } from "@/components/hubspot/import-timeline";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
