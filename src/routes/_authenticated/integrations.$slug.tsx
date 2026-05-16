@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/page-header";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Trash2, Eye, XCircle } from "lucide-react";
 import { getProvider } from "@/lib/integrations/registry";
 import {
   listIntegrations,
@@ -18,9 +19,12 @@ import {
   listJobs,
   getCreditUsage,
   setCreditLimit,
+  sweepZombieJobs,
+  cancelJob,
 } from "@/lib/integrations/core.functions";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
+import { ImportTimeline } from "@/components/hubspot/import-timeline";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
@@ -39,14 +43,17 @@ function IntegrationDetail() {
   const disconnect = useServerFn(disconnectIntegration);
   const setLimit = useServerFn(setCreditLimit);
   const enrichCeps = useServerFn(enrichCompaniesAddress);
+  const sweep = useServerFn(sweepZombieJobs);
+  const cancel = useServerFn(cancelJob);
 
   const { data: integrations } = useQuery({
     queryKey: ["integrations", "list"],
     queryFn: () => list({}),
   });
-  const { data: jobsData } = useQuery({
+  const { data: jobsData, refetch: refetchJobs } = useQuery({
     queryKey: ["integrations", slug, "jobs"],
     queryFn: () => jobs({ data: { provider: slug } }),
+    refetchInterval: 5000,
   });
   const { data: usageData } = useQuery({
     queryKey: ["integrations", slug, "usage"],
@@ -58,6 +65,38 @@ function IntegrationDetail() {
   const [autoOnCreate, setAutoOnCreate] = useState(false);
   const [monthlyLimit, setMonthlyLimit] = useState("");
   const [confirmAbove, setConfirmAbove] = useState("10");
+  const [liveJobId, setLiveJobId] = useState<string | null>(null);
+
+  // Limpa jobs zumbis (status "running" sem progresso há mais de ~90s) ao
+  // entrar na tela e a cada 30s, para refletir o estado real.
+  useEffect(() => {
+    let alive = true;
+    const run = async () => {
+      try {
+        const r = await sweep({ data: { provider: slug } });
+        if (alive && r.swept > 0) refetchJobs();
+      } catch {
+        /* silencioso */
+      }
+    };
+    run();
+    const t = setInterval(run, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [slug, sweep, refetchJobs]);
+
+  const handleCancelJob = async (jobId: string) => {
+    if (!confirm("Cancelar esta execução? O job será marcado como falho.")) return;
+    try {
+      await cancel({ data: { jobId } });
+      toast.success("Execução cancelada");
+      refetchJobs();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cancelar");
+    }
+  };
 
   if (!provider) {
     return (
@@ -232,26 +271,89 @@ function IntegrationDetail() {
               <p className="text-sm text-muted-foreground">Nenhuma execução ainda.</p>
             ) : (
               <ul className="space-y-2">
-                {jobsData!.items.slice(0, 10).map((j) => (
-                  <li key={j.id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
-                    <div>
-                      <span className="font-medium">{j.kind}</span>
-                      <span className="text-muted-foreground"> · {j.entity ?? "—"}</span>
-                      <span className="text-muted-foreground"> · {new Date(j.created_at).toLocaleString("pt-BR")}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {j.succeeded}/{j.total} ok{j.failed ? ` · ${j.failed} falhas` : ""}
-                      </span>
-                      <Badge variant={j.status === "done" ? "default" : j.status === "failed" ? "destructive" : "secondary"}>
-                        {j.status}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
+                {jobsData!.items.slice(0, 10).map((j) => {
+                  const isRunning = j.status === "running";
+                  const stamp = (j.updated_at ?? j.started_at) as string | null;
+                  const idleMs = stamp ? Date.now() - new Date(stamp).getTime() : 0;
+                  const idleLabel =
+                    idleMs < 60_000
+                      ? `${Math.max(0, Math.floor(idleMs / 1000))}s`
+                      : idleMs < 3_600_000
+                      ? `${Math.floor(idleMs / 60_000)}m`
+                      : `${Math.floor(idleMs / 3_600_000)}h${Math.floor((idleMs % 3_600_000) / 60_000)}m`;
+                  return (
+                    <li
+                      key={j.id}
+                      className="flex items-center justify-between gap-3 text-sm border-b pb-2 last:border-0"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate">
+                          <span className="font-medium">{j.kind}</span>
+                          <span className="text-muted-foreground"> · {j.entity ?? "—"}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {new Date(j.created_at).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        {isRunning && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Última atualização há {idleLabel}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-muted-foreground tabular-nums">
+                          {j.succeeded}/{j.total} ok{j.failed ? ` · ${j.failed} falhas` : ""}
+                        </span>
+                        <Badge
+                          variant={
+                            j.status === "done"
+                              ? "default"
+                              : j.status === "failed"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {j.status}
+                        </Badge>
+                        {isRunning && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLiveJobId(j.id)}
+                              title="Acompanhar em tempo real"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" /> Acompanhar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancelJob(j.id)}
+                              title="Cancelar execução"
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
+
+          <Dialog open={!!liveJobId} onOpenChange={(o) => !o && setLiveJobId(null)}>
+            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Acompanhamento em tempo real</DialogTitle>
+              </DialogHeader>
+              {liveJobId && (
+                <ImportTimeline jobId={liveJobId} onReset={() => setLiveJobId(null)} />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
 
         <aside className="space-y-4">
