@@ -391,8 +391,23 @@ async function loadMapForStep(
     .eq("job_id", jobId);
   const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
   const ids = (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
-  if (!ids.length) return new Map();
   const map = new Map<string, string>();
+  if (!ids.length) {
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase
+        .from(table)
+        .select("id, external_ids")
+        .eq("owner_id", userId)
+        .not("external_ids->>hubspot", "is", null)
+        .range(from, from + 999);
+      for (const r of data ?? []) {
+        const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
+        if (hs) map.set(String(hs), r.id as string);
+      }
+      if (!data || data.length < 1000) break;
+    }
+    return map;
+  }
   // Postgrest .in('external_ids->>hubspot', ids) – use chunking to avoid URL length limits
   for (let i = 0; i < ids.length; i += 200) {
     const chunk = ids.slice(i, i + 200);
@@ -535,12 +550,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const propsParam = allProps.length
         ? allProps.join(",")
         : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
-      let after: string | undefined = resume.cursor;
-      let page = 1;
+      const alreadyProcessed = ok + fail;
+      let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
+      let page = Math.floor(alreadyProcessed / 100) + 1;
       while (ok + fail < scope.maxCompanies) {
         if (isExpired()) {
           partial = true;
-          await persistCursor({ cursor: after });
+          await persistCursor({ cursor: after ?? (ok + fail > 0 ? String(ok + fail) : undefined) });
           break;
         }
         const remaining = scope.maxCompanies - (ok + fail);
@@ -591,7 +607,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           }
         }
         after = res.paging?.next?.after;
-        await persistCursor({ cursor: after });
+        await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
         await bump(ok, fail, scope.maxCompanies);
         page++;
         if (!after) break;

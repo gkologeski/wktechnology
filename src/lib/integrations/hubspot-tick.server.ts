@@ -94,9 +94,27 @@ export async function tickOnce(
     .eq("job_id", job.id)
     .order("created_at", { ascending: true });
 
-  const pending = (items ?? []).find((it) => it.status === "pending");
-  const running = (items ?? []).find((it) => it.status === "running");
-  const anyUnfinished = pending || running;
+  const allItems = items ?? [];
+  const doneSteps = new Set(
+    allItems
+      .filter((it) => it.status === "done")
+      .map((it) => ((it.before as { step?: string } | null)?.step ?? ""))
+      .filter(Boolean),
+  );
+  const sortedPending = allItems
+    .filter((it) => it.status === "pending")
+    .sort(
+      (a, b) =>
+        (((a.before as { order?: number } | null)?.order ?? 0) -
+          ((b.before as { order?: number } | null)?.order ?? 0)),
+    );
+  const pending = sortedPending.find((it) => {
+    const deps = ((it.before as { depends_on?: string[] } | null)?.depends_on ?? []) as string[];
+    return deps.every((d) => doneSteps.has(d));
+  });
+  const blockedPending = sortedPending.length > 0 && !pending;
+  const running = allItems.find((it) => it.status === "running");
+  const anyUnfinished = pending || running || blockedPending;
 
   // Sem nada pra fazer → finalizar job
   if (!anyUnfinished) {
@@ -130,10 +148,14 @@ export async function tickOnce(
   }
 
   // Se há item já 'running', outro worker está nele → sair
-  if (running && !pending) {
+  if (running) {
     return { kind: "busy", jobId: job.id };
   }
   if (!pending) return { kind: "busy", jobId: job.id };
+
+  if (blockedPending) {
+    return { kind: "busy", jobId: job.id };
+  }
 
   // Claim atômico
   const { data: claimed, error: claimErr } = await supabase

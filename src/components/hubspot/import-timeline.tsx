@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Loader2, Play } from "lucide-react";
+import { toast } from "sonner";
+import { resumeHubspotImport, tickHubspotImportJob } from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
@@ -52,7 +56,10 @@ function fmtElapsed(startedAt: string | null, finishedAt: string | null): string
 export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () => void }) {
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [continuing, setContinuing] = useState(false);
   const [, setTick] = useState(0);
+  const resumeFn = useServerFn(resumeHubspotImport);
+  const tickFn = useServerFn(tickHubspotImportJob);
 
   useEffect(() => {
     let active = true;
@@ -102,7 +109,29 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     };
   }, [jobId]);
 
+  useEffect(() => {
+    if (job?.status !== "queued" && job?.status !== "running") return;
+    let cancelled = false;
+    let timer: number | null = null;
+    const loop = async () => {
+      if (cancelled) return;
+      try {
+        const r = await tickFn({ data: { jobId } });
+        if (r.kind === "no_pending" || r.kind === "no_job") return;
+      } catch {
+        // mantém o polling; pode haver outro worker com o item em execução
+      }
+      if (!cancelled) timer = window.setTimeout(loop, 2500);
+    };
+    loop();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [job?.status, jobId, tickFn]);
+
   const finished = job?.status === "done" || job?.status === "failed";
+  const canContinue = job?.status === "failed" && items.some((it) => it.status === "failed" || it.status === "running");
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 
@@ -122,6 +151,20 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       return { step: s, status, succeeded, failed, target, discovered };
     });
   }, [items, job?.scope]);
+
+  async function handleContinue() {
+    setContinuing(true);
+    try {
+      await resumeFn({ data: { jobId } });
+      setJob((prev) => (prev ? { ...prev, status: "queued", error: null, finished_at: null } : prev));
+      void tickFn({ data: { jobId } });
+      toast.success("Importação retomada do último ponto salvo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao continuar importação");
+    } finally {
+      setContinuing(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -148,9 +191,17 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             {job?.failed ? ` · ${job.failed} falhas` : ""}
           </span>
           {finished && (
-            <Button size="sm" variant="outline" onClick={onReset}>
-              Nova importação
-            </Button>
+            <div className="flex items-center gap-2">
+              {canContinue && (
+                <Button size="sm" onClick={() => void handleContinue()} disabled={continuing}>
+                  {continuing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                  Continuar importação
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={onReset}>
+                Nova importação
+              </Button>
+            </div>
           )}
         </div>
         {job?.error && <p className="mt-3 text-sm text-destructive">{job.error}</p>}

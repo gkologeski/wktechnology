@@ -651,6 +651,89 @@ export const tickHubspotImportJob = createServerFn({ method: "POST" })
     return result;
   });
 
+export const resumeHubspotImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: job, error: jobErr } = await supabase
+      .from("enrichment_jobs")
+      .select("id, status")
+      .eq("id", data.jobId)
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (jobErr) throw new Error(jobErr.message);
+    if (!job) throw new Error("Importação não encontrada");
+
+    const { data: items, error: itemsErr } = await supabase
+      .from("enrichment_job_items")
+      .select("id, status, before, after")
+      .eq("job_id", data.jobId);
+    if (itemsErr) throw new Error(itemsErr.message);
+
+    const stepByItem = new Map<string, string>();
+    const depsByStep = new Map<string, string[]>();
+    for (const item of items ?? []) {
+      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const step = typeof before.step === "string" ? before.step : undefined;
+      if (!step) continue;
+      stepByItem.set(item.id, step);
+      depsByStep.set(step, Array.isArray(before.depends_on) ? (before.depends_on as string[]) : []);
+    }
+    const resumeSteps = new Set(
+      (items ?? [])
+        .filter((item) => item.status === "failed" || item.status === "running")
+        .map((item) => stepByItem.get(item.id))
+        .filter(Boolean) as string[],
+    );
+    let expanded = true;
+    while (expanded) {
+      expanded = false;
+      for (const [step, deps] of depsByStep.entries()) {
+        if (!resumeSteps.has(step) && deps.some((dep) => resumeSteps.has(dep))) {
+          resumeSteps.add(step);
+          expanded = true;
+        }
+      }
+    }
+
+    let resumedItems = 0;
+    for (const item of items ?? []) {
+      const step = stepByItem.get(item.id);
+      if (!step || !resumeSteps.has(step)) continue;
+      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const keepProgress = item.status === "failed" || item.status === "running";
+      const mergedBefore = {
+        ...before,
+        read_index: keepProgress ? before.read_index : 0,
+        running_succeeded: keepProgress ? before.running_succeeded ?? after.succeeded ?? 0 : 0,
+        running_failed: keepProgress ? before.running_failed ?? after.failed ?? 0 : 0,
+        imported_hs_ids: keepProgress ? before.imported_hs_ids ?? after.imported_hs_ids ?? [] : [],
+      };
+      const { error } = await supabase
+        .from("enrichment_job_items")
+        .update({ status: "pending", before: mergedBefore as never, after: null, error: null })
+        .eq("id", item.id);
+      if (error) throw new Error(error.message);
+      resumedItems++;
+    }
+
+    if (resumedItems === 0) throw new Error("Não há etapas para continuar nesta importação");
+    const doneCount = (items ?? []).filter((it) => it.status === "done").length;
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: "queued",
+        processed: doneCount,
+        error: null,
+        finished_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.jobId);
+    return { ok: true, resumedItems };
+  });
+
 // Stub do antigo handler — mantido apenas para satisfazer referências; o
 // código abaixo está inativo agora que a execução é tick-based.
 const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
