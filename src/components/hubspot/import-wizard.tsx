@@ -18,7 +18,11 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { startHubspotImport, countHubspotObjects } from "@/lib/integrations/hubspot.functions";
+import {
+  startHubspotImport,
+  countHubspotObjects,
+  tickHubspotImportJob,
+} from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
 type Obj = "companies" | "contacts" | "deals" | "leads" | "activities";
