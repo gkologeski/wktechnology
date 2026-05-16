@@ -99,6 +99,35 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         </DialogContent>
       </Dialog>
 
+      {hsProps && (
+        <Dialog open={showHs} onOpenChange={setShowHs}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full">
+              <Database className="h-3.5 w-3.5 mr-1" />
+              Mais campos (HubSpot) {extraHsEntries.length ? `· ${extraHsEntries.length}` : ""}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Campos do HubSpot</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground">
+              Somente leitura. Dados originais recebidos do HubSpot na última importação.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              {Object.entries(hsProps).map(([k, v]) => (
+                <div key={k} className="space-y-0.5 min-w-0">
+                  <Label className="text-xs text-muted-foreground break-all">{k}</Label>
+                  <div className="text-sm break-words border rounded px-2 py-1 bg-muted/40">
+                    {v === null || v === "" || v === undefined ? "—" : String(v)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <PropertyHistoryDrawer open={showHist} onOpenChange={setShowHist} entity={entity} entityId={row.id} />
     </div>
   );
