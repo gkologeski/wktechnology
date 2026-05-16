@@ -293,10 +293,7 @@ export async function tickOnce(
       .eq("id", job.id);
 
     const stillPending = (refreshed ?? []).some(
-      (it) =>
-        it.status === "pending" ||
-        (it.status === "running" && !((it.before as { paused?: boolean } | null)?.paused === false ? false : true)) ||
-        (it.status === "running"),
+      (it) => it.status === "pending" || it.status === "running",
     );
     if (!stillPending) {
       const anyFailed = (refreshed ?? []).some((it) => it.status === "failed");
