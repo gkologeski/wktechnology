@@ -404,6 +404,8 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
 
   try {
     if (step === "companies") {
+      const allProps = await loadHsProperties("companies");
+      const propsParam = allProps.length ? allProps.join(",") : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
       let after: string | undefined;
       let page = 1;
       while (ok + fail < scope.maxCompanies) {
@@ -411,11 +413,11 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
         const limit = Math.min(100, remaining);
         const params: Record<string, string> = {
           limit: String(limit),
-          properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
+          properties: propsParam,
         };
         if (after) params.after = after;
         const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
-          results: HSRec[];
+          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
           paging?: { next?: { after: string } };
         };
         if (!res.results.length) break;
@@ -431,6 +433,7 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
             fail++;
             continue;
           }
+          const mapped = mapCompany(p);
           const { data: row, error } = await supabase
             .from("companies")
             .insert({
@@ -440,12 +443,14 @@ export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed
               industry: p.industry ?? null,
               size: p.numberofemployees ?? null,
               phone: p.phone ?? null,
-              city: p.city ?? null,
+              city: p.city ?? mapped.city,
               state: p.state ?? null,
               cep: p.zip ?? null,
               address: p.address ?? null,
               website: p.website ?? null,
+              ...mapped,
               external_ids: { hubspot: c.id } as never,
+              hs_raw: rawOf(c),
             })
             .select("id")
             .single();
