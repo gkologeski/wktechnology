@@ -65,7 +65,12 @@ async function getAssocMany(
   return out;
 }
 
-type HSRec = { id: string; properties: Record<string, string | null | undefined> };
+type HSRec = {
+  id: string;
+  properties: Record<string, string | null | undefined>;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
   const out: HSRec[] = [];
