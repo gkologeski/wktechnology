@@ -1,0 +1,246 @@
+// Tick-based execution for HubSpot imports.
+// One tick = one pending item (= one step from planSteps) executed in its own
+// HTTP request, so the Cloudflare Worker timeout (~30s) only has to fit a
+// single step instead of an entire pipeline.
+//
+// Drivers:
+// • UI live timeline calls tickHubspotImportJob every few seconds while open.
+// • pg_cron calls /api/public/hooks/hubspot-tick every minute as a fallback
+//   so jobs progress even when no one is watching the screen.
+//
+// Concurrency: each tick claims one pending item atomically
+// (`UPDATE ... WHERE status='pending' RETURNING *`). If no row is claimed,
+// another tick is already working on this job — return early.
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { runStep, planSteps, STEP_DEPS, type StepName, type Scope } from "./hubspot-steps.server";
+
+type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+
+async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
+  const full: LogEntry = { ...entry, ts: new Date().toISOString() };
+  const { data: cur } = await supabase
+    .from("enrichment_jobs")
+    .select("step_logs")
+    .eq("id", jobId)
+    .single();
+  const arr = Array.isArray(cur?.step_logs) ? (cur!.step_logs as LogEntry[]) : [];
+  const next = [...arr, full].slice(-300);
+  await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
+}
+
+// Cria os itens (1 por step) para o job. Idempotente: só cria se ainda não houver.
+export async function ensureJobItems(supabase: SupabaseClient, jobId: string, steps: StepName[]) {
+  const { data: existing } = await supabase
+    .from("enrichment_job_items")
+    .select("id, before")
+    .eq("job_id", jobId);
+  const have = new Set(
+    (existing ?? []).map((it) => (it.before as { step?: string } | null)?.step).filter(Boolean)
+  );
+  const rows = steps
+    .filter((s) => !have.has(s))
+    .map((s, i) => ({
+      job_id: jobId,
+      status: "pending",
+      before: { step: s, order: i, depends_on: STEP_DEPS[s] } as never,
+    }));
+  if (rows.length > 0) await supabase.from("enrichment_job_items").insert(rows);
+}
+
+type TickResult =
+  | { kind: "no_job" }
+  | { kind: "no_pending"; jobId: string; finished: true }
+  | { kind: "ran"; jobId: string; step: StepName; ok: number; fail: number; finished: boolean }
+  | { kind: "busy"; jobId: string }
+  | { kind: "error"; jobId: string; message: string };
+
+// Encontra próximo job HubSpot para executar (queued/running) e processa UM step.
+// Quando ownerId é fornecido, restringe ao owner; quando undefined (cron),
+// pega qualquer job — o supabase client passado deve ser o admin.
+export async function tickOnce(
+  supabase: SupabaseClient,
+  jobId?: string,
+  ownerId?: string,
+): Promise<TickResult> {
+  // 1) Selecionar o job
+  let job: { id: string; scope: unknown; status: string; owner_id: string } | null = null;
+  if (jobId) {
+    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id").eq("id", jobId);
+    if (ownerId) q.eq("owner_id", ownerId);
+    const { data } = await q.maybeSingle();
+    job = data ?? null;
+  } else {
+    let q = supabase
+      .from("enrichment_jobs")
+      .select("id, scope, status, owner_id")
+      .eq("provider", "hubspot")
+      .eq("kind", "import")
+      .in("status", ["queued", "running"])
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (ownerId) q = q.eq("owner_id", ownerId);
+    const { data } = await q.maybeSingle();
+    job = data ?? null;
+  }
+  if (!job) return { kind: "no_job" };
+
+  const scope = (job.scope ?? {}) as Scope;
+
+  // 2) Pegar próximo item pending e claim atômico
+  const { data: items } = await supabase
+    .from("enrichment_job_items")
+    .select("id, status, before")
+    .eq("job_id", job.id)
+    .order("created_at", { ascending: true });
+
+  const pending = (items ?? []).find((it) => it.status === "pending");
+  const running = (items ?? []).find((it) => it.status === "running");
+  const anyUnfinished = pending || running;
+
+  // Sem nada pra fazer → finalizar job
+  if (!anyUnfinished) {
+    const totals = (items ?? []).reduce(
+      (acc, it) => {
+        const a = (it.after as { succeeded?: number; failed?: number } | null) ?? {};
+        return {
+          succeeded: acc.succeeded + (a.succeeded ?? 0),
+          failed: acc.failed + (a.failed ?? 0),
+        };
+      },
+      { succeeded: 0, failed: 0 },
+    );
+    const anyFailed = (items ?? []).some((it) => it.status === "failed");
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: anyFailed ? "failed" : "done",
+        succeeded: totals.succeeded,
+        failed: totals.failed,
+        processed: items?.length ?? 0,
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    await appendLog(supabase, job.id, {
+      level: "info",
+      step: "done",
+      message: `Importação finalizada: ${totals.succeeded} ok / ${totals.failed} falhas`,
+    });
+    return { kind: "no_pending", jobId: job.id, finished: true };
+  }
+
+  // Se há item já 'running', outro worker está nele → sair
+  if (running && !pending) {
+    return { kind: "busy", jobId: job.id };
+  }
+  if (!pending) return { kind: "busy", jobId: job.id };
+
+  // Claim atômico
+  const { data: claimed, error: claimErr } = await supabase
+    .from("enrichment_job_items")
+    .update({ status: "running" })
+    .eq("id", pending.id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (claimErr || !claimed) {
+    return { kind: "busy", jobId: job.id };
+  }
+
+  // Garantir que o job esteja em 'running'
+  if (job.status !== "running") {
+    await supabase
+      .from("enrichment_jobs")
+      .update({ status: "running", started_at: new Date().toISOString() })
+      .eq("id", job.id);
+  } else {
+    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", job.id);
+  }
+
+  const step = (pending.before as { step?: StepName } | null)?.step as StepName;
+  if (!step) {
+    await supabase
+      .from("enrichment_job_items")
+      .update({ status: "failed", after: { error: "Item sem 'step'" } as never })
+      .eq("id", pending.id);
+    return { kind: "error", jobId: job.id, message: "Item sem step" };
+  }
+
+  // 3) Executar o step
+  try {
+    const result = await runStep({
+      supabase,
+      userId: job.owner_id,
+      jobId: job.id,
+      step,
+      itemId: pending.id,
+      scope,
+    });
+    await supabase
+      .from("enrichment_job_items")
+      .update({
+        status: "done",
+        after: {
+          succeeded: result.succeeded,
+          failed: result.failed,
+          imported_hs_ids: result.importedHsIds,
+        } as never,
+      })
+      .eq("id", pending.id);
+
+    // Atualizar contadores do job
+    const { data: refreshed } = await supabase
+      .from("enrichment_job_items")
+      .select("status, after")
+      .eq("job_id", job.id);
+    const doneCount = (refreshed ?? []).filter((it) => it.status === "done" || it.status === "failed").length;
+    const totalSucc = (refreshed ?? []).reduce(
+      (s, it) => s + ((it.after as { succeeded?: number } | null)?.succeeded ?? 0),
+      0,
+    );
+    const totalFail = (refreshed ?? []).reduce(
+      (s, it) => s + ((it.after as { failed?: number } | null)?.failed ?? 0),
+      0,
+    );
+    await supabase
+      .from("enrichment_jobs")
+      .update({ processed: doneCount, succeeded: totalSucc, failed: totalFail })
+      .eq("id", job.id);
+
+    const stillPending = (refreshed ?? []).some((it) => it.status === "pending" || it.status === "running");
+    if (!stillPending) {
+      const anyFailed = (refreshed ?? []).some((it) => it.status === "failed");
+      await supabase
+        .from("enrichment_jobs")
+        .update({ status: anyFailed ? "failed" : "done", finished_at: new Date().toISOString() })
+        .eq("id", job.id);
+      await appendLog(supabase, job.id, {
+        level: "info",
+        step: "done",
+        message: `Importação finalizada: ${totalSucc} ok / ${totalFail} falhas`,
+      });
+    }
+
+    return {
+      kind: "ran",
+      jobId: job.id,
+      step,
+      ok: result.succeeded,
+      fail: result.failed,
+      finished: !stillPending,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await supabase
+      .from("enrichment_job_items")
+      .update({ status: "failed", after: { error: msg } as never })
+      .eq("id", pending.id);
+    await appendLog(supabase, job.id, { level: "error", step, message: msg });
+    return { kind: "error", jobId: job.id, message: msg };
+  }
+}
+
+// Helper: cria item plan a partir do scope (5-key) usando o planSteps 9-step.
+export function planStepsFromScope(scope: Scope): StepName[] {
+  return planSteps(scope);
+}
