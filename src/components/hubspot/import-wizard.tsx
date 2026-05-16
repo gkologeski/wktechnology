@@ -161,38 +161,38 @@ export function HubspotImportWizard() {
         },
       });
       setJobId(r.jobId);
-      toast.success(`Importação concluída: ${r.succeeded} ok / ${r.failed} falhas`);
+      toast.success(`Importação enfileirada (${r.steps.length} etapas). Execução em segundo plano iniciada.`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha na importação");
+      toast.error(e instanceof Error ? e.message : "Falha ao enfileirar importação");
       setStage("scope");
     }
   }
 
+  // Tick loop — enquanto o usuário está olhando, executa um step a cada ~3s.
+  // O cron (pg_cron) garante progresso quando ninguém está olhando.
+  const tickFn = useServerFn(tickHubspotImportJob);
   useEffect(() => {
-    if (stage !== "running" || jobId) return;
+    if (stage !== "running" || !jobId) return;
     let cancelled = false;
-    (async () => {
-      const { supabase } = await import("@/integrations/supabase/client");
-      for (let i = 0; i < 20; i++) {
-        if (cancelled) return;
-        const { data } = await supabase
-          .from("enrichment_jobs")
-          .select("id")
-          .eq("provider", "hubspot")
-          .eq("kind", "import")
-          .order("created_at", { ascending: false })
-          .limit(1);
-        if (data?.[0]?.id) {
-          setJobId(data[0].id);
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 500));
+    let timer: number | null = null;
+
+    const loop = async () => {
+      if (cancelled) return;
+      try {
+        const r = await tickFn({ data: { jobId } });
+        if (r.kind === "no_pending" || r.kind === "no_job") return; // terminou
+      } catch {
+        // segue tentando — pode ter sido um claim concorrente
       }
-    })();
+      if (!cancelled) timer = window.setTimeout(loop, 2500);
+    };
+    loop();
+
     return () => {
       cancelled = true;
+      if (timer) window.clearTimeout(timer);
     };
-  }, [stage, jobId]);
+  }, [stage, jobId, tickFn]);
 
   if (stage === "running") {
     return (
