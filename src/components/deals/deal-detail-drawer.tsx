@@ -78,9 +78,11 @@ export function DealDetailDrawer({
 
     if (!payload.name) return toast.error("Nome obrigatório");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
     const { error } = deal
-      ? await supabase.from("deals").update(payload).eq("id", deal.id)
-      : await supabase.from("deals").insert(payload);
+      ? await sb.from("deals").update(payload).eq("id", deal.id)
+      : await sb.from("deals").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Salvo");
     qc.invalidateQueries({ queryKey: ["deals"] });

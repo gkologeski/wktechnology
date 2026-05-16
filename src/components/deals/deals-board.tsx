@@ -56,7 +56,8 @@ export function DealsBoard({
     const payload: Record<string, unknown> = { stage_id: newStage };
     if (legacyEnum.includes(newStage)) payload.stage = newStage;
 
-    const { error } = await supabase.from("deals").update(payload).eq("id", id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("deals").update(payload).eq("id", id);
     if (error) {
       toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["deals"] });
