@@ -23,6 +23,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [value, setValue] = useState<string>("");
   const [showAll, setShowAll] = useState(false);
   const [showHist, setShowHist] = useState(false);
+  const [showHs, setShowHs] = useState(false);
+
+  const hsRaw = (row as Record<string, unknown>).hs_raw as { properties?: Record<string, unknown> } | null | undefined;
+  const hsProps = hsRaw?.properties ?? null;
+  const knownKeys = new Set(props.map((p) => p.key));
+  const extraHsEntries = hsProps
+    ? Object.entries(hsProps).filter(([k, v]) => !knownKeys.has(k) && v !== null && v !== "" && v !== undefined)
+    : [];
 
   const primary = props.filter((p) => p.primary);
   const display = primary.length ? primary : props.slice(0, 8);
