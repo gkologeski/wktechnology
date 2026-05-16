@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Loader2, Play } from "lucide-react";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
@@ -52,6 +53,7 @@ function fmtElapsed(startedAt: string | null, finishedAt: string | null): string
 export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () => void }) {
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [continuing, setContinuing] = useState(false);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -103,6 +105,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }, [jobId]);
 
   const finished = job?.status === "done" || job?.status === "failed";
+  const canContinue = job?.status === "failed" && items.some((it) => it.status === "failed" || it.status === "running");
   const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 
@@ -148,9 +151,17 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             {job?.failed ? ` · ${job.failed} falhas` : ""}
           </span>
           {finished && (
-            <Button size="sm" variant="outline" onClick={onReset}>
-              Nova importação
-            </Button>
+            <div className="flex items-center gap-2">
+              {canContinue && (
+                <Button size="sm" onClick={() => void handleContinue()} disabled={continuing}>
+                  {continuing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                  Continuar importação
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={onReset}>
+                Nova importação
+              </Button>
+            </div>
           )}
         </div>
         {job?.error && <p className="mt-3 text-sm text-destructive">{job.error}</p>}
