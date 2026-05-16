@@ -535,12 +535,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const propsParam = allProps.length
         ? allProps.join(",")
         : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
-      let after: string | undefined = resume.cursor;
-      let page = 1;
+      const alreadyProcessed = ok + fail;
+      let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
+      let page = Math.floor(alreadyProcessed / 100) + 1;
       while (ok + fail < scope.maxCompanies) {
         if (isExpired()) {
           partial = true;
-          await persistCursor({ cursor: after });
+          await persistCursor({ cursor: after ?? (ok + fail > 0 ? String(ok + fail) : undefined) });
           break;
         }
         const remaining = scope.maxCompanies - (ok + fail);
@@ -591,7 +592,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           }
         }
         after = res.paging?.next?.after;
-        await persistCursor({ cursor: after });
+        await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
         await bump(ok, fail, scope.maxCompanies);
         page++;
         if (!after) break;
