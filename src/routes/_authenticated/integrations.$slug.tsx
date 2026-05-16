@@ -271,26 +271,89 @@ function IntegrationDetail() {
               <p className="text-sm text-muted-foreground">Nenhuma execução ainda.</p>
             ) : (
               <ul className="space-y-2">
-                {jobsData!.items.slice(0, 10).map((j) => (
-                  <li key={j.id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
-                    <div>
-                      <span className="font-medium">{j.kind}</span>
-                      <span className="text-muted-foreground"> · {j.entity ?? "—"}</span>
-                      <span className="text-muted-foreground"> · {new Date(j.created_at).toLocaleString("pt-BR")}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {j.succeeded}/{j.total} ok{j.failed ? ` · ${j.failed} falhas` : ""}
-                      </span>
-                      <Badge variant={j.status === "done" ? "default" : j.status === "failed" ? "destructive" : "secondary"}>
-                        {j.status}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
+                {jobsData!.items.slice(0, 10).map((j) => {
+                  const isRunning = j.status === "running";
+                  const stamp = (j.updated_at ?? j.started_at) as string | null;
+                  const idleMs = stamp ? Date.now() - new Date(stamp).getTime() : 0;
+                  const idleLabel =
+                    idleMs < 60_000
+                      ? `${Math.max(0, Math.floor(idleMs / 1000))}s`
+                      : idleMs < 3_600_000
+                      ? `${Math.floor(idleMs / 60_000)}m`
+                      : `${Math.floor(idleMs / 3_600_000)}h${Math.floor((idleMs % 3_600_000) / 60_000)}m`;
+                  return (
+                    <li
+                      key={j.id}
+                      className="flex items-center justify-between gap-3 text-sm border-b pb-2 last:border-0"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate">
+                          <span className="font-medium">{j.kind}</span>
+                          <span className="text-muted-foreground"> · {j.entity ?? "—"}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {new Date(j.created_at).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        {isRunning && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Última atualização há {idleLabel}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-muted-foreground tabular-nums">
+                          {j.succeeded}/{j.total} ok{j.failed ? ` · ${j.failed} falhas` : ""}
+                        </span>
+                        <Badge
+                          variant={
+                            j.status === "done"
+                              ? "default"
+                              : j.status === "failed"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {j.status}
+                        </Badge>
+                        {isRunning && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLiveJobId(j.id)}
+                              title="Acompanhar em tempo real"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" /> Acompanhar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancelJob(j.id)}
+                              title="Cancelar execução"
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
+
+          <Dialog open={!!liveJobId} onOpenChange={(o) => !o && setLiveJobId(null)}>
+            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Acompanhamento em tempo real</DialogTitle>
+              </DialogHeader>
+              {liveJobId && (
+                <ImportTimeline jobId={liveJobId} onReset={() => setLiveJobId(null)} />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
 
         <aside className="space-y-4">
