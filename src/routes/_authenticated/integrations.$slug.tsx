@@ -43,6 +43,8 @@ function IntegrationDetail() {
   const disconnect = useServerFn(disconnectIntegration);
   const setLimit = useServerFn(setCreditLimit);
   const enrichCeps = useServerFn(enrichCompaniesAddress);
+  const sweep = useServerFn(sweepZombieJobs);
+  const cancel = useServerFn(cancelJob);
 
   const { data: integrations } = useQuery({
     queryKey: ["integrations", "list"],
