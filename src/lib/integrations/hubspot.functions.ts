@@ -596,7 +596,64 @@ function planSteps(scope: Scope): StepName[] {
   return STEP_ORDER.filter((s) => wanted.has(s));
 }
 
+// ─── Enqueue-only: cria job + items e retorna. A execução roda em ticks
+// (UI/cron chamam tickHubspotImportJob), evitando o timeout de ~30s do Worker.
 export const startHubspotImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ScopeSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { planStepsFromScope, ensureJobItems } = await import("./hubspot-tick.server");
+    const { supabase, userId } = context;
+    const scope = data;
+    // Em modo "full" usamos um teto alto pra companies; demais steps são best-effort.
+    const effectiveScope = {
+      ...scope,
+      maxCompanies: scope.mode === "full" ? 100000 : scope.maxCompanies,
+    };
+    const steps = planStepsFromScope(effectiveScope as never);
+
+    const { data: job, error: jobErr } = await supabase
+      .from("enrichment_jobs")
+      .insert({
+        owner_id: userId,
+        provider: "hubspot",
+        kind: "import",
+        entity: "lead",
+        status: "queued",
+        total: steps.length,
+        scope: effectiveScope as never,
+        step_logs: [
+          {
+            ts: new Date().toISOString(),
+            level: "info",
+            step: "queued",
+            message: `Job criado com ${steps.length} etapas. Aguardando execução…`,
+          },
+        ],
+      })
+      .select("id")
+      .single();
+    if (jobErr || !job) throw new Error(`Erro ao criar job: ${jobErr?.message}`);
+    const jobId = job.id;
+
+    await ensureJobItems(supabase, jobId, steps as never);
+    return { jobId, steps };
+  });
+
+// Executa UM step do job HubSpot. Chamado pela UI (polling) e pelo cron.
+export const tickHubspotImportJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid().optional() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { tickOnce } = await import("./hubspot-tick.server");
+    const { supabase, userId } = context;
+    const result = await tickOnce(supabase, data.jobId, userId);
+    return result;
+  });
+
+// Stub do antigo handler — mantido apenas para satisfazer referências; o
+// código abaixo está inativo agora que a execução é tick-based.
+const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ScopeSchema.parse(input))
   .handler(async ({ data, context }) => {

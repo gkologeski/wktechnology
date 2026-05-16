@@ -33,6 +33,7 @@ import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_au
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
+import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -165,6 +166,12 @@ const AuthenticatedIntegrationsSlugRoute =
     path: '/$slug',
     getParentRoute: () => AuthenticatedIntegrationsRoute,
   } as any)
+const ApiPublicHooksHubspotTickRoute =
+  ApiPublicHooksHubspotTickRouteImport.update({
+    id: '/api/public/hooks/hubspot-tick',
+    path: '/api/public/hooks/hubspot-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/integrations/'
     | '/settings/'
+    | '/api/public/hooks/hubspot-tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/integrations'
     | '/settings'
+    | '/api/public/hooks/hubspot-tick'
   id:
     | '__root__'
     | '/'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/workflows'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
+    | '/api/public/hooks/hubspot-tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,6 +337,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -496,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsSlugRouteImport
       parentRoute: typeof AuthenticatedIntegrationsRoute
     }
+    '/api/public/hooks/hubspot-tick': {
+      id: '/api/public/hooks/hubspot-tick'
+      path: '/api/public/hooks/hubspot-tick'
+      fullPath: '/api/public/hooks/hubspot-tick'
+      preLoaderRoute: typeof ApiPublicHooksHubspotTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -586,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
