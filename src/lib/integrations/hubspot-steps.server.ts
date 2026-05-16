@@ -409,7 +409,75 @@ async function loadMapForStep(
   return map;
 }
 
-// ─────────────────────────── Step implementations ────────────────────────────
+// ─────────────────────── Dedup + resume helpers ──────────────────────────────
+
+type UpsertResult = { status: "inserted" | "updated" | "unchanged" | "failed"; localId?: string; error?: string };
+
+/** Compare existing row vs incoming payload by HS id; insert/update/skip. */
+async function upsertByHsId(
+  supabase: SupabaseClient,
+  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  ownerId: string,
+  hsId: string,
+  payload: Record<string, unknown>,
+): Promise<UpsertResult> {
+  const compareKeys = Object.keys(payload).filter(
+    (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
+  );
+  const selectCols = ["id", ...compareKeys].join(",");
+  const { data: existing } = await supabase
+    .from(table)
+    .select(selectCols)
+    .eq("owner_id", ownerId)
+    .eq("external_ids->>hubspot", hsId)
+    .maybeSingle();
+
+  if (existing) {
+    const localId = (existing as { id: string }).id;
+    const diff: Record<string, unknown> = {};
+    for (const k of compareKeys) {
+      const cur = (existing as Record<string, unknown>)[k];
+      const nxt = payload[k];
+      if (JSON.stringify(cur ?? null) !== JSON.stringify(nxt ?? null)) diff[k] = nxt;
+    }
+    if (Object.keys(diff).length === 0) return { status: "unchanged", localId };
+    const { error } = await supabase.from(table).update(diff as never).eq("id", localId);
+    if (error) return { status: "failed", error: error.message };
+    return { status: "updated", localId };
+  }
+
+  const { data: row, error } = await supabase
+    .from(table)
+    .insert(payload as never)
+    .select("id")
+    .single();
+  if (error || !row) return { status: "failed", error: error?.message ?? "insert failed" };
+  return { status: "inserted", localId: (row as { id: string }).id };
+}
+
+type ResumeState = {
+  started_at?: string;
+  cursor?: string;
+  read_index?: number;
+  running_succeeded?: number;
+  running_failed?: number;
+  discovered?: number;
+  imported_hs_ids?: string[];
+  step?: string;
+  order?: number;
+  depends_on?: string[];
+  [k: string]: unknown;
+};
+
+async function loadResume(supabase: SupabaseClient, itemId: string): Promise<ResumeState> {
+  const { data } = await supabase
+    .from("enrichment_job_items")
+    .select("before")
+    .eq("id", itemId)
+    .single();
+  return ((data?.before as ResumeState | null) ?? {}) as ResumeState;
+}
+
 
 export async function runStep(ctx: StepCtx): Promise<{ succeeded: number; failed: number; importedHsIds: string[] }> {
   const { supabase, userId, jobId, step, itemId, scope } = ctx;
