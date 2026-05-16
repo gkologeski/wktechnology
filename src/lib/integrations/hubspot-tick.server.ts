@@ -90,7 +90,7 @@ export async function tickOnce(
   // 2) Pegar próximo item pending e claim atômico
   const { data: items } = await supabase
     .from("enrichment_job_items")
-    .select("id, status, before")
+    .select("id, status, before, after")
     .eq("job_id", job.id)
     .order("created_at", { ascending: true });
 
