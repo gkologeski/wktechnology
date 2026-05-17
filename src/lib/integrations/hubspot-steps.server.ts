@@ -757,25 +757,33 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       let targetIds = resume.target_ids as string[] | undefined;
       let parentMap = resume.parent_map as Record<string, string> | undefined;
-      if (!targetIds || !parentMap) {
+      if (!targetIds || !parentMap || !resume.discovery_complete) {
         const hsCompanyIds = [...companyMap.keys()];
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
-        });
-        const assoc = await getAssocMany("companies", hsCompanyIds, "contacts", 20);
-        const map: Record<string, string> = {};
-        for (const [hsCo, list] of assoc.entries()) {
-          for (const id of list) if (!map[id]) map[id] = hsCo;
+        if ((resume.assoc_index ?? 0) === 0) {
+          await appendLog(supabase, jobId, {
+            level: "info", step,
+            message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
+          });
         }
-        targetIds = Object.keys(map);
-        parentMap = map;
-        await patchItemBefore(supabase, itemId, {
-          target_ids: targetIds as never,
-          parent_map: parentMap as never,
-          discovered: targetIds.length,
+        const discovery = await discoverTargetsFromAssociations({
+          supabase,
+          jobId,
+          itemId,
+          step,
+          fromObj: "companies",
+          fromIds: hsCompanyIds,
+          toObj: "contacts",
+          resume,
+          deadlineAt,
         });
+        targetIds = discovery.targetIds;
+        parentMap = discovery.parentMap;
         await bump(0, 0, targetIds.length, true);
+        if (discovery.partial) {
+          partial = true;
+          await persistCursor({ discovered: targetIds.length });
+          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+        }
         await appendLog(supabase, jobId, {
           level: "info", step,
           message: `Plano: ${targetIds.length} contatos a importar`,
