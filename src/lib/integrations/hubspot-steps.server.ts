@@ -688,194 +688,229 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         if (!after) break;
       }
     } else if (step === "contacts") {
+      // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
+      // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
-      const hsCompanyIds = [...companyMap.keys()];
-      await appendLog(supabase, jobId, {
-        level: "info",
-        step,
-        message: `Buscando contatos vinculados a ${hsCompanyIds.length} empresas`,
-      });
-      const assoc = await getAssocMany("companies", hsCompanyIds, "contacts", 20);
-      const contactToCompany = new Map<string, string>();
-      for (const [hsCo, list] of assoc.entries()) {
-        for (const id of list) if (!contactToCompany.has(id)) contactToCompany.set(id, hsCo);
+      let targetIds = resume.target_ids as string[] | undefined;
+      let parentMap = resume.parent_map as Record<string, string> | undefined;
+      if (!targetIds || !parentMap) {
+        const hsCompanyIds = [...companyMap.keys()];
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
+        });
+        const assoc = await getAssocMany("companies", hsCompanyIds, "contacts", 20);
+        const map: Record<string, string> = {};
+        for (const [hsCo, list] of assoc.entries()) {
+          for (const id of list) if (!map[id]) map[id] = hsCo;
+        }
+        targetIds = Object.keys(map);
+        parentMap = map;
+        await patchItemBefore(supabase, itemId, {
+          target_ids: targetIds as never,
+          parent_map: parentMap as never,
+          discovered: targetIds.length,
+        });
+        await bump(0, 0, targetIds.length, true);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Plano: ${targetIds.length} contatos a importar`,
+        });
       }
-      await bump(0, 0, contactToCompany.size, true);
       const contactProps = await loadHsProperties("contacts");
       const propsList = contactProps.length
         ? contactProps
         : ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"];
-      const recs = await batchRead("contacts", [...contactToCompany.keys()], propsList);
       let idx = (resume.read_index as number) ?? 0;
-      await appendLog(supabase, jobId, {
-        level: "info",
-        step,
-        message: `Lendo ${recs.length} contatos (a partir de ${idx})`,
-        count: recs.length,
-      });
-      for (; idx < recs.length; idx++) {
-        if (isExpired()) {
-          partial = true;
-          await persistCursor({ read_index: idx });
-          break;
+      const CHUNK = 100;
+      while (idx < targetIds.length) {
+        if (isExpired()) { partial = true; break; }
+        const chunkIds = targetIds.slice(idx, idx + CHUNK);
+        const recs = await batchRead("contacts", chunkIds, propsList);
+        const byId = new Map(recs.map((r) => [r.id, r]));
+        for (const hsId of chunkIds) {
+          const c = byId.get(hsId);
+          if (!c) { fail++; continue; }
+          const p = c.properties;
+          if (!p.firstname && !p.email) { fail++; continue; }
+          const localCompanyId = companyMap.get(parentMap[hsId] ?? "") ?? null;
+          const mapped = mapContact(p);
+          const payload = {
+            owner_id: userId,
+            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+            last_name: p.lastname ?? null,
+            email: p.email ?? null,
+            phone: p.phone ?? null,
+            job_title: p.jobtitle ?? null,
+            company_id: localCompanyId,
+            ...mapped,
+            external_ids: { hubspot: c.id, hs_lifecyclestage: p.lifecyclestage ?? null } as never,
+            hs_raw: rawOf(c),
+          };
+          const r = await upsertByHsId(supabase, "contacts", userId, c.id, payload);
+          if (r.status === "failed") fail++;
+          else { imported.push(c.id); ok++; }
         }
-        const c = recs[idx];
-        const p = c.properties;
-        if (!p.firstname && !p.email) {
-          fail++;
-          continue;
-        }
-        const localCompanyId = companyMap.get(contactToCompany.get(c.id) ?? "") ?? null;
-        const mapped = mapContact(p);
-        const payload = {
-          owner_id: userId,
-          first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-          last_name: p.lastname ?? null,
-          email: p.email ?? null,
-          phone: p.phone ?? null,
-          job_title: p.jobtitle ?? null,
-          company_id: localCompanyId,
-          ...mapped,
-          external_ids: { hubspot: c.id, hs_lifecyclestage: p.lifecyclestage ?? null } as never,
-          hs_raw: rawOf(c),
-        };
-        const r = await upsertByHsId(supabase, "contacts", userId, c.id, payload);
-        if (r.status === "failed") fail++;
-        else {
-          imported.push(c.id);
-          ok++;
-        }
-        if ((idx + 1) % 25 === 0) {
-          await persistCursor({ read_index: idx + 1 });
-          await bump(ok, fail, recs.length);
-        }
+        idx += chunkIds.length;
+        await persistCursor({ read_index: idx });
+        await bump(ok, fail, targetIds.length);
       }
-      if (!partial) await persistCursor({ read_index: recs.length });
+      if (partial) await persistCursor({ read_index: idx });
+      else await persistCursor({ read_index: targetIds.length });
     } else if (step === "deals") {
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
-      const hsCompanyIds = [...companyMap.keys()];
-      await appendLog(supabase, jobId, {
-        level: "info",
-        step,
-        message: `Buscando negócios vinculados a ${hsCompanyIds.length} empresas`,
-      });
-      const assoc = await getAssocMany("companies", hsCompanyIds, "deals", 20);
-      const dealToCompany = new Map<string, string>();
-      for (const [hsCo, list] of assoc.entries()) {
-        for (const id of list) if (!dealToCompany.has(id)) dealToCompany.set(id, hsCo);
+      let targetIds = resume.target_ids as string[] | undefined;
+      let parentMap = resume.parent_map as Record<string, string> | undefined;
+      let dealContactsMap = resume.deal_contacts_map as Record<string, string[]> | undefined;
+      if (!targetIds || !parentMap || !dealContactsMap) {
+        const hsCompanyIds = [...companyMap.keys()];
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Mapeando negócios para ${hsCompanyIds.length} empresas`,
+        });
+        const assoc = await getAssocMany("companies", hsCompanyIds, "deals", 20);
+        const map: Record<string, string> = {};
+        for (const [hsCo, list] of assoc.entries()) {
+          for (const id of list) if (!map[id]) map[id] = hsCo;
+        }
+        targetIds = Object.keys(map);
+        parentMap = map;
+        const dcAssoc = await getAssocMany("deals", targetIds, "contacts", 20);
+        const dcMap: Record<string, string[]> = {};
+        for (const [dId, list] of dcAssoc.entries()) dcMap[dId] = list;
+        dealContactsMap = dcMap;
+        await patchItemBefore(supabase, itemId, {
+          target_ids: targetIds as never,
+          parent_map: parentMap as never,
+          deal_contacts_map: dealContactsMap as never,
+          discovered: targetIds.length,
+        });
+        await bump(0, 0, targetIds.length, true);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Plano: ${targetIds.length} negócios a importar`,
+        });
       }
-      await bump(0, 0, dealToCompany.size, true);
       const dealProps = await loadHsProperties("deals");
       const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
-      const recs = await batchRead("deals", [...dealToCompany.keys()], dealPropsList);
-      const dealContactsAssoc = await getAssocMany("deals", recs.map((r) => r.id), "contacts", 20);
       let idx = (resume.read_index as number) ?? 0;
-      for (; idx < recs.length; idx++) {
-        if (isExpired()) {
-          partial = true;
-          await persistCursor({ read_index: idx });
-          break;
-        }
-        const d = recs[idx];
-        const p = d.properties;
-        const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
-        const mapped = mapDeal(p);
-        const payload = {
-          owner_id: userId,
-          name: p.dealname ?? "Sem nome",
-          value: p.amount ? Number(p.amount) : 0,
-          currency: "BRL",
-          stage: "new",
-          company_id: localCompanyId,
-          expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
-          ...mapped,
-          external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
-          hs_raw: rawOf(d),
-        };
-        const r = await upsertByHsId(supabase, "deals", userId, d.id, payload);
-        if (r.status === "failed") fail++;
-        else {
-          imported.push(d.id);
-          ok++;
-          if (r.status === "inserted") {
-            const contactIds = dealContactsAssoc.get(d.id) ?? [];
-            for (const cid of contactIds) {
-              const lc = contactMap.get(cid);
-              if (lc && r.localId) {
-                await supabase.from("deal_contacts").insert({ deal_id: r.localId, contact_id: lc });
+      const CHUNK = 100;
+      while (idx < targetIds.length) {
+        if (isExpired()) { partial = true; break; }
+        const chunkIds = targetIds.slice(idx, idx + CHUNK);
+        const recs = await batchRead("deals", chunkIds, dealPropsList);
+        const byId = new Map(recs.map((r) => [r.id, r]));
+        for (const hsId of chunkIds) {
+          const d = byId.get(hsId);
+          if (!d) { fail++; continue; }
+          const p = d.properties;
+          const localCompanyId = companyMap.get(parentMap[hsId] ?? "") ?? null;
+          const mapped = mapDeal(p);
+          const payload = {
+            owner_id: userId,
+            name: p.dealname ?? "Sem nome",
+            value: p.amount ? Number(p.amount) : 0,
+            currency: "BRL",
+            stage: "new",
+            company_id: localCompanyId,
+            expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            ...mapped,
+            external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+            hs_raw: rawOf(d),
+          };
+          const r = await upsertByHsId(supabase, "deals", userId, d.id, payload);
+          if (r.status === "failed") fail++;
+          else {
+            imported.push(d.id);
+            ok++;
+            if (r.status === "inserted") {
+              const contactIds = dealContactsMap[d.id] ?? [];
+              for (const cid of contactIds) {
+                const lc = contactMap.get(cid);
+                if (lc && r.localId) {
+                  await supabase.from("deal_contacts").insert({ deal_id: r.localId, contact_id: lc });
+                }
               }
             }
           }
         }
-        if ((idx + 1) % 25 === 0) {
-          await persistCursor({ read_index: idx + 1 });
-          await bump(ok, fail, recs.length);
-        }
+        idx += chunkIds.length;
+        await persistCursor({ read_index: idx });
+        await bump(ok, fail, targetIds.length);
       }
-      if (!partial) await persistCursor({ read_index: recs.length });
+      if (partial) await persistCursor({ read_index: idx });
+      else await persistCursor({ read_index: targetIds.length });
     } else if (step === "leads") {
-      const { data: items } = await supabase
-        .from("enrichment_job_items")
-        .select("after, before")
-        .eq("job_id", jobId);
-      const contactsItem = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === "contacts");
-      const importedContactHs = (contactsItem?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
-      const leadHsIds: string[] = [];
-      for (let i = 0; i < importedContactHs.length; i += 200) {
-        const chunk = importedContactHs.slice(i, i + 200);
-        const { data } = await supabase
-          .from("contacts")
-          .select("external_ids")
-          .eq("owner_id", userId)
-          .in("external_ids->>hubspot", chunk)
-          .eq("external_ids->>hs_lifecyclestage", "lead");
-        for (const r of data ?? []) {
-          const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
-          if (hs) leadHsIds.push(String(hs));
+      let targetIds = resume.target_ids as string[] | undefined;
+      if (!targetIds) {
+        const { data: items } = await supabase
+          .from("enrichment_job_items")
+          .select("after, before")
+          .eq("job_id", jobId);
+        const contactsItem = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === "contacts");
+        const importedContactHs = (contactsItem?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
+        const leadHsIds: string[] = [];
+        for (let i = 0; i < importedContactHs.length; i += 200) {
+          const chunk = importedContactHs.slice(i, i + 200);
+          const { data } = await supabase
+            .from("contacts")
+            .select("external_ids")
+            .eq("owner_id", userId)
+            .in("external_ids->>hubspot", chunk)
+            .eq("external_ids->>hs_lifecyclestage", "lead");
+          for (const r of data ?? []) {
+            const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
+            if (hs) leadHsIds.push(String(hs));
+          }
         }
+        targetIds = leadHsIds;
+        await patchItemBefore(supabase, itemId, {
+          target_ids: targetIds as never,
+          discovered: targetIds.length,
+        });
+        await bump(0, 0, targetIds.length, true);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Plano: ${targetIds.length} leads`,
+        });
       }
-      await bump(0, 0, leadHsIds.length, true);
       const leadProps = await loadHsProperties("contacts");
       const leadPropsList = leadProps.length
         ? leadProps
         : ["firstname", "lastname", "email", "phone", "company", "hs_lead_status", "hs_analytics_source"];
-      const recs = await batchRead("contacts", leadHsIds, leadPropsList);
       let idx = (resume.read_index as number) ?? 0;
-      for (; idx < recs.length; idx++) {
-        if (isExpired()) {
-          partial = true;
-          await persistCursor({ read_index: idx });
-          break;
+      const CHUNK = 100;
+      while (idx < targetIds.length) {
+        if (isExpired()) { partial = true; break; }
+        const chunkIds = targetIds.slice(idx, idx + CHUNK);
+        const recs = await batchRead("contacts", chunkIds, leadPropsList);
+        for (const c of recs) {
+          const p = c.properties;
+          const mapped = mapLead(p);
+          const payload = {
+            owner_id: userId,
+            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+            last_name: p.lastname ?? null,
+            email: p.email ?? null,
+            phone: p.phone ?? null,
+            company_name: p.company ?? null,
+            source: p.hs_analytics_source ?? "hubspot",
+            status: "new",
+            ...mapped,
+            external_ids: { hubspot: c.id } as never,
+            hs_raw: rawOf(c),
+          };
+          const r = await upsertByHsId(supabase, "leads", userId, c.id, payload);
+          if (r.status === "failed") fail++;
+          else { imported.push(c.id); ok++; }
         }
-        const c = recs[idx];
-        const p = c.properties;
-        const mapped = mapLead(p);
-        const payload = {
-          owner_id: userId,
-          first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-          last_name: p.lastname ?? null,
-          email: p.email ?? null,
-          phone: p.phone ?? null,
-          company_name: p.company ?? null,
-          source: p.hs_analytics_source ?? "hubspot",
-          status: "new",
-          ...mapped,
-          external_ids: { hubspot: c.id } as never,
-          hs_raw: rawOf(c),
-        };
-        const r = await upsertByHsId(supabase, "leads", userId, c.id, payload);
-        if (r.status === "failed") fail++;
-        else {
-          imported.push(c.id);
-          ok++;
-        }
-        if ((idx + 1) % 25 === 0) {
-          await persistCursor({ read_index: idx + 1 });
-          await bump(ok, fail, recs.length);
-        }
+        idx += chunkIds.length;
+        await persistCursor({ read_index: idx });
+        await bump(ok, fail, targetIds.length);
       }
-      if (!partial) await persistCursor({ read_index: recs.length });
+      if (partial) await persistCursor({ read_index: idx });
+      else await persistCursor({ read_index: targetIds.length });
     } else if (step.startsWith("activities-")) {
       const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
       const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
@@ -891,78 +926,84 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
       const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
 
-      const seen = new Set<string>();
-      const engagementToParents = new Map<string, { contactId?: string; companyId?: string; dealId?: string }>();
-      const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
-        { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
-        { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
-        { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
-      ];
-      for (const ent of entities) {
-        const assoc = await getAssocMany(ent.fromObj, ent.ids, kind, 20);
-        for (const [fid, list] of assoc.entries()) {
-          for (const eid of list) {
-            seen.add(eid);
-            const cur = engagementToParents.get(eid) ?? {};
-            cur[ent.key] = fid;
-            engagementToParents.set(eid, cur);
+      let targetIds = resume.target_ids as string[] | undefined;
+      type Parents = { contactId?: string; companyId?: string; dealId?: string };
+      let parents = resume.parents_map as Record<string, Parents> | undefined;
+      if (!targetIds || !parents) {
+        const engagementToParents: Record<string, Parents> = {};
+        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
+          { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
+          { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
+          { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
+        ];
+        for (const ent of entities) {
+          const assoc = await getAssocMany(ent.fromObj, ent.ids, kind, 20);
+          for (const [fid, list] of assoc.entries()) {
+            for (const eid of list) {
+              const cur = engagementToParents[eid] ?? {};
+              cur[ent.key] = fid;
+              engagementToParents[eid] = cur;
+            }
           }
         }
+        targetIds = Object.keys(engagementToParents);
+        parents = engagementToParents;
+        await patchItemBefore(supabase, itemId, {
+          target_ids: targetIds as never,
+          parents_map: parents as never,
+          discovered: targetIds.length,
+        });
+        await bump(0, 0, targetIds.length, true);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Plano: ${targetIds.length} ${kind}`,
+        });
       }
-      if (!seen.size) {
+      if (targetIds.length === 0) {
         await appendLog(supabase, jobId, { level: "info", step, message: `Sem ${kind}` });
       } else {
-        await bump(0, 0, seen.size, true);
         const allActProps = await loadHsProperties(kind);
         const actPropsList = allActProps.length ? allActProps : t.props;
-        const recs = await batchRead(kind, [...seen], actPropsList);
         let idx = (resume.read_index as number) ?? 0;
-        for (; idx < recs.length; idx++) {
-          if (isExpired()) {
-            partial = true;
-            await persistCursor({ read_index: idx });
-            break;
+        const CHUNK = 100;
+        while (idx < targetIds.length) {
+          if (isExpired()) { partial = true; break; }
+          const chunkIds = targetIds.slice(idx, idx + CHUNK);
+          const recs = await batchRead(kind, chunkIds, actPropsList);
+          for (const a of recs) {
+            const p = a.properties;
+            const subject =
+              p.hs_note_body?.replace(/<[^>]+>/g, "").slice(0, 100) ??
+              p.hs_call_title ?? p.hs_meeting_title ?? p.hs_task_subject ?? p.hs_email_subject ?? t.type;
+            const body =
+              p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
+            const due = p.hs_timestamp ?? null;
+            const pr = parents[a.id] ?? {};
+            const mapped = mapActivity(kind, p);
+            const payload = {
+              owner_id: userId,
+              type: t.type,
+              subject,
+              body,
+              due_date: due,
+              completed: t.type !== "task",
+              related_contact_id: pr.contactId ? contactMap.get(pr.contactId) ?? null : null,
+              related_company_id: pr.companyId ? companyMap.get(pr.companyId) ?? null : null,
+              related_deal_id: pr.dealId ? dealMap.get(pr.dealId) ?? null : null,
+              ...mapped,
+              external_ids: { hubspot: a.id, hs_kind: kind } as never,
+              hs_raw: rawOf(a),
+            };
+            const r = await upsertByHsId(supabase, "activities", userId, a.id, payload);
+            if (r.status === "failed") fail++;
+            else { imported.push(a.id); ok++; }
           }
-          const a = recs[idx];
-          const p = a.properties;
-          const subject =
-            p.hs_note_body?.replace(/<[^>]+>/g, "").slice(0, 100) ??
-            p.hs_call_title ??
-            p.hs_meeting_title ??
-            p.hs_task_subject ??
-            p.hs_email_subject ??
-            t.type;
-          const body =
-            p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
-          const due = p.hs_timestamp ?? null;
-          const parents = engagementToParents.get(a.id) ?? {};
-          const mapped = mapActivity(kind, p);
-          const payload = {
-            owner_id: userId,
-            type: t.type,
-            subject,
-            body,
-            due_date: due,
-            completed: t.type !== "task",
-            related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
-            related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
-            related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
-            ...mapped,
-            external_ids: { hubspot: a.id, hs_kind: kind } as never,
-            hs_raw: rawOf(a),
-          };
-          const r = await upsertByHsId(supabase, "activities", userId, a.id, payload);
-          if (r.status === "failed") fail++;
-          else {
-            imported.push(a.id);
-            ok++;
-          }
-          if ((idx + 1) % 25 === 0) {
-            await persistCursor({ read_index: idx + 1 });
-            await bump(ok, fail, recs.length);
-          }
+          idx += chunkIds.length;
+          await persistCursor({ read_index: idx });
+          await bump(ok, fail, targetIds.length);
         }
-        if (!partial) await persistCursor({ read_index: recs.length });
+        if (partial) await persistCursor({ read_index: idx });
+        else await persistCursor({ read_index: targetIds.length });
       }
     }
 
