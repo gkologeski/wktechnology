@@ -295,6 +295,19 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     }
   }
 
+  async function handleCancel() {
+    if (!window.confirm("Cancelar a importação em andamento? Você poderá retomá-la depois.")) return;
+    setCancelling(true);
+    try {
+      await cancelFn({ data: { jobId } });
+      toast.success("Importação cancelada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-lg border bg-card p-5">
