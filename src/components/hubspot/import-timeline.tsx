@@ -117,8 +117,13 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       }, 400);
     };
 
+    // Use a unique topic per mount. In React dev/StrictMode the previous
+    // channel can still be subscribed while the effect reconnects; reusing the
+    // same topic can make supabase-js return a subscribed channel, and then
+    // adding `postgres_changes` callbacks throws and crashes the import screen.
+    const channelName = `job-${jobId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const ch = supabase
-      .channel(`job-${jobId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "enrichment_jobs", filter: `id=eq.${jobId}` },
