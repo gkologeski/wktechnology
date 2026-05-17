@@ -567,7 +567,7 @@ const STEP_DEPS: Record<StepName, StepName[]> = {
   companies: [],
   contacts: ["companies"],
   deals: ["companies", "contacts"],
-  leads: ["contacts"],
+  leads: [],
   activities: ["contacts", "companies", "deals"],
 };
 
@@ -580,7 +580,6 @@ function planSteps(scope: Scope): StepName[] {
     wanted.add("deals");
   }
   if (scope.leads) {
-    wanted.add("contacts");
     wanted.add("leads");
   }
   if (scope.activities) {
