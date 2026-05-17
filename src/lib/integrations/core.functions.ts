@@ -23,7 +23,11 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function withTransientRetry<T>(run: () => PromiseLike<QueryResult<T>>, attempts = 3): Promise<QueryResult<T>> {
   let last: QueryResult<T> | null = null;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    last = await run();
+    try {
+      last = await run();
+    } catch (error) {
+      last = { data: null, error: { message: error instanceof Error ? error.message : "Erro temporário ao consultar o banco de dados." } };
+    }
     if (!isTransientDatabaseError(last.error)) return last;
     if (attempt < attempts - 1) await wait(250 * (attempt + 1));
   }
@@ -107,13 +111,15 @@ export const listJobs = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40).optional() }).parse(input))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("enrichment_jobs")
-      .select("id, provider, kind, entity, scope, status, total, processed, succeeded, failed, credits_used, error, started_at, finished_at, created_at, updated_at, step_logs")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (data.provider) q = q.eq("provider", data.provider);
-    const { data: rows, error } = await withTransientRetry(() => q);
+    const { data: rows, error } = await withTransientRetry(() => {
+      let q = supabase
+        .from("enrichment_jobs")
+        .select("id, provider, kind, entity, scope, status, total, processed, succeeded, failed, credits_used, error, started_at, finished_at, created_at, updated_at, step_logs")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (data.provider) q = q.eq("provider", data.provider);
+      return q;
+    });
     if (error) {
       if (isTransientDatabaseError(error)) return { items: [], error: "Banco temporariamente ocupado. Tente novamente em instantes." };
       throw new Error(error.message);
