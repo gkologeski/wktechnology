@@ -1082,19 +1082,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             },
           });
         }
-        const CONCURRENCY = 12;
-        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-          const batch = tasks.slice(i, i + CONCURRENCY);
-          const results = await Promise.all(
-            batch.map((t) => upsertByHsId(supabase, "contacts", userId, t.hsId, t.payload)),
-          );
-          for (let j = 0; j < results.length; j++) {
-            const r = results[j];
-            if (r.status === "failed") fail++;
-            else { imported.push(batch[j].hsId); ok++; }
-          }
-          await bump(ok, fail, targetIds.length);
+        const results = await upsertBatchByHsId(supabase, "contacts", userId, tasks);
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === "failed") fail++;
+          else { imported.push(tasks[j].hsId); ok++; }
         }
+        await bump(ok, fail, targetIds.length, true);
 
         idx += chunkIds.length;
         await persistCursor({ read_index: idx });
