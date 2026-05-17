@@ -429,7 +429,9 @@ async function loadMapForStep(
   fromStep: StepName,
 ): Promise<Map<string, string>> {
   const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
-  if (importedIds.length > 0) return loadLocalMapForHsIds(supabase, userId, table, importedIds);
+  if (importedIds.length > 0 && importedIds.length <= 2_000) {
+    return loadLocalMapForHsIds(supabase, userId, table, importedIds);
+  }
 
   return scanLocalHubspotMap(supabase, userId, table);
 }
