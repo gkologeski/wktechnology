@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import {
   startHubspotImport,
   countHubspotObjects,
-  tickHubspotImportJob,
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
@@ -190,32 +189,6 @@ export function HubspotImportWizard() {
       setStage("scope");
     }
   }
-
-  // Tick loop — enquanto o usuário está olhando, executa um step a cada ~3s.
-  // O cron (pg_cron) garante progresso quando ninguém está olhando.
-  const tickFn = useServerFn(tickHubspotImportJob);
-  useEffect(() => {
-    if (stage !== "running" || !jobId) return;
-    let cancelled = false;
-    let timer: number | null = null;
-
-    const loop = async () => {
-      if (cancelled) return;
-      try {
-        const r = await tickFn({ data: { jobId } });
-        if (r.kind === "no_pending" || r.kind === "no_job") return; // terminou
-      } catch {
-        // segue tentando — pode ter sido um claim concorrente
-      }
-      if (!cancelled) timer = window.setTimeout(loop, 2500);
-    };
-    loop();
-
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [stage, jobId, tickFn]);
 
   if (stage === "running") {
     return (
