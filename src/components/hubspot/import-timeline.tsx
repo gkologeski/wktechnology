@@ -159,7 +159,6 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const counters: LiveCounterProps[] = useMemo(() => {
     const byStep = new Map<string, Item>();
     for (const it of items) if (it.before?.step) byStep.set(it.before.step, it);
-    const maxCompanies = job?.scope?.maxCompanies ?? job?.scope?.maxPerObject;
 
     return KNOWN_STEPS.filter((s) => byStep.has(s)).map((s) => {
       const it = byStep.get(s)!;
@@ -167,10 +166,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       const succeeded = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
       const failed = it.after?.failed ?? it.before?.running_failed ?? 0;
       const discovered = it.before?.discovered;
-      const target = s === "companies" ? (discovered ?? maxCompanies) : discovered;
-      return { step: s, status, succeeded, failed, target, discovered };
+      // Só usa denominador quando descobrimos o total real no HubSpot;
+      // nunca caímos em maxCompanies (que era um teto, não o total real).
+      return { step: s, status, succeeded, failed, target: discovered, discovered };
     });
-  }, [items, job?.scope]);
+  }, [items]);
 
   async function handleContinue() {
     setContinuing(true);
