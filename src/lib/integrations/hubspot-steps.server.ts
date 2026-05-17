@@ -990,11 +990,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     } else if (step === "contacts") {
       // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
       // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
-      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       let targetIds = resume.target_ids as string[] | undefined;
       let parentMap = resume.parent_map as Record<string, string> | undefined;
       if (!targetIds || !parentMap || !resume.discovery_complete) {
-        const hsCompanyIds = [...companyMap.keys()];
+        const hsCompanyIds = await loadImportedHsIdsForStep(supabase, userId, jobId, "companies", "companies");
         if ((resume.assoc_index ?? 0) === 0) {
           await appendLog(supabase, jobId, {
             level: "info", step,
@@ -1058,6 +1057,12 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         const chunkIds = targetIds.slice(idx, idx + CHUNK);
         const recs = await batchRead("contacts", chunkIds, propsList);
         const byId = new Map(recs.map((r) => [r.id, r]));
+        const parentCompanyHsIds = Array.from(
+          new Set(chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id))),
+        );
+        const companyMap = parentCompanyHsIds.length
+          ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+          : new Map<string, string>();
         const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const hsId of chunkIds) {
           const c = byId.get(hsId);
