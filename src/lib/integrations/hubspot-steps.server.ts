@@ -514,10 +514,19 @@ type ResumeState = {
   started_at?: string;
   cursor?: string;
   read_index?: number;
+  assoc_index?: number;
+  deal_contacts_index?: number;
+  discovery_entity_index?: number;
+  discovery_id_index?: number;
+  discovery_complete?: boolean;
   running_succeeded?: number;
   running_failed?: number;
   discovered?: number;
   imported_hs_ids?: string[];
+  target_ids?: string[];
+  parent_map?: Record<string, string>;
+  deal_contacts_map?: Record<string, string[]>;
+  parents_map?: Record<string, { contactId?: string; companyId?: string; dealId?: string }>;
   step?: string;
   order?: number;
   depends_on?: string[];
@@ -546,6 +555,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
 
   // Initialize / preserve before
   const baseBefore: Record<string, unknown> = {
+    ...resume,
     step,
     order: STEP_ORDER.indexOf(step),
     depends_on: STEP_DEPS[step],
