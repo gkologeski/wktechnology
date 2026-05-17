@@ -141,7 +141,7 @@ export const getCreditUsage = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
     const used = (rows ?? []).reduce((s, r) => s + Number(r.delta || 0), 0);
-    const { data: limit } = await withTransientRetry(() =>
+    const { data: limit } = await withTransientRetry<{ monthly_limit: number | null; per_run_confirm_above: number }>(() =>
       supabase
         .from("credit_limits")
         .select("monthly_limit, per_run_confirm_above")
