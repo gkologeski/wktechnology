@@ -334,6 +334,7 @@ export function planSteps(scope: Scope): StepName[] {
     wanted.add("leads");
   }
   if (scope.activities) {
+    wanted.add("deals");
     wanted.add("contacts");
     wanted.add("activities-notes");
     wanted.add("activities-calls");
@@ -427,12 +428,41 @@ async function loadMapForStep(
   table: "companies" | "contacts" | "deals",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
+  const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
+  if (importedIds.length > 0 && importedIds.length <= 2_000) {
+    return loadLocalMapForHsIds(supabase, userId, table, importedIds);
+  }
+
+  return scanLocalHubspotMap(supabase, userId, table);
+}
+
+async function loadImportedHsIdsForStep(
+  supabase: SupabaseClient,
+  userId: string,
+  jobId: string,
+  table: "companies" | "contacts" | "deals",
+  fromStep: StepName,
+): Promise<string[]> {
   const { data: items } = await supabase
     .from("enrichment_job_items")
     .select("after, before")
     .eq("job_id", jobId);
   const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
-  const ids = (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
+  const ids =
+    (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
+    (item?.before as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
+    [];
+  if (ids.length > 0) return Array.from(new Set(ids.map(String)));
+
+  const fallback = await scanLocalHubspotMap(supabase, userId, table);
+  return [...fallback.keys()];
+}
+
+async function scanLocalHubspotMap(
+  supabase: SupabaseClient,
+  userId: string,
+  table: "companies" | "contacts" | "deals",
+): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
     const { data } = await supabase
@@ -447,9 +477,19 @@ async function loadMapForStep(
     }
     if (!data || data.length < 1000) break;
   }
-  // Postgrest .in('external_ids->>hubspot', ids) – use chunking to avoid URL length limits
-  for (let i = 0; i < ids.length; i += 200) {
-    const chunk = ids.slice(i, i + 200);
+  return map;
+}
+
+async function loadLocalMapForHsIds(
+  supabase: SupabaseClient,
+  userId: string,
+  table: "companies" | "contacts" | "deals",
+  ids: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = Array.from(new Set(ids.map(String).filter(Boolean)));
+  for (let i = 0; i < unique.length; i += 250) {
+    const chunk = unique.slice(i, i + 250);
     const { data } = await supabase
       .from(table)
       .select("id, external_ids")
@@ -594,6 +634,122 @@ async function discoverTargetsFromAssociations(args: {
 
   await patchItemBefore(supabase, itemId, { assoc_index: assocIndex, discovery_complete: true, target_ids: targetIds, parent_map: parentMap, discovered: targetIds.length });
   return { targetIds, parentMap, partial: false };
+}
+
+async function discoverDealContactsMap(args: {
+  supabase: SupabaseClient;
+  jobId: string;
+  itemId: string;
+  step: StepName;
+  dealIds: string[];
+  resume: ResumeState;
+  deadlineAt: number;
+}) {
+  const { supabase, jobId, itemId, step, dealIds, resume, deadlineAt } = args;
+  const dealContactsMap = { ...(resume.deal_contacts_map ?? {}) };
+  let index = resume.deal_contacts_index ?? 0;
+  const CHUNK = 500;
+  while (index < dealIds.length) {
+    if (Date.now() >= deadlineAt - 1_500) {
+      await patchItemBefore(supabase, itemId, { deal_contacts_index: index, deal_contacts_map: dealContactsMap });
+      return { dealContactsMap, partial: true };
+    }
+    const chunk = dealIds.slice(index, index + CHUNK);
+    const assoc = await getAssocMany("deals", chunk, "contacts", 20);
+    for (const [dealId, list] of assoc.entries()) dealContactsMap[dealId] = list;
+    index += chunk.length;
+    await patchItemBefore(supabase, itemId, {
+      deal_contacts_index: index,
+      deal_contacts_map: dealContactsMap,
+      last_heartbeat_at: new Date().toISOString(),
+    });
+    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+    await appendLog(supabase, jobId, {
+      level: "info",
+      step,
+      message: `Associações negócio↔contato mapeadas: ${index}/${dealIds.length}`,
+    });
+  }
+  await patchItemBefore(supabase, itemId, { deal_contacts_index: index, deal_contacts_complete: true, deal_contacts_map: dealContactsMap });
+  return { dealContactsMap, partial: false };
+}
+
+async function discoverActivityTargets(args: {
+  supabase: SupabaseClient;
+  jobId: string;
+  itemId: string;
+  step: StepName;
+  kind: string;
+  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[];
+  resume: ResumeState;
+  deadlineAt: number;
+}) {
+  const { supabase, jobId, itemId, step, kind, entities, resume, deadlineAt } = args;
+  const targetIds = [...(resume.target_ids ?? [])];
+  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string }>;
+  const seen = new Set(targetIds);
+  let entityIndex = resume.discovery_entity_index ?? 0;
+  let idIndex = resume.discovery_id_index ?? 0;
+  const CHUNK = 500;
+
+  while (entityIndex < entities.length) {
+    const ent = entities[entityIndex];
+    while (idIndex < ent.ids.length) {
+      if (Date.now() >= deadlineAt - 1_500) {
+        await patchItemBefore(supabase, itemId, {
+          discovery_entity_index: entityIndex,
+          discovery_id_index: idIndex,
+          target_ids: targetIds,
+          parents_map: parents,
+          discovered: targetIds.length,
+        });
+        return { targetIds, parents, partial: true };
+      }
+      const chunk = ent.ids.slice(idIndex, idIndex + CHUNK);
+      const assoc = await getAssocMany(ent.fromObj, chunk, kind, 20);
+      for (const [, list] of assoc.entries()) {
+        for (const eid of list) {
+          const cur = parents[eid] ?? {};
+          cur[ent.key] ??= undefined;
+          cur[ent.key] = cur[ent.key] ?? undefined;
+          parents[eid] = { ...cur, [ent.key]: cur[ent.key] ?? undefined };
+          if (!seen.has(eid)) {
+            seen.add(eid);
+            targetIds.push(eid);
+          }
+        }
+      }
+      for (const [fid, list] of assoc.entries()) {
+        for (const eid of list) parents[eid] = { ...(parents[eid] ?? {}), [ent.key]: fid };
+      }
+      idIndex += chunk.length;
+      await patchItemBefore(supabase, itemId, {
+        discovery_entity_index: entityIndex,
+        discovery_id_index: idIndex,
+        target_ids: targetIds,
+        parents_map: parents,
+        discovered: targetIds.length,
+        last_heartbeat_at: new Date().toISOString(),
+      });
+      await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+      await appendLog(supabase, jobId, {
+        level: "info",
+        step,
+        message: `Associações ${ent.fromObj}→${kind}: ${idIndex}/${ent.ids.length}, ${targetIds.length} itens únicos`,
+      });
+    }
+    entityIndex++;
+    idIndex = 0;
+  }
+  await patchItemBefore(supabase, itemId, {
+    discovery_entity_index: entityIndex,
+    discovery_id_index: idIndex,
+    discovery_complete: true,
+    target_ids: targetIds,
+    parents_map: parents,
+    discovered: targetIds.length,
+  });
+  return { targetIds, parents, partial: false };
 }
 
 
@@ -751,6 +907,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         page++;
         if (!after) break;
       }
+      await patchItemBefore(supabase, itemId, { discovered: ok + fail });
     } else if (step === "contacts") {
       // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
       // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
@@ -764,34 +921,47 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             level: "info", step,
             message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
           });
+          if (hsCompanyIds.length === 0) {
+            targetIds = [];
+            parentMap = {};
+            await patchItemBefore(supabase, itemId, {
+              assoc_index: 0,
+              discovery_complete: true,
+              target_ids: [],
+              parent_map: {},
+              discovered: 0,
+            });
+          }
         }
-        const discovery = await discoverTargetsFromAssociations({
-          supabase,
-          jobId,
-          itemId,
-          step,
-          fromObj: "companies",
-          fromIds: hsCompanyIds,
-          toObj: "contacts",
-          resume,
-          deadlineAt,
-        });
-        targetIds = discovery.targetIds;
-        parentMap = discovery.parentMap;
-        await bump(0, 0, targetIds.length, true);
-        if (discovery.partial) {
-          partial = true;
-          await persistCursor({ discovered: targetIds.length });
-          await patchItemBefore(supabase, itemId, {
-            paused: true,
-            last_heartbeat_at: new Date().toISOString(),
-          });
-          await appendLog(supabase, jobId, {
-            level: "info",
+        if (targetIds === undefined || parentMap === undefined) {
+          const discovery = await discoverTargetsFromAssociations({
+            supabase,
+            jobId,
+            itemId,
             step,
-            message: `Mapeamento de contatos pausado para próximo tick (${targetIds.length} contatos encontrados)`,
+            fromObj: "companies",
+            fromIds: hsCompanyIds,
+            toObj: "contacts",
+            resume,
+            deadlineAt,
           });
-          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+          targetIds = discovery.targetIds;
+          parentMap = discovery.parentMap;
+          await bump(0, 0, targetIds.length, true);
+          if (discovery.partial) {
+            partial = true;
+            await persistCursor({ discovered: targetIds.length });
+            await patchItemBefore(supabase, itemId, {
+              paused: true,
+              last_heartbeat_at: new Date().toISOString(),
+            });
+            await appendLog(supabase, jobId, {
+              level: "info",
+              step,
+              message: `Mapeamento de contatos pausado para próximo tick (${targetIds.length} contatos encontrados)`,
+            });
+            return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+          }
         }
         await appendLog(supabase, jobId, {
           level: "info", step,
@@ -844,34 +1014,51 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       let targetIds = resume.target_ids as string[] | undefined;
       let parentMap = resume.parent_map as Record<string, string> | undefined;
       let dealContactsMap = resume.deal_contacts_map as Record<string, string[]> | undefined;
-      if (!targetIds || !parentMap || !dealContactsMap) {
+      if (!targetIds || !parentMap || !resume.discovery_complete) {
         const hsCompanyIds = [...companyMap.keys()];
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Mapeando negócios para ${hsCompanyIds.length} empresas`,
-        });
-        const assoc = await getAssocMany("companies", hsCompanyIds, "deals", 20);
-        const map: Record<string, string> = {};
-        for (const [hsCo, list] of assoc.entries()) {
-          for (const id of list) if (!map[id]) map[id] = hsCo;
+        if ((resume.assoc_index ?? 0) === 0) {
+          await appendLog(supabase, jobId, {
+            level: "info", step,
+            message: `Mapeando negócios para ${hsCompanyIds.length} empresas`,
+          });
         }
-        targetIds = Object.keys(map);
-        parentMap = map;
-        const dcAssoc = await getAssocMany("deals", targetIds, "contacts", 20);
-        const dcMap: Record<string, string[]> = {};
-        for (const [dId, list] of dcAssoc.entries()) dcMap[dId] = list;
-        dealContactsMap = dcMap;
-        await patchItemBefore(supabase, itemId, {
-          target_ids: targetIds as never,
-          parent_map: parentMap as never,
-          deal_contacts_map: dealContactsMap as never,
-          discovered: targetIds.length,
+        const discovery = await discoverTargetsFromAssociations({
+          supabase,
+          jobId,
+          itemId,
+          step,
+          fromObj: "companies",
+          fromIds: hsCompanyIds,
+          toObj: "deals",
+          resume,
+          deadlineAt,
         });
+        targetIds = discovery.targetIds;
+        parentMap = discovery.parentMap;
         await bump(0, 0, targetIds.length, true);
+        if (discovery.partial) {
+          await persistCursor({ discovered: targetIds.length });
+          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Mapeamento de negócios pausado para próximo tick (${targetIds.length} negócios encontrados)`,
+          });
+          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+        }
         await appendLog(supabase, jobId, {
           level: "info", step,
           message: `Plano: ${targetIds.length} negócios a importar`,
         });
+      }
+      if (!dealContactsMap || !resume.deal_contacts_complete) {
+        const discovery = await discoverDealContactsMap({ supabase, jobId, itemId, step, dealIds: targetIds, resume: await loadResume(supabase, itemId), deadlineAt });
+        dealContactsMap = discovery.dealContactsMap;
+        if (discovery.partial) {
+          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
+          await appendLog(supabase, jobId, { level: "info", step, message: "Mapeamento de contatos dos negócios pausado para próximo tick" });
+          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+        }
       }
       const dealProps = await loadHsProperties("deals");
       const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
@@ -1010,31 +1197,25 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       let targetIds = resume.target_ids as string[] | undefined;
       type Parents = { contactId?: string; companyId?: string; dealId?: string };
       let parents = resume.parents_map as Record<string, Parents> | undefined;
-      if (!targetIds || !parents) {
-        const engagementToParents: Record<string, Parents> = {};
+      if (!targetIds || !parents || !resume.discovery_complete) {
         const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
           { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
           { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
           { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
         ];
-        for (const ent of entities) {
-          const assoc = await getAssocMany(ent.fromObj, ent.ids, kind, 20);
-          for (const [fid, list] of assoc.entries()) {
-            for (const eid of list) {
-              const cur = engagementToParents[eid] ?? {};
-              cur[ent.key] = fid;
-              engagementToParents[eid] = cur;
-            }
-          }
-        }
-        targetIds = Object.keys(engagementToParents);
-        parents = engagementToParents;
-        await patchItemBefore(supabase, itemId, {
-          target_ids: targetIds as never,
-          parents_map: parents as never,
-          discovered: targetIds.length,
-        });
+        const discovery = await discoverActivityTargets({ supabase, jobId, itemId, step, kind, entities, resume, deadlineAt });
+        targetIds = discovery.targetIds;
+        parents = discovery.parents;
         await bump(0, 0, targetIds.length, true);
+        if (discovery.partial) {
+          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Mapeamento de ${kind} pausado para próximo tick (${targetIds.length} encontrados)`,
+          });
+          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+        }
         await appendLog(supabase, jobId, {
           level: "info", step,
           message: `Plano: ${targetIds.length} ${kind}`,

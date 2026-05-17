@@ -66,12 +66,15 @@ async function repairPrematureDependents(supabase: SupabaseClient, jobId: string
   const toReset = rows.filter((it) => {
     const deps = it.before?.depends_on ?? [];
     const zeroResult = (it.after?.succeeded ?? 0) === 0 && (it.after?.failed ?? 0) === 0 && (it.after?.imported_hs_ids?.length ?? 0) === 0;
-    return it.status === "done" && zeroResult && deps.some((dep) => unfinishedSteps.has(dep));
+    const depsUnfinished = deps.some((dep) => unfinishedSteps.has(dep));
+    if (!depsUnfinished) return false;
+    return it.status === "running" || it.status === "pending" || (it.status === "done" && zeroResult);
   });
   for (const item of toReset) {
+    const before = { ...((item.before as Record<string, unknown> | null) ?? {}), paused: false };
     await supabase
       .from("enrichment_job_items")
-      .update({ status: "pending", after: null, error: null })
+      .update({ status: "pending", before: before as never, after: null, error: null })
       .eq("id", item.id);
   }
   if (toReset.length > 0) {
