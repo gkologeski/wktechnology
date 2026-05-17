@@ -334,6 +334,7 @@ export function planSteps(scope: Scope): StepName[] {
     wanted.add("leads");
   }
   if (scope.activities) {
+    wanted.add("deals");
     wanted.add("contacts");
     wanted.add("activities-notes");
     wanted.add("activities-calls");
@@ -427,12 +428,39 @@ async function loadMapForStep(
   table: "companies" | "contacts" | "deals",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
+  const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
+  if (importedIds.length > 0) return loadLocalMapForHsIds(supabase, userId, table, importedIds);
+
+  return scanLocalHubspotMap(supabase, userId, table);
+}
+
+async function loadImportedHsIdsForStep(
+  supabase: SupabaseClient,
+  userId: string,
+  jobId: string,
+  table: "companies" | "contacts" | "deals",
+  fromStep: StepName,
+): Promise<string[]> {
   const { data: items } = await supabase
     .from("enrichment_job_items")
     .select("after, before")
     .eq("job_id", jobId);
   const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
-  const ids = (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
+  const ids =
+    (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
+    (item?.before as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
+    [];
+  if (ids.length > 0) return Array.from(new Set(ids.map(String)));
+
+  const fallback = await scanLocalHubspotMap(supabase, userId, table);
+  return [...fallback.keys()];
+}
+
+async function scanLocalHubspotMap(
+  supabase: SupabaseClient,
+  userId: string,
+  table: "companies" | "contacts" | "deals",
+): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
     const { data } = await supabase
@@ -447,9 +475,19 @@ async function loadMapForStep(
     }
     if (!data || data.length < 1000) break;
   }
-  // Postgrest .in('external_ids->>hubspot', ids) – use chunking to avoid URL length limits
-  for (let i = 0; i < ids.length; i += 200) {
-    const chunk = ids.slice(i, i + 200);
+  return map;
+}
+
+async function loadLocalMapForHsIds(
+  supabase: SupabaseClient,
+  userId: string,
+  table: "companies" | "contacts" | "deals",
+  ids: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = Array.from(new Set(ids.map(String).filter(Boolean)));
+  for (let i = 0; i < unique.length; i += 250) {
+    const chunk = unique.slice(i, i + 250);
     const { data } = await supabase
       .from(table)
       .select("id, external_ids")
