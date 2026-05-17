@@ -573,9 +573,13 @@ const STEP_DEPS: Record<StepName, StepName[]> = {
 
 function planSteps(scope: Scope): StepName[] {
   const wanted = new Set<StepName>();
-  wanted.add("companies"); // sempre
-  if (scope.contacts) wanted.add("contacts");
+  if (scope.companies) wanted.add("companies");
+  if (scope.contacts) {
+    wanted.add("companies");
+    wanted.add("contacts");
+  }
   if (scope.deals) {
+    wanted.add("companies");
     wanted.add("contacts");
     wanted.add("deals");
   }
@@ -583,6 +587,7 @@ function planSteps(scope: Scope): StepName[] {
     wanted.add("leads");
   }
   if (scope.activities) {
+    wanted.add("companies");
     wanted.add("contacts");
     wanted.add("activities");
   }
