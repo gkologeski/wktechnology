@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -142,7 +142,21 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         (it.before?.depends_on?.length ?? 0) > 0;
       return hasEmptyResult;
     });
-  const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+  // Trava monotônica: o scheduler pode reabrir etapas (status done→pending),
+  // o que faria a barra do topo retroceder. Mantemos o maior valor já visto.
+  const highWaterRef = useRef({ processed: 0, succeeded: 0 });
+  if (job && (job.processed ?? 0) > highWaterRef.current.processed) {
+    highWaterRef.current.processed = job.processed ?? 0;
+  }
+  if (job && (job.succeeded ?? 0) > highWaterRef.current.succeeded) {
+    highWaterRef.current.succeeded = job.succeeded ?? 0;
+  }
+  // Reset ao reiniciar/continuar
+  if (job?.status === "queued" && (job.processed ?? 0) === 0) {
+    highWaterRef.current = { processed: 0, succeeded: 0 };
+  }
+  const stableProcessed = Math.max(job?.processed ?? 0, highWaterRef.current.processed);
+  const progress = job && job.total > 0 ? Math.round((stableProcessed / job.total) * 100) : 0;
   const liveSucceeded = items.reduce(
     (acc, it) => acc + (it.after?.succeeded ?? it.before?.running_succeeded ?? 0),
     0,
@@ -151,7 +165,10 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     (acc, it) => acc + (it.after?.failed ?? it.before?.running_failed ?? 0),
     0,
   );
-  const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded);
+  if (liveSucceeded > highWaterRef.current.succeeded) {
+    highWaterRef.current.succeeded = liveSucceeded;
+  }
+  const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded, highWaterRef.current.succeeded);
   const displayFailed = Math.max(job?.failed ?? 0, liveFailed);
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 
@@ -159,7 +176,6 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const counters: LiveCounterProps[] = useMemo(() => {
     const byStep = new Map<string, Item>();
     for (const it of items) if (it.before?.step) byStep.set(it.before.step, it);
-    const maxCompanies = job?.scope?.maxCompanies ?? job?.scope?.maxPerObject;
 
     return KNOWN_STEPS.filter((s) => byStep.has(s)).map((s) => {
       const it = byStep.get(s)!;
@@ -167,10 +183,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       const succeeded = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
       const failed = it.after?.failed ?? it.before?.running_failed ?? 0;
       const discovered = it.before?.discovered;
-      const target = s === "companies" ? (discovered ?? maxCompanies) : discovered;
-      return { step: s, status, succeeded, failed, target, discovered };
+      // Só usa denominador quando descobrimos o total real no HubSpot;
+      // nunca caímos em maxCompanies (que era um teto, não o total real).
+      return { step: s, status, succeeded, failed, target: discovered, discovered };
     });
-  }, [items, job?.scope]);
+  }, [items]);
 
   async function handleContinue() {
     setContinuing(true);
