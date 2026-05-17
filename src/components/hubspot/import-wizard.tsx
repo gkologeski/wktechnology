@@ -40,8 +40,7 @@ const OBJECTS: {
     label: "Empresas",
     icon: Building2,
     deps: [],
-    description: "Raiz da árvore — define o escopo de todos os filhos.",
-    required: true,
+    description: "Raiz da árvore — define o escopo de empresas/contatos/negócios/atividades.",
   },
   {
     key: "contacts",
@@ -61,8 +60,8 @@ const OBJECTS: {
     key: "leads",
     label: "Leads",
     icon: UserPlus,
-    deps: ["contacts"],
-    description: "Contatos importados com lifecyclestage = lead.",
+    deps: [],
+    description: "Objeto Leads nativo do HubSpot (independente de empresas).",
   },
   {
     key: "activities",
