@@ -58,7 +58,11 @@ function DealsPage() {
   const { data: deals = [] } = useQuery({
     queryKey: ["deals", "list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("deals").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at")
+        .order("created_at", { ascending: false })
+        .range(0, 999);
       if (error) throw error;
       return (data ?? []) as Deal[];
     },
