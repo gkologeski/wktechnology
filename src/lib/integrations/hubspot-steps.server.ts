@@ -292,14 +292,14 @@ export type StepName =
 export const STEP_DEPS: Record<StepName, StepName[]> = {
   compare: [],
   companies: ["compare"],
-  contacts: ["compare", "companies"],
-  deals: ["compare", "companies", "contacts"],
+  contacts: ["compare"],
+  deals: ["compare"],
   leads: ["compare"],
-  "activities-notes": ["compare", "contacts", "companies", "deals"],
-  "activities-calls": ["compare", "contacts", "companies", "deals"],
-  "activities-meetings": ["compare", "contacts", "companies", "deals"],
-  "activities-tasks": ["compare", "contacts", "companies", "deals"],
-  "activities-emails": ["compare", "contacts", "companies", "deals"],
+  "activities-notes": ["compare"],
+  "activities-calls": ["compare"],
+  "activities-meetings": ["compare"],
+  "activities-tasks": ["compare"],
+  "activities-emails": ["compare"],
 };
 
 const STEP_ORDER: StepName[] = [
@@ -327,18 +327,11 @@ export type Scope = {
 export function planSteps(scope: Scope): StepName[] {
   const wanted = new Set<StepName>();
   wanted.add("compare");
-  wanted.add("companies");
+  if (scope.companies) wanted.add("companies");
   if (scope.contacts) wanted.add("contacts");
-  if (scope.deals) {
-    wanted.add("contacts");
-    wanted.add("deals");
-  }
-  if (scope.leads) {
-    wanted.add("leads");
-  }
+  if (scope.deals) wanted.add("deals");
+  if (scope.leads) wanted.add("leads");
   if (scope.activities) {
-    wanted.add("deals");
-    wanted.add("contacts");
     wanted.add("activities-notes");
     wanted.add("activities-calls");
     wanted.add("activities-meetings");
