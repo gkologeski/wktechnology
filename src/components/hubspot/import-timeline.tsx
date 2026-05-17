@@ -67,9 +67,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [continuing, setContinuing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [, setTick] = useState(0);
   const resumeFn = useServerFn(resumeHubspotImport);
   const tickFn = useServerFn(tickHubspotImportJob);
+  const cancelFn = useServerFn(cancelHubspotImport);
 
   const normalizeItem = (it: Item): Item => ({
     id: it.id,
