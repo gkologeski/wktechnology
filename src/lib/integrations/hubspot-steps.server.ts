@@ -278,6 +278,7 @@ function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updat
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
+  | "compare"
   | "companies"
   | "contacts"
   | "deals"
@@ -289,18 +290,20 @@ export type StepName =
   | "activities-emails";
 
 export const STEP_DEPS: Record<StepName, StepName[]> = {
-  companies: [],
-  contacts: ["companies"],
-  deals: ["companies", "contacts"],
-  leads: ["contacts"],
-  "activities-notes": ["contacts", "companies", "deals"],
-  "activities-calls": ["contacts", "companies", "deals"],
-  "activities-meetings": ["contacts", "companies", "deals"],
-  "activities-tasks": ["contacts", "companies", "deals"],
-  "activities-emails": ["contacts", "companies", "deals"],
+  compare: [],
+  companies: ["compare"],
+  contacts: ["compare", "companies"],
+  deals: ["compare", "companies", "contacts"],
+  leads: ["compare"],
+  "activities-notes": ["compare", "contacts", "companies", "deals"],
+  "activities-calls": ["compare", "contacts", "companies", "deals"],
+  "activities-meetings": ["compare", "contacts", "companies", "deals"],
+  "activities-tasks": ["compare", "contacts", "companies", "deals"],
+  "activities-emails": ["compare", "contacts", "companies", "deals"],
 };
 
 const STEP_ORDER: StepName[] = [
+  "compare",
   "companies",
   "contacts",
   "deals",
