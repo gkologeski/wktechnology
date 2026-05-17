@@ -199,7 +199,34 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   // Build counter cards in the canonical order — only for steps present in the plan
   const counters: LiveCounterProps[] = useMemo(() => {
     const byStep = new Map<string, Item>();
-    for (const it of items) if (it.before?.step) byStep.set(it.before.step, it);
+    const activityItems: Item[] = [];
+    for (const it of items) {
+      const step = it.before?.step;
+      if (!step) continue;
+      if (step.startsWith("activities-")) activityItems.push(it);
+      else byStep.set(step, it);
+    }
+    if (activityItems.length > 0) {
+      const running = activityItems.find((it) => it.status === "running");
+      const failed = activityItems.find((it) => it.status === "failed");
+      const pending = activityItems.find((it) => it.status === "pending");
+      const base = running ?? failed ?? pending ?? activityItems[activityItems.length - 1];
+      byStep.set("activities", {
+        ...base,
+        status: running ? "running" : failed ? "failed" : pending ? "pending" : "done",
+        before: {
+          ...(base.before ?? { step: "activities", order: 4 }),
+          step: "activities",
+          discovered: activityItems.reduce((acc, it) => acc + (it.before?.discovered ?? 0), 0),
+          running_succeeded: activityItems.reduce((acc, it) => acc + (it.before?.running_succeeded ?? 0), 0),
+          running_failed: activityItems.reduce((acc, it) => acc + (it.before?.running_failed ?? 0), 0),
+        },
+        after: {
+          succeeded: activityItems.reduce((acc, it) => acc + (it.after?.succeeded ?? 0), 0),
+          failed: activityItems.reduce((acc, it) => acc + (it.after?.failed ?? 0), 0),
+        },
+      });
+    }
 
     return KNOWN_STEPS.filter((s) => byStep.has(s)).map((s) => {
       const it = byStep.get(s)!;
