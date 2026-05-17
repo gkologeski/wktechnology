@@ -326,6 +326,7 @@ export type Scope = {
 
 export function planSteps(scope: Scope): StepName[] {
   const wanted = new Set<StepName>();
+  wanted.add("compare");
   wanted.add("companies");
   if (scope.contacts) wanted.add("contacts");
   if (scope.deals) {
@@ -333,7 +334,6 @@ export function planSteps(scope: Scope): StepName[] {
     wanted.add("deals");
   }
   if (scope.leads) {
-    wanted.add("contacts");
     wanted.add("leads");
   }
   if (scope.activities) {
