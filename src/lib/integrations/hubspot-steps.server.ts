@@ -782,6 +782,15 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         if (discovery.partial) {
           partial = true;
           await persistCursor({ discovered: targetIds.length });
+          await patchItemBefore(supabase, itemId, {
+            paused: true,
+            last_heartbeat_at: new Date().toISOString(),
+          });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Mapeamento de contatos pausado para próximo tick (${targetIds.length} contatos encontrados)`,
+          });
           return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
         }
         await appendLog(supabase, jobId, {
