@@ -652,11 +652,11 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               ok++;
             }
           }
-          await bump(ok, fail, scope.maxCompanies);
+          await bump(ok, fail);
         }
         after = res.paging?.next?.after;
         await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
-        await bump(ok, fail, scope.maxCompanies);
+        await bump(ok, fail);
         page++;
         if (!after) break;
       }
