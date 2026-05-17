@@ -51,10 +51,8 @@ export async function computePlannedCount(
   }
 
   if (key === "leads") {
-    const contacts = await deps.unionAssocIds("companies", companyIds, "contacts");
-    if (contacts.size === 0) return 0;
-    const recs = await deps.readContactProps([...contacts], ["lifecyclestage"]);
-    return recs.filter((r) => (r.properties?.lifecyclestage ?? "") === "lead").length;
+    // Objeto nativo "leads" do HubSpot é independente das empresas.
+    return remote;
   }
 
   // activities
