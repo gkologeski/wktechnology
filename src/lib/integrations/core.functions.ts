@@ -198,36 +198,49 @@ export const sweepZombieJobs = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const cutoff = new Date(Date.now() - ZOMBIE_IDLE_SECONDS * 1000).toISOString();
-    let q = supabase
-      .from("enrichment_jobs")
-      .select("id, started_at, updated_at")
-      .eq("status", "running");
-    if (data.provider) q = q.eq("provider", data.provider);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    const { data: rows, error } = await withTransientRetry(() => {
+      let q = supabase
+        .from("enrichment_jobs")
+        .select("id, started_at, updated_at")
+        .eq("status", "running");
+      if (data.provider) q = q.eq("provider", data.provider);
+      return q;
+    });
+    if (error) {
+      if (isTransientDatabaseError(error)) return { swept: 0 };
+      throw new Error(error.message);
+    }
     const zombies = (rows ?? []).filter((r) => {
       const stamp = (r.updated_at ?? r.started_at) as string | null;
       return !stamp || stamp < cutoff;
     });
     if (zombies.length === 0) return { swept: 0 };
     const ids = zombies.map((r) => r.id);
-    await supabase
+    const { error: jobUpdateError } = await withTransientRetry(() => supabase
       .from("enrichment_jobs")
       .update({
         status: "failed",
         error: `Execução interrompida por timeout do servidor (sem progresso por ${ZOMBIE_IDLE_SECONDS}s).`,
         finished_at: new Date().toISOString(),
       })
-      .in("id", ids);
+      .in("id", ids));
+    if (jobUpdateError) {
+      if (isTransientDatabaseError(jobUpdateError)) return { swept: 0 };
+      throw new Error(jobUpdateError.message);
+    }
     // Também finaliza items "running" órfãos para refletir no timeline.
-    await supabase
+    const { error: itemUpdateError } = await withTransientRetry(() => supabase
       .from("enrichment_job_items")
       .update({
         status: "failed",
         after: { error: `Interrompido por timeout (>${ZOMBIE_IDLE_SECONDS}s sem progresso).` } as never,
       })
       .in("job_id", ids)
-      .eq("status", "running");
+      .eq("status", "running"));
+    if (itemUpdateError) {
+      if (isTransientDatabaseError(itemUpdateError)) return { swept: ids.length };
+      throw new Error(itemUpdateError.message);
+    }
     return { swept: ids.length };
   });
 
