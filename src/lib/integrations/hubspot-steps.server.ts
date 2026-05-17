@@ -1184,29 +1184,43 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         if (isExpired()) { partial = true; break; }
         const chunkIds = targetIds.slice(idx, idx + CHUNK);
         const recs = await batchRead("contacts", chunkIds, leadPropsList);
+        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const c of recs) {
           const p = c.properties;
           const mapped = mapLead(p);
-          const payload = {
-            owner_id: userId,
-            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-            last_name: p.lastname ?? null,
-            email: p.email ?? null,
-            phone: p.phone ?? null,
-            company_name: p.company ?? null,
-            source: p.hs_analytics_source ?? "hubspot",
-            status: "new",
-            ...mapped,
-            external_ids: { hubspot: c.id } as never,
-            hs_raw: rawOf(c),
-          };
-          const r = await upsertByHsId(supabase, "leads", userId, c.id, payload);
-          if (r.status === "failed") fail++;
-          else { imported.push(c.id); ok++; }
+          tasks.push({
+            hsId: c.id,
+            payload: {
+              owner_id: userId,
+              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+              last_name: p.lastname ?? null,
+              email: p.email ?? null,
+              phone: p.phone ?? null,
+              company_name: p.company ?? null,
+              source: p.hs_analytics_source ?? "hubspot",
+              status: "new",
+              ...mapped,
+              external_ids: { hubspot: c.id } as never,
+              hs_raw: rawOf(c),
+            },
+          });
+        }
+        const CONCURRENCY = 12;
+        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+          const batch = tasks.slice(i, i + CONCURRENCY);
+          const results = await Promise.all(
+            batch.map((t) => upsertByHsId(supabase, "leads", userId, t.hsId, t.payload)),
+          );
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            if (r.status === "failed") fail++;
+            else { imported.push(batch[j].hsId); ok++; }
+          }
+          await bump(ok, fail, targetIds.length);
         }
         idx += chunkIds.length;
         await persistCursor({ read_index: idx });
-        await bump(ok, fail, targetIds.length);
+
       }
       if (partial) await persistCursor({ read_index: idx });
       else await persistCursor({ read_index: targetIds.length });
