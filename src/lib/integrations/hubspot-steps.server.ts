@@ -1197,31 +1197,25 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       let targetIds = resume.target_ids as string[] | undefined;
       type Parents = { contactId?: string; companyId?: string; dealId?: string };
       let parents = resume.parents_map as Record<string, Parents> | undefined;
-      if (!targetIds || !parents) {
-        const engagementToParents: Record<string, Parents> = {};
+      if (!targetIds || !parents || !resume.discovery_complete) {
         const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
           { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
           { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
           { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
         ];
-        for (const ent of entities) {
-          const assoc = await getAssocMany(ent.fromObj, ent.ids, kind, 20);
-          for (const [fid, list] of assoc.entries()) {
-            for (const eid of list) {
-              const cur = engagementToParents[eid] ?? {};
-              cur[ent.key] = fid;
-              engagementToParents[eid] = cur;
-            }
-          }
-        }
-        targetIds = Object.keys(engagementToParents);
-        parents = engagementToParents;
-        await patchItemBefore(supabase, itemId, {
-          target_ids: targetIds as never,
-          parents_map: parents as never,
-          discovered: targetIds.length,
-        });
+        const discovery = await discoverActivityTargets({ supabase, jobId, itemId, step, kind, entities, resume, deadlineAt });
+        targetIds = discovery.targetIds;
+        parents = discovery.parents;
         await bump(0, 0, targetIds.length, true);
+        if (discovery.partial) {
+          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Mapeamento de ${kind} pausado para próximo tick (${targetIds.length} encontrados)`,
+          });
+          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+        }
         await appendLog(supabase, jobId, {
           level: "info", step,
           message: `Plano: ${targetIds.length} ${kind}`,
