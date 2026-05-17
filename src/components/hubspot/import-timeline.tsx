@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Play } from "lucide-react";
+import { Loader2, Play, StopCircle } from "lucide-react";
 import { toast } from "sonner";
-import { resumeHubspotImport, tickHubspotImportJob } from "@/lib/integrations/hubspot.functions";
+import { resumeHubspotImport, tickHubspotImportJob, cancelHubspotImport } from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
@@ -67,9 +67,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [continuing, setContinuing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [, setTick] = useState(0);
   const resumeFn = useServerFn(resumeHubspotImport);
   const tickFn = useServerFn(tickHubspotImportJob);
+  const cancelFn = useServerFn(cancelHubspotImport);
 
   const normalizeItem = (it: Item): Item => ({
     id: it.id,
@@ -293,6 +295,19 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     }
   }
 
+  async function handleCancel() {
+    if (!window.confirm("Cancelar a importação em andamento? Você poderá retomá-la depois.")) return;
+    setCancelling(true);
+    try {
+      await cancelFn({ data: { jobId } });
+      toast.success("Importação cancelada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-lg border bg-card p-5">
@@ -317,7 +332,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             {stableProcessed}/{job?.total ?? 0} etapas · {displaySucceeded} registros importados
             {displayFailed ? ` · ${displayFailed} falhas` : ""}
           </span>
-          {finished && (
+          {finished ? (
             <div className="flex items-center gap-2">
               {canContinue && (
                 <Button size="sm" onClick={() => void handleContinue()} disabled={continuing}>
@@ -329,6 +344,20 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
                 Nova importação
               </Button>
             </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => void handleCancel()}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <StopCircle className="mr-2 h-4 w-4" />
+              )}
+              Parar importação
+            </Button>
           )}
         </div>
         {job?.error && <p className="mt-3 text-sm text-destructive">{job.error}</p>}

@@ -744,6 +744,50 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
     return { ok: true, resumedItems };
   });
 
+export const cancelHubspotImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: job, error: jobErr } = await supabase
+      .from("enrichment_jobs")
+      .select("id, status, step_logs")
+      .eq("id", data.jobId)
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (jobErr) throw new Error(jobErr.message);
+    if (!job) throw new Error("Importação não encontrada");
+    if (job.status === "done" || job.status === "failed") {
+      return { ok: true, alreadyFinished: true };
+    }
+    const logs = Array.isArray(job.step_logs) ? (job.step_logs as Array<Record<string, unknown>>) : [];
+    const next = [
+      ...logs,
+      {
+        ts: new Date().toISOString(),
+        level: "warn",
+        step: "cancel",
+        message: "Importação cancelada pelo usuário",
+      },
+    ].slice(-300);
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: "failed",
+        error: "Cancelado pelo usuário",
+        finished_at: new Date().toISOString(),
+        step_logs: next as never,
+      })
+      .eq("id", data.jobId);
+    // Marca itens pendentes/em execução como failed para o tick parar de tentar
+    await supabase
+      .from("enrichment_job_items")
+      .update({ status: "failed", error: "Cancelado pelo usuário" } as never)
+      .eq("job_id", data.jobId)
+      .in("status", ["pending", "running"]);
+    return { ok: true };
+  });
+
 // Stub do antigo handler — mantido apenas para satisfazer referências; o
 // código abaixo está inativo agora que a execução é tick-based.
 const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })

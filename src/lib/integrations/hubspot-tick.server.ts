@@ -116,6 +116,10 @@ export async function tickOnce(
     job = data ?? null;
   }
   if (!job) return { kind: "no_job" };
+  // Cancelled/finished jobs must not execute new steps
+  if (job.status !== "queued" && job.status !== "running") {
+    return { kind: "no_pending", jobId: job.id, finished: true };
+  }
 
   const scope = (job.scope ?? {}) as Scope;
 

@@ -278,6 +278,7 @@ function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updat
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
+  | "compare"
   | "companies"
   | "contacts"
   | "deals"
@@ -289,18 +290,20 @@ export type StepName =
   | "activities-emails";
 
 export const STEP_DEPS: Record<StepName, StepName[]> = {
-  companies: [],
-  contacts: ["companies"],
-  deals: ["companies", "contacts"],
-  leads: ["contacts"],
-  "activities-notes": ["contacts", "companies", "deals"],
-  "activities-calls": ["contacts", "companies", "deals"],
-  "activities-meetings": ["contacts", "companies", "deals"],
-  "activities-tasks": ["contacts", "companies", "deals"],
-  "activities-emails": ["contacts", "companies", "deals"],
+  compare: [],
+  companies: ["compare"],
+  contacts: ["compare", "companies"],
+  deals: ["compare", "companies", "contacts"],
+  leads: ["compare"],
+  "activities-notes": ["compare", "contacts", "companies", "deals"],
+  "activities-calls": ["compare", "contacts", "companies", "deals"],
+  "activities-meetings": ["compare", "contacts", "companies", "deals"],
+  "activities-tasks": ["compare", "contacts", "companies", "deals"],
+  "activities-emails": ["compare", "contacts", "companies", "deals"],
 };
 
 const STEP_ORDER: StepName[] = [
+  "compare",
   "companies",
   "contacts",
   "deals",
@@ -323,6 +326,7 @@ export type Scope = {
 
 export function planSteps(scope: Scope): StepName[] {
   const wanted = new Set<StepName>();
+  wanted.add("compare");
   wanted.add("companies");
   if (scope.contacts) wanted.add("contacts");
   if (scope.deals) {
@@ -330,7 +334,6 @@ export function planSteps(scope: Scope): StepName[] {
     wanted.add("deals");
   }
   if (scope.leads) {
-    wanted.add("contacts");
     wanted.add("leads");
   }
   if (scope.activities) {
@@ -831,6 +834,15 @@ async function discoverActivityTargets(args: {
   return { targetIds, parents, partial: false };
 }
 
+async function searchTotal(obj: string): Promise<number> {
+  try {
+    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1 })) as { total?: number };
+    return r.total ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 
 const DEFAULT_BUDGET_MS = 22_000;
 
@@ -885,7 +897,108 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
   };
 
   try {
-    if (step === "companies") {
+    if (step === "compare") {
+      // Count remote (HubSpot) vs local for each planned object and log the diff.
+      // Steps where local >= remote are marked to be skipped (no fetch).
+      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "activities" }[] = [];
+      if (scope.companies !== false) objects.push({ key: "companies", remote: () => searchTotal("companies"), localTable: "companies" });
+      if (scope.contacts) objects.push({ key: "contacts", remote: () => searchTotal("contacts"), localTable: "contacts" });
+      if (scope.deals) objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
+      if (scope.leads) objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
+      if (scope.activities) {
+        objects.push({
+          key: "activities",
+          remote: async () => {
+            const parts = await Promise.all([
+              searchTotal("notes"),
+              searchTotal("calls"),
+              searchTotal("meetings"),
+              searchTotal("tasks"),
+              searchTotal("emails"),
+            ]);
+            return parts.reduce((a: number, b: number) => a + b, 0);
+          },
+          localTable: "activities",
+        });
+      }
+
+      const skipSteps: string[] = [];
+      const summary: Record<string, { local: number; remote: number; diff: number }> = {};
+
+      for (const o of objects) {
+        const [remote, localRes] = await Promise.all([
+          o.remote().catch(() => 0),
+          supabase
+            .from(o.localTable)
+            .select("*", { count: "exact", head: true })
+            .eq("owner_id", userId),
+        ]);
+        const local = localRes.count ?? 0;
+        const diff = Math.max(0, remote - local);
+        summary[o.key] = { local, remote, diff };
+        await appendLog(supabase, jobId, {
+          level: "info",
+          step: "compare",
+          message: `${o.key}: local=${local} · HubSpot=${remote} · diferença=${diff}`,
+          count: diff,
+        });
+        if (diff === 0 && remote > 0) {
+          // already in sync — skip the corresponding step(s)
+          if (o.key === "activities") {
+            skipSteps.push("activities-notes", "activities-calls", "activities-meetings", "activities-tasks", "activities-emails");
+          } else {
+            skipSteps.push(o.key);
+          }
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step: "compare",
+            message: `${o.key}: já está sincronizado, etapa será pulada`,
+          });
+        }
+      }
+
+      // Persist comparison + skip list on the job scope so other steps can read it
+      const { data: jobRow } = await supabase
+        .from("enrichment_jobs")
+        .select("scope")
+        .eq("id", jobId)
+        .single();
+      const prevScope = (jobRow?.scope as Record<string, unknown> | null) ?? {};
+      await supabase
+        .from("enrichment_jobs")
+        .update({ scope: { ...prevScope, compare_summary: summary, skip_steps: skipSteps } as never })
+        .eq("id", jobId);
+
+      // Mark downstream items as 'done' with 0 imports when in skip list
+      if (skipSteps.length > 0) {
+        const { data: allItems } = await supabase
+          .from("enrichment_job_items")
+          .select("id, before")
+          .eq("job_id", jobId);
+        for (const it of allItems ?? []) {
+          const stepName = (it.before as { step?: string } | null)?.step;
+          if (stepName && skipSteps.includes(stepName)) {
+            await supabase
+              .from("enrichment_job_items")
+              .update({
+                status: "done",
+                after: { succeeded: 0, failed: 0, imported_hs_ids: [], skipped: true } as never,
+              })
+              .eq("id", it.id);
+          }
+        }
+      }
+
+      ok = 1;
+      await supabase
+        .from("enrichment_job_items")
+        .update({
+          status: "done",
+          after: { succeeded: 1, failed: 0, imported_hs_ids: [], compare_summary: summary, skip_steps: skipSteps } as never,
+        })
+        .eq("id", itemId);
+      return { succeeded: 1, failed: 0, importedHsIds: [] };
+    } else if (step === "companies") {
       const allProps = await loadHsProperties("companies");
       const propsParam = allProps.length
         ? allProps.join(",")
