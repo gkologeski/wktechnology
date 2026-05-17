@@ -53,11 +53,6 @@ export async function computePlannedCount(
     return set.size;
   }
 
-  if (key === "leads") {
-    // Objeto nativo "leads" do HubSpot é independente das empresas.
-    return remote;
-  }
-
   // activities
   const [contacts, deals] = await Promise.all([
     deps.unionAssocIds("companies", companyIds, "contacts"),
