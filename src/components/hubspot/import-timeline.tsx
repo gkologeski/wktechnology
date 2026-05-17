@@ -28,6 +28,16 @@ type Job = {
 type Item = {
   id: string;
   status: string;
+  step?: string;
+  order?: number;
+  depends_on?: string[];
+  started_at?: string;
+  running_succeeded?: string | number;
+  running_failed?: string | number;
+  discovered?: string | number;
+  after_succeeded?: string | number;
+  after_failed?: string | number;
+  after_finished_at?: string;
   before: {
     step: string;
     order: number;
@@ -61,17 +71,40 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   const resumeFn = useServerFn(resumeHubspotImport);
   const tickFn = useServerFn(tickHubspotImportJob);
 
+  const normalizeItem = (it: Item): Item => ({
+    id: it.id,
+    status: it.status,
+    before: it.before ?? {
+      step: it.step ?? "",
+      order: Number(it.order ?? 0),
+      depends_on: it.depends_on ?? [],
+      started_at: it.started_at,
+      running_succeeded: Number(it.running_succeeded ?? 0),
+      running_failed: Number(it.running_failed ?? 0),
+      discovered: it.discovered === undefined ? undefined : Number(it.discovered),
+    },
+    after: it.after ?? {
+      succeeded: it.after_succeeded === undefined ? undefined : Number(it.after_succeeded),
+      failed: it.after_failed === undefined ? undefined : Number(it.after_failed),
+      finished_at: it.after_finished_at,
+    },
+  });
+
   useEffect(() => {
     let active = true;
     const loadSnapshot = async () => {
-      const { data: j } = await supabase.from("enrichment_jobs").select("*").eq("id", jobId).single();
+      const { data: j } = await supabase
+        .from("enrichment_jobs")
+        .select("id,status,succeeded,failed,processed,total,error,step_logs,finished_at,started_at,scope")
+        .eq("id", jobId)
+        .single();
       if (active && j) setJob(j as unknown as Job);
       const { data: its } = await supabase
         .from("enrichment_job_items")
-        .select("*")
+        .select("id,status,step:before->>step,order:before->>order,depends_on:before->depends_on,started_at:before->>started_at,running_succeeded:before->>running_succeeded,running_failed:before->>running_failed,discovered:before->>discovered,after_succeeded:after->>succeeded,after_failed:after->>failed,after_finished_at:after->>finished_at")
         .eq("job_id", jobId);
       if (active && its)
-        setItems((its as unknown as Item[]).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
+        setItems((its as unknown as Item[]).map(normalizeItem).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
     };
     void loadSnapshot();
 
