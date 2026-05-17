@@ -506,6 +506,7 @@ async function loadLocalMapForHsIds(
 // ─────────────────────── Dedup + resume helpers ──────────────────────────────
 
 type UpsertResult = { status: "inserted" | "updated" | "unchanged" | "failed"; localId?: string; error?: string };
+type UpsertTask = { hsId: string; payload: Record<string, unknown> };
 
 /** Compare existing row vs incoming payload by HS id; insert/update/skip. */
 async function upsertByHsId(
@@ -548,6 +549,84 @@ async function upsertByHsId(
     .single();
   if (error || !row) return { status: "failed", error: error?.message ?? "insert failed" };
   return { status: "inserted", localId: (row as { id: string }).id };
+}
+
+async function upsertBatchByHsId(
+  supabase: SupabaseClient,
+  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  ownerId: string,
+  tasks: UpsertTask[],
+): Promise<UpsertResult[]> {
+  if (tasks.length === 0) return [];
+  const compareKeys = Array.from(
+    new Set(tasks.flatMap((t) => Object.keys(t.payload).filter((k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw"))),
+  );
+  const selectCols = ["id", "external_ids", ...compareKeys].join(",");
+  const { data: existing, error: selectError } = await supabase
+    .from(table)
+    .select(selectCols)
+    .eq("owner_id", ownerId)
+    .in("external_ids->>hubspot", tasks.map((t) => t.hsId));
+
+  if (selectError) return Promise.all(tasks.map((t) => upsertByHsId(supabase, table, ownerId, t.hsId, t.payload)));
+
+  const existingByHs = new Map<string, Record<string, unknown>>();
+  for (const row of (existing ?? []) as unknown as Record<string, unknown>[]) {
+    const hs = (row.external_ids as { hubspot?: string } | null)?.hubspot;
+    if (hs && !existingByHs.has(String(hs))) existingByHs.set(String(hs), row);
+  }
+
+  const results: UpsertResult[] = Array(tasks.length).fill(null).map(() => ({ status: "failed", error: "not processed" }));
+  const inserts: { index: number; row: Record<string, unknown> }[] = [];
+  const updates: { index: number; localId: string; diff: Record<string, unknown> }[] = [];
+
+  tasks.forEach((task, index) => {
+    const existingRow = existingByHs.get(task.hsId);
+    if (!existingRow) {
+      inserts.push({ index, row: task.payload });
+      return;
+    }
+    const localId = existingRow.id as string;
+    const diff: Record<string, unknown> = {};
+    for (const k of compareKeys) {
+      if (JSON.stringify(existingRow[k] ?? null) !== JSON.stringify(task.payload[k] ?? null)) diff[k] = task.payload[k];
+    }
+    if (Object.keys(diff).length === 0) results[index] = { status: "unchanged", localId };
+    else updates.push({ index, localId, diff });
+  });
+
+  for (let i = 0; i < updates.length; i += 12) {
+    const batch = updates.slice(i, i + 12);
+    const updated = await Promise.all(batch.map((u) => supabase.from(table).update(u.diff as never).eq("id", u.localId)));
+    updated.forEach(({ error }, j) => {
+      const u = batch[j];
+      results[u.index] = error ? { status: "failed", error: error.message } : { status: "updated", localId: u.localId };
+    });
+  }
+
+  if (inserts.length > 0) {
+    const { data: inserted, error } = await supabase
+      .from(table)
+      .insert(inserts.map((i) => i.row) as never)
+      .select("id, external_ids");
+    if (error) {
+      inserts.forEach((ins) => { results[ins.index] = { status: "failed", error: error.message }; });
+    } else {
+      const insertedByHs = new Map<string, string>();
+      for (const row of (inserted ?? []) as unknown as { id: string; external_ids: { hubspot?: string } | null }[]) {
+        const hs = row.external_ids?.hubspot;
+        if (hs) insertedByHs.set(String(hs), row.id);
+      }
+      inserts.forEach((ins) => {
+        const hs = (ins.row.external_ids as { hubspot?: string } | null)?.hubspot;
+        results[ins.index] = hs && insertedByHs.has(String(hs))
+          ? { status: "inserted", localId: insertedByHs.get(String(hs)) }
+          : { status: "failed", error: "insert did not return id" };
+      });
+    }
+  }
+
+  return results;
 }
 
 type ResumeState = {
@@ -1003,19 +1082,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             },
           });
         }
-        const CONCURRENCY = 12;
-        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-          const batch = tasks.slice(i, i + CONCURRENCY);
-          const results = await Promise.all(
-            batch.map((t) => upsertByHsId(supabase, "contacts", userId, t.hsId, t.payload)),
-          );
-          for (let j = 0; j < results.length; j++) {
-            const r = results[j];
-            if (r.status === "failed") fail++;
-            else { imported.push(batch[j].hsId); ok++; }
-          }
-          await bump(ok, fail, targetIds.length);
+        const results = await upsertBatchByHsId(supabase, "contacts", userId, tasks);
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === "failed") fail++;
+          else { imported.push(tasks[j].hsId); ok++; }
         }
+        await bump(ok, fail, targetIds.length, true);
 
         idx += chunkIds.length;
         await persistCursor({ read_index: idx });
