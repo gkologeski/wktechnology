@@ -1046,10 +1046,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           message: `Plano: ${targetIds.length} contatos a importar`,
         });
       }
-      const contactProps = await loadHsProperties("contacts");
-      const propsList = contactProps.length
-        ? contactProps
-        : ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"];
+      const propsList = [
+        "firstname", "lastname", "email", "phone", "jobtitle", "mobilephone",
+        "country", "address", "zip", "city", "state", "website", "company",
+        "lifecyclestage", "hs_lead_status", "hubspot_owner_id", "hs_object_id",
+        "createdate", "hs_createdate", "lastmodifieddate", "hs_lastmodifieddate",
+        "linkedin_url", "linkedinbio", "twitterhandle",
+      ];
       let idx = (resume.read_index as number) ?? 0;
       const CHUNK = 100;
       while (idx < targetIds.length) {
