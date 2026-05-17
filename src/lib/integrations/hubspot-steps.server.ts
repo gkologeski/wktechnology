@@ -979,6 +979,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         const chunkIds = targetIds.slice(idx, idx + CHUNK);
         const recs = await batchRead("contacts", chunkIds, propsList);
         const byId = new Map(recs.map((r) => [r.id, r]));
+        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const hsId of chunkIds) {
           const c = byId.get(hsId);
           if (!c) { fail++; continue; }
@@ -986,22 +987,36 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           if (!p.firstname && !p.email) { fail++; continue; }
           const localCompanyId = companyMap.get(parentMap[hsId] ?? "") ?? null;
           const mapped = mapContact(p);
-          const payload = {
-            owner_id: userId,
-            first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-            last_name: p.lastname ?? null,
-            email: p.email ?? null,
-            phone: p.phone ?? null,
-            job_title: p.jobtitle ?? null,
-            company_id: localCompanyId,
-            ...mapped,
-            external_ids: { hubspot: c.id, hs_lifecyclestage: p.lifecyclestage ?? null } as never,
-            hs_raw: rawOf(c),
-          };
-          const r = await upsertByHsId(supabase, "contacts", userId, c.id, payload);
-          if (r.status === "failed") fail++;
-          else { imported.push(c.id); ok++; }
+          tasks.push({
+            hsId: c.id,
+            payload: {
+              owner_id: userId,
+              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
+              last_name: p.lastname ?? null,
+              email: p.email ?? null,
+              phone: p.phone ?? null,
+              job_title: p.jobtitle ?? null,
+              company_id: localCompanyId,
+              ...mapped,
+              external_ids: { hubspot: c.id, hs_lifecyclestage: p.lifecyclestage ?? null } as never,
+              hs_raw: rawOf(c),
+            },
+          });
         }
+        const CONCURRENCY = 12;
+        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+          const batch = tasks.slice(i, i + CONCURRENCY);
+          const results = await Promise.all(
+            batch.map((t) => upsertByHsId(supabase, "contacts", userId, t.hsId, t.payload)),
+          );
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            if (r.status === "failed") fail++;
+            else { imported.push(batch[j].hsId); ok++; }
+          }
+          await bump(ok, fail, targetIds.length);
+        }
+
         idx += chunkIds.length;
         await persistCursor({ read_index: idx });
         await bump(ok, fail, targetIds.length);
