@@ -3,16 +3,48 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ProviderSlug } from "./registry";
 
+const TRANSIENT_DB_MESSAGES = [
+  "could not query the database for the schema cache",
+  "statement timeout",
+  "connection",
+  "timeout",
+  "temporarily unavailable",
+];
+
+type QueryResult<T> = { data: T | null; error: { message?: string } | null };
+
+const isTransientDatabaseError = (error: { message?: string } | null | undefined) => {
+  const message = error?.message?.toLowerCase() ?? "";
+  return TRANSIENT_DB_MESSAGES.some((needle) => message.includes(needle));
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function withTransientRetry<T>(run: () => PromiseLike<QueryResult<T>>, attempts = 3): Promise<QueryResult<T>> {
+  let last: QueryResult<T> | null = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    last = await run();
+    if (!isTransientDatabaseError(last.error)) return last;
+    if (attempt < attempts - 1) await wait(250 * (attempt + 1));
+  }
+  return last ?? { data: null, error: { message: "Erro temporário ao consultar o banco de dados." } };
+}
+
 // List integrations of the current user
 export const listIntegrations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
-      .from("integrations")
-      .select("id, provider, status, config, last_used_at, created_at, updated_at")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    const { data, error } = await withTransientRetry(() =>
+      supabase
+        .from("integrations")
+        .select("id, provider, status, config, last_used_at, created_at, updated_at")
+        .order("created_at", { ascending: false })
+    );
+    if (error) {
+      if (isTransientDatabaseError(error)) return { items: [], error: "Banco temporariamente ocupado. Tente novamente em instantes." };
+      throw new Error(error.message);
+    }
     return { items: data ?? [] };
   });
 
@@ -75,10 +107,17 @@ export const listJobs = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40).optional() }).parse(input))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    let q = supabase.from("enrichment_jobs").select("*").order("created_at", { ascending: false }).limit(50);
+    let q = supabase
+      .from("enrichment_jobs")
+      .select("id, provider, kind, entity, scope, status, total, processed, succeeded, failed, credits_used, error, started_at, finished_at, created_at, updated_at, step_logs")
+      .order("created_at", { ascending: false })
+      .limit(50);
     if (data.provider) q = q.eq("provider", data.provider);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    const { data: rows, error } = await withTransientRetry(() => q);
+    if (error) {
+      if (isTransientDatabaseError(error)) return { items: [], error: "Banco temporariamente ocupado. Tente novamente em instantes." };
+      throw new Error(error.message);
+    }
     return { items: rows ?? [] };
   });
 
