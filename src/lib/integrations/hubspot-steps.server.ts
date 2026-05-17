@@ -1328,63 +1328,79 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       if (partial) await persistCursor({ read_index: idx });
       else await persistCursor({ read_index: targetIds.length });
     } else if (step === "leads") {
-      let targetIds = resume.target_ids as string[] | undefined;
-      if (!targetIds) {
-        const { data: items } = await supabase
-          .from("enrichment_job_items")
-          .select("after, before")
-          .eq("job_id", jobId);
-        const contactsItem = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === "contacts");
-        const importedContactHs = (contactsItem?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ?? [];
-        const leadHsIds: string[] = [];
-        for (let i = 0; i < importedContactHs.length; i += 200) {
-          const chunk = importedContactHs.slice(i, i + 200);
-          const { data } = await supabase
-            .from("contacts")
-            .select("external_ids")
-            .eq("owner_id", userId)
-            .in("external_ids->>hubspot", chunk)
-            .eq("external_ids->>hs_lifecyclestage", "lead");
-          for (const r of data ?? []) {
-            const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
-            if (hs) leadHsIds.push(String(hs));
-          }
-        }
-        targetIds = leadHsIds;
-        await patchItemBefore(supabase, itemId, {
-          target_ids: targetIds as never,
-          discovered: targetIds.length,
-        });
-        await bump(0, 0, targetIds.length, true);
+      // Importa o objeto NATIVO de Leads do HubSpot (/crm/v3/objects/leads),
+      // paginando com cursor — não depende da importação de contatos.
+      const leadProps = await loadHsProperties("leads");
+      const fallbackProps = [
+        "hs_lead_name",
+        "hs_lead_name_calculated",
+        "hs_associated_contact_firstname",
+        "hs_associated_contact_lastname",
+        "hs_associated_contact_email",
+        "hs_associated_company_name",
+        "hs_lead_source",
+        "hs_analytics_source",
+        "hs_analytics_source_data_1",
+        "hs_pipeline_stage",
+        "hubspot_owner_id",
+        "hs_object_id",
+        "createdate",
+        "lastmodifieddate",
+      ];
+      const propsParam = (leadProps.length ? leadProps : fallbackProps).join(",");
+
+      if (resume.discovered === undefined) {
+        const total = await searchTotal("leads");
+        await patchItemBefore(supabase, itemId, { discovered: total });
         await appendLog(supabase, jobId, {
           level: "info", step,
-          message: `Plano: ${targetIds.length} leads`,
+          message: `Total no HubSpot: ${total} leads`,
         });
       }
-      const leadProps = await loadHsProperties("contacts");
-      const leadPropsList = leadProps.length
-        ? leadProps
-        : ["firstname", "lastname", "email", "phone", "company", "hs_lead_status", "hs_analytics_source"];
-      let idx = (resume.read_index as number) ?? 0;
-      const CHUNK = 100;
-      while (idx < targetIds.length) {
-        if (isExpired()) { partial = true; break; }
-        const chunkIds = targetIds.slice(idx, idx + CHUNK);
-        const recs = await batchRead("contacts", chunkIds, leadPropsList);
-        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
-        for (const c of recs) {
+
+      let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
+      let page = (resume.page as number | undefined) ?? 1;
+      while (true) {
+        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+        const params: Record<string, string> = { limit: "100", properties: propsParam };
+        if (after) params.after = after;
+        const res = (await hsFetch("/crm/v3/objects/leads", params)) as {
+          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
+          paging?: { next?: { after: string } };
+        };
+        if (!res.results?.length) break;
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Página ${page}: ${res.results.length} leads`,
+          count: res.results.length,
+        });
+
+        type Task = { hsId: string; payload: Record<string, unknown> };
+        const tasks: Task[] = [];
+        for (const c of res.results) {
           const p = c.properties;
           const mapped = mapLead(p);
+          let first = (p.hs_associated_contact_firstname ?? "") as string;
+          let last = (p.hs_associated_contact_lastname ?? null) as string | null;
+          if (!first) {
+            const full = ((p.hs_lead_name_calculated ?? p.hs_lead_name ?? "") as string).trim();
+            if (full) {
+              const parts = full.split(/\s+/);
+              first = parts[0];
+              last = parts.slice(1).join(" ") || last;
+            }
+          }
+          if (!first) first = (p.hs_associated_contact_email ?? "Sem nome") as string;
           tasks.push({
             hsId: c.id,
             payload: {
               owner_id: userId,
-              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-              last_name: p.lastname ?? null,
-              email: p.email ?? null,
-              phone: p.phone ?? null,
-              company_name: p.company ?? null,
-              source: p.hs_analytics_source ?? "hubspot",
+              first_name: first,
+              last_name: last,
+              email: p.hs_associated_contact_email ?? null,
+              phone: null,
+              company_name: p.hs_associated_company_name ?? null,
+              source: p.hs_lead_source ?? p.hs_analytics_source ?? "hubspot",
               status: "new",
               ...mapped,
               external_ids: { hubspot: c.id } as never,
@@ -1392,6 +1408,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             },
           });
         }
+
         const CONCURRENCY = 12;
         for (let i = 0; i < tasks.length; i += CONCURRENCY) {
           const batch = tasks.slice(i, i + CONCURRENCY);
@@ -1400,17 +1417,26 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           );
           for (let j = 0; j < results.length; j++) {
             const r = results[j];
-            if (r.status === "failed") fail++;
-            else { imported.push(batch[j].hsId); ok++; }
+            if (r.status === "failed") {
+              fail++;
+              await appendLog(supabase, jobId, {
+                level: "warn", step,
+                message: `Falha lead ${batch[j].hsId}: ${r.error}`,
+              });
+            } else {
+              imported.push(batch[j].hsId);
+              ok++;
+            }
           }
-          await bump(ok, fail, targetIds.length);
+          await bump(ok, fail);
         }
-        idx += chunkIds.length;
-        await persistCursor({ read_index: idx });
 
+        after = res.paging?.next?.after;
+        page++;
+        await persistCursor({ cursor: after ?? null, page });
+        await bump(ok, fail);
+        if (!after) break;
       }
-      if (partial) await persistCursor({ read_index: idx });
-      else await persistCursor({ read_index: targetIds.length });
     } else if (step.startsWith("activities-")) {
       const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
       const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
