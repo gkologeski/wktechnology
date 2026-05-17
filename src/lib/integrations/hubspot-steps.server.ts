@@ -789,6 +789,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         page++;
         if (!after) break;
       }
+      await patchItemBefore(supabase, itemId, { discovered: ok + fail });
     } else if (step === "contacts") {
       // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
       // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
@@ -802,34 +803,47 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             level: "info", step,
             message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
           });
+          if (hsCompanyIds.length === 0) {
+            targetIds = [];
+            parentMap = {};
+            await patchItemBefore(supabase, itemId, {
+              assoc_index: 0,
+              discovery_complete: true,
+              target_ids: [],
+              parent_map: {},
+              discovered: 0,
+            });
+          }
         }
-        const discovery = await discoverTargetsFromAssociations({
-          supabase,
-          jobId,
-          itemId,
-          step,
-          fromObj: "companies",
-          fromIds: hsCompanyIds,
-          toObj: "contacts",
-          resume,
-          deadlineAt,
-        });
-        targetIds = discovery.targetIds;
-        parentMap = discovery.parentMap;
-        await bump(0, 0, targetIds.length, true);
-        if (discovery.partial) {
-          partial = true;
-          await persistCursor({ discovered: targetIds.length });
-          await patchItemBefore(supabase, itemId, {
-            paused: true,
-            last_heartbeat_at: new Date().toISOString(),
-          });
-          await appendLog(supabase, jobId, {
-            level: "info",
+        if (targetIds === undefined || parentMap === undefined) {
+          const discovery = await discoverTargetsFromAssociations({
+            supabase,
+            jobId,
+            itemId,
             step,
-            message: `Mapeamento de contatos pausado para próximo tick (${targetIds.length} contatos encontrados)`,
+            fromObj: "companies",
+            fromIds: hsCompanyIds,
+            toObj: "contacts",
+            resume,
+            deadlineAt,
           });
-          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+          targetIds = discovery.targetIds;
+          parentMap = discovery.parentMap;
+          await bump(0, 0, targetIds.length, true);
+          if (discovery.partial) {
+            partial = true;
+            await persistCursor({ discovered: targetIds.length });
+            await patchItemBefore(supabase, itemId, {
+              paused: true,
+              last_heartbeat_at: new Date().toISOString(),
+            });
+            await appendLog(supabase, jobId, {
+              level: "info",
+              step,
+              message: `Mapeamento de contatos pausado para próximo tick (${targetIds.length} contatos encontrados)`,
+            });
+            return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
+          }
         }
         await appendLog(supabase, jobId, {
           level: "info", step,
