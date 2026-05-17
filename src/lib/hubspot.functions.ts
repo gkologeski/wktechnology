@@ -4,57 +4,90 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
-type HSContact = {
+type HSLead = {
   id: string;
   properties: Record<string, string | null | undefined>;
 };
 
-async function fetchHubspotContacts(limit: number, after?: string) {
+const LEAD_PROPERTIES = [
+  "hs_lead_name",
+  "hs_lead_name_calculated",
+  "hs_associated_contact_firstname",
+  "hs_associated_contact_lastname",
+  "hs_associated_contact_email",
+  "hs_associated_company_name",
+  "hs_lead_source",
+  "hs_pipeline_stage",
+  "hubspot_owner_id",
+];
+
+function headers() {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
   const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY;
   if (!HUBSPOT_API_KEY) throw new Error("Conecte o HubSpot para continuar");
+  return {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "X-Connection-Api-Key": HUBSPOT_API_KEY,
+    "Content-Type": "application/json",
+  } as Record<string, string>;
+}
 
+async function fetchHubspotLeads(limit: number, after?: string) {
   const params = new URLSearchParams({
     limit: String(limit),
-    properties: "firstname,lastname,email,phone,company,hs_lead_status,lifecyclestage,hs_analytics_source",
+    properties: LEAD_PROPERTIES.join(","),
   });
   if (after) params.set("after", after);
 
-  const res = await fetch(`${GATEWAY_URL}/crm/v3/objects/contacts?${params}`, {
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": HUBSPOT_API_KEY,
-    },
+  const res = await fetch(`${GATEWAY_URL}/crm/v3/objects/leads?${params}`, {
+    headers: headers(),
   });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(`HubSpot API erro [${res.status}]: ${JSON.stringify(data)}`);
   }
-  return data as { results: HSContact[]; paging?: { next?: { after: string } } };
+  return data as { results: HSLead[]; paging?: { next?: { after: string } } };
+}
+
+function splitName(full: string | null | undefined): { first: string; last: string | null } {
+  const s = (full ?? "").trim();
+  if (!s) return { first: "", last: null };
+  const parts = s.split(/\s+/);
+  return { first: parts[0], last: parts.slice(1).join(" ") || null };
+}
+
+function normalize(l: HSLead) {
+  const p = l.properties;
+  let first = p.hs_associated_contact_firstname ?? "";
+  let last = p.hs_associated_contact_lastname ?? null;
+  if (!first) {
+    const sp = splitName(p.hs_lead_name_calculated ?? p.hs_lead_name);
+    first = sp.first;
+    last = sp.last;
+  }
+  return {
+    id: l.id,
+    first_name: first || (p.hs_associated_contact_email ?? "Sem nome"),
+    last_name: last,
+    email: p.hs_associated_contact_email ?? null,
+    phone: null as string | null,
+    company_name: p.hs_associated_company_name ?? null,
+    source: p.hs_lead_source ?? "hubspot",
+  };
 }
 
 export const previewHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input))
   .handler(async ({ data }) => {
-    const result = await fetchHubspotContacts(data.limit);
-    return {
-      contacts: result.results.map((c) => ({
-        id: c.id,
-        first_name: c.properties.firstname ?? "",
-        last_name: c.properties.lastname ?? "",
-        email: c.properties.email ?? "",
-        phone: c.properties.phone ?? "",
-        company_name: c.properties.company ?? "",
-        source: c.properties.hs_analytics_source ?? "hubspot",
-      })),
-    };
+    const result = await fetchHubspotLeads(data.limit);
+    return { contacts: result.results.map(normalize) };
   });
 
 export const importHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ maxRecords: z.number().min(1).max(1000).default(200) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ maxRecords: z.number().min(1).max(20000).default(200) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let imported = 0;
@@ -65,26 +98,25 @@ export const importHubspotLeads = createServerFn({ method: "POST" })
     while (imported + skipped < data.maxRecords) {
       const remaining = data.maxRecords - (imported + skipped);
       const limit = Math.min(pageSize, remaining);
-      const page = await fetchHubspotContacts(limit, after);
+      const page = await fetchHubspotLeads(limit, after);
       if (page.results.length === 0) break;
 
-      const rows = page.results
-        .filter((c) => c.properties.firstname || c.properties.email)
-        .map((c) => ({
-          owner_id: userId,
-          first_name: (c.properties.firstname ?? c.properties.email ?? "Sem nome").toString(),
-          last_name: c.properties.lastname ?? null,
-          email: c.properties.email ?? null,
-          phone: c.properties.phone ?? null,
-          company_name: c.properties.company ?? null,
-          source: "hubspot",
-          status: "new" as const,
-        }));
-
+      const rows = page.results.map(normalize).filter((r) => r.first_name);
       skipped += page.results.length - rows.length;
 
       if (rows.length > 0) {
-        const { error } = await supabase.from("leads").insert(rows);
+        const insertRows = rows.map((r) => ({
+          owner_id: userId,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          email: r.email,
+          phone: r.phone,
+          company_name: r.company_name,
+          source: r.source,
+          status: "new" as const,
+          external_ids: { hubspot_lead: r.id } as never,
+        }));
+        const { error } = await supabase.from("leads").insert(insertRows);
         if (error) throw new Error(`Erro ao salvar leads: ${error.message}`);
         imported += rows.length;
       }
