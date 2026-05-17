@@ -990,6 +990,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         .eq("id", itemId);
       return { succeeded: 1, failed: 0, importedHsIds: [] };
     } else if (step === "companies") {
+      const allProps = await loadHsProperties("companies");
       const propsParam = allProps.length
         ? allProps.join(",")
         : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
