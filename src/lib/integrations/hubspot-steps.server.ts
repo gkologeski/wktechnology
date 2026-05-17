@@ -916,7 +916,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               searchTotal("tasks"),
               searchTotal("emails"),
             ]);
-            return parts.reduce((a, b) => a + b, 0);
+            return parts.reduce((a: number, b: number) => a + b, 0);
           },
           localTable: "activities",
         });
