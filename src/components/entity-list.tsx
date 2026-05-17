@@ -72,6 +72,8 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -84,24 +86,61 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     columnOrder: null, sortBy: "created_at", sortDir: "desc",
   });
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir],
+  const PAGE_SIZE = 50;
+
+  // Debounce search (300ms)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset page when filters/sort/search/view change
+  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode]);
+
+  // Build a slim column projection so we never pull heavy JSONB (hs_raw etc.)
+  const selectColumns = useMemo(() => {
+    const set = new Set<string>(["id", "owner_id", "created_at", "updated_at", view.sortBy]);
+    for (const c of columns) set.add(String(c.key));
+    for (const f of fields) set.add(f.name);
+    for (const k of searchKeys ?? []) set.add(String(k));
+    if (boardStageField) set.add(boardStageField);
+    return Array.from(set).join(",");
+  }, [columns, fields, searchKeys, boardStageField, view.sortBy]);
+
+  const isBoard = viewMode === "board" && !!boardStages && !!boardStageField;
+
+  const { data: queryResult, isLoading } = useQuery({
+    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q = (supabase as any).from(table).select("*");
+      let q = (supabase as any).from(table).select(selectColumns, { count: "estimated" });
       q = applyFilters(q, view.filters);
+      // Server-side search across searchKeys
+      const term = debouncedSearch.trim();
+      if (term && searchKeys && searchKeys.length > 0) {
+        const safe = term.replace(/[,()]/g, " ").trim();
+        if (safe) {
+          const parts = searchKeys.map((k) => `${String(k)}.ilike.%${safe}%`);
+          q = q.or(parts.join(","));
+        }
+      }
       q = q.order(view.sortBy, { ascending: view.sortDir === "asc" });
-      const { data, error } = await q;
+      if (!isBoard) {
+        q = q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      } else {
+        // Board mode: hard cap so we don't pull tens of thousands of rows
+        q = q.range(0, 999);
+      }
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as T[];
+      return { rows: (data ?? []) as T[], count: count ?? 0 };
     },
   });
 
-  const filtered = rows.filter((r) => {
-    if (!search.trim()) return true;
-    const ql = search.toLowerCase();
-    return (searchKeys ?? []).some((k) => String((r as Record<string, unknown>)[k as string] ?? "").toLowerCase().includes(ql));
-  });
+  const rows = queryResult?.rows ?? [];
+  const totalCount = queryResult?.count ?? 0;
+  // Server already filtered; keep `filtered` as alias for downstream code paths
+  const filtered = rows;
 
   // Visible columns based on column order
   const visibleColumns = useMemo(() => {
@@ -334,9 +373,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
             {isLoading
               ? "Carregando…"
-              : filtered.length === rows.length
-                ? `${filtered.length} ${filtered.length === 1 ? "registro" : "registros"}`
-                : `${filtered.length} de ${rows.length}`}
+              : isBoard
+                ? `${rows.length}${totalCount > rows.length ? ` de ~${totalCount.toLocaleString("pt-BR")}` : ""} ${rows.length === 1 ? "registro" : "registros"}`
+                : `~${totalCount.toLocaleString("pt-BR")} ${totalCount === 1 ? "registro" : "registros"}`}
             {hasSelection ? ` · ${ids.length} selecionado${ids.length === 1 ? "" : "s"}` : ""}
           </span>
           <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs h-9" />
@@ -428,6 +467,16 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
               )}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {!isBoard && totalCount > PAGE_SIZE && (
+        <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
+          <span className="tabular-nums">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString("pt-BR")} de ~{totalCount.toLocaleString("pt-BR")}
+          </span>
+          <Button variant="outline" size="sm" disabled={page === 0 || isLoading} onClick={() => setPage((p) => Math.max(0, p - 1))}>Anterior</Button>
+          <Button variant="outline" size="sm" disabled={isLoading || (page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
         </div>
       )}
 
