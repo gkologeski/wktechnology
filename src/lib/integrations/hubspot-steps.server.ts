@@ -834,6 +834,15 @@ async function discoverActivityTargets(args: {
   return { targetIds, parents, partial: false };
 }
 
+async function searchTotal(obj: string): Promise<number> {
+  try {
+    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1 })) as { total?: number };
+    return r.total ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 
 const DEFAULT_BUDGET_MS = 22_000;
 
