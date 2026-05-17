@@ -542,6 +542,60 @@ async function loadResume(supabase: SupabaseClient, itemId: string): Promise<Res
   return ((data?.before as ResumeState | null) ?? {}) as ResumeState;
 }
 
+async function discoverTargetsFromAssociations(args: {
+  supabase: SupabaseClient;
+  jobId: string;
+  itemId: string;
+  step: StepName;
+  fromObj: string;
+  fromIds: string[];
+  toObj: string;
+  resume: ResumeState;
+  deadlineAt: number;
+}) {
+  const { supabase, jobId, itemId, step, fromObj, fromIds, toObj, resume, deadlineAt } = args;
+  const targetIds = [...(resume.target_ids ?? [])];
+  const parentMap = { ...(resume.parent_map ?? {}) };
+  const seen = new Set(targetIds);
+  let assocIndex = resume.assoc_index ?? 0;
+  const CHUNK = 500;
+
+  while (assocIndex < fromIds.length) {
+    if (Date.now() >= deadlineAt - 1_500) {
+      await patchItemBefore(supabase, itemId, { assoc_index: assocIndex, target_ids: targetIds, parent_map: parentMap, discovered: targetIds.length });
+      return { targetIds, parentMap, partial: true };
+    }
+    const chunk = fromIds.slice(assocIndex, assocIndex + CHUNK);
+    const assoc = await getAssocMany(fromObj, chunk, toObj, 20);
+    for (const [fromId, list] of assoc.entries()) {
+      for (const id of list) {
+        if (!parentMap[id]) parentMap[id] = fromId;
+        if (!seen.has(id)) {
+          seen.add(id);
+          targetIds.push(id);
+        }
+      }
+    }
+    assocIndex += chunk.length;
+    await patchItemBefore(supabase, itemId, {
+      assoc_index: assocIndex,
+      target_ids: targetIds,
+      parent_map: parentMap,
+      discovered: targetIds.length,
+      last_heartbeat_at: new Date().toISOString(),
+    });
+    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+    await appendLog(supabase, jobId, {
+      level: "info",
+      step,
+      message: `Associações mapeadas: ${assocIndex}/${fromIds.length} ${fromObj}, ${targetIds.length} ${toObj} únicos`,
+    });
+  }
+
+  await patchItemBefore(supabase, itemId, { assoc_index: assocIndex, discovery_complete: true, target_ids: targetIds, parent_map: parentMap, discovered: targetIds.length });
+  return { targetIds, parentMap, partial: false };
+}
+
 
 const DEFAULT_BUDGET_MS = 22_000;
 
