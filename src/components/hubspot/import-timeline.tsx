@@ -142,7 +142,21 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         (it.before?.depends_on?.length ?? 0) > 0;
       return hasEmptyResult;
     });
-  const progress = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+  // Trava monotônica: o scheduler pode reabrir etapas (status done→pending),
+  // o que faria a barra do topo retroceder. Mantemos o maior valor já visto.
+  const highWaterRef = useRef({ processed: 0, succeeded: 0 });
+  if (job && (job.processed ?? 0) > highWaterRef.current.processed) {
+    highWaterRef.current.processed = job.processed ?? 0;
+  }
+  if (job && (job.succeeded ?? 0) > highWaterRef.current.succeeded) {
+    highWaterRef.current.succeeded = job.succeeded ?? 0;
+  }
+  // Reset ao reiniciar/continuar
+  if (job?.status === "queued" && (job.processed ?? 0) === 0) {
+    highWaterRef.current = { processed: 0, succeeded: 0 };
+  }
+  const stableProcessed = Math.max(job?.processed ?? 0, highWaterRef.current.processed);
+  const progress = job && job.total > 0 ? Math.round((stableProcessed / job.total) * 100) : 0;
   const liveSucceeded = items.reduce(
     (acc, it) => acc + (it.after?.succeeded ?? it.before?.running_succeeded ?? 0),
     0,
