@@ -1377,10 +1377,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
 
       while (nextPromise) {
         if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
-        const res = await nextPromise;
+        const res: LeadsPage = await nextPromise;
         if (!res.results?.length) break;
 
-        const nextAfter = res.paging?.next?.after;
+        const nextAfter: string | undefined = res.paging?.next?.after;
         // Start the next page download immediately (overlap with DB work).
         nextPromise = nextAfter ? fetchPage(nextAfter) : null;
 
