@@ -144,7 +144,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     });
   // Trava monotônica: o scheduler pode reabrir etapas (status done→pending),
   // o que faria a barra do topo retroceder. Mantemos o maior valor já visto.
-  const highWaterRef = useRef({ processed: 0, succeeded: 0 });
+  const highWaterRef = useRef({ processed: 0, succeeded: 0, progress: 0 });
   if (job && (job.processed ?? 0) > highWaterRef.current.processed) {
     highWaterRef.current.processed = job.processed ?? 0;
   }
@@ -153,10 +153,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }
   // Reset ao reiniciar/continuar
   if (job?.status === "queued" && (job.processed ?? 0) === 0) {
-    highWaterRef.current = { processed: 0, succeeded: 0 };
+    highWaterRef.current = { processed: 0, succeeded: 0, progress: 0 };
   }
-  const stableProcessed = Math.max(job?.processed ?? 0, highWaterRef.current.processed);
-  const progress = job && job.total > 0 ? Math.round((stableProcessed / job.total) * 100) : 0;
   const liveSucceeded = items.reduce(
     (acc, it) => acc + (it.after?.succeeded ?? it.before?.running_succeeded ?? 0),
     0,
@@ -170,6 +168,29 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }
   const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded, highWaterRef.current.succeeded);
   const displayFailed = Math.max(job?.failed ?? 0, liveFailed);
+
+  // Progresso ponderado por registros: cada etapa contribui com sua fração
+  // (succeeded/discovered). Quando uma etapa não tem total conhecido, conta
+  // como 1 quando concluída, 0 caso contrário. Isso evita saltos bruscos de
+  // 11% em 11% (1/9 etapas) e mostra movimento contínuo dentro de cada etapa.
+  const totalSteps = Math.max(items.length, job?.total ?? 0, 1);
+  const fractional = items.reduce((acc, it) => {
+    if (it.status === "done") return acc + 1;
+    if (it.status === "failed") return acc + 1;
+    const succ = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
+    const disc = it.before?.discovered ?? 0;
+    if (it.status === "running") {
+      if (disc > 0) return acc + Math.min(0.99, succ / disc);
+      return acc + (succ > 0 ? 0.5 : 0.1);
+    }
+    return acc;
+  }, 0);
+  const rawProgress = Math.min(100, Math.round((fractional / totalSteps) * 100));
+  if (rawProgress > highWaterRef.current.progress) {
+    highWaterRef.current.progress = rawProgress;
+  }
+  const progress = Math.max(rawProgress, highWaterRef.current.progress);
+  const stableProcessed = Math.max(job?.processed ?? 0, highWaterRef.current.processed);
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
 
   // Build counter cards in the canonical order — only for steps present in the plan
