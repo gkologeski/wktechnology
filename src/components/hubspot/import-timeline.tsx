@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Play } from "lucide-react";
+import { Loader2, Play, StopCircle } from "lucide-react";
 import { toast } from "sonner";
-import { resumeHubspotImport, tickHubspotImportJob } from "@/lib/integrations/hubspot.functions";
+import { resumeHubspotImport, tickHubspotImportJob, cancelHubspotImport } from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
