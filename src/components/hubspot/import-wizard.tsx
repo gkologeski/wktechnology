@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -96,6 +97,28 @@ export function HubspotImportWizard() {
 
   const startFn = useServerFn(startHubspotImport);
   const countFn = useServerFn(countHubspotObjects);
+
+  useEffect(() => {
+    let active = true;
+    const loadActiveJob = async () => {
+      const { data } = await supabase
+        .from("enrichment_jobs")
+        .select("id")
+        .eq("provider", "hubspot")
+        .eq("kind", "import")
+        .in("status", ["queued", "running"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!active || !data?.id || jobId) return;
+      setJobId(data.id);
+      setStage("running");
+    };
+    void loadActiveJob();
+    return () => {
+      active = false;
+    };
+  }, [jobId]);
 
   function toggle(key: Obj, value: boolean) {
     setScope((prev) => {
