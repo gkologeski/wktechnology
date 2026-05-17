@@ -302,6 +302,19 @@ export const STEP_DEPS: Record<StepName, StepName[]> = {
   "activities-emails": ["compare"],
 };
 
+const STEP_ORDER: StepName[] = [
+  "compare",
+  "companies",
+  "contacts",
+  "deals",
+  "leads",
+  "activities-notes",
+  "activities-calls",
+  "activities-meetings",
+  "activities-tasks",
+  "activities-emails",
+];
+
 export type Scope = {
   companies: boolean;
   contacts: boolean;
