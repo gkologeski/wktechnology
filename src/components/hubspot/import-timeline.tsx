@@ -63,7 +63,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
 
   useEffect(() => {
     let active = true;
-    (async () => {
+    const loadSnapshot = async () => {
       const { data: j } = await supabase.from("enrichment_jobs").select("*").eq("id", jobId).single();
       if (active && j) setJob(j as unknown as Job);
       const { data: its } = await supabase
@@ -72,7 +72,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
         .eq("job_id", jobId);
       if (active && its)
         setItems((its as unknown as Item[]).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
-    })();
+    };
+    void loadSnapshot();
 
     const ch = supabase
       .channel(`job-${jobId}`)
@@ -101,11 +102,13 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
 
     // tick every second so elapsed time updates
     const interval = window.setInterval(() => setTick((t) => t + 1), 1000);
+    const snapshotInterval = window.setInterval(() => void loadSnapshot(), 5000);
 
     return () => {
       active = false;
       supabase.removeChannel(ch);
       window.clearInterval(interval);
+      window.clearInterval(snapshotInterval);
     };
   }, [jobId]);
 
