@@ -1360,23 +1360,37 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
 
       let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
       let page = (resume.page as number | undefined) ?? 1;
-      while (true) {
-        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+
+      type LeadsPage = {
+        results: (HSRec & { createdAt?: string; updatedAt?: string })[];
+        paging?: { next?: { after: string } };
+      };
+      const fetchPage = async (cursor?: string): Promise<LeadsPage> => {
         const params: Record<string, string> = { limit: "100", properties: propsParam };
-        if (after) params.after = after;
-        const res = (await hsFetch("/crm/v3/objects/leads", params)) as {
-          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
-          paging?: { next?: { after: string } };
-        };
+        if (cursor) params.after = cursor;
+        return (await hsFetch("/crm/v3/objects/leads", params)) as LeadsPage;
+      };
+
+      // Prefetch first page; subsequent pages are prefetched in parallel
+      // with the upsert of the current page (network ⇄ DB pipelining).
+      let nextPromise: Promise<LeadsPage> | null = fetchPage(after);
+
+      while (nextPromise) {
+        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+        const res = await nextPromise;
         if (!res.results?.length) break;
+
+        const nextAfter = res.paging?.next?.after;
+        // Start the next page download immediately (overlap with DB work).
+        nextPromise = nextAfter ? fetchPage(nextAfter) : null;
+
         await appendLog(supabase, jobId, {
           level: "info", step,
           message: `Página ${page}: ${res.results.length} leads`,
           count: res.results.length,
         });
 
-        type Task = { hsId: string; payload: Record<string, unknown> };
-        const tasks: Task[] = [];
+        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const c of res.results) {
           const p = c.properties;
           const mapped = mapLead(p);
@@ -1409,34 +1423,30 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           });
         }
 
-        const CONCURRENCY = 12;
-        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-          const batch = tasks.slice(i, i + CONCURRENCY);
-          const results = await Promise.all(
-            batch.map((t) => upsertByHsId(supabase, "leads", userId, t.hsId, t.payload)),
-          );
-          for (let j = 0; j < results.length; j++) {
-            const r = results[j];
-            if (r.status === "failed") {
-              fail++;
-              await appendLog(supabase, jobId, {
-                level: "warn", step,
-                message: `Falha lead ${batch[j].hsId}: ${r.error}`,
-              });
-            } else {
-              imported.push(batch[j].hsId);
-              ok++;
-            }
+        // 1 SELECT + 1 batch INSERT (+ small UPDATE batch) per page
+        // instead of ~100 round-trips.
+        const results = await upsertBatchByHsId(supabase, "leads", userId, tasks);
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === "failed") {
+            fail++;
+            await appendLog(supabase, jobId, {
+              level: "warn", step,
+              message: `Falha lead ${tasks[j].hsId}: ${r.error}`,
+            });
+          } else {
+            imported.push(tasks[j].hsId);
+            ok++;
           }
-          await bump(ok, fail);
         }
 
-        after = res.paging?.next?.after;
+        after = nextAfter;
         page++;
         await persistCursor({ cursor: after ?? null, page });
         await bump(ok, fail);
-        if (!after) break;
+        if (!nextAfter) break;
       }
+
     } else if (step.startsWith("activities-")) {
       const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
       const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
