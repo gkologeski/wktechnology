@@ -373,9 +373,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
             {isLoading
               ? "Carregando…"
-              : filtered.length === rows.length
-                ? `${filtered.length} ${filtered.length === 1 ? "registro" : "registros"}`
-                : `${filtered.length} de ${rows.length}`}
+              : isBoard
+                ? `${rows.length}${totalCount > rows.length ? ` de ~${totalCount.toLocaleString("pt-BR")}` : ""} ${rows.length === 1 ? "registro" : "registros"}`
+                : `~${totalCount.toLocaleString("pt-BR")} ${totalCount === 1 ? "registro" : "registros"}`}
             {hasSelection ? ` · ${ids.length} selecionado${ids.length === 1 ? "" : "s"}` : ""}
           </span>
           <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs h-9" />
