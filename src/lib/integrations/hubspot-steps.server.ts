@@ -62,18 +62,45 @@ async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise
   }
 }
 
-// Run getAssoc for many ids in parallel batches (avoids CF subrequest cap of 50).
+// Busca associações em lote usando o endpoint v4 (até 1000 IDs por request).
+// Reduz milhares de chamadas individuais para dezenas de batches.
+// Se o batch v4 falhar, faz fallback para getAssoc individual em paralelo.
 async function getAssocMany(
   fromObj: string,
   fromIds: string[],
   toObj: string,
-  concurrency = 20,
+  _concurrency = 20,
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
-  for (let i = 0; i < fromIds.length; i += concurrency) {
-    const batch = fromIds.slice(i, i + concurrency);
-    const results = await Promise.all(batch.map((id) => getAssoc(fromObj, id, toObj)));
-    batch.forEach((id, idx) => out.set(id, results[idx]));
+  const BATCH = 1000;
+  for (let i = 0; i < fromIds.length; i += BATCH) {
+    const chunk = fromIds.slice(i, i + BATCH);
+    try {
+      const r = (await hsPost(`/crm/v4/associations/${fromObj}/${toObj}/batch/read`, {
+        inputs: chunk.map((id) => ({ id })),
+      })) as {
+        results?: {
+          from?: { id?: string | number };
+          to?: { toObjectId?: string | number; id?: string | number }[];
+        }[];
+      };
+      for (const row of r.results ?? []) {
+        const fromId = String(row.from?.id ?? "");
+        if (!fromId) continue;
+        const tos = (row.to ?? [])
+          .map((t) => String(t.toObjectId ?? t.id ?? ""))
+          .filter(Boolean);
+        out.set(fromId, tos);
+      }
+      for (const id of chunk) if (!out.has(id)) out.set(id, []);
+    } catch {
+      // Fallback: chamadas individuais em paralelo (20 por vez)
+      for (let j = 0; j < chunk.length; j += 20) {
+        const sub = chunk.slice(j, j + 20);
+        const results = await Promise.all(sub.map((id) => getAssoc(fromObj, id, toObj)));
+        sub.forEach((id, idx) => out.set(id, results[idx]));
+      }
+    }
   }
   return out;
 }
