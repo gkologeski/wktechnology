@@ -165,6 +165,9 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     (acc, it) => acc + (it.after?.failed ?? it.before?.running_failed ?? 0),
     0,
   );
+  if (liveSucceeded > highWaterRef.current.succeeded) {
+    highWaterRef.current.succeeded = liveSucceeded;
+  }
   const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded, highWaterRef.current.succeeded);
   const displayFailed = Math.max(job?.failed ?? 0, liveFailed);
   const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
