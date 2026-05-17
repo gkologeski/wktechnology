@@ -108,6 +108,15 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     };
     void loadSnapshot();
 
+    let refreshTimer: number | null = null;
+    const scheduleSnapshot = () => {
+      if (refreshTimer) return;
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null;
+        void loadSnapshot();
+      }, 400);
+    };
+
     const ch = supabase
       .channel(`job-${jobId}`)
       .on(
@@ -120,16 +129,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "enrichment_job_items", filter: `job_id=eq.${jobId}` },
-        (payload) => {
-          setItems((prev) => {
-            const next = [...prev];
-            const row = payload.new as unknown as Item;
-            const idx = next.findIndex((i) => i.id === row.id);
-            if (idx >= 0) next[idx] = row;
-            else next.push(row);
-            return next.sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0));
-          });
-        },
+        () => scheduleSnapshot(),
       )
       .subscribe();
 
@@ -140,6 +140,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     return () => {
       active = false;
       supabase.removeChannel(ch);
+      if (refreshTimer) window.clearTimeout(refreshTimer);
       window.clearInterval(interval);
       window.clearInterval(snapshotInterval);
     };
