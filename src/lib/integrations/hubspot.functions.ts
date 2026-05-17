@@ -1404,47 +1404,63 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
 
           }
         } else if (step === "leads") {
-          // Contatos importados que tinham lifecyclestage = lead
-          const leadIds = [...contactLifecycle.entries()]
-            .filter(([, ls]) => ls === "lead")
-            .map(([id]) => id);
+          // Importa do objeto nativo "leads" do HubSpot (independente de contatos).
+          const LEAD_PROPS = [
+            "hs_lead_name",
+            "hs_lead_name_calculated",
+            "hs_associated_contact_firstname",
+            "hs_associated_contact_lastname",
+            "hs_associated_contact_email",
+            "hs_associated_company_name",
+            "hs_lead_source",
+            "hs_pipeline_stage",
+            "hubspot_owner_id",
+          ];
           await appendLog({
             level: "info",
             step,
-            message: `Lendo ${leadIds.length} leads (contatos com lifecyclestage=lead)`,
-            count: leadIds.length,
+            message: `Listando leads do HubSpot (objeto nativo /crm/v3/objects/leads)`,
           });
-          const recs = await batchRead("contacts", leadIds, [
-            "firstname",
-            "lastname",
-            "email",
-            "phone",
-            "company",
-            "hs_lead_status",
-            "hs_analytics_source",
-          ]);
-          for (const c of recs) {
+          const all = await listAll("leads", LEAD_PROPS);
+          await appendLog({
+            level: "info",
+            step,
+            message: `Encontrados ${all.length} leads no HubSpot`,
+            count: all.length,
+          });
+          for (const c of all) {
             const p = c.properties;
-            const hsStatus = p.hs_lead_status ?? "";
+            let first = (p.hs_associated_contact_firstname ?? "").toString();
+            let last: string | null = p.hs_associated_contact_lastname ?? null;
+            if (!first) {
+              const full = (p.hs_lead_name_calculated ?? p.hs_lead_name ?? "").toString().trim();
+              if (full) {
+                const parts = full.split(/\s+/);
+                first = parts[0];
+                last = parts.slice(1).join(" ") || null;
+              }
+            }
+            const email = p.hs_associated_contact_email ?? null;
+            const hsStatus = p.hs_pipeline_stage ?? "";
             const stageEntry = hsStatus ? leadPipeline?.stageByValue.get(hsStatus) : undefined;
             const leadData = {
-              first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
-              last_name: p.lastname ?? null,
-              email: p.email ?? null,
-              phone: p.phone ?? null,
-              company_name: p.company ?? null,
-              source: p.hs_analytics_source ?? "hubspot",
+              first_name: first || email || "Sem nome",
+              last_name: last,
+              email,
+              phone: null as string | null,
+              company_name: p.hs_associated_company_name ?? null,
+              source: p.hs_lead_source ?? "hubspot",
               status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
             };
             const existingId = await findExistingId("leads", c.id, [
-              { column: "email", value: p.email },
+              { column: "email", value: email },
             ]);
             if (existingId) {
               const ext = await mergeExternalIds("leads", existingId, {
-                hubspot: c.id,
-                hs_lead_status: hsStatus || null,
+                hubspot_lead: c.id,
+                hs_pipeline_stage: hsStatus || null,
               });
               const { error } = await supabase
                 .from("leads")
@@ -1456,13 +1472,14 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               const { error } = await supabase.from("leads").insert({
                 owner_id: userId,
                 ...leadData,
-                external_ids: { hubspot: c.id, hs_lead_status: hsStatus || null } as never,
+                external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
               });
               if (error) stepFail++;
               else stepOk++;
             }
-            await bumpProgress(step, stepOk, stepFail, leadIds.length);
+            await bumpProgress(step, stepOk, stepFail, all.length);
           }
+
 
         } else if (step === "activities") {
           const types: { obj: string; type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }[] = [
