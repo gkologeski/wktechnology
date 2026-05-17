@@ -129,18 +129,25 @@ export const getCreditUsage = createServerFn({ method: "POST" })
     const since = new Date();
     since.setDate(1);
     since.setHours(0, 0, 0, 0);
-    const { data: rows, error } = await supabase
-      .from("credit_ledger")
-      .select("delta")
-      .eq("provider", data.provider)
-      .gte("created_at", since.toISOString());
-    if (error) throw new Error(error.message);
+    const { data: rows, error } = await withTransientRetry(() =>
+      supabase
+        .from("credit_ledger")
+        .select("delta")
+        .eq("provider", data.provider)
+        .gte("created_at", since.toISOString())
+    );
+    if (error) {
+      if (isTransientDatabaseError(error)) return { used: 0, monthly_limit: null, per_run_confirm_above: 10, error: "Banco temporariamente ocupado. Tente novamente em instantes." };
+      throw new Error(error.message);
+    }
     const used = (rows ?? []).reduce((s, r) => s + Number(r.delta || 0), 0);
-    const { data: limit } = await supabase
-      .from("credit_limits")
-      .select("monthly_limit, per_run_confirm_above")
-      .eq("provider", data.provider)
-      .maybeSingle();
+    const { data: limit } = await withTransientRetry(() =>
+      supabase
+        .from("credit_limits")
+        .select("monthly_limit, per_run_confirm_above")
+        .eq("provider", data.provider)
+        .maybeSingle()
+    );
     return { used, monthly_limit: limit?.monthly_limit ?? null, per_run_confirm_above: limit?.per_run_confirm_above ?? 10 };
   });
 
