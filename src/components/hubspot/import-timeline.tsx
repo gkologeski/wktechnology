@@ -332,7 +332,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             {stableProcessed}/{job?.total ?? 0} etapas · {displaySucceeded} registros importados
             {displayFailed ? ` · ${displayFailed} falhas` : ""}
           </span>
-          {finished && (
+          {finished ? (
             <div className="flex items-center gap-2">
               {canContinue && (
                 <Button size="sm" onClick={() => void handleContinue()} disabled={continuing}>
@@ -344,6 +344,20 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
                 Nova importação
               </Button>
             </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => void handleCancel()}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <StopCircle className="mr-2 h-4 w-4" />
+              )}
+              Parar importação
+            </Button>
           )}
         </div>
         {job?.error && <p className="mt-3 text-sm text-destructive">{job.error}</p>}
