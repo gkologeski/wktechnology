@@ -64,8 +64,10 @@ export function DealsBoard({
     }
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   return (
-    <DndContext onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <div className="flex gap-2 overflow-x-auto pb-4">
         {pipeline.stages.map((s) => {
           const rows = grouped[s.value] ?? [];
