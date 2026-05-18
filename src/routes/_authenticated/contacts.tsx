@@ -91,6 +91,20 @@ function ContactsPage() {
           </Button>
         </>
       )}
+      rowActions={(row) =>
+        row.phone || row.mobile_phone ? (
+          <SendWhatsAppDialog
+            defaultTo={(row.phone || row.mobile_phone) as string}
+            contactId={row.id}
+            contactName={`${row.first_name} ${row.last_name ?? ""}`.trim()}
+            trigger={
+              <Button size="icon" variant="ghost" title="Enviar WhatsApp">
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+            }
+          />
+        ) : null
+      }
     />
   );
 }
