@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Phone, Settings as SettingsIcon } from "lucide-react";
+import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listWhatsAppConversations,
@@ -11,6 +11,9 @@ import {
   markWhatsAppRead,
   getWhatsAppConfig,
   saveWhatsAppConfig,
+  listAssignableMembers,
+  assignWhatsAppConversation,
+  setWhatsAppConversationStatus,
 } from "@/lib/whatsapp.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +22,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
+import { useAuth } from "@/lib/auth";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { WhatsAppTemplatesEditor } from "@/components/whatsapp/whatsapp-templates-editor";
 
