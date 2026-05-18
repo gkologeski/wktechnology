@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug, ListTodo, MessageSquare, StickyNote } from "lucide-react";
+import { LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug, ListTodo, MessageSquare, StickyNote, MessageCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const items = [
   { title: "Negócios", url: "/deals", icon: Briefcase },
   { title: "Tarefas", url: "/tasks", icon: ListTodo },
   { title: "Comunicações", url: "/communications", icon: MessageSquare },
+  { title: "Inbox WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
   { title: "Notas", url: "/notes", icon: StickyNote },
   { title: "Integrações", url: "/integrations", icon: Plug },
 ] as const;

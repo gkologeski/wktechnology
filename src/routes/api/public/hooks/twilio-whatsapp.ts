@@ -1,0 +1,123 @@
+// Webhook que o Twilio chama quando chega mensagem WhatsApp.
+// Configure no Twilio Console > Messaging > Sandbox/Sender > "When a message comes in":
+//   https://wktechnology.lovable.app/api/public/hooks/twilio-whatsapp  (POST)
+// (Pode ser testado via sandbox antes de número de produção.)
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+function strip(s: string | null | undefined) {
+  return (s ?? "").replace(/^whatsapp:/, "");
+}
+
+export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
+  server: {
+    handlers: {
+      GET: async () => Response.json({ ok: true, info: "POST Twilio webhooks here" }),
+      POST: async ({ request }) => {
+        try {
+          const text = await request.text();
+          const params = new URLSearchParams(text);
+          const data = Object.fromEntries(params.entries());
+
+          const from = strip(data.From); // contato
+          const to = strip(data.To); // nosso número Twilio
+          const body = data.Body ?? "";
+          const sid = data.MessageSid ?? data.SmsMessageSid ?? null;
+          const numMedia = Number(data.NumMedia ?? "0") || 0;
+          const mediaUrl = numMedia > 0 ? data.MediaUrl0 : null;
+          const mediaType = numMedia > 0 ? data.MediaContentType0 : null;
+
+          if (!from || !to) {
+            return new Response("missing From/To", { status: 400 });
+          }
+
+          // Descobrir owner: 1) integrações configuradas com esse from_number,
+          // 2) senão contato com esse phone, 3) fallback: ignora.
+          let ownerId: string | null = null;
+          let contactId: string | null = null;
+
+          const { data: integ } = await supabaseAdmin
+            .from("integrations")
+            .select("owner_id")
+            .eq("provider", "twilio_whatsapp")
+            .contains("config", { from_number: to })
+            .maybeSingle();
+          if (integ?.owner_id) ownerId = integ.owner_id;
+
+          // tenta achar contato por telefone (com ou sem +)
+          const phoneNoPlus = from.replace(/^\+/, "");
+          const { data: contact } = await supabaseAdmin
+            .from("contacts")
+            .select("id, owner_id")
+            .or(`phone.eq.${from},phone.eq.${phoneNoPlus},mobile_phone.eq.${from},mobile_phone.eq.${phoneNoPlus}`)
+            .maybeSingle();
+          if (contact) {
+            contactId = contact.id;
+            if (!ownerId) ownerId = contact.owner_id;
+          }
+
+          if (!ownerId) {
+            // Sandbox: se ninguém configurou, atribui ao primeiro perfil (útil para testes solo)
+            const { data: p } = await supabaseAdmin
+              .from("profiles")
+              .select("id")
+              .order("created_at", { ascending: true })
+              .limit(1)
+              .maybeSingle();
+            ownerId = p?.id ?? null;
+          }
+
+          if (!ownerId) {
+            console.warn("[twilio-whatsapp] sem owner para mensagem de", from);
+            return new Response("<Response/>", { headers: { "Content-Type": "text/xml" } });
+          }
+
+          // upsert conversa
+          const { data: conv, error: cErr } = await supabaseAdmin
+            .from("whatsapp_conversations")
+            .upsert(
+              {
+                owner_id: ownerId,
+                contact_id: contactId,
+                contact_phone: from,
+                twilio_number: to,
+                last_message_at: new Date().toISOString(),
+                last_message_preview: body.slice(0, 120) || (mediaUrl ? "[mídia]" : ""),
+              },
+              { onConflict: "contact_phone,twilio_number" },
+            )
+            .select("id, unread_count")
+            .single();
+          if (cErr) throw cErr;
+
+          await supabaseAdmin
+            .from("whatsapp_conversations")
+            .update({ unread_count: (conv.unread_count ?? 0) + 1 })
+            .eq("id", conv.id);
+
+          await supabaseAdmin.from("whatsapp_messages").insert({
+            conversation_id: conv.id,
+            owner_id: ownerId,
+            direction: "inbound",
+            body,
+            media_url: mediaUrl,
+            media_content_type: mediaType,
+            from_number: from,
+            to_number: to,
+            twilio_sid: sid,
+            status: "received",
+            raw: data,
+          });
+
+          // resposta TwiML vazia = sem auto-reply
+          return new Response("<Response/>", {
+            headers: { "Content-Type": "text/xml" },
+          });
+        } catch (e) {
+          console.error("[twilio-whatsapp] erro", e);
+          return new Response("error", { status: 500 });
+        }
+      },
+    },
+  },
+});
