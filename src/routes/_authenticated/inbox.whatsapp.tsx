@@ -21,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
+import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
+import { WhatsAppTemplatesEditor } from "@/components/whatsapp/whatsapp-templates-editor";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   component: WhatsAppInbox,
