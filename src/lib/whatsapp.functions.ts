@@ -349,6 +349,12 @@ export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
 const TemplateSchema = z.object({
   name: z.string().min(1).max(60),
   body: z.string().min(1).max(1600),
+  contentSid: z
+    .string()
+    .regex(/^HX[0-9a-fA-F]{32}$/, "ContentSid deve começar com HX e ter 34 chars")
+    .optional()
+    .or(z.literal("")),
+  variableCount: z.number().int().min(0).max(20).optional(),
 });
 
 export const listWhatsAppTemplates = createServerFn({ method: "GET" })
