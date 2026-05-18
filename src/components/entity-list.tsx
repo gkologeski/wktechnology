@@ -402,36 +402,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
       {/* Toolbar: views, columns, view-mode, search */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm"><Star className="h-4 w-4 mr-1" /> {currentViewName ?? "View"}</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <div className="px-2 py-1 text-xs text-muted-foreground">Predefinidos</div>
-            {presets.map((p) => (
-              <DropdownMenuItem key={p.id} onClick={() => applyPreset(p)}>{p.name}</DropdownMenuItem>
-            ))}
-            {savedViews.data && savedViews.data.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1 text-xs text-muted-foreground">Salvos</div>
-                {savedViews.data.map((sv) => (
-                  <DropdownMenuItem key={sv.id} onClick={() => applyView(sv)}>
-                    {sv.is_shared ? "🔗 " : ""}{sv.name}{sv.is_default ? " ⭐" : ""}
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={saveAsView}><Save className="h-4 w-4 mr-1" /> Salvar como nova view</DropdownMenuItem>
-            {view.viewId && !view.viewId.startsWith("preset:") && (
-              <>
-                <DropdownMenuItem onClick={updateCurrentView}>Atualizar view atual</DropdownMenuItem>
-                <DropdownMenuItem onClick={deleteCurrentView} className="text-destructive">Excluir view</DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {view.viewId && !view.viewId.startsWith("preset:") && (
+          <Button variant="outline" size="sm" onClick={updateCurrentView}>
+            <Save className="h-4 w-4 mr-1" /> Salvar alterações
+          </Button>
+        )}
 
         {quickFilterFields.length === 0 && (
           <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
