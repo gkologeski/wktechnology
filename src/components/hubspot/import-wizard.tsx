@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import {
   startHubspotImport,
   countHubspotObjects,
+  clearHubspotLocalTables,
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
@@ -85,6 +86,13 @@ export function HubspotImportWizard() {
     leads: false,
     activities: false,
   });
+  const [clearScope, setClearScope] = useState<Record<Obj, boolean>>({
+    companies: false,
+    contacts: false,
+    deals: false,
+    leads: false,
+    activities: false,
+  });
   const [maxCompanies, setMaxCompanies] = useState(200);
   const [stage, setStage] = useState<"scope" | "running">("scope");
   const [jobId, setJobId] = useState<string | null>(null);
@@ -95,6 +103,7 @@ export function HubspotImportWizard() {
 
   const startFn = useServerFn(startHubspotImport);
   const countFn = useServerFn(countHubspotObjects);
+  const clearFn = useServerFn(clearHubspotLocalTables);
 
   useEffect(() => {
     let active = true;
@@ -169,7 +178,23 @@ export function HubspotImportWizard() {
 
   async function handleStart() {
     try {
+      const toClear = (Object.keys(clearScope) as Obj[]).filter((k) => clearScope[k]);
+      if (toClear.length > 0) {
+        const ok = window.confirm(
+          `Tem certeza que deseja apagar TODOS os registros locais das tabelas: ${toClear.join(", ")}? Esta ação é irreversível.`,
+        );
+        if (!ok) return;
+      }
       setStage("running");
+      if (toClear.length > 0) {
+        const res = await clearFn({
+          data: Object.fromEntries(toClear.map((k) => [k, true])) as Record<Obj, boolean>,
+        });
+        const summary = Object.entries(res.cleared)
+          .map(([k, n]) => `${k}: ${n}`)
+          .join(", ");
+        toast.success(`Tabelas limpas (${summary})`);
+      }
       const r = await startFn({
         data: {
           mode,
@@ -307,6 +332,19 @@ export function HubspotImportWizard() {
                   {forcedBy.length > 0 && scope[o.key] && !o.required && (
                     <p className="text-xs text-amber-600 mt-1">Necessário para: {forcedBy.join(", ")}</p>
                   )}
+                  <label
+                    htmlFor={`clear-${o.key}`}
+                    className="mt-2 inline-flex items-center gap-2 text-xs text-destructive cursor-pointer"
+                  >
+                    <Checkbox
+                      id={`clear-${o.key}`}
+                      checked={clearScope[o.key]}
+                      onCheckedChange={(v) =>
+                        setClearScope((prev) => ({ ...prev, [o.key]: !!v }))
+                      }
+                    />
+                    Limpar tabela local de {o.label.toLowerCase()} antes de importar
+                  </label>
                 </div>
               </div>
             );
