@@ -344,7 +344,43 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         </BulkActionBar>
       )}
 
-      {/* Toolbar: views, filters, columns, view-mode */}
+      {/* Quick filters row (HubSpot-style) */}
+      {quickFilterFields.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b">
+          {quickFilterFields.map((qf) => {
+            const v = getQuickValue(qf.name);
+            const selected = qf.options?.find((o) => o.value === v);
+            return (
+              <DropdownMenu key={qf.name}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className={`text-primary font-medium ${v ? "bg-primary/10" : ""}`}>
+                    {qf.label}{selected ? `: ${selected.label}` : ""} ▾
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 max-h-80 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setQuickValue(qf.name, "")}>Todos</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {qf.options?.map((o) => (
+                    <DropdownMenuItem key={o.value} onClick={() => setQuickValue(qf.name, o.value)}>
+                      {o.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })}
+          <Button
+            variant={hasFilter ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setFilterOpen(true)}
+            className="ml-1"
+          >
+            <Filter className="h-4 w-4 mr-1" /> Filtros avançados{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+          </Button>
+        </div>
+      )}
+
+      {/* Toolbar: views, columns, view-mode, search */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -377,9 +413,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
-          <Filter className="h-4 w-4 mr-1" /> Filtros{hasFilter ? ` (${view.filters.conditions.length})` : ""}
-        </Button>
+        {quickFilterFields.length === 0 && (
+          <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
+            <Filter className="h-4 w-4 mr-1" /> Filtros{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+          </Button>
+        )}
 
         <Button variant="outline" size="sm" onClick={() => setColumnOpen(true)}>
           <Columns3 className="h-4 w-4 mr-1" /> Colunas
@@ -397,14 +435,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-            {isLoading
-              ? "Carregando…"
-              : isBoard
-                ? `${rows.length}${totalCount > rows.length ? ` de ~${totalCount.toLocaleString("pt-BR")}` : ""} ${rows.length === 1 ? "registro" : "registros"}`
-                : `~${totalCount.toLocaleString("pt-BR")} ${totalCount === 1 ? "registro" : "registros"}`}
-            {hasSelection ? ` · ${ids.length} selecionado${ids.length === 1 ? "" : "s"}` : ""}
-          </span>
+          {hasSelection && (
+            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+              {ids.length} selecionado{ids.length === 1 ? "" : "s"}
+            </span>
+          )}
           <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs h-9" />
         </div>
       </div>
