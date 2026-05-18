@@ -79,26 +79,37 @@ export function SendWhatsAppDialog({
 
   const templates = tplQ.data ?? [];
   const selectedTpl = templates.find((t) => t.name === templateName);
-  const varCount = selectedTpl
+  const placeholderCount = selectedTpl
     ? Array.from(selectedTpl.body.matchAll(/\{\{(\d+)\}\}/g))
         .map((m) => Number(m[1]))
         .reduce((a, b) => Math.max(a, b), 0)
     : 0;
+  const varCount = Math.max(placeholderCount, selectedTpl?.variableCount ?? 0);
 
   const previewBody = selectedTpl ? applyTemplate(selectedTpl.body, vars) : body;
+  const isOfficialHsm = !!selectedTpl?.contentSid;
 
   const sendMut = useMutation({
-    mutationFn: () =>
-      sendFn({
+    mutationFn: () => {
+      const contentVariables =
+        isOfficialHsm && varCount > 0
+          ? Object.fromEntries(
+              Array.from({ length: varCount }, (_, i) => [String(i + 1), vars[i] ?? ""]),
+            )
+          : undefined;
+      return sendFn({
         data: {
           to,
-          body: previewBody,
+          body: isOfficialHsm ? "" : previewBody,
           contactId,
           templateName: templateName || undefined,
-          mediaUrl: media?.url,
-          mediaContentType: media?.contentType,
+          contentSid: isOfficialHsm ? selectedTpl!.contentSid : undefined,
+          contentVariables,
+          mediaUrl: isOfficialHsm ? undefined : media?.url,
+          mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setOpen(false);
