@@ -1,0 +1,108 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { getRequestHost } from "@tanstack/react-start/server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  callbackRedirectUri,
+  exchangeCodeForTokens,
+  fetchGoogleUserInfo,
+  verifyState,
+} from "@/lib/email-oauth.server";
+
+function htmlResponse(title: string, body: string, status = 200) {
+  return new Response(
+    `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
+<style>body{font-family:system-ui;background:#0b0b0c;color:#e7e7ea;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}main{max-width:480px;padding:32px;border:1px solid #2a2a2e;border-radius:12px;background:#141416}h1{margin:0 0 8px;font-size:18px}p{margin:6px 0;color:#a1a1aa;font-size:14px}a{color:#60a5fa}</style>
+</head><body><main>${body}</main></body></html>`,
+    { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
+}
+
+export const Route = createFileRoute("/api/public/oauth/google-callback")({
+  server: {
+    handlers: {
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const errorParam = url.searchParams.get("error");
+
+        if (errorParam) {
+          return htmlResponse(
+            "Falha no Google",
+            `<h1>Google retornou erro</h1><p>${errorParam}</p><p><a href="/settings/email">Voltar</a></p>`,
+            400,
+          );
+        }
+        if (!code || !state) {
+          return htmlResponse("Parâmetros faltando", `<h1>Requisição inválida</h1>`, 400);
+        }
+
+        let parsed: { user_id: string; return_to?: string };
+        try {
+          parsed = verifyState(state);
+        } catch (e) {
+          return htmlResponse(
+            "State inválido",
+            `<h1>State inválido</h1><p>${e instanceof Error ? e.message : ""}</p>`,
+            400,
+          );
+        }
+
+        const redirectUri = callbackRedirectUri(getRequestHost());
+
+        try {
+          const tokens = await exchangeCodeForTokens({ code, redirectUri });
+          const info = await fetchGoogleUserInfo(tokens.access_token);
+          const scopes = tokens.scope ? tokens.scope.split(" ") : [];
+          const expiresAt = new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString();
+
+          // Upsert account. If reconnecting, refresh_token may be absent — keep existing.
+          const { data: existing } = await supabaseAdmin
+            .from("email_accounts")
+            .select("id, refresh_token")
+            .eq("owner_id", parsed.user_id)
+            .eq("provider", "gmail")
+            .eq("email", info.email)
+            .maybeSingle();
+
+          const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
+
+          const payload = {
+            owner_id: parsed.user_id,
+            provider: "gmail",
+            email: info.email,
+            access_token: tokens.access_token,
+            refresh_token: refreshToken,
+            expires_at: expiresAt,
+            scopes,
+            status: "connected",
+            last_error: null as string | null,
+          };
+
+          if (existing) {
+            const { error } = await supabaseAdmin
+              .from("email_accounts")
+              .update(payload)
+              .eq("id", existing.id);
+            if (error) throw new Error(error.message);
+          } else {
+            const { error } = await supabaseAdmin.from("email_accounts").insert(payload);
+            if (error) throw new Error(error.message);
+          }
+
+          const returnTo = parsed.return_to && parsed.return_to.startsWith("/")
+            ? parsed.return_to
+            : "/settings/email";
+          return new Response(null, { status: 302, headers: { Location: `${returnTo}?gmail=connected` } });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Erro desconhecido";
+          return htmlResponse(
+            "Falha ao conectar",
+            `<h1>Falha ao conectar Gmail</h1><p>${msg}</p><p><a href="/settings/email">Voltar</a></p>`,
+            500,
+          );
+        }
+      },
+    },
+  },
+});
