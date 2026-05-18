@@ -11,13 +11,34 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+async function fetchAll<T>(
+  build: (from: number, to: number) => Promise<{ data: T[] | null }>,
+): Promise<T[]> {
+  const PAGE = 1000;
+  const out: T[] = [];
+  for (let page = 0; ; page++) {
+    const from = page * PAGE;
+    const { data } = await build(from, from + PAGE - 1);
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
 function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       const [leads, deals, activities] = await Promise.all([
-        supabase.from("leads").select("id,status,created_at"),
-        supabase.from("deals").select("id,name,value,stage,created_at,expected_close_date"),
+        fetchAll<{ id: string; status: string; created_at: string }>(async (from, to) => {
+          const r = await supabase.from("leads").select("id,status,created_at").range(from, to);
+          return { data: r.data };
+        }),
+        fetchAll<{ id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }>(async (from, to) => {
+          const r = await supabase.from("deals").select("id,name,value,stage,created_at,expected_close_date").range(from, to);
+          return { data: r.data as { id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }[] | null };
+        }),
         supabase
           .from("activities")
           .select("id,subject,due_date,completed,type")
@@ -27,8 +48,8 @@ function DashboardPage() {
           .limit(10),
       ]);
       return {
-        leads: leads.data ?? [],
-        deals: deals.data ?? [],
+        leads,
+        deals,
         tasks: activities.data ?? [],
       };
     },
