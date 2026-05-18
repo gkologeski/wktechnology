@@ -199,7 +199,7 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("whatsapp_messages")
       .select(
-        "id, direction, body, media_url, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
+        "id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
       )
       .eq("conversation_id", data.conversationId)
       .order("created_at", { ascending: true })
