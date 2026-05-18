@@ -18,7 +18,7 @@ import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dial
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
-import { applyFilters, type FilterGroup, conditionToLabel } from "@/lib/filters";
+import { applyFilters, type FilterGroup, type FilterCondition, conditionToLabel } from "@/lib/filters";
 import { useSavedViews, type SavedView } from "@/lib/saved-views";
 import { PRESET_VIEWS } from "@/lib/preset-views";
 import { toast } from "sonner";
