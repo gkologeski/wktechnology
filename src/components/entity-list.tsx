@@ -286,8 +286,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const hasSelection = ids.length > 0;
   const hasFilter = view.filters.conditions.length > 0;
 
-  return (
-    <div>
   // Singular entity label for CTA ("Criar lead")
   const entitySingular = ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio" } as const)[table];
 
