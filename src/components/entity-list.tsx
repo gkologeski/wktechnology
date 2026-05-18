@@ -115,11 +115,14 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const isBoard = viewMode === "board" && !!boardStages && !!boardStageField;
 
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns],
+    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns, lockedFilters],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any).from(table).select(selectColumns, { count: "exact" });
       q = applyFilters(q, view.filters);
+      if (lockedFilters && lockedFilters.length > 0) {
+        q = applyFilters(q, { type: "group", op: "and", conditions: lockedFilters });
+      }
       // Server-side search across searchKeys
       const term = debouncedSearch.trim();
       if (term && searchKeys && searchKeys.length > 0) {
