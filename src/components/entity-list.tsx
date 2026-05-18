@@ -666,3 +666,88 @@ function EntityDialog<T extends { id: string }>({
     </Dialog>
   );
 }
+
+function NumberedPagination({
+  page, pageSize, totalCount, isLoading, onPageChange, onPageSizeChange,
+}: {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  isLoading: boolean;
+  onPageChange: (p: number) => void;
+  onPageSizeChange: (n: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const current = page + 1;
+
+  // Build compact page list: 1 … (c-2) (c-1) c (c+1) (c+2) … last
+  const pages: (number | "...")[] = [];
+  const add = (n: number) => { if (!pages.includes(n)) pages.push(n); };
+  add(1);
+  for (let i = current - 2; i <= current + 2; i++) {
+    if (i > 1 && i < totalPages) add(i);
+  }
+  if (totalPages > 1) add(totalPages);
+  const withDots: (number | "...")[] = [];
+  for (let i = 0; i < pages.length; i++) {
+    const p = pages[i];
+    const prev = pages[i - 1];
+    if (typeof prev === "number" && typeof p === "number" && p - prev > 1) withDots.push("...");
+    withDots.push(p);
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 mt-4 py-3 border-t">
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={page === 0 || isLoading}
+        onClick={() => onPageChange(Math.max(0, page - 1))}
+      >
+        ‹ Voltar
+      </Button>
+      <div className="flex items-center gap-1">
+        {withDots.map((p, i) =>
+          p === "..." ? (
+            <span key={`d${i}`} className="px-2 text-muted-foreground">…</span>
+          ) : (
+            <Button
+              key={p}
+              variant={p === current ? "secondary" : "ghost"}
+              size="sm"
+              className={`h-8 min-w-8 px-2 ${p === current ? "font-semibold text-primary" : ""}`}
+              onClick={() => onPageChange(p - 1)}
+              disabled={isLoading}
+            >
+              {p}
+            </Button>
+          )
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={isLoading || current >= totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        Próximo ›
+      </Button>
+      <div className="ml-2">
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-8 rounded-md border bg-background px-2 text-sm text-primary"
+        >
+          {[25, 50, 100, 200].map((n) => (
+            <option key={n} value={n}>{n} por página</option>
+          ))}
+        </select>
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums ml-2">
+        {(page * pageSize + 1).toLocaleString("pt-BR")}–
+        {Math.min((page + 1) * pageSize, totalCount).toLocaleString("pt-BR")} de ~
+        {totalCount.toLocaleString("pt-BR")}
+      </span>
+    </div>
+  );
+}
