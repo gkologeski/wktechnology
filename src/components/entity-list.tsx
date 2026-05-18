@@ -854,3 +854,18 @@ function SavedViewsTabs({
     </div>
   );
 }
+
+function avatarLabel<T extends { id: string }>(
+  row: T,
+  key: string,
+  render?: (row: T) => React.ReactNode,
+): string {
+  const raw = (row as Record<string, unknown>)[key];
+  if (typeof raw === "string" && raw.trim()) return raw;
+  if (render) {
+    const out = render(row);
+    if (typeof out === "string") return out;
+    if (typeof out === "number") return String(out);
+  }
+  return String(raw ?? "?");
+}
