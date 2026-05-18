@@ -34,7 +34,7 @@ type Field = {
 };
 
 export type EntityListProps<T extends { id: string }> = {
-  table: "companies" | "contacts" | "leads" | "deals";
+  table: "companies" | "contacts" | "leads" | "deals" | "activities";
   title: string;
   description?: string;
   columns: { key: keyof T | string; label: string; render?: (row: T) => ReactNode }[];
@@ -52,6 +52,10 @@ export type EntityListProps<T extends { id: string }> = {
   boardStages?: BoardStage[];
   boardStageField?: string;
   filterFields?: { name: string; label: string; type?: string; options?: { value: string; label: string }[] }[];
+  /** Always-applied filters (not shown in UI). Useful to scope a page to a subset (e.g. activities of type=task). */
+  lockedFilters?: FilterCondition[];
+  /** Singular label for the "Criar X" button. Overrides default mapping. */
+  entitySingularLabel?: string;
 };
 
 type ViewState = {
