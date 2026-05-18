@@ -100,39 +100,14 @@ function WhatsAppInbox() {
         </div>
         <div className="flex gap-2">
           <WhatsAppSettingsButton />
-          <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-            <DialogTrigger asChild>
+          <SendWhatsAppDialog
+            onSent={(id) => setSelected(id)}
+            trigger={
               <Button>
                 <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Enviar WhatsApp</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Para (E.164, ex: +5511999999999)</label>
-                  <Input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="+5511..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Mensagem</label>
-                  <Textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={4} />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    No sandbox, o destinatário precisa primeiro enviar o "join &lt;código&gt;" ao número da Twilio.
-                  </p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => sendMut.mutate({ to: composeTo, body: composeBody })}
-                  disabled={!composeTo || !composeBody || sendMut.isPending}
-                >
-                  <Send className="mr-2 h-4 w-4" /> Enviar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            }
+          />
         </div>
       </div>
 
