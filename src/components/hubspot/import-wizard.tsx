@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import {
   startHubspotImport,
   countHubspotObjects,
+  clearHubspotLocalTables,
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
