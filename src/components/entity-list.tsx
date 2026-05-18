@@ -96,7 +96,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   }, [search]);
 
   // Reset page when filters/sort/search/view change
-  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode]);
+  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode, pageSize]);
 
   // Build a slim column projection so we never pull heavy JSONB (hs_raw etc.)
   const selectColumns = useMemo(() => {
