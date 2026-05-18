@@ -127,7 +127,8 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
           contact_phone: toBare,
           twilio_number: fromBare,
           last_message_at: new Date().toISOString(),
-          last_message_preview: data.body.slice(0, 120),
+          last_message_preview:
+            (data.body && data.body.slice(0, 120)) || (data.mediaUrl ? "[mídia]" : ""),
         },
         { onConflict: "contact_phone,twilio_number" },
       )
@@ -141,6 +142,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       direction: "outbound",
       body: data.body,
       media_url: data.mediaUrl ?? null,
+      media_content_type: data.mediaContentType ?? null,
       from_number: fromBare,
       to_number: toBare,
       twilio_sid: tw.sid,
@@ -160,7 +162,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         type: "whatsapp",
         related_contact_id: contactId,
         subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
-        body: data.body,
+        body: data.body || (data.mediaUrl ? "[mídia]" : ""),
         email_direction: "outbound",
         completed: true,
         outcome: "sent",
