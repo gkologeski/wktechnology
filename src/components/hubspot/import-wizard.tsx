@@ -86,6 +86,13 @@ export function HubspotImportWizard() {
     leads: false,
     activities: false,
   });
+  const [clearScope, setClearScope] = useState<Record<Obj, boolean>>({
+    companies: false,
+    contacts: false,
+    deals: false,
+    leads: false,
+    activities: false,
+  });
   const [maxCompanies, setMaxCompanies] = useState(200);
   const [stage, setStage] = useState<"scope" | "running">("scope");
   const [jobId, setJobId] = useState<string | null>(null);
