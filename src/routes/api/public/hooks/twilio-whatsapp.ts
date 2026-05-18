@@ -109,6 +109,22 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
             raw: data,
           });
 
+          // Atividade na timeline do contato (se vinculado)
+          if (contactId) {
+            await supabaseAdmin.from("activities").insert({
+              owner_id: ownerId,
+              type: "whatsapp",
+              related_contact_id: contactId,
+              subject: "WhatsApp recebido",
+              body: body || (mediaUrl ? "[mídia]" : ""),
+              email_direction: "inbound",
+              completed: true,
+              outcome: "received",
+              outcome_set_at: new Date().toISOString(),
+              external_ids: { twilio_sid: sid, conversation_id: conv.id },
+            });
+          }
+
           // resposta TwiML vazia = sem auto-reply
           return new Response("<Response/>", {
             headers: { "Content-Type": "text/xml" },
