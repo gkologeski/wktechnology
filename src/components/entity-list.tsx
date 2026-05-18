@@ -757,3 +757,100 @@ function NumberedPagination({
     </div>
   );
 }
+
+function RowAvatar({ label }: { label: string }) {
+  // Extract initials from rendered string content (strip non-letters)
+  const clean = (label ?? "").replace(/[^\p{L}\p{N} ]+/gu, " ").trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  const initials = ((parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "")).toUpperCase();
+
+  // Stable color from string hash
+  const hash = Array.from(clean).reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
+  const hue = Math.abs(hash) % 360;
+  const bg = `oklch(0.92 0.05 ${hue})`;
+  const fg = `oklch(0.35 0.12 ${hue})`;
+
+  return (
+    <span
+      aria-hidden
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold tabular-nums"
+      style={{ background: bg, color: fg }}
+    >
+      {initials}
+    </span>
+  );
+}
+
+function SavedViewsTabs({
+  presets,
+  savedViews,
+  currentViewId,
+  onSelectAll,
+  onApplyPreset,
+  onApplyView,
+  onAdd,
+  onDeleteView,
+}: {
+  presets: import("@/lib/saved-views").PresetView[];
+  savedViews: import("@/lib/saved-views").SavedView[];
+  currentViewId: string | null;
+  onSelectAll: () => void;
+  onApplyPreset: (p: import("@/lib/saved-views").PresetView) => void;
+  onApplyView: (sv: import("@/lib/saved-views").SavedView) => void;
+  onAdd: () => void;
+  onDeleteView: (id: string) => void;
+}) {
+  const tabBase =
+    "group inline-flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors";
+  const active = "border-primary text-primary font-medium";
+  const inactive = "border-transparent text-muted-foreground hover:text-foreground";
+
+  const allActive = currentViewId === null;
+
+  return (
+    <div className="flex items-center gap-1 mb-3 border-b overflow-x-auto -mx-1 px-1">
+      <button onClick={onSelectAll} className={`${tabBase} ${allActive ? active : inactive}`}>
+        Todos
+      </button>
+      {presets.map((p) => {
+        const isActive = currentViewId === p.id;
+        return (
+          <button
+            key={p.id}
+            onClick={() => onApplyPreset(p)}
+            className={`${tabBase} ${isActive ? active : inactive}`}
+          >
+            {p.name}
+          </button>
+        );
+      })}
+      {savedViews.map((sv) => {
+        const isActive = currentViewId === sv.id;
+        return (
+          <div key={sv.id} className={`${tabBase} ${isActive ? active : inactive}`}>
+            <button onClick={() => onApplyView(sv)} className="flex items-center gap-1">
+              {sv.is_shared ? "🔗 " : ""}{sv.name}{sv.is_default ? " ⭐" : ""}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteView(sv.id);
+              }}
+              className="opacity-0 group-hover:opacity-100 hover:bg-muted rounded p-0.5"
+              aria-label="Excluir visualização"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        );
+      })}
+      <button
+        onClick={onAdd}
+        className={`${tabBase} ${inactive} hover:text-primary`}
+        title="Salvar visualização atual"
+      >
+        <Plus className="h-4 w-4" /> Adicionar visualização
+      </button>
+    </div>
+  );
+}
