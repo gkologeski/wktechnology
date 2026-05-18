@@ -513,7 +513,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                           <TableCell key={k} data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
                             {isFirst ? (
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <RowAvatar label={String(cellContent ?? "")} />
+                                <RowAvatar label={avatarLabel(row, k, c.render)} />
                                 <span className={detailPath && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
                                   {cellContent}
                                 </span>
