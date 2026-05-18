@@ -1,62 +1,66 @@
-# Acelerar entrada em /companies (e demais listas)
+# Plano: Mapeamento de Funcionalidades HubSpot → Nosso CRM
 
-## Diagnóstico
+## Objetivo
 
-`src/components/entity-list.tsx` faz hoje:
+Produzir um **catálogo navegável** de TODAS as funcionalidades do HubSpot CRM (Sales Hub + Service Hub + Marketing Hub básico, focando no que é CRM-core), comparado ao que já existe no nosso app, para você marcar item a item o que quer incorporar.
 
-```ts
-let q = supabase.from(table).select("*");      // todas as colunas, incluindo hs_raw
-q = applyFilters(q, view.filters);
-q = q.order(view.sortBy, ...);
-const { data } = await q;                      // sem range, sem count
+## Entregáveis
+
+### 1. Documento mestre `docs/hubspot-feature-map.md`
+
+Estrutura por módulo. Cada item segue o formato:
+
+```
+- [ ] Nome da funcionalidade
+      HubSpot: descrição em 1 linha
+      Status atual: ✅ pronto | 🟡 parcial | ❌ não existe
+      Esforço: P / M / G
+      Notas: dependências, limitações
 ```
 
-- Sem `count` separado — o "total" exibido é `rows.length` (cap de 1000 do Supabase).
-- Sem paginação — busca tudo de uma vez.
-- `select("*")` puxa colunas pesadas (`hs_raw`, `description`, etc.) que a tabela nem renderiza.
-- Busca/filtro de texto é feito 100% no cliente sobre o array carregado.
+Você marca os `[ ]` no que quiser priorizar.
 
-Em `companies` com 32k linhas + JSONB, isso domina o TTI da tela.
+### 2. Página interna `/settings/roadmap` (opcional, etapa 2)
 
-## Plano
+Mesma lista renderizada como checklist persistido em Supabase (tabela `feature_roadmap`), para evoluir com a equipe. **Só construo se você pedir** — o markdown já resolve a decisão.
 
-### 1. Paginação server-side no `EntityList`
+## Módulos a mapear
 
-- Adicionar estado `page` (default 0) e constante `PAGE_SIZE = 50`.
-- Alterar a query para:
-  ```ts
-  supabase
-    .from(table)
-    .select(selectColumns, { count: "estimated", head: false })
-    .order(...)
-    .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
-  ```
-- Usar `count: "estimated"` (rápido, vem do planner do Postgres) em vez de `exact` — para 30k+ registros `exact` é caro. Mostrar o total como "~32.000".
-- Trocar o footer/contagem para usar `count` retornado, não `rows.length`.
-- Adicionar controles "Anterior / Próximo" e indicador "Página X de Y".
+Cada seção do documento cobre:
 
-### 2. Selecionar só as colunas necessárias
+1. **Objetos CRM** — Contacts, Companies, Deals, Tickets, Leads, Products, Quotes, Line Items, Custom Objects, Feed
+2. **Engajamento / Activities** — Tasks, Calls (com gravação/transcrição), Emails (1:1, sequences, templates, snippets), Meetings (booking pages), Notes, Postal Mail, SMS, WhatsApp, LinkedIn
+3. **Pipelines & Automação** — múltiplos pipelines, stage probability, deal rotation, workflows (if/then), sequences, playbooks, lead scoring (manual e preditivo), lead rotation, SLA
+4. **Inbox & Conversations** — caixa compartilhada, chat ao vivo, chatbot, formulários, roteamento
+5. **Relatórios & Dashboards** — biblioteca de relatórios, custom reports, dashboards, forecast, goals, attribution, funil, coorte
+6. **Importação & Sincronização** — import wizard, mapeamento, dedupe, two-way sync, HubSpot↔outros (já temos parcial)
+7. **Listas & Segmentação** — listas estáticas/dinâmicas, filtros aninhados, propriedades calculadas
+8. **Propriedades** — tipos, grupos, dependências condicionais, histórico, validação, propriedades calculadas
+9. **Permissões & Times** — roles, teams, ownership, partition de dados, audit log, SSO/SAML
+10. **Comunicação outbound** — sequences, templates com tokens, A/B, throttling, unsubscribe, tracking pixel, click tracking
+11. **Calling** — VOIP nativo, integração com 3rd party, transcrição, coaching, gravação
+12. **Meetings & Calendário** — booking pages, round-robin, sincronização Google/Outlook
+13. **Marketing core** (recorte CRM) — formulários, landing pages básicas, CTAs, email marketing, listas
+14. **Service** — tickets, SLA, knowledge base, feedback (NPS/CSAT), portal do cliente
+15. **Payments & Quotes** — quotes, e-signature, payment links, subscriptions, invoices
+16. **AI / Breeze** — assistente, summarization, AI properties, prospecting agent, content agent
+17. **Integrações & Marketplace** — App marketplace, Zapier, API pública, webhooks, custom code actions
+18. **Mobile** — apps iOS/Android, notificações, offline
+19. **Customização** — custom objects, custom cards no record, layouts por time, custom tabs
 
-- Computar `selectColumns` a partir de `columns` + campos essenciais (`id`, `owner_id`, `created_at`, e quaisquer chaves usadas em `searchKeys`, `rowActions`).
-- Nunca trazer `hs_raw` na listagem.
+## Método
 
-### 3. Busca server-side
+1. **Exploração HubSpot** — usar `websearch` na documentação oficial (developers.hubspot.com + knowledge.hubspot.com) por módulo para extrair a lista canônica de features, sem precisar de conta.
+2. **Inventário do nosso CRM** — varrer `src/routes/_authenticated/*`, `src/components/*`, `src/lib/*` e migrations para preencher coluna "Status atual" com precisão.
+3. **Estimativa de esforço** — P (≤1 dia, só UI/CRUD), M (1–3 dias, lógica + UI), G (>3 dias, novo subsistema/integração externa).
+4. **Geração do markdown** num único arquivo, agrupado por módulo, com sumário no topo e contagem (✅/🟡/❌) por seção.
 
-- Quando `search` tiver texto, aplicar `.or()` com `ilike` nas `searchKeys` em vez de filtrar no cliente — caso contrário a busca só encontra dentro da página atual.
-- Debounce de 300ms no input para evitar requests a cada tecla.
-- A `queryKey` passa a incluir `page` e `search`.
+## Fora de escopo deste plano
 
-### 4. Ajustes secundários
+- Implementar as features marcadas — isso vira tarefas separadas depois que você escolher.
+- Roadmap temporal / sprints — o documento é só catálogo + status; priorização vem depois da sua marcação.
+- Comparativo de pricing/tiers do HubSpot.
 
-- Manter a seleção (`selectedIds`) por id ao trocar de página (já é `Set<string>`, só não resetar).
-- "Selecionar todos" passa a significar "selecionar todos da página"; adicionar opção "selecionar todos os N filtrados" que dispara uma query separada só de `id` quando o usuário clicar.
-- Bulk actions e CSV: o export CSV hoje usaria só a página; adicionar caminho que busca todos os ids/colunas em lotes quando o usuário pedir exportar tudo.
+## Próximo passo após aprovação
 
-## Arquivos afetados
-
-- `src/components/entity-list.tsx` — única alteração estrutural. As páginas (`companies.tsx`, `contacts.tsx`, `deals.tsx`, etc.) continuam iguais porque só consomem o componente.
-
-## Fora de escopo
-
-- Índices no banco (estimar antes se a ordenação default em `created_at desc` precisa de índice — `companies` provavelmente já tem).
-- Virtualização da tabela; com 50 linhas/página não é necessário.
+Eu pesquiso, monto o `docs/hubspot-feature-map.md` completo (esperado: 300–500 itens), e te entrego para você marcar. Depois você me devolve as escolhas e abrimos tarefas de implementação.
