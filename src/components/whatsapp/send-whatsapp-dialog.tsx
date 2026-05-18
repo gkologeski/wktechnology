@@ -191,10 +191,16 @@ export function SendWhatsAppDialog({
                 </div>
               ))}
               <div>
-                <Label>Preview</Label>
+                <Label>Preview {isOfficialHsm ? "(HSM oficial)" : ""}</Label>
                 <div className="rounded-md border bg-muted/40 p-2 text-sm whitespace-pre-wrap">
                   {previewBody || "—"}
                 </div>
+                {isOfficialHsm && (
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Será enviado via ContentSid {selectedTpl!.contentSid} — Twilio renderiza o
+                    corpo aprovado. Mídia/texto livre são ignorados.
+                  </p>
+                )}
               </div>
             </>
           ) : (
