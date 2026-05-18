@@ -36,13 +36,18 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
 
 function WhatsAppInbox() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const listFn = useServerFn(listWhatsAppConversations);
   const msgsFn = useServerFn(listWhatsAppMessages);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const markFn = useServerFn(markWhatsAppRead);
+  const membersFn = useServerFn(listAssignableMembers);
+  const assignFn = useServerFn(assignWhatsAppConversation);
+  const statusFn = useServerFn(setWhatsAppConversationStatus);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
@@ -50,6 +55,12 @@ function WhatsAppInbox() {
     queryFn: () => msgsFn({ data: { conversationId: selected! } }),
     enabled: !!selected,
   });
+  const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  const memberMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (membersQ.data ?? []).forEach((m) => map.set(m.id, m.full_name || "—"));
+    return map;
+  }, [membersQ.data]);
 
   // Realtime: nova mensagem entra -> refetch
   useEffect(() => {
@@ -88,9 +99,32 @@ function WhatsAppInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const conversations = conversationsQ.data ?? [];
+  const assignMut = useMutation({
+    mutationFn: (vars: { conversationId: string; assignedTo: string | null }) =>
+      assignFn({ data: vars }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["wa", "conversations"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const statusMut = useMutation({
+    mutationFn: (vars: { conversationId: string; status: "open" | "closed" | "snoozed" }) =>
+      statusFn({ data: vars }),
+    onSuccess: () => {
+      toast.success("Status atualizado");
+      qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const allConversations = conversationsQ.data ?? [];
+  const conversations = useMemo(() => {
+    if (filter === "mine") return allConversations.filter((c) => c.assigned_to === user?.id);
+    if (filter === "unassigned") return allConversations.filter((c) => !c.assigned_to);
+    return allConversations;
+  }, [allConversations, filter, user?.id]);
   const messages = messagesQ.data ?? [];
-  const current = useMemo(() => conversations.find((c) => c.id === selected), [conversations, selected]);
+  const current = useMemo(() => conversations.find((c) => c.id === selected) ?? allConversations.find((c) => c.id === selected), [conversations, allConversations, selected]);
+
 
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
