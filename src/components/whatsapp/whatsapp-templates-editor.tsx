@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-type Tpl = { name: string; body: string };
+type Tpl = { name: string; body: string; contentSid?: string; variableCount?: number };
 
 export function WhatsAppTemplatesEditor() {
   const qc = useQueryClient();
