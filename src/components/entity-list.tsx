@@ -87,7 +87,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     columnOrder: null, sortBy: "created_at", sortDir: "desc",
   });
 
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = pageSize;
 
   // Debounce search (300ms)
   useEffect(() => {
