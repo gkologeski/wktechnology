@@ -76,9 +76,6 @@ function WhatsAppInbox() {
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
-      setComposeBody("");
-      setComposeTo("");
-      setComposeOpen(false);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
     },
