@@ -256,7 +256,7 @@ export function SendWhatsAppDialog({
             onClick={() => sendMut.mutate()}
             disabled={
               !to ||
-              (!previewBody.trim() && !media) ||
+              (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||
               uploading ||
               (!!selectedTpl && vars.slice(0, varCount).some((v) => !v))
