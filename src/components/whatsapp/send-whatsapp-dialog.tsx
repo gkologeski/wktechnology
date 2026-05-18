@@ -51,6 +51,23 @@ export function SendWhatsAppDialog({
   const [body, setBody] = useState("");
   const [templateName, setTemplateName] = useState<string>("");
   const [vars, setVars] = useState<string[]>([]);
+  const [media, setMedia] = useState<{ url: string; contentType: string; name: string } | null>(
+    null,
+  );
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handlePickFile(file: File) {
+    setUploading(true);
+    try {
+      const res = await uploadWhatsAppMedia(file);
+      setMedia({ url: res.url, contentType: res.contentType, name: file.name });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
