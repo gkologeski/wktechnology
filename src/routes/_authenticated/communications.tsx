@@ -32,7 +32,7 @@ function CommunicationsPage() {
         { name: "body", label: "Conteúdo", type: "textarea" },
         { name: "outcome", label: "Resultado" },
         { name: "meeting_location", label: "Local (reunião)" },
-        { name: "recording_url", label: "URL da gravação (call)", type: "url" as unknown as "text" },
+        { name: "recording_url", label: "URL da gravação (call)" },
       ]}
       defaults={{ type: "call" } as Partial<Activity>}
       filterFields={[
