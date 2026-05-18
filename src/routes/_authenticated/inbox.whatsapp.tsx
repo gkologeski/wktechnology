@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Phone, Settings as SettingsIcon } from "lucide-react";
+import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listWhatsAppConversations,
@@ -11,6 +11,9 @@ import {
   markWhatsAppRead,
   getWhatsAppConfig,
   saveWhatsAppConfig,
+  listAssignableMembers,
+  assignWhatsAppConversation,
+  setWhatsAppConversationStatus,
 } from "@/lib/whatsapp.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +22,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
+import { useAuth } from "@/lib/auth";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { WhatsAppTemplatesEditor } from "@/components/whatsapp/whatsapp-templates-editor";
 
@@ -30,13 +36,18 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
 
 function WhatsAppInbox() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const listFn = useServerFn(listWhatsAppConversations);
   const msgsFn = useServerFn(listWhatsAppMessages);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const markFn = useServerFn(markWhatsAppRead);
+  const membersFn = useServerFn(listAssignableMembers);
+  const assignFn = useServerFn(assignWhatsAppConversation);
+  const statusFn = useServerFn(setWhatsAppConversationStatus);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
@@ -44,6 +55,12 @@ function WhatsAppInbox() {
     queryFn: () => msgsFn({ data: { conversationId: selected! } }),
     enabled: !!selected,
   });
+  const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  const memberMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (membersQ.data ?? []).forEach((m) => map.set(m.id, m.full_name || "—"));
+    return map;
+  }, [membersQ.data]);
 
   // Realtime: nova mensagem entra -> refetch
   useEffect(() => {
@@ -82,9 +99,32 @@ function WhatsAppInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const conversations = conversationsQ.data ?? [];
+  const assignMut = useMutation({
+    mutationFn: (vars: { conversationId: string; assignedTo: string | null }) =>
+      assignFn({ data: vars }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["wa", "conversations"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const statusMut = useMutation({
+    mutationFn: (vars: { conversationId: string; status: "open" | "closed" | "snoozed" }) =>
+      statusFn({ data: vars }),
+    onSuccess: () => {
+      toast.success("Status atualizado");
+      qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const allConversations = conversationsQ.data ?? [];
+  const conversations = useMemo(() => {
+    if (filter === "mine") return allConversations.filter((c) => c.assigned_to === user?.id);
+    if (filter === "unassigned") return allConversations.filter((c) => !c.assigned_to);
+    return allConversations;
+  }, [allConversations, filter, user?.id]);
   const messages = messagesQ.data ?? [];
-  const current = useMemo(() => conversations.find((c) => c.id === selected), [conversations, selected]);
+  const current = useMemo(() => conversations.find((c) => c.id === selected) ?? allConversations.find((c) => c.id === selected), [conversations, allConversations, selected]);
+
 
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -114,8 +154,17 @@ function WhatsAppInbox() {
       <div className="grid flex-1 grid-cols-[320px_1fr] gap-3 overflow-hidden">
         {/* Lista de conversas */}
         <Card className="flex flex-col overflow-hidden">
-          <div className="border-b p-3 text-sm font-medium">
-            Conversas <span className="text-muted-foreground">({conversations.length})</span>
+          <div className="border-b p-2">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="mine">Minhas</TabsTrigger>
+                <TabsTrigger value="unassigned">Sem dono</TabsTrigger>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="mt-2 px-1 text-xs text-muted-foreground">
+              {conversations.length} conversa(s)
+            </div>
           </div>
           <ScrollArea className="flex-1">
             {conversationsQ.isLoading && <div className="p-4 text-sm text-muted-foreground">Carregando…</div>}
@@ -137,13 +186,24 @@ function WhatsAppInbox() {
                     <Phone className="h-3 w-3 text-muted-foreground" />
                     <span className="truncate">{c.contact_phone}</span>
                   </div>
-                  {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
+                  <div className="flex items-center gap-1">
+                    {c.status === "closed" && <Badge variant="secondary" className="text-[10px]">fechada</Badge>}
+                    {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
+                  </div>
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
                   {c.last_message_preview || "—"}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {c.last_message_at ? formatDateTime(c.last_message_at) : ""}
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{c.last_message_at ? formatDateTime(c.last_message_at) : ""}</span>
+                  {c.assigned_to ? (
+                    <span className="flex items-center gap-1">
+                      <UserCheck className="h-3 w-3" />
+                      {memberMap.get(c.assigned_to) ?? "atribuída"}
+                    </span>
+                  ) : (
+                    <span className="italic">sem dono</span>
+                  )}
                 </div>
               </button>
             ))}
@@ -158,9 +218,56 @@ function WhatsAppInbox() {
             </div>
           ) : (
             <>
-              <div className="border-b p-3">
-                <div className="text-sm font-medium">{current.contact_phone}</div>
-                <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
+                <div>
+                  <div className="text-sm font-medium">{current.contact_phone}</div>
+                  <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={current.assigned_to ?? "_none"}
+                    onValueChange={(v) =>
+                      assignMut.mutate({
+                        conversationId: current.id,
+                        assignedTo: v === "_none" ? null : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="Atribuir a…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Sem dono</SelectItem>
+                      {user?.id && (
+                        <SelectItem value={user.id}>Eu ({memberMap.get(user.id) ?? "—"})</SelectItem>
+                      )}
+                      {(membersQ.data ?? [])
+                        .filter((m) => m.id !== user?.id)
+                        .map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.full_name || m.id.slice(0, 6)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {current.status === "closed" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "open" })}
+                    >
+                      Reabrir
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "closed" })}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
+                    </Button>
+                  )}
+                </div>
               </div>
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-2">
@@ -182,8 +289,21 @@ function WhatsAppInbox() {
                           </a>
                         )}
                         <div className="whitespace-pre-wrap">{m.body}</div>
-                        <div className="mt-1 text-[10px] opacity-70">
-                          {formatDateTime(m.created_at)} · {m.status}
+                        <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
+                          <span>{formatDateTime(m.created_at)}</span>
+                          {m.direction === "outbound" && (
+                            <span className="ml-auto inline-flex items-center gap-0.5">
+                              {m.status === "read" ? (
+                                <CheckCheck className="h-3 w-3 text-sky-300" />
+                              ) : m.status === "delivered" ? (
+                                <CheckCheck className="h-3 w-3" />
+                              ) : m.status === "sent" || m.status === "queued" ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                <span>{m.status}</span>
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -235,12 +355,16 @@ function WhatsAppSettingsButton() {
   const saveCfg = useServerFn(saveWhatsAppConfig);
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   const cfgQ = useQuery({ queryKey: ["wa", "config"], queryFn: () => getCfg(), enabled: open });
   useEffect(() => {
-    if (cfgQ.data) setFrom(cfgQ.data.from_number || "");
+    if (cfgQ.data) {
+      setFrom(cfgQ.data.from_number || "");
+      setBaseUrl(cfgQ.data.public_base_url || "");
+    }
   }, [cfgQ.data]);
   const saveMut = useMutation({
-    mutationFn: () => saveCfg({ data: { from_number: from } }),
+    mutationFn: () => saveCfg({ data: { from_number: from, public_base_url: baseUrl } }),
     onSuccess: () => {
       toast.success("Configuração salva");
       setOpen(false);
@@ -248,6 +372,7 @@ function WhatsAppSettingsButton() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const effectiveBase = cfgQ.data?.effective_public_base ?? "";
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -257,7 +382,7 @@ function WhatsAppSettingsButton() {
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Número Twilio WhatsApp</DialogTitle>
+          <DialogTitle>Twilio WhatsApp</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -267,12 +392,25 @@ function WhatsAppSettingsButton() {
               Deixe vazio para usar o sandbox padrão da Twilio (+14155238886). Para produção, cole o número aprovado para WhatsApp Business.
             </p>
           </div>
-          <div className="rounded-md border bg-muted/40 p-3 text-xs">
-            <div className="font-medium">Webhook inbound</div>
-            <code className="break-all">{typeof window !== "undefined" ? window.location.origin : ""}/api/public/hooks/twilio-whatsapp</code>
-            <p className="mt-1 text-muted-foreground">
-              Cole essa URL em Twilio Console → Messaging → Sandbox (ou Sender) em "When a message comes in" (POST).
+          <div>
+            <label className="text-sm font-medium">URL pública (base)</label>
+            <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={effectiveBase || "https://seu-dominio.com"} />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Usada para webhooks de entrada e status callback. Padrão: domínio publicado.
             </p>
+          </div>
+          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-2">
+            <div>
+              <div className="font-medium">Webhook inbound (When a message comes in)</div>
+              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp</code>
+            </div>
+            <div>
+              <div className="font-medium">Status callback (entrega/leitura)</div>
+              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp-status</code>
+              <p className="mt-1 text-muted-foreground">
+                Já é enviado automaticamente em cada mensagem. Use no Twilio Console se quiser também receber por número.
+              </p>
+            </div>
           </div>
           <div className="border-t pt-3">
             <WhatsAppTemplatesEditor />

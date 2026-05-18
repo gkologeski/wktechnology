@@ -39,8 +39,15 @@ async function getIntegrationConfig(supabase: any, userId: string) {
     .maybeSingle();
   return (data?.config ?? {}) as {
     from_number?: string;
+    public_base_url?: string;
     templates?: { name: string; body: string }[];
   };
+}
+
+const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
+async function resolvePublicBase(supabase: any, userId: string): Promise<string> {
+  const cfg = await getIntegrationConfig(supabase, userId);
+  return (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");
 }
 
 async function resolveFromNumber(supabase: any, userId: string): Promise<string> {
@@ -81,7 +88,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     const toBare = normalizePhone(data.to);
     const fromBare = from.replace(/^whatsapp:/, "");
 
-    const params = new URLSearchParams({ From: from, To: toWaNum, Body: data.body });
+    const publicBase = await resolvePublicBase(supabase, userId);
+    const params = new URLSearchParams({
+      From: from,
+      To: toWaNum,
+      Body: data.body,
+      StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
+    });
     if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
 
     const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
@@ -163,7 +176,7 @@ export const listWhatsAppConversations = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("whatsapp_conversations")
       .select(
-        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status",
+        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status, assigned_to",
       )
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
@@ -211,9 +224,11 @@ export const getWhatsAppConfig = createServerFn({ method: "GET" })
     const cfg = await getIntegrationConfig(supabase, userId);
     return {
       from_number: cfg.from_number ?? "",
+      public_base_url: cfg.public_base_url ?? "",
       effective_from: cfg.from_number
         ? normalizePhone(cfg.from_number)
         : SANDBOX_FROM.replace("whatsapp:", ""),
+      effective_public_base: cfg.public_base_url || DEFAULT_PUBLIC_BASE,
       using_sandbox: !cfg.from_number,
       templates: cfg.templates ?? [],
     };
@@ -221,14 +236,23 @@ export const getWhatsAppConfig = createServerFn({ method: "GET" })
 
 export const saveWhatsAppConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ from_number: z.string().min(0).max(32) }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        from_number: z.string().min(0).max(32),
+        public_base_url: z.string().min(0).max(255).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const from = data.from_number.trim();
+    const base = (data.public_base_url ?? "").trim().replace(/\/$/, "");
     const cfg = await getIntegrationConfig(supabase, userId);
     const newCfg = {
       ...cfg,
       from_number: from ? normalizePhone(from) : undefined,
+      public_base_url: base || undefined,
     };
     const { error } = await supabase.from("integrations").upsert(
       {
@@ -239,6 +263,63 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
       },
       { onConflict: "owner_id,provider" },
     );
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ---------- assignment ----------
+export const listAssignableMembers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("member_user_id")
+      .eq("workspace_owner_id", userId);
+    const ids = new Set<string>([userId, ...(members ?? []).map((m: any) => m.member_user_id)]);
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", Array.from(ids));
+    return (profs ?? []) as { id: string; full_name: string | null }[];
+  });
+
+export const assignWhatsAppConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+        assignedTo: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("whatsapp_conversations")
+      .update({ assigned_to: data.assignedTo })
+      .eq("id", data.conversationId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+        status: z.enum(["open", "closed", "snoozed"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("whatsapp_conversations")
+      .update({ status: data.status })
+      .eq("id", data.conversationId);
     if (error) throw error;
     return { ok: true };
   });
