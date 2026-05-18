@@ -37,9 +37,6 @@ function WhatsAppInbox() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [composeTo, setComposeTo] = useState("");
-  const [composeBody, setComposeBody] = useState("");
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
