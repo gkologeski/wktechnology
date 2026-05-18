@@ -88,7 +88,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     const toBare = normalizePhone(data.to);
     const fromBare = from.replace(/^whatsapp:/, "");
 
-    const params = new URLSearchParams({ From: from, To: toWaNum, Body: data.body });
+    const publicBase = await resolvePublicBase(supabase, userId);
+    const params = new URLSearchParams({
+      From: from,
+      To: toWaNum,
+      Body: data.body,
+      StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
+    });
     if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
 
     const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
