@@ -31,12 +31,14 @@ function DashboardPage() {
     queryKey: ["dashboard"],
     queryFn: async () => {
       const [leads, deals, activities] = await Promise.all([
-        fetchAll<{ id: string; status: string; created_at: string }>((from, to) =>
-          supabase.from("leads").select("id,status,created_at").range(from, to),
-        ),
-        fetchAll<{ id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }>((from, to) =>
-          supabase.from("deals").select("id,name,value,stage,created_at,expected_close_date").range(from, to),
-        ),
+        fetchAll<{ id: string; status: string; created_at: string }>(async (from, to) => {
+          const r = await supabase.from("leads").select("id,status,created_at").range(from, to);
+          return { data: r.data };
+        }),
+        fetchAll<{ id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }>(async (from, to) => {
+          const r = await supabase.from("deals").select("id,name,value,stage,created_at,expected_close_date").range(from, to);
+          return { data: r.data as { id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }[] | null };
+        }),
         supabase
           .from("activities")
           .select("id,subject,due_date,completed,type")
