@@ -631,6 +631,290 @@ export type Database = {
           },
         ]
       }
+      email_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          history_id: string | null
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          owner_id: string
+          provider: string
+          refresh_token: string | null
+          scopes: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          history_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          owner_id: string
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          history_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          owner_id?: string
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_messages: {
+        Row: {
+          account_id: string
+          attachments: Json | null
+          bcc_emails: string[]
+          body_html: string | null
+          body_text: string | null
+          cc_emails: string[]
+          click_count: number
+          created_at: string
+          direction: string
+          first_opened_at: string | null
+          from_email: string | null
+          from_name: string | null
+          has_attachments: boolean
+          headers: Json | null
+          id: string
+          in_reply_to: string | null
+          message_id_header: string | null
+          open_count: number
+          owner_id: string
+          provider_message_id: string
+          received_at: string | null
+          sent_at: string | null
+          snippet: string | null
+          subject: string | null
+          thread_id: string | null
+          to_emails: string[]
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          attachments?: Json | null
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          click_count?: number
+          created_at?: string
+          direction: string
+          first_opened_at?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          headers?: Json | null
+          id?: string
+          in_reply_to?: string | null
+          message_id_header?: string | null
+          open_count?: number
+          owner_id: string
+          provider_message_id: string
+          received_at?: string | null
+          sent_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          attachments?: Json | null
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          click_count?: number
+          created_at?: string
+          direction?: string
+          first_opened_at?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          headers?: Json | null
+          id?: string
+          in_reply_to?: string | null
+          message_id_header?: string | null
+          open_count?: number
+          owner_id?: string
+          provider_message_id?: string
+          received_at?: string | null
+          sent_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_threads: {
+        Row: {
+          account_id: string
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          last_message_at: string | null
+          lead_id: string | null
+          message_count: number
+          owner_id: string
+          provider_thread_id: string
+          snippet: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          message_count?: number
+          owner_id: string
+          provider_thread_id: string
+          snippet?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          message_count?: number
+          owner_id?: string
+          provider_thread_id?: string
+          snippet?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_tracking_events: {
+        Row: {
+          event_type: string
+          id: string
+          ip: string | null
+          message_id: string
+          occurred_at: string
+          owner_id: string
+          url: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          ip?: string | null
+          message_id: string
+          occurred_at?: string
+          owner_id: string
+          url?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          ip?: string | null
+          message_id?: string
+          occurred_at?: string
+          owner_id?: string
+          url?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrichment_job_items: {
         Row: {
           after: Json | null
