@@ -103,6 +103,7 @@ export function HubspotImportWizard() {
 
   const startFn = useServerFn(startHubspotImport);
   const countFn = useServerFn(countHubspotObjects);
+  const clearFn = useServerFn(clearHubspotLocalTables);
 
   useEffect(() => {
     let active = true;
