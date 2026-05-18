@@ -98,15 +98,46 @@ function WhatsAppInbox() {
   }, [selected, markFn, qc]);
 
   const sendMut = useMutation({
-    mutationFn: (input: { to: string; body: string; contactId?: string }) => sendFn({ data: input }),
+    mutationFn: (input: {
+      to: string;
+      body: string;
+      contactId?: string;
+      mediaUrl?: string;
+      mediaContentType?: string;
+    }) => sendFn({ data: input }),
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
+      setPendingMedia(null);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  async function handlePickFile(file: File) {
+    setUploading(true);
+    try {
+      const res = await uploadWhatsAppMedia(file);
+      setPendingMedia({ url: res.url, contentType: res.contentType, name: file.name });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function submitDraft() {
+    if (!current) return;
+    if (!draft.trim() && !pendingMedia) return;
+    sendMut.mutate({
+      to: current.contact_phone,
+      body: draft,
+      contactId: current.contact_id ?? undefined,
+      mediaUrl: pendingMedia?.url,
+      mediaContentType: pendingMedia?.contentType,
+    });
+  }
 
   const assignMut = useMutation({
     mutationFn: (vars: { conversationId: string; assignedTo: string | null }) =>
