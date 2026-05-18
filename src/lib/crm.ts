@@ -28,6 +28,21 @@ export const ACTIVITY_TYPES = [
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]["value"];
 
+// HubSpot task statuses (used in tasks kanban board)
+export const TASK_STATUSES = [
+  { value: "NOT_STARTED", label: "Não iniciada" },
+  { value: "IN_PROGRESS", label: "Em andamento" },
+  { value: "WAITING", label: "Aguardando" },
+  { value: "COMPLETED", label: "Concluída" },
+  { value: "DEFERRED", label: "Adiada" },
+] as const;
+
+export const TASK_PRIORITIES = [
+  { value: "LOW", label: "Baixa" },
+  { value: "MEDIUM", label: "Média" },
+  { value: "HIGH", label: "Alta" },
+] as const;
+
 export function formatCurrency(v: number, currency = "BRL") {
   try {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v ?? 0);

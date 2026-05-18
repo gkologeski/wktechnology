@@ -18,7 +18,7 @@ import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dial
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
-import { applyFilters, type FilterGroup, conditionToLabel } from "@/lib/filters";
+import { applyFilters, type FilterGroup, type FilterCondition, conditionToLabel } from "@/lib/filters";
 import { useSavedViews, type SavedView } from "@/lib/saved-views";
 import { PRESET_VIEWS } from "@/lib/preset-views";
 import { toast } from "sonner";
@@ -34,7 +34,7 @@ type Field = {
 };
 
 export type EntityListProps<T extends { id: string }> = {
-  table: "companies" | "contacts" | "leads" | "deals";
+  table: "companies" | "contacts" | "leads" | "deals" | "activities";
   title: string;
   description?: string;
   columns: { key: keyof T | string; label: string; render?: (row: T) => ReactNode }[];
@@ -52,6 +52,10 @@ export type EntityListProps<T extends { id: string }> = {
   boardStages?: BoardStage[];
   boardStageField?: string;
   filterFields?: { name: string; label: string; type?: string; options?: { value: string; label: string }[] }[];
+  /** Always-applied filters (not shown in UI). Useful to scope a page to a subset (e.g. activities of type=task). */
+  lockedFilters?: FilterCondition[];
+  /** Singular label for the "Criar X" button. Overrides default mapping. */
+  entitySingularLabel?: string;
 };
 
 type ViewState = {
@@ -63,7 +67,7 @@ type ViewState = {
 };
 
 export function EntityList<T extends { id: string; owner_id?: string }>(props: EntityListProps<T>) {
-  const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields } = props;
+  const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields, lockedFilters, entitySingularLabel } = props;
   const { user } = useAuth();
   const qc = useQueryClient();
   const savedViews = useSavedViews(table);
@@ -111,11 +115,14 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const isBoard = viewMode === "board" && !!boardStages && !!boardStageField;
 
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns],
+    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns, lockedFilters],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any).from(table).select(selectColumns, { count: "exact" });
       q = applyFilters(q, view.filters);
+      if (lockedFilters && lockedFilters.length > 0) {
+        q = applyFilters(q, { type: "group", op: "and", conditions: lockedFilters });
+      }
       // Server-side search across searchKeys
       const term = debouncedSearch.trim();
       if (term && searchKeys && searchKeys.length > 0) {
@@ -287,7 +294,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const hasFilter = view.filters.conditions.length > 0;
 
   // Singular entity label for CTA ("Criar lead")
-  const entitySingular = ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio" } as const)[table];
+  const entitySingular = entitySingularLabel ?? ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio", activities: "registro" } as const)[table];
 
   // Quick-filter fields (select-type only)
   const quickFilterFields = filterFieldList.filter((f) => f.type === "select" && f.options && f.options.length > 0);
@@ -358,7 +365,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           {bulkEditFields && bulkEditFields.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>Editar em massa</Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}><ListTodo className="h-4 w-4 mr-1" /> Criar atividade</Button>
+          {table !== "activities" && (
+            <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}><ListTodo className="h-4 w-4 mr-1" /> Criar atividade</Button>
+          )}
           {bulkActions?.(ids, selectedRows)}
           <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>Excluir</Button>
         </BulkActionBar>
@@ -561,8 +570,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       )}
 
       <ConfirmCountDialog open={bulkDeleteOpen} setOpen={setBulkDeleteOpen} count={ids.length} entity={table} onConfirm={async () => { await bulkDelete(); }} />
-      <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
-        onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
+      {table !== "activities" && (
+        <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
+          onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
+      )}
 
       <FilterBuilderDialog open={filterOpen} setOpen={setFilterOpen} fields={filterFieldList} value={view.filters}
         onApply={(g) => setView({ ...view, filters: g })} />
