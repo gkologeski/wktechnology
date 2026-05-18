@@ -275,6 +275,114 @@ function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updat
   } as never;
 }
 
+// ─────────────────────── HubSpot Pipelines sync ──────────────────────────────
+
+type HsPipelineStage = {
+  id: string;
+  label: string;
+  displayOrder?: number;
+  metadata?: { probability?: string; isClosed?: string | boolean; ticketState?: string };
+  stageType?: string;
+};
+type HsPipeline = {
+  id: string;
+  label: string;
+  displayOrder?: number;
+  stages?: HsPipelineStage[];
+};
+
+const STAGE_COLOR_POOL = [
+  "var(--hs-stage-1)",
+  "var(--hs-stage-2)",
+  "var(--hs-stage-3)",
+  "var(--hs-stage-4)",
+  "var(--hs-stage-won)",
+  "var(--hs-stage-lost)",
+];
+
+function classifyHsStage(s: HsPipelineStage): { type: "open" | "won" | "lost"; legacy: "new" | "won" | "lost" } {
+  const prob = Number(s.metadata?.probability ?? "");
+  const closed = String(s.metadata?.isClosed ?? "").toLowerCase() === "true";
+  if (closed && prob >= 1) return { type: "won", legacy: "won" };
+  if (closed) return { type: "lost", legacy: "lost" };
+  return { type: "open", legacy: "new" };
+}
+
+type PipelineSync = {
+  pipelineMap: Record<string, string>; // hsPipelineId -> local pipelines.id
+  stageMap: Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }>; // hsStageId -> info
+};
+
+async function syncHubspotDealPipelines(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<PipelineSync> {
+  const r = (await hsFetch("/crm/v3/pipelines/deals")) as { results?: HsPipeline[] };
+  const pipelines = r.results ?? [];
+
+  const { data: existing } = await supabase
+    .from("pipelines")
+    .select("id, name, config, is_default")
+    .eq("owner_id", userId)
+    .eq("entity", "deal");
+
+  const existingByHsId = new Map<string, { id: string; name: string }>();
+  const existingByName = new Map<string, { id: string; name: string }>();
+  for (const p of (existing ?? []) as { id: string; name: string; config: { hs_pipeline_id?: string } | null }[]) {
+    const hsId = p.config?.hs_pipeline_id;
+    if (hsId) existingByHsId.set(String(hsId), { id: p.id, name: p.name });
+    existingByName.set(p.name, { id: p.id, name: p.name });
+  }
+  const hasAnyDefault = (existing ?? []).some((p) => (p as { is_default?: boolean }).is_default);
+
+  const pipelineMap: Record<string, string> = {};
+  const stageMap: Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }> = {};
+
+  for (const hp of pipelines) {
+    const sortedStages = [...(hp.stages ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    const stagesPayload = sortedStages.map((s, i) => {
+      const c = classifyHsStage(s);
+      stageMap[String(s.id)] = { hsPipelineId: hp.id, legacy: c.legacy };
+      return {
+        value: String(s.id),
+        label: s.label,
+        color: c.type === "won" ? "var(--hs-stage-won)" : c.type === "lost" ? "var(--hs-stage-lost)" : STAGE_COLOR_POOL[i % 4],
+        probability: Math.round(Number(s.metadata?.probability ?? 0) * 100),
+        type: c.type,
+      };
+    });
+
+    const found = existingByHsId.get(hp.id) ?? existingByName.get(hp.label);
+    if (found) {
+      await supabase
+        .from("pipelines")
+        .update({
+          name: hp.label,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id } as never,
+        })
+        .eq("id", found.id);
+      pipelineMap[hp.id] = found.id;
+    } else {
+      const { data: ins, error } = await supabase
+        .from("pipelines")
+        .insert({
+          owner_id: userId,
+          entity: "deal",
+          name: hp.label,
+          is_default: !hasAnyDefault && Object.keys(pipelineMap).length === 0,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id } as never,
+        })
+        .select("id")
+        .single();
+      if (!error && ins) pipelineMap[hp.id] = (ins as { id: string }).id;
+    }
+  }
+
+  return { pipelineMap, stageMap };
+}
+
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
@@ -1211,122 +1319,132 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       if (partial) await persistCursor({ read_index: idx });
       else await persistCursor({ read_index: targetIds.length });
     } else if (step === "deals") {
-      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
+      // Sincroniza pipelines do HubSpot (cria os inexistentes) e importa TODOS
+      // os negócios (de todos os pipelines), paginando direto em /objects/deals
+      // — sem depender de associações vindas de companies.
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
-      let targetIds = resume.target_ids as string[] | undefined;
-      let parentMap = resume.parent_map as Record<string, string> | undefined;
-      let dealContactsMap = resume.deal_contacts_map as Record<string, string[]> | undefined;
-      if (!targetIds || !parentMap || !resume.discovery_complete) {
-        const hsCompanyIds = [...companyMap.keys()];
-        if ((resume.assoc_index ?? 0) === 0) {
-          await appendLog(supabase, jobId, {
-            level: "info", step,
-            message: `Mapeando negócios para ${hsCompanyIds.length} empresas`,
-          });
-        }
-        const discovery = await discoverTargetsFromAssociations({
-          supabase,
-          jobId,
-          itemId,
-          step,
-          fromObj: "companies",
-          fromIds: hsCompanyIds,
-          toObj: "deals",
-          resume,
-          deadlineAt,
-        });
-        targetIds = discovery.targetIds;
-        parentMap = discovery.parentMap;
-        await bump(0, 0, targetIds.length, true);
-        if (discovery.partial) {
-          await persistCursor({ discovered: targetIds.length });
-          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
-          await appendLog(supabase, jobId, {
-            level: "info",
-            step,
-            message: `Mapeamento de negócios pausado para próximo tick (${targetIds.length} negócios encontrados)`,
-          });
-          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
-        }
+
+      let pipelineMap = resume.pipeline_map as Record<string, string> | undefined;
+      let stageMap = resume.stage_map as Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }> | undefined;
+      if (!pipelineMap || !stageMap) {
+        const synced = await syncHubspotDealPipelines(supabase, userId);
+        pipelineMap = synced.pipelineMap;
+        stageMap = synced.stageMap;
+        await patchItemBefore(supabase, itemId, { pipeline_map: pipelineMap, stage_map: stageMap });
         await appendLog(supabase, jobId, {
           level: "info", step,
-          message: `Plano: ${targetIds.length} negócios a importar`,
+          message: `Pipelines sincronizados: ${Object.keys(pipelineMap).length}`,
         });
       }
-      if (!dealContactsMap || !resume.deal_contacts_complete) {
-        const discovery = await discoverDealContactsMap({ supabase, jobId, itemId, step, dealIds: targetIds, resume: await loadResume(supabase, itemId), deadlineAt });
-        dealContactsMap = discovery.dealContactsMap;
-        if (discovery.partial) {
-          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
-          await appendLog(supabase, jobId, { level: "info", step, message: "Mapeamento de contatos dos negócios pausado para próximo tick" });
-          return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
-        }
+
+      if (resume.discovered === undefined) {
+        const total = await searchTotal("deals");
+        await patchItemBefore(supabase, itemId, { discovered: total });
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Total no HubSpot: ${total} negócios`,
+        });
       }
+
       const dealProps = await loadHsProperties("deals");
       const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
-      let idx = (resume.read_index as number) ?? 0;
-      const CHUNK = 100;
-      while (idx < targetIds.length) {
-        if (isExpired()) { partial = true; break; }
-        const chunkIds = targetIds.slice(idx, idx + CHUNK);
-        const recs = await batchRead("deals", chunkIds, dealPropsList);
-        const byId = new Map(recs.map((r) => [r.id, r]));
-        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
-        for (const hsId of chunkIds) {
-          const d = byId.get(hsId);
-          if (!d) { fail++; continue; }
+      const propsParam = dealPropsList.join(",");
+
+      let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
+      let page = (resume.page as number | undefined) ?? 1;
+
+      type DealsPage = {
+        results: HSRec[];
+        paging?: { next?: { after: string } };
+      };
+      const fetchPage = async (cursor?: string): Promise<DealsPage> => {
+        const params: Record<string, string> = { limit: "100", properties: propsParam };
+        if (cursor) params.after = cursor;
+        return (await hsFetch("/crm/v3/objects/deals", params)) as DealsPage;
+      };
+
+      let nextPromise: Promise<DealsPage> | null = fetchPage(after);
+
+      while (nextPromise) {
+        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+        const res: DealsPage = await nextPromise;
+        if (!res.results?.length) break;
+
+        const nextAfter: string | undefined = res.paging?.next?.after;
+        nextPromise = nextAfter ? fetchPage(nextAfter) : null;
+
+        const pageIds = res.results.map((r) => r.id);
+        const [dealCompanies, dealContacts] = await Promise.all([
+          getAssocMany("deals", pageIds, "companies", 20),
+          getAssocMany("deals", pageIds, "contacts", 20),
+        ]);
+        const parentCompanyHsIds = Array.from(
+          new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
+        );
+        const companyMap = parentCompanyHsIds.length
+          ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+          : new Map<string, string>();
+
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Página ${page}: ${res.results.length} negócios`,
+          count: res.results.length,
+        });
+
+        const tasks: { hsId: string; payload: Record<string, unknown>; contactHsIds: string[] }[] = [];
+        for (const d of res.results) {
           const p = d.properties;
-          const localCompanyId = companyMap.get(parentMap[hsId] ?? "") ?? null;
+          const hsCompanyId = (dealCompanies.get(d.id) ?? [])[0];
+          const localCompanyId = hsCompanyId ? companyMap.get(hsCompanyId) ?? null : null;
+          const stageInfo = p.dealstage ? stageMap[p.dealstage] : undefined;
+          const hsPipelineId = p.pipeline ?? stageInfo?.hsPipelineId ?? null;
+          const localPipelineId = hsPipelineId ? pipelineMap[hsPipelineId] ?? null : null;
+          const legacyStage: "new" | "won" | "lost" = stageInfo?.legacy ?? "new";
           const mapped = mapDeal(p);
           tasks.push({
             hsId: d.id,
+            contactHsIds: dealContacts.get(d.id) ?? [],
             payload: {
               owner_id: userId,
               name: p.dealname ?? "Sem nome",
               value: p.amount ? Number(p.amount) : 0,
               currency: "BRL",
-              stage: "new",
+              stage: legacyStage,
+              stage_id: p.dealstage ?? null,
+              pipeline_id: localPipelineId,
               company_id: localCompanyId,
               expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
               ...mapped,
-              external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+              external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: hsPipelineId } as never,
               hs_raw: rawOf(d),
             },
           });
         }
-        const CONCURRENCY = 12;
-        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-          const batch = tasks.slice(i, i + CONCURRENCY);
-          const results = await Promise.all(
-            batch.map((t) => upsertByHsId(supabase, "deals", userId, t.hsId, t.payload)),
-          );
-          // Sequential follow-up for deal_contacts (only on inserts)
-          for (let j = 0; j < results.length; j++) {
-            const r = results[j];
-            const t = batch[j];
-            if (r.status === "failed") { fail++; continue; }
-            imported.push(t.hsId);
-            ok++;
-            if (r.status === "inserted") {
-              const contactIds = dealContactsMap[t.hsId] ?? [];
-              const inserts = contactIds
-                .map((cid) => contactMap.get(cid))
-                .filter((lc): lc is string => !!lc && !!r.localId)
-                .map((lc) => ({ deal_id: r.localId as string, contact_id: lc }));
-              if (inserts.length) {
-                await supabase.from("deal_contacts").insert(inserts);
-              }
+
+        const results = await upsertBatchByHsId(supabase, "deals", userId, tasks);
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          const t = tasks[j];
+          if (r.status === "failed") { fail++; continue; }
+          imported.push(t.hsId);
+          ok++;
+          if (r.status === "inserted" && r.localId) {
+            const inserts = t.contactHsIds
+              .map((cid) => contactMap.get(cid))
+              .filter((lc): lc is string => !!lc)
+              .map((lc) => ({ deal_id: r.localId as string, contact_id: lc }));
+            if (inserts.length) {
+              await supabase.from("deal_contacts").insert(inserts);
             }
           }
-          await bump(ok, fail, targetIds.length);
         }
 
-        idx += chunkIds.length;
-        await persistCursor({ read_index: idx });
-        await bump(ok, fail, targetIds.length);
+        after = nextAfter;
+        page++;
+        await persistCursor({ cursor: after ?? null, page });
+        await bump(ok, fail);
+        if (!nextAfter) break;
       }
-      if (partial) await persistCursor({ read_index: idx });
-      else await persistCursor({ read_index: targetIds.length });
     } else if (step === "leads") {
       // Importa o objeto NATIVO de Leads do HubSpot (/crm/v3/objects/leads),
       // paginando com cursor — não depende da importação de contatos.
