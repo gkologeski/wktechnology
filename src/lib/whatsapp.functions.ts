@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-// Twilio Sandbox padrão. Para produção: salvar em integrations(provider='twilio_whatsapp').config.from_number
 const SANDBOX_FROM = "whatsapp:+14155238886";
 
 function twilioHeaders() {
@@ -27,15 +26,38 @@ function toWa(phone: string): string {
   return p.startsWith("whatsapp:") ? p : `whatsapp:${p}`;
 }
 
-async function resolveFromNumber(supabase: any, userId: string): Promise<string> {
+export function applyTemplate(body: string, vars: string[]): string {
+  return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
+}
+
+async function getIntegrationConfig(supabase: any, userId: string) {
   const { data } = await supabase
     .from("integrations")
     .select("config")
     .eq("owner_id", userId)
     .eq("provider", "twilio_whatsapp")
     .maybeSingle();
-  const cfg = (data?.config ?? {}) as { from_number?: string };
+  return (data?.config ?? {}) as {
+    from_number?: string;
+    templates?: { name: string; body: string }[];
+  };
+}
+
+async function resolveFromNumber(supabase: any, userId: string): Promise<string> {
+  const cfg = await getIntegrationConfig(supabase, userId);
   return cfg.from_number ? toWa(cfg.from_number) : SANDBOX_FROM;
+}
+
+async function findContactByPhone(supabase: any, phoneE164: string): Promise<string | null> {
+  const noPlus = phoneE164.replace(/^\+/, "");
+  const { data } = await supabase
+    .from("contacts")
+    .select("id")
+    .or(
+      `phone.eq.${phoneE164},phone.eq.${noPlus},mobile_phone.eq.${phoneE164},mobile_phone.eq.${noPlus}`,
+    )
+    .maybeSingle();
+  return data?.id ?? null;
 }
 
 // ---------- send ----------
@@ -48,6 +70,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         body: z.string().min(1).max(1600),
         contactId: z.string().uuid().optional(),
         mediaUrl: z.string().url().optional(),
+        templateName: z.string().optional(),
       })
       .parse(input),
   )
@@ -71,13 +94,19 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       throw new Error(`Twilio erro [${res.status}]: ${tw?.message ?? JSON.stringify(tw)}`);
     }
 
+    // Resolve contato pelo telefone se não informado
+    let contactId = data.contactId ?? null;
+    if (!contactId) {
+      contactId = await findContactByPhone(supabase, toBare);
+    }
+
     // upsert conversation
     const { data: conv, error: cErr } = await supabase
       .from("whatsapp_conversations")
       .upsert(
         {
           owner_id: userId,
-          contact_id: data.contactId ?? null,
+          contact_id: contactId,
           contact_phone: toBare,
           twilio_number: fromBare,
           last_message_at: new Date().toISOString(),
@@ -99,11 +128,29 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       to_number: toBare,
       twilio_sid: tw.sid,
       status: tw.status ?? "queued",
+      template_name: data.templateName ?? null,
+      is_template: !!data.templateName,
       sent_by: userId,
       sent_at: new Date().toISOString(),
       raw: tw,
     });
     if (mErr) throw mErr;
+
+    // Cria atividade na timeline do contato (se vinculado)
+    if (contactId) {
+      await supabase.from("activities").insert({
+        owner_id: userId,
+        type: "whatsapp",
+        related_contact_id: contactId,
+        subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
+        body: data.body,
+        email_direction: "outbound",
+        completed: true,
+        outcome: "sent",
+        outcome_set_at: new Date().toISOString(),
+        external_ids: { twilio_sid: tw.sid, conversation_id: conv.id },
+      });
+    }
 
     return { ok: true, sid: tw.sid as string, conversationId: conv.id as string };
   });
@@ -115,7 +162,9 @@ export const listWhatsAppConversations = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status")
+      .select(
+        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status",
+      )
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
     if (error) throw error;
@@ -130,7 +179,9 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("whatsapp_messages")
-      .select("id, direction, body, media_url, status, created_at, sent_at, delivered_at, read_at, twilio_sid")
+      .select(
+        "id, direction, body, media_url, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
+      )
       .eq("conversation_id", data.conversationId)
       .order("created_at", { ascending: true })
       .limit(500);
@@ -157,17 +208,14 @@ export const getWhatsAppConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase
-      .from("integrations")
-      .select("config, status")
-      .eq("owner_id", userId)
-      .eq("provider", "twilio_whatsapp")
-      .maybeSingle();
-    const cfg = (data?.config ?? {}) as { from_number?: string };
+    const cfg = await getIntegrationConfig(supabase, userId);
     return {
       from_number: cfg.from_number ?? "",
-      effective_from: cfg.from_number ? normalizePhone(cfg.from_number) : SANDBOX_FROM.replace("whatsapp:", ""),
+      effective_from: cfg.from_number
+        ? normalizePhone(cfg.from_number)
+        : SANDBOX_FROM.replace("whatsapp:", ""),
       using_sandbox: !cfg.from_number,
+      templates: cfg.templates ?? [],
     };
   });
 
@@ -177,12 +225,52 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const from = data.from_number.trim();
+    const cfg = await getIntegrationConfig(supabase, userId);
+    const newCfg = {
+      ...cfg,
+      from_number: from ? normalizePhone(from) : undefined,
+    };
     const { error } = await supabase.from("integrations").upsert(
       {
         owner_id: userId,
         provider: "twilio_whatsapp",
         status: from ? "connected" : "pending",
-        config: from ? { from_number: normalizePhone(from) } : {},
+        config: newCfg,
+      },
+      { onConflict: "owner_id,provider" },
+    );
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ---------- templates ----------
+const TemplateSchema = z.object({
+  name: z.string().min(1).max(60),
+  body: z.string().min(1).max(1600),
+});
+
+export const listWhatsAppTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const cfg = await getIntegrationConfig(context.supabase, context.userId);
+    return cfg.templates ?? [];
+  });
+
+export const saveWhatsAppTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ templates: z.array(TemplateSchema).max(50) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const cfg = await getIntegrationConfig(supabase, userId);
+    const newCfg = { ...cfg, templates: data.templates };
+    const { error } = await supabase.from("integrations").upsert(
+      {
+        owner_id: userId,
+        provider: "twilio_whatsapp",
+        status: cfg.from_number ? "connected" : "pending",
+        config: newCfg,
       },
       { onConflict: "owner_id,provider" },
     );
