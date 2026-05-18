@@ -154,8 +154,17 @@ function WhatsAppInbox() {
       <div className="grid flex-1 grid-cols-[320px_1fr] gap-3 overflow-hidden">
         {/* Lista de conversas */}
         <Card className="flex flex-col overflow-hidden">
-          <div className="border-b p-3 text-sm font-medium">
-            Conversas <span className="text-muted-foreground">({conversations.length})</span>
+          <div className="border-b p-2">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="mine">Minhas</TabsTrigger>
+                <TabsTrigger value="unassigned">Sem dono</TabsTrigger>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="mt-2 px-1 text-xs text-muted-foreground">
+              {conversations.length} conversa(s)
+            </div>
           </div>
           <ScrollArea className="flex-1">
             {conversationsQ.isLoading && <div className="p-4 text-sm text-muted-foreground">Carregando…</div>}
