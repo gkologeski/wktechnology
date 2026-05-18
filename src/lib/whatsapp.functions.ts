@@ -39,8 +39,15 @@ async function getIntegrationConfig(supabase: any, userId: string) {
     .maybeSingle();
   return (data?.config ?? {}) as {
     from_number?: string;
+    public_base_url?: string;
     templates?: { name: string; body: string }[];
   };
+}
+
+const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
+async function resolvePublicBase(supabase: any, userId: string): Promise<string> {
+  const cfg = await getIntegrationConfig(supabase, userId);
+  return (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");
 }
 
 async function resolveFromNumber(supabase: any, userId: string): Promise<string> {
