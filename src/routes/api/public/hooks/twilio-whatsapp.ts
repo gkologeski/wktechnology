@@ -139,6 +139,12 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
             return new Response("<Response/>", { headers: { "Content-Type": "text/xml" } });
           }
 
+          // Rehost de mídia para nosso bucket público
+          let finalMediaUrl = mediaUrl;
+          if (mediaUrl) {
+            finalMediaUrl = await rehostTwilioMedia(mediaUrl, mediaType, ownerId, sid);
+          }
+
           // upsert conversa
           const { data: conv, error: cErr } = await supabaseAdmin
             .from("whatsapp_conversations")
@@ -149,7 +155,7 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
                 contact_phone: from,
                 twilio_number: to,
                 last_message_at: new Date().toISOString(),
-                last_message_preview: body.slice(0, 120) || (mediaUrl ? "[mídia]" : ""),
+                last_message_preview: body.slice(0, 120) || (finalMediaUrl ? "[mídia]" : ""),
               },
               { onConflict: "contact_phone,twilio_number" },
             )
@@ -167,7 +173,7 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
             owner_id: ownerId,
             direction: "inbound",
             body,
-            media_url: mediaUrl,
+            media_url: finalMediaUrl,
             media_content_type: mediaType,
             from_number: from,
             to_number: to,
