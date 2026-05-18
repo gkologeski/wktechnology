@@ -332,6 +332,26 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         }
       />
 
+      {/* Saved views as tabs (HubSpot-style) */}
+      <SavedViewsTabs
+        presets={presets}
+        savedViews={savedViews.data ?? []}
+        currentViewId={view.viewId}
+        onSelectAll={() =>
+          setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" })
+        }
+        onApplyPreset={applyPreset}
+        onApplyView={applyView}
+        onAdd={saveAsView}
+        onDeleteView={async (id) => {
+          if (!confirm("Excluir esta visualização?")) return;
+          await savedViews.remove.mutateAsync(id);
+          if (view.viewId === id) {
+            setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" });
+          }
+        }}
+      />
+
       {hasSelection && (
         <BulkActionBar count={ids.length} onClear={clearSel}>
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>Exportar selecionados</Button>
@@ -382,36 +402,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
       {/* Toolbar: views, columns, view-mode, search */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm"><Star className="h-4 w-4 mr-1" /> {currentViewName ?? "View"}</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <div className="px-2 py-1 text-xs text-muted-foreground">Predefinidos</div>
-            {presets.map((p) => (
-              <DropdownMenuItem key={p.id} onClick={() => applyPreset(p)}>{p.name}</DropdownMenuItem>
-            ))}
-            {savedViews.data && savedViews.data.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1 text-xs text-muted-foreground">Salvos</div>
-                {savedViews.data.map((sv) => (
-                  <DropdownMenuItem key={sv.id} onClick={() => applyView(sv)}>
-                    {sv.is_shared ? "🔗 " : ""}{sv.name}{sv.is_default ? " ⭐" : ""}
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={saveAsView}><Save className="h-4 w-4 mr-1" /> Salvar como nova view</DropdownMenuItem>
-            {view.viewId && !view.viewId.startsWith("preset:") && (
-              <>
-                <DropdownMenuItem onClick={updateCurrentView}>Atualizar view atual</DropdownMenuItem>
-                <DropdownMenuItem onClick={deleteCurrentView} className="text-destructive">Excluir view</DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {view.viewId && !view.viewId.startsWith("preset:") && (
+          <Button variant="outline" size="sm" onClick={updateCurrentView}>
+            <Save className="h-4 w-4 mr-1" /> Salvar alterações
+          </Button>
+        )}
 
         {quickFilterFields.length === 0 && (
           <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
@@ -500,20 +495,31 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                       <TableCell data-no-row-click onClick={(e) => e.stopPropagation()}>
                         <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} />
                       </TableCell>
-                      {visibleColumns.map((c) => {
+                      {visibleColumns.map((c, ci) => {
                         const k = String(c.key);
                         const editable = inlineEditable?.includes(k);
+                        const isFirst = ci === 0;
+                        const cellContent = editable ? (
+                          <InlineCell
+                            row={row}
+                            field={k}
+                            fieldDef={fields.find((f) => f.name === k)}
+                            onSave={(v) => inlineUpdate(row.id, k, v)}
+                          />
+                        ) : (
+                          c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
+                        );
                         return (
                           <TableCell key={k} data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
-                            {editable ? (
-                              <InlineCell
-                                row={row}
-                                field={k}
-                                fieldDef={fields.find((f) => f.name === k)}
-                                onSave={(v) => inlineUpdate(row.id, k, v)}
-                              />
+                            {isFirst ? (
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <RowAvatar label={avatarLabel(row, k, c.render)} />
+                                <span className={detailPath && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
+                                  {cellContent}
+                                </span>
+                              </div>
                             ) : (
-                              c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
+                              cellContent
                             )}
                           </TableCell>
                         );
@@ -750,4 +756,116 @@ function NumberedPagination({
       </span>
     </div>
   );
+}
+
+function RowAvatar({ label }: { label: string }) {
+  // Extract initials from rendered string content (strip non-letters)
+  const clean = (label ?? "").replace(/[^\p{L}\p{N} ]+/gu, " ").trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  const initials = ((parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "")).toUpperCase();
+
+  // Stable color from string hash
+  const hash = Array.from(clean).reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
+  const hue = Math.abs(hash) % 360;
+  const bg = `oklch(0.92 0.05 ${hue})`;
+  const fg = `oklch(0.35 0.12 ${hue})`;
+
+  return (
+    <span
+      aria-hidden
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold tabular-nums"
+      style={{ background: bg, color: fg }}
+    >
+      {initials}
+    </span>
+  );
+}
+
+function SavedViewsTabs({
+  presets,
+  savedViews,
+  currentViewId,
+  onSelectAll,
+  onApplyPreset,
+  onApplyView,
+  onAdd,
+  onDeleteView,
+}: {
+  presets: import("@/lib/saved-views").PresetView[];
+  savedViews: import("@/lib/saved-views").SavedView[];
+  currentViewId: string | null;
+  onSelectAll: () => void;
+  onApplyPreset: (p: import("@/lib/saved-views").PresetView) => void;
+  onApplyView: (sv: import("@/lib/saved-views").SavedView) => void;
+  onAdd: () => void;
+  onDeleteView: (id: string) => void;
+}) {
+  const tabBase =
+    "group inline-flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors";
+  const active = "border-primary text-primary font-medium";
+  const inactive = "border-transparent text-muted-foreground hover:text-foreground";
+
+  const allActive = currentViewId === null;
+
+  return (
+    <div className="flex items-center gap-1 mb-3 border-b overflow-x-auto -mx-1 px-1">
+      <button onClick={onSelectAll} className={`${tabBase} ${allActive ? active : inactive}`}>
+        Todos
+      </button>
+      {presets.map((p) => {
+        const isActive = currentViewId === p.id;
+        return (
+          <button
+            key={p.id}
+            onClick={() => onApplyPreset(p)}
+            className={`${tabBase} ${isActive ? active : inactive}`}
+          >
+            {p.name}
+          </button>
+        );
+      })}
+      {savedViews.map((sv) => {
+        const isActive = currentViewId === sv.id;
+        return (
+          <div key={sv.id} className={`${tabBase} ${isActive ? active : inactive}`}>
+            <button onClick={() => onApplyView(sv)} className="flex items-center gap-1">
+              {sv.is_shared ? "🔗 " : ""}{sv.name}{sv.is_default ? " ⭐" : ""}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteView(sv.id);
+              }}
+              className="opacity-0 group-hover:opacity-100 hover:bg-muted rounded p-0.5"
+              aria-label="Excluir visualização"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        );
+      })}
+      <button
+        onClick={onAdd}
+        className={`${tabBase} ${inactive} hover:text-primary`}
+        title="Salvar visualização atual"
+      >
+        <Plus className="h-4 w-4" /> Adicionar visualização
+      </button>
+    </div>
+  );
+}
+
+function avatarLabel<T extends { id: string }>(
+  row: T,
+  key: string,
+  render?: (row: T) => ReactNode,
+): string {
+  const raw = (row as Record<string, unknown>)[key];
+  if (typeof raw === "string" && raw.trim()) return raw;
+  if (render) {
+    const out = render(row);
+    if (typeof out === "string") return out;
+    if (typeof out === "number") return String(out);
+  }
+  return String(raw ?? "?");
 }
