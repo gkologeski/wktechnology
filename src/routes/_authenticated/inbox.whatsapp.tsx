@@ -355,7 +355,45 @@ function WhatsAppInbox() {
                 </div>
               </ScrollArea>
               <div className="border-t p-3">
+                {pendingMedia && (
+                  <div className="mb-2 flex items-start gap-2 rounded-md border p-2">
+                    <WhatsAppMediaBubble
+                      url={pendingMedia.url}
+                      contentType={pendingMedia.contentType}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs">{pendingMedia.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {pendingMedia.contentType}
+                      </div>
+                    </div>
+                    <Button size="icon" variant="ghost" onClick={() => setPendingMedia(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    hidden
+                    accept="image/*,audio/*,video/*,application/pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handlePickFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploading}
+                    onClick={() => fileRef.current?.click()}
+                    title="Anexar mídia"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
                   <Textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
@@ -364,25 +402,20 @@ function WhatsAppInbox() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
-                        if (draft.trim())
-                          sendMut.mutate({ to: current.contact_phone, body: draft, contactId: current.contact_id ?? undefined });
+                        submitDraft();
                       }
                     }}
                   />
                   <Button
-                    onClick={() =>
-                      sendMut.mutate({
-                        to: current.contact_phone,
-                        body: draft,
-                        contactId: current.contact_id ?? undefined,
-                      })
-                    }
-                    disabled={!draft.trim() || sendMut.isPending}
+                    onClick={submitDraft}
+                    disabled={(!draft.trim() && !pendingMedia) || sendMut.isPending || uploading}
                   >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">Ctrl/Cmd + Enter para enviar</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
+                </p>
               </div>
             </>
           )}
