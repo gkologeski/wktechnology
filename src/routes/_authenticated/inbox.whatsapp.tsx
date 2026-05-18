@@ -324,11 +324,14 @@ function WhatsAppInbox() {
                         }`}
                       >
                         {m.media_url && (
-                          <a href={m.media_url} target="_blank" rel="noreferrer" className="mb-1 block underline">
-                            [mídia]
-                          </a>
+                          <div className="mb-1">
+                            <WhatsAppMediaBubble
+                              url={m.media_url}
+                              contentType={m.media_content_type}
+                            />
+                          </div>
                         )}
-                        <div className="whitespace-pre-wrap">{m.body}</div>
+                        {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
                         <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
                           <span>{formatDateTime(m.created_at)}</span>
                           {m.direction === "outbound" && (
