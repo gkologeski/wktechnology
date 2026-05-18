@@ -218,9 +218,56 @@ function WhatsAppInbox() {
             </div>
           ) : (
             <>
-              <div className="border-b p-3">
-                <div className="text-sm font-medium">{current.contact_phone}</div>
-                <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
+                <div>
+                  <div className="text-sm font-medium">{current.contact_phone}</div>
+                  <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={current.assigned_to ?? "_none"}
+                    onValueChange={(v) =>
+                      assignMut.mutate({
+                        conversationId: current.id,
+                        assignedTo: v === "_none" ? null : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="Atribuir a…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Sem dono</SelectItem>
+                      {user?.id && (
+                        <SelectItem value={user.id}>Eu ({memberMap.get(user.id) ?? "—"})</SelectItem>
+                      )}
+                      {(membersQ.data ?? [])
+                        .filter((m) => m.id !== user?.id)
+                        .map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.full_name || m.id.slice(0, 6)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {current.status === "closed" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "open" })}
+                    >
+                      Reabrir
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "closed" })}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
+                    </Button>
+                  )}
+                </div>
               </div>
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-2">
