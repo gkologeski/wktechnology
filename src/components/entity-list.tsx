@@ -74,6 +74,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -86,7 +87,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     columnOrder: null, sortBy: "created_at", sortDir: "desc",
   });
 
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = pageSize;
 
   // Debounce search (300ms)
   useEffect(() => {
@@ -95,7 +96,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   }, [search]);
 
   // Reset page when filters/sort/search/view change
-  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode]);
+  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode, pageSize]);
 
   // Build a slim column projection so we never pull heavy JSONB (hs_raw etc.)
   const selectColumns = useMemo(() => {
@@ -285,9 +286,33 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const hasSelection = ids.length > 0;
   const hasFilter = view.filters.conditions.length > 0;
 
+  // Singular entity label for CTA ("Criar lead")
+  const entitySingular = ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio" } as const)[table];
+
+  // Quick-filter fields (select-type only)
+  const quickFilterFields = filterFieldList.filter((f) => f.type === "select" && f.options && f.options.length > 0);
+  const getQuickValue = (fname: string) => {
+    const cond = view.filters.conditions.find(
+      (c) => c.type === "condition" && c.field === fname && c.op === "eq",
+    );
+    return cond && cond.type === "condition" ? String(cond.value ?? "") : "";
+  };
+  const setQuickValue = (fname: string, value: string) => {
+    const others = view.filters.conditions.filter(
+      (c) => !(c.type === "condition" && c.field === fname && c.op === "eq"),
+    );
+    const next = value
+      ? [...others, { type: "condition" as const, field: fname, op: "eq" as const, value }]
+      : others;
+    setView({ ...view, filters: { ...view.filters, conditions: next } });
+  };
+
   return (
     <div>
-      <PageHeader title={title} description={description}
+      <PageHeader
+        title={title}
+        description={description}
+        count={isLoading ? undefined : totalCount}
         actions={
           <>
             {csvEnabled && (
@@ -300,7 +325,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
               </>
             )}
             {toolbar}
-            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo</Button>
+            <Button size="default" onClick={openNew} className="shadow-sm">
+              <Plus className="h-4 w-4 mr-1" /> Criar {entitySingular}
+            </Button>
           </>
         }
       />
@@ -317,7 +344,43 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         </BulkActionBar>
       )}
 
-      {/* Toolbar: views, filters, columns, view-mode */}
+      {/* Quick filters row (HubSpot-style) */}
+      {quickFilterFields.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b">
+          {quickFilterFields.map((qf) => {
+            const v = getQuickValue(qf.name);
+            const selected = qf.options?.find((o) => o.value === v);
+            return (
+              <DropdownMenu key={qf.name}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className={`text-primary font-medium ${v ? "bg-primary/10" : ""}`}>
+                    {qf.label}{selected ? `: ${selected.label}` : ""} ▾
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 max-h-80 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setQuickValue(qf.name, "")}>Todos</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {qf.options?.map((o) => (
+                    <DropdownMenuItem key={o.value} onClick={() => setQuickValue(qf.name, o.value)}>
+                      {o.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })}
+          <Button
+            variant={hasFilter ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setFilterOpen(true)}
+            className="ml-1"
+          >
+            <Filter className="h-4 w-4 mr-1" /> Filtros avançados{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+          </Button>
+        </div>
+      )}
+
+      {/* Toolbar: views, columns, view-mode, search */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -350,9 +413,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
-          <Filter className="h-4 w-4 mr-1" /> Filtros{hasFilter ? ` (${view.filters.conditions.length})` : ""}
-        </Button>
+        {quickFilterFields.length === 0 && (
+          <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
+            <Filter className="h-4 w-4 mr-1" /> Filtros{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+          </Button>
+        )}
 
         <Button variant="outline" size="sm" onClick={() => setColumnOpen(true)}>
           <Columns3 className="h-4 w-4 mr-1" /> Colunas
@@ -370,14 +435,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-            {isLoading
-              ? "Carregando…"
-              : isBoard
-                ? `${rows.length}${totalCount > rows.length ? ` de ~${totalCount.toLocaleString("pt-BR")}` : ""} ${rows.length === 1 ? "registro" : "registros"}`
-                : `~${totalCount.toLocaleString("pt-BR")} ${totalCount === 1 ? "registro" : "registros"}`}
-            {hasSelection ? ` · ${ids.length} selecionado${ids.length === 1 ? "" : "s"}` : ""}
-          </span>
+          {hasSelection && (
+            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+              {ids.length} selecionado{ids.length === 1 ? "" : "s"}
+            </span>
+          )}
           <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs h-9" />
         </div>
       </div>
@@ -470,14 +532,15 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         </div>
       )}
 
-      {!isBoard && totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString("pt-BR")} de ~{totalCount.toLocaleString("pt-BR")}
-          </span>
-          <Button variant="outline" size="sm" disabled={page === 0 || isLoading} onClick={() => setPage((p) => Math.max(0, p - 1))}>Anterior</Button>
-          <Button variant="outline" size="sm" disabled={isLoading || (page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
-        </div>
+      {!isBoard && totalCount > 0 && (
+        <NumberedPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          isLoading={isLoading}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
 
       <EntityDialog
@@ -601,5 +664,90 @@ function EntityDialog<T extends { id: string }>({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function NumberedPagination({
+  page, pageSize, totalCount, isLoading, onPageChange, onPageSizeChange,
+}: {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  isLoading: boolean;
+  onPageChange: (p: number) => void;
+  onPageSizeChange: (n: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const current = page + 1;
+
+  // Build compact page list: 1 … (c-2) (c-1) c (c+1) (c+2) … last
+  const pages: (number | "...")[] = [];
+  const add = (n: number) => { if (!pages.includes(n)) pages.push(n); };
+  add(1);
+  for (let i = current - 2; i <= current + 2; i++) {
+    if (i > 1 && i < totalPages) add(i);
+  }
+  if (totalPages > 1) add(totalPages);
+  const withDots: (number | "...")[] = [];
+  for (let i = 0; i < pages.length; i++) {
+    const p = pages[i];
+    const prev = pages[i - 1];
+    if (typeof prev === "number" && typeof p === "number" && p - prev > 1) withDots.push("...");
+    withDots.push(p);
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 mt-4 py-3 border-t">
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={page === 0 || isLoading}
+        onClick={() => onPageChange(Math.max(0, page - 1))}
+      >
+        ‹ Voltar
+      </Button>
+      <div className="flex items-center gap-1">
+        {withDots.map((p, i) =>
+          p === "..." ? (
+            <span key={`d${i}`} className="px-2 text-muted-foreground">…</span>
+          ) : (
+            <Button
+              key={p}
+              variant={p === current ? "secondary" : "ghost"}
+              size="sm"
+              className={`h-8 min-w-8 px-2 ${p === current ? "font-semibold text-primary" : ""}`}
+              onClick={() => onPageChange(p - 1)}
+              disabled={isLoading}
+            >
+              {p}
+            </Button>
+          )
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={isLoading || current >= totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        Próximo ›
+      </Button>
+      <div className="ml-2">
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-8 rounded-md border bg-background px-2 text-sm text-primary"
+        >
+          {[25, 50, 100, 200].map((n) => (
+            <option key={n} value={n}>{n} por página</option>
+          ))}
+        </select>
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums ml-2">
+        {(page * pageSize + 1).toLocaleString("pt-BR")}–
+        {Math.min((page + 1) * pageSize, totalCount).toLocaleString("pt-BR")} de ~
+        {totalCount.toLocaleString("pt-BR")}
+      </span>
+    </div>
   );
 }
