@@ -638,6 +638,41 @@ export const startHubspotImport = createServerFn({ method: "POST" })
     return { jobId, steps };
   });
 
+// Limpa tabelas locais (apenas registros do usuário) antes de importar.
+export const clearHubspotLocalTables = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        companies: z.boolean().optional(),
+        contacts: z.boolean().optional(),
+        deals: z.boolean().optional(),
+        leads: z.boolean().optional(),
+        activities: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const tables: ("companies" | "contacts" | "deals" | "leads" | "activities")[] = [];
+    if (data.companies) tables.push("companies");
+    if (data.contacts) tables.push("contacts");
+    if (data.deals) tables.push("deals");
+    if (data.leads) tables.push("leads");
+    if (data.activities) tables.push("activities");
+
+    const result: Record<string, number> = {};
+    for (const t of tables) {
+      const { count, error } = await supabase
+        .from(t)
+        .delete({ count: "exact" })
+        .eq("owner_id", userId);
+      if (error) throw new Error(`Falha ao limpar ${t}: ${error.message}`);
+      result[t] = count ?? 0;
+    }
+    return { cleared: result };
+  });
+
 // Executa UM step do job HubSpot. Chamado pela UI (polling) e pelo cron.
 export const tickHubspotImportJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
