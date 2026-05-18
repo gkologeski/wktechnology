@@ -532,14 +532,15 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         </div>
       )}
 
-      {!isBoard && totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount).toLocaleString("pt-BR")} de ~{totalCount.toLocaleString("pt-BR")}
-          </span>
-          <Button variant="outline" size="sm" disabled={page === 0 || isLoading} onClick={() => setPage((p) => Math.max(0, p - 1))}>Anterior</Button>
-          <Button variant="outline" size="sm" disabled={isLoading || (page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
-        </div>
+      {!isBoard && totalCount > 0 && (
+        <NumberedPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          isLoading={isLoading}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
 
       <EntityDialog
