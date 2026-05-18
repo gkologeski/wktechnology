@@ -37,6 +37,7 @@ import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_a
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
+import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
@@ -194,6 +195,12 @@ const AuthenticatedInboxWhatsappRoute =
     path: '/inbox/whatsapp',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicHooksWhatsappCampaignTickRoute =
+  ApiPublicHooksWhatsappCampaignTickRouteImport.update({
+    id: '/api/public/hooks/whatsapp-campaign-tick',
+    path: '/api/public/hooks/whatsapp-campaign-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksTwilioWhatsappStatusRoute =
   ApiPublicHooksTwilioWhatsappStatusRouteImport.update({
     id: '/api/public/hooks/twilio-whatsapp-status',
@@ -244,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -308,6 +317,7 @@ export interface FileRoutesById {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/whatsapp-campaign-tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/whatsapp-campaign-tick'
   id:
     | '__root__'
     | '/'
@@ -405,6 +417,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/whatsapp-campaign-tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -416,6 +429,7 @@ export interface RootRouteChildren {
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -616,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxWhatsappRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/hooks/whatsapp-campaign-tick': {
+      id: '/api/public/hooks/whatsapp-campaign-tick'
+      path: '/api/public/hooks/whatsapp-campaign-tick'
+      fullPath: '/api/public/hooks/whatsapp-campaign-tick'
+      preLoaderRoute: typeof ApiPublicHooksWhatsappCampaignTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/twilio-whatsapp-status': {
       id: '/api/public/hooks/twilio-whatsapp-status'
       path: '/api/public/hooks/twilio-whatsapp-status'
@@ -739,6 +760,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
+  ApiPublicHooksWhatsappCampaignTickRoute:
+    ApiPublicHooksWhatsappCampaignTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

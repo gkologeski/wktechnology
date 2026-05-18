@@ -114,7 +114,11 @@ export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: "running" | "paused" | "canceled";
+      started_at?: string;
+      finished_at?: string;
+    } = { status: data.status };
     if (data.status === "running") patch.started_at = new Date().toISOString();
     if (data.status === "canceled") patch.finished_at = new Date().toISOString();
     const { error } = await context.supabase
