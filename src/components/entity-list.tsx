@@ -495,20 +495,31 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                       <TableCell data-no-row-click onClick={(e) => e.stopPropagation()}>
                         <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} />
                       </TableCell>
-                      {visibleColumns.map((c) => {
+                      {visibleColumns.map((c, ci) => {
                         const k = String(c.key);
                         const editable = inlineEditable?.includes(k);
+                        const isFirst = ci === 0;
+                        const cellContent = editable ? (
+                          <InlineCell
+                            row={row}
+                            field={k}
+                            fieldDef={fields.find((f) => f.name === k)}
+                            onSave={(v) => inlineUpdate(row.id, k, v)}
+                          />
+                        ) : (
+                          c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
+                        );
                         return (
                           <TableCell key={k} data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
-                            {editable ? (
-                              <InlineCell
-                                row={row}
-                                field={k}
-                                fieldDef={fields.find((f) => f.name === k)}
-                                onSave={(v) => inlineUpdate(row.id, k, v)}
-                              />
+                            {isFirst ? (
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <RowAvatar label={String(cellContent ?? "")} />
+                                <span className={detailPath && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
+                                  {cellContent}
+                                </span>
+                              </div>
                             ) : (
-                              c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
+                              cellContent
                             )}
                           </TableCell>
                         );
