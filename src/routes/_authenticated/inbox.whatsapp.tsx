@@ -50,6 +50,13 @@ function WhatsAppInbox() {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
+  const [pendingMedia, setPendingMedia] = useState<{
+    url: string;
+    contentType: string;
+    name: string;
+  } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
