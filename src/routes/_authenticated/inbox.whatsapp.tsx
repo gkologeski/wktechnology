@@ -255,7 +255,7 @@ function WhatsAppSettingsButton() {
           <SettingsIcon className="mr-2 h-4 w-4" /> Configurar
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Número Twilio WhatsApp</DialogTitle>
         </DialogHeader>
