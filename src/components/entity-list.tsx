@@ -568,8 +568,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       )}
 
       <ConfirmCountDialog open={bulkDeleteOpen} setOpen={setBulkDeleteOpen} count={ids.length} entity={table} onConfirm={async () => { await bulkDelete(); }} />
-      <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
-        onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
+      {table !== "activities" && (
+        <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
+          onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
+      )}
 
       <FilterBuilderDialog open={filterOpen} setOpen={setFilterOpen} fields={filterFieldList} value={view.filters}
         onApply={(g) => setView({ ...view, filters: g })} />
