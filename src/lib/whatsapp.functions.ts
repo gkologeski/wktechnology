@@ -176,7 +176,7 @@ export const listWhatsAppConversations = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("whatsapp_conversations")
       .select(
-        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status",
+        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status, assigned_to",
       )
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
