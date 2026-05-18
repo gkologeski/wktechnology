@@ -166,6 +166,7 @@ export function SendWhatsAppDialog({
                 {templates.map((t) => (
                   <SelectItem key={t.name} value={t.name}>
                     {t.name}
+                    {t.contentSid ? "  · HSM oficial" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
