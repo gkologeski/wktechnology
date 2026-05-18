@@ -181,7 +181,7 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
       {
         owner_id: userId,
         provider: "twilio_whatsapp",
-        status: from ? "active" : "pending",
+        status: from ? "connected" : "pending",
         config: from ? { from_number: normalizePhone(from) } : {},
       },
       { onConflict: "owner_id,provider" },
