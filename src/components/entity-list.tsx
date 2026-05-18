@@ -332,6 +332,26 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         }
       />
 
+      {/* Saved views as tabs (HubSpot-style) */}
+      <SavedViewsTabs
+        presets={presets}
+        savedViews={savedViews.data ?? []}
+        currentViewId={view.viewId}
+        onSelectAll={() =>
+          setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" })
+        }
+        onApplyPreset={applyPreset}
+        onApplyView={applyView}
+        onAdd={saveAsView}
+        onDeleteView={async (id) => {
+          if (!confirm("Excluir esta visualização?")) return;
+          await savedViews.remove.mutateAsync(id);
+          if (view.viewId === id) {
+            setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" });
+          }
+        }}
+      />
+
       {hasSelection && (
         <BulkActionBar count={ids.length} onClear={clearSel}>
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>Exportar selecionados</Button>
