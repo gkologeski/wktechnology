@@ -294,7 +294,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const hasFilter = view.filters.conditions.length > 0;
 
   // Singular entity label for CTA ("Criar lead")
-  const entitySingular = ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio" } as const)[table];
+  const entitySingular = entitySingularLabel ?? ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio", activities: "registro" } as const)[table];
 
   // Quick-filter fields (select-type only)
   const quickFilterFields = filterFieldList.filter((f) => f.type === "select" && f.options && f.options.length > 0);
