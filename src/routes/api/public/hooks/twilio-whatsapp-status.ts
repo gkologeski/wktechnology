@@ -17,8 +17,15 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp-status")
           const errorMessage = params.get("ErrorMessage");
           if (!sid || !status) return new Response("missing sid/status", { status: 400 });
 
-          const patch: Record<string, unknown> = { status };
           const now = new Date().toISOString();
+          const patch: {
+            status: string;
+            delivered_at?: string;
+            read_at?: string;
+            sent_at?: string;
+            error_code?: string;
+            error_message?: string;
+          } = { status };
           if (status === "delivered") patch.delivered_at = now;
           if (status === "read") patch.read_at = now;
           if (status === "sent") patch.sent_at = now;
