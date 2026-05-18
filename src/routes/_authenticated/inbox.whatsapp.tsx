@@ -186,13 +186,24 @@ function WhatsAppInbox() {
                     <Phone className="h-3 w-3 text-muted-foreground" />
                     <span className="truncate">{c.contact_phone}</span>
                   </div>
-                  {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
+                  <div className="flex items-center gap-1">
+                    {c.status === "closed" && <Badge variant="secondary" className="text-[10px]">fechada</Badge>}
+                    {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
+                  </div>
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
                   {c.last_message_preview || "—"}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {c.last_message_at ? formatDateTime(c.last_message_at) : ""}
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{c.last_message_at ? formatDateTime(c.last_message_at) : ""}</span>
+                  {c.assigned_to ? (
+                    <span className="flex items-center gap-1">
+                      <UserCheck className="h-3 w-3" />
+                      {memberMap.get(c.assigned_to) ?? "atribuída"}
+                    </span>
+                  ) : (
+                    <span className="italic">sem dono</span>
+                  )}
                 </div>
               </button>
             ))}
