@@ -274,6 +274,9 @@ function WhatsAppSettingsButton() {
               Cole essa URL em Twilio Console → Messaging → Sandbox (ou Sender) em "When a message comes in" (POST).
             </p>
           </div>
+          <div className="border-t pt-3">
+            <WhatsAppTemplatesEditor />
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
