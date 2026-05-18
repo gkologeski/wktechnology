@@ -67,7 +67,7 @@ type ViewState = {
 };
 
 export function EntityList<T extends { id: string; owner_id?: string }>(props: EntityListProps<T>) {
-  const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields } = props;
+  const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields, lockedFilters, entitySingularLabel } = props;
   const { user } = useAuth();
   const qc = useQueryClient();
   const savedViews = useSavedViews(table);
