@@ -289,8 +289,21 @@ function WhatsAppInbox() {
                           </a>
                         )}
                         <div className="whitespace-pre-wrap">{m.body}</div>
-                        <div className="mt-1 text-[10px] opacity-70">
-                          {formatDateTime(m.created_at)} · {m.status}
+                        <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
+                          <span>{formatDateTime(m.created_at)}</span>
+                          {m.direction === "outbound" && (
+                            <span className="ml-auto inline-flex items-center gap-0.5">
+                              {m.status === "read" ? (
+                                <CheckCheck className="h-3 w-3 text-sky-300" />
+                              ) : m.status === "delivered" ? (
+                                <CheckCheck className="h-3 w-3" />
+                              ) : m.status === "sent" || m.status === "queued" ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                <span>{m.status}</span>
+                              )}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
