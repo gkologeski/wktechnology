@@ -9,6 +9,73 @@ function strip(s: string | null | undefined) {
   return (s ?? "").replace(/^whatsapp:/, "");
 }
 
+const TWILIO_GATEWAY = "https://connector-gateway.lovable.dev/twilio";
+
+function extFromMime(mime: string | null | undefined): string {
+  if (!mime) return "bin";
+  const m = mime.toLowerCase();
+  if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+  if (m.includes("png")) return "png";
+  if (m.includes("webp")) return "webp";
+  if (m.includes("gif")) return "gif";
+  if (m.includes("pdf")) return "pdf";
+  if (m.includes("ogg")) return "ogg";
+  if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+  if (m.includes("mp4")) return "mp4";
+  if (m.includes("amr")) return "amr";
+  if (m.includes("wav")) return "wav";
+  const sub = m.split("/")[1];
+  return (sub || "bin").split(";")[0];
+}
+
+// Twilio media URLs require Basic Auth. Refazemos o download via gateway (que cuida da auth)
+// e republicamos no bucket público whatsapp-media para podermos exibir e reaproveitar.
+async function rehostTwilioMedia(
+  mediaUrl: string,
+  mime: string | null,
+  ownerId: string,
+  messageSid: string | null,
+): Promise<string | null> {
+  try {
+    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+    const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
+    if (!LOVABLE_API_KEY || !TWILIO_API_KEY) return mediaUrl;
+
+    // mediaUrl: https://api.twilio.com/2010-04-01/Accounts/AC.../Messages/MM.../Media/ME...
+    const match = mediaUrl.match(/\/Messages\/[^/]+\/Media\/[^/?]+/);
+    if (!match) return mediaUrl;
+    const gatewayPath = match[0]; // /Messages/.../Media/...
+
+    const res = await fetch(`${TWILIO_GATEWAY}${gatewayPath}`, {
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": TWILIO_API_KEY,
+      },
+      redirect: "follow",
+    });
+    if (!res.ok) {
+      console.warn("[twilio-media] download falhou", res.status);
+      return mediaUrl;
+    }
+    const contentType = res.headers.get("content-type") || mime || "application/octet-stream";
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const ext = extFromMime(contentType);
+    const path = `${ownerId}/in/${messageSid ?? crypto.randomUUID()}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("whatsapp-media")
+      .upload(path, buf, { contentType, upsert: true });
+    if (error) {
+      console.warn("[twilio-media] upload bucket falhou", error.message);
+      return mediaUrl;
+    }
+    const { data: pub } = supabaseAdmin.storage.from("whatsapp-media").getPublicUrl(path);
+    return pub.publicUrl;
+  } catch (e) {
+    console.warn("[twilio-media] erro rehost", e);
+    return mediaUrl;
+  }
+}
+
 export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
   server: {
     handlers: {
