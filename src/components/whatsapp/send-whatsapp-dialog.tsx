@@ -1,13 +1,15 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   sendWhatsAppMessage,
   listWhatsAppTemplates,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
+import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
+import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
