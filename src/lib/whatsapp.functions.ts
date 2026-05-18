@@ -74,10 +74,14 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     z
       .object({
         to: z.string().min(5),
-        body: z.string().min(1).max(1600),
+        body: z.string().max(1600).optional().default(""),
         contactId: z.string().uuid().optional(),
         mediaUrl: z.string().url().optional(),
+        mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
+      })
+      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl, {
+        message: "Informe um texto ou anexo de mídia",
       })
       .parse(input),
   )
@@ -92,9 +96,9 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     const params = new URLSearchParams({
       From: from,
       To: toWaNum,
-      Body: data.body,
       StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
     });
+    if (data.body) params.set("Body", data.body);
     if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
 
     const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
