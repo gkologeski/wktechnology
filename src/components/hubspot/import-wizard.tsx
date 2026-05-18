@@ -316,6 +316,19 @@ export function HubspotImportWizard() {
                   {forcedBy.length > 0 && scope[o.key] && !o.required && (
                     <p className="text-xs text-amber-600 mt-1">Necessário para: {forcedBy.join(", ")}</p>
                   )}
+                  <label
+                    htmlFor={`clear-${o.key}`}
+                    className="mt-2 inline-flex items-center gap-2 text-xs text-destructive cursor-pointer"
+                  >
+                    <Checkbox
+                      id={`clear-${o.key}`}
+                      checked={clearScope[o.key]}
+                      onCheckedChange={(v) =>
+                        setClearScope((prev) => ({ ...prev, [o.key]: !!v }))
+                      }
+                    />
+                    Limpar tabela local de {o.label.toLowerCase()} antes de importar
+                  </label>
                 </div>
               </div>
             );
