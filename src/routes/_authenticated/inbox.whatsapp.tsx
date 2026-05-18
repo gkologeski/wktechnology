@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck } from "lucide-react";
+import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck, Paperclip, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
+import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import {
   listWhatsAppConversations,
   listWhatsAppMessages,
