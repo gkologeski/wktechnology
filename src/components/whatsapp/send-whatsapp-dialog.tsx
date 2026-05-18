@@ -79,26 +79,37 @@ export function SendWhatsAppDialog({
 
   const templates = tplQ.data ?? [];
   const selectedTpl = templates.find((t) => t.name === templateName);
-  const varCount = selectedTpl
+  const placeholderCount = selectedTpl
     ? Array.from(selectedTpl.body.matchAll(/\{\{(\d+)\}\}/g))
         .map((m) => Number(m[1]))
         .reduce((a, b) => Math.max(a, b), 0)
     : 0;
+  const varCount = Math.max(placeholderCount, selectedTpl?.variableCount ?? 0);
 
   const previewBody = selectedTpl ? applyTemplate(selectedTpl.body, vars) : body;
+  const isOfficialHsm = !!selectedTpl?.contentSid;
 
   const sendMut = useMutation({
-    mutationFn: () =>
-      sendFn({
+    mutationFn: () => {
+      const contentVariables =
+        isOfficialHsm && varCount > 0
+          ? Object.fromEntries(
+              Array.from({ length: varCount }, (_, i) => [String(i + 1), vars[i] ?? ""]),
+            )
+          : undefined;
+      return sendFn({
         data: {
           to,
-          body: previewBody,
+          body: isOfficialHsm ? "" : previewBody,
           contactId,
           templateName: templateName || undefined,
-          mediaUrl: media?.url,
-          mediaContentType: media?.contentType,
+          contentSid: isOfficialHsm ? selectedTpl!.contentSid : undefined,
+          contentVariables,
+          mediaUrl: isOfficialHsm ? undefined : media?.url,
+          mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setOpen(false);
@@ -155,6 +166,7 @@ export function SendWhatsAppDialog({
                 {templates.map((t) => (
                   <SelectItem key={t.name} value={t.name}>
                     {t.name}
+                    {t.contentSid ? "  · HSM oficial" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -179,10 +191,16 @@ export function SendWhatsAppDialog({
                 </div>
               ))}
               <div>
-                <Label>Preview</Label>
+                <Label>Preview {isOfficialHsm ? "(HSM oficial)" : ""}</Label>
                 <div className="rounded-md border bg-muted/40 p-2 text-sm whitespace-pre-wrap">
                   {previewBody || "—"}
                 </div>
+                {isOfficialHsm && (
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Será enviado via ContentSid {selectedTpl!.contentSid} — Twilio renderiza o
+                    corpo aprovado. Mídia/texto livre são ignorados.
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -238,7 +256,7 @@ export function SendWhatsAppDialog({
             onClick={() => sendMut.mutate()}
             disabled={
               !to ||
-              (!previewBody.trim() && !media) ||
+              (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||
               uploading ||
               (!!selectedTpl && vars.slice(0, varCount).some((v) => !v))

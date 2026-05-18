@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-type Tpl = { name: string; body: string };
+type Tpl = { name: string; body: string; contentSid?: string; variableCount?: number };
 
 export function WhatsAppTemplatesEditor() {
   const qc = useQueryClient();
@@ -81,6 +81,36 @@ export function WhatsAppTemplatesEditor() {
             placeholder="Olá {{1}}, ..."
             rows={3}
           />
+          <div className="grid grid-cols-[1fr_120px] gap-2">
+            <Input
+              value={t.contentSid ?? ""}
+              onChange={(e) =>
+                setItems((prev) =>
+                  prev.map((x, j) => (j === i ? { ...x, contentSid: e.target.value.trim() } : x)),
+                )
+              }
+              placeholder="ContentSid oficial (HX...) — opcional"
+            />
+            <Input
+              type="number"
+              min={0}
+              max={20}
+              value={t.variableCount ?? 0}
+              onChange={(e) =>
+                setItems((prev) =>
+                  prev.map((x, j) =>
+                    j === i ? { ...x, variableCount: Number(e.target.value) || 0 } : x,
+                  ),
+                )
+              }
+              placeholder="Vars"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Cole o <strong>ContentSid</strong> de um template aprovado no Twilio Console
+            (Messaging → Content Template Builder) para enviar como HSM oficial fora da janela de
+            24h. Sem ContentSid, o template é apenas um atalho de texto.
+          </p>
         </div>
       ))}
 
