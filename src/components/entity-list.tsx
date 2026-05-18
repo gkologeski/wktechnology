@@ -365,7 +365,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           {bulkEditFields && bulkEditFields.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>Editar em massa</Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}><ListTodo className="h-4 w-4 mr-1" /> Criar atividade</Button>
+          {table !== "activities" && (
+            <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}><ListTodo className="h-4 w-4 mr-1" /> Criar atividade</Button>
+          )}
           {bulkActions?.(ids, selectedRows)}
           <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>Excluir</Button>
         </BulkActionBar>
