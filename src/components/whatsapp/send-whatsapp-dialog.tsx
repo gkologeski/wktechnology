@@ -1,13 +1,15 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   sendWhatsAppMessage,
   listWhatsAppTemplates,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
+import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
+import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +51,23 @@ export function SendWhatsAppDialog({
   const [body, setBody] = useState("");
   const [templateName, setTemplateName] = useState<string>("");
   const [vars, setVars] = useState<string[]>([]);
+  const [media, setMedia] = useState<{ url: string; contentType: string; name: string } | null>(
+    null,
+  );
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handlePickFile(file: File) {
+    setUploading(true);
+    try {
+      const res = await uploadWhatsAppMedia(file);
+      setMedia({ url: res.url, contentType: res.contentType, name: file.name });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
@@ -76,6 +95,8 @@ export function SendWhatsAppDialog({
           body: previewBody,
           contactId,
           templateName: templateName || undefined,
+          mediaUrl: media?.url,
+          mediaContentType: media?.contentType,
         },
       }),
     onSuccess: (res) => {
@@ -84,6 +105,7 @@ export function SendWhatsAppDialog({
       setBody("");
       setTemplateName("");
       setVars([]);
+      setMedia(null);
       onSent?.(res.conversationId);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -169,14 +191,56 @@ export function SendWhatsAppDialog({
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
             </div>
           )}
+
+          <div>
+            <Label>Mídia (opcional)</Label>
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept="image/*,audio/*,video/*,application/pdf"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handlePickFile(f);
+                e.target.value = "";
+              }}
+            />
+            {media ? (
+              <div className="flex items-start gap-2 rounded-md border p-2">
+                <WhatsAppMediaBubble url={media.url} contentType={media.contentType} />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-xs">{media.name}</div>
+                  <div className="text-[10px] text-muted-foreground">{media.contentType}</div>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => setMedia(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Paperclip className="mr-2 h-4 w-4" />
+                {uploading ? "Enviando…" : "Anexar imagem, áudio ou PDF"}
+              </Button>
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Máx 16MB. Formatos suportados pelo WhatsApp.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button
             onClick={() => sendMut.mutate()}
             disabled={
               !to ||
-              !previewBody.trim() ||
+              (!previewBody.trim() && !media) ||
               sendMut.isPending ||
+              uploading ||
               (!!selectedTpl && vars.slice(0, varCount).some((v) => !v))
             }
           >

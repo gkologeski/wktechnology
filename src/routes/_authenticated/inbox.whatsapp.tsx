@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck } from "lucide-react";
+import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck, Paperclip, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
+import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import {
   listWhatsAppConversations,
   listWhatsAppMessages,
@@ -48,6 +50,13 @@ function WhatsAppInbox() {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
+  const [pendingMedia, setPendingMedia] = useState<{
+    url: string;
+    contentType: string;
+    name: string;
+  } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
@@ -89,15 +98,46 @@ function WhatsAppInbox() {
   }, [selected, markFn, qc]);
 
   const sendMut = useMutation({
-    mutationFn: (input: { to: string; body: string; contactId?: string }) => sendFn({ data: input }),
+    mutationFn: (input: {
+      to: string;
+      body: string;
+      contactId?: string;
+      mediaUrl?: string;
+      mediaContentType?: string;
+    }) => sendFn({ data: input }),
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
+      setPendingMedia(null);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  async function handlePickFile(file: File) {
+    setUploading(true);
+    try {
+      const res = await uploadWhatsAppMedia(file);
+      setPendingMedia({ url: res.url, contentType: res.contentType, name: file.name });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function submitDraft() {
+    if (!current) return;
+    if (!draft.trim() && !pendingMedia) return;
+    sendMut.mutate({
+      to: current.contact_phone,
+      body: draft,
+      contactId: current.contact_id ?? undefined,
+      mediaUrl: pendingMedia?.url,
+      mediaContentType: pendingMedia?.contentType,
+    });
+  }
 
   const assignMut = useMutation({
     mutationFn: (vars: { conversationId: string; assignedTo: string | null }) =>
@@ -284,11 +324,14 @@ function WhatsAppInbox() {
                         }`}
                       >
                         {m.media_url && (
-                          <a href={m.media_url} target="_blank" rel="noreferrer" className="mb-1 block underline">
-                            [mídia]
-                          </a>
+                          <div className="mb-1">
+                            <WhatsAppMediaBubble
+                              url={m.media_url}
+                              contentType={m.media_content_type}
+                            />
+                          </div>
                         )}
-                        <div className="whitespace-pre-wrap">{m.body}</div>
+                        {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
                         <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
                           <span>{formatDateTime(m.created_at)}</span>
                           {m.direction === "outbound" && (
@@ -312,7 +355,45 @@ function WhatsAppInbox() {
                 </div>
               </ScrollArea>
               <div className="border-t p-3">
+                {pendingMedia && (
+                  <div className="mb-2 flex items-start gap-2 rounded-md border p-2">
+                    <WhatsAppMediaBubble
+                      url={pendingMedia.url}
+                      contentType={pendingMedia.contentType}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs">{pendingMedia.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {pendingMedia.contentType}
+                      </div>
+                    </div>
+                    <Button size="icon" variant="ghost" onClick={() => setPendingMedia(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    hidden
+                    accept="image/*,audio/*,video/*,application/pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handlePickFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploading}
+                    onClick={() => fileRef.current?.click()}
+                    title="Anexar mídia"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
                   <Textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
@@ -321,25 +402,20 @@ function WhatsAppInbox() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
-                        if (draft.trim())
-                          sendMut.mutate({ to: current.contact_phone, body: draft, contactId: current.contact_id ?? undefined });
+                        submitDraft();
                       }
                     }}
                   />
                   <Button
-                    onClick={() =>
-                      sendMut.mutate({
-                        to: current.contact_phone,
-                        body: draft,
-                        contactId: current.contact_id ?? undefined,
-                      })
-                    }
-                    disabled={!draft.trim() || sendMut.isPending}
+                    onClick={submitDraft}
+                    disabled={(!draft.trim() && !pendingMedia) || sendMut.isPending || uploading}
                   >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">Ctrl/Cmd + Enter para enviar</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
+                </p>
               </div>
             </>
           )}

@@ -74,10 +74,14 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     z
       .object({
         to: z.string().min(5),
-        body: z.string().min(1).max(1600),
+        body: z.string().max(1600).optional().default(""),
         contactId: z.string().uuid().optional(),
         mediaUrl: z.string().url().optional(),
+        mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
+      })
+      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl, {
+        message: "Informe um texto ou anexo de mídia",
       })
       .parse(input),
   )
@@ -92,9 +96,9 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     const params = new URLSearchParams({
       From: from,
       To: toWaNum,
-      Body: data.body,
       StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
     });
+    if (data.body) params.set("Body", data.body);
     if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
 
     const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
@@ -123,7 +127,8 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
           contact_phone: toBare,
           twilio_number: fromBare,
           last_message_at: new Date().toISOString(),
-          last_message_preview: data.body.slice(0, 120),
+          last_message_preview:
+            (data.body && data.body.slice(0, 120)) || (data.mediaUrl ? "[mídia]" : ""),
         },
         { onConflict: "contact_phone,twilio_number" },
       )
@@ -137,6 +142,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       direction: "outbound",
       body: data.body,
       media_url: data.mediaUrl ?? null,
+      media_content_type: data.mediaContentType ?? null,
       from_number: fromBare,
       to_number: toBare,
       twilio_sid: tw.sid,
@@ -156,7 +162,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         type: "whatsapp",
         related_contact_id: contactId,
         subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
-        body: data.body,
+        body: data.body || (data.mediaUrl ? "[mídia]" : ""),
         email_direction: "outbound",
         completed: true,
         outcome: "sent",
@@ -193,7 +199,7 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("whatsapp_messages")
       .select(
-        "id, direction, body, media_url, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
+        "id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
       )
       .eq("conversation_id", data.conversationId)
       .order("created_at", { ascending: true })
