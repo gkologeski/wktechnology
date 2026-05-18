@@ -178,7 +178,23 @@ export function HubspotImportWizard() {
 
   async function handleStart() {
     try {
+      const toClear = (Object.keys(clearScope) as Obj[]).filter((k) => clearScope[k]);
+      if (toClear.length > 0) {
+        const ok = window.confirm(
+          `Tem certeza que deseja apagar TODOS os registros locais das tabelas: ${toClear.join(", ")}? Esta ação é irreversível.`,
+        );
+        if (!ok) return;
+      }
       setStage("running");
+      if (toClear.length > 0) {
+        const res = await clearFn({
+          data: Object.fromEntries(toClear.map((k) => [k, true])) as Record<Obj, boolean>,
+        });
+        const summary = Object.entries(res.cleared)
+          .map(([k, n]) => `${k}: ${n}`)
+          .join(", ");
+        toast.success(`Tabelas limpas (${summary})`);
+      }
       const r = await startFn({
         data: {
           mode,
