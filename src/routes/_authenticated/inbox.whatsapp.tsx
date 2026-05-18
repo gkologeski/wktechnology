@@ -355,12 +355,16 @@ function WhatsAppSettingsButton() {
   const saveCfg = useServerFn(saveWhatsAppConfig);
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   const cfgQ = useQuery({ queryKey: ["wa", "config"], queryFn: () => getCfg(), enabled: open });
   useEffect(() => {
-    if (cfgQ.data) setFrom(cfgQ.data.from_number || "");
+    if (cfgQ.data) {
+      setFrom(cfgQ.data.from_number || "");
+      setBaseUrl(cfgQ.data.public_base_url || "");
+    }
   }, [cfgQ.data]);
   const saveMut = useMutation({
-    mutationFn: () => saveCfg({ data: { from_number: from } }),
+    mutationFn: () => saveCfg({ data: { from_number: from, public_base_url: baseUrl } }),
     onSuccess: () => {
       toast.success("Configuração salva");
       setOpen(false);
@@ -368,6 +372,7 @@ function WhatsAppSettingsButton() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const effectiveBase = cfgQ.data?.effective_public_base ?? "";
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -377,7 +382,7 @@ function WhatsAppSettingsButton() {
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Número Twilio WhatsApp</DialogTitle>
+          <DialogTitle>Twilio WhatsApp</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -387,12 +392,25 @@ function WhatsAppSettingsButton() {
               Deixe vazio para usar o sandbox padrão da Twilio (+14155238886). Para produção, cole o número aprovado para WhatsApp Business.
             </p>
           </div>
-          <div className="rounded-md border bg-muted/40 p-3 text-xs">
-            <div className="font-medium">Webhook inbound</div>
-            <code className="break-all">{typeof window !== "undefined" ? window.location.origin : ""}/api/public/hooks/twilio-whatsapp</code>
-            <p className="mt-1 text-muted-foreground">
-              Cole essa URL em Twilio Console → Messaging → Sandbox (ou Sender) em "When a message comes in" (POST).
+          <div>
+            <label className="text-sm font-medium">URL pública (base)</label>
+            <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={effectiveBase || "https://seu-dominio.com"} />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Usada para webhooks de entrada e status callback. Padrão: domínio publicado.
             </p>
+          </div>
+          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-2">
+            <div>
+              <div className="font-medium">Webhook inbound (When a message comes in)</div>
+              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp</code>
+            </div>
+            <div>
+              <div className="font-medium">Status callback (entrega/leitura)</div>
+              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp-status</code>
+              <p className="mt-1 text-muted-foreground">
+                Já é enviado automaticamente em cada mensagem. Use no Twilio Console se quiser também receber por número.
+              </p>
+            </div>
           </div>
           <div className="border-t pt-3">
             <WhatsAppTemplatesEditor />
