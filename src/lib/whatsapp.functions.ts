@@ -40,7 +40,12 @@ async function getIntegrationConfig(supabase: any, userId: string) {
   return (data?.config ?? {}) as {
     from_number?: string;
     public_base_url?: string;
-    templates?: { name: string; body: string }[];
+    templates?: {
+      name: string;
+      body: string;
+      contentSid?: string;
+      variableCount?: number;
+    }[];
   };
 }
 
