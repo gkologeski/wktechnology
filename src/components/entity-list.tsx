@@ -288,7 +288,33 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
   return (
     <div>
-      <PageHeader title={title} description={description}
+  // Singular entity label for CTA ("Criar lead")
+  const entitySingular = ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio" } as const)[table];
+
+  // Quick-filter fields (select-type only)
+  const quickFilterFields = filterFieldList.filter((f) => f.type === "select" && f.options && f.options.length > 0);
+  const getQuickValue = (fname: string) => {
+    const cond = view.filters.conditions.find(
+      (c) => c.type === "condition" && c.field === fname && c.op === "eq",
+    );
+    return cond && cond.type === "condition" ? String(cond.value ?? "") : "";
+  };
+  const setQuickValue = (fname: string, value: string) => {
+    const others = view.filters.conditions.filter(
+      (c) => !(c.type === "condition" && c.field === fname && c.op === "eq"),
+    );
+    const next = value
+      ? [...others, { type: "condition" as const, field: fname, op: "eq" as const, value }]
+      : others;
+    setView({ ...view, filters: { ...view.filters, conditions: next } });
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title={title}
+        description={description}
+        count={isLoading ? undefined : totalCount}
         actions={
           <>
             {csvEnabled && (
@@ -301,7 +327,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
               </>
             )}
             {toolbar}
-            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo</Button>
+            <Button size="default" onClick={openNew} className="shadow-sm">
+              <Plus className="h-4 w-4 mr-1" /> Criar {entitySingular}
+            </Button>
           </>
         }
       />
