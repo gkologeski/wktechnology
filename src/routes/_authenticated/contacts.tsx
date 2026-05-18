@@ -6,9 +6,10 @@ import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
-import { Sparkles, Users as UsersIcon } from "lucide-react";
+import { Sparkles, Users as UsersIcon, MessageCircle } from "lucide-react";
 import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
 import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
+import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -90,6 +91,20 @@ function ContactsPage() {
           </Button>
         </>
       )}
+      rowActions={(row) =>
+        row.phone || row.mobile_phone ? (
+          <SendWhatsAppDialog
+            defaultTo={(row.phone || row.mobile_phone) as string}
+            contactId={row.id}
+            contactName={`${row.first_name} ${row.last_name ?? ""}`.trim()}
+            trigger={
+              <Button size="icon" variant="ghost" title="Enviar WhatsApp">
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+            }
+          />
+        ) : null
+      }
     />
   );
 }

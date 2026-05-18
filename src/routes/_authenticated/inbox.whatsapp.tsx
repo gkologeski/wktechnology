@@ -21,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
+import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
+import { WhatsAppTemplatesEditor } from "@/components/whatsapp/whatsapp-templates-editor";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   component: WhatsAppInbox,
@@ -35,9 +37,6 @@ function WhatsAppInbox() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [composeTo, setComposeTo] = useState("");
-  const [composeBody, setComposeBody] = useState("");
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
   const messagesQ = useQuery({
@@ -77,9 +76,6 @@ function WhatsAppInbox() {
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
-      setComposeBody("");
-      setComposeTo("");
-      setComposeOpen(false);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
     },
@@ -104,39 +100,14 @@ function WhatsAppInbox() {
         </div>
         <div className="flex gap-2">
           <WhatsAppSettingsButton />
-          <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-            <DialogTrigger asChild>
+          <SendWhatsAppDialog
+            onSent={(id) => setSelected(id)}
+            trigger={
               <Button>
                 <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Enviar WhatsApp</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Para (E.164, ex: +5511999999999)</label>
-                  <Input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="+5511..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Mensagem</label>
-                  <Textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={4} />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    No sandbox, o destinatário precisa primeiro enviar o "join &lt;código&gt;" ao número da Twilio.
-                  </p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => sendMut.mutate({ to: composeTo, body: composeBody })}
-                  disabled={!composeTo || !composeBody || sendMut.isPending}
-                >
-                  <Send className="mr-2 h-4 w-4" /> Enviar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            }
+          />
         </div>
       </div>
 
@@ -284,7 +255,7 @@ function WhatsAppSettingsButton() {
           <SettingsIcon className="mr-2 h-4 w-4" /> Configurar
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Número Twilio WhatsApp</DialogTitle>
         </DialogHeader>
@@ -302,6 +273,9 @@ function WhatsAppSettingsButton() {
             <p className="mt-1 text-muted-foreground">
               Cole essa URL em Twilio Console → Messaging → Sandbox (ou Sender) em "When a message comes in" (POST).
             </p>
+          </div>
+          <div className="border-t pt-3">
+            <WhatsAppTemplatesEditor />
           </div>
         </div>
         <DialogFooter>
