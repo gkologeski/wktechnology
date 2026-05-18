@@ -191,14 +191,56 @@ export function SendWhatsAppDialog({
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
             </div>
           )}
+
+          <div>
+            <Label>Mídia (opcional)</Label>
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept="image/*,audio/*,video/*,application/pdf"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handlePickFile(f);
+                e.target.value = "";
+              }}
+            />
+            {media ? (
+              <div className="flex items-start gap-2 rounded-md border p-2">
+                <WhatsAppMediaBubble url={media.url} contentType={media.contentType} />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-xs">{media.name}</div>
+                  <div className="text-[10px] text-muted-foreground">{media.contentType}</div>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => setMedia(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Paperclip className="mr-2 h-4 w-4" />
+                {uploading ? "Enviando…" : "Anexar imagem, áudio ou PDF"}
+              </Button>
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Máx 16MB. Formatos suportados pelo WhatsApp.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button
             onClick={() => sendMut.mutate()}
             disabled={
               !to ||
-              !previewBody.trim() ||
+              (!previewBody.trim() && !media) ||
               sendMut.isPending ||
+              uploading ||
               (!!selectedTpl && vars.slice(0, varCount).some((v) => !v))
             }
           >
