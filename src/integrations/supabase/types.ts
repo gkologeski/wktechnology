@@ -1337,6 +1337,139 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_conversations: {
+        Row: {
+          assigned_to: string | null
+          contact_id: string | null
+          contact_phone: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          owner_id: string
+          status: string
+          twilio_number: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          contact_phone: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          owner_id: string
+          status?: string
+          twilio_number: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          owner_id?: string
+          status?: string
+          twilio_number?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          body: string | null
+          conversation_id: string
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error_code: string | null
+          error_message: string | null
+          from_number: string
+          id: string
+          is_template: boolean
+          media_content_type: string | null
+          media_url: string | null
+          owner_id: string
+          raw: Json | null
+          read_at: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          template_name: string | null
+          to_number: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          delivered_at?: string | null
+          direction: string
+          error_code?: string | null
+          error_message?: string | null
+          from_number: string
+          id?: string
+          is_template?: boolean
+          media_content_type?: string | null
+          media_url?: string | null
+          owner_id: string
+          raw?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          to_number: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string
+          id?: string
+          is_template?: boolean
+          media_content_type?: string | null
+          media_url?: string | null
+          owner_id?: string
+          raw?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          to_number?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflows: {
         Row: {
           actions: Json
@@ -1381,7 +1514,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      activity_type: "note" | "task" | "call" | "email" | "meeting"
+      activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
       deal_stage:
         | "new"
         | "qualified"
@@ -1522,7 +1655,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["note", "task", "call", "email", "meeting"],
+      activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
       deal_stage: [
         "new",
         "qualified",
