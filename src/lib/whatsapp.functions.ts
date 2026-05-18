@@ -84,10 +84,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         mediaUrl: z.string().url().optional(),
         mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
+        contentSid: z.string().regex(/^HX[0-9a-fA-F]{32}$/).optional(),
+        contentVariables: z.record(z.string(), z.string()).optional(),
       })
-      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl, {
-        message: "Informe um texto ou anexo de mídia",
-      })
+      .refine(
+        (v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.contentSid,
+        { message: "Informe um texto, anexo ou template oficial" },
+      )
       .parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -103,8 +106,15 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       To: toWaNum,
       StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
     });
-    if (data.body) params.set("Body", data.body);
-    if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
+    if (data.contentSid) {
+      params.set("ContentSid", data.contentSid);
+      if (data.contentVariables && Object.keys(data.contentVariables).length > 0) {
+        params.set("ContentVariables", JSON.stringify(data.contentVariables));
+      }
+    } else {
+      if (data.body) params.set("Body", data.body);
+      if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
+    }
 
     const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: "POST",
