@@ -95,6 +95,8 @@ export function SendWhatsAppDialog({
           body: previewBody,
           contactId,
           templateName: templateName || undefined,
+          mediaUrl: media?.url,
+          mediaContentType: media?.contentType,
         },
       }),
     onSuccess: (res) => {
@@ -103,6 +105,7 @@ export function SendWhatsAppDialog({
       setBody("");
       setTemplateName("");
       setVars([]);
+      setMedia(null);
       onSent?.(res.conversationId);
     },
     onError: (e: Error) => toast.error(e.message),
