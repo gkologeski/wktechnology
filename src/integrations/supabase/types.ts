@@ -1337,6 +1337,125 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_campaign_recipients: {
+        Row: {
+          campaign_id: string
+          contact_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          owner_id: string
+          phone: string
+          sent_at: string | null
+          status: string
+          twilio_sid: string | null
+          variables: Json
+        }
+        Insert: {
+          campaign_id: string
+          contact_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          owner_id: string
+          phone: string
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+          variables?: Json
+        }
+        Update: {
+          campaign_id?: string
+          contact_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          owner_id?: string
+          phone?: string
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_campaigns: {
+        Row: {
+          body_template: string | null
+          content_sid: string | null
+          content_variables_template: Json
+          created_at: string
+          failed: number
+          finished_at: string | null
+          id: string
+          last_tick_at: string | null
+          media_content_type: string | null
+          media_url: string | null
+          name: string
+          owner_id: string
+          rate_per_minute: number
+          scheduled_at: string | null
+          sent: number
+          started_at: string | null
+          status: string
+          template_name: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          body_template?: string | null
+          content_sid?: string | null
+          content_variables_template?: Json
+          created_at?: string
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_tick_at?: string | null
+          media_content_type?: string | null
+          media_url?: string | null
+          name: string
+          owner_id: string
+          rate_per_minute?: number
+          scheduled_at?: string | null
+          sent?: number
+          started_at?: string | null
+          status?: string
+          template_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string | null
+          content_sid?: string | null
+          content_variables_template?: Json
+          created_at?: string
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_tick_at?: string | null
+          media_content_type?: string | null
+          media_url?: string | null
+          name?: string
+          owner_id?: string
+          rate_per_minute?: number
+          scheduled_at?: string | null
+          sent?: number
+          started_at?: string | null
+          status?: string
+          template_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_conversations: {
         Row: {
           assigned_to: string | null
