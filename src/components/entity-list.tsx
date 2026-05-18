@@ -114,7 +114,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q = (supabase as any).from(table).select(selectColumns, { count: "estimated" });
+      let q = (supabase as any).from(table).select(selectColumns, { count: "exact" });
       q = applyFilters(q, view.filters);
       // Server-side search across searchKeys
       const term = debouncedSearch.trim();
