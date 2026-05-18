@@ -858,7 +858,7 @@ function SavedViewsTabs({
 function avatarLabel<T extends { id: string }>(
   row: T,
   key: string,
-  render?: (row: T) => React.ReactNode,
+  render?: (row: T) => ReactNode,
 ): string {
   const raw = (row as Record<string, unknown>)[key];
   if (typeof raw === "string" && raw.trim()) return raw;
