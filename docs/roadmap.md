@@ -43,7 +43,7 @@
 
 11. Roles & Permissions (M) ✅ — enum `app_role` (admin/manager/member), tabela `user_roles` separada (workspace_owner + user + role, único), funções `has_role` e `is_workspace_admin` (security definer, restritas a `authenticated`), RLS limitando leitura ao próprio usuário/owner e escrita só ao owner. Server functions em `src/lib/roles.functions.ts` (`listWorkspaceRoles`, `setUserRole`, `getMyRole`). Página `/settings/roles` lista membros do workspace e permite trocar role via dropdown; owner é admin fixo.
 12. Teams UI (P) ✅ — página `/settings/teams` para gerenciar membros do workspace: convidar por email (resolve `user_id` via admin client em `auth.users`), alterar papel (admin/gestor/membro) e remover. Server functions em `src/lib/teams.functions.ts` (`listTeamMembers`, `inviteTeamMember`, `updateTeamMemberRole`, `removeTeamMember`) espelham automaticamente em `user_roles` para manter as permissões consistentes.
-13. Audit log (M)
+13. Audit log (M) ✅ — tabela `audit_logs` (workspace_owner, actor_user, entity, entity_id, action, before, after, metadata) populada por triggers automáticas em `leads`/`contacts`/`companies`/`deals` (insert/update/delete). RLS limita leitura ao owner do workspace + admins (via `is_workspace_admin`); ninguém edita/exclui manualmente. Server function `listAuditLogs` resolve nomes/emails dos atores e calcula diff de campos. Página `/settings/audit-log` com filtros por entidade/ação, lista paginada (200) e drawer com diff antes/depois ou snapshot completo.
 14. 2FA + session management (P)
 15. Custom properties UI (G)
 
