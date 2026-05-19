@@ -13,8 +13,9 @@ import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { DealLineItems } from "@/components/deals/deal-line-items";
 import { toast } from "sonner";
-import { Database, Trash2 } from "lucide-react";
+import { Database, Trash2, Package } from "lucide-react";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
