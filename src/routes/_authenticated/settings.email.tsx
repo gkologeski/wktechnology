@@ -77,9 +77,12 @@ function EmailSettings() {
               Conecte sua conta Gmail para enviar e receber emails dentro do CRM.
             </p>
           </div>
-          <Button onClick={connect}>
-            <Plug className="h-4 w-4 mr-1" /> Conectar Gmail
-          </Button>
+          <div className="flex items-center gap-2">
+            <SendEmailDialog />
+            <Button onClick={connect}>
+              <Plug className="h-4 w-4 mr-1" /> Conectar Gmail
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
