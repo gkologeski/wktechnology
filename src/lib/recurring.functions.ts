@@ -124,10 +124,11 @@ export const updateSubscriptionStatus = createServerFn({ method: "POST" })
     action: z.enum(["pause", "resume", "cancel"]),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> =
-      data.action === "pause" ? { status: "paused" } :
-      data.action === "resume" ? { status: "active" } :
-      { status: "canceled", ended_at: new Date().toISOString(), next_billing_at: null };
+    const patch = data.action === "pause"
+      ? { status: "paused" as const }
+      : data.action === "resume"
+      ? { status: "active" as const }
+      : { status: "canceled" as const, ended_at: new Date().toISOString(), next_billing_at: null };
     const { error } = await context.supabase.from("subscriptions").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
