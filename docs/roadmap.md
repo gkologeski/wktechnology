@@ -51,7 +51,7 @@
 
 16. Tickets como objeto (M) ✅ — tabela `tickets` (assunto, descrição, status enum `ticket_status` new/open/waiting/resolved/closed, prioridade enum `ticket_priority` low/medium/high/urgent, fonte, contato/empresa/negócio relacionados, responsável, vencimento, resolved_at, custom_fields jsonb). RLS por owner + admins do workspace. Trigger `tickets_audit` integrada com `audit_logs`. Página `/tickets` com board kanban por status + lista com edição inline de status, busca, drawer de criação/edição com vínculos a contato/empresa/negócio. Entrada "Tickets" no grupo CRM da sidebar.
 17. Macros / respostas prontas (P) ✅ — tabela `macros` (nome, atalho, categoria, corpo, enabled) com RLS por owner. Página `/settings/macros` para CRUD com toggle ativo/inativo. Dropdown "Aplicar macro" no dialog de criação/edição de tickets insere o corpo na descrição (concatena se já houver texto), expandindo tokens `{{contact_first_name}}`, `{{contact_name}}`, `{{company_name}}`, `{{ticket_subject}}`, `{{agent_name}}`. Entrada no sidebar (grupo CRM) e na aba de Configurações.
-18. NPS/CSAT pós-resolução (M)
+18. NPS/CSAT pós-resolução (M) ✅ — tabela `survey_responses` (kind csat/nps, token público único, score, comment, sent_at, responded_at) com RLS (owner + admins). Trigger `tickets_create_survey` cria convite automaticamente quando ticket vai para `resolved` ou `closed`. Server fns `getSurveyByToken` e `submitSurvey` (via `supabaseAdmin`, sem auth) servem a rota pública `/survey/$token` com escala 0–5 (CSAT) ou 0–10 (NPS) + comentário. Página `/settings/surveys` consolida convites, taxa de resposta, média CSAT, NPS calculado (promotores − detratores) e botão para copiar link público.
 19. Portal do cliente (G)
 
 ## 🟤 Onda 5 — Quotes & Payments (3 semanas)
