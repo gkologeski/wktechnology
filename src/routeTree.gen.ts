@@ -42,6 +42,7 @@ import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
+import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
@@ -251,6 +252,12 @@ const AuthenticatedSettingsRolesRoute =
     path: '/roles',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsQuotesRoute =
+  AuthenticatedSettingsQuotesRouteImport.update({
+    id: '/quotes',
+    path: '/quotes',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsProductsRoute =
   AuthenticatedSettingsProductsRouteImport.update({
     id: '/products',
@@ -451,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -511,6 +519,7 @@ export interface FileRoutesByTo {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -575,6 +584,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -639,6 +649,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/quotes'
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
@@ -699,6 +710,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/quotes'
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
@@ -762,6 +774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/products'
+    | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
     | '/_authenticated/settings/scoring'
@@ -1047,6 +1060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRolesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/quotes': {
+      id: '/_authenticated/settings/quotes'
+      path: '/quotes'
+      fullPath: '/settings/quotes'
+      preLoaderRoute: typeof AuthenticatedSettingsQuotesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/products': {
       id: '/_authenticated/settings/products'
       path: '/products'
@@ -1285,6 +1305,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
+  AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
@@ -1311,6 +1332,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
+  AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
