@@ -371,6 +371,8 @@ export type Database = {
           notes: string | null
           owner_id: string
           phone: string | null
+          portal_enabled: boolean
+          portal_token: string | null
           score: number
           state: string | null
           twitter_handle: string | null
@@ -408,6 +410,8 @@ export type Database = {
           notes?: string | null
           owner_id: string
           phone?: string | null
+          portal_enabled?: boolean
+          portal_token?: string | null
           score?: number
           state?: string | null
           twitter_handle?: string | null
@@ -445,6 +449,8 @@ export type Database = {
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          portal_enabled?: boolean
+          portal_token?: string | null
           score?: number
           state?: string | null
           twitter_handle?: string | null
