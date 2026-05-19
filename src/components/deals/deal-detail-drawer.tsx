@@ -13,8 +13,9 @@ import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { DealLineItems } from "@/components/deals/deal-line-items";
 import { toast } from "sonner";
-import { Database, Trash2 } from "lucide-react";
+import { Database, Trash2, Package } from "lucide-react";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -137,6 +138,7 @@ export function DealDetailDrawer({
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-5 mt-3 self-start">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
+            {!isNew && <TabsTrigger value="items"><Package className="h-3.5 w-3.5 mr-1" />Itens</TabsTrigger>}
             {!isNew && <TabsTrigger value="activity">Atividades</TabsTrigger>}
             {!isNew && hsExtras.length > 0 && (
               <TabsTrigger value="hs">
@@ -248,6 +250,19 @@ export function DealDetailDrawer({
                 />
               </Field>
             </TabsContent>
+
+            {!isNew && (
+              <TabsContent value="items" className="mt-0">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Itens deste negócio. O valor total recalcula o campo "Valor" automaticamente.
+                </p>
+                <DealLineItems
+                  dealId={deal!.id}
+                  ownerId={ownerId!}
+                  currency={String(v.currency ?? "BRL")}
+                />
+              </TabsContent>
+            )}
 
             {!isNew && (
               <TabsContent value="activity" className="mt-0">
