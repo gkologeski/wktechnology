@@ -72,7 +72,8 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
     if (!apiKeySid.startsWith("SK")) {
       return {
         ok: false,
-        error: "TWILIO_API_KEY_SID inválido (deve começar com SK, não AC). Crie uma API Key em Console → Account → API keys & tokens.",
+        error:
+          "TWILIO_API_KEY_SID inválido (deve começar com SK, não AC). Crie uma API Key em Console → Account → API keys & tokens.",
       } as const;
     }
     if (!twimlAppSid.startsWith("AP")) {
@@ -99,10 +100,14 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
       if (probe.status === 404) {
         return {
           ok: false,
-          error: "API Key não encontrada nessa conta (404). O TWILIO_API_KEY_SID existe em outra subconta diferente do TWILIO_ACCOUNT_SID.",
+          error:
+            "API Key não encontrada nessa conta (404). O TWILIO_API_KEY_SID existe em outra subconta diferente do TWILIO_ACCOUNT_SID.",
         } as const;
       }
-      return { ok: false, error: `Falha ao validar credenciais Twilio (${probe.status}): ${body.slice(0, 200)}` } as const;
+      return {
+        ok: false,
+        error: `Falha ao validar credenciais Twilio (${probe.status}): ${body.slice(0, 200)}`,
+      } as const;
     }
 
     const identity = `user_${context.userId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
