@@ -151,8 +151,9 @@ export const setInvoiceStatus = createServerFn({ method: "POST" })
     status: invStatus,
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.status === "paid") patch.paid_at = new Date().toISOString();
+    const patch = data.status === "paid"
+      ? { status: data.status, paid_at: new Date().toISOString() }
+      : { status: data.status };
     const { error } = await context.supabase.from("subscription_invoices").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
