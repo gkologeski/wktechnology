@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
@@ -86,6 +87,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   id: '/tasks',
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/notes': typeof AuthenticatedNotesRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
+  '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/settings'
     | '/tasks'
+    | '/tickets'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notes'
     | '/tasks'
+    | '/tickets'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notes'
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
+    | '/_authenticated/tickets'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -747,6 +759,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/tickets': {
+      id: '/_authenticated/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AuthenticatedTicketsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tasks': {
       id: '/_authenticated/tasks'
@@ -1201,6 +1220,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
+  AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -1217,6 +1237,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
+  AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
