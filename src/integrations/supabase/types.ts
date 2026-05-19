@@ -1261,6 +1261,191 @@ export type Database = {
           },
         ]
       }
+      esign_audit: {
+        Row: {
+          created_at: string
+          document_id: string
+          event: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          owner_id: string
+          signer_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          event: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          owner_id: string
+          signer_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          event?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          owner_id?: string
+          signer_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esign_audit_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_audit_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      esign_documents: {
+        Row: {
+          body: string
+          completed_at: string | null
+          contact_id: string | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          ordered: boolean
+          owner_id: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["esign_doc_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          ordered?: boolean
+          owner_id: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["esign_doc_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          ordered?: boolean
+          owner_id?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["esign_doc_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esign_documents_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      esign_signers: {
+        Row: {
+          created_at: string
+          decline_reason: string | null
+          declined_at: string | null
+          document_id: string
+          email: string
+          id: string
+          ip_address: string | null
+          name: string
+          owner_id: string
+          public_token: string
+          sign_order: number
+          signature_data: string | null
+          signed_at: string | null
+          signed_name: string | null
+          status: Database["public"]["Enums"]["esign_signer_status"]
+          user_agent: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          document_id: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          name: string
+          owner_id: string
+          public_token?: string
+          sign_order?: number
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_name?: string | null
+          status?: Database["public"]["Enums"]["esign_signer_status"]
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          document_id?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          name?: string
+          owner_id?: string
+          public_token?: string
+          sign_order?: number
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_name?: string | null
+          status?: Database["public"]["Enums"]["esign_signer_status"]
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esign_signers_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           config: Json
@@ -2878,6 +3063,15 @@ export type Database = {
         | "negotiation"
         | "won"
         | "lost"
+      esign_doc_status:
+        | "draft"
+        | "sent"
+        | "partially_signed"
+        | "completed"
+        | "declined"
+        | "expired"
+        | "canceled"
+      esign_signer_status: "pending" | "viewed" | "signed" | "declined"
       integration_status: "connected" | "pending" | "error" | "disconnected"
       job_entity: "lead" | "contact" | "company" | "deal"
       job_kind: "import" | "enrich" | "export" | "sync"
@@ -3024,6 +3218,16 @@ export const Constants = {
         "won",
         "lost",
       ],
+      esign_doc_status: [
+        "draft",
+        "sent",
+        "partially_signed",
+        "completed",
+        "declined",
+        "expired",
+        "canceled",
+      ],
+      esign_signer_status: ["pending", "viewed", "signed", "declined"],
       integration_status: ["connected", "pending", "error", "disconnected"],
       job_entity: ["lead", "contact", "company", "deal"],
       job_kind: ["import", "enrich", "export", "sync"],
