@@ -54,6 +54,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
+import { Route as AuthenticatedSettingsExportsRouteImport } from './routes/_authenticated/settings.exports'
 import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
@@ -73,6 +74,7 @@ import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
+import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
@@ -327,6 +329,12 @@ const AuthenticatedSettingsGoalsRoute =
     path: '/goals',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsExportsRoute =
+  AuthenticatedSettingsExportsRouteImport.update({
+    id: '/exports',
+    path: '/exports',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsEsignRoute =
   AuthenticatedSettingsEsignRouteImport.update({
     id: '/esign',
@@ -438,6 +446,12 @@ const ApiPublicHooksScoringTickRoute =
     path: '/api/public/hooks/scoring-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksScheduledExportsTickRoute =
+  ApiPublicHooksScheduledExportsTickRouteImport.update({
+    id: '/api/public/hooks/scheduled-exports-tick',
+    path: '/api/public/hooks/scheduled-exports-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksHubspotTickRoute =
   ApiPublicHooksHubspotTickRouteImport.update({
     id: '/api/public/hooks/hubspot-tick',
@@ -503,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -527,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
@@ -571,6 +587,7 @@ export interface FileRoutesByTo {
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -595,6 +612,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
@@ -643,6 +661,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/_authenticated/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -667,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
@@ -715,6 +735,7 @@ export interface FileRouteTypes {
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/esign'
+    | '/settings/exports'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -739,6 +760,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
@@ -783,6 +805,7 @@ export interface FileRouteTypes {
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/esign'
+    | '/settings/exports'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -807,6 +830,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
@@ -854,6 +878,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/esign'
+    | '/_authenticated/settings/exports'
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
@@ -878,6 +903,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
@@ -903,6 +929,7 @@ export interface RootRouteChildren {
   SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
+  ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
@@ -1232,6 +1259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsGoalsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/exports': {
+      id: '/_authenticated/settings/exports'
+      path: '/exports'
+      fullPath: '/settings/exports'
+      preLoaderRoute: typeof AuthenticatedSettingsExportsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/esign': {
       id: '/_authenticated/settings/esign'
       path: '/esign'
@@ -1365,6 +1399,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScoringTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scheduled-exports-tick': {
+      id: '/api/public/hooks/scheduled-exports-tick'
+      path: '/api/public/hooks/scheduled-exports-tick'
+      fullPath: '/api/public/hooks/scheduled-exports-tick'
+      preLoaderRoute: typeof ApiPublicHooksScheduledExportsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/hubspot-tick': {
       id: '/api/public/hooks/hubspot-tick'
       path: '/api/public/hooks/hubspot-tick'
@@ -1438,6 +1479,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
+  AuthenticatedSettingsExportsRoute: typeof AuthenticatedSettingsExportsRoute
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -1468,6 +1510,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
+  AuthenticatedSettingsExportsRoute: AuthenticatedSettingsExportsRoute,
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
@@ -1578,6 +1621,8 @@ const rootRouteChildren: RootRouteChildren = {
   SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
+  ApiPublicHooksScheduledExportsTickRoute:
+    ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,

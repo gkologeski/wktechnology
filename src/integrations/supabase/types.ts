@@ -2231,6 +2231,77 @@ export type Database = {
         }
         Relationships: []
       }
+      report_schedules: {
+        Row: {
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          email_account_id: string | null
+          enabled: boolean
+          format: Database["public"]["Enums"]["export_format"]
+          frequency: Database["public"]["Enums"]["export_frequency"]
+          hour_of_day: number
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          last_status: string | null
+          name: string
+          next_run_at: string | null
+          owner_id: string
+          recipients: string[]
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          email_account_id?: string | null
+          enabled?: boolean
+          format?: Database["public"]["Enums"]["export_format"]
+          frequency?: Database["public"]["Enums"]["export_frequency"]
+          hour_of_day?: number
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?: string | null
+          name: string
+          next_run_at?: string | null
+          owner_id?: string
+          recipients?: string[]
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          email_account_id?: string | null
+          enabled?: boolean
+          format?: Database["public"]["Enums"]["export_format"]
+          frequency?: Database["public"]["Enums"]["export_frequency"]
+          hour_of_day?: number
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?: string | null
+          name?: string
+          next_run_at?: string | null
+          owner_id?: string
+          recipients?: string[]
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "custom_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rotation_rules: {
         Row: {
           assignees: Json
@@ -3456,6 +3527,8 @@ export type Database = {
         | "expired"
         | "canceled"
       esign_signer_status: "pending" | "viewed" | "signed" | "declined"
+      export_format: "csv"
+      export_frequency: "daily" | "weekly" | "monthly"
       goal_metric:
         | "deals_won_count"
         | "deals_won_value"
@@ -3630,6 +3703,8 @@ export const Constants = {
         "canceled",
       ],
       esign_signer_status: ["pending", "viewed", "signed", "declined"],
+      export_format: ["csv"],
+      export_frequency: ["daily", "weekly", "monthly"],
       goal_metric: [
         "deals_won_count",
         "deals_won_value",
