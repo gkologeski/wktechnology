@@ -103,6 +103,15 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         ))}
       </div>
 
+      {isCustomEntity && customDefs.length > 0 && (
+        <div className="space-y-2 pt-2 border-t">
+          <div className="text-xs font-medium text-muted-foreground">Personalizadas</div>
+          {customDefs.map((d) => (
+            <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} />
+          ))}
+        </div>
+      )}
+
       <Dialog open={showAll} onOpenChange={setShowAll}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="w-full">Ver todas as propriedades</Button>
