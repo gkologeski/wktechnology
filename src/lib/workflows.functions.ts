@@ -80,8 +80,8 @@ export const saveWorkflow = createServerFn({ method: "POST" })
       name: data.name,
       entity: data.entity,
       enabled: data.enabled,
-      trigger: data.trigger,
-      actions: data.actions,
+      trigger: data.trigger as unknown as Record<string, unknown>,
+      actions: data.actions as unknown as Record<string, unknown>[],
     };
     if (data.id) {
       const { error } = await supabase.from("workflows").update(payload).eq("id", data.id);
