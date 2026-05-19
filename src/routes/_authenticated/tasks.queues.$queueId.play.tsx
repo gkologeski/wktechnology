@@ -163,16 +163,18 @@ function PlayQueue() {
   );
 }
 
-function displayName(item: ReturnType<typeof firstItemType>): string {
+type QueueData = Awaited<ReturnType<typeof getQueueWithItems>>;
+type HydratedItem = QueueData["items"][number];
+
+function displayName(item: HydratedItem | undefined): string {
   if (!item) return "";
   if (item.contact) return `${item.contact.first_name ?? ""} ${item.contact.last_name ?? ""}`.trim();
-  if (item.lead) return `${item.lead.first_name ?? ""} ${item.lead.last_name ?? ""}`.trim() || item.lead.company_name || "Lead";
+  if (item.lead)
+    return (
+      `${item.lead.first_name ?? ""} ${item.lead.last_name ?? ""}`.trim() ||
+      item.lead.company_name ||
+      "Lead"
+    );
   if (item.deal) return item.deal.name;
   return "Item";
-}
-
-// helper used only for the inferred type above
-type Hydrated = NonNullable<ReturnType<typeof useQuery<Awaited<ReturnType<typeof getQueueWithItems>>>>["data"]>["items"][number];
-function firstItemType(): Hydrated | undefined {
-  return undefined;
 }

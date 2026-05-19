@@ -26,6 +26,7 @@ import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
+import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
@@ -49,6 +50,7 @@ import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
+import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -137,6 +139,12 @@ const AuthenticatedIntegrationsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedIntegrationsRoute,
+  } as any)
+const AuthenticatedTasksQueuesRoute =
+  AuthenticatedTasksQueuesRouteImport.update({
+    id: '/queues',
+    path: '/queues',
+    getParentRoute: () => AuthenticatedTasksRoute,
   } as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
@@ -274,6 +282,12 @@ const ApiPublicEmailClickMessageIdRoute =
     path: '/api/public/email/click/$messageId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedTasksQueuesQueueIdPlayRoute =
+  AuthenticatedTasksQueuesQueueIdPlayRouteImport.update({
+    id: '/$queueId/play',
+    path: '/$queueId/play',
+    getParentRoute: () => AuthenticatedTasksQueuesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -289,7 +303,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
-  '/tasks': typeof AuthenticatedTasksRoute
+  '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -305,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -313,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
@@ -328,7 +344,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
-  '/tasks': typeof AuthenticatedTasksRoute
+  '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -344,6 +360,7 @@ export interface FileRoutesByTo {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -352,6 +369,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
@@ -371,7 +389,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
-  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
+  '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -387,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -395,6 +414,7 @@ export interface FileRoutesById {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
@@ -430,6 +450,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/subscriptions'
     | '/settings/workflows'
+    | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
     | '/api/public/hooks/email-sync-tick'
@@ -438,6 +459,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
   fileRoutesByTo: FileRoutesByTo
@@ -469,6 +491,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/subscriptions'
     | '/settings/workflows'
+    | '/tasks/queues'
     | '/integrations'
     | '/settings'
     | '/api/public/hooks/email-sync-tick'
@@ -477,6 +500,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
   id:
@@ -511,6 +535,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/api/public/hooks/email-sync-tick'
@@ -519,6 +544,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
   fileRoutesById: FileRoutesById
@@ -659,6 +685,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/integrations/'
       preLoaderRoute: typeof AuthenticatedIntegrationsIndexRouteImport
       parentRoute: typeof AuthenticatedIntegrationsRoute
+    }
+    '/_authenticated/tasks/queues': {
+      id: '/_authenticated/tasks/queues'
+      path: '/queues'
+      fullPath: '/tasks/queues'
+      preLoaderRoute: typeof AuthenticatedTasksQueuesRouteImport
+      parentRoute: typeof AuthenticatedTasksRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -821,6 +854,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEmailClickMessageIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/tasks/queues/$queueId/play': {
+      id: '/_authenticated/tasks/queues/$queueId/play'
+      path: '/$queueId/play'
+      fullPath: '/tasks/queues/$queueId/play'
+      preLoaderRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRouteImport
+      parentRoute: typeof AuthenticatedTasksQueuesRoute
+    }
   }
 }
 
@@ -886,6 +926,32 @@ const AuthenticatedSettingsRouteWithChildren =
     AuthenticatedSettingsRouteChildren,
   )
 
+interface AuthenticatedTasksQueuesRouteChildren {
+  AuthenticatedTasksQueuesQueueIdPlayRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+}
+
+const AuthenticatedTasksQueuesRouteChildren: AuthenticatedTasksQueuesRouteChildren =
+  {
+    AuthenticatedTasksQueuesQueueIdPlayRoute:
+      AuthenticatedTasksQueuesQueueIdPlayRoute,
+  }
+
+const AuthenticatedTasksQueuesRouteWithChildren =
+  AuthenticatedTasksQueuesRoute._addFileChildren(
+    AuthenticatedTasksQueuesRouteChildren,
+  )
+
+interface AuthenticatedTasksRouteChildren {
+  AuthenticatedTasksQueuesRoute: typeof AuthenticatedTasksQueuesRouteWithChildren
+}
+
+const AuthenticatedTasksRouteChildren: AuthenticatedTasksRouteChildren = {
+  AuthenticatedTasksQueuesRoute: AuthenticatedTasksQueuesRouteWithChildren,
+}
+
+const AuthenticatedTasksRouteWithChildren =
+  AuthenticatedTasksRoute._addFileChildren(AuthenticatedTasksRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
@@ -896,7 +962,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
-  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -912,7 +978,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
-  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
+  AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
