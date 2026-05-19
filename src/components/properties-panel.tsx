@@ -171,3 +171,61 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     </div>
   );
 }
+
+function CustomFieldRow({
+  def, value, onChange,
+}: { def: CustomProp; value: unknown; onChange: (v: unknown) => void | Promise<void> }) {
+  const [draft, setDraft] = useState<string>(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
+  useEffect(() => {
+    setDraft(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
+  }, [value]);
+
+  const commit = (raw: string) => {
+    if (raw === "" || raw == null) { onChange(null); return; }
+    if (def.type === "number") { const n = Number(raw); onChange(Number.isFinite(n) ? n : null); return; }
+    onChange(raw);
+  };
+
+  return (
+    <div className="text-sm">
+      <div className="text-xs text-muted-foreground flex items-center gap-1">
+        {def.label}{def.required && <span className="text-destructive">*</span>}
+      </div>
+      {def.type === "textarea" ? (
+        <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={(e) => commit(e.target.value)} rows={3} className="mt-0.5" />
+      ) : def.type === "boolean" ? (
+        <div className="mt-1"><Switch checked={!!value} onCheckedChange={(v) => onChange(v)} /></div>
+      ) : def.type === "select" ? (
+        <Select value={(value as string | undefined) ?? ""} onValueChange={(v) => onChange(v || null)}>
+          <SelectTrigger className="h-8 mt-0.5"><SelectValue placeholder="—" /></SelectTrigger>
+          <SelectContent>
+            {((def.options as string[] | undefined) ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ) : def.type === "multiselect" ? (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {((def.options as string[] | undefined) ?? []).map((o) => {
+            const arr = Array.isArray(value) ? (value as string[]) : [];
+            const on = arr.includes(o);
+            return (
+              <Button key={o} type="button" size="sm" variant={on ? "default" : "outline"}
+                className="h-6 text-xs"
+                onClick={() => onChange(on ? arr.filter((x) => x !== o) : [...arr, o])}>
+                {o}
+              </Button>
+            );
+          })}
+        </div>
+      ) : (
+        <Input
+          type={def.type === "number" ? "number" : def.type === "date" ? "date" : def.type === "email" ? "email"
+            : def.type === "url" ? "url" : def.type === "tel" ? "tel" : "text"}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          className="h-8 mt-0.5"
+        />
+      )}
+    </div>
+  );
+}
