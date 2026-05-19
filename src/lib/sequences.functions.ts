@@ -40,7 +40,12 @@ export const listSequences = createServerFn({ method: "POST" })
       if (r.status === "completed") byId[r.sequence_id].completed++;
     }
     return (seqs ?? []).map((s) => ({
-      ...s,
+      id: s.id as string,
+      name: s.name as string,
+      entity: s.entity as SequenceEntity,
+      enabled: s.enabled as boolean,
+      steps: (s.steps as unknown as SequenceStep[]) ?? [],
+      updated_at: s.updated_at as string,
       active_enrollments: byId[s.id]?.active ?? 0,
       completed_enrollments: byId[s.id]?.completed ?? 0,
     }));
