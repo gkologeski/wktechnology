@@ -21,6 +21,7 @@ const groups: Group[] = [
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Analytics", url: "/analytics", icon: TrendingUp },
+      { title: "Metas", url: "/settings/goals", icon: Target },
 
 
       { title: "Leads", url: "/leads", icon: UserPlus },

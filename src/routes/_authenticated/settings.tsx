@@ -31,6 +31,7 @@ const tabs = [
   { to: "/settings/portal", label: "Portal do cliente" },
   { to: "/settings/security", label: "Segurança" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
+  { to: "/settings/goals", label: "Metas" },
 ] as const;
 
 function SettingsLayout() {
