@@ -145,8 +145,8 @@ function TicketsPage() {
       toast.error("Informe um assunto.");
       return;
     }
-    const payload: Record<string, unknown> = {
-      subject: draft.subject,
+    const payload = {
+      subject: draft.subject!,
       description: draft.description ?? null,
       status: draft.status ?? "new",
       priority: draft.priority ?? "medium",
