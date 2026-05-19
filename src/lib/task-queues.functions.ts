@@ -165,7 +165,11 @@ export const updateQueueItem = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, string | null> = { notes: data.notes ?? null };
+    const patch: {
+      notes: string | null;
+      completed_at?: string | null;
+      skipped_at?: string | null;
+    } = { notes: data.notes ?? null };
     if (data.action === "complete") {
       patch.completed_at = new Date().toISOString();
       patch.skipped_at = null;
