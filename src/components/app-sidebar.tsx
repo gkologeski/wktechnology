@@ -24,6 +24,7 @@ const groups: Group[] = [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Filas de tarefas", url: "/tasks/queues", icon: PlayCircle },
+      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Listas", url: "/settings/segments", icon: Filter },
     ],
   },
