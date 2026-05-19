@@ -267,6 +267,11 @@ export function DealDetailDrawer({
             )}
 
             {!isNew && (
+              <TabsContent value="quotes" className="mt-0">
+                <DealQuotes dealId={deal!.id} />
+            )}
+
+            {!isNew && (
               <TabsContent value="activity" className="mt-0">
                 <ActivityTimeline relatedKey="related_deal_id" relatedId={deal!.id} />
               </TabsContent>
