@@ -485,7 +485,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                   <Checkbox checked={allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false} onCheckedChange={toggleAll} />
                 </TableHead>
                 {visibleColumns.map((c) => <TableHead key={String(c.key)}>{c.label}</TableHead>)}
-                <TableHead className="w-24 text-right">Ações</TableHead>
+                <TableHead className="w-32 text-right whitespace-nowrap">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
