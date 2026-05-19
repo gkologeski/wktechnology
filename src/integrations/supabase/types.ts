@@ -631,6 +631,69 @@ export type Database = {
           },
         ]
       }
+      deal_line_items: {
+        Row: {
+          created_at: string
+          deal_id: string
+          description: string | null
+          discount_pct: number
+          id: string
+          name: string
+          owner_id: string
+          position: number
+          product_id: string | null
+          quantity: number
+          tax_rate: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          description?: string | null
+          discount_pct?: number
+          id?: string
+          name: string
+          owner_id: string
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          tax_rate?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          description?: string | null
+          discount_pct?: number
+          id?: string
+          name?: string
+          owner_id?: string
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          tax_rate?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_line_items_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_line_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           closed_lost_reason: string | null
@@ -1469,6 +1532,51 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          sku: string | null
+          tax_rate: number
+          unit: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          sku?: string | null
+          tax_rate?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          sku?: string | null
+          tax_rate?: number
+          unit?: string | null
+          unit_price?: number
           updated_at?: string
         }
         Relationships: []
