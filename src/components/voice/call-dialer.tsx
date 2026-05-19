@@ -73,10 +73,14 @@ export function CallDialer({
   const cleanupDevice = useCallback(() => {
     try {
       callRef.current?.disconnect();
-    } catch {}
+    } catch {
+      // Ignore cleanup errors from an already-closed call.
+    }
     try {
       deviceRef.current?.destroy();
-    } catch {}
+    } catch {
+      // Ignore cleanup errors from an already-destroyed device.
+    }
     callRef.current = null;
     deviceRef.current = null;
   }, []);
@@ -103,9 +107,17 @@ export function CallDialer({
     }
     setStatus("connecting");
     try {
-      const { token } = await fetchToken({});
+      const tokenResult = await fetchToken({});
+      if (!tokenResult.ok) {
+        toast.error(tokenResult.error);
+        setStatus("idle");
+        return;
+      }
       const { Device } = await import("@twilio/voice-sdk");
-      const device = new Device(token, { logLevel: 1, codecPreferences: ["opus", "pcmu"] as never });
+      const device = new Device(tokenResult.token, {
+        logLevel: 1,
+        codecPreferences: ["opus", "pcmu"] as never,
+      });
       deviceRef.current = device;
 
       device.on("error", (err) => {
@@ -115,7 +127,9 @@ export function CallDialer({
 
       const call = await device.connect({ params: { To: target } });
       callRef.current = call;
-      callSidRef.current = (call as unknown as { parameters?: { CallSid?: string } }).parameters?.CallSid;
+      callSidRef.current = (
+        call as unknown as { parameters?: { CallSid?: string } }
+      ).parameters?.CallSid;
 
       setStatus("ringing");
 
@@ -149,8 +163,7 @@ export function CallDialer({
           ? e.message
           : typeof e === "string"
             ? e
-            : (e as { message?: string; code?: string | number })?.message ??
-              JSON.stringify(e);
+            : ((e as { message?: string; code?: string | number })?.message ?? JSON.stringify(e));
       toast.error(`Falha ao iniciar ligação: ${msg || "erro desconhecido"}`);
       setStatus("idle");
     }
@@ -159,7 +172,9 @@ export function CallDialer({
   const hangup = useCallback(() => {
     try {
       callRef.current?.disconnect();
-    } catch {}
+    } catch {
+      // Ignore hangup errors when the call is already closed.
+    }
   }, []);
 
   const toggleMute = useCallback(() => {
@@ -205,9 +220,7 @@ export function CallDialer({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {contactName ? `Ligar para ${contactName}` : "Ligação"}
-          </DialogTitle>
+          <DialogTitle>{contactName ? `Ligar para ${contactName}` : "Ligação"}</DialogTitle>
         </DialogHeader>
 
         {!showLog ? (
@@ -265,7 +278,9 @@ export function CallDialer({
             <div className="text-sm text-muted-foreground">
               Duração:{" "}
               <span className="font-mono">
-                {fmt(startedAtRef.current ? Math.floor((Date.now() - startedAtRef.current) / 1000) : 0)}
+                {fmt(
+                  startedAtRef.current ? Math.floor((Date.now() - startedAtRef.current) / 1000) : 0,
+                )}
               </span>
             </div>
             <div>
