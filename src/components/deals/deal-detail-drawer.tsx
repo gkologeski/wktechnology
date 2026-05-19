@@ -252,6 +252,19 @@ export function DealDetailDrawer({
             </TabsContent>
 
             {!isNew && (
+              <TabsContent value="items" className="mt-0">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Itens deste negócio. O valor total recalcula o campo "Valor" automaticamente.
+                </p>
+                <DealLineItems
+                  dealId={deal!.id}
+                  ownerId={ownerId!}
+                  currency={String(v.currency ?? "BRL")}
+                />
+              </TabsContent>
+            )}
+
+            {!isNew && (
               <TabsContent value="activity" className="mt-0">
                 <ActivityTimeline relatedKey="related_deal_id" relatedId={deal!.id} />
               </TabsContent>
