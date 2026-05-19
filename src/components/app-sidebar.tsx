@@ -18,7 +18,9 @@ const groups: Group[] = [
   {
     label: "CRM", icon: Users, items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
+
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
