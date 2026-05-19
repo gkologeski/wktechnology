@@ -133,7 +133,11 @@ export const logCallActivity = createServerFn({ method: "POST" })
         leadId: z.string().uuid().optional(),
         dealId: z.string().uuid().optional(),
         toNumber: z.string().min(3).max(32),
-        durationMs: z.number().int().min(0).max(24 * 60 * 60 * 1000),
+        durationMs: z
+          .number()
+          .int()
+          .min(0)
+          .max(24 * 60 * 60 * 1000),
         outcome: z.string().max(255).optional(),
         notes: z.string().max(5000).optional(),
         callSid: z.string().max(64).optional(),
