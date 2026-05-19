@@ -28,6 +28,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
+import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
 import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
@@ -157,6 +158,12 @@ const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
     path: '/workflows',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsTeamsRoute =
+  AuthenticatedSettingsTeamsRouteImport.update({
+    id: '/teams',
+    path: '/teams',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsSubscriptionsRoute =
@@ -369,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -417,6 +425,7 @@ export interface FileRoutesByTo {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
@@ -469,6 +478,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/sla'
     | '/settings/subscriptions'
+    | '/settings/teams'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations/'
@@ -569,6 +580,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/sla'
     | '/settings/subscriptions'
+    | '/settings/teams'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations'
@@ -620,6 +632,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/sla'
     | '/_authenticated/settings/subscriptions'
+    | '/_authenticated/settings/teams'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
@@ -792,6 +805,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/settings/workflows'
       preLoaderRoute: typeof AuthenticatedSettingsWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/teams': {
+      id: '/_authenticated/settings/teams'
+      path: '/teams'
+      fullPath: '/settings/teams'
+      preLoaderRoute: typeof AuthenticatedSettingsTeamsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/subscriptions': {
@@ -1048,6 +1068,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
   AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
+  AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
@@ -1066,6 +1087,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,
   AuthenticatedSettingsSubscriptionsRoute:
     AuthenticatedSettingsSubscriptionsRoute,
+  AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
