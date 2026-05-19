@@ -1,104 +1,79 @@
-# Onda 1 — Plano de finalização
+## Item 6 — Workflows engine + builder visual
 
-Faltam 6 entregas (1.1.d, 1.1.e, 1.2, 1.3, 1.4, 1.5). É escopo grande; vou implementar em sequência, em mensagens separadas, com checkpoint após cada bloco para você validar antes do próximo.
+Hoje a tabela `workflows` existe mas não roda nada: a página é só um CRUD de JSON cru. Vou entregar três coisas: (1) captura de eventos via triggers no Postgres, (2) executor server-side processado por pg_cron, (3) builder visual substituindo a tela atual.
 
----
+### Modelo de eventos
 
-## 1.1.d — Inbound Gmail (History API + pg_cron)
+Migration:
+- `workflow_events(id, entity, entity_id, owner_id, event_type, before jsonb, after jsonb, processed_at, created_at)` — fila append-only.
+- `workflow_runs(id, workflow_id, event_id, status, started_at, finished_at, error, log jsonb)` — uma execução por (workflow × evento).
+- Triggers `AFTER INSERT/UPDATE` em `leads`, `contacts`, `companies`, `deals` inserindo em `workflow_events` com `event_type ∈ {created, updated, stage_changed}` (stage_changed só para deals quando `stage_id` muda).
+- Índice em `(processed_at) WHERE processed_at IS NULL`.
+- RLS owner em ambas as tabelas novas.
 
-**Backend**
-- `src/lib/gmail-sync.server.ts`: helpers para Gmail History API (`users.history.list`, `users.messages.get`), parser de MIME → `body_text/body_html/headers/attachments`, normalização de endereços.
-- `src/lib/gmail-sync.functions.ts`: `syncEmailAccount({ accountId })` — usa `history_id` salvo; faz fallback para `messages.list` quando o history expira (404). Para cada mensagem nova: upsert `email_threads` (por `provider_thread_id`), insert `email_messages` (direction=inbound), tenta match com `contacts` pelo `from_email` para preencher `contact_id`. Atualiza `history_id` e `last_sync_at`.
-- Endpoint cron `src/routes/api/public/hooks/email-sync-tick.ts`: itera contas com `status=connected`, chama `syncEmailAccount` em cada uma (try/catch isolado).
-- pg_cron a cada 1 minuto chamando o hook (via `supabase--insert`, com `apikey` anon).
-- Botão "Sincronizar agora" em `/settings/email` (dispara `syncEmailAccount` manual).
+### Trigger DSL (formato `trigger` na tabela `workflows`)
 
-**Atividade**: cada inbound também gera registro em `activities` (`type='email'`, `email_direction='inbound'`, vínculo ao contato quando match).
+```json
+{
+  "event": "created" | "updated" | "stage_changed",
+  "filters": [{ "field": "source", "op": "eq", "value": "site" }]
+}
+```
 
-## 1.1.e — UI `/inbox/email`
+Operadores suportados: `eq`, `neq`, `in`, `contains`, `gt`, `lt`, `changed_to` (só faz sentido em `updated`/`stage_changed`).
 
-- Rota `src/routes/_authenticated/inbox.email.tsx` com layout 3 colunas (lista de threads → mensagens → preview), espelhando `inbox.whatsapp`.
-- Server fns em `email-inbox.functions.ts`: `listEmailThreads({ q, filter })`, `getEmailThread({ threadId })`, `markThreadRead`.
-- Renderização segura de HTML via `dompurify` (já permite imagens/links) com fallback para `body_text`.
-- Botão **Responder** abre `SendEmailDialog` em modo reply (preenche To, Subject "Re: …", `inReplyTo`/`references`, `threadId` do Gmail).
-- Indicadores de **open/click** (badges) usando `open_count`/`click_count`/`first_opened_at`.
-- Item no `app-sidebar` "Email" dentro de Inbox.
+### Action DSL (array `actions`)
 
-## 1.2 — Templates de email + snippets
+Tipos suportados nesta entrega:
+- `set_field` `{field, value}` — update no próprio registro
+- `create_activity` `{type, title, body, due_in_days?}` — insere em `activities`
+- `add_to_sequence` `{sequence_id}` — placeholder que apenas grava log (executor real vem no item 7)
+- `send_notification` `{title, body}` — insere em `notifications` se a tabela existir; senão log
+- `assign_to` `{user_id}` — set `owner_id`
+- `webhook` `{url, payload?}` — POST JSON
 
-**Schema** (migration):
-- `email_templates(id, owner_id, name, subject, body_html, body_text, shared bool, created_at, updated_at)`.
-- `email_snippets(id, owner_id, shortcut text, body text, shared bool, ...)`.
-- RLS owner + leitura quando `shared=true` para membros do mesmo workspace (via `team_members`).
+Suporte a tokens `{{field}}` em strings, resolvendo contra `after`.
 
-**UI/UX**:
-- Página `src/routes/_authenticated/settings.email-templates.tsx`: CRUD com editor (textarea HTML simples + preview).
-- Render de tokens: helper `renderTokens(template, vars)` resolvendo `{{first_name}}`, `{{last_name}}`, `{{company}}`, `{{my_name}}`, `{{my_email}}`. Quando `SendEmailDialog` abre com `contact_id`, o contexto é montado automaticamente.
-- `SendEmailDialog`: dropdown "Inserir template" + autocompletion de snippets digitando `;atalho`.
+### Executor
 
-## 1.3 — Calling via Twilio Voice (WebRTC)
+`src/lib/workflows/engine.server.ts`:
+- `processEvent(eventId)` — carrega evento, lista workflows ativos com `entity == event.entity`, avalia trigger+filters, para cada match cria `workflow_runs` e executa ações sequencialmente, gravando log por step. Marca `processed_at` ao final.
+- Idempotência: `unique(workflow_id, event_id)` em `workflow_runs`.
 
-Requer pré-configuração no console Twilio: **TwiML App** + número Voice habilitado. Vou listar os passos pra você antes de implementar.
+Endpoint cron: `src/routes/api/public/hooks/workflows-tick.ts`:
+- Pega até 50 eventos com `processed_at IS NULL`, processa um por um (try/catch isolado).
 
-**Secrets necessários** (peço via `add_secret` quando chegarmos): `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, `TWILIO_API_KEY_SECRET`, `TWILIO_TWIML_APP_SID`, `TWILIO_CALLER_ID`.
+pg_cron a cada 1 minuto chamando o hook.
 
-**Backend**:
-- `src/lib/twilio-voice.functions.ts`: `getVoiceAccessToken()` — gera JWT (lib `twilio`) com `VoiceGrant` apontando para a TwiML App; TTL 1h.
-- Rota pública `/api/public/hooks/twilio-voice-twiml.ts` — responde TwiML `<Dial callerId="…"><Number>{To}</Number></Dial>`.
-- Rota pública `/api/public/hooks/twilio-voice-status.ts` — recebe status callback, persiste `activities` (`type='call'`, `duration_ms`, `recording_url`, `disposition`, `outcome`).
+### UI — Builder visual
 
-**Frontend**:
-- `src/components/voice/call-dialer.tsx`: usa `@twilio/voice-sdk` (instalar). Botão de ligar em contatos/leads/deals usa o número formatado E.164.
-- HUD global flutuante com timer, mute, hangup; ao desligar abre diálogo para `outcome` + notas (grava na atividade criada pelo status callback).
+Substituir `src/routes/_authenticated/settings.workflows.tsx`:
+- Lista de workflows (cards com nome, entidade, on/off, contagem de runs últimas 24h).
+- Drawer/dialog "Editar workflow" com:
+  - **Quando** — entidade + tipo de evento (select)
+  - **Se** — filtros (linhas dinâmicas field/op/value); fields populados conforme entidade
+  - **Então** — lista ordenada de ações; cada ação tem form específico por tipo (`set_field`, `create_activity`, etc.) em vez de JSON cru
+  - Toggle ativo + nome
+- Aba "Execuções recentes" mostrando últimas 20 entradas de `workflow_runs` com status e log expandível.
 
-## 1.4 — Task queues ("play through")
+Componente em `src/components/workflows/workflow-builder.tsx`. Sem libs novas.
 
-**Schema** (migration):
-- `task_queues(id, owner_id, name, description, entity, created_at)`.
-- `task_queue_items(id, queue_id, owner_id, entity, entity_id, position, completed_at, skipped_at)`.
-- RLS owner.
+### Entregáveis (arquivos)
 
-**UI**:
-- `src/routes/_authenticated/tasks.queues.tsx`: lista de filas + criar fila.
-- `src/routes/_authenticated/tasks.queues.$queueId.play.tsx`: modo "Play" focado — mostra 1 registro por vez (contato/lead/deal) com painel lateral de ação rápida (ligar, email, WhatsApp, próxima/pular/concluir). Atalhos teclado: `N` próxima, `S` pular, `E` email, `C` ligar, `W` WhatsApp.
-- Botão "Adicionar à fila" no bulk-action-bar das telas existentes (contatos/leads).
-- Server fns: `createQueue`, `addToQueue`, `nextItem`, `completeItem`, `skipItem`.
+1. Migration: `workflow_events`, `workflow_runs`, triggers em 4 tabelas, índices, RLS, registro pg_cron.
+2. `src/lib/workflows/engine.server.ts` — executor.
+3. `src/lib/workflows/types.ts` — tipos do DSL.
+4. `src/lib/workflows.functions.ts` — `listWorkflows`, `saveWorkflow`, `deleteWorkflow`, `listRecentRuns`, `runEventNow` (debug).
+5. `src/routes/api/public/hooks/workflows-tick.ts` — endpoint cron.
+6. `src/routes/_authenticated/settings.workflows.tsx` — nova UI.
+7. `src/components/workflows/workflow-builder.tsx` — drawer/builder visual.
+8. `src/components/workflows/workflow-runs-list.tsx` — execuções recentes.
+9. Atualizar `docs/roadmap.md` marcando item 6 ✅.
 
-## 1.5 — Notes com @menções e anexos
+### Fora do escopo desta entrega
 
-**Schema** (migration):
-- Estender `activities` (`type='note'`) com:
-  - `mentions uuid[]` (referencia `auth.users.id`).
-  - `attachments jsonb` (já existe em `email_messages`; aqui também `[{url, name, content_type, size}]`).
-- Bucket público `notes-attachments` (storage) com RLS por `owner_id` no path.
+- Triggers temporais ("3 dias depois de…") — entra com Sequences (item 7).
+- Branching/if-else dentro das ações — sequencial linear por enquanto.
+- Versionamento de workflows.
 
-**UI**:
-- Refatorar `activity-timeline.tsx`: editor de nota usando textarea com listener de `@` que abre popover de membros do `team_members` (+ o próprio owner).
-- Upload drag-and-drop de até 5 arquivos por nota (10 MB cada). Render dos anexos como cards com download.
-- Render de menções como `<span class="mention">@nome</span>` linkando para o perfil.
-- Trigger SQL: ao criar nota com `mentions`, inserir em `notifications` (se já houver tabela — caso contrário, deixar como "sugerir Onda 3.13" e seguir sem trigger).
-
----
-
-## Ordem de execução
-
-1. 1.1.d + 1.1.e (mesma feature) — entrega Email completo end-to-end.
-2. 1.2 — Templates/snippets (alavanca para 1.4).
-3. 1.4 — Task queues.
-4. 1.5 — Notes (@menções/anexos).
-5. 1.3 — Twilio Voice por último (depende de configuração externa Twilio).
-
-Após cada bloco eu paro, atualizo o `docs/roadmap.md` e peço sua validação antes de seguir.
-
-## Detalhes técnicos relevantes
-
-- Toda lógica server-side via `createServerFn` + `requireSupabaseAuth` (padrão atual).
-- Sincronização Gmail respeita rate-limit (250 quota units/seg por usuário) — batches de 25 mensagens por tick.
-- Tracking pixel/click já implementado (1.1.c) continua válido para envios feitos via `SendEmailDialog`.
-- Twilio Voice SDK (`@twilio/voice-sdk`) é Web-compatível, sem dependências Node.
-- DOMPurify roda no client; sanitiza HTML do Gmail antes de renderizar.
-
-## Riscos / pedidos que farei durante a execução
-
-- **1.3**: precisarei dos 5 secrets Twilio + você criar a TwiML App apontando para o endpoint do step 1.3.
-- **1.5**: se quiser notificações reais (email/in-app), confirmo se isso entra agora ou fica pra Onda 3.
+Após sua validação, sigo para o item 7 (Sequences executor) reusando o mesmo executor.
