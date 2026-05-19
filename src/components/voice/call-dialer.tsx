@@ -103,9 +103,14 @@ export function CallDialer({
     }
     setStatus("connecting");
     try {
-      const { token } = await fetchToken({});
+      const tokenResult = await fetchToken({});
+      if (!tokenResult.ok) {
+        toast.error(tokenResult.error);
+        setStatus("idle");
+        return;
+      }
       const { Device } = await import("@twilio/voice-sdk");
-      const device = new Device(token, { logLevel: 1, codecPreferences: ["opus", "pcmu"] as never });
+      const device = new Device(tokenResult.token, { logLevel: 1, codecPreferences: ["opus", "pcmu"] as never });
       deviceRef.current = device;
 
       device.on("error", (err) => {
