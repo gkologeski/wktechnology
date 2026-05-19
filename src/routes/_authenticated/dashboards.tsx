@@ -47,8 +47,8 @@ function DashboardsPage() {
   const deleteW = useServerFn(deleteWidget);
   const listRep = useServerFn(listReports);
 
-  const { data: dashboards = [] } = useQuery<Dashboard[]>({ queryKey: ["dashboards"], queryFn: () => listDash() });
-  const { data: reports = [] } = useQuery<Report[]>({ queryKey: ["custom-reports"], queryFn: () => listRep() });
+  const { data: dashboards = [] } = useQuery({ queryKey: ["dashboards"], queryFn: () => listDash() as Promise<Dashboard[]> });
+  const { data: reports = [] } = useQuery({ queryKey: ["custom-reports"], queryFn: () => listRep() as unknown as Promise<Report[]> });
 
   const [activeId, setActiveId] = useState<string | null>(null);
   useEffect(() => {
@@ -58,11 +58,12 @@ function DashboardsPage() {
   }, [dashboards, activeId]);
 
   const active = dashboards.find((d) => d.id === activeId) ?? null;
-  const { data: widgets = [] } = useQuery<Widget[]>({
+  const { data: widgets = [] } = useQuery({
     queryKey: ["dashboard-widgets", activeId],
-    queryFn: () => listW({ data: { dashboard_id: activeId! } }),
+    queryFn: () => listW({ data: { dashboard_id: activeId! } }) as unknown as Promise<Widget[]>,
     enabled: !!activeId,
   });
+
 
   const [newDashOpen, setNewDashOpen] = useState(false);
   const [newName, setNewName] = useState("");
