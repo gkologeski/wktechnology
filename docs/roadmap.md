@@ -49,7 +49,7 @@
 
 ## 🟣 Onda 4 — Service / Tickets (2 semanas)
 
-16. Tickets como objeto (M)
+16. Tickets como objeto (M) ✅ — tabela `tickets` (assunto, descrição, status enum `ticket_status` new/open/waiting/resolved/closed, prioridade enum `ticket_priority` low/medium/high/urgent, fonte, contato/empresa/negócio relacionados, responsável, vencimento, resolved_at, custom_fields jsonb). RLS por owner + admins do workspace. Trigger `tickets_audit` integrada com `audit_logs`. Página `/tickets` com board kanban por status + lista com edição inline de status, busca, drawer de criação/edição com vínculos a contato/empresa/negócio. Entrada "Tickets" no grupo CRM da sidebar.
 17. Macros / respostas prontas (P)
 18. NPS/CSAT pós-resolução (M)
 19. Portal do cliente (G)

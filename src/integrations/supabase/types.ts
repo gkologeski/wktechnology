@@ -2012,6 +2012,88 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets: {
+        Row: {
+          assignee_id: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          custom_fields: Json
+          deal_id: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          owner_id: string
+          pipeline_id: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          custom_fields?: Json
+          deal_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          owner_id: string
+          pipeline_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          custom_fields?: Json
+          deal_id?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          owner_id?: string
+          pipeline_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2457,6 +2539,8 @@ export type Database = {
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
       team_role: "owner" | "admin" | "member"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status: "new" | "open" | "waiting" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2600,6 +2684,8 @@ export const Constants = {
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
       team_role: ["owner", "admin", "member"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: ["new", "open", "waiting", "resolved", "closed"],
     },
   },
 } as const
