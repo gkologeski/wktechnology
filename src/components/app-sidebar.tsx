@@ -20,6 +20,8 @@ const groups: Group[] = [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
+      { title: "Analytics", url: "/analytics", icon: TrendingUp },
+
 
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Contatos", url: "/contacts", icon: Users },
