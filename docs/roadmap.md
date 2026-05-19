@@ -41,7 +41,7 @@
 
 ## 🔵 Onda 3 — Estrutura & Permissões (2–3 semanas)
 
-11. Roles & Permissions (M) — tabela `user_roles` separada
+11. Roles & Permissions (M) ✅ — enum `app_role` (admin/manager/member), tabela `user_roles` separada (workspace_owner + user + role, único), funções `has_role` e `is_workspace_admin` (security definer, restritas a `authenticated`), RLS limitando leitura ao próprio usuário/owner e escrita só ao owner. Server functions em `src/lib/roles.functions.ts` (`listWorkspaceRoles`, `setUserRole`, `getMyRole`). Página `/settings/roles` lista membros do workspace e permite trocar role via dropdown; owner é admin fixo.
 12. Teams UI (P)
 13. Audit log (M)
 14. 2FA + session management (P)

@@ -18,6 +18,7 @@ const tabs = [
   { to: "/settings/workflows", label: "Workflows" },
   { to: "/settings/rotation", label: "Distribuição" },
   { to: "/settings/sla", label: "SLA" },
+  { to: "/settings/roles", label: "Permissões" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
 ] as const;
 
