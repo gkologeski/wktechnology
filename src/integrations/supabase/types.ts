@@ -1321,6 +1321,42 @@ export type Database = {
         }
         Relationships: []
       }
+      macros: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          owner_id: string
+          shortcut: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          owner_id?: string
+          shortcut?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          owner_id?: string
+          shortcut?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pipelines: {
         Row: {
           config: Json
