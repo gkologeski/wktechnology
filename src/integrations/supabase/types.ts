@@ -1687,6 +1687,45 @@ export type Database = {
         }
         Relationships: []
       }
+      stage_entries: {
+        Row: {
+          created_at: string
+          entered_at: string
+          entity: string
+          entity_id: string
+          exited_at: string | null
+          id: string
+          owner_id: string
+          pipeline_id: string | null
+          sla_hours: number | null
+          stage_id: string
+        }
+        Insert: {
+          created_at?: string
+          entered_at?: string
+          entity: string
+          entity_id: string
+          exited_at?: string | null
+          id?: string
+          owner_id: string
+          pipeline_id?: string | null
+          sla_hours?: number | null
+          stage_id: string
+        }
+        Update: {
+          created_at?: string
+          entered_at?: string
+          entity?: string
+          entity_id?: string
+          exited_at?: string | null
+          id?: string
+          owner_id?: string
+          pipeline_id?: string | null
+          sla_hours?: number | null
+          stage_id?: string
+        }
+        Relationships: []
+      }
       subscription_types: {
         Row: {
           created_at: string
@@ -2198,7 +2237,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      lookup_stage_sla: {
+        Args: {
+          p_entity: string
+          p_owner: string
+          p_pipeline_id: string
+          p_stage: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
