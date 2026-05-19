@@ -56,7 +56,7 @@
 
 ## 🟤 Onda 5 — Quotes & Payments (3 semanas)
 
-20. Products + Line Items (M)
+20. **Products + Line Items (M)** ✅ — tabela `products` (catálogo: nome, sku, descrição, preço unitário, moeda, taxa de imposto, unidade, ativo) com RLS por owner/admin. Tabela `deal_line_items` (quantidade, preço, desconto %, imposto %, posição) vinculada a deals/products com cascade. Trigger `dli_recompute_amount` recalcula automaticamente `deals.amount` somando `qty × preço × (1 − desc%) × (1 + imp%)`. Página `/settings/products` para CRUD do catálogo. Nova aba "Itens" no drawer de negócios com inline edit (qty/preço/desc/imp), seletor "Adicionar do catálogo", botão "Item em branco" e resumo Subtotal/Descontos/Impostos/Total. Entradas em CRM (sidebar) e nas abas de Configurações.
 21. Quotes em PDF (G)
 22. Payment link Stripe (M)
 23. E-signature (G)
