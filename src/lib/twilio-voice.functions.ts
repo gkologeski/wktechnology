@@ -70,6 +70,29 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
     if (!apiKeySid.startsWith("SK")) throw new Error("TWILIO_API_KEY_SID inválido (deve começar com SK, não AC). Crie uma API Key em Console → Account → API keys & tokens.");
     if (!twimlAppSid.startsWith("AP")) throw new Error("TWILIO_TWIML_APP_SID inválido (deve começar com AP).");
 
+    // Diagnóstico: valida o par API Key SID/Secret contra a Twilio REST API.
+    // Se a credencial não bate, retornamos um erro claro ao invés de um JWT
+    // que vai falhar como "AccessTokenInvalid (20101)" no client.
+    const probe = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Keys/${apiKeySid}.json`,
+      { headers: { Authorization: `Basic ${btoa(`${apiKeySid}:${apiKeySecret}`)}` } },
+    );
+    if (!probe.ok) {
+      const body = await probe.text();
+      console.error("[twilio-voice] credential probe failed", probe.status, body);
+      if (probe.status === 401) {
+        throw new Error(
+          "Credenciais Twilio rejeitadas (401). O TWILIO_API_KEY_SECRET não corresponde ao TWILIO_API_KEY_SID, ou a API Key não pertence ao TWILIO_ACCOUNT_SID informado. Recrie a API Key no Console (Account → API keys & tokens) na MESMA conta do Account SID e cole SID+Secret novamente.",
+        );
+      }
+      if (probe.status === 404) {
+        throw new Error(
+          "API Key não encontrada nessa conta (404). O TWILIO_API_KEY_SID existe em outra subconta diferente do TWILIO_ACCOUNT_SID.",
+        );
+      }
+      throw new Error(`Falha ao validar credenciais Twilio (${probe.status}): ${body.slice(0, 200)}`);
+    }
+
     const identity = `user_${context.userId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
     const ttl = 3600;
     const token = await signTwilioVoiceToken({
