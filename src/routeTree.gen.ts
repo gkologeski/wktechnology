@@ -44,6 +44,8 @@ import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
+import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
+import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -240,6 +242,18 @@ const ApiPublicHooksHubspotTickRoute =
     path: '/api/public/hooks/hubspot-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicEmailPixelMessageIdRoute =
+  ApiPublicEmailPixelMessageIdRouteImport.update({
+    id: '/api/public/email/pixel/$messageId',
+    path: '/api/public/email/pixel/$messageId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicEmailClickMessageIdRoute =
+  ApiPublicEmailClickMessageIdRouteImport.update({
+    id: '/api/public/email/click/$messageId',
+    path: '/api/public/email/click/$messageId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -276,6 +290,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
+  '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -310,6 +326,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
+  '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -348,6 +366,8 @@ export interface FileRoutesById {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
+  '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -386,6 +406,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/email/click/$messageId'
+    | '/api/public/email/pixel/$messageId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -420,6 +442,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/email/click/$messageId'
+    | '/api/public/email/pixel/$messageId'
   id:
     | '__root__'
     | '/'
@@ -457,6 +481,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/email/click/$messageId'
+    | '/api/public/email/pixel/$messageId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -470,6 +496,8 @@ export interface RootRouteChildren {
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
+  ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
+  ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -719,6 +747,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksHubspotTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/email/pixel/$messageId': {
+      id: '/api/public/email/pixel/$messageId'
+      path: '/api/public/email/pixel/$messageId'
+      fullPath: '/api/public/email/pixel/$messageId'
+      preLoaderRoute: typeof ApiPublicEmailPixelMessageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/email/click/$messageId': {
+      id: '/api/public/email/click/$messageId'
+      path: '/api/public/email/click/$messageId'
+      fullPath: '/api/public/email/click/$messageId'
+      preLoaderRoute: typeof ApiPublicEmailClickMessageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -828,6 +870,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
+  ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
+  ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

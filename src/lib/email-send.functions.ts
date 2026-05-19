@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -9,6 +10,7 @@ import {
   gmailSendRaw,
   type EmailAccountRow,
 } from "@/lib/gmail.server";
+import { injectTracking } from "@/lib/email-tracking.server";
 
 const emailListSchema = z
   .union([z.string(), z.array(z.string())])
@@ -47,14 +49,21 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
 
     const accessToken = await ensureAccessToken(account);
 
+    const messageDbId = randomUUID();
+    const tracked = injectTracking({
+      messageId: messageDbId,
+      bodyHtml: data.body_html,
+      bodyText: data.body_text,
+    });
+
     const raw = buildRawMime({
       from: account.email,
       to: data.to,
       cc: data.cc,
       bcc: data.bcc,
       subject: data.subject,
-      bodyHtml: data.body_html,
-      bodyText: data.body_text,
+      bodyHtml: tracked.html,
+      bodyText: tracked.text,
     });
 
     const sent = await gmailSendRaw(accessToken, raw);
@@ -107,6 +116,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     }
 
     const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
+      id: messageDbId,
       owner_id: context.userId,
       account_id: account.id,
       thread_id: threadDbId,
@@ -118,8 +128,8 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       cc_emails: data.cc ?? [],
       bcc_emails: data.bcc ?? [],
       subject: data.subject,
-      body_html: data.body_html ?? null,
-      body_text: data.body_text ?? null,
+      body_html: tracked.html,
+      body_text: tracked.text,
       snippet,
       sent_at: nowIso,
     });
@@ -135,5 +145,5 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       .update({ message_count: count ?? 1 })
       .eq("id", threadDbId);
 
-    return { ok: true, thread_id: threadDbId, gmail_message_id: sent.id };
+    return { ok: true, thread_id: threadDbId, message_id: messageDbId, gmail_message_id: sent.id };
   });
