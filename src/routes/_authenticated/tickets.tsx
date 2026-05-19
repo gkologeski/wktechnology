@@ -19,7 +19,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, LayoutGrid, List as ListIcon, Trash2 } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Trash2, Wand2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
@@ -102,6 +106,27 @@ function TicketsPage() {
     queryKey: ["deals", "select"],
     queryFn: async () => (await supabase.from("deals").select("id,name").order("name")).data ?? [],
   });
+  const { data: macros = [] } = useQuery({
+    queryKey: ["macros", "enabled"],
+    queryFn: async () =>
+      (await supabase.from("macros").select("id,name,shortcut,category,body").eq("enabled", true).order("name")).data ?? [],
+  });
+
+  function applyMacro(body: string) {
+    const contact = contacts.find((c) => c.id === draft.contact_id);
+    const company = companies.find((c) => c.id === draft.company_id);
+    const firstName = contact?.first_name ?? "";
+    const fullName = contact ? `${contact.first_name} ${contact.last_name ?? ""}`.trim() : "";
+    const text = body
+      .replaceAll("{{contact_first_name}}", firstName)
+      .replaceAll("{{contact_name}}", fullName)
+      .replaceAll("{{company_name}}", company?.name ?? "")
+      .replaceAll("{{ticket_subject}}", draft.subject ?? "")
+      .replaceAll("{{agent_name}}", user?.email ?? "");
+    const current = draft.description ?? "";
+    setDraft({ ...draft, description: current ? `${current}\n\n${text}` : text });
+    toast.success("Macro aplicada.");
+  }
 
   const contactName = (id: string | null) => {
     if (!id) return "—";
@@ -319,7 +344,29 @@ function TicketsPage() {
               <Input value={draft.subject ?? ""} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Descrição</Label>
+              <div className="flex items-center justify-between">
+                <Label>Descrição</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" size="sm" className="h-7">
+                      <Wand2 className="h-3.5 w-3.5 mr-1" /> Aplicar macro
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-80 overflow-auto w-64">
+                    <DropdownMenuLabel>Respostas prontas</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {macros.length === 0 && (
+                      <div className="px-2 py-3 text-xs text-muted-foreground">Nenhuma macro ativa.</div>
+                    )}
+                    {macros.map((m) => (
+                      <DropdownMenuItem key={m.id} onSelect={() => applyMacro(m.body)} className="flex flex-col items-start gap-0.5">
+                        <span className="text-sm">{m.name}</span>
+                        {m.category && <span className="text-[10px] text-muted-foreground">{m.category}</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <Textarea rows={4} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
             <div className="space-y-1.5">
