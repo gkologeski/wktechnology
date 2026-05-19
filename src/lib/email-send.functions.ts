@@ -38,7 +38,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
       .from("email_accounts")
-      .select("id, owner_id, email, access_token, refresh_token, expires_at, status")
+      .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
       .eq("owner_id", context.userId)
       .eq("provider", "gmail");
     if (data.account_id) q = q.eq("id", data.account_id);
