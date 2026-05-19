@@ -25,7 +25,8 @@ function TeamsPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const removeFn = useServerFn(removeTeamMember);
 
-  const [rows, setRows] = useState<Awaited<ReturnType<typeof listTeamMembers>>>([]);
+  type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
