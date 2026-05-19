@@ -116,6 +116,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     }
 
     const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
+      id: messageDbId,
       owner_id: context.userId,
       account_id: account.id,
       thread_id: threadDbId,
@@ -127,8 +128,8 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       cc_emails: data.cc ?? [],
       bcc_emails: data.bcc ?? [],
       subject: data.subject,
-      body_html: data.body_html ?? null,
-      body_text: data.body_text ?? null,
+      body_html: tracked.html,
+      body_text: tracked.text,
       snippet,
       sent_at: nowIso,
     });
