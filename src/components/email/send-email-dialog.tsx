@@ -1,11 +1,13 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send } from "lucide-react";
+import { Mail, Send, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { listEmailAccounts } from "@/lib/email-accounts.functions";
+import { listEmailTemplates, listEmailSnippets } from "@/lib/email-templates.functions";
+import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +20,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 
 type Props = {
@@ -27,6 +35,7 @@ type Props = {
   dealId?: string;
   companyId?: string;
   contactName?: string;
+  tokenContext?: TokenContext;
   trigger?: ReactNode;
   onSent?: (threadId: string) => void;
 };
@@ -38,6 +47,7 @@ export function SendEmailDialog({
   dealId,
   companyId,
   contactName,
+  tokenContext,
   trigger,
   onSent,
 }: Props) {
@@ -49,11 +59,23 @@ export function SendEmailDialog({
   const [body, setBody] = useState("");
 
   const listAccounts = useServerFn(listEmailAccounts);
+  const listTemplates = useServerFn(listEmailTemplates);
+  const listSnippets = useServerFn(listEmailSnippets);
   const sendFn = useServerFn(sendGmailEmail);
 
   const accountsQ = useQuery({
     queryKey: ["email_accounts"],
     queryFn: () => listAccounts(),
+    enabled: open,
+  });
+  const templatesQ = useQuery({
+    queryKey: ["email_templates"],
+    queryFn: () => listTemplates(),
+    enabled: open,
+  });
+  const snippetsQ = useQuery({
+    queryKey: ["email_snippets"],
+    queryFn: () => listSnippets(),
     enabled: open,
   });
 
@@ -63,15 +85,41 @@ export function SendEmailDialog({
 
   const account = accountsQ.data?.items?.find((a) => a.status === "connected");
 
+  const ctx = useMemo<TokenContext>(
+    () => ({
+      first_name: tokenContext?.first_name ?? contactName?.split(" ")[0] ?? "",
+      last_name: tokenContext?.last_name ?? "",
+      full_name: tokenContext?.full_name ?? contactName ?? "",
+      email: tokenContext?.email ?? defaultTo,
+      company: tokenContext?.company ?? "",
+    }),
+    [tokenContext, contactName, defaultTo],
+  );
+
+  const applyTemplate = (id: string) => {
+    const t = templatesQ.data?.items.find((x) => x.id === id);
+    if (!t) return;
+    setSubject(renderTokens(t.subject ?? "", ctx));
+    setBody(renderTokens(t.body_text ?? "", ctx));
+    toast.success(`Template "${t.name}" aplicado`);
+  };
+
+  const finalBody = useMemo(() => {
+    const snips = snippetsQ.data?.items ?? [];
+    return expandSnippets(renderTokens(body, ctx), snips);
+  }, [body, ctx, snippetsQ.data]);
+
+  const finalSubject = useMemo(() => renderTokens(subject, ctx), [subject, ctx]);
+
   const sendMut = useMutation({
     mutationFn: () =>
       sendFn({
         data: {
           to,
           cc: cc.trim() ? cc : undefined,
-          subject,
-          body_text: body,
-          body_html: `<div style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escape(body)}</div>`,
+          subject: finalSubject,
+          body_text: finalBody,
+          body_html: `<div style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escape(finalBody)}</div>`,
           contact_id: contactId,
           lead_id: leadId,
           deal_id: dealId,
@@ -119,6 +167,26 @@ export function SendEmailDialog({
           </div>
         ) : (
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" disabled={!templatesQ.data?.items.length}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {templatesQ.data?.items.length ? "Usar template" : "Sem templates"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {templatesQ.data?.items.map((t) => (
+                    <DropdownMenuItem key={t.id} onSelect={() => applyTemplate(t.id)}>
+                      {t.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Link to="/settings/email-templates" className="text-xs underline text-muted-foreground">
+                Gerenciar
+              </Link>
+            </div>
             <div>
               <Label>Para</Label>
               <Input
@@ -136,7 +204,12 @@ export function SendEmailDialog({
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
             </div>
             <div>
-              <Label>Mensagem</Label>
+              <Label>
+                Mensagem{" "}
+                <span className="text-xs text-muted-foreground">
+                  · tokens <code>{"{{first_name}}"}</code> · snippets <code>/atalho</code>
+                </span>
+              </Label>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} />
             </div>
           </div>
@@ -145,7 +218,7 @@ export function SendEmailDialog({
         <DialogFooter>
           <Button
             onClick={() => sendMut.mutate()}
-            disabled={!account || !to || !subject.trim() || !body.trim() || sendMut.isPending}
+            disabled={!account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending}
           >
             <Send className="mr-2 h-4 w-4" />
             {sendMut.isPending ? "Enviando…" : "Enviar"}

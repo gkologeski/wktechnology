@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
+          attachments: Json
           body: string | null
           completed: boolean
           created_at: string
@@ -33,6 +34,7 @@ export type Database = {
           id: string
           meeting_location: string | null
           meeting_outcome: string | null
+          mentions: string[]
           outcome: string | null
           outcome_set_at: string | null
           owner_id: string
@@ -48,6 +50,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json
           body?: string | null
           completed?: boolean
           created_at?: string
@@ -65,6 +68,7 @@ export type Database = {
           id?: string
           meeting_location?: string | null
           meeting_outcome?: string | null
+          mentions?: string[]
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id: string
@@ -80,6 +84,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json
           body?: string | null
           completed?: boolean
           created_at?: string
@@ -97,6 +102,7 @@ export type Database = {
           id?: string
           meeting_location?: string | null
           meeting_outcome?: string | null
+          mentions?: string[]
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id?: string
@@ -786,6 +792,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_snippets: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          owner_id: string
+          shortcut: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          shortcut: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          shortcut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       email_threads: {
         Row: {
@@ -1594,6 +1660,86 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+        }
+        Relationships: []
+      }
+      task_queue_items: {
+        Row: {
+          activity_id: string | null
+          completed_at: string | null
+          contact_id: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          owner_id: string
+          position: number
+          queue_id: string
+          skipped_at: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          position?: number
+          queue_id: string
+          skipped_at?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          position?: number
+          queue_id?: string
+          skipped_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_queue_items_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "task_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_queues: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
