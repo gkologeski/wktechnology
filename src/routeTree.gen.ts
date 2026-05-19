@@ -26,6 +26,7 @@ import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
+import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
@@ -159,6 +160,11 @@ const AuthenticatedIntegrationsRoute =
 const AuthenticatedDealsRoute = AuthenticatedDealsRouteImport.update({
   id: '/deals',
   path: '/deals',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardsRoute = AuthenticatedDashboardsRouteImport.update({
+  id: '/dashboards',
+  path: '/dashboards',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -459,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/companies': typeof AuthenticatedCompaniesRoute
   '/contacts': typeof AuthenticatedContactsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -526,6 +533,7 @@ export interface FileRoutesByTo {
   '/companies': typeof AuthenticatedCompaniesRoute
   '/contacts': typeof AuthenticatedContactsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
@@ -593,6 +601,7 @@ export interface FileRoutesById {
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
   '/_authenticated/contacts': typeof AuthenticatedContactsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -662,6 +671,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/contacts'
     | '/dashboard'
+    | '/dashboards'
     | '/deals'
     | '/integrations'
     | '/leads'
@@ -729,6 +739,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/contacts'
     | '/dashboard'
+    | '/dashboards'
     | '/deals'
     | '/leads'
     | '/notes'
@@ -795,6 +806,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies'
     | '/_authenticated/contacts'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dashboards'
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
     | '/_authenticated/leads'
@@ -997,6 +1009,13 @@ declare module '@tanstack/react-router' {
       path: '/deals'
       fullPath: '/deals'
       preLoaderRoute: typeof AuthenticatedDealsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboards': {
+      id: '/_authenticated/dashboards'
+      path: '/dashboards'
+      fullPath: '/dashboards'
+      preLoaderRoute: typeof AuthenticatedDashboardsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
@@ -1467,6 +1486,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
@@ -1485,6 +1505,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
   AuthenticatedContactsRoute: AuthenticatedContactsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,

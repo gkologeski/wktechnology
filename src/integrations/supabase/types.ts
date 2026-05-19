@@ -637,6 +637,102 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_widgets: {
+        Row: {
+          config: Json
+          created_at: string
+          dashboard_id: string
+          height: number
+          id: string
+          owner_id: string
+          position: number
+          report_id: string | null
+          title: string
+          updated_at: string
+          widget_type: string
+          width: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          dashboard_id: string
+          height?: number
+          id?: string
+          owner_id: string
+          position?: number
+          report_id?: string | null
+          title: string
+          updated_at?: string
+          widget_type?: string
+          width?: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          dashboard_id?: string
+          height?: number
+          id?: string
+          owner_id?: string
+          position?: number
+          report_id?: string | null
+          title?: string
+          updated_at?: string
+          widget_type?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_widgets_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "dashboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dashboard_widgets_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "custom_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboards: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          is_favorite: boolean
+          name: string
+          owner_id: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          is_favorite?: boolean
+          name: string
+          owner_id: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          is_favorite?: boolean
+          name?: string
+          owner_id?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_contacts: {
         Row: {
           contact_id: string
