@@ -485,7 +485,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                   <Checkbox checked={allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false} onCheckedChange={toggleAll} />
                 </TableHead>
                 {visibleColumns.map((c) => <TableHead key={String(c.key)}>{c.label}</TableHead>)}
-                <TableHead className="w-24 text-right">Ações</TableHead>
+                <TableHead className="w-32 text-right whitespace-nowrap">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -497,11 +497,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                 filtered.map((row) => {
                   const sel = selectedIds.has(row.id);
                   return (
-                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={detailPath ? "cursor-pointer" : ""} onClick={(e) => {
+                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 ${detailPath ? "cursor-pointer" : ""}`} onClick={(e) => {
                       if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
                       if (detailPath) window.location.href = detailPath(row.id);
                     }}>
-                      <TableCell data-no-row-click onClick={(e) => e.stopPropagation()}>
+                      <TableCell className="py-0 whitespace-nowrap" data-no-row-click onClick={(e) => e.stopPropagation()}>
                         <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} />
                       </TableCell>
                       {visibleColumns.map((c, ci) => {
@@ -519,7 +519,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                           c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
                         );
                         return (
-                          <TableCell key={k} data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
+                          <TableCell key={k} className="py-0 whitespace-nowrap truncate max-w-[280px]" data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
                             {isFirst ? (
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <RowAvatar label={avatarLabel(row, k, c.render)} />
@@ -533,10 +533,12 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                           </TableCell>
                         );
                       })}
-                      <TableCell className="text-right" data-no-row-click onClick={(e) => e.stopPropagation()}>
-                        {rowActions?.(row)}
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => remove(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <TableCell className="py-0 text-right whitespace-nowrap" data-no-row-click onClick={(e) => e.stopPropagation()}>
+                        <div className="inline-flex items-center gap-0.5 flex-nowrap">
+                          {rowActions?.(row)}
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
