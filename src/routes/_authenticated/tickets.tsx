@@ -344,7 +344,29 @@ function TicketsPage() {
               <Input value={draft.subject ?? ""} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Descrição</Label>
+              <div className="flex items-center justify-between">
+                <Label>Descrição</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" size="sm" className="h-7">
+                      <Wand2 className="h-3.5 w-3.5 mr-1" /> Aplicar macro
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-80 overflow-auto w-64">
+                    <DropdownMenuLabel>Respostas prontas</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {macros.length === 0 && (
+                      <div className="px-2 py-3 text-xs text-muted-foreground">Nenhuma macro ativa.</div>
+                    )}
+                    {macros.map((m) => (
+                      <DropdownMenuItem key={m.id} onSelect={() => applyMacro(m.body)} className="flex flex-col items-start gap-0.5">
+                        <span className="text-sm">{m.name}</span>
+                        {m.category && <span className="text-[10px] text-muted-foreground">{m.category}</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <Textarea rows={4} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
             <div className="space-y-1.5">
