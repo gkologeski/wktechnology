@@ -138,6 +138,7 @@ export function DealDetailDrawer({
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-5 mt-3 self-start">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
+            {!isNew && <TabsTrigger value="items"><Package className="h-3.5 w-3.5 mr-1" />Itens</TabsTrigger>}
             {!isNew && <TabsTrigger value="activity">Atividades</TabsTrigger>}
             {!isNew && hsExtras.length > 0 && (
               <TabsTrigger value="hs">
