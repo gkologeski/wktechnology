@@ -1,18 +1,19 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Mail, Plug, Trash2 } from "lucide-react";
+import { Mail, Plug, RefreshCw, Trash2 } from "lucide-react";
 import {
   listEmailAccounts,
   startGmailOAuth,
   disconnectEmailAccount,
 } from "@/lib/email-accounts.functions";
+import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 
