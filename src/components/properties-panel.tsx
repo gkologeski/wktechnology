@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { History, Pencil, Database } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
+import {
+  listCustomProperties, setCustomFieldValue, type CustomEntity,
+} from "@/lib/custom-properties.functions";
 
 export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
+
+type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
 export function PropertiesPanel<T extends Record<string, unknown> & { id: string }>({
   entity, table, row, props, onSaved,
