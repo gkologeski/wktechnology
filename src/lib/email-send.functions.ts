@@ -126,6 +126,14 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     if (mErr) throw new Error(mErr.message);
 
     // Bump message_count
-    await supabaseAdmin.rpc("set_updated_at"); // no-op safe; replace with proper increment
+    const { count } = await supabaseAdmin
+      .from("email_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("thread_id", threadDbId);
+    await supabaseAdmin
+      .from("email_threads")
+      .update({ message_count: count ?? 1 })
+      .eq("id", threadDbId);
+
     return { ok: true, thread_id: threadDbId, gmail_message_id: sent.id };
   });
