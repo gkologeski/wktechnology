@@ -32,6 +32,7 @@ import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
 import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
+import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
@@ -177,6 +178,12 @@ const AuthenticatedSettingsScoringRoute =
   AuthenticatedSettingsScoringRouteImport.update({
     id: '/scoring',
     path: '/scoring',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsRotationRoute =
+  AuthenticatedSettingsRotationRouteImport.update({
+    id: '/rotation',
+    path: '/rotation',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsPlaybooksRoute =
@@ -334,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
@@ -378,6 +386,7 @@ export interface FileRoutesByTo {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
@@ -426,6 +435,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
@@ -474,6 +484,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/pipelines'
     | '/settings/playbooks'
+    | '/settings/rotation'
     | '/settings/scoring'
     | '/settings/segments'
     | '/settings/sequences'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/pipelines'
     | '/settings/playbooks'
+    | '/settings/rotation'
     | '/settings/scoring'
     | '/settings/segments'
     | '/settings/sequences'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
+    | '/_authenticated/settings/rotation'
     | '/_authenticated/settings/scoring'
     | '/_authenticated/settings/segments'
     | '/_authenticated/settings/sequences'
@@ -769,6 +782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsScoringRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/rotation': {
+      id: '/_authenticated/settings/rotation'
+      path: '/rotation'
+      fullPath: '/settings/rotation'
+      preLoaderRoute: typeof AuthenticatedSettingsRotationRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/playbooks': {
       id: '/_authenticated/settings/playbooks'
       path: '/playbooks'
@@ -960,6 +980,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
+  AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
   AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
@@ -974,6 +995,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
+  AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
   AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
   AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,

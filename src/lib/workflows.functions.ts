@@ -27,6 +27,7 @@ const ActionSchema = z.discriminatedUnion("type", [
     due_in_days: z.number().int().min(0).max(365).optional(),
   }),
   z.object({ type: z.literal("assign_to"), user_id: z.string().uuid() }),
+  z.object({ type: z.literal("rotate_assign"), rule_id: z.string().uuid() }),
   z.object({ type: z.literal("add_to_sequence"), sequence_id: z.string().uuid() }),
   z.object({ type: z.literal("send_notification"), title: z.string().min(1).max(200), body: z.string().max(2000).optional() }),
   z.object({ type: z.literal("webhook"), url: z.string().url().max(500), payload: z.record(z.string(), z.unknown()).optional() }),

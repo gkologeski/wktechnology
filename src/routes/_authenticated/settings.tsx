@@ -16,6 +16,7 @@ const tabs = [
   { to: "/settings/segments", label: "Segmentos" },
   { to: "/settings/sequences", label: "Sequências" },
   { to: "/settings/workflows", label: "Workflows" },
+  { to: "/settings/rotation", label: "Distribuição" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
 ] as const;
 

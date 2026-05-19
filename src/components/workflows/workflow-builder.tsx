@@ -35,6 +35,7 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "set_field": return { type, field: "status", value: "" };
     case "create_activity": return { type, subject: "Nova tarefa", activity_type: "task" };
     case "assign_to": return { type, user_id: "" };
+    case "rotate_assign": return { type, rule_id: "" };
     case "add_to_sequence": return { type, sequence_id: "" };
     case "send_notification": return { type, title: "Atenção" };
     case "webhook": return { type, url: "https://" };
@@ -258,6 +259,13 @@ function ActionCard({
 
       {action.type === "assign_to" && (
         <Input value={action.user_id} onChange={(e) => onChange({ ...action, user_id: e.target.value })} placeholder="UUID do usuário" />
+      )}
+
+      {action.type === "rotate_assign" && (
+        <div className="space-y-1">
+          <Input value={action.rule_id} onChange={(e) => onChange({ ...action, rule_id: e.target.value })} placeholder="UUID da regra de rotação" />
+          <p className="text-xs text-muted-foreground">Configure regras em Configurações → Distribuição.</p>
+        </div>
       )}
 
       {action.type === "add_to_sequence" && (
