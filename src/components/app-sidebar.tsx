@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -18,6 +18,7 @@ const groups: Group[] = [
   {
     label: "CRM", icon: Users, items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
