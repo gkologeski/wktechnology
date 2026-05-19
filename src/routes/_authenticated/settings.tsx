@@ -20,6 +20,7 @@ const tabs = [
   { to: "/settings/sla", label: "SLA" },
   { to: "/settings/teams", label: "Equipe" },
   { to: "/settings/roles", label: "Permissões" },
+  { to: "/settings/audit-log", label: "Auditoria" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
 ] as const;
 
