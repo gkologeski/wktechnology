@@ -31,10 +31,29 @@ function EmailSettings() {
   const start = useServerFn(startGmailOAuth);
   const list = useServerFn(listEmailAccounts);
   const disconnect = useServerFn(disconnectEmailAccount);
+  const syncNow = useServerFn(syncMyEmailAccounts);
 
   const { data, isLoading } = useQuery({
     queryKey: ["email_accounts"],
     queryFn: () => list(),
+  });
+
+  const syncMut = useMutation({
+    mutationFn: (accountId?: string) =>
+      syncNow({ data: accountId ? { account_id: accountId } : {} }),
+    onSuccess: (res) => {
+      const inserted = res.results.reduce((a, r) => a + r.inserted, 0);
+      const errs = res.results.filter((r) => r.error);
+      if (errs.length) toast.error(`Erros: ${errs.map((e) => e.error).join("; ")}`);
+      toast.success(
+        inserted > 0
+          ? `${inserted} mensagem(ns) sincronizada(s)`
+          : "Nenhuma mensagem nova",
+      );
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+      qc.invalidateQueries({ queryKey: ["email_threads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   useEffect(() => {
