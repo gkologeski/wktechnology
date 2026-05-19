@@ -6,10 +6,11 @@ import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
-import { Sparkles, Users as UsersIcon, MessageCircle } from "lucide-react";
+import { Sparkles, Users as UsersIcon, MessageCircle, Mail } from "lucide-react";
 import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
 import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
+import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
