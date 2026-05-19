@@ -106,6 +106,27 @@ function TicketsPage() {
     queryKey: ["deals", "select"],
     queryFn: async () => (await supabase.from("deals").select("id,name").order("name")).data ?? [],
   });
+  const { data: macros = [] } = useQuery({
+    queryKey: ["macros", "enabled"],
+    queryFn: async () =>
+      (await supabase.from("macros").select("id,name,shortcut,category,body").eq("enabled", true).order("name")).data ?? [],
+  });
+
+  function applyMacro(body: string) {
+    const contact = contacts.find((c) => c.id === draft.contact_id);
+    const company = companies.find((c) => c.id === draft.company_id);
+    const firstName = contact?.first_name ?? "";
+    const fullName = contact ? `${contact.first_name} ${contact.last_name ?? ""}`.trim() : "";
+    const text = body
+      .replaceAll("{{contact_first_name}}", firstName)
+      .replaceAll("{{contact_name}}", fullName)
+      .replaceAll("{{company_name}}", company?.name ?? "")
+      .replaceAll("{{ticket_subject}}", draft.subject ?? "")
+      .replaceAll("{{agent_name}}", user?.email ?? "");
+    const current = draft.description ?? "";
+    setDraft({ ...draft, description: current ? `${current}\n\n${text}` : text });
+    toast.success("Macro aplicada.");
+  }
 
   const contactName = (id: string | null) => {
     if (!id) return "—";
