@@ -114,7 +114,10 @@ export function CallDialer({
         return;
       }
       const { Device } = await import("@twilio/voice-sdk");
-      const device = new Device(tokenResult.token, { logLevel: 1, codecPreferences: ["opus", "pcmu"] as never });
+      const device = new Device(tokenResult.token, {
+        logLevel: 1,
+        codecPreferences: ["opus", "pcmu"] as never,
+      });
       deviceRef.current = device;
 
       device.on("error", (err) => {
@@ -124,7 +127,9 @@ export function CallDialer({
 
       const call = await device.connect({ params: { To: target } });
       callRef.current = call;
-      callSidRef.current = (call as unknown as { parameters?: { CallSid?: string } }).parameters?.CallSid;
+      callSidRef.current = (
+        call as unknown as { parameters?: { CallSid?: string } }
+      ).parameters?.CallSid;
 
       setStatus("ringing");
 
@@ -158,8 +163,7 @@ export function CallDialer({
           ? e.message
           : typeof e === "string"
             ? e
-            : (e as { message?: string; code?: string | number })?.message ??
-              JSON.stringify(e);
+            : ((e as { message?: string; code?: string | number })?.message ?? JSON.stringify(e));
       toast.error(`Falha ao iniciar ligação: ${msg || "erro desconhecido"}`);
       setStatus("idle");
     }
