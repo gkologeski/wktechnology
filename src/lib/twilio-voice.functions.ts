@@ -58,14 +58,17 @@ async function signTwilioVoiceToken(opts: {
 export const getVoiceAccessToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const apiKeySid = process.env.TWILIO_API_KEY_SID;
-    const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
-    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
+    const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+    const apiKeySid = process.env.TWILIO_API_KEY_SID?.trim();
+    const apiKeySecret = process.env.TWILIO_API_KEY_SECRET?.trim();
+    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
 
     if (!accountSid || !apiKeySid || !apiKeySecret || !twimlAppSid) {
       throw new Error("Twilio Voice não está configurado (faltam secrets).");
     }
+    if (!accountSid.startsWith("AC")) throw new Error("TWILIO_ACCOUNT_SID inválido (deve começar com AC).");
+    if (!apiKeySid.startsWith("SK")) throw new Error("TWILIO_API_KEY_SID inválido (deve começar com SK, não AC). Crie uma API Key em Console → Account → API keys & tokens.");
+    if (!twimlAppSid.startsWith("AP")) throw new Error("TWILIO_TWIML_APP_SID inválido (deve começar com AP).");
 
     const identity = `user_${context.userId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
     const ttl = 3600;
