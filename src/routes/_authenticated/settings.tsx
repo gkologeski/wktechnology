@@ -9,6 +9,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 const tabs = [
   { to: "/settings", label: "Perfil" },
   { to: "/settings/email", label: "Email" },
+  { to: "/settings/email-templates", label: "Templates de Email" },
   { to: "/settings/pipelines", label: "Pipelines" },
   { to: "/settings/scoring", label: "Lead Scoring" },
   { to: "/settings/playbooks", label: "Playbooks" },
