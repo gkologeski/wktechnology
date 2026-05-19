@@ -3,9 +3,58 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Issues a short-lived Twilio Voice access token (JWT) granting the current
- * user permission to use the configured TwiML App as a WebRTC client.
+ * Builds a Twilio Voice Access Token (HS256 JWT) using Web Crypto.
+ * Avoids importing the `twilio` Node SDK, which breaks Worker SSR.
+ *
+ * Twilio AccessToken spec: https://www.twilio.com/docs/iam/access-tokens
  */
+function b64url(input: ArrayBuffer | Uint8Array | string): string {
+  let bytes: Uint8Array;
+  if (typeof input === "string") bytes = new TextEncoder().encode(input);
+  else if (input instanceof Uint8Array) bytes = input;
+  else bytes = new Uint8Array(input);
+  let str = "";
+  for (let i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+  return btoa(str).replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function signTwilioVoiceToken(opts: {
+  accountSid: string;
+  apiKeySid: string;
+  apiKeySecret: string;
+  twimlAppSid: string;
+  identity: string;
+  ttlSeconds: number;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "HS256", typ: "JWT", cty: "twilio-fpa;v=1" };
+  const payload = {
+    jti: `${opts.apiKeySid}-${now}`,
+    iss: opts.apiKeySid,
+    sub: opts.accountSid,
+    iat: now,
+    exp: now + opts.ttlSeconds,
+    grants: {
+      identity: opts.identity,
+      voice: {
+        outgoing: { application_sid: opts.twimlAppSid },
+        incoming: { allow: true },
+      },
+    },
+  };
+
+  const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(opts.apiKeySecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signingInput));
+  return `${signingInput}.${b64url(sig)}`;
+}
+
 export const getVoiceAccessToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -18,31 +67,20 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
       throw new Error("Twilio Voice não está configurado (faltam secrets).");
     }
 
-    // Identity must be URL/JWT-safe.
     const identity = `user_${context.userId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
-
-    const AccessTokenModule = await import("twilio/lib/jwt/AccessToken.js");
-    const AccessToken = (AccessTokenModule as unknown as { default: typeof import("twilio/lib/jwt/AccessToken") }).default
-      ?? (AccessTokenModule as unknown as typeof import("twilio/lib/jwt/AccessToken"));
-    const VoiceGrant = AccessToken.VoiceGrant;
-
-    const token = new AccessToken(accountSid, apiKeySid, apiKeySecret, {
+    const ttl = 3600;
+    const token = await signTwilioVoiceToken({
+      accountSid,
+      apiKeySid,
+      apiKeySecret,
+      twimlAppSid,
       identity,
-      ttl: 3600,
+      ttlSeconds: ttl,
     });
-    const grant = new VoiceGrant({
-      outgoingApplicationSid: twimlAppSid,
-      incomingAllow: true,
-    });
-    token.addGrant(grant);
 
-    return { token: token.toJwt(), identity, ttl: 3600 };
+    return { token, identity, ttl };
   });
 
-/**
- * Logs a completed call as an activity (type='call').
- * Called by the dialer when the user hangs up — captures duration + outcome.
- */
 export const logCallActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
