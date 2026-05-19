@@ -14,8 +14,9 @@ import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { DealLineItems } from "@/components/deals/deal-line-items";
+import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
-import { Database, Trash2, Package } from "lucide-react";
+import { Database, Trash2, Package, FileText } from "lucide-react";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -139,6 +140,7 @@ export function DealDetailDrawer({
           <TabsList className="mx-5 mt-3 self-start">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
             {!isNew && <TabsTrigger value="items"><Package className="h-3.5 w-3.5 mr-1" />Itens</TabsTrigger>}
+            {!isNew && <TabsTrigger value="quotes"><FileText className="h-3.5 w-3.5 mr-1" />Cotações</TabsTrigger>}
             {!isNew && <TabsTrigger value="activity">Atividades</TabsTrigger>}
             {!isNew && hsExtras.length > 0 && (
               <TabsTrigger value="hs">
@@ -261,6 +263,12 @@ export function DealDetailDrawer({
                   ownerId={ownerId!}
                   currency={String(v.currency ?? "BRL")}
                 />
+              </TabsContent>
+            )}
+
+            {!isNew && (
+              <TabsContent value="quotes" className="mt-0">
+                <DealQuotes dealId={deal!.id} />
               </TabsContent>
             )}
 
