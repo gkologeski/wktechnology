@@ -22,6 +22,7 @@ const groups: Group[] = [
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Analytics", url: "/analytics", icon: TrendingUp },
       { title: "Metas", url: "/settings/goals", icon: Target },
+      { title: "Exports agendados", url: "/settings/exports", icon: Send },
     ],
   },
   {
