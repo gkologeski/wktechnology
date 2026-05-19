@@ -143,8 +143,15 @@ export function CallDialer({
         setShowLog(true);
       });
     } catch (e) {
-      console.error(e);
-      toast.error(e instanceof Error ? e.message : "Falha ao iniciar ligação");
+      console.error("[call-dialer] start failed", e);
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+            ? e
+            : (e as { message?: string; code?: string | number })?.message ??
+              JSON.stringify(e);
+      toast.error(`Falha ao iniciar ligação: ${msg || "erro desconhecido"}`);
       setStatus("idle");
     }
   }, [fetchToken, to]);
