@@ -41,6 +41,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
+import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -240,6 +241,12 @@ const AuthenticatedSettingsEmailRoute =
     path: '/email',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsCustomPropertiesRoute =
+  AuthenticatedSettingsCustomPropertiesRouteImport.update({
+    id: '/custom-properties',
+    path: '/custom-properties',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsAuditLogRoute =
   AuthenticatedSettingsAuditLogRouteImport.update({
     id: '/audit-log',
@@ -380,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -431,6 +439,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -486,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/pipelines'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/pipelines'
@@ -646,6 +658,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/settings/audit-log'
+    | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/pipelines'
@@ -924,6 +937,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsEmailRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/custom-properties': {
+      id: '/_authenticated/settings/custom-properties'
+      path: '/custom-properties'
+      fullPath: '/settings/custom-properties'
+      preLoaderRoute: typeof AuthenticatedSettingsCustomPropertiesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/audit-log': {
       id: '/_authenticated/settings/audit-log'
       path: '/audit-log'
@@ -1098,6 +1118,7 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
+  AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -1117,6 +1138,8 @@ interface AuthenticatedSettingsRouteChildren {
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
+  AuthenticatedSettingsCustomPropertiesRoute:
+    AuthenticatedSettingsCustomPropertiesRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,

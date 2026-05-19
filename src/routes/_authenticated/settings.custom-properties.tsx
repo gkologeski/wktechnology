@@ -185,7 +185,7 @@ function PropertyDialog({
           <div className="space-y-1">
             <Label>Opções (uma por linha)</Label>
             <Textarea
-              value={(form.options ?? []).join("\n")}
+              value={((form.options as string[] | undefined) ?? []).join("\n")}
               onChange={(e) => setForm((f) => ({ ...f, options: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) }))}
               rows={5}
             />
