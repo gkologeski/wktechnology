@@ -175,6 +175,7 @@ function SubscriptionsTab() {
   const create = useServerFn(createSubscription);
   const update = useServerFn(updateSubscriptionStatus);
   const del = useServerFn(deleteSubscription);
+  const { data: subs = [] } = useQuery({ queryKey: ["subscriptions"], queryFn: () => list() });
   const listPlansFn = useServerFn(listPlans);
   const { data: plans = [] } = useQuery({ queryKey: ["recurring-plans"], queryFn: () => listPlansFn() });
 
