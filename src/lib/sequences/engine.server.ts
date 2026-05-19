@@ -92,7 +92,7 @@ export async function tickSequences(supabase: SupabaseClient, limit = 100) {
 
       const nextIdx = enr.current_step + 1;
       const next = steps[nextIdx];
-      const update: Record<string, unknown> = { current_step: nextIdx };
+      const update: { current_step: number; status?: string; next_run_at?: string | null; finished_at?: string } = { current_step: nextIdx };
       if (!next) {
         update.status = "completed";
         update.next_run_at = null;
