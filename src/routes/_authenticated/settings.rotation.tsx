@@ -115,7 +115,7 @@ function RotationPage() {
                 {!r.enabled && <Badge variant="destructive">pausada</Badge>}
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                {(r.assignees as RotationAssignee[] | null)?.length ?? 0} responsável(is) ·
+                {((r.assignees as unknown) as RotationAssignee[] | null)?.length ?? 0} responsável(is) ·
                 {" "}último: {r.last_assigned_user_id ? (nameById.get(r.last_assigned_user_id as string) ?? r.last_assigned_user_id) : "—"}
               </p>
               <div className="flex items-center gap-2 pt-1">
@@ -132,7 +132,7 @@ function RotationPage() {
                 id: r.id as string, name: r.name as string,
                 entity: r.entity as RotationEntity, enabled: r.enabled as boolean,
                 strategy: r.strategy as RotationStrategy,
-                assignees: (r.assignees as RotationAssignee[]) ?? [],
+                assignees: ((r.assignees as unknown) as RotationAssignee[]) ?? [],
               })}><Pencil className="h-4 w-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id as string)}>
                 <Trash2 className="h-4 w-4" />
