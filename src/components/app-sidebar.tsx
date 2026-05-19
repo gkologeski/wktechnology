@@ -23,6 +23,7 @@ const groups: Group[] = [
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Produtos", url: "/settings/products", icon: Package },
+      { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Filas de tarefas", url: "/tasks/queues", icon: PlayCircle },
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
