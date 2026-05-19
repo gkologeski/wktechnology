@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -30,6 +31,7 @@ import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
+import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
 import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
@@ -87,6 +89,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SurveyTokenRoute = SurveyTokenRouteImport.update({
+  id: '/survey/$token',
+  path: '/survey/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
@@ -174,6 +181,12 @@ const AuthenticatedSettingsTeamsRoute =
   AuthenticatedSettingsTeamsRouteImport.update({
     id: '/teams',
     path: '/teams',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSurveysRoute =
+  AuthenticatedSettingsSurveysRouteImport.update({
+    id: '/surveys',
+    path: '/surveys',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsSubscriptionsRoute =
@@ -394,6 +407,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -415,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -448,6 +463,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthenticatedNotesRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -469,6 +485,7 @@ export interface FileRoutesByTo {
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -506,6 +523,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/survey/$token': typeof SurveyTokenRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -527,6 +545,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
+  '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -564,6 +583,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/survey/$token'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -585,6 +605,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/sla'
     | '/settings/subscriptions'
+    | '/settings/surveys'
     | '/settings/teams'
     | '/settings/workflows'
     | '/tasks/queues'
@@ -618,6 +639,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/tasks'
     | '/tickets'
+    | '/survey/$token'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -639,6 +661,7 @@ export interface FileRouteTypes {
     | '/settings/sequences'
     | '/settings/sla'
     | '/settings/subscriptions'
+    | '/settings/surveys'
     | '/settings/teams'
     | '/settings/workflows'
     | '/tasks/queues'
@@ -675,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/survey/$token'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -696,6 +720,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/sla'
     | '/_authenticated/settings/subscriptions'
+    | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/tasks/queues'
@@ -722,6 +747,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
@@ -771,6 +797,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/survey/$token': {
+      id: '/survey/$token'
+      path: '/survey/$token'
+      fullPath: '/survey/$token'
+      preLoaderRoute: typeof SurveyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tickets': {
@@ -883,6 +916,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/settings/teams'
       preLoaderRoute: typeof AuthenticatedSettingsTeamsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/surveys': {
+      id: '/_authenticated/settings/surveys'
+      path: '/surveys'
+      fullPath: '/settings/surveys'
+      preLoaderRoute: typeof AuthenticatedSettingsSurveysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/subscriptions': {
@@ -1171,6 +1211,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
   AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
+  AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -1195,6 +1236,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,
   AuthenticatedSettingsSubscriptionsRoute:
     AuthenticatedSettingsSubscriptionsRoute,
+  AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -1275,6 +1317,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,

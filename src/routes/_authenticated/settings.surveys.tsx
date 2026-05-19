@@ -1,0 +1,158 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+export const Route = createFileRoute("/_authenticated/settings/surveys")({
+  component: SurveysPage,
+});
+
+type Survey = {
+  id: string;
+  ticket_id: string;
+  kind: "csat" | "nps";
+  token: string;
+  score: number | null;
+  comment: string | null;
+  sent_at: string;
+  responded_at: string | null;
+};
+
+function SurveysPage() {
+  const [tab, setTab] = useState<"csat" | "nps">("csat");
+
+  const { data: surveys = [], isLoading } = useQuery({
+    queryKey: ["surveys"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("survey_responses")
+        .select("id, ticket_id, kind, token, score, comment, sent_at, responded_at")
+        .order("sent_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as Survey[];
+    },
+  });
+
+  const filtered = useMemo(() => surveys.filter((s) => s.kind === tab), [surveys, tab]);
+
+  const stats = useMemo(() => {
+    const answered = filtered.filter((s) => s.score !== null);
+    if (tab === "nps") {
+      const promoters = answered.filter((s) => (s.score ?? 0) >= 9).length;
+      const detractors = answered.filter((s) => (s.score ?? 0) <= 6).length;
+      const nps = answered.length ? Math.round(((promoters - detractors) / answered.length) * 100) : null;
+      return { total: filtered.length, answered: answered.length, nps, avg: null as number | null };
+    }
+    const avg = answered.length
+      ? answered.reduce((a, s) => a + (s.score ?? 0), 0) / answered.length
+      : null;
+    return { total: filtered.length, answered: answered.length, nps: null, avg };
+  }, [filtered, tab]);
+
+  function copyLink(token: string) {
+    const url = `${window.location.origin}/survey/${token}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiado.");
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Pesquisas pós-resolução</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao cliente.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+            <TabsList>
+              <TabsTrigger value="csat">CSAT</TabsTrigger>
+              <TabsTrigger value="nps">NPS</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            <Stat label="Convites" value={String(stats.total)} />
+            <Stat label="Respondidas" value={String(stats.answered)} />
+            {tab === "nps" ? (
+              <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
+            ) : (
+              <Stat label="Média (0–5)" value={stats.avg !== null ? stats.avg.toFixed(2) : "—"} />
+            )}
+            <Stat
+              label="Taxa de resposta"
+              value={stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Enviado</TableHead>
+                <TableHead>Score</TableHead>
+                <TableHead>Comentário</TableHead>
+                <TableHead>Respondido</TableHead>
+                <TableHead className="w-[1%]" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+              )}
+              {!isLoading && filtered.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma pesquisa.</TableCell></TableRow>
+              )}
+              {filtered.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(s.sent_at).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell>
+                    {s.score !== null ? (
+                      <Badge variant={
+                        tab === "nps"
+                          ? (s.score >= 9 ? "default" : s.score <= 6 ? "destructive" : "secondary")
+                          : (s.score >= 4 ? "default" : s.score >= 3 ? "secondary" : "destructive")
+                      }>{s.score}</Badge>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {s.responded_at ? new Date(s.responded_at).toLocaleString("pt-BR") : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => copyLink(s.token)} title="Copiar link público">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-2xl font-semibold mt-1">{value}</div>
+    </div>
+  );
+}

@@ -23,6 +23,7 @@ const tabs = [
   { to: "/settings/roles", label: "Permissões" },
   { to: "/settings/audit-log", label: "Auditoria" },
   { to: "/settings/macros", label: "Macros" },
+  { to: "/settings/surveys", label: "Pesquisas" },
   { to: "/settings/security", label: "Segurança" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
 ] as const;

@@ -1944,6 +1944,48 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_responses: {
+        Row: {
+          comment: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          owner_id: string
+          responded_at: string | null
+          score: number | null
+          sent_at: string
+          ticket_id: string
+          token: string
+        }
+        Insert: {
+          comment?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id: string
+          responded_at?: string | null
+          score?: number | null
+          sent_at?: string
+          ticket_id: string
+          token?: string
+        }
+        Update: {
+          comment?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          responded_at?: string | null
+          score?: number | null
+          sent_at?: string
+          ticket_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       task_queue_items: {
         Row: {
           activity_id: string | null
