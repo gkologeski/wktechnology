@@ -1641,6 +1641,159 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_line_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_pct: number
+          id: string
+          name: string
+          owner_id: string
+          position: number
+          quantity: number
+          quote_id: string
+          tax_rate: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number
+          id?: string
+          name: string
+          owner_id: string
+          position?: number
+          quantity?: number
+          quote_id: string
+          tax_rate?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number
+          id?: string
+          name?: string
+          owner_id?: string
+          position?: number
+          quantity?: number
+          quote_id?: string
+          tax_rate?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_line_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          accepted_at: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string | null
+          declined_at: string | null
+          discount_total: number
+          id: string
+          notes: string | null
+          number: string
+          owner_id: string
+          public_token: string
+          sent_at: string | null
+          signature_name: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_total: number
+          terms: string | null
+          title: string | null
+          total: number
+          updated_at: string
+          valid_until: string | null
+          view_count: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          declined_at?: string | null
+          discount_total?: number
+          id?: string
+          notes?: string | null
+          number: string
+          owner_id: string
+          public_token: string
+          sent_at?: string | null
+          signature_name?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_total?: number
+          terms?: string | null
+          title?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+          view_count?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          declined_at?: string | null
+          discount_total?: number
+          id?: string
+          notes?: string | null
+          number?: string
+          owner_id?: string
+          public_token?: string
+          sent_at?: string | null
+          signature_name?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_total?: number
+          terms?: string | null
+          title?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_layouts: {
         Row: {
           created_at: string
@@ -2730,6 +2883,7 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       team_role: "owner" | "admin" | "member"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "new" | "open" | "waiting" | "resolved" | "closed"
@@ -2875,6 +3029,7 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      quote_status: ["draft", "sent", "accepted", "declined", "expired"],
       team_role: ["owner", "admin", "member"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["new", "open", "waiting", "resolved", "closed"],
