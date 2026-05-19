@@ -44,6 +44,7 @@ import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
+import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
@@ -246,6 +247,12 @@ const ApiPublicOauthGoogleCallbackRoute =
     path: '/api/public/oauth/google-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWorkflowsTickRoute =
+  ApiPublicHooksWorkflowsTickRouteImport.update({
+    id: '/api/public/hooks/workflows-tick',
+    path: '/api/public/hooks/workflows-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWhatsappCampaignTickRoute =
   ApiPublicHooksWhatsappCampaignTickRouteImport.update({
     id: '/api/public/hooks/whatsapp-campaign-tick',
@@ -333,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
+  '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -375,6 +383,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
+  '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -421,6 +430,7 @@ export interface FileRoutesById {
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
+  '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
+    | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
@@ -509,6 +520,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
+    | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
@@ -554,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
+    | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/_authenticated/tasks/queues/$queueId/play'
@@ -572,6 +585,7 @@ export interface RootRouteChildren {
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
+  ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
@@ -825,6 +839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/workflows-tick': {
+      id: '/api/public/hooks/workflows-tick'
+      path: '/api/public/hooks/workflows-tick'
+      fullPath: '/api/public/hooks/workflows-tick'
+      preLoaderRoute: typeof ApiPublicHooksWorkflowsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/whatsapp-campaign-tick': {
       id: '/api/public/hooks/whatsapp-campaign-tick'
       path: '/api/public/hooks/whatsapp-campaign-tick'
@@ -1021,6 +1042,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksTwilioWhatsappStatusRoute,
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
+  ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
@@ -1029,13 +1051,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

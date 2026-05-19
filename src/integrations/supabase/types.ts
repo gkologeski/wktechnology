@@ -2019,6 +2019,96 @@ export type Database = {
           },
         ]
       }
+      workflow_events: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity: string
+          entity_id: string
+          event_type: string
+          id: string
+          owner_id: string
+          processed_at: string | null
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity: string
+          entity_id: string
+          event_type: string
+          id?: string
+          owner_id: string
+          processed_at?: string | null
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          event_type?: string
+          id?: string
+          owner_id?: string
+          processed_at?: string | null
+        }
+        Relationships: []
+      }
+      workflow_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_id: string
+          finished_at: string | null
+          id: string
+          log: Json
+          owner_id: string
+          started_at: string | null
+          status: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_id: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          owner_id: string
+          started_at?: string | null
+          status?: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_id?: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          owner_id?: string
+          started_at?: string | null
+          status?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflows: {
         Row: {
           actions: Json
