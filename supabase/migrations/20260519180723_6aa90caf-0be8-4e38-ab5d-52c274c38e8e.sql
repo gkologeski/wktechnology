@@ -1,0 +1,1 @@
+revoke execute on function public.log_audit_event() from public, anon, authenticated;
