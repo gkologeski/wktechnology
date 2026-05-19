@@ -335,9 +335,16 @@ function WidgetCard({ widget, reports, onEdit, onDelete }: {
   });
 
   const colSpan = useMemo(() => {
-    const w = Math.min(12, Math.max(3, widget.width));
-    return `col-span-12 md:col-span-${w}`;
+    const map: Record<number, string> = {
+      3: "col-span-12 md:col-span-3",
+      4: "col-span-12 md:col-span-4",
+      6: "col-span-12 md:col-span-6",
+      8: "col-span-12 md:col-span-8",
+      12: "col-span-12",
+    };
+    return map[widget.width] ?? "col-span-12 md:col-span-6";
   }, [widget.width]);
+
 
   const cfg = (report?.config ?? {}) as { chartType?: string };
   const chartType = cfg.chartType ?? "bar";
