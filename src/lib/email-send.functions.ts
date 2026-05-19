@@ -49,14 +49,21 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
 
     const accessToken = await ensureAccessToken(account);
 
+    const messageDbId = randomUUID();
+    const tracked = injectTracking({
+      messageId: messageDbId,
+      bodyHtml: data.body_html,
+      bodyText: data.body_text,
+    });
+
     const raw = buildRawMime({
       from: account.email,
       to: data.to,
       cc: data.cc,
       bcc: data.bcc,
       subject: data.subject,
-      bodyHtml: data.body_html,
-      bodyText: data.body_text,
+      bodyHtml: tracked.html,
+      bodyText: tracked.text,
     });
 
     const sent = await gmailSendRaw(accessToken, raw);
