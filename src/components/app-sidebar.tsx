@@ -55,6 +55,7 @@ const groups: Group[] = [
   {
     label: "Dados", icon: GitBranch, items: [
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
+      { title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
       { title: "Integrações", url: "/integrations", icon: Plug },
     ],
   },
