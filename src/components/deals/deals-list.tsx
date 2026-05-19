@@ -68,7 +68,7 @@ export function DealsList({
                 </TableRow>
                 {!isCollapsed &&
                   rows.map((d) => (
-                    <TableRow key={d.id} className="cursor-pointer hover:bg-accent/40" onClick={() => onOpen(d)}>
+                    <TableRow key={d.id} className="cursor-pointer" onClick={() => onOpen(d)}>
                       <TableCell className="font-medium">{d.name}</TableCell>
                       <TableCell className="text-sm">{d.company_id ? lookups.companies.get(d.company_id) ?? "—" : "—"}</TableCell>
                       <TableCell className="text-sm">{d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) ?? "—" : "—"}</TableCell>
