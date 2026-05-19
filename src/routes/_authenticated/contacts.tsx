@@ -6,9 +6,10 @@ import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
-import { Sparkles, Users as UsersIcon, MessageCircle, Mail } from "lucide-react";
+import { Sparkles, Users as UsersIcon, MessageCircle, Mail, Phone } from "lucide-react";
 import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
 import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
+import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
@@ -105,6 +106,18 @@ function ContactsPage() {
                 trigger={
                   <Button size="icon" variant="ghost" title="Enviar email">
                     <Mail className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            )}
+            {phone && (
+              <CallDialer
+                defaultTo={phone}
+                contactId={row.id}
+                contactName={name}
+                trigger={
+                  <Button size="icon" variant="ghost" title="Ligar">
+                    <Phone className="h-4 w-4" />
                   </Button>
                 }
               />
