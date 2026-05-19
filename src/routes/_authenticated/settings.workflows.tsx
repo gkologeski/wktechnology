@@ -47,7 +47,7 @@ function WorkflowsPage() {
     setLoading(true);
     try {
       const [w, r] = await Promise.all([listFn(), runsFn({ data: { limit: 20 } })]);
-      setRows(w as WorkflowRow[]);
+      setRows(w as unknown as WorkflowRow[]);
       setRuns(r);
     } finally { setLoading(false); }
   };
