@@ -27,6 +27,7 @@ export type WorkflowAction =
   | { type: "set_field"; field: string; value: unknown }
   | { type: "create_activity"; activity_type?: string; subject: string; body?: string; due_in_days?: number }
   | { type: "assign_to"; user_id: string }
+  | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
   | { type: "send_notification"; title: string; body?: string }
   | { type: "webhook"; url: string; payload?: Record<string, unknown> };
@@ -50,6 +51,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   set_field: "Atualizar campo",
   create_activity: "Criar atividade",
   assign_to: "Atribuir a usuário",
+  rotate_assign: "Distribuir via regra (rotação)",
   add_to_sequence: "Adicionar a sequência",
   send_notification: "Enviar notificação",
   webhook: "Disparar webhook",
