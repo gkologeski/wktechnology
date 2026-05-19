@@ -11,6 +11,7 @@ const tabs = [
   { to: "/settings/email", label: "Email" },
   { to: "/settings/email-templates", label: "Templates de Email" },
   { to: "/settings/pipelines", label: "Pipelines" },
+  { to: "/settings/custom-properties", label: "Propriedades" },
   { to: "/settings/scoring", label: "Lead Scoring" },
   { to: "/settings/playbooks", label: "Playbooks" },
   { to: "/settings/segments", label: "Segmentos" },

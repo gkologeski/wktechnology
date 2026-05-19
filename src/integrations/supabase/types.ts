@@ -195,6 +195,7 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          custom_fields: Json
           description: string | null
           domain: string | null
           external_ids: Json
@@ -231,6 +232,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          custom_fields?: Json
           description?: string | null
           domain?: string | null
           external_ids?: Json
@@ -267,6 +269,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          custom_fields?: Json
           description?: string | null
           domain?: string | null
           external_ids?: Json
@@ -346,6 +349,7 @@ export type Database = {
           consent_date: string | null
           country: string | null
           created_at: string
+          custom_fields: Json
           email: string | null
           external_ids: Json
           first_name: string
@@ -382,6 +386,7 @@ export type Database = {
           consent_date?: string | null
           country?: string | null
           created_at?: string
+          custom_fields?: Json
           email?: string | null
           external_ids?: Json
           first_name: string
@@ -418,6 +423,7 @@ export type Database = {
           consent_date?: string | null
           country?: string | null
           created_at?: string
+          custom_fields?: Json
           email?: string | null
           external_ids?: Json
           first_name?: string
@@ -544,6 +550,51 @@ export type Database = {
           },
         ]
       }
+      custom_properties: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          entity: string
+          id: string
+          key: string
+          label: string
+          options: Json
+          owner_id: string
+          position: number
+          required: boolean
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          id?: string
+          key: string
+          label: string
+          options?: Json
+          owner_id?: string
+          position?: number
+          required?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          id?: string
+          key?: string
+          label?: string
+          options?: Json
+          owner_id?: string
+          position?: number
+          required?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_contacts: {
         Row: {
           contact_id: string
@@ -581,6 +632,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           currency: string
+          custom_fields: Json
           dealtype: string | null
           description: string | null
           expected_close_date: string | null
@@ -610,6 +662,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           currency?: string
+          custom_fields?: Json
           dealtype?: string | null
           description?: string | null
           expected_close_date?: string | null
@@ -639,6 +692,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           currency?: string
+          custom_fields?: Json
           dealtype?: string | null
           description?: string | null
           expected_close_date?: string | null
@@ -1184,6 +1238,7 @@ export type Database = {
           converted_contact_id: string | null
           converted_deal_id: string | null
           created_at: string
+          custom_fields: Json
           email: string | null
           external_ids: Json
           first_name: string
@@ -1212,6 +1267,7 @@ export type Database = {
           converted_contact_id?: string | null
           converted_deal_id?: string | null
           created_at?: string
+          custom_fields?: Json
           email?: string | null
           external_ids?: Json
           first_name: string
@@ -1240,6 +1296,7 @@ export type Database = {
           converted_contact_id?: string | null
           converted_deal_id?: string | null
           created_at?: string
+          custom_fields?: Json
           email?: string | null
           external_ids?: Json
           first_name?: string
