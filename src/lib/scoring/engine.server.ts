@@ -1,0 +1,154 @@
+// Scoring engine: avalia regras de pontuação contra eventos da fila
+// workflow_events (reaproveitando a infraestrutura) e aplica pontos
+// idempotentemente em leads/contacts/companies.
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type AnyRow = Record<string, unknown>;
+type ScoringEntity = "leads" | "contacts" | "companies";
+
+const ENTITY_TO_RULE: Record<ScoringEntity, "lead" | "contact" | "company"> = {
+  leads: "lead",
+  contacts: "contact",
+  companies: "company",
+};
+
+interface Condition {
+  field?: string;
+  op?: string;
+  value?: unknown;
+}
+
+function getField(obj: AnyRow | null | undefined, path: string): unknown {
+  if (!obj || !path) return undefined;
+  return path.split(".").reduce<unknown>((acc, k) => {
+    if (acc && typeof acc === "object") return (acc as AnyRow)[k];
+    return undefined;
+  }, obj);
+}
+
+function evalCondition(c: Condition, after: AnyRow | null, before: AnyRow | null): boolean {
+  if (!c?.field || !c?.op) return false;
+  const v = getField(after, c.field);
+  switch (c.op) {
+    case "eq": return v === c.value;
+    case "neq": return v !== c.value;
+    case "in": {
+      const list = Array.isArray(c.value)
+        ? c.value
+        : String(c.value ?? "").split(",").map((s) => s.trim());
+      return list.includes(v as never);
+    }
+    case "contains":
+      return typeof v === "string" && v.toLowerCase().includes(String(c.value ?? "").toLowerCase());
+    case "gt": return typeof v === "number" && typeof c.value === "number" && v > c.value;
+    case "lt": return typeof v === "number" && typeof c.value === "number" && v < c.value;
+    case "changed_to": {
+      const prev = getField(before, c.field);
+      return v === c.value && prev !== c.value;
+    }
+    case "is_empty": return v == null || v === "";
+    case "is_not_empty": return v != null && v !== "";
+    default: return false;
+  }
+}
+
+interface TickResult { owners: number; events: number; applied: number; }
+
+export async function tickScoring(supabase: SupabaseClient, batchPerOwner = 200): Promise<TickResult> {
+  const result: TickResult = { owners: 0, events: 0, applied: 0 };
+
+  // Donos que têm pelo menos uma regra ativa.
+  const { data: ownersRows, error: oErr } = await supabase
+    .from("scoring_rules")
+    .select("owner_id")
+    .eq("enabled", true);
+  if (oErr) throw new Error(oErr.message);
+  const owners = Array.from(new Set((ownersRows ?? []).map((r) => r.owner_id as string)));
+  result.owners = owners.length;
+
+  for (const ownerId of owners) {
+    // cursor
+    const { data: cur } = await supabase
+      .from("scoring_cursors")
+      .select("last_event_at")
+      .eq("owner_id", ownerId)
+      .maybeSingle();
+    const since = (cur?.last_event_at as string) ?? "1970-01-01T00:00:00Z";
+
+    const { data: events, error: eErr } = await supabase
+      .from("workflow_events")
+      .select("id, entity, entity_id, event_type, before, after, created_at")
+      .eq("owner_id", ownerId)
+      .gt("created_at", since)
+      .in("entity", ["leads", "contacts", "companies"])
+      .order("created_at", { ascending: true })
+      .limit(batchPerOwner);
+    if (eErr) { console.error("[scoring] events", eErr); continue; }
+    if (!events?.length) continue;
+
+    const { data: rules, error: rErr } = await supabase
+      .from("scoring_rules")
+      .select("id, name, entity, condition, points, enabled")
+      .eq("owner_id", ownerId)
+      .eq("enabled", true);
+    if (rErr) { console.error("[scoring] rules", rErr); continue; }
+
+    let maxAt = since;
+    for (const ev of events) {
+      result.events += 1;
+      const evEntity = ev.entity as ScoringEntity;
+      if (ev.created_at && (ev.created_at as string) > maxAt) maxAt = ev.created_at as string;
+
+      const ruleEntity = ENTITY_TO_RULE[evEntity];
+      const matching = (rules ?? []).filter((r) => r.entity === ruleEntity);
+      for (const rule of matching) {
+        const ok = evalCondition(
+          (rule.condition as Condition) ?? {},
+          (ev.after as AnyRow) ?? null,
+          (ev.before as AnyRow) ?? null,
+        );
+        if (!ok) continue;
+        const points = Number(rule.points ?? 0);
+        if (!points) continue;
+
+        const { error: insErr } = await supabase
+          .from("score_events")
+          .insert({
+            owner_id: ownerId,
+            rule_id: rule.id,
+            entity: evEntity,
+            entity_id: ev.entity_id,
+            points,
+            reason: rule.name,
+          })
+          .select("id")
+          .single();
+        // unique violation = já aplicado, ignora silenciosamente
+        if (insErr) {
+          if (!/duplicate key/i.test(insErr.message)) {
+            console.error("[scoring] insert", insErr);
+          }
+          continue;
+        }
+
+        // soma pontos no registro
+        const { data: row } = await supabase
+          .from(evEntity)
+          .select("score")
+          .eq("id", ev.entity_id)
+          .maybeSingle();
+        const current = Number((row?.score as number | null) ?? 0);
+        await supabase.from(evEntity).update({ score: current + points }).eq("id", ev.entity_id);
+        result.applied += 1;
+      }
+    }
+
+    await supabase.from("scoring_cursors").upsert({
+      owner_id: ownerId,
+      last_event_at: maxAt,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  return result;
+}

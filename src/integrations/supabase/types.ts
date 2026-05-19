@@ -175,6 +175,7 @@ export type Database = {
           notes: string | null
           owner_id: string
           phone: string | null
+          score: number
           size: string | null
           state: string | null
           target_account_tier: string | null
@@ -210,6 +211,7 @@ export type Database = {
           notes?: string | null
           owner_id: string
           phone?: string | null
+          score?: number
           size?: string | null
           state?: string | null
           target_account_tier?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          score?: number
           size?: string | null
           state?: string | null
           target_account_tier?: string | null
@@ -1511,6 +1514,65 @@ export type Database = {
           quick_filters?: Json
           sort_by?: string | null
           sort_dir?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      score_events: {
+        Row: {
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          owner_id: string
+          points: number
+          reason: string | null
+          rule_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          entity_id: string
+          id?: string
+          owner_id: string
+          points: number
+          reason?: string | null
+          rule_id: string
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          owner_id?: string
+          points?: number
+          reason?: string | null
+          rule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "score_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "scoring_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scoring_cursors: {
+        Row: {
+          last_event_at: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          last_event_at?: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          last_event_at?: string
+          owner_id?: string
           updated_at?: string
         }
         Relationships: []
