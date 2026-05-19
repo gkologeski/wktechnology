@@ -12,6 +12,7 @@ export type EmailAccountRow = {
   refresh_token: string | null;
   expires_at: string | null;
   status: string;
+  history_id: string | null;
 };
 
 function b64url(input: string | Buffer) {

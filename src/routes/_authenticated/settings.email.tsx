@@ -1,18 +1,19 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Mail, Plug, Trash2 } from "lucide-react";
+import { Mail, Plug, RefreshCw, Trash2 } from "lucide-react";
 import {
   listEmailAccounts,
   startGmailOAuth,
   disconnectEmailAccount,
 } from "@/lib/email-accounts.functions";
+import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 
@@ -30,10 +31,29 @@ function EmailSettings() {
   const start = useServerFn(startGmailOAuth);
   const list = useServerFn(listEmailAccounts);
   const disconnect = useServerFn(disconnectEmailAccount);
+  const syncNow = useServerFn(syncMyEmailAccounts);
 
   const { data, isLoading } = useQuery({
     queryKey: ["email_accounts"],
     queryFn: () => list(),
+  });
+
+  const syncMut = useMutation({
+    mutationFn: (accountId?: string) =>
+      syncNow({ data: accountId ? { account_id: accountId } : {} }),
+    onSuccess: (res) => {
+      const inserted = res.results.reduce((a, r) => a + r.inserted, 0);
+      const errs = res.results.filter((r) => r.error);
+      if (errs.length) toast.error(`Erros: ${errs.map((e) => e.error).join("; ")}`);
+      toast.success(
+        inserted > 0
+          ? `${inserted} mensagem(ns) sincronizada(s)`
+          : "Nenhuma mensagem nova",
+      );
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+      qc.invalidateQueries({ queryKey: ["email_threads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   useEffect(() => {
@@ -111,9 +131,21 @@ function EmailSettings() {
                     <p className="text-xs text-destructive mt-1">{a.last_error}</p>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Desconectar">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => syncMut.mutate(a.id)}
+                    disabled={syncMut.isPending}
+                    title="Sincronizar agora"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`} />
+                    Sincronizar
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Desconectar">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))
