@@ -16,29 +16,39 @@ type Group = { label: string; icon: React.ComponentType<{ className?: string }>;
 
 const groups: Group[] = [
   {
-    label: "CRM", icon: Users, items: [
+    label: "Análises", icon: BarChart3, items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Analytics", url: "/analytics", icon: TrendingUp },
       { title: "Metas", url: "/settings/goals", icon: Target },
-
-
+    ],
+  },
+  {
+    label: "CRM", icon: Users, items: [
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Negócios", url: "/deals", icon: Briefcase },
-      { title: "Produtos", url: "/settings/products", icon: Package },
-      { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Assinaturas", url: "/settings/esign", icon: PenLine },
-      { title: "Recorrência", url: "/settings/recurring", icon: Repeat },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Filas de tarefas", url: "/tasks/queues", icon: PlayCircle },
+      { title: "Listas", url: "/settings/segments", icon: Filter },
+    ],
+  },
+  {
+    label: "Vendas", icon: Briefcase, items: [
+      { title: "Produtos", url: "/settings/products", icon: Package },
+      { title: "Cotações", url: "/settings/quotes", icon: FileText },
+      { title: "Assinaturas eletrônicas", url: "/settings/esign", icon: PenLine },
+      { title: "Recorrência", url: "/settings/recurring", icon: Repeat },
+    ],
+  },
+  {
+    label: "Suporte", icon: LifeBuoy, items: [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Macros", url: "/settings/macros", icon: Wand2 },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
       { title: "Portal do cliente", url: "/settings/portal", icon: ExternalLink },
-      { title: "Listas", url: "/settings/segments", icon: Filter },
     ],
   },
   {
@@ -53,7 +63,7 @@ const groups: Group[] = [
     label: "Marketing", icon: Megaphone, items: [
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone },
       { title: "Templates de email", url: "/settings/email-templates", icon: Send },
-      { title: "Assinaturas", url: "/settings/subscriptions", icon: Mail },
+      { title: "Tipos de assinatura", url: "/settings/subscriptions", icon: Mail },
     ],
   },
   {
@@ -67,13 +77,14 @@ const groups: Group[] = [
     ],
   },
   {
-    label: "Dados", icon: GitBranch, items: [
+    label: "Configuração", icon: Settings, items: [
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },
       { title: "Equipe", url: "/settings/teams", icon: UsersRound },
       { title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
-      { title: "Log de auditoria", url: "/settings/audit-log", icon: ScrollText },
+      { title: "Auditoria", url: "/settings/audit-log", icon: ScrollText },
       { title: "Segurança (2FA)", url: "/settings/security", icon: KeyRound },
+      { title: "Conexão de Email", url: "/settings/email", icon: Mail },
       { title: "Integrações", url: "/integrations", icon: Plug },
     ],
   },
