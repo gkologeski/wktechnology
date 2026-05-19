@@ -25,7 +25,7 @@
    - 1.1.d Inbound via History API + pg_cron ✅
    - 1.1.e UI /inbox/email ✅
 2. **Templates de email + snippets (M)** ✅ — tokens `{{first_name}}`, snippets `/atalho`, página `/settings/email-templates`, dropdown no SendEmailDialog.
-3. **Calling via Twilio Voice (G)** — discador WebRTC, log automático, gravação opcional. ⏳ aguarda secrets.
+3. **Calling via Twilio Voice (G)** ✅ — discador WebRTC `CallDialer`, TwiML endpoint `/api/public/twilio/voice`, log automático em `activities` (type=`call`) com duração, outcome e `twilio_call_sid` em `external_ids`. Botão "Ligar" em contatos.
 4. **Tasks queues (P)** ✅ — `task_queues` + `task_queue_items`, página `/tasks/queues`, executor `/tasks/queues/$queueId/play` com atalhos C/S.
 5. **Notes com @menções e anexos (P)** ✅ — `mentions uuid[]` + `attachments jsonb`, bucket `notes-attachments`, drag-and-drop e autocomplete `@`.
 
