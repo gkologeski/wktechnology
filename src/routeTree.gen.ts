@@ -33,6 +33,7 @@ import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes
 import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
 import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
+import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings.security'
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
@@ -189,6 +190,12 @@ const AuthenticatedSettingsSegmentsRoute =
   AuthenticatedSettingsSegmentsRouteImport.update({
     id: '/segments',
     path: '/segments',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSecurityRoute =
+  AuthenticatedSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsScoringRoute =
@@ -380,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
@@ -430,6 +438,7 @@ export interface FileRoutesByTo {
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
@@ -484,6 +493,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
+  '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
+    | '/settings/security'
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
+    | '/settings/security'
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
@@ -641,6 +653,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
     | '/_authenticated/settings/scoring'
+    | '/_authenticated/settings/security'
     | '/_authenticated/settings/segments'
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/sla'
@@ -853,6 +866,13 @@ declare module '@tanstack/react-router' {
       path: '/segments'
       fullPath: '/settings/segments'
       preLoaderRoute: typeof AuthenticatedSettingsSegmentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/security': {
+      id: '/_authenticated/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof AuthenticatedSettingsSecurityRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/scoring': {
@@ -1085,6 +1105,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
+  AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
   AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
   AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
@@ -1104,6 +1125,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
+  AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
   AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
   AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,
   AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,

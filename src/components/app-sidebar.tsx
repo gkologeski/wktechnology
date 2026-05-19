@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -58,6 +58,7 @@ const groups: Group[] = [
       { title: "Equipe", url: "/settings/teams", icon: UsersRound },
       { title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
       { title: "Log de auditoria", url: "/settings/audit-log", icon: ScrollText },
+      { title: "Segurança (2FA)", url: "/settings/security", icon: KeyRound },
       { title: "Integrações", url: "/integrations", icon: Plug },
     ],
   },
