@@ -25,6 +25,7 @@ const groups: Group[] = [
       { title: "Produtos", url: "/settings/products", icon: Package },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Assinaturas", url: "/settings/esign", icon: PenLine },
+      { title: "Recorrência", url: "/settings/recurring", icon: Repeat },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Filas de tarefas", url: "/tasks/queues", icon: PlayCircle },
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
