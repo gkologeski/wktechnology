@@ -170,9 +170,10 @@ type Msg = NonNullable<ReturnType<typeof getEmailThread> extends Promise<infer T
 
 function MessageCard({ message: m }: { message: Msg }) {
   const isOut = m.direction === "outbound";
-  const html = m.body_html
-    ? DOMPurify.sanitize(m.body_html, { USE_PROFILES: { html: true } })
-    : null;
+  const html =
+    m.body_html && typeof window !== "undefined"
+      ? DOMPurify.sanitize(m.body_html, { USE_PROFILES: { html: true } })
+      : null;
   return (
     <div
       className={`rounded-md border p-3 text-sm ${

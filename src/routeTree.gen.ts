@@ -38,6 +38,7 @@ import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_a
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
+import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
@@ -207,6 +208,11 @@ const AuthenticatedInboxWhatsappRoute =
     path: '/inbox/whatsapp',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedInboxEmailRoute = AuthenticatedInboxEmailRouteImport.update({
+  id: '/inbox/email',
+  path: '/inbox/email',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedCampaignsWhatsappRoute =
   AuthenticatedCampaignsWhatsappRouteImport.update({
     id: '/campaigns/whatsapp',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -315,6 +322,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthenticatedNotesRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -356,6 +364,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -397,6 +406,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/campaigns/whatsapp'
+    | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
     | '/leads/$id'
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/tasks'
     | '/campaigns/whatsapp'
+    | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
     | '/leads/$id'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/campaigns/whatsapp'
+    | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
@@ -719,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxWhatsappRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/inbox/email': {
+      id: '/_authenticated/inbox/email'
+      path: '/inbox/email'
+      fullPath: '/inbox/email'
+      preLoaderRoute: typeof AuthenticatedInboxEmailRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/whatsapp': {
       id: '/_authenticated/campaigns/whatsapp'
       path: '/campaigns/whatsapp'
@@ -856,6 +875,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
 }
 
@@ -871,6 +891,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
 }
 
