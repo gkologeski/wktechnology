@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { AddQueueItemsDialog } from "@/components/tasks/add-queue-items-dialog";
 import {
   listTaskQueues,
   createTaskQueue,
@@ -83,15 +84,18 @@ function QueuesPage() {
               <div className="text-xs text-muted-foreground">
                 {row.counts.pending} pendentes · {row.counts.total} total
               </div>
-              <div className="flex justify-between pt-2">
-                <Button asChild size="sm" variant="default">
-                  <Link to="/tasks/queues/$queueId/play" params={{ queueId: row.id }}>
-                    <Play className="mr-1 h-4 w-4" /> Executar
-                  </Link>
-                </Button>
-                <Button size="icon" variant="ghost" onClick={() => del.mutate(row.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="flex justify-between items-center pt-2 gap-2">
+                <AddQueueItemsDialog queueId={row.id} />
+                <div className="flex gap-1">
+                  <Button asChild size="sm" variant="default">
+                    <Link to="/tasks/queues/$queueId/play" params={{ queueId: row.id }}>
+                      <Play className="mr-1 h-4 w-4" /> Executar
+                    </Link>
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => del.mutate(row.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
