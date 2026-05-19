@@ -8,30 +8,13 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 const tabs = [
   { to: "/settings", label: "Perfil" },
-  { to: "/settings/email", label: "Email" },
-  { to: "/settings/email-templates", label: "Templates de Email" },
+  { to: "/settings/email", label: "Conexão de Email" },
+  { to: "/settings/security", label: "Segurança" },
   { to: "/settings/pipelines", label: "Pipelines" },
-  { to: "/settings/products", label: "Produtos" },
-  { to: "/settings/quotes", label: "Cotações" },
-  { to: "/settings/esign", label: "Assinaturas" },
-  { to: "/settings/recurring", label: "Recorrência" },
   { to: "/settings/custom-properties", label: "Propriedades" },
-  { to: "/settings/scoring", label: "Lead Scoring" },
-  { to: "/settings/playbooks", label: "Playbooks" },
-  { to: "/settings/segments", label: "Segmentos" },
-  { to: "/settings/sequences", label: "Sequências" },
-  { to: "/settings/workflows", label: "Workflows" },
-  { to: "/settings/rotation", label: "Distribuição" },
-  { to: "/settings/sla", label: "SLA" },
   { to: "/settings/teams", label: "Equipe" },
   { to: "/settings/roles", label: "Permissões" },
   { to: "/settings/audit-log", label: "Auditoria" },
-  { to: "/settings/macros", label: "Macros" },
-  { to: "/settings/surveys", label: "Pesquisas" },
-  { to: "/settings/portal", label: "Portal do cliente" },
-  { to: "/settings/security", label: "Segurança" },
-  { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
-  { to: "/settings/goals", label: "Metas" },
 ] as const;
 
 function SettingsLayout() {
