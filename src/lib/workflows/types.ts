@@ -1,0 +1,76 @@
+export type WorkflowEntity = "leads" | "contacts" | "companies" | "deals";
+export type WorkflowEventType = "created" | "updated" | "stage_changed";
+
+export type FilterOp =
+  | "eq"
+  | "neq"
+  | "in"
+  | "contains"
+  | "gt"
+  | "lt"
+  | "changed_to"
+  | "is_empty"
+  | "is_not_empty";
+
+export interface WorkflowFilter {
+  field: string;
+  op: FilterOp;
+  value?: unknown;
+}
+
+export interface WorkflowTrigger {
+  event: WorkflowEventType;
+  filters?: WorkflowFilter[];
+}
+
+export type WorkflowAction =
+  | { type: "set_field"; field: string; value: unknown }
+  | { type: "create_activity"; activity_type?: string; subject: string; body?: string; due_in_days?: number }
+  | { type: "assign_to"; user_id: string }
+  | { type: "add_to_sequence"; sequence_id: string }
+  | { type: "send_notification"; title: string; body?: string }
+  | { type: "webhook"; url: string; payload?: Record<string, unknown> };
+
+export type WorkflowActionType = WorkflowAction["type"];
+
+export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
+  leads: "Leads",
+  contacts: "Contatos",
+  companies: "Empresas",
+  deals: "Negócios",
+};
+
+export const EVENT_LABELS: Record<WorkflowEventType, string> = {
+  created: "Quando for criado",
+  updated: "Quando for atualizado",
+  stage_changed: "Quando mudar de etapa",
+};
+
+export const ACTION_LABELS: Record<WorkflowActionType, string> = {
+  set_field: "Atualizar campo",
+  create_activity: "Criar atividade",
+  assign_to: "Atribuir a usuário",
+  add_to_sequence: "Adicionar a sequência",
+  send_notification: "Enviar notificação",
+  webhook: "Disparar webhook",
+};
+
+// Common fields by entity, used in filter dropdowns and set_field actions
+export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
+  leads: ["first_name", "last_name", "email", "phone", "company_name", "source", "status", "score", "label", "owner_id"],
+  contacts: ["first_name", "last_name", "email", "phone", "job_title", "company_name", "label", "score", "owner_id"],
+  companies: ["name", "domain", "industry", "size", "city", "state", "country", "is_target_account", "owner_id"],
+  deals: ["name", "value", "currency", "stage", "stage_id", "pipeline_id", "expected_close_date", "owner_id"],
+};
+
+export const FILTER_OPS: Array<{ value: FilterOp; label: string }> = [
+  { value: "eq", label: "é igual a" },
+  { value: "neq", label: "é diferente de" },
+  { value: "in", label: "está em (lista separada por vírgula)" },
+  { value: "contains", label: "contém" },
+  { value: "gt", label: "maior que" },
+  { value: "lt", label: "menor que" },
+  { value: "changed_to", label: "mudou para" },
+  { value: "is_empty", label: "está vazio" },
+  { value: "is_not_empty", label: "não está vazio" },
+];
