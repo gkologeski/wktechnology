@@ -33,6 +33,7 @@ import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
+import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -179,6 +180,12 @@ const AuthenticatedSettingsPipelinesRoute =
     path: '/pipelines',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsEmailTemplatesRoute =
+  AuthenticatedSettingsEmailTemplatesRouteImport.update({
+    id: '/email-templates',
+    path: '/email-templates',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsEmailRoute =
   AuthenticatedSettingsEmailRouteImport.update({
     id: '/email',
@@ -290,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
+  '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -328,6 +336,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
+  '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -370,6 +379,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
+  '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/email'
+    | '/settings/email-templates'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/scoring'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/email'
+    | '/settings/email-templates'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/scoring'
@@ -491,6 +503,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/settings/email'
+    | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/scoring'
@@ -696,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/email-templates': {
+      id: '/_authenticated/settings/email-templates'
+      path: '/email-templates'
+      fullPath: '/settings/email-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsEmailTemplatesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/email': {
       id: '/_authenticated/settings/email'
       path: '/email'
@@ -835,6 +855,7 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
+  AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
@@ -847,6 +868,8 @@ interface AuthenticatedSettingsRouteChildren {
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
+  AuthenticatedSettingsEmailTemplatesRoute:
+    AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
