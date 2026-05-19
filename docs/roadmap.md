@@ -34,7 +34,7 @@
 ## 🟠 Onda 2 — Automação (3–4 semanas)
 
 6. **Workflows engine + builder visual (G)** ✅ — fila `workflow_events` alimentada por triggers em leads/contacts/companies/deals, executor server-side processado via pg_cron (`workflows-tick`), `workflow_runs` com log por passo, builder visual (Quando/Se/Então) em `/settings/workflows` com ações tipadas (`set_field`, `create_activity`, `assign_to`, `add_to_sequence`, `send_notification`, `webhook`) e tokens `{{campo}}`.
-7. Sequences executor (G)
+7. **Sequences executor (G)** ✅ — DSL de passos (`task` / `email` / `wait` com `wait_days`), engine server-side (`tickSequences`) processado via pg_cron (`sequences-tick`), enrollments com `current_step` + `next_run_at`, integração com workflow action `add_to_sequence`, builder visual em `/settings/sequences` com aba de inscrições (pausar / retomar / remover).
 8. Lead/Deal rotation (M)
 9. SLA por pipeline stage (M)
 10. Scoring executor (M)
