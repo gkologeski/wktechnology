@@ -220,9 +220,7 @@ export function CallDialer({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {contactName ? `Ligar para ${contactName}` : "Ligação"}
-          </DialogTitle>
+          <DialogTitle>{contactName ? `Ligar para ${contactName}` : "Ligação"}</DialogTitle>
         </DialogHeader>
 
         {!showLog ? (
@@ -280,7 +278,9 @@ export function CallDialer({
             <div className="text-sm text-muted-foreground">
               Duração:{" "}
               <span className="font-mono">
-                {fmt(startedAtRef.current ? Math.floor((Date.now() - startedAtRef.current) / 1000) : 0)}
+                {fmt(
+                  startedAtRef.current ? Math.floor((Date.now() - startedAtRef.current) / 1000) : 0,
+                )}
               </span>
             </div>
             <div>
