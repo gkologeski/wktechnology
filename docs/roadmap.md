@@ -64,7 +64,7 @@
 
 ## 🟦 Onda 6 — Relatórios & Forecast (2–3 semanas)
 
-25. Custom reports builder (G)
+25. **Custom reports builder (G)** ✅ — tabela `custom_reports` (nome, descrição, entidade, config JSONB, favorito) com RLS owner/admin. Server fns em `src/lib/reports.functions.ts` com whitelist `REPORT_ENTITIES` (deals/leads/contacts/tickets/activities/tasks/subscriptions) definindo campos válidos para groupBy/numéricos/datas (validação Zod rejeita campos fora da whitelist, previne SQL injection). `runReport` executa query Supabase restrita aos campos permitidos e agrega em JS (count/sum/avg) por bucket, ordena por valor desc, limita ao topN. `listReports`, `saveReport` (criar/atualizar), `deleteReport`, `toggleReportFavorite`. Página `/reports` com sidebar de relatórios salvos (favoritar/excluir/carregar), builder de configuração (entidade, agrupar por, métrica + campo, visualização, filtro por período) e visualização ao vivo via Recharts em 4 modos (barras/linha/pizza/tabela), export CSV. Entrada na sidebar (CRM, ícone BarChart3).
 26. Multiple dashboards (M)
 27. Funnel + sales velocity + cohort (M cada)
 28. Goals por usuário/time (M)
