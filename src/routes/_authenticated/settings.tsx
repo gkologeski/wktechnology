@@ -13,6 +13,7 @@ const tabs = [
   { to: "/settings/pipelines", label: "Pipelines" },
   { to: "/settings/products", label: "Produtos" },
   { to: "/settings/quotes", label: "Cotações" },
+  { to: "/settings/esign", label: "Assinaturas" },
   { to: "/settings/custom-properties", label: "Propriedades" },
   { to: "/settings/scoring", label: "Lead Scoring" },
   { to: "/settings/playbooks", label: "Playbooks" },
