@@ -138,7 +138,8 @@ export const runReport = createServerFn({ method: "POST" })
     const selectCols = cfg.metric === "count"
       ? cfg.groupBy
       : `${cfg.groupBy},${cfg.metricField}`;
-    let q = supabase.from(ent.table).select(selectCols).limit(5000);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = (supabase as any).from(ent.table).select(selectCols).limit(5000);
     if (cfg.dateField && ent.date.includes(cfg.dateField as never)) {
       if (cfg.dateFrom) q = q.gte(cfg.dateField, cfg.dateFrom);
       if (cfg.dateTo) q = q.lte(cfg.dateField, cfg.dateTo);
@@ -148,7 +149,7 @@ export const runReport = createServerFn({ method: "POST" })
 
     // Aggregate in JS (safe, no dynamic SQL)
     const buckets = new Map<string, { key: string; count: number; sum: number }>();
-    for (const r of (rows ?? []) as Record<string, unknown>[]) {
+    for (const r of ((rows ?? []) as Record<string, unknown>[])) {
       const k = String(r[cfg.groupBy] ?? "—");
       const b = buckets.get(k) ?? { key: k, count: 0, sum: 0 };
       b.count += 1;
