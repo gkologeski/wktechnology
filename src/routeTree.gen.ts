@@ -48,6 +48,7 @@ import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
@@ -288,6 +289,12 @@ const AuthenticatedSettingsMacrosRoute =
     path: '/macros',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsEsignRoute =
+  AuthenticatedSettingsEsignRouteImport.update({
+    id: '/esign',
+    path: '/esign',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsEmailTemplatesRoute =
   AuthenticatedSettingsEmailTemplatesRouteImport.update({
     id: '/email-templates',
@@ -453,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -514,6 +522,7 @@ export interface FileRoutesByTo {
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -579,6 +588,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -644,6 +654,7 @@ export interface FileRouteTypes {
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
+    | '/settings/esign'
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -705,6 +716,7 @@ export interface FileRouteTypes {
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
+    | '/settings/esign'
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -769,6 +781,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
+    | '/_authenticated/settings/esign'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
@@ -1102,6 +1115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/esign': {
+      id: '/_authenticated/settings/esign'
+      path: '/esign'
+      fullPath: '/settings/esign'
+      preLoaderRoute: typeof AuthenticatedSettingsEsignRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/email-templates': {
       id: '/_authenticated/settings/email-templates'
       path: '/email-templates'
@@ -1300,6 +1320,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
+  AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
@@ -1327,6 +1348,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,
+  AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
