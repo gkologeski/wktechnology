@@ -140,6 +140,7 @@ export function DealDetailDrawer({
           <TabsList className="mx-5 mt-3 self-start">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
             {!isNew && <TabsTrigger value="items"><Package className="h-3.5 w-3.5 mr-1" />Itens</TabsTrigger>}
+            {!isNew && <TabsTrigger value="quotes"><FileText className="h-3.5 w-3.5 mr-1" />Cotações</TabsTrigger>}
             {!isNew && <TabsTrigger value="activity">Atividades</TabsTrigger>}
             {!isNew && hsExtras.length > 0 && (
               <TabsTrigger value="hs">
