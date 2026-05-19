@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -9,6 +10,7 @@ import {
   gmailSendRaw,
   type EmailAccountRow,
 } from "@/lib/gmail.server";
+import { injectTracking } from "@/lib/email-tracking.server";
 
 const emailListSchema = z
   .union([z.string(), z.array(z.string())])
