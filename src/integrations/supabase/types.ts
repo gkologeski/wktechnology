@@ -1916,6 +1916,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+          workspace_owner_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_campaign_recipients: {
         Row: {
           campaign_id: string
@@ -2299,6 +2323,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user: string
+          _workspace: string
+        }
+        Returns: boolean
+      }
+      is_workspace_admin: {
+        Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
       lookup_stage_sla: {
         Args: {
           p_entity: string
@@ -2311,6 +2347,7 @@ export type Database = {
     }
     Enums: {
       activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
+      app_role: "admin" | "manager" | "member"
       deal_stage:
         | "new"
         | "qualified"
@@ -2452,6 +2489,7 @@ export const Constants = {
   public: {
     Enums: {
       activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
+      app_role: ["admin", "manager", "member"],
       deal_stage: [
         "new",
         "qualified",
