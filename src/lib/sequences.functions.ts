@@ -124,9 +124,9 @@ export const updateEnrollmentStatus = createServerFn({ method: "POST" })
       status: z.enum(["active", "paused", "removed"]),
     }).parse(input))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: { status: string; next_run_at?: string | null } = { status: data.status };
     if (data.status === "removed") patch.next_run_at = null;
-    if (data.status === "active" && !patch.next_run_at) patch.next_run_at = new Date().toISOString();
+    if (data.status === "active") patch.next_run_at = new Date().toISOString();
     const { error } = await context.supabase
       .from("sequence_enrollments").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
