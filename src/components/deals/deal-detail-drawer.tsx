@@ -269,6 +269,7 @@ export function DealDetailDrawer({
             {!isNew && (
               <TabsContent value="quotes" className="mt-0">
                 <DealQuotes dealId={deal!.id} />
+              </TabsContent>
             )}
 
             {!isNew && (
