@@ -199,10 +199,10 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       const r = await supabaseAdmin.from("contacts").select("id, first_name, last_name, email").eq("id", quote.contact_id).maybeSingle();
       contact = r.data;
     }
-    let agent = null;
+    let agent: { id: string; full_name: string | null; email: string | null } | null = null;
     {
-      const r = await supabaseAdmin.from("profiles").select("id, full_name, email").eq("id", quote.owner_id).maybeSingle();
-      agent = r.data;
+      const r = await supabaseAdmin.from("profiles").select("id, full_name").eq("id", quote.owner_id).maybeSingle();
+      if (r.data) agent = { id: r.data.id, full_name: r.data.full_name, email: null };
     }
     return { quote, items: items ?? [], company, contact, agent };
   });
