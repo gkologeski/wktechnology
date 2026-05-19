@@ -145,5 +145,5 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       .update({ message_count: count ?? 1 })
       .eq("id", threadDbId);
 
-    return { ok: true, thread_id: threadDbId, gmail_message_id: sent.id };
+    return { ok: true, thread_id: threadDbId, message_id: messageDbId, gmail_message_id: sent.id };
   });
