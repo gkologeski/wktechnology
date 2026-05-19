@@ -54,7 +54,7 @@ export const updateDashboard = createServerFn({ method: "POST" })
     if (data.is_default) {
       await supabase.from("dashboards").update({ is_default: false }).eq("owner_id", userId).neq("id", data.id);
     }
-    const patch: Record<string, unknown> = {};
+    const patch: { name?: string; description?: string | null; is_default?: boolean; is_favorite?: boolean } = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.description !== undefined) patch.description = data.description;
     if (data.is_default !== undefined) patch.is_default = data.is_default;
@@ -62,6 +62,7 @@ export const updateDashboard = createServerFn({ method: "POST" })
     const { error } = await supabase.from("dashboards").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+
   });
 
 export const deleteDashboard = createServerFn({ method: "POST" })
