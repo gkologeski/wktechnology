@@ -1419,6 +1419,54 @@ export type Database = {
         }
         Relationships: []
       }
+      rotation_rules: {
+        Row: {
+          assignees: Json
+          created_at: string
+          enabled: boolean
+          entity: string
+          filters: Json
+          id: string
+          last_assigned_at: string | null
+          last_assigned_user_id: string | null
+          last_index: number
+          name: string
+          owner_id: string
+          strategy: string
+          updated_at: string
+        }
+        Insert: {
+          assignees?: Json
+          created_at?: string
+          enabled?: boolean
+          entity: string
+          filters?: Json
+          id?: string
+          last_assigned_at?: string | null
+          last_assigned_user_id?: string | null
+          last_index?: number
+          name: string
+          owner_id?: string
+          strategy?: string
+          updated_at?: string
+        }
+        Update: {
+          assignees?: Json
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          filters?: Json
+          id?: string
+          last_assigned_at?: string | null
+          last_assigned_user_id?: string | null
+          last_index?: number
+          name?: string
+          owner_id?: string
+          strategy?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saved_views: {
         Row: {
           column_order: string[] | null
