@@ -33,6 +33,27 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [showAll, setShowAll] = useState(false);
   const [showHist, setShowHist] = useState(false);
   const [showHs, setShowHs] = useState(false);
+  const [customDefs, setCustomDefs] = useState<CustomProp[]>([]);
+  const listCustomFn = useServerFn(listCustomProperties);
+  const setCustomFn = useServerFn(setCustomFieldValue);
+  const customEntity = entity as CustomEntity;
+  const isCustomEntity = ["leads", "contacts", "companies", "deals"].includes(entity);
+  const customValues = ((row as Record<string, unknown>).custom_fields ?? {}) as Record<string, unknown>;
+
+  useEffect(() => {
+    if (!isCustomEntity) return;
+    listCustomFn({ data: { entity: customEntity } })
+      .then((d) => setCustomDefs(d.filter((p) => p.enabled)))
+      .catch(() => { /* ignore */ });
+  }, [customEntity, isCustomEntity, listCustomFn]);
+
+  const saveCustom = async (key: string, val: unknown) => {
+    try {
+      await setCustomFn({ data: { entity: customEntity, entity_id: row.id, key, value: val as never } });
+      toast.success("Atualizado");
+      onSaved?.();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+  };
 
   const hsRaw = (row as Record<string, unknown>).hs_raw as { properties?: Record<string, unknown> } | null | undefined;
   const hsProps = hsRaw?.properties ?? null;
