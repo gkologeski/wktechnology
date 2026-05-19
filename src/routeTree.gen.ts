@@ -53,6 +53,7 @@ import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
 import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
@@ -320,6 +321,12 @@ const AuthenticatedSettingsMacrosRoute =
     path: '/macros',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsGoalsRoute =
+  AuthenticatedSettingsGoalsRouteImport.update({
+    id: '/goals',
+    path: '/goals',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsEsignRoute =
   AuthenticatedSettingsEsignRouteImport.update({
     id: '/esign',
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -563,6 +571,7 @@ export interface FileRoutesByTo {
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -634,6 +643,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
+  '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/esign'
+    | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -772,6 +783,7 @@ export interface FileRouteTypes {
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/esign'
+    | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -842,6 +854,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/esign'
+    | '/_authenticated/settings/goals'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
@@ -1212,6 +1225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/goals': {
+      id: '/_authenticated/settings/goals'
+      path: '/goals'
+      fullPath: '/settings/goals'
+      preLoaderRoute: typeof AuthenticatedSettingsGoalsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/esign': {
       id: '/_authenticated/settings/esign'
       path: '/esign'
@@ -1418,6 +1438,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
+  AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
@@ -1447,6 +1468,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
+  AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
