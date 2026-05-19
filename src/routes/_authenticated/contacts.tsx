@@ -92,20 +92,38 @@ function ContactsPage() {
           </Button>
         </>
       )}
-      rowActions={(row) =>
-        row.phone || row.mobile_phone ? (
-          <SendWhatsAppDialog
-            defaultTo={(row.phone || row.mobile_phone) as string}
-            contactId={row.id}
-            contactName={`${row.first_name} ${row.last_name ?? ""}`.trim()}
-            trigger={
-              <Button size="icon" variant="ghost" title="Enviar WhatsApp">
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-            }
-          />
-        ) : null
-      }
+      rowActions={(row) => {
+        const name = `${row.first_name} ${row.last_name ?? ""}`.trim();
+        const phone = (row.phone || row.mobile_phone) as string | undefined;
+        return (
+          <div className="flex items-center gap-1">
+            {row.email && (
+              <SendEmailDialog
+                defaultTo={row.email}
+                contactId={row.id}
+                contactName={name}
+                trigger={
+                  <Button size="icon" variant="ghost" title="Enviar email">
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            )}
+            {phone && (
+              <SendWhatsAppDialog
+                defaultTo={phone}
+                contactId={row.id}
+                contactName={name}
+                trigger={
+                  <Button size="icon" variant="ghost" title="Enviar WhatsApp">
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        );
+      }}
     />
   );
 }
