@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -47,6 +47,7 @@ const groups: Group[] = [
       { title: "Workflows", url: "/settings/workflows", icon: Workflow },
       { title: "Sequências", url: "/settings/sequences", icon: Repeat },
       { title: "Distribuição", url: "/settings/rotation", icon: Shuffle },
+      { title: "SLA por etapa", url: "/settings/sla", icon: Timer },
       { title: "Pontuação", url: "/settings/scoring", icon: Target },
       { title: "Playbooks", url: "/settings/playbooks", icon: BookOpen },
     ],

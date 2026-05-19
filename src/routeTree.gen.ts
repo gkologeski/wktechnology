@@ -29,6 +29,7 @@ import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
+import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
 import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
@@ -160,6 +161,12 @@ const AuthenticatedSettingsSubscriptionsRoute =
   AuthenticatedSettingsSubscriptionsRouteImport.update({
     id: '/subscriptions',
     path: '/subscriptions',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSlaRoute =
+  AuthenticatedSettingsSlaRouteImport.update({
+    id: '/sla',
+    path: '/sla',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsSequencesRoute =
@@ -345,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -390,6 +398,7 @@ export interface FileRoutesByTo {
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -439,6 +448,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
+  '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/settings/scoring'
     | '/settings/segments'
     | '/settings/sequences'
+    | '/settings/sla'
     | '/settings/subscriptions'
     | '/settings/workflows'
     | '/tasks/queues'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/settings/scoring'
     | '/settings/segments'
     | '/settings/sequences'
+    | '/settings/sla'
     | '/settings/subscriptions'
     | '/settings/workflows'
     | '/tasks/queues'
@@ -581,6 +593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/scoring'
     | '/_authenticated/settings/segments'
     | '/_authenticated/settings/sequences'
+    | '/_authenticated/settings/sla'
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/tasks/queues'
@@ -759,6 +772,13 @@ declare module '@tanstack/react-router' {
       path: '/subscriptions'
       fullPath: '/settings/subscriptions'
       preLoaderRoute: typeof AuthenticatedSettingsSubscriptionsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/sla': {
+      id: '/_authenticated/settings/sla'
+      path: '/sla'
+      fullPath: '/settings/sla'
+      preLoaderRoute: typeof AuthenticatedSettingsSlaRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/sequences': {
@@ -984,6 +1004,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
   AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
+  AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -999,6 +1020,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
   AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
   AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,
+  AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,
   AuthenticatedSettingsSubscriptionsRoute:
     AuthenticatedSettingsSubscriptionsRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,

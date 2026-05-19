@@ -36,7 +36,7 @@
 6. **Workflows engine + builder visual (G)** ✅ — fila `workflow_events` alimentada por triggers em leads/contacts/companies/deals, executor server-side processado via pg_cron (`workflows-tick`), `workflow_runs` com log por passo, builder visual (Quando/Se/Então) em `/settings/workflows` com ações tipadas (`set_field`, `create_activity`, `assign_to`, `add_to_sequence`, `send_notification`, `webhook`) e tokens `{{campo}}`.
 7. **Sequences executor (G)** ✅ — DSL de passos (`task` / `email` / `wait` com `wait_days`), engine server-side (`tickSequences`) processado via pg_cron (`sequences-tick`), enrollments com `current_step` + `next_run_at`, integração com workflow action `add_to_sequence`, builder visual em `/settings/sequences` com aba de inscrições (pausar / retomar / remover).
 8. **Lead/Deal rotation (M)** ✅ — tabela `rotation_rules` (owner, entidade leads/deals, estratégia `round_robin` ou `weighted`, lista de `assignees` com peso, checkpoint `last_index`/`last_assigned_user_id`). Engine `applyRotation` em `src/lib/rotation/engine.server.ts` integrada como nova ação de workflow `rotate_assign` (referencia `rule_id`). UI em `/settings/rotation` com builder de membros + cópia rápida do UUID para colar no Workflow. Membros do workspace vêm de `team_members` + admin.
-9. SLA por pipeline stage (M)
+9. **SLA por pipeline stage (M)** ✅ — tabela `stage_entries` populada por triggers em `leads`/`deals` (abre nova entrada e fecha a anterior a cada mudança de etapa), `sla_hours` configurado dentro de `pipelines.stages`, página `/settings/sla` lista breaches em tempo real (auto-refresh 60s) + editor de SLA por estágio em cada pipeline.
 10. Scoring executor (M)
 
 ## 🔵 Onda 3 — Estrutura & Permissões (2–3 semanas)
