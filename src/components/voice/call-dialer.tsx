@@ -73,10 +73,14 @@ export function CallDialer({
   const cleanupDevice = useCallback(() => {
     try {
       callRef.current?.disconnect();
-    } catch {}
+    } catch {
+      // Ignore cleanup errors from an already-closed call.
+    }
     try {
       deviceRef.current?.destroy();
-    } catch {}
+    } catch {
+      // Ignore cleanup errors from an already-destroyed device.
+    }
     callRef.current = null;
     deviceRef.current = null;
   }, []);
@@ -164,7 +168,9 @@ export function CallDialer({
   const hangup = useCallback(() => {
     try {
       callRef.current?.disconnect();
-    } catch {}
+    } catch {
+      // Ignore hangup errors when the call is already closed.
+    }
   }, []);
 
   const toggleMute = useCallback(() => {
