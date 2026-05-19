@@ -183,10 +183,12 @@ function TicketsPage() {
   }
 
   async function setStatus(t: Ticket, status: Ticket["status"]) {
-    const patch: Record<string, unknown> = { status };
-    if ((status === "resolved" || status === "closed") && !t.resolved_at) {
-      patch.resolved_at = new Date().toISOString();
-    }
+    const patch = {
+      status,
+      resolved_at: (status === "resolved" || status === "closed") && !t.resolved_at
+        ? new Date().toISOString()
+        : t.resolved_at,
+    };
     const { error } = await supabase.from("tickets").update(patch).eq("id", t.id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["tickets"] });
