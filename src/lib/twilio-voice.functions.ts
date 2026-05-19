@@ -21,8 +21,9 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
     // Identity must be URL/JWT-safe.
     const identity = `user_${context.userId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-    const { jwt: jwtNs } = await import("twilio");
-    const AccessToken = jwtNs.AccessToken;
+    const AccessTokenModule = await import("twilio/lib/jwt/AccessToken.js");
+    const AccessToken = (AccessTokenModule as unknown as { default: typeof import("twilio/lib/jwt/AccessToken") }).default
+      ?? (AccessTokenModule as unknown as typeof import("twilio/lib/jwt/AccessToken"));
     const VoiceGrant = AccessToken.VoiceGrant;
 
     const token = new AccessToken(accountSid, apiKeySid, apiKeySecret, {

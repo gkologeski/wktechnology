@@ -42,6 +42,7 @@ import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_aut
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
+import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
@@ -234,6 +235,11 @@ const AuthenticatedCampaignsWhatsappRoute =
     path: '/campaigns/whatsapp',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
+  id: '/api/public/twilio/voice',
+  path: '/api/public/twilio/voice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthGoogleCallbackRoute =
   ApiPublicOauthGoogleCallbackRouteImport.update({
     id: '/api/public/oauth/google-callback',
@@ -328,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
@@ -459,6 +468,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/twilio/voice'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
@@ -561,6 +573,7 @@ export interface RootRouteChildren {
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
+  ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
 }
@@ -798,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsWhatsappRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/twilio/voice': {
+      id: '/api/public/twilio/voice'
+      path: '/api/public/twilio/voice'
+      fullPath: '/api/public/twilio/voice'
+      preLoaderRoute: typeof ApiPublicTwilioVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/google-callback': {
       id: '/api/public/oauth/google-callback'
       path: '/api/public/oauth/google-callback'
@@ -1002,6 +1022,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
+  ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
 }
