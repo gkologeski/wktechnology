@@ -2006,6 +2006,51 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          interval: Database["public"]["Enums"]["billing_interval"]
+          interval_count: number
+          name: string
+          owner_id: string
+          price: number
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          interval?: Database["public"]["Enums"]["billing_interval"]
+          interval_count?: number
+          name: string
+          owner_id: string
+          price?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          interval?: Database["public"]["Enums"]["billing_interval"]
+          interval_count?: number
+          name?: string
+          owner_id?: string
+          price?: number
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rotation_rules: {
         Row: {
           assignees: Json
@@ -2372,6 +2417,65 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          invoice_number: string
+          notes: string | null
+          owner_id: string
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["sub_invoice_status"]
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date: string
+          id?: string
+          invoice_number: string
+          notes?: string | null
+          owner_id: string
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          status?: Database["public"]["Enums"]["sub_invoice_status"]
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          owner_id?: string
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          status?: Database["public"]["Enums"]["sub_invoice_status"]
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_types: {
         Row: {
           created_at: string
@@ -2395,6 +2499,97 @@ export type Database = {
           owner_id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          contact_id: string
+          created_at: string
+          currency: string
+          cycles_completed: number
+          deal_id: string | null
+          ended_at: string | null
+          id: string
+          interval: Database["public"]["Enums"]["billing_interval"]
+          interval_count: number
+          name: string
+          next_billing_at: string | null
+          notes: string | null
+          owner_id: string
+          plan_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          total_cycles: number | null
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          contact_id: string
+          created_at?: string
+          currency?: string
+          cycles_completed?: number
+          deal_id?: string | null
+          ended_at?: string | null
+          id?: string
+          interval?: Database["public"]["Enums"]["billing_interval"]
+          interval_count?: number
+          name: string
+          next_billing_at?: string | null
+          notes?: string | null
+          owner_id: string
+          plan_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          total_cycles?: number | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          contact_id?: string
+          created_at?: string
+          currency?: string
+          cycles_completed?: number
+          deal_id?: string | null
+          ended_at?: string | null
+          id?: string
+          interval?: Database["public"]["Enums"]["billing_interval"]
+          interval_count?: number
+          name?: string
+          next_billing_at?: string | null
+          notes?: string | null
+          owner_id?: string
+          plan_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          total_cycles?: number | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       survey_responses: {
         Row: {
@@ -3031,6 +3226,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _add_billing_interval: {
+        Args: {
+          p_count: number
+          p_date: string
+          p_interval: Database["public"]["Enums"]["billing_interval"]
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3056,6 +3259,7 @@ export type Database = {
     Enums: {
       activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
       app_role: "admin" | "manager" | "member"
+      billing_interval: "week" | "month" | "quarter" | "year"
       deal_stage:
         | "new"
         | "qualified"
@@ -3078,6 +3282,14 @@ export type Database = {
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
+      sub_invoice_status: "pending" | "paid" | "failed" | "void"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "paused"
+        | "canceled"
+        | "past_due"
+        | "completed"
       team_role: "owner" | "admin" | "member"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "new" | "open" | "waiting" | "resolved" | "closed"
@@ -3210,6 +3422,7 @@ export const Constants = {
     Enums: {
       activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
       app_role: ["admin", "manager", "member"],
+      billing_interval: ["week", "month", "quarter", "year"],
       deal_stage: [
         "new",
         "qualified",
@@ -3234,6 +3447,15 @@ export const Constants = {
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
+      sub_invoice_status: ["pending", "paid", "failed", "void"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "paused",
+        "canceled",
+        "past_due",
+        "completed",
+      ],
       team_role: ["owner", "admin", "member"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["new", "open", "waiting", "resolved", "closed"],
