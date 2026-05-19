@@ -22,7 +22,7 @@
    - 1.1.a Schema + OAuth callback ✅
    - 1.1.b Envio + compose drawer ✅
    - 1.1.c Pixel + click tracking ✅
-   - 1.1.d Inbound via History API + pg_cron ⏳
+   - 1.1.d Inbound via History API + pg_cron ✅
    - 1.1.e UI /inbox/email ⏳
 2. **Templates de email + snippets (M)** — tokens `{{first_name}}`, biblioteca compartilhada.
 3. **Calling via Twilio Voice (G)** — discador WebRTC, log automático, gravação opcional.
