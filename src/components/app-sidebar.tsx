@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -27,6 +27,7 @@ const groups: Group[] = [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Macros", url: "/settings/macros", icon: Wand2 },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+      { title: "Portal do cliente", url: "/settings/portal", icon: ExternalLink },
       { title: "Listas", url: "/settings/segments", icon: Filter },
     ],
   },

@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
+import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
+import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
@@ -94,6 +96,11 @@ const IndexRoute = IndexRouteImport.update({
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
   id: '/survey/$token',
   path: '/survey/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalTokenRoute = PortalTokenRouteImport.update({
+  id: '/portal/$token',
+  path: '/portal/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
@@ -235,6 +242,12 @@ const AuthenticatedSettingsRolesRoute =
   AuthenticatedSettingsRolesRouteImport.update({
     id: '/roles',
     path: '/roles',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPortalRoute =
+  AuthenticatedSettingsPortalRouteImport.update({
+    id: '/portal',
+    path: '/portal',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsPlaybooksRoute =
@@ -407,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/portal/$token': typeof PortalTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -421,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -463,6 +478,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthenticatedNotesRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/portal/$token': typeof PortalTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -477,6 +493,7 @@ export interface FileRoutesByTo {
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -523,6 +540,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/portal/$token': typeof PortalTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -537,6 +555,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
+  '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -583,6 +602,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/portal/$token'
     | '/survey/$token'
     | '/campaigns/whatsapp'
     | '/inbox/email'
@@ -597,6 +617,7 @@ export interface FileRouteTypes {
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
+    | '/settings/portal'
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
@@ -639,6 +660,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/tasks'
     | '/tickets'
+    | '/portal/$token'
     | '/survey/$token'
     | '/campaigns/whatsapp'
     | '/inbox/email'
@@ -653,6 +675,7 @@ export interface FileRouteTypes {
     | '/settings/macros'
     | '/settings/pipelines'
     | '/settings/playbooks'
+    | '/settings/portal'
     | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
@@ -698,6 +721,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/portal/$token'
     | '/survey/$token'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/inbox/email'
@@ -712,6 +736,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
+    | '/_authenticated/settings/portal'
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
     | '/_authenticated/settings/scoring'
@@ -747,6 +772,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  PortalTokenRoute: typeof PortalTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
@@ -804,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/survey/$token'
       fullPath: '/survey/$token'
       preLoaderRoute: typeof SurveyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/$token': {
+      id: '/portal/$token'
+      path: '/portal/$token'
+      fullPath: '/portal/$token'
+      preLoaderRoute: typeof PortalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tickets': {
@@ -979,6 +1012,13 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/settings/roles'
       preLoaderRoute: typeof AuthenticatedSettingsRolesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/portal': {
+      id: '/_authenticated/settings/portal'
+      path: '/portal'
+      fullPath: '/settings/portal'
+      preLoaderRoute: typeof AuthenticatedSettingsPortalRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/playbooks': {
@@ -1203,6 +1243,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
+  AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
@@ -1227,6 +1268,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
+  AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
@@ -1317,6 +1359,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  PortalTokenRoute: PortalTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,

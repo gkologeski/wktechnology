@@ -24,6 +24,7 @@ const tabs = [
   { to: "/settings/audit-log", label: "Auditoria" },
   { to: "/settings/macros", label: "Macros" },
   { to: "/settings/surveys", label: "Pesquisas" },
+  { to: "/settings/portal", label: "Portal do cliente" },
   { to: "/settings/security", label: "Segurança" },
   { to: "/settings/subscriptions", label: "Tipos de Assinatura" },
 ] as const;
