@@ -1578,6 +1578,54 @@ export type Database = {
           },
         ]
       }
+      goals: {
+        Row: {
+          created_at: string
+          id: string
+          metric: Database["public"]["Enums"]["goal_metric"]
+          name: string
+          notes: string | null
+          owner_id: string
+          period: Database["public"]["Enums"]["goal_period"]
+          period_end: string
+          period_start: string
+          pipeline_id: string | null
+          target_user_id: string | null
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric: Database["public"]["Enums"]["goal_metric"]
+          name: string
+          notes?: string | null
+          owner_id?: string
+          period?: Database["public"]["Enums"]["goal_period"]
+          period_end: string
+          period_start: string
+          pipeline_id?: string | null
+          target_user_id?: string | null
+          target_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric?: Database["public"]["Enums"]["goal_metric"]
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          period?: Database["public"]["Enums"]["goal_period"]
+          period_end?: string
+          period_start?: string
+          pipeline_id?: string | null
+          target_user_id?: string | null
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           config: Json
@@ -3408,6 +3456,15 @@ export type Database = {
         | "expired"
         | "canceled"
       esign_signer_status: "pending" | "viewed" | "signed" | "declined"
+      goal_metric:
+        | "deals_won_count"
+        | "deals_won_value"
+        | "deals_created"
+        | "activities_count"
+        | "calls_count"
+        | "emails_sent"
+        | "tasks_completed"
+      goal_period: "month" | "quarter" | "year" | "custom"
       integration_status: "connected" | "pending" | "error" | "disconnected"
       job_entity: "lead" | "contact" | "company" | "deal"
       job_kind: "import" | "enrich" | "export" | "sync"
@@ -3573,6 +3630,16 @@ export const Constants = {
         "canceled",
       ],
       esign_signer_status: ["pending", "viewed", "signed", "declined"],
+      goal_metric: [
+        "deals_won_count",
+        "deals_won_value",
+        "deals_created",
+        "activities_count",
+        "calls_count",
+        "emails_sent",
+        "tasks_completed",
+      ],
+      goal_period: ["month", "quarter", "year", "custom"],
       integration_status: ["connected", "pending", "error", "disconnected"],
       job_entity: ["lead", "contact", "company", "deal"],
       job_kind: ["import", "enrich", "export", "sync"],
