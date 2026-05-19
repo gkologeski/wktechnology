@@ -131,9 +131,21 @@ function EmailSettings() {
                     <p className="text-xs text-destructive mt-1">{a.last_error}</p>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Desconectar">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => syncMut.mutate(a.id)}
+                    disabled={syncMut.isPending}
+                    title="Sincronizar agora"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`} />
+                    Sincronizar
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Desconectar">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))
