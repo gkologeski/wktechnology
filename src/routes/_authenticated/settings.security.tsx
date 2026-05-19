@@ -173,15 +173,16 @@ function SecurityPage() {
                 Escaneie o QR Code com seu app autenticador, depois digite o código de 6 dígitos.
               </p>
               <div className="flex items-start gap-4">
-                <div
-                  className="bg-white p-2 rounded border w-44 h-44 flex items-center justify-center"
-                  // qr_code é uma data URL SVG
-                  dangerouslySetInnerHTML={enroll.qr.startsWith("data:") ? undefined : { __html: enroll.qr }}
-                >
-                  {enroll.qr.startsWith("data:") && (
+                {enroll.qr.startsWith("data:") ? (
+                  <div className="bg-white p-2 rounded border w-44 h-44 flex items-center justify-center">
                     <img src={enroll.qr} alt="QR Code 2FA" className="w-40 h-40" />
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div
+                    className="bg-white p-2 rounded border w-44 h-44 flex items-center justify-center [&_svg]:w-40 [&_svg]:h-40"
+                    dangerouslySetInnerHTML={{ __html: enroll.qr }}
+                  />
+                )}
                 <div className="space-y-2 flex-1">
                   <div className="space-y-1">
                     <Label className="text-xs">Chave manual</Label>
