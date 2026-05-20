@@ -18,15 +18,29 @@ const SearchInput = z.object({
   max_results: z.number().int().min(1).max(50).default(10),
 });
 
+type ProspectSearch = {
+  id: string; owner_id: string; name: string; status: string; error: string | null;
+  industry: string | null; role_title: string | null; company_size: string | null;
+  location: string | null; keywords: string | null; instructions: string | null;
+  max_results: number; result_count: number; ran_at: string | null;
+  created_at: string; updated_at: string;
+};
+type ProspectResult = {
+  id: string; owner_id: string; search_id: string;
+  company_name: string | null; contact_name: string | null; role_title: string | null;
+  email_hint: string | null; domain_hint: string | null; location: string | null;
+  reason: string | null; imported_lead_id: string | null; imported_at: string | null; created_at: string;
+};
+
 export const listProspectSearches = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<ProspectSearch[]> => {
     const { supabase, userId } = context;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any).from("prospecting_searches")
       .select("*").eq("owner_id", userId).order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as Array<Record<string, unknown> & { id: string; status: string }>;
+    return (data ?? []) as ProspectSearch[];
   });
 
 export const upsertProspectSearch = createServerFn({ method: "POST" })

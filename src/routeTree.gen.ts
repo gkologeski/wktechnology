@@ -49,6 +49,7 @@ import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
+import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
@@ -312,6 +313,12 @@ const AuthenticatedSettingsQuotesRoute =
   AuthenticatedSettingsQuotesRouteImport.update({
     id: '/quotes',
     path: '/quotes',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsProspectingRoute =
+  AuthenticatedSettingsProspectingRouteImport.update({
+    id: '/prospecting',
+    path: '/prospecting',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsProductsRoute =
@@ -638,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -724,6 +732,7 @@ export interface FileRoutesByTo {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -814,6 +823,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -904,6 +914,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
     | '/settings/roles'
@@ -990,6 +1001,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
     | '/settings/roles'
@@ -1079,6 +1091,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/products'
+    | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/recurring'
     | '/_authenticated/settings/roles'
@@ -1435,6 +1448,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/settings/quotes'
       preLoaderRoute: typeof AuthenticatedSettingsQuotesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/prospecting': {
+      id: '/_authenticated/settings/prospecting'
+      path: '/prospecting'
+      fullPath: '/settings/prospecting'
+      preLoaderRoute: typeof AuthenticatedSettingsProspectingRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/products': {
@@ -1815,6 +1835,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
+  AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
@@ -1850,6 +1871,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
+  AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
