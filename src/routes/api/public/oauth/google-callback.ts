@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           return htmlResponse("Parâmetros faltando", `<h1>Requisição inválida</h1>`, 400);
         }
 
-        let parsed: { user_id: string; return_to?: string };
+        let parsed: { user_id: string; return_to?: string; mode?: string };
         try {
           parsed = verifyState(state);
         } catch (e) {
@@ -49,6 +49,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         }
 
         const redirectUri = callbackRedirectUri(getRequestHost());
+        const mode = parsed.mode === "calendar" ? "calendar" : "gmail";
 
         try {
           const tokens = await exchangeCodeForTokens({ code, redirectUri });
@@ -56,7 +57,42 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           const scopes = tokens.scope ? tokens.scope.split(" ") : [];
           const expiresAt = new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString();
 
-          // Upsert account. If reconnecting, refresh_token may be absent — keep existing.
+          if (mode === "calendar") {
+            const { data: existing } = await supabaseAdmin
+              .from("calendar_accounts")
+              .select("id, refresh_token")
+              .eq("owner_id", parsed.user_id)
+              .eq("provider", "google")
+              .eq("email", info.email)
+              .maybeSingle();
+            const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
+            const payload = {
+              owner_id: parsed.user_id,
+              provider: "google",
+              email: info.email,
+              access_token: tokens.access_token,
+              refresh_token: refreshToken,
+              expires_at: expiresAt,
+              scopes,
+              primary_calendar_id: "primary",
+              sync_enabled: true,
+              last_status: "connected",
+              last_error: null as string | null,
+            };
+            if (existing) {
+              const { error } = await supabaseAdmin
+                .from("calendar_accounts").update(payload).eq("id", existing.id);
+              if (error) throw new Error(error.message);
+            } else {
+              const { error } = await supabaseAdmin.from("calendar_accounts").insert(payload);
+              if (error) throw new Error(error.message);
+            }
+            const returnTo = parsed.return_to && parsed.return_to.startsWith("/")
+              ? parsed.return_to : "/settings/calendars";
+            return new Response(null, { status: 302, headers: { Location: `${returnTo}?calendar=connected` } });
+          }
+
+          // Default: gmail
           const { data: existing } = await supabaseAdmin
             .from("email_accounts")
             .select("id, refresh_token")
@@ -98,7 +134,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(
             "Falha ao conectar",
-            `<h1>Falha ao conectar Gmail</h1><p>${msg}</p><p><a href="/settings/email">Voltar</a></p>`,
+            `<h1>Falha ao conectar</h1><p>${msg}</p><p><a href="/settings/calendars">Voltar</a></p>`,
             500,
           );
         }
