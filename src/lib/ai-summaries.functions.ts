@@ -68,7 +68,14 @@ async function collectMessages(
     .gte("created_at", since)
     .order("created_at", { ascending: true })
     .limit(200);
-  if (relCol) actQuery = actQuery.eq(relCol, entityId);
+  if (relCol) {
+    actQuery = actQuery.eq(relCol, entityId);
+  } else {
+    // ticket → use contact link
+    const cid = await resolveContactId(supabase, entity, entityId);
+    if (!cid) return msgs;
+    actQuery = actQuery.eq("related_contact_id", cid);
+  }
   const { data: acts } = await actQuery;
   for (const a of (acts ?? []) as any[]) {
     if (kind === "call" && a.type !== "call" && a.type !== "meeting") continue;
