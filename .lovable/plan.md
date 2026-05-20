@@ -1,79 +1,95 @@
-## Item 6 — Workflows engine + builder visual
+# Réplica fiel HubSpot na tela de Leads
 
-Hoje a tabela `workflows` existe mas não roda nada: a página é só um CRUD de JSON cru. Vou entregar três coisas: (1) captura de eventos via triggers no Postgres, (2) executor server-side processado por pg_cron, (3) builder visual substituindo a tela atual.
+Reescrevo `/leads` para reproduzir o layout do CRM Index do HubSpot. O `EntityList` genérico permanece intacto (continua servindo Contatos, Empresas, Negócios, Tarefas etc.) — só a tela de Leads ganha esta versão dedicada.
 
-### Modelo de eventos
+## Layout final
 
-Migration:
-- `workflow_events(id, entity, entity_id, owner_id, event_type, before jsonb, after jsonb, processed_at, created_at)` — fila append-only.
-- `workflow_runs(id, workflow_id, event_id, status, started_at, finished_at, error, log jsonb)` — uma execução por (workflow × evento).
-- Triggers `AFTER INSERT/UPDATE` em `leads`, `contacts`, `companies`, `deals` inserindo em `workflow_events` com `event_type ∈ {created, updated, stage_changed}` (stage_changed só para deals quando `stage_id` muda).
-- Índice em `(processed_at) WHERE processed_at IS NULL`.
-- RLS owner em ambas as tabelas novas.
-
-### Trigger DSL (formato `trigger` na tabela `workflows`)
-
-```json
-{
-  "event": "created" | "updated" | "stage_changed",
-  "filters": [{ "field": "source", "op": "eq", "value": "site" }]
-}
+```text
+┌───────────────────────────────────────────────────────────────────┐
+│ Leads                          [Importar HubSpot] [Exportar] [+ Criar lead] │
+├───────────────────────────────────────────────────────────────────┤
+│ [All leads] [My leads] [Unassigned] [New this week] [+ Add view] │  ← abas
+├──────────────┬────────────────────────────────────────────────────┤
+│ FILTERS      │ 🔍 Buscar nome, email...    [Actions ▾]            │
+│              ├────────────────────────────────────────────────────┤
+│ ▾ Status     │ ☐ │ NAME │ EMAIL │ PHONE │ COMPANY │ STATUS │ ... │
+│   ☐ New      ├────────────────────────────────────────────────────┤
+│   ☐ Qualified│ ☐ │ João  │ ...   │ ...   │ Acme    │ ● New  │ ... │
+│ ▾ Owner      │ ☐ │ Maria │ ...   │ ...   │ Beta    │ ● Qual │ ... │
+│ ▾ Source     │ ...                                                │
+│ ▾ Score      ├────────────────────────────────────────────────────┤
+│ ▾ Create date│ 50 per page  ◀ 1 2 3 4 ▶          1–50 of 1,234   │
+└──────────────┴────────────────────────────────────────────────────┘
 ```
 
-Operadores suportados: `eq`, `neq`, `in`, `contains`, `gt`, `lt`, `changed_to` (só faz sentido em `updated`/`stage_changed`).
+Hero atual, KPIs, "Distribuição por status" e "Top fontes" saem da tela `/leads` para casar com a estética HubSpot (densa, focada na tabela). Esses widgets continuam disponíveis no Dashboard.
 
-### Action DSL (array `actions`)
+## Arquivos
 
-Tipos suportados nesta entrega:
-- `set_field` `{field, value}` — update no próprio registro
-- `create_activity` `{type, title, body, due_in_days?}` — insere em `activities`
-- `add_to_sequence` `{sequence_id}` — placeholder que apenas grava log (executor real vem no item 7)
-- `send_notification` `{title, body}` — insere em `notifications` se a tabela existir; senão log
-- `assign_to` `{user_id}` — set `owner_id`
-- `webhook` `{url, payload?}` — POST JSON
+- `src/routes/_authenticated/leads.tsx` — substitui a tela atual pela nova UI HubSpot. Mantém o `<Outlet />` quando `pathname !== "/leads"` para preservar `/leads/:id` e `/leads/import-hubspot`. Mantém `convert(lead)` movida para um menu de ações por linha.
+- `src/components/leads/leads-filters-sidebar.tsx` — sidebar esquerda fixa (~260px), grupos colapsáveis (`Collapsible` do shadcn).
+- `src/components/leads/leads-views-tabs.tsx` — abas das views padrão + "+ Add view".
+- `src/components/leads/leads-table.tsx` — tabela densa: header sticky `bg-muted/50`, linhas `h-12 hover:bg-primary/5`, divisores finos, coluna Name em link azul.
+- `src/components/leads/leads-pagination.tsx` — rodapé com page size (25/50/100) e paginação numérica.
 
-Suporte a tokens `{{field}}` em strings, resolvendo contra `after`.
+Reutiliza `Table`, `Checkbox`, `Button`, `Input`, `Badge`, `DropdownMenu`, `BulkActionBar`, `BulkEnrichDialog` já existentes, e o cliente Supabase atual.
 
-### Executor
+## Views padrão (client-side)
 
-`src/lib/workflows/engine.server.ts`:
-- `processEvent(eventId)` — carrega evento, lista workflows ativos com `entity == event.entity`, avalia trigger+filters, para cada match cria `workflow_runs` e executa ações sequencialmente, gravando log por step. Marca `processed_at` ao final.
-- Idempotência: `unique(workflow_id, event_id)` em `workflow_runs`.
+| View | Filtro |
+|---|---|
+| All leads | nenhum |
+| My leads | `owner_id = auth.uid()` |
+| Unassigned | `owner_id is null` |
+| New this week | `created_at >= now() - 7d` |
 
-Endpoint cron: `src/routes/api/public/hooks/workflows-tick.ts`:
-- Pega até 50 eventos com `processed_at IS NULL`, processa um por um (try/catch isolado).
+A view ativa controla a query do Supabase.
 
-pg_cron a cada 1 minuto chamando o hook.
+## Colunas (Padrão HubSpot)
 
-### UI — Builder visual
+Ordem fixa nesta primeira versão:
 
-Substituir `src/routes/_authenticated/settings.workflows.tsx`:
-- Lista de workflows (cards com nome, entidade, on/off, contagem de runs últimas 24h).
-- Drawer/dialog "Editar workflow" com:
-  - **Quando** — entidade + tipo de evento (select)
-  - **Se** — filtros (linhas dinâmicas field/op/value); fields populados conforme entidade
-  - **Então** — lista ordenada de ações; cada ação tem form específico por tipo (`set_field`, `create_activity`, etc.) em vez de JSON cru
-  - Toggle ativo + nome
-- Aba "Execuções recentes" mostrando últimas 20 entradas de `workflow_runs` com status e log expandível.
+1. ☐ checkbox
+2. **Name** (link azul para `/leads/:id`, com avatar circular pequeno à esquerda)
+3. Email (com ícone)
+4. Phone
+5. Company name
+6. Lead Status (pill colorida)
+7. Owner (placeholder enquanto não houver join real)
+8. Create Date (formato relativo "3 days ago")
 
-Componente em `src/components/workflows/workflow-builder.tsx`. Sem libs novas.
+## Filtros (sidebar esquerda)
 
-### Entregáveis (arquivos)
+- Cada grupo colapsável.
+- Multi-select com checkbox (Status, Owner, Source).
+- Score: slider 0–100.
+- Create date: presets (Today / Last 7d / Last 30d / Custom).
+- Estado em React local; aplicado via `.in()`, `.gte()`, `.eq()` na query.
+- Botão "Clear all" no topo quando há filtro ativo.
 
-1. Migration: `workflow_events`, `workflow_runs`, triggers em 4 tabelas, índices, RLS, registro pg_cron.
-2. `src/lib/workflows/engine.server.ts` — executor.
-3. `src/lib/workflows/types.ts` — tipos do DSL.
-4. `src/lib/workflows.functions.ts` — `listWorkflows`, `saveWorkflow`, `deleteWorkflow`, `listRecentRuns`, `runEventNow` (debug).
-5. `src/routes/api/public/hooks/workflows-tick.ts` — endpoint cron.
-6. `src/routes/_authenticated/settings.workflows.tsx` — nova UI.
-7. `src/components/workflows/workflow-builder.tsx` — drawer/builder visual.
-8. `src/components/workflows/workflow-runs-list.tsx` — execuções recentes.
-9. Atualizar `docs/roadmap.md` marcando item 6 ✅.
+## Tabela
 
-### Fora do escopo desta entrega
+- Container `border rounded-md overflow-hidden`.
+- Header: `bg-muted/50`, texto `text-xs font-semibold uppercase tracking-wide`.
+- Linhas `h-12 hover:bg-primary/5`, divisor `border-b border-border/50`.
+- Sort por Name e Create Date no header.
+- Seleção em massa reaproveita `BulkActionBar` (Editar / Excluir / Enriquecer / Converter).
 
-- Triggers temporais ("3 dias depois de…") — entra com Sequences (item 7).
-- Branching/if-else dentro das ações — sequencial linear por enquanto.
-- Versionamento de workflows.
+## Paginação
 
-Após sua validação, sigo para o item 7 (Sequences executor) reusando o mesmo executor.
+- Page size 25 / 50 / 100 (default 50).
+- Paginação numérica + setas + "X–Y of N".
+- Via `.range()` do Supabase.
+
+## Detalhes técnicos
+
+- `useQuery` com chave `["leads", "hubspot-list", view, filters, sort, page, search]`.
+- `search` aplica `.or("first_name.ilike.%x%,last_name.ilike.%x%,email.ilike.%x%,company_name.ilike.%x%")` com debounce 300ms.
+- Sem mudanças de schema.
+
+## Fora do escopo desta entrega
+
+- Persistir views customizadas do usuário (precisaria de tabela `lead_views`).
+- Editor de colunas drag-and-drop.
+- Hover-card / preview lateral ao clicar em linha.
+- Owner real (depende de join com `profiles`).
