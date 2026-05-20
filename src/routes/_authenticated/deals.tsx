@@ -151,7 +151,7 @@ function DealsPage() {
         title="Negócios"
         description="Pipeline de vendas estilo HubSpot."
         actions={
-          <Button size="sm" onClick={openNew} className="bg-[var(--hs-orange)] text-[var(--hs-orange-foreground)] hover:bg-[var(--hs-orange)]/90">
+          <Button size="sm" onClick={openNew} className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90">
             <Plus className="h-4 w-4 mr-1" /> Criar negócio
           </Button>
         }
