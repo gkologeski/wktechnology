@@ -54,7 +54,7 @@ function DealsPage() {
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
-  const [view, setView] = useState<"board" | "list" | "forecast">("board");
+  const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
 
   const { data: deals = [] } = useQuery({
     queryKey: ["deals", "list"],
