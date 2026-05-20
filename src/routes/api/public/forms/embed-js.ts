@@ -65,7 +65,7 @@ const SCRIPT = (origin: string) => `(function(){
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();`;
 
-export const Route = createFileRoute("/api/public/forms/embed/js")({
+export const Route = createFileRoute("/api/public/forms/embed-js")({
   server: {
     handlers: {
       GET: async () => {

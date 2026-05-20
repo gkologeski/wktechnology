@@ -78,6 +78,7 @@ import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
+import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed.js'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
@@ -471,6 +472,11 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
   path: '/api/public/forms/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
+  id: '/api/public/forms/embed/js',
+  path: '/api/public/forms/embed/js',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFormsSlugSubmitRoute =
   ApiPublicFormsSlugSubmitRouteImport.update({
     id: '/submit',
@@ -569,6 +575,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -641,6 +648,7 @@ export interface FileRoutesByTo {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -717,6 +725,7 @@ export interface FileRoutesById {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -793,6 +802,7 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/forms/embed/js'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -865,6 +875,7 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/forms/embed/js'
   id:
     | '__root__'
     | '/'
@@ -940,6 +951,7 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/forms/embed/js'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -966,6 +978,7 @@ export interface RootRouteChildren {
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
+  ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1453,6 +1466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/forms/embed/js': {
+      id: '/api/public/forms/embed/js'
+      path: '/api/public/forms/embed/js'
+      fullPath: '/api/public/forms/embed/js'
+      preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/$slug/submit': {
       id: '/api/public/forms/$slug/submit'
       path: '/submit'
@@ -1687,6 +1707,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
+  ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
