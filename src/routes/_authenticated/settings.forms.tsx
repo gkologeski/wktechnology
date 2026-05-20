@@ -339,3 +339,98 @@ function ViewerBody({ form }: { form: FormRow }) {
     </div>
   );
 }
+
+function DisplaySection({
+  editing, update,
+}: {
+  editing: Partial<FormRow>;
+  update: (patch: Partial<FormRow>) => void;
+}) {
+  const mode: DisplayMode = (editing.display_mode as DisplayMode) ?? "inline";
+  const cfg: PopupConfig = (editing.popup_config as PopupConfig) ?? {};
+  const updateCfg = (patch: Partial<PopupConfig>) => update({ popup_config: { ...cfg, ...patch } });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Exibição</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Modo</Label>
+            <Select value={mode} onValueChange={(v) => update({ display_mode: v as DisplayMode, popup_config: v === "inline" ? {} : { ...DEFAULT_POPUP, ...cfg } })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inline">Inline (embed na página)</SelectItem>
+                <SelectItem value="popup">Pop-up (modal)</SelectItem>
+                <SelectItem value="slidein">Slide-in lateral</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {mode !== "inline" && (
+            <div>
+              <Label>Gatilho</Label>
+              <Select value={cfg.trigger ?? "time"} onValueChange={(v) => updateCfg({ trigger: v as PopupConfig["trigger"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="load">Ao carregar</SelectItem>
+                  <SelectItem value="time">Após X segundos</SelectItem>
+                  <SelectItem value="scroll">Após rolar X%</SelectItem>
+                  <SelectItem value="exit_intent">Exit intent (sair)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {mode !== "inline" && (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              {cfg.trigger === "time" && (
+                <div>
+                  <Label>Atraso (s)</Label>
+                  <Input type="number" min={0} max={600} value={cfg.delay_seconds ?? 5} onChange={(e) => updateCfg({ delay_seconds: Number(e.target.value) })} />
+                </div>
+              )}
+              {cfg.trigger === "scroll" && (
+                <div>
+                  <Label>Scroll (%)</Label>
+                  <Input type="number" min={1} max={100} value={cfg.scroll_percent ?? 50} onChange={(e) => updateCfg({ scroll_percent: Number(e.target.value) })} />
+                </div>
+              )}
+              <div>
+                <Label>Frequência (dias)</Label>
+                <Input type="number" min={0} max={365} value={cfg.frequency_days ?? 7} onChange={(e) => updateCfg({ frequency_days: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Posição</Label>
+                <Select value={cfg.position ?? "center"} onValueChange={(v) => updateCfg({ position: v as PopupConfig["position"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="bottom-right">Canto inferior direito</SelectItem>
+                    <SelectItem value="bottom-left">Canto inferior esquerdo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Título do pop-up (opcional)</Label>
+                <Input value={cfg.title ?? ""} onChange={(e) => updateCfg({ title: e.target.value })} placeholder="Receba nosso material" />
+              </div>
+              <div>
+                <Label>Descrição (opcional)</Label>
+                <Input value={cfg.description ?? ""} onChange={(e) => updateCfg({ description: e.target.value })} placeholder="Deixe seu email..." />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Frequência 0 = mostrar uma única vez por navegador. Exit intent só funciona em desktop; em mobile, há fallback de 60s.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
