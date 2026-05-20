@@ -2706,6 +2706,126 @@ export type Database = {
         }
         Relationships: []
       }
+      prospecting_results: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          domain_hint: string | null
+          email_hint: string | null
+          id: string
+          imported_at: string | null
+          imported_lead_id: string | null
+          location: string | null
+          owner_id: string
+          reason: string | null
+          role_title: string | null
+          search_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          domain_hint?: string | null
+          email_hint?: string | null
+          id?: string
+          imported_at?: string | null
+          imported_lead_id?: string | null
+          location?: string | null
+          owner_id: string
+          reason?: string | null
+          role_title?: string | null
+          search_id: string
+        }
+        Update: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          domain_hint?: string | null
+          email_hint?: string | null
+          id?: string
+          imported_at?: string | null
+          imported_lead_id?: string | null
+          location?: string | null
+          owner_id?: string
+          reason?: string | null
+          role_title?: string | null
+          search_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_results_imported_lead_id_fkey"
+            columns: ["imported_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_results_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_searches: {
+        Row: {
+          company_size: string | null
+          created_at: string
+          error: string | null
+          id: string
+          industry: string | null
+          instructions: string | null
+          keywords: string | null
+          location: string | null
+          max_results: number
+          name: string
+          owner_id: string
+          ran_at: string | null
+          result_count: number
+          role_title: string | null
+          status: Database["public"]["Enums"]["prospecting_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_size?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          industry?: string | null
+          instructions?: string | null
+          keywords?: string | null
+          location?: string | null
+          max_results?: number
+          name: string
+          owner_id: string
+          ran_at?: string | null
+          result_count?: number
+          role_title?: string | null
+          status?: Database["public"]["Enums"]["prospecting_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_size?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          industry?: string | null
+          instructions?: string | null
+          keywords?: string | null
+          location?: string | null
+          max_results?: number
+          name?: string
+          owner_id?: string
+          ran_at?: string | null
+          result_count?: number
+          role_title?: string | null
+          status?: Database["public"]["Enums"]["prospecting_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quote_line_items: {
         Row: {
           created_at: string
@@ -4270,6 +4390,7 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      prospecting_status: "pending" | "running" | "completed" | "failed"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       sentiment_label: "positive" | "neutral" | "negative"
       sub_invoice_status: "pending" | "paid" | "failed" | "void"
@@ -4465,6 +4586,7 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      prospecting_status: ["pending", "running", "completed", "failed"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
       sentiment_label: ["positive", "neutral", "negative"],
       sub_invoice_status: ["pending", "paid", "failed", "void"],
