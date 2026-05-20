@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { pushContactsToHubspot, listHubspotSyncState } from "@/lib/hubspot-sync.functions";
-import { Loader2, ArrowUpDown } from "lucide-react";
+import { relinkHubspotActivities, countActivitiesToRelink } from "@/lib/hubspot-relink.functions";
+import { Loader2, ArrowUpDown, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
@@ -13,14 +14,25 @@ export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
 });
 
 type Row = { id: string; entity: string; local_id: string; hubspot_id: string; last_synced_at: string; direction: string };
+type ActType = "note" | "task" | "call" | "meeting" | "email";
 
 function HubspotSyncPage() {
   const push = useServerFn(pushContactsToHubspot);
   const list = useServerFn(listHubspotSyncState);
+  const relink = useServerFn(relinkHubspotActivities);
+  const countRelink = useServerFn(countActivitiesToRelink);
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
+  const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [progress, setProgress] = useState<string>("");
 
-  const load = async () => { const r = await list({}); setRows(r.state as Row[]); };
+  const load = async () => {
+    const r = await list({});
+    setRows(r.state as Row[]);
+    const c = await countRelink({});
+    setCounts(c.counts);
+  };
   useEffect(() => { void load(); }, []);
 
   const doPush = async () => {
@@ -32,6 +44,50 @@ function HubspotSyncPage() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
   };
+
+  const runRelink = async (type: ActType) => {
+    setRelinkBusy(type);
+    setProgress("");
+    let totalProcessed = 0;
+    let totalUpdated = 0;
+    try {
+      // Loop até esgotar — cada chamada é uma request separada (respeita timeout do Worker)
+      for (let i = 0; i < 1000; i++) {
+        const r = await relink({ data: { type, batchSize: 200 } });
+        totalProcessed += r.processed;
+        totalUpdated += r.updated;
+        setProgress(`${type}: ${totalProcessed} processadas, ${totalUpdated} vinculadas...`);
+        if (!r.hasMore) break;
+      }
+      toast.success(`${type}: ${totalProcessed} processadas, ${totalUpdated} vinculadas`);
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setRelinkBusy(null); setProgress(""); }
+  };
+
+  const runRelinkAll = async () => {
+    setRelinkBusy("all");
+    try {
+      for (const t of ["note", "task", "call", "meeting", "email"] as ActType[]) {
+        if ((counts[t] ?? 0) === 0) continue;
+        setProgress(`Iniciando ${t}...`);
+        let totalProcessed = 0;
+        let totalUpdated = 0;
+        for (let i = 0; i < 1000; i++) {
+          const r = await relink({ data: { type: t, batchSize: 200 } });
+          totalProcessed += r.processed;
+          totalUpdated += r.updated;
+          setProgress(`${t}: ${totalProcessed} processadas, ${totalUpdated} vinculadas...`);
+          if (!r.hasMore) break;
+        }
+      }
+      toast.success("Re-vinculação completa");
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setRelinkBusy(null); setProgress(""); }
+  };
+
+  const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
     <div className="p-6 space-y-6">
@@ -50,6 +106,43 @@ function HubspotSyncPage() {
             {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
             Sincronizar agora
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Re-vincular atividades importadas</CardTitle>
+          <CardDescription>
+            Busca as associações no HubSpot para atividades que vieram sem vínculo de contato/empresa/negócio/lead e atualiza somente os FKs nulos. Não reimporta conteúdo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
+              <div key={t} className="border rounded p-2 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="capitalize font-medium">{t}</span>
+                  <Badge variant={counts[t] ? "default" : "outline"}>{counts[t] ?? 0}</Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!!relinkBusy || !counts[t]}
+                  onClick={() => runRelink(t)}
+                >
+                  {relinkBusy === t ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-vincular"}
+                </Button>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-sm text-muted-foreground">{totalPending.toLocaleString("pt-BR")} pendentes no total</span>
+            <Button onClick={runRelinkAll} disabled={!!relinkBusy || totalPending === 0}>
+              {relinkBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+              Re-vincular todas
+            </Button>
+          </div>
+          {progress && <p className="text-xs text-muted-foreground">{progress}</p>}
         </CardContent>
       </Card>
 
