@@ -143,8 +143,10 @@ export const computeAiProperty = createServerFn({ method: "POST" })
     entity_id: z.string().uuid(),
   }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: prop, error: pErr } = await supabase
+    const { userId } = context;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = context.supabase as any;
+    const { data: prop, error: pErr } = await sb
       .from("custom_properties")
       .select("entity, key, type, options, ai_prompt, label")
       .eq("id", data.property_id)
@@ -152,8 +154,8 @@ export const computeAiProperty = createServerFn({ method: "POST" })
       .single();
     if (pErr || !prop) throw new Error("Propriedade não encontrada");
     if (!prop.ai_prompt) throw new Error("Esta propriedade não tem prompt de IA");
-    const { data: row, error: rErr } = await supabase
-      .from(prop.entity as string)
+    const { data: row, error: rErr } = await sb
+      .from(prop.entity)
       .select("*")
       .eq("id", data.entity_id)
       .eq("owner_id", userId)
@@ -184,18 +186,17 @@ export const computeAiProperty = createServerFn({ method: "POST" })
     if (!res.ok) throw new Error(`AI Gateway ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = (j.choices?.[0]?.message?.content ?? "").trim();
-    let value: unknown = raw;
+    let value: string | number | boolean | string[] | null = raw;
     if (prop.type === "boolean") value = /^t|true|sim|yes|1$/i.test(raw);
     else if (prop.type === "number") { const n = parseFloat(raw.replace(",", ".")); value = Number.isFinite(n) ? n : null; }
-    else if (prop.type === "multiselect") { try { value = JSON.parse(raw); } catch { value = []; } }
-    // merge into custom_fields
-    const cur = (row as { custom_fields?: Record<string, unknown> }).custom_fields ?? {};
-    const next = { ...cur, [prop.key as string]: value };
-    const { error } = await supabase
-      .from(prop.entity as string)
-      .update({ custom_fields: next } as never)
+    else if (prop.type === "multiselect") { try { const p = JSON.parse(raw); value = Array.isArray(p) ? p.map(String) : []; } catch { value = []; } }
+    const cur = (row.custom_fields ?? {}) as Record<string, unknown>;
+    const next = { ...cur, [prop.key]: value };
+    const { error } = await sb
+      .from(prop.entity)
+      .update({ custom_fields: next })
       .eq("id", data.entity_id)
       .eq("owner_id", userId);
     if (error) throw new Error(error.message);
-    return { value };
+    return { value: value as string | number | boolean | string[] | null };
   });
