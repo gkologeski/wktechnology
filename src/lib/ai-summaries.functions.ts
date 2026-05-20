@@ -16,11 +16,10 @@ type Msg = {
   text: string;
 };
 
-const RELATED_KEY: Record<z.infer<typeof ENTITY>, string> = {
+const RELATED_KEY: Partial<Record<z.infer<typeof ENTITY>, string>> = {
   lead: "related_lead_id",
   contact: "related_contact_id",
   deal: "related_deal_id",
-  ticket: "related_ticket_id",
 };
 
 async function resolveContactId(
