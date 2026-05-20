@@ -1640,6 +1640,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               related_contact_id: pr.contactId ? contactMap.get(pr.contactId) ?? null : null,
               related_company_id: pr.companyId ? companyMap.get(pr.companyId) ?? null : null,
               related_deal_id: pr.dealId ? dealMap.get(pr.dealId) ?? null : null,
+              related_lead_id: pr.leadId ? leadMap.get(pr.leadId) ?? null : null,
               ...mapped,
               external_ids: { hubspot: a.id, hs_kind: kind } as never,
               hs_raw: rawOf(a),
