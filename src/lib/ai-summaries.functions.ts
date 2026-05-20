@@ -91,25 +91,31 @@ async function collectMessages(
   }
 
   if (kind === "conversation") {
-    // WhatsApp messages via contact
     const contactId = await resolveContactId(supabase, entity, entityId);
     if (contactId) {
-      const { data: wa } = await supabase
-        .from("whatsapp_messages")
-        .select("direction, body, created_at, conversation_id, whatsapp_conversations!inner(contact_id)")
-        .eq("whatsapp_conversations.contact_id", contactId)
-        .gte("created_at", since)
-        .order("created_at", { ascending: true })
-        .limit(300);
-      for (const m of (wa ?? []) as any[]) {
-        if (!m.body) continue;
-        msgs.push({
-          at: m.created_at,
-          channel: "whatsapp",
-          direction: m.direction === "inbound" ? "in" : "out",
-          who: m.direction === "inbound" ? "Cliente" : "Atendente",
-          text: m.body,
-        });
+      const { data: convs } = await supabase
+        .from("whatsapp_conversations")
+        .select("id")
+        .eq("contact_id", contactId);
+      const convIds = (convs ?? []).map((c: any) => c.id);
+      if (convIds.length > 0) {
+        const { data: wa } = await supabase
+          .from("whatsapp_messages")
+          .select("direction, body, created_at, conversation_id")
+          .in("conversation_id", convIds)
+          .gte("created_at", since)
+          .order("created_at", { ascending: true })
+          .limit(300);
+        for (const m of (wa ?? []) as any[]) {
+          if (!m.body) continue;
+          msgs.push({
+            at: m.created_at,
+            channel: "whatsapp",
+            direction: m.direction === "inbound" ? "in" : "out",
+            who: m.direction === "inbound" ? "Cliente" : "Atendente",
+            text: m.body,
+          });
+        }
       }
     }
   }
