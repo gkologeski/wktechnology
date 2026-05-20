@@ -39,7 +39,7 @@ export const listForms = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("forms")
-      .select("id, name, slug, target, fields, success_message, redirect_url, active, submit_count, created_at, updated_at")
+      .select("id, name, slug, target, fields, success_message, redirect_url, active, submit_count, display_mode, popup_config, created_at, updated_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { items: data ?? [] };
