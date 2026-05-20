@@ -168,11 +168,15 @@ function DealsPage() {
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">
         <TabsList>
+          <TabsTrigger value="table"><TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela</TabsTrigger>
           <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Board</TabsTrigger>
           <TabsTrigger value="list"><ListIcon className="h-3.5 w-3.5 mr-1" /> Lista</TabsTrigger>
           <TabsTrigger value="forecast"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Previsão</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="table" className="mt-4">
+          <DealsHubspotTable deals={filtered} pipeline={selected} lookups={lookups} onOpen={openEdit} />
+        </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
             <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} onOpen={openEdit} />
