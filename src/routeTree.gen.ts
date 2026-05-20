@@ -65,6 +65,7 @@ import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
+import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
@@ -418,6 +419,12 @@ const AuthenticatedSettingsCustomPropertiesRoute =
     path: '/custom-properties',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsCustomObjectsRoute =
+  AuthenticatedSettingsCustomObjectsRouteImport.update({
+    id: '/custom-objects',
+    path: '/custom-objects',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
@@ -679,6 +686,7 @@ export interface FileRoutesByFullPath {
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -773,6 +781,7 @@ export interface FileRoutesByTo {
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -871,6 +880,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -969,6 +979,7 @@ export interface FileRouteTypes {
     | '/settings/audit-log'
     | '/settings/booking'
     | '/settings/calendars'
+    | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -1063,6 +1074,7 @@ export interface FileRouteTypes {
     | '/settings/audit-log'
     | '/settings/booking'
     | '/settings/calendars'
+    | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -1160,6 +1172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/booking'
     | '/_authenticated/settings/calendars'
+    | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
@@ -1654,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCustomPropertiesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/custom-objects': {
+      id: '/_authenticated/settings/custom-objects'
+      path: '/custom-objects'
+      fullPath: '/settings/custom-objects'
+      preLoaderRoute: typeof AuthenticatedSettingsCustomObjectsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/calendars': {
       id: '/_authenticated/settings/calendars'
       path: '/calendars'
@@ -1964,6 +1984,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
+  AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -2001,6 +2022,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
+  AuthenticatedSettingsCustomObjectsRoute:
+    AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
