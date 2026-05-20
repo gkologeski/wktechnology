@@ -869,7 +869,7 @@ async function discoverActivityTargets(args: {
 }) {
   const { supabase, jobId, itemId, step, kind, entities, resume, deadlineAt } = args;
   const targetIds = [...(resume.target_ids ?? [])];
-  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string }>;
+  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string; leadId?: string }>;
   const seen = new Set(targetIds);
   let entityIndex = resume.discovery_entity_index ?? 0;
   let idIndex = resume.discovery_id_index ?? 0;
