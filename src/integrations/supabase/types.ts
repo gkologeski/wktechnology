@@ -2428,6 +2428,69 @@ export type Database = {
         }
         Relationships: []
       }
+      message_sentiments: {
+        Row: {
+          analyzed_at: string
+          contact_id: string | null
+          created_at: string
+          emotion: string | null
+          id: string
+          keywords: Json
+          label: Database["public"]["Enums"]["sentiment_label"]
+          lead_id: string | null
+          model: string
+          owner_id: string
+          score: number
+          source: string
+          source_id: string
+        }
+        Insert: {
+          analyzed_at?: string
+          contact_id?: string | null
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          keywords?: Json
+          label: Database["public"]["Enums"]["sentiment_label"]
+          lead_id?: string | null
+          model: string
+          owner_id: string
+          score: number
+          source: string
+          source_id: string
+        }
+        Update: {
+          analyzed_at?: string
+          contact_id?: string | null
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          keywords?: Json
+          label?: Database["public"]["Enums"]["sentiment_label"]
+          lead_id?: string | null
+          model?: string
+          owner_id?: string
+          score?: number
+          source?: string
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_sentiments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_sentiments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipelines: {
         Row: {
           config: Json
@@ -4208,6 +4271,7 @@ export type Database = {
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
+      sentiment_label: "positive" | "neutral" | "negative"
       sub_invoice_status: "pending" | "paid" | "failed" | "void"
       subscription_status:
         | "trialing"
@@ -4402,6 +4466,7 @@ export const Constants = {
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
+      sentiment_label: ["positive", "neutral", "negative"],
       sub_invoice_status: ["pending", "paid", "failed", "void"],
       subscription_status: [
         "trialing",
