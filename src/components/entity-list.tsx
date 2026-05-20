@@ -71,6 +71,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields, lockedFilters, entitySingularLabel } = props;
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const savedViews = useSavedViews(table);
   const presets = PRESET_VIEWS[table] ?? [];
 
