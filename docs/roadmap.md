@@ -72,7 +72,7 @@
 
 ## ⚪ Onda 7 — Captação & Marketing (3 semanas)
 
-30. Forms builder + embed (G)
+30. **Forms builder + embed (G)** ✅ — tabela `forms` (slug público, fields jsonb, target lead/contact, success_message, redirect_url, active, submit_count) e `form_submissions` (data, lead_id/contact_id, ip, user_agent, referer) com RLS owner/admin. Server fns em `src/lib/forms.functions.ts` (list/upsert/delete/listSubmissions) com validação Zod. Endpoints públicos com CORS: GET `/api/public/forms/:slug` (definição), POST `/api/public/forms/:slug/submit` (cria lead/contato via admin client + registra submissão + honeypot), GET `/api/public/forms/embed-js` (script vanilla que renderiza e envia). Página `/settings/forms` com builder de campos (text/email/tel/number/textarea/select), toggle ativo, mensagem de sucesso, redirect, snippet de embed e listagem dos envios recentes. Entrada "Formulários" no grupo Marketing da sidebar.
 31. Listas dinâmicas (M)
 32. Lead enrichment Apollo/Lusha refinado (M)
 33. Email marketing broadcast (G)
