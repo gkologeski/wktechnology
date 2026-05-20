@@ -1579,15 +1579,17 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
       const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
+      const leadMap = await loadMapForStep(supabase, userId, jobId, "leads", "leads");
 
       let targetIds = resume.target_ids as string[] | undefined;
-      type Parents = { contactId?: string; companyId?: string; dealId?: string };
+      type Parents = { contactId?: string; companyId?: string; dealId?: string; leadId?: string };
       let parents = resume.parents_map as Record<string, Parents> | undefined;
       if (!targetIds || !parents || !resume.discovery_complete) {
-        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
+        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[] = [
           { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
           { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
           { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
+          { fromObj: "leads", ids: [...leadMap.keys()], key: "leadId" },
         ];
         const discovery = await discoverActivityTargets({ supabase, jobId, itemId, step, kind, entities, resume, deadlineAt });
         targetIds = discovery.targetIds;
