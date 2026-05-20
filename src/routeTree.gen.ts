@@ -54,6 +54,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
+import { Route as AuthenticatedSettingsFormsRouteImport } from './routes/_authenticated/settings.forms'
 import { Route as AuthenticatedSettingsExportsRouteImport } from './routes/_authenticated/settings.exports'
 import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
@@ -77,6 +78,9 @@ import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
+import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
+import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
+import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
@@ -329,6 +333,12 @@ const AuthenticatedSettingsGoalsRoute =
     path: '/goals',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsFormsRoute =
+  AuthenticatedSettingsFormsRouteImport.update({
+    id: '/forms',
+    path: '/forms',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsExportsRoute =
   AuthenticatedSettingsExportsRouteImport.update({
     id: '/exports',
@@ -464,6 +474,22 @@ const ApiPublicHooksEmailSyncTickRoute =
     path: '/api/public/hooks/email-sync-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
+  id: '/api/public/forms/embed-js',
+  path: '/api/public/forms/embed-js',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
+  id: '/api/public/forms/$slug',
+  path: '/api/public/forms/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFormsSlugSubmitRoute =
+  ApiPublicFormsSlugSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicFormsSlugRoute,
+  } as any)
 const ApiPublicEmailPixelMessageIdRoute =
   ApiPublicEmailPixelMessageIdRouteImport.update({
     id: '/api/public/email/pixel/$messageId',
@@ -518,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -540,6 +567,8 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -554,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -588,6 +618,7 @@ export interface FileRoutesByTo {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -610,6 +641,8 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -624,6 +657,7 @@ export interface FileRoutesByTo {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -662,6 +696,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/_authenticated/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/_authenticated/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -684,6 +719,8 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -698,6 +735,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -736,6 +774,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/esign'
     | '/settings/exports'
+    | '/settings/forms'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -758,6 +797,8 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
+    | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -772,6 +813,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -806,6 +848,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/esign'
     | '/settings/exports'
+    | '/settings/forms'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -828,6 +871,8 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations'
     | '/settings'
+    | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -842,6 +887,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   id:
     | '__root__'
     | '/'
@@ -879,6 +925,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/esign'
     | '/_authenticated/settings/exports'
+    | '/_authenticated/settings/forms'
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
@@ -901,6 +948,8 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
+    | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -915,6 +964,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -927,6 +977,8 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
+  ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -1259,6 +1311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsGoalsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/forms': {
+      id: '/_authenticated/settings/forms'
+      path: '/forms'
+      fullPath: '/settings/forms'
+      preLoaderRoute: typeof AuthenticatedSettingsFormsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/exports': {
       id: '/_authenticated/settings/exports'
       path: '/exports'
@@ -1420,6 +1479,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailSyncTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/forms/embed-js': {
+      id: '/api/public/forms/embed-js'
+      path: '/api/public/forms/embed-js'
+      fullPath: '/api/public/forms/embed-js'
+      preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/forms/$slug': {
+      id: '/api/public/forms/$slug'
+      path: '/api/public/forms/$slug'
+      fullPath: '/api/public/forms/$slug'
+      preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/forms/$slug/submit': {
+      id: '/api/public/forms/$slug/submit'
+      path: '/submit'
+      fullPath: '/api/public/forms/$slug/submit'
+      preLoaderRoute: typeof ApiPublicFormsSlugSubmitRouteImport
+      parentRoute: typeof ApiPublicFormsSlugRoute
+    }
     '/api/public/email/pixel/$messageId': {
       id: '/api/public/email/pixel/$messageId'
       path: '/api/public/email/pixel/$messageId'
@@ -1480,6 +1560,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
   AuthenticatedSettingsExportsRoute: typeof AuthenticatedSettingsExportsRoute
+  AuthenticatedSettingsFormsRoute: typeof AuthenticatedSettingsFormsRoute
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -1511,6 +1592,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
   AuthenticatedSettingsExportsRoute: AuthenticatedSettingsExportsRoute,
+  AuthenticatedSettingsFormsRoute: AuthenticatedSettingsFormsRoute,
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
@@ -1609,6 +1691,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiPublicFormsSlugRouteChildren {
+  ApiPublicFormsSlugSubmitRoute: typeof ApiPublicFormsSlugSubmitRoute
+}
+
+const ApiPublicFormsSlugRouteChildren: ApiPublicFormsSlugRouteChildren = {
+  ApiPublicFormsSlugSubmitRoute: ApiPublicFormsSlugSubmitRoute,
+}
+
+const ApiPublicFormsSlugRouteWithChildren =
+  ApiPublicFormsSlugRoute._addFileChildren(ApiPublicFormsSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1619,6 +1712,8 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
+  ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
