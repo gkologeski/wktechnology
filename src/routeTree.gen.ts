@@ -91,6 +91,7 @@ import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/publi
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
+import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 
 const SignupRoute = SignupRouteImport.update({
@@ -557,6 +558,12 @@ const ApiPublicEmailClickMessageIdRoute =
     path: '/api/public/email/click/$messageId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBookingSlugSubmitRoute =
+  ApiPublicBookingSlugSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicBookingSlugRoute,
+  } as any)
 const AuthenticatedTasksQueuesQueueIdPlayRoute =
   AuthenticatedTasksQueuesQueueIdPlayRouteImport.update({
     id: '/$queueId/play',
@@ -625,7 +632,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -643,6 +650,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -707,7 +715,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -725,6 +733,7 @@ export interface FileRoutesByTo {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -793,7 +802,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -811,6 +820,7 @@ export interface FileRoutesById {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -897,6 +907,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -979,6 +990,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -1064,6 +1076,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/_authenticated/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -1080,7 +1093,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
-  ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRoute
+  ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
@@ -1678,6 +1691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEmailClickMessageIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/booking/$slug/submit': {
+      id: '/api/public/booking/$slug/submit'
+      path: '/submit'
+      fullPath: '/api/public/booking/$slug/submit'
+      preLoaderRoute: typeof ApiPublicBookingSlugSubmitRouteImport
+      parentRoute: typeof ApiPublicBookingSlugRoute
+    }
     '/_authenticated/tasks/queues/$queueId/play': {
       id: '/_authenticated/tasks/queues/$queueId/play'
       path: '/$queueId/play'
@@ -1861,6 +1881,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiPublicBookingSlugRouteChildren {
+  ApiPublicBookingSlugSubmitRoute: typeof ApiPublicBookingSlugSubmitRoute
+}
+
+const ApiPublicBookingSlugRouteChildren: ApiPublicBookingSlugRouteChildren = {
+  ApiPublicBookingSlugSubmitRoute: ApiPublicBookingSlugSubmitRoute,
+}
+
+const ApiPublicBookingSlugRouteWithChildren =
+  ApiPublicBookingSlugRoute._addFileChildren(ApiPublicBookingSlugRouteChildren)
+
 interface ApiPublicFormsSlugRouteChildren {
   ApiPublicFormsSlugSubmitRoute: typeof ApiPublicFormsSlugSubmitRoute
 }
@@ -1882,7 +1913,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
-  ApiPublicBookingSlugRoute: ApiPublicBookingSlugRoute,
+  ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
