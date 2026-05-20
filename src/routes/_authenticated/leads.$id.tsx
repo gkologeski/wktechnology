@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
@@ -103,6 +104,7 @@ function LeadDetail() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
+          <AiSummaryPanel entity="lead" entityId={lead.id} />
           <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
         </div>
