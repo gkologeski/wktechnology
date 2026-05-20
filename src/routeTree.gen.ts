@@ -36,6 +36,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
+import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
@@ -78,6 +79,8 @@ import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
+import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
+import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
@@ -248,6 +251,11 @@ const AuthenticatedTasksQueuesRoute =
     path: '/queues',
     getParentRoute: () => AuthenticatedTasksRoute,
   } as any)
+const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedTasksRoute,
+} as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
@@ -498,6 +506,17 @@ const AuthenticatedInboxEmailRoute = AuthenticatedInboxEmailRouteImport.update({
   path: '/inbox/email',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedContactsRoute,
+} as any)
+const AuthenticatedCompaniesIdRoute =
+  AuthenticatedCompaniesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedCompaniesRoute,
+  } as any)
 const AuthenticatedCampaignsWhatsappRoute =
   AuthenticatedCampaignsWhatsappRouteImport.update({
     id: '/campaigns/whatsapp',
@@ -679,8 +698,8 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
-  '/companies': typeof AuthenticatedCompaniesRoute
-  '/contacts': typeof AuthenticatedContactsRoute
+  '/companies': typeof AuthenticatedCompaniesRouteWithChildren
+  '/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRoute
@@ -698,6 +717,8 @@ export interface FileRoutesByFullPath {
   '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/companies/$id': typeof AuthenticatedCompaniesIdRoute
+  '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -740,6 +761,7 @@ export interface FileRoutesByFullPath {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -779,8 +801,8 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
-  '/companies': typeof AuthenticatedCompaniesRoute
-  '/contacts': typeof AuthenticatedContactsRoute
+  '/companies': typeof AuthenticatedCompaniesRouteWithChildren
+  '/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRoute
@@ -796,6 +818,8 @@ export interface FileRoutesByTo {
   '/survey/$token': typeof SurveyTokenRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/companies/$id': typeof AuthenticatedCompaniesIdRoute
+  '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -838,6 +862,7 @@ export interface FileRoutesByTo {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -879,8 +904,8 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
-  '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
-  '/_authenticated/contacts': typeof AuthenticatedContactsRoute
+  '/_authenticated/companies': typeof AuthenticatedCompaniesRouteWithChildren
+  '/_authenticated/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
@@ -898,6 +923,8 @@ export interface FileRoutesById {
   '/survey/$token': typeof SurveyTokenRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
+  '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -940,6 +967,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -1000,6 +1028,8 @@ export interface FileRouteTypes {
     | '/survey/$token'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/companies/$id'
+    | '/contacts/$id'
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -1042,6 +1072,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
@@ -1098,6 +1129,8 @@ export interface FileRouteTypes {
     | '/survey/$token'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/companies/$id'
+    | '/contacts/$id'
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -1140,6 +1173,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations'
     | '/settings'
@@ -1199,6 +1233,8 @@ export interface FileRouteTypes {
     | '/survey/$token'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
+    | '/_authenticated/companies/$id'
+    | '/_authenticated/contacts/$id'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
@@ -1241,6 +1277,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
@@ -1501,6 +1538,13 @@ declare module '@tanstack/react-router' {
       path: '/queues'
       fullPath: '/tasks/queues'
       preLoaderRoute: typeof AuthenticatedTasksQueuesRouteImport
+      parentRoute: typeof AuthenticatedTasksRoute
+    }
+    '/_authenticated/tasks/$id': {
+      id: '/_authenticated/tasks/$id'
+      path: '/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
       parentRoute: typeof AuthenticatedTasksRoute
     }
     '/_authenticated/settings/workflows': {
@@ -1797,6 +1841,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contacts/$id': {
+      id: '/_authenticated/contacts/$id'
+      path: '/$id'
+      fullPath: '/contacts/$id'
+      preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
+      parentRoute: typeof AuthenticatedContactsRoute
+    }
+    '/_authenticated/companies/$id': {
+      id: '/_authenticated/companies/$id'
+      path: '/$id'
+      fullPath: '/companies/$id'
+      preLoaderRoute: typeof AuthenticatedCompaniesIdRouteImport
+      parentRoute: typeof AuthenticatedCompaniesRoute
+    }
     '/_authenticated/campaigns/whatsapp': {
       id: '/_authenticated/campaigns/whatsapp'
       path: '/campaigns/whatsapp'
@@ -2010,6 +2068,33 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedCompaniesRouteChildren {
+  AuthenticatedCompaniesIdRoute: typeof AuthenticatedCompaniesIdRoute
+}
+
+const AuthenticatedCompaniesRouteChildren: AuthenticatedCompaniesRouteChildren =
+  {
+    AuthenticatedCompaniesIdRoute: AuthenticatedCompaniesIdRoute,
+  }
+
+const AuthenticatedCompaniesRouteWithChildren =
+  AuthenticatedCompaniesRoute._addFileChildren(
+    AuthenticatedCompaniesRouteChildren,
+  )
+
+interface AuthenticatedContactsRouteChildren {
+  AuthenticatedContactsIdRoute: typeof AuthenticatedContactsIdRoute
+}
+
+const AuthenticatedContactsRouteChildren: AuthenticatedContactsRouteChildren = {
+  AuthenticatedContactsIdRoute: AuthenticatedContactsIdRoute,
+}
+
+const AuthenticatedContactsRouteWithChildren =
+  AuthenticatedContactsRoute._addFileChildren(
+    AuthenticatedContactsRouteChildren,
+  )
+
 interface AuthenticatedIntegrationsRouteChildren {
   AuthenticatedIntegrationsSlugRoute: typeof AuthenticatedIntegrationsSlugRoute
   AuthenticatedIntegrationsIndexRoute: typeof AuthenticatedIntegrationsIndexRoute
@@ -2146,10 +2231,12 @@ const AuthenticatedTasksQueuesRouteWithChildren =
   )
 
 interface AuthenticatedTasksRouteChildren {
+  AuthenticatedTasksIdRoute: typeof AuthenticatedTasksIdRoute
   AuthenticatedTasksQueuesRoute: typeof AuthenticatedTasksQueuesRouteWithChildren
 }
 
 const AuthenticatedTasksRouteChildren: AuthenticatedTasksRouteChildren = {
+  AuthenticatedTasksIdRoute: AuthenticatedTasksIdRoute,
   AuthenticatedTasksQueuesRoute: AuthenticatedTasksQueuesRouteWithChildren,
 }
 
@@ -2159,8 +2246,8 @@ const AuthenticatedTasksRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
-  AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
-  AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
+  AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRouteWithChildren
+  AuthenticatedContactsRoute: typeof AuthenticatedContactsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
@@ -2180,8 +2267,8 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
-  AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
-  AuthenticatedContactsRoute: AuthenticatedContactsRoute,
+  AuthenticatedCompaniesRoute: AuthenticatedCompaniesRouteWithChildren,
+  AuthenticatedContactsRoute: AuthenticatedContactsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
