@@ -2373,6 +2373,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hubspot_owners: {
+        Row: {
+          archived: boolean
+          created_at: string
+          email: string | null
+          first_name: string | null
+          hs_raw: Json | null
+          id: string
+          last_name: string | null
+          team_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          hs_raw?: Json | null
+          id: string
+          last_name?: string | null
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          hs_raw?: Json | null
+          id?: string
+          last_name?: string | null
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hubspot_sync_state: {
         Row: {
           direction: string
