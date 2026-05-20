@@ -565,7 +565,7 @@ async function loadImportedHsIdsForStep(
 async function scanLocalHubspotMap(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
