@@ -69,6 +69,7 @@ const groups: Group[] = [
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail },
       { title: "Templates de email", url: "/settings/email-templates", icon: Send },
       { title: "Formulários", url: "/settings/forms", icon: FileText },
+      { title: "Prospecting", url: "/settings/prospecting", icon: Sparkles },
       { title: "Tipos de assinatura", url: "/settings/subscriptions", icon: Mail },
     ],
   },
