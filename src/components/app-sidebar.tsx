@@ -11,8 +11,30 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/lib/auth";
 
+import { useMyRole } from "@/lib/use-my-role";
+
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 type Group = { label: string; icon: React.ComponentType<{ className?: string }>; items: Item[] };
+
+// URLs visíveis apenas para admin (configuração estrutural e dados sensíveis).
+const ADMIN_ONLY = new Set<string>([
+  "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
+  "/settings/audit-log", "/settings/security", "/settings/hubspot-sync",
+  "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
+  "/settings/pipelines", "/integrations", "/settings/email", "/leads/import-hubspot",
+  "/settings/mobile", "/settings/language",
+]);
+// URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
+const MANAGER_PLUS = new Set<string>([
+  "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
+  "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
+  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign",
+  "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
+  "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
+  "/settings/email-templates", "/settings/segments", "/settings/calendars",
+  "/settings/booking", "/reports", "/dashboards", "/analytics",
+  "/campaigns/whatsapp", "/campaigns/email",
+]);
 
 const groups: Group[] = [
   {
