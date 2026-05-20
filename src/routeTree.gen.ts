@@ -78,6 +78,7 @@ import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
+import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
@@ -470,6 +471,12 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
   path: '/api/public/forms/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFormsSlugSubmitRoute =
+  ApiPublicFormsSlugSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicFormsSlugRoute,
+  } as any)
 const ApiPublicEmailPixelMessageIdRoute =
   ApiPublicEmailPixelMessageIdRouteImport.update({
     id: '/api/public/email/pixel/$messageId',
@@ -546,7 +553,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -561,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -617,7 +625,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -632,6 +640,7 @@ export interface FileRoutesByTo {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -692,7 +701,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRoute
+  '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -707,6 +716,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -782,6 +792,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -853,6 +864,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   id:
     | '__root__'
     | '/'
@@ -927,6 +939,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/forms/$slug/submit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -939,7 +952,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
-  ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRoute
+  ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -1440,6 +1453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/forms/$slug/submit': {
+      id: '/api/public/forms/$slug/submit'
+      path: '/submit'
+      fullPath: '/api/public/forms/$slug/submit'
+      preLoaderRoute: typeof ApiPublicFormsSlugSubmitRouteImport
+      parentRoute: typeof ApiPublicFormsSlugRoute
+    }
     '/api/public/email/pixel/$messageId': {
       id: '/api/public/email/pixel/$messageId'
       path: '/api/public/email/pixel/$messageId'
@@ -1629,6 +1649,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiPublicFormsSlugRouteChildren {
+  ApiPublicFormsSlugSubmitRoute: typeof ApiPublicFormsSlugSubmitRoute
+}
+
+const ApiPublicFormsSlugRouteChildren: ApiPublicFormsSlugRouteChildren = {
+  ApiPublicFormsSlugSubmitRoute: ApiPublicFormsSlugSubmitRoute,
+}
+
+const ApiPublicFormsSlugRouteWithChildren =
+  ApiPublicFormsSlugRoute._addFileChildren(ApiPublicFormsSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1639,7 +1670,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
-  ApiPublicFormsSlugRoute: ApiPublicFormsSlugRoute,
+  ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
