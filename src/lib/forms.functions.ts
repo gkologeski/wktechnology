@@ -58,6 +58,8 @@ export const upsertForm = createServerFn({ method: "POST" })
       success_message: data.success_message ?? "Obrigado pelo contato!",
       redirect_url: data.redirect_url || null,
       active: data.active ?? true,
+      display_mode: data.display_mode ?? "inline",
+      popup_config: data.popup_config ?? {},
     };
     if (data.id) {
       const { error } = await context.supabase.from("forms").update(payload).eq("id", data.id);
