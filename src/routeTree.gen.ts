@@ -54,6 +54,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
+import { Route as AuthenticatedSettingsFormsRouteImport } from './routes/_authenticated/settings.forms'
 import { Route as AuthenticatedSettingsExportsRouteImport } from './routes/_authenticated/settings.exports'
 import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
@@ -332,6 +333,12 @@ const AuthenticatedSettingsGoalsRoute =
     path: '/goals',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsFormsRoute =
+  AuthenticatedSettingsFormsRouteImport.update({
+    id: '/forms',
+    path: '/forms',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsExportsRoute =
   AuthenticatedSettingsExportsRouteImport.update({
     id: '/exports',
@@ -537,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -610,6 +618,7 @@ export interface FileRoutesByTo {
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -687,6 +696,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/_authenticated/settings/exports': typeof AuthenticatedSettingsExportsRoute
+  '/_authenticated/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -764,6 +774,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/esign'
     | '/settings/exports'
+    | '/settings/forms'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -837,6 +848,7 @@ export interface FileRouteTypes {
     | '/settings/email-templates'
     | '/settings/esign'
     | '/settings/exports'
+    | '/settings/forms'
     | '/settings/goals'
     | '/settings/macros'
     | '/settings/pipelines'
@@ -913,6 +925,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/esign'
     | '/_authenticated/settings/exports'
+    | '/_authenticated/settings/forms'
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/pipelines'
@@ -1298,6 +1311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsGoalsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/forms': {
+      id: '/_authenticated/settings/forms'
+      path: '/forms'
+      fullPath: '/settings/forms'
+      preLoaderRoute: typeof AuthenticatedSettingsFormsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/exports': {
       id: '/_authenticated/settings/exports'
       path: '/exports'
@@ -1540,6 +1560,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
   AuthenticatedSettingsExportsRoute: typeof AuthenticatedSettingsExportsRoute
+  AuthenticatedSettingsFormsRoute: typeof AuthenticatedSettingsFormsRoute
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -1571,6 +1592,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsEmailTemplatesRoute,
   AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
   AuthenticatedSettingsExportsRoute: AuthenticatedSettingsExportsRoute,
+  AuthenticatedSettingsFormsRoute: AuthenticatedSettingsFormsRoute,
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
@@ -1712,13 +1734,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
