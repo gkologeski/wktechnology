@@ -544,7 +544,7 @@ async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   fromStep: StepName,
 ): Promise<string[]> {
   const { data: items } = await supabase
