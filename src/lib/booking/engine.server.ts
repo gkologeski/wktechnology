@@ -318,8 +318,8 @@ export async function createPublicBooking(input: {
     body: input.notes ?? null,
     due_date: start_at,
     meeting_location: page.location ?? null,
-    contact_id: contactId,
-    lead_id: leadId,
+    related_contact_id: contactId,
+    related_lead_id: leadId,
     external_ids: page.calendar_account_id && gcalEventId
       ? { [`gcal_${page.calendar_account_id}`]: gcalEventId }
       : {},
