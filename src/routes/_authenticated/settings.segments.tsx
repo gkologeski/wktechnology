@@ -149,7 +149,7 @@ function SegmentsPage() {
       <PageHeader
         title="Listas"
         description="Listas estáticas (manuais) e dinâmicas (atualizadas automaticamente por filtros)."
-        action={
+        actions={
           <Button onClick={() => { setEditing(null); setOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" /> Nova lista
           </Button>
@@ -412,8 +412,7 @@ function MembersSheet({ segmentId, onClose }: { segmentId: string | null; onClos
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {q.data.rows.map((r) => {
-                    const row = r as Record<string, unknown>;
+                  {(q.data.rows as unknown as Record<string, unknown>[]).map((row) => {
                     const label =
                       (row.name as string) ||
                       [row.first_name, row.last_name].filter(Boolean).join(" ") ||
@@ -422,8 +421,8 @@ function MembersSheet({ segmentId, onClose }: { segmentId: string | null; onClos
                     return (
                       <TableRow key={row.id as string}>
                         <TableCell>
-                          <div className="font-medium">{label}</div>
-                          {row.email && <div className="text-xs text-muted-foreground">{row.email as string}</div>}
+                          <div className="font-medium">{String(label ?? "")}</div>
+                          {row.email ? <div className="text-xs text-muted-foreground">{String(row.email)}</div> : null}
                         </TableCell>
                         <TableCell>
                           <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
