@@ -102,7 +102,7 @@ function FormsPage() {
             Crie formulários públicos e incorpore no seu site. Cada envio gera um lead ou contato.
           </p>
         </div>
-        <Button onClick={() => setEditing({ target: "lead", fields: EMPTY_FIELDS, active: true, success_message: "Obrigado pelo contato!" })}>
+        <Button onClick={() => setEditing({ target: "lead", fields: EMPTY_FIELDS, active: true, success_message: "Obrigado pelo contato!", display_mode: "inline", popup_config: DEFAULT_POPUP })}>
           <Plus className="mr-1 h-4 w-4" /> Novo formulário
         </Button>
       </div>
