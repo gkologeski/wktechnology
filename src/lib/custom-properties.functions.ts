@@ -76,6 +76,7 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
       position: data.position,
       required: data.required,
       enabled: data.enabled,
+      ai_prompt: data.ai_prompt ?? null,
     };
     if (data.id) {
       const { error } = await supabase.from("custom_properties").update(payload as never).eq("id", data.id).eq("owner_id", userId);
