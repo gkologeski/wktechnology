@@ -8,11 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { History, Pencil, Database } from "lucide-react";
+import { History, Pencil, Database, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
-  listCustomProperties, setCustomFieldValue, type CustomEntity,
+  listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
 
 export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
