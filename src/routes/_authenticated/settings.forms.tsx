@@ -72,6 +72,8 @@ function FormsPage() {
         success_message: editing?.success_message ?? "Obrigado pelo contato!",
         redirect_url: editing?.redirect_url ?? "",
         active: editing?.active ?? true,
+        display_mode: (editing?.display_mode as DisplayMode) ?? "inline",
+        popup_config: (editing?.popup_config as PopupConfig) ?? {},
       },
     }),
     onSuccess: () => {
