@@ -129,7 +129,16 @@ const groups: Group[] = [
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, signOut } = useAuth();
+  const { isAdmin, isManager } = useMyRole();
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
+  const canSee = (url: string) => {
+    if (ADMIN_ONLY.has(url)) return isAdmin;
+    if (MANAGER_PLUS.has(url)) return isManager;
+    return true;
+  };
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => canSee(i.url)) }))
+    .filter((g) => g.items.length > 0);
   const groupHasActive = (g: Group) => g.items.some((i) => isActive(i.url));
 
   return (
@@ -141,7 +150,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <Collapsible key={group.label} defaultOpen={groupHasActive(group)} className="group/collapsible">
             <SidebarGroup>
               <SidebarGroupLabel asChild>
