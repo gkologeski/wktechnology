@@ -280,7 +280,10 @@ function ViewerBody({ form }: { form: FormRow }) {
   });
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const publicUrl = `${origin}/api/public/forms/${form.slug}`;
-  const embedHtml = `<div data-lovable-form="${form.slug}"></div>\n<script src="${origin}/api/public/forms/embed-js" async></script>`;
+  const isPopup = form.display_mode === "popup" || form.display_mode === "slidein";
+  const embedHtml = isPopup
+    ? `<script data-lovable-form-popup="${form.slug}" src="${origin}/api/public/forms/embed-js" async></script>`
+    : `<div data-lovable-form="${form.slug}"></div>\n<script src="${origin}/api/public/forms/embed-js" async></script>`;
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => toast.success(`${label} copiado`));
