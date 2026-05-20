@@ -70,11 +70,11 @@ async function pickPending(limit: number): Promise<Pending[]> {
     const doneSet = new Set(((done ?? []) as { source_id: string }[]).map((d) => d.source_id));
     const phones = Array.from(new Set(waRows.map((r) => r.from_number).filter(Boolean)));
     const { data: contacts } = await supabaseAdmin
-      .from("contacts").select("id, owner_id, phone, whatsapp").in("phone", phones);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from("contacts").select("id, owner_id, phone" as any).in("phone", phones);
     const phoneMap = new Map<string, string>();
-    for (const c of ((contacts ?? []) as { id: string; phone: string | null; whatsapp: string | null }[])) {
+    for (const c of ((contacts ?? []) as unknown as { id: string; phone: string | null }[])) {
       if (c.phone) phoneMap.set(c.phone, c.id);
-      if (c.whatsapp) phoneMap.set(c.whatsapp, c.id);
     }
     for (const r of waRows) {
       if (doneSet.has(r.id) || !r.body) continue;
