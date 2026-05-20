@@ -111,14 +111,9 @@ function LeadsPage() {
         { name: "source", label: "Fonte" },
       ]}
       bulkActions={(ids) => (
-        <>
-          <Button variant="outline" size="sm" onClick={() => runApollo(ids)}>
-            <Sparkles className="h-4 w-4 mr-1" /> Apollo
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => runLusha(ids)}>
-            <UsersIcon className="h-4 w-4 mr-1" /> Lusha
-          </Button>
-        </>
+        <Button variant="outline" size="sm" onClick={() => setEnrichIds(ids)}>
+          <Sparkles className="h-4 w-4 mr-1" /> Enriquecer
+        </Button>
       )}
       rowActions={(row) => (
         row.status !== "qualified" && row.status !== "disqualified" ? (
@@ -128,5 +123,13 @@ function LeadsPage() {
         ) : null
       )}
     />
+    <BulkEnrichDialog
+      open={!!enrichIds}
+      onOpenChange={(o) => !o && setEnrichIds(null)}
+      ids={enrichIds ?? []}
+      entity="lead"
+      onDone={() => qc.invalidateQueries({ queryKey: ["leads"] })}
+    />
+    </>
   );
 }
