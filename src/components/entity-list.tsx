@@ -502,10 +502,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
               ) : (
                 filtered.map((row) => {
                   const sel = selectedIds.has(row.id);
+                  const href = detailPath ? detailPath(row.id) : null;
                   return (
-                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 border-border/50 transition-colors hover:bg-muted/40 ${detailPath ? "cursor-pointer" : ""}`} onClick={(e) => {
+                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 border-border/50 transition-colors hover:bg-muted/40 ${href ? "cursor-pointer" : ""}`} onClick={(e) => {
                       if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
-                      if (detailPath) window.location.href = detailPath(row.id);
+                      if (href) navigate({ to: href });
                     }}>
                       <TableCell className="py-0 whitespace-nowrap" data-no-row-click onClick={(e) => e.stopPropagation()}>
                         <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} />
@@ -529,7 +530,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                             {isFirst ? (
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <RowAvatar label={avatarLabel(row, k, c.render)} />
-                                <span className={detailPath && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
+                                <span className={href && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
                                   {cellContent}
                                 </span>
                               </div>
