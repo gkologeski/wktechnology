@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EntityList } from "@/components/entity-list";
@@ -16,7 +16,12 @@ export const Route = createFileRoute("/_authenticated/companies")({
 
 function CompaniesPage() {
   const qc = useQueryClient();
+  const location = useLocation();
   const enrichCeps = useServerFn(enrichCompaniesAddress);
+
+  if (location.pathname !== "/companies") {
+    return <Outlet />;
+  }
 
   const lookupRow = async (row: Company) => {
     if (!row.cep) return toast.error("Empresa sem CEP");
@@ -46,6 +51,7 @@ function CompaniesPage() {
       table="companies"
       title="Empresas"
       description="Gerencie as empresas do seu CRM."
+      detailPath={(id) => `/companies/${id}`}
       searchKeys={["name", "domain", "industry"]}
       csvEnabled
       columns={[

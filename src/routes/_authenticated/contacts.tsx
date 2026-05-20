@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/contacts")({
 
 function ContactsPage() {
   const qc = useQueryClient();
+  const location = useLocation();
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
 
   const { data: companies = [] } = useQuery({
@@ -29,6 +30,9 @@ function ContactsPage() {
 
   const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
+  if (location.pathname !== "/contacts") {
+    return <Outlet />;
+  }
 
   return (
     <>
@@ -36,6 +40,7 @@ function ContactsPage() {
       table="contacts"
       title="Contatos"
       description="Pessoas com quem você se relaciona."
+      detailPath={(id) => `/contacts/${id}`}
       csvEnabled
       searchKeys={["first_name", "last_name", "email", "phone"]}
       columns={[

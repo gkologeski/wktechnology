@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -477,31 +477,22 @@ function LeadsPage() {
 
 function LeadCell({ lead }: { lead: Lead }) {
   const full = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
-  const initials = useMemo(() => {
-    const parts = full.split(/\s+/).filter(Boolean);
-    return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
-  }, [full]);
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-violet-500/20 text-xs font-semibold text-primary">
-        {initials}
-      </div>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-medium">{full}</div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {lead.email && (
-            <span className="inline-flex items-center gap-1 truncate">
-              <Mail className="h-3 w-3" />
-              <span className="truncate">{lead.email}</span>
-            </span>
-          )}
-          {lead.phone && (
-            <span className="inline-flex items-center gap-1">
-              <PhoneCall className="h-3 w-3" />
-              {lead.phone}
-            </span>
-          )}
-        </div>
+    <div className="min-w-0">
+      <div className="truncate text-sm font-medium">{full}</div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {lead.email && (
+          <span className="inline-flex items-center gap-1 truncate">
+            <Mail className="h-3 w-3" />
+            <span className="truncate">{lead.email}</span>
+          </span>
+        )}
+        {lead.phone && (
+          <span className="inline-flex items-center gap-1">
+            <PhoneCall className="h-3 w-3" />
+            {lead.phone}
+          </span>
+        )}
       </div>
     </div>
   );
