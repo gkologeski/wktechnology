@@ -587,7 +587,7 @@ async function scanLocalHubspotMap(
 async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   ids: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
