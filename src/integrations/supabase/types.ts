@@ -985,6 +985,167 @@ export type Database = {
         }
         Relationships: []
       }
+      email_broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          contact_id: string | null
+          created_at: string
+          email: string
+          error: string | null
+          id: string
+          lead_id: string | null
+          name: string | null
+          owner_id: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["email_broadcast_recipient_status"]
+          variables: Json
+        }
+        Insert: {
+          broadcast_id: string
+          contact_id?: string | null
+          created_at?: string
+          email: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          name?: string | null
+          owner_id: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
+          variables?: Json
+        }
+        Update: {
+          broadcast_id?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          name?: string | null
+          owner_id?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "email_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcast_recipients_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcast_recipients_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_broadcasts: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          email_account_id: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          name: string
+          owner_id: string
+          rate_per_minute: number
+          reply_to: string | null
+          scheduled_at: string
+          segment_id: string | null
+          sent: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["email_broadcast_status"]
+          subject: string
+          template_id: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          email_account_id?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          name: string
+          owner_id?: string
+          rate_per_minute?: number
+          reply_to?: string | null
+          scheduled_at?: string
+          segment_id?: string | null
+          sent?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["email_broadcast_status"]
+          subject: string
+          template_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          email_account_id?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          name?: string
+          owner_id?: string
+          rate_per_minute?: number
+          reply_to?: string | null
+          scheduled_at?: string
+          segment_id?: string | null
+          sent?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["email_broadcast_status"]
+          subject?: string
+          template_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_broadcasts_email_account_id_fkey"
+            columns: ["email_account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcasts_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcasts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_messages: {
         Row: {
           account_id: string
@@ -1277,6 +1438,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_unsubscribes: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          owner_id: string
+          reason: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          owner_id: string
+          reason?: string | null
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          owner_id?: string
+          reason?: string | null
+          token?: string
+        }
+        Relationships: []
       }
       enrichment_job_items: {
         Row: {
@@ -3622,6 +3810,20 @@ export type Database = {
         | "negotiation"
         | "won"
         | "lost"
+      email_broadcast_recipient_status:
+        | "pending"
+        | "sent"
+        | "failed"
+        | "skipped"
+        | "unsubscribed"
+      email_broadcast_status:
+        | "draft"
+        | "scheduled"
+        | "running"
+        | "paused"
+        | "completed"
+        | "canceled"
+        | "failed"
       esign_doc_status:
         | "draft"
         | "sent"
@@ -3796,6 +3998,22 @@ export const Constants = {
         "negotiation",
         "won",
         "lost",
+      ],
+      email_broadcast_recipient_status: [
+        "pending",
+        "sent",
+        "failed",
+        "skipped",
+        "unsubscribed",
+      ],
+      email_broadcast_status: [
+        "draft",
+        "scheduled",
+        "running",
+        "paused",
+        "completed",
+        "canceled",
+        "failed",
       ],
       esign_doc_status: [
         "draft",
