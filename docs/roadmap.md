@@ -86,8 +86,8 @@
 ## 🟨 Onda 9 — IA / Breeze (rolling)
 
 37. **Resumo automático de conversa/call (M)** ✅ — tabela `ai_summaries` (entity lead/contact/deal/ticket, entity_id, kind `conversation`/`call`, summary, key_points jsonb, next_actions jsonb, sentiment, model, window_from/to, source_count) com RLS owner/admin. Server fns em `src/lib/ai-summaries.functions.ts` (`generateAiSummary`, `listAiSummaries`, `deleteAiSummary`) coletam activities (resolvendo ticket→contact via FK) + whatsapp_messages do contato resolvido (lead.email/contact/deal.primary_contact/ticket.contact) numa janela de 7/30/60/180 dias, montam prompt JSON-strict, chamam Lovable AI Gateway (`google/gemini-2.5-flash` via `LOVABLE_API_KEY`) e persistem o retorno parseado. Componente `AiSummaryPanel` (Sparkles + select de tipo/janela + botão Gerar) renderiza histórico de resumos com badge de sentimento, pontos-chave e próximos passos; embutido no detalhe de Lead e na aba Atividades do drawer de Deal.
-38. Smart compose em WhatsApp/email (M)
-39. AI properties (M)
+38. **Smart compose em WhatsApp/email (M)** ✅ — server fn `smartCompose` (`src/lib/ai-compose.functions.ts`) usando Lovable AI Gateway (`google/gemini-2.5-flash`) com modos `draft`/`improve`/`shorter`/`longer`/`formal`/`casual`/`reply`/`translate_en|es|pt`, tom adaptado ao canal (email formal, WhatsApp conversacional). Componente `SmartComposeMenu` integrado ao `SendEmailDialog` e `SendWhatsAppDialog` permite gerar/reescrever inline com prompt opcional e nome do destinatário como contexto.
+39. **AI properties (M)** ✅ — coluna `ai_prompt` em `custom_properties`, server fn `computeAiProperty` em `src/lib/custom-properties.functions.ts` que monta o registro como JSON, envia prompt + type hint (boolean → true/false, number → decimal, select/multiselect → restrito às opções, date → YYYY-MM-DD) para `google/gemini-2.5-flash` e normaliza o retorno antes de gravar no jsonb `custom_fields`. Editor em `/settings/custom-properties` ganhou textarea de prompt; `PropertiesPanel` mostra botão Sparkles ("Calcular com IA") ao lado de cada campo com prompt configurado.
 40. Sentiment de mensagens (M)
 41. Prospecting agent (G)
 
