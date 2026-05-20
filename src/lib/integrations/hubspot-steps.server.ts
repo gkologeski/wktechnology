@@ -529,7 +529,7 @@ async function loadMapForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
   const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
@@ -544,7 +544,7 @@ async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   fromStep: StepName,
 ): Promise<string[]> {
   const { data: items } = await supabase
@@ -565,7 +565,7 @@ async function loadImportedHsIdsForStep(
 async function scanLocalHubspotMap(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
@@ -587,7 +587,7 @@ async function scanLocalHubspotMap(
 async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   ids: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -863,13 +863,13 @@ async function discoverActivityTargets(args: {
   itemId: string;
   step: StepName;
   kind: string;
-  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[];
+  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[];
   resume: ResumeState;
   deadlineAt: number;
 }) {
   const { supabase, jobId, itemId, step, kind, entities, resume, deadlineAt } = args;
   const targetIds = [...(resume.target_ids ?? [])];
-  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string }>;
+  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string; leadId?: string }>;
   const seen = new Set(targetIds);
   let entityIndex = resume.discovery_entity_index ?? 0;
   let idIndex = resume.discovery_id_index ?? 0;
@@ -1579,15 +1579,17 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
       const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
+      const leadMap = await loadMapForStep(supabase, userId, jobId, "leads", "leads");
 
       let targetIds = resume.target_ids as string[] | undefined;
-      type Parents = { contactId?: string; companyId?: string; dealId?: string };
+      type Parents = { contactId?: string; companyId?: string; dealId?: string; leadId?: string };
       let parents = resume.parents_map as Record<string, Parents> | undefined;
       if (!targetIds || !parents || !resume.discovery_complete) {
-        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[] = [
+        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[] = [
           { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
           { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
           { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
+          { fromObj: "leads", ids: [...leadMap.keys()], key: "leadId" },
         ];
         const discovery = await discoverActivityTargets({ supabase, jobId, itemId, step, kind, entities, resume, deadlineAt });
         targetIds = discovery.targetIds;
@@ -1638,6 +1640,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               related_contact_id: pr.contactId ? contactMap.get(pr.contactId) ?? null : null,
               related_company_id: pr.companyId ? companyMap.get(pr.companyId) ?? null : null,
               related_deal_id: pr.dealId ? dealMap.get(pr.dealId) ?? null : null,
+              related_lead_id: pr.leadId ? leadMap.get(pr.leadId) ?? null : null,
               ...mapped,
               external_ids: { hubspot: a.id, hs_kind: kind } as never,
               hs_raw: rawOf(a),
