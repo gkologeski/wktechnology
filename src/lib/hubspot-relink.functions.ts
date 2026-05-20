@@ -182,7 +182,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       if (Object.keys(patch).length > 0) {
         const { error: upErr } = await supabase
           .from("activities")
-          .update(patch)
+          .update(patch as never)
           .eq("id", a.id)
           .eq("owner_id", userId);
         if (!upErr) updated++;
