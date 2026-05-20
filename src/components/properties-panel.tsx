@@ -107,7 +107,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         <div className="space-y-2 pt-2 border-t">
           <div className="text-xs font-medium text-muted-foreground">Personalizadas</div>
           {customDefs.map((d) => (
-            <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} />
+            <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} entityId={row.id} onComputed={onSaved} />
           ))}
         </div>
       )}
