@@ -64,6 +64,7 @@ const groups: Group[] = [
   {
     label: "Marketing", icon: Megaphone, items: [
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone },
+      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail },
       { title: "Templates de email", url: "/settings/email-templates", icon: Send },
       { title: "Formulários", url: "/settings/forms", icon: FileText },
       { title: "Tipos de assinatura", url: "/settings/subscriptions", icon: Mail },
