@@ -110,5 +110,13 @@ function ContactsPage() {
         );
       }}
     />
+    <BulkEnrichDialog
+      open={!!enrichIds}
+      onOpenChange={(o) => !o && setEnrichIds(null)}
+      ids={enrichIds ?? []}
+      entity="contact"
+      onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
+    />
+    </>
   );
 }
