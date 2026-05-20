@@ -81,6 +81,22 @@ export function buildGmailAuthUrl(opts: { redirectUri: string; state: string }) 
   return `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }
 
+export function buildCalendarAuthUrl(opts: { redirectUri: string; state: string }) {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  if (!clientId) throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID");
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: opts.redirectUri,
+    response_type: "code",
+    scope: CALENDAR_SCOPES.join(" "),
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state: opts.state,
+  });
+  return `${GOOGLE_AUTH_URL}?${params.toString()}`;
+}
+
 export async function exchangeCodeForTokens(opts: { code: string; redirectUri: string }) {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
