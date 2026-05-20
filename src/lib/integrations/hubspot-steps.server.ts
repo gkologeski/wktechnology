@@ -529,7 +529,7 @@ async function loadMapForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals",
+  table: "companies" | "contacts" | "deals" | "leads",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
   const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
