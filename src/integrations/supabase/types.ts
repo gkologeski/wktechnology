@@ -1578,6 +1578,98 @@ export type Database = {
           },
         ]
       }
+      form_submissions: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          data: Json
+          form_id: string
+          id: string
+          ip: string | null
+          lead_id: string | null
+          owner_id: string
+          referer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          data?: Json
+          form_id: string
+          id?: string
+          ip?: string | null
+          lead_id?: string | null
+          owner_id: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          data?: Json
+          form_id?: string
+          id?: string
+          ip?: string | null
+          lead_id?: string | null
+          owner_id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          active: boolean
+          created_at: string
+          fields: Json
+          id: string
+          name: string
+          owner_id: string
+          redirect_url: string | null
+          slug: string
+          submit_count: number
+          success_message: string
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          fields?: Json
+          id?: string
+          name: string
+          owner_id: string
+          redirect_url?: string | null
+          slug: string
+          submit_count?: number
+          success_message?: string
+          target?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          fields?: Json
+          id?: string
+          name?: string
+          owner_id?: string
+          redirect_url?: string | null
+          slug?: string
+          submit_count?: number
+          success_message?: string
+          target?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
