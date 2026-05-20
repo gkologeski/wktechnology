@@ -80,9 +80,11 @@ import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
+import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
+import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
@@ -488,6 +490,12 @@ const ApiPublicHooksEmailSyncTickRoute =
     path: '/api/public/hooks/email-sync-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEmailBroadcastTickRoute =
+  ApiPublicHooksEmailBroadcastTickRouteImport.update({
+    id: '/api/public/hooks/email-broadcast-tick',
+    path: '/api/public/hooks/email-broadcast-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
@@ -503,6 +511,12 @@ const ApiPublicFormsSlugSubmitRoute =
     id: '/submit',
     path: '/submit',
     getParentRoute: () => ApiPublicFormsSlugRoute,
+  } as any)
+const ApiPublicEmailUnsubscribeTokenRoute =
+  ApiPublicEmailUnsubscribeTokenRouteImport.update({
+    id: '/api/public/email/unsubscribe/$token',
+    path: '/api/public/email/unsubscribe/$token',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicEmailPixelMessageIdRoute =
   ApiPublicEmailPixelMessageIdRouteImport.update({
@@ -584,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -599,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesByTo {
@@ -660,6 +676,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -675,6 +692,7 @@ export interface FileRoutesByTo {
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRoutesById {
@@ -740,6 +758,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -755,6 +774,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
+  '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
 }
 export interface FileRouteTypes {
@@ -820,6 +840,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -835,6 +856,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -896,6 +918,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -911,6 +934,7 @@ export interface FileRouteTypes {
     | '/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
   id:
     | '__root__'
@@ -975,6 +999,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -990,6 +1015,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
+    | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
   fileRoutesById: FileRoutesById
 }
@@ -1005,6 +1031,7 @@ export interface RootRouteChildren {
   SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -1019,6 +1046,7 @@ export interface RootRouteChildren {
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
+  ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1520,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailSyncTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/email-broadcast-tick': {
+      id: '/api/public/hooks/email-broadcast-tick'
+      path: '/api/public/hooks/email-broadcast-tick'
+      fullPath: '/api/public/hooks/email-broadcast-tick'
+      preLoaderRoute: typeof ApiPublicHooksEmailBroadcastTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/embed-js': {
       id: '/api/public/forms/embed-js'
       path: '/api/public/forms/embed-js'
@@ -1540,6 +1575,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/forms/$slug/submit'
       preLoaderRoute: typeof ApiPublicFormsSlugSubmitRouteImport
       parentRoute: typeof ApiPublicFormsSlugRoute
+    }
+    '/api/public/email/unsubscribe/$token': {
+      id: '/api/public/email/unsubscribe/$token'
+      path: '/api/public/email/unsubscribe/$token'
+      fullPath: '/api/public/email/unsubscribe/$token'
+      preLoaderRoute: typeof ApiPublicEmailUnsubscribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/email/pixel/$messageId': {
       id: '/api/public/email/pixel/$messageId'
@@ -1757,6 +1799,7 @@ const rootRouteChildren: RootRouteChildren = {
   SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
@@ -1774,6 +1817,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
+  ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
