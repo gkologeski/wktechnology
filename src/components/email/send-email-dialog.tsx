@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 
 type Props = {
   defaultTo?: string;
