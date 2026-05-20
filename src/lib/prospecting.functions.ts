@@ -85,13 +85,13 @@ export const deleteProspectSearch = createServerFn({ method: "POST" })
 export const listProspectResults = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ search_id: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<ProspectResult[]> => {
     const { supabase, userId } = context;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (supabase as any).from("prospecting_results")
       .select("*").eq("owner_id", userId).eq("search_id", data.search_id).order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as Array<Record<string, unknown> & { id: string }>;
+    return (rows ?? []) as ProspectResult[];
   });
 
 export const runProspectSearch = createServerFn({ method: "POST" })
