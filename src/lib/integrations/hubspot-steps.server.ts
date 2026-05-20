@@ -863,7 +863,7 @@ async function discoverActivityTargets(args: {
   itemId: string;
   step: StepName;
   kind: string;
-  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" }[];
+  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[];
   resume: ResumeState;
   deadlineAt: number;
 }) {
