@@ -187,6 +187,175 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_pages: {
+        Row: {
+          active: boolean
+          availability: Json
+          buffer_after_minutes: number
+          buffer_before_minutes: number
+          calendar_account_id: string | null
+          color: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          location: string | null
+          max_advance_days: number
+          min_notice_hours: number
+          owner_id: string
+          slug: string
+          target: string
+          timezone: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          availability?: Json
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          calendar_account_id?: string | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          max_advance_days?: number
+          min_notice_hours?: number
+          owner_id: string
+          slug: string
+          target?: string
+          timezone?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          availability?: Json
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          calendar_account_id?: string | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          max_advance_days?: number
+          min_notice_hours?: number
+          owner_id?: string
+          slug?: string
+          target?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_pages_calendar_account_id_fkey"
+            columns: ["calendar_account_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          activity_id: string | null
+          cancel_reason: string | null
+          canceled_at: string | null
+          contact_id: string | null
+          created_at: string
+          end_at: string
+          gcal_event_id: string | null
+          id: string
+          invitee_email: string
+          invitee_name: string
+          invitee_phone: string | null
+          lead_id: string | null
+          notes: string | null
+          owner_id: string
+          page_id: string
+          start_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_id?: string | null
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          end_at: string
+          gcal_event_id?: string | null
+          id?: string
+          invitee_email: string
+          invitee_name: string
+          invitee_phone?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          owner_id: string
+          page_id: string
+          start_at: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string | null
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          end_at?: string
+          gcal_event_id?: string | null
+          id?: string
+          invitee_email?: string
+          invitee_name?: string
+          invitee_phone?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          page_id?: string
+          start_at?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "booking_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_accounts: {
         Row: {
           access_token: string | null
@@ -3934,6 +4103,7 @@ export type Database = {
       activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
+      booking_status: "confirmed" | "canceled"
       deal_stage:
         | "new"
         | "qualified"
@@ -4122,6 +4292,7 @@ export const Constants = {
       activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
+      booking_status: ["confirmed", "canceled"],
       deal_stage: [
         "new",
         "qualified",
