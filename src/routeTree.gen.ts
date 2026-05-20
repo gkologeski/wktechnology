@@ -55,6 +55,7 @@ import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
+import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
@@ -357,6 +358,12 @@ const AuthenticatedSettingsPipelinesRoute =
   AuthenticatedSettingsPipelinesRouteImport.update({
     id: '/pipelines',
     path: '/pipelines',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMobileRoute =
+  AuthenticatedSettingsMobileRouteImport.update({
+    id: '/mobile',
+    path: '/mobile',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsMacrosRoute =
@@ -697,6 +704,7 @@ export interface FileRoutesByFullPath {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -792,6 +800,7 @@ export interface FileRoutesByTo {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -891,6 +900,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -990,6 +1000,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/macros'
+    | '/settings/mobile'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -1085,6 +1096,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/macros'
+    | '/settings/mobile'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -1183,6 +1195,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/hubspot-sync'
     | '/_authenticated/settings/macros'
+    | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
@@ -1597,6 +1610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/mobile': {
+      id: '/_authenticated/settings/mobile'
+      path: '/mobile'
+      fullPath: '/settings/mobile'
+      preLoaderRoute: typeof AuthenticatedSettingsMobileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/macros': {
       id: '/_authenticated/settings/macros'
       path: '/macros'
@@ -1995,6 +2015,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
+  AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
@@ -2036,6 +2057,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
+  AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
