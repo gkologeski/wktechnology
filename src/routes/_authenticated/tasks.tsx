@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { EntityList } from "@/components/entity-list";
 import { TASK_STATUSES, TASK_PRIORITIES, formatDateTime } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
@@ -8,17 +8,22 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 });
 
 function TasksPage() {
+  const location = useLocation();
+  if (location.pathname !== "/tasks") {
+    return <Outlet />;
+  }
   return (
     <EntityList<Activity>
       table="activities"
       title="Tarefas"
       description="Gerencie suas tarefas como no HubSpot."
       entitySingularLabel="tarefa"
+      detailPath={(id) => `/tasks/${id}`}
       lockedFilters={[{ type: "condition", field: "type", op: "eq", value: "task" }]}
       searchKeys={["subject", "body"]}
       boardStageField="task_status"
       boardStages={TASK_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-      inlineEditable={["task_status", "task_priority", "subject"]}
+      inlineEditable={["task_status", "task_priority"]}
       columns={[
         { key: "subject", label: "Assunto", render: (r) => r.subject || "(sem assunto)" },
         { key: "task_status", label: "Status", render: (r) => TASK_STATUSES.find((s) => s.value === r.task_status)?.label ?? "—" },
