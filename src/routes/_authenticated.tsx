@@ -1,16 +1,41 @@
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/lib/auth";
+import { useMyRole } from "@/lib/use-my-role";
+import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
+const ADMIN_ONLY = [
+  "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
+  "/settings/audit-log", "/settings/security", "/settings/hubspot-sync",
+  "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
+  "/settings/pipelines", "/integrations", "/settings/email", "/leads/import-hubspot",
+  "/settings/mobile", "/settings/language",
+];
+const MANAGER_PLUS = [
+  "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
+  "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
+  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign",
+  "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
+  "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
+  "/settings/email-templates", "/settings/segments", "/settings/calendars",
+  "/settings/booking", "/reports", "/dashboards", "/analytics",
+  "/campaigns/whatsapp", "/campaigns/email",
+];
+
+const matches = (path: string, list: string[]) =>
+  list.some((p) => path === p || path.startsWith(p + "/"));
+
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const { isAdmin, isManager, loading: roleLoading } = useMyRole();
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
@@ -22,6 +47,11 @@ function AuthenticatedLayout() {
     );
   }
 
+  const blocked = !roleLoading && (
+    (matches(path, ADMIN_ONLY) && !isAdmin) ||
+    (matches(path, MANAGER_PLUS) && !isManager)
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-muted/20">
@@ -31,7 +61,17 @@ function AuthenticatedLayout() {
             <SidebarTrigger />
           </header>
           <main className="flex-1 p-6 overflow-auto">
-            <Outlet />
+            {blocked ? (
+              <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
+                <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Acesso restrito</h2>
+                <p className="text-sm text-muted-foreground">
+                  Você não tem permissão para acessar esta tela. Fale com um administrador do workspace.
+                </p>
+              </div>
+            ) : (
+              <Outlet />
+            )}
           </main>
         </div>
       </div>
