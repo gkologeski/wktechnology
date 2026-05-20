@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 
 type Props = {
   defaultTo?: string;
