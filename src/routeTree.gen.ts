@@ -18,6 +18,7 @@ import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -62,6 +63,7 @@ import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './route
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
+import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -86,10 +88,12 @@ import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/a
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
+import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
+import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 
 const SignupRoute = SignupRouteImport.update({
@@ -134,6 +138,11 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
   path: '/portal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookSlugRoute = BookSlugRouteImport.update({
+  id: '/book/$slug',
+  path: '/book/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
@@ -388,6 +397,12 @@ const AuthenticatedSettingsCalendarsRoute =
     path: '/calendars',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsBookingRoute =
+  AuthenticatedSettingsBookingRouteImport.update({
+    id: '/booking',
+    path: '/booking',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsAuditLogRoute =
   AuthenticatedSettingsAuditLogRouteImport.update({
     id: '/audit-log',
@@ -527,6 +542,11 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
   path: '/api/public/forms/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
+  id: '/api/public/booking/$slug',
+  path: '/api/public/booking/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFormsSlugSubmitRoute =
   ApiPublicFormsSlugSubmitRouteImport.update({
     id: '/submit',
@@ -550,6 +570,12 @@ const ApiPublicEmailClickMessageIdRoute =
     id: '/api/public/email/click/$messageId',
     path: '/api/public/email/click/$messageId',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBookingSlugSubmitRoute =
+  ApiPublicBookingSlugSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicBookingSlugRoute,
   } as any)
 const AuthenticatedTasksQueuesQueueIdPlayRoute =
   AuthenticatedTasksQueuesQueueIdPlayRouteImport.update({
@@ -577,6 +603,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -589,6 +616,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -619,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -636,6 +665,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -658,6 +688,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -670,6 +701,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -700,6 +732,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -717,6 +750,7 @@ export interface FileRoutesByTo {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -743,6 +777,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -755,6 +790,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -785,6 +821,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -802,6 +839,7 @@ export interface FileRoutesById {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
+  '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -828,6 +866,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -840,6 +879,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/booking'
     | '/settings/calendars'
     | '/settings/custom-properties'
     | '/settings/email'
@@ -870,6 +910,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
+    | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/calendar-tick'
@@ -887,6 +928,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -909,6 +951,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/tickets'
+    | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -921,6 +964,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/booking'
     | '/settings/calendars'
     | '/settings/custom-properties'
     | '/settings/email'
@@ -951,6 +995,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations'
     | '/settings'
+    | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/calendar-tick'
@@ -968,6 +1013,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -993,6 +1039,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -1005,6 +1052,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/settings/audit-log'
+    | '/_authenticated/settings/booking'
     | '/_authenticated/settings/calendars'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
@@ -1035,6 +1083,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
+    | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/calendar-tick'
@@ -1052,6 +1101,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
     | '/_authenticated/tasks/queues/$queueId/play'
+    | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
@@ -1064,10 +1114,12 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  BookSlugRoute: typeof BookSlugRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
@@ -1152,6 +1204,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$slug': {
+      id: '/book/$slug'
+      path: '/book/$slug'
+      fullPath: '/book/$slug'
+      preLoaderRoute: typeof BookSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tickets': {
@@ -1462,6 +1521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCalendarsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/booking': {
+      id: '/_authenticated/settings/booking'
+      path: '/booking'
+      fullPath: '/settings/booking'
+      preLoaderRoute: typeof AuthenticatedSettingsBookingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/audit-log': {
       id: '/_authenticated/settings/audit-log'
       path: '/audit-log'
@@ -1630,6 +1696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/booking/$slug': {
+      id: '/api/public/booking/$slug'
+      path: '/api/public/booking/$slug'
+      fullPath: '/api/public/booking/$slug'
+      preLoaderRoute: typeof ApiPublicBookingSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/$slug/submit': {
       id: '/api/public/forms/$slug/submit'
       path: '/submit'
@@ -1657,6 +1730,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/email/click/$messageId'
       preLoaderRoute: typeof ApiPublicEmailClickMessageIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/booking/$slug/submit': {
+      id: '/api/public/booking/$slug/submit'
+      path: '/submit'
+      fullPath: '/api/public/booking/$slug/submit'
+      preLoaderRoute: typeof ApiPublicBookingSlugSubmitRouteImport
+      parentRoute: typeof ApiPublicBookingSlugRoute
     }
     '/_authenticated/tasks/queues/$queueId/play': {
       id: '/_authenticated/tasks/queues/$queueId/play'
@@ -1699,6 +1779,7 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
+  AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
@@ -1731,6 +1812,7 @@ interface AuthenticatedSettingsRouteChildren {
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
+  AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
@@ -1841,6 +1923,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiPublicBookingSlugRouteChildren {
+  ApiPublicBookingSlugSubmitRoute: typeof ApiPublicBookingSlugSubmitRoute
+}
+
+const ApiPublicBookingSlugRouteChildren: ApiPublicBookingSlugRouteChildren = {
+  ApiPublicBookingSlugSubmitRoute: ApiPublicBookingSlugSubmitRoute,
+}
+
+const ApiPublicBookingSlugRouteWithChildren =
+  ApiPublicBookingSlugRoute._addFileChildren(ApiPublicBookingSlugRouteChildren)
+
 interface ApiPublicFormsSlugRouteChildren {
   ApiPublicFormsSlugSubmitRoute: typeof ApiPublicFormsSlugSubmitRoute
 }
@@ -1858,10 +1951,12 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  BookSlugRoute: BookSlugRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
