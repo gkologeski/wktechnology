@@ -24,6 +24,7 @@ const groups: Group[] = [
       { title: "Metas", url: "/settings/goals", icon: Target },
       { title: "Exports agendados", url: "/settings/exports", icon: Send },
       { title: "Enriquecimento", url: "/settings/enrichment", icon: Sparkles },
+      { title: "Calendários", url: "/settings/calendars", icon: Calendar },
     ],
   },
   {
