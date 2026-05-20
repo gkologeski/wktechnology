@@ -45,7 +45,8 @@ function BookingSettings() {
   const qc = useQueryClient();
 
   const { data: pages = [] } = useQuery({ queryKey: ["booking-pages"], queryFn: () => list() });
-  const { data: accounts = [] } = useQuery({ queryKey: ["calendar-accounts"], queryFn: () => accountsFn() });
+  const { data: accountsResp } = useQuery({ queryKey: ["calendar-accounts"], queryFn: () => accountsFn() });
+  const accounts = (accountsResp && "items" in accountsResp ? accountsResp.items : []) as any[];
 
   const [editing, setEditing] = useState<any | null>(null);
   const [bookingsForPage, setBookingsForPage] = useState<string | null>(null);
