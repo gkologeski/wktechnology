@@ -23,10 +23,22 @@ export const Route = createFileRoute("/_authenticated/settings/forms")({
 
 type FieldType = "text" | "email" | "tel" | "textarea" | "select" | "number";
 type FormField = { key: string; label: string; type: FieldType; required?: boolean; options?: string[]; placeholder?: string };
+type DisplayMode = "inline" | "popup" | "slidein";
+type PopupConfig = {
+  trigger?: "load" | "time" | "scroll" | "exit_intent";
+  delay_seconds?: number;
+  scroll_percent?: number;
+  frequency_days?: number;
+  position?: "center" | "bottom-right" | "bottom-left";
+  title?: string;
+  description?: string;
+};
 type FormRow = {
   id: string; name: string; slug: string; target: "lead" | "contact";
   fields: FormField[]; success_message: string; redirect_url: string | null;
   active: boolean; submit_count: number;
+  display_mode: DisplayMode;
+  popup_config: PopupConfig;
 };
 
 const EMPTY_FIELDS: FormField[] = [
@@ -35,6 +47,10 @@ const EMPTY_FIELDS: FormField[] = [
   { key: "phone", label: "Telefone", type: "tel" },
   { key: "message", label: "Mensagem", type: "textarea" },
 ];
+
+const DEFAULT_POPUP: PopupConfig = {
+  trigger: "time", delay_seconds: 5, scroll_percent: 50, frequency_days: 7, position: "center",
+};
 
 function FormsPage() {
   const qc = useQueryClient();
@@ -56,6 +72,8 @@ function FormsPage() {
         success_message: editing?.success_message ?? "Obrigado pelo contato!",
         redirect_url: editing?.redirect_url ?? "",
         active: editing?.active ?? true,
+        display_mode: (editing?.display_mode as DisplayMode) ?? "inline",
+        popup_config: (editing?.popup_config as PopupConfig) ?? {},
       },
     }),
     onSuccess: () => {
@@ -84,7 +102,7 @@ function FormsPage() {
             Crie formulários públicos e incorpore no seu site. Cada envio gera um lead ou contato.
           </p>
         </div>
-        <Button onClick={() => setEditing({ target: "lead", fields: EMPTY_FIELDS, active: true, success_message: "Obrigado pelo contato!" })}>
+        <Button onClick={() => setEditing({ target: "lead", fields: EMPTY_FIELDS, active: true, success_message: "Obrigado pelo contato!", display_mode: "inline", popup_config: DEFAULT_POPUP })}>
           <Plus className="mr-1 h-4 w-4" /> Novo formulário
         </Button>
       </div>
@@ -104,6 +122,9 @@ function FormsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{row.name}</span>
                       <Badge variant="outline">{row.target}</Badge>
+                      <Badge variant="outline">
+                        {row.display_mode === "popup" ? "Pop-up" : row.display_mode === "slidein" ? "Slide-in" : "Inline"}
+                      </Badge>
                       {!row.active && <Badge variant="secondary">Inativo</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -196,6 +217,10 @@ function EditorBody({
         <Input value={editing.redirect_url ?? ""} onChange={(e) => update({ redirect_url: e.target.value })} placeholder="https://..." />
       </div>
 
+      <DisplaySection editing={editing} update={update} />
+
+
+
       <div>
         <div className="mb-2 flex items-center justify-between">
           <Label>Campos</Label>
@@ -255,7 +280,10 @@ function ViewerBody({ form }: { form: FormRow }) {
   });
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const publicUrl = `${origin}/api/public/forms/${form.slug}`;
-  const embedHtml = `<div data-lovable-form="${form.slug}"></div>\n<script src="${origin}/api/public/forms/embed-js" async></script>`;
+  const isPopup = form.display_mode === "popup" || form.display_mode === "slidein";
+  const embedHtml = isPopup
+    ? `<script data-lovable-form-popup="${form.slug}" src="${origin}/api/public/forms/embed-js" async></script>`
+    : `<div data-lovable-form="${form.slug}"></div>\n<script src="${origin}/api/public/forms/embed-js" async></script>`;
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => toast.success(`${label} copiado`));
@@ -309,5 +337,100 @@ function ViewerBody({ form }: { form: FormRow }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function DisplaySection({
+  editing, update,
+}: {
+  editing: Partial<FormRow>;
+  update: (patch: Partial<FormRow>) => void;
+}) {
+  const mode: DisplayMode = (editing.display_mode as DisplayMode) ?? "inline";
+  const cfg: PopupConfig = (editing.popup_config as PopupConfig) ?? {};
+  const updateCfg = (patch: Partial<PopupConfig>) => update({ popup_config: { ...cfg, ...patch } });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Exibição</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Modo</Label>
+            <Select value={mode} onValueChange={(v) => update({ display_mode: v as DisplayMode, popup_config: v === "inline" ? {} : { ...DEFAULT_POPUP, ...cfg } })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inline">Inline (embed na página)</SelectItem>
+                <SelectItem value="popup">Pop-up (modal)</SelectItem>
+                <SelectItem value="slidein">Slide-in lateral</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {mode !== "inline" && (
+            <div>
+              <Label>Gatilho</Label>
+              <Select value={cfg.trigger ?? "time"} onValueChange={(v) => updateCfg({ trigger: v as PopupConfig["trigger"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="load">Ao carregar</SelectItem>
+                  <SelectItem value="time">Após X segundos</SelectItem>
+                  <SelectItem value="scroll">Após rolar X%</SelectItem>
+                  <SelectItem value="exit_intent">Exit intent (sair)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {mode !== "inline" && (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              {cfg.trigger === "time" && (
+                <div>
+                  <Label>Atraso (s)</Label>
+                  <Input type="number" min={0} max={600} value={cfg.delay_seconds ?? 5} onChange={(e) => updateCfg({ delay_seconds: Number(e.target.value) })} />
+                </div>
+              )}
+              {cfg.trigger === "scroll" && (
+                <div>
+                  <Label>Scroll (%)</Label>
+                  <Input type="number" min={1} max={100} value={cfg.scroll_percent ?? 50} onChange={(e) => updateCfg({ scroll_percent: Number(e.target.value) })} />
+                </div>
+              )}
+              <div>
+                <Label>Frequência (dias)</Label>
+                <Input type="number" min={0} max={365} value={cfg.frequency_days ?? 7} onChange={(e) => updateCfg({ frequency_days: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Posição</Label>
+                <Select value={cfg.position ?? "center"} onValueChange={(v) => updateCfg({ position: v as PopupConfig["position"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="bottom-right">Canto inferior direito</SelectItem>
+                    <SelectItem value="bottom-left">Canto inferior esquerdo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Título do pop-up (opcional)</Label>
+                <Input value={cfg.title ?? ""} onChange={(e) => updateCfg({ title: e.target.value })} placeholder="Receba nosso material" />
+              </div>
+              <div>
+                <Label>Descrição (opcional)</Label>
+                <Input value={cfg.description ?? ""} onChange={(e) => updateCfg({ description: e.target.value })} placeholder="Deixe seu email..." />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Frequência 0 = mostrar uma única vez por navegador. Exit intent só funciona em desktop; em mobile, há fallback de 60s.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

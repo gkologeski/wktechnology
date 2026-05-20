@@ -1817,10 +1817,12 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          display_mode: string
           fields: Json
           id: string
           name: string
           owner_id: string
+          popup_config: Json
           redirect_url: string | null
           slug: string
           submit_count: number
@@ -1831,10 +1833,12 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          display_mode?: string
           fields?: Json
           id?: string
           name: string
           owner_id: string
+          popup_config?: Json
           redirect_url?: string | null
           slug: string
           submit_count?: number
@@ -1845,10 +1849,12 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          display_mode?: string
           fields?: Json
           id?: string
           name?: string
           owner_id?: string
+          popup_config?: Json
           redirect_url?: string | null
           slug?: string
           submit_count?: number

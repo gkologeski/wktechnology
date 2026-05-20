@@ -17,13 +17,18 @@ export const Route = createFileRoute("/api/public/forms/$slug")({
       GET: async ({ params }) => {
         const { data, error } = await supabaseAdmin
           .from("forms")
-          .select("id, name, slug, fields, success_message, active")
+          .select("id, name, slug, fields, success_message, active, display_mode, popup_config")
           .eq("slug", params.slug)
           .maybeSingle();
         if (error) return Response.json({ error: error.message }, { status: 500, headers: cors() });
         if (!data || !data.active) return Response.json({ error: "Not found" }, { status: 404, headers: cors() });
         return Response.json(
-          { id: data.id, name: data.name, slug: data.slug, fields: data.fields, success_message: data.success_message },
+          {
+            id: data.id, name: data.name, slug: data.slug, fields: data.fields,
+            success_message: data.success_message,
+            display_mode: data.display_mode ?? "inline",
+            popup_config: data.popup_config ?? {},
+          },
           { headers: cors({ "Cache-Control": "public, max-age=60" }) },
         );
       },
