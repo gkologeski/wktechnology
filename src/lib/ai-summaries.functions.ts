@@ -64,14 +64,13 @@ async function collectMessages(
   const relCol = RELATED_KEY[entity];
   let actQuery = supabase
     .from("activities")
-    .select("id, type, subject, body, created_at, due_date, call_outcome, call_duration_seconds")
+    .select("id, type, subject, body, created_at, due_date, outcome, duration_ms")
     .gte("created_at", since)
     .order("created_at", { ascending: true })
     .limit(200);
   if (relCol) {
     actQuery = actQuery.eq(relCol, entityId);
   } else {
-    // ticket → use contact link
     const cid = await resolveContactId(supabase, entity, entityId);
     if (!cid) return msgs;
     actQuery = actQuery.eq("related_contact_id", cid);
@@ -81,14 +80,13 @@ async function collectMessages(
     if (kind === "call" && a.type !== "call" && a.type !== "meeting") continue;
     const body = [a.subject, a.body].filter(Boolean).join(" — ");
     if (!body) continue;
+    const minutes = a.duration_ms ? Math.round(a.duration_ms / 60000) : null;
     msgs.push({
       at: a.created_at,
       channel: a.type,
       direction: "internal",
-      who: a.type === "call" ? `Call (${a.call_outcome ?? "—"})` : a.type,
-      text: a.type === "call" && a.call_duration_seconds
-        ? `${body} [${Math.round(a.call_duration_seconds / 60)} min]`
-        : body,
+      who: a.type === "call" ? `Call (${a.outcome ?? "—"})` : a.type,
+      text: minutes ? `${body} [${minutes} min]` : body,
     });
   }
 
