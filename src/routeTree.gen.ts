@@ -57,6 +57,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
 import { Route as AuthenticatedSettingsFormsRouteImport } from './routes/_authenticated/settings.forms'
@@ -68,6 +69,7 @@ import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
+import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
@@ -372,6 +374,12 @@ const AuthenticatedSettingsMacrosRoute =
     path: '/macros',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsLanguageRoute =
+  AuthenticatedSettingsLanguageRouteImport.update({
+    id: '/language',
+    path: '/language',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsHubspotSyncRoute =
   AuthenticatedSettingsHubspotSyncRouteImport.update({
     id: '/hubspot-sync',
@@ -436,6 +444,12 @@ const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
     path: '/calendars',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsBrandingRoute =
+  AuthenticatedSettingsBrandingRouteImport.update({
+    id: '/branding',
+    path: '/branding',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsBookingRoute =
@@ -692,6 +706,7 @@ export interface FileRoutesByFullPath {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -703,6 +718,7 @@ export interface FileRoutesByFullPath {
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -788,6 +804,7 @@ export interface FileRoutesByTo {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -799,6 +816,7 @@ export interface FileRoutesByTo {
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -888,6 +906,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -899,6 +918,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -988,6 +1008,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/booking'
+    | '/settings/branding'
     | '/settings/calendars'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
@@ -999,6 +1020,7 @@ export interface FileRouteTypes {
     | '/settings/forms'
     | '/settings/goals'
     | '/settings/hubspot-sync'
+    | '/settings/language'
     | '/settings/macros'
     | '/settings/mobile'
     | '/settings/pipelines'
@@ -1084,6 +1106,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/booking'
+    | '/settings/branding'
     | '/settings/calendars'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
@@ -1095,6 +1118,7 @@ export interface FileRouteTypes {
     | '/settings/forms'
     | '/settings/goals'
     | '/settings/hubspot-sync'
+    | '/settings/language'
     | '/settings/macros'
     | '/settings/mobile'
     | '/settings/pipelines'
@@ -1183,6 +1207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/booking'
+    | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
@@ -1194,6 +1219,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/forms'
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/hubspot-sync'
+    | '/_authenticated/settings/language'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/pipelines'
@@ -1624,6 +1650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/language': {
+      id: '/_authenticated/settings/language'
+      path: '/language'
+      fullPath: '/settings/language'
+      preLoaderRoute: typeof AuthenticatedSettingsLanguageRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/hubspot-sync': {
       id: '/_authenticated/settings/hubspot-sync'
       path: '/hubspot-sync'
@@ -1699,6 +1732,13 @@ declare module '@tanstack/react-router' {
       path: '/calendars'
       fullPath: '/settings/calendars'
       preLoaderRoute: typeof AuthenticatedSettingsCalendarsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/branding': {
+      id: '/_authenticated/settings/branding'
+      path: '/branding'
+      fullPath: '/settings/branding'
+      preLoaderRoute: typeof AuthenticatedSettingsBrandingRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/booking': {
@@ -2003,6 +2043,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
+  AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -2014,6 +2055,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsFormsRoute: typeof AuthenticatedSettingsFormsRoute
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
+  AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -2042,6 +2084,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
+  AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
   AuthenticatedSettingsCustomObjectsRoute:
     AuthenticatedSettingsCustomObjectsRoute,
@@ -2056,6 +2099,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsFormsRoute: AuthenticatedSettingsFormsRoute,
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
+  AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
