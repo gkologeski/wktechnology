@@ -85,7 +85,7 @@
 
 ## 🟨 Onda 9 — IA / Breeze (rolling)
 
-37. Resumo automático de conversa/call (M)
+37. **Resumo automático de conversa/call (M)** ✅ — tabela `ai_summaries` (entity lead/contact/deal/ticket, entity_id, kind `conversation`/`call`, summary, key_points jsonb, next_actions jsonb, sentiment, model, window_from/to, source_count) com RLS owner/admin. Server fns em `src/lib/ai-summaries.functions.ts` (`generateAiSummary`, `listAiSummaries`, `deleteAiSummary`) coletam activities (resolvendo ticket→contact via FK) + whatsapp_messages do contato resolvido (lead.email/contact/deal.primary_contact/ticket.contact) numa janela de 7/30/60/180 dias, montam prompt JSON-strict, chamam Lovable AI Gateway (`google/gemini-2.5-flash` via `LOVABLE_API_KEY`) e persistem o retorno parseado. Componente `AiSummaryPanel` (Sparkles + select de tipo/janela + botão Gerar) renderiza histórico de resumos com badge de sentimento, pontos-chave e próximos passos; embutido no detalhe de Lead e na aba Atividades do drawer de Deal.
 38. Smart compose em WhatsApp/email (M)
 39. AI properties (M)
 40. Sentiment de mensagens (M)
