@@ -73,6 +73,7 @@ function LeadsPage() {
   };
 
   return (
+    <>
     <EntityList<Lead>
       table="leads"
       title="Leads"
