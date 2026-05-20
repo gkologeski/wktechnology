@@ -148,6 +148,60 @@ export type Database = {
           },
         ]
       }
+      ai_summaries: {
+        Row: {
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          key_points: Json
+          kind: string
+          model: string | null
+          next_actions: Json
+          owner_id: string
+          sentiment: string | null
+          source_count: number
+          summary: string
+          updated_at: string
+          window_from: string | null
+          window_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          entity_id: string
+          id?: string
+          key_points?: Json
+          kind?: string
+          model?: string | null
+          next_actions?: Json
+          owner_id: string
+          sentiment?: string | null
+          source_count?: number
+          summary: string
+          updated_at?: string
+          window_from?: string | null
+          window_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          key_points?: Json
+          kind?: string
+          model?: string | null
+          next_actions?: Json
+          owner_id?: string
+          sentiment?: string | null
+          source_count?: number
+          summary?: string
+          updated_at?: string
+          window_from?: string | null
+          window_to?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
