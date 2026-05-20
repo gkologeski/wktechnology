@@ -122,6 +122,9 @@ function FormsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{row.name}</span>
                       <Badge variant="outline">{row.target}</Badge>
+                      <Badge variant="outline">
+                        {row.display_mode === "popup" ? "Pop-up" : row.display_mode === "slidein" ? "Slide-in" : "Inline"}
+                      </Badge>
                       {!row.active && <Badge variant="secondary">Inativo</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground">
