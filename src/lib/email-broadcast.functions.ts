@@ -151,11 +151,8 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
-    const { sendGmailEmail } = await import("@/lib/email-send.functions");
-    void sendGmailEmail; // referenciado abaixo via supabaseAdmin path
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { ensureAccessToken, gmailSendRaw, buildRawMime, type EmailAccountRow } =
-      await import("@/lib/gmail.server");
+    const gmail = await import("@/lib/gmail.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const admin = supabaseAdmin as any;
     let q = admin
