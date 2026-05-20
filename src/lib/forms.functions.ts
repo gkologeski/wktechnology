@@ -11,6 +11,16 @@ const FieldSchema = z.object({
   placeholder: z.string().max(120).optional(),
 });
 
+const PopupConfigSchema = z.object({
+  trigger: z.enum(["load", "time", "scroll", "exit_intent"]).default("time"),
+  delay_seconds: z.number().int().min(0).max(600).default(5),
+  scroll_percent: z.number().int().min(1).max(100).default(50),
+  frequency_days: z.number().int().min(0).max(365).default(7),
+  position: z.enum(["center", "bottom-right", "bottom-left"]).default("center"),
+  title: z.string().max(160).optional(),
+  description: z.string().max(500).optional(),
+}).partial().default({});
+
 const UpsertSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1).max(120),
@@ -20,6 +30,8 @@ const UpsertSchema = z.object({
   success_message: z.string().max(500).optional(),
   redirect_url: z.string().url().max(500).optional().or(z.literal("")),
   active: z.boolean().optional(),
+  display_mode: z.enum(["inline", "popup", "slidein"]).optional().default("inline"),
+  popup_config: PopupConfigSchema.optional(),
 });
 
 export const listForms = createServerFn({ method: "GET" })
