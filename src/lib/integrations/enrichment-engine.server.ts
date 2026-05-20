@@ -173,7 +173,7 @@ export interface RunBatchResult {
   preview?: Array<{
     entity_id: string;
     provider: EnrichProvider | null;
-    update: Record<string, unknown>;
+    update: Record<string, string | number | boolean | null>;
   }>;
 }
 
