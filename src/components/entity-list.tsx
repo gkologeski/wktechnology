@@ -787,13 +787,13 @@ function RowAvatar({ label }: { label: string }) {
   // Stable color from string hash
   const hash = Array.from(clean).reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
   const hue = Math.abs(hash) % 360;
-  const bg = `oklch(0.92 0.05 ${hue})`;
-  const fg = `oklch(0.35 0.12 ${hue})`;
+  const bg = `oklch(0.93 0.06 ${hue})`;
+  const fg = `oklch(0.38 0.14 ${hue})`;
 
   return (
     <span
       aria-hidden
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold tabular-nums"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ring-1 ring-border/40"
       style={{ background: bg, color: fg }}
     >
       {initials}
