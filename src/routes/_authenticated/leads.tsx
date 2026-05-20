@@ -210,7 +210,7 @@ function LeadsHubspotView() {
       }
 
       // Filters
-      if (filters.status.length > 0) q = q.in("status", filters.status);
+      if (filters.status.length > 0) q = q.in("status", filters.status as ("new" | "contacted" | "qualified" | "disqualified")[]);
       if (filters.source.length > 0) q = q.in("source", filters.source);
       if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
       if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
