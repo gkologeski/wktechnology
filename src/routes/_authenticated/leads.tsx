@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import { LEAD_STATUSES } from "@/lib/crm";
@@ -8,9 +8,8 @@ import type { Lead } from "@/lib/db-types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowRightLeft, Settings, Sparkles, Users as UsersIcon } from "lucide-react";
-import { enrichWithApollo } from "@/lib/integrations/apollo.functions";
-import { enrichWithLusha } from "@/lib/integrations/lusha.functions";
+import { ArrowRightLeft, Settings, Sparkles } from "lucide-react";
+import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 
 export const Route = createFileRoute("/_authenticated/leads")({
   component: LeadsPage,
@@ -20,33 +19,12 @@ function LeadsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const location = useLocation();
-  const apollo = useServerFn(enrichWithApollo);
-  const lusha = useServerFn(enrichWithLusha);
+  const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
 
   if (location.pathname !== "/leads") {
     return <Outlet />;
   }
 
-  const runApollo = async (ids: string[]) => {
-    if (!confirm(`Enriquecer ${ids.length} lead(s) com Apollo? (consome 1 crédito por sucesso)`)) return;
-    try {
-      const r = await apollo({ data: { entity: "lead", ids } });
-      toast.success(`Apollo: ${r.succeeded} ok · ${r.failed} falha(s) · ${r.credits} crédito(s)`);
-      qc.invalidateQueries({ queryKey: ["leads"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro Apollo");
-    }
-  };
-  const runLusha = async (ids: string[]) => {
-    if (!confirm(`Enriquecer ${ids.length} lead(s) com Lusha?`)) return;
-    try {
-      const r = await lusha({ data: { entity: "lead", ids } });
-      toast.success(`Lusha: ${r.succeeded} ok · ${r.failed} falha(s) · ${r.credits} crédito(s)`);
-      qc.invalidateQueries({ queryKey: ["leads"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro Lusha");
-    }
-  };
 
   const convert = async (lead: Lead) => {
     if (!user) return;
