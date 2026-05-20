@@ -173,9 +173,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
 }
 
 function CustomFieldRow({
-  def, value, onChange,
-}: { def: CustomProp; value: unknown; onChange: (v: unknown) => void | Promise<void> }) {
+  def, value, onChange, entityId, onComputed,
+}: { def: CustomProp; value: unknown; onChange: (v: unknown) => void | Promise<void>; entityId: string; onComputed?: () => void }) {
   const [draft, setDraft] = useState<string>(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
+  const [computing, setComputing] = useState(false);
+  const computeFn = useServerFn(computeAiProperty);
   useEffect(() => {
     setDraft(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
   }, [value]);
@@ -186,10 +188,27 @@ function CustomFieldRow({
     onChange(raw);
   };
 
+  const runAi = async () => {
+    setComputing(true);
+    try {
+      await computeFn({ data: { property_id: def.id, entity_id: entityId } });
+      toast.success("Calculado pela IA");
+      onComputed?.();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    finally { setComputing(false); }
+  };
+
   return (
     <div className="text-sm">
-      <div className="text-xs text-muted-foreground flex items-center gap-1">
-        {def.label}{def.required && <span className="text-destructive">*</span>}
+      <div className="text-xs text-muted-foreground flex items-center justify-between gap-1">
+        <span className="flex items-center gap-1">
+          {def.label}{def.required && <span className="text-destructive">*</span>}
+        </span>
+        {def.ai_prompt && (
+          <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={runAi} disabled={computing} title="Calcular com IA">
+            {computing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          </Button>
+        )}
       </div>
       {def.type === "textarea" ? (
         <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={(e) => commit(e.target.value)} rows={3} className="mt-0.5" />
