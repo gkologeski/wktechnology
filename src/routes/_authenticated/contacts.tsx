@@ -1,24 +1,113 @@
-import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { EntityList } from "@/components/entity-list";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
-import { Sparkles, MessageCircle, Mail, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronDown,
+  Download,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
-import { CallDialer } from "@/components/voice/call-dialer";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import {
+  CheckboxFilter,
+  FilterGroup,
+  FiltersSidebar,
+  HeaderCheckbox,
+  InitialsAvatar,
+  Pagination,
+  Pill,
+  RadioFilter,
+  Td,
+  Th,
+  TONES,
+  ViewsTabs,
+  timeAgo,
+  type SortDir,
+} from "@/components/crm/hubspot-shell";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
 });
 
+const LIFECYCLE_STAGES = [
+  { value: "subscriber", label: "Subscriber", tone: "slate" as const },
+  { value: "lead", label: "Lead", tone: "sky" as const },
+  { value: "marketingqualifiedlead", label: "MQL", tone: "violet" as const },
+  { value: "salesqualifiedlead", label: "SQL", tone: "indigo" as const },
+  { value: "opportunity", label: "Opportunity", tone: "amber" as const },
+  { value: "customer", label: "Customer", tone: "emerald" as const },
+  { value: "evangelist", label: "Evangelist", tone: "fuchsia" as const },
+  { value: "other", label: "Other", tone: "slate" as const },
+];
+
+type ViewId = "all" | "mine" | "unassigned" | "new_week";
+const VIEWS = [
+  { id: "all" as const, label: "All contacts" },
+  { id: "mine" as const, label: "My contacts" },
+  { id: "unassigned" as const, label: "Unassigned" },
+  { id: "new_week" as const, label: "Created this week" },
+];
+
+type SortKey = "first_name" | "created_at" | "updated_at";
+
+type Filters = {
+  lifecycle: string[];
+  companyIds: string[];
+  createdPreset: "any" | "today" | "7d" | "30d";
+};
+const DEFAULT_FILTERS: Filters = {
+  lifecycle: [],
+  companyIds: [],
+  createdPreset: "any",
+};
+
 function ContactsPage() {
-  const qc = useQueryClient();
   const location = useLocation();
+  if (location.pathname !== "/contacts") return <Outlet />;
+  return <ContactsHubspotView />;
+}
+
+function ContactsHubspotView() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+
+  const [activeView, setActiveView] = useState<ViewId>("all");
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => {
+    setPage(0);
+  }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
 
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
@@ -27,102 +116,477 @@ function ContactsPage() {
       return (data ?? []) as Pick<Company, "id" | "name">[];
     },
   });
-
   const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
-  if (location.pathname !== "/contacts") {
-    return <Outlet />;
-  }
+  const { data: result, isLoading } = useQuery({
+    queryKey: [
+      "contacts",
+      "hubspot-list",
+      activeView,
+      filters,
+      sortKey,
+      sortDir,
+      debouncedSearch,
+      page,
+      pageSize,
+      user?.id,
+    ],
+    queryFn: async () => {
+      let q = supabase
+        .from("contacts")
+        .select(
+          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at",
+          { count: "exact" },
+        );
+
+      if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
+      if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "new_week") {
+        const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+        q = q.gte("created_at", since);
+      }
+      if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
+      if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
+      if (filters.createdPreset !== "any") {
+        const days =
+          filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
+        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+
+      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+      if (term) {
+        q = q.or(
+          [
+            `first_name.ilike.%${term}%`,
+            `last_name.ilike.%${term}%`,
+            `email.ilike.%${term}%`,
+            `phone.ilike.%${term}%`,
+          ].join(","),
+        );
+      }
+
+      q = q.order(sortKey, { ascending: sortDir === "asc" });
+      q = q.range(page * pageSize, page * pageSize + pageSize - 1);
+
+      const { data, error, count } = await q;
+      if (error) throw error;
+      return { rows: (data ?? []) as Contact[], count: count ?? 0 };
+    },
+  });
+
+  const rows = result?.rows ?? [];
+  const total = result?.count ?? 0;
+  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
+  const someSelected = rows.some((r) => selectedIds.has(r.id));
+
+  const toggleAll = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) for (const r of rows) next.delete(r.id);
+      else for (const r of rows) next.add(r.id);
+      return next;
+    });
+  const toggleOne = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const onSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
+      setSortKey(k);
+      setSortDir("asc");
+    }
+  };
+
+  const hasActiveFilters =
+    filters.lifecycle.length > 0 ||
+    filters.companyIds.length > 0 ||
+    filters.createdPreset !== "any";
+
+  const removeOne = async (id: string) => {
+    if (!confirm("Excluir este contato?")) return;
+    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Removido");
+    qc.invalidateQueries({ queryKey: ["contacts"] });
+  };
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Excluir ${ids.length} contato(s)?`)) return;
+    const { error } = await supabase.from("contacts").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} excluído(s)`);
+    clearSelection();
+    qc.invalidateQueries({ queryKey: ["contacts"] });
+  };
 
   return (
-    <>
-    <EntityList<Contact>
-      table="contacts"
-      title="Contatos"
-      description="Pessoas com quem você se relaciona."
-      detailPath={(id) => `/contacts/${id}`}
-      csvEnabled
-      searchKeys={["first_name", "last_name", "email", "phone"]}
-      columns={[
-        { key: "first_name", label: "Nome", render: (r) => `${r.first_name} ${r.last_name ?? ""}`.trim() },
-        { key: "email", label: "Email" },
-        { key: "phone", label: "Telefone" },
-        { key: "company_id", label: "Empresa", render: (r) => (r.company_id ? companyMap.get(r.company_id) ?? "—" : "—") },
-        { key: "job_title", label: "Cargo" },
-      ]}
-      fields={[
-        { name: "first_name", label: "Nome", required: true },
-        { name: "last_name", label: "Sobrenome" },
-        { name: "email", label: "Email", type: "email" },
-        { name: "phone", label: "Telefone", type: "tel" },
-        { name: "job_title", label: "Cargo" },
-        {
-          name: "company_id", label: "Empresa", type: "select",
-          options: companies.map((c) => ({ value: c.id, label: c.name })),
-        },
-        { name: "notes", label: "Notas", type: "textarea" },
-      ]}
-      bulkEditFields={[
-        { name: "job_title", label: "Cargo" },
-        { name: "company_id", label: "Empresa", type: "select", options: companies.map((c) => ({ value: c.id, label: c.name })) },
-      ]}
-      bulkActions={(ids) => (
-        <Button variant="outline" size="sm" onClick={() => setEnrichIds(ids)}>
-          <Sparkles className="h-4 w-4 mr-1" /> Enriquecer
-        </Button>
-      )}
-      rowActions={(row) => {
-        const name = `${row.first_name} ${row.last_name ?? ""}`.trim();
-        const phone = (row.phone || row.mobile_phone) as string | undefined;
-        return (
-          <div className="flex items-center gap-1">
-            {row.email && (
-              <SendEmailDialog
-                defaultTo={row.email}
-                contactId={row.id}
-                contactName={name}
-                trigger={
-                  <Button size="icon" variant="ghost" title="Enviar email">
-                    <Mail className="h-4 w-4" />
-                  </Button>
+    <div className="flex h-full flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Contatos</h1>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" disabled>
+            <Download className="mr-1.5 h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" disabled>
+            <Plus className="mr-1.5 h-4 w-4" /> Criar contato
+          </Button>
+        </div>
+      </div>
+
+      <ViewsTabs views={VIEWS} active={activeView} onChange={setActiveView} />
+
+      <div className="flex min-h-0 flex-1">
+        <FiltersSidebar
+          hasActiveFilters={hasActiveFilters}
+          onClear={() => setFilters(DEFAULT_FILTERS)}
+        >
+          <FilterGroup title="Lifecycle stage" defaultOpen>
+            {LIFECYCLE_STAGES.map((s) => (
+              <CheckboxFilter
+                key={s.value}
+                label={s.label}
+                dotClass={TONES[s.tone]?.dot}
+                checked={filters.lifecycle.includes(s.value)}
+                onChange={(v) =>
+                  setFilters((f) => ({
+                    ...f,
+                    lifecycle: v
+                      ? [...f.lifecycle, s.value]
+                      : f.lifecycle.filter((x) => x !== s.value),
+                  }))
                 }
               />
+            ))}
+          </FilterGroup>
+
+          <FilterGroup title="Owner" defaultOpen>
+            <button
+              type="button"
+              onClick={() => setActiveView(activeView === "mine" ? "all" : "mine")}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                activeView === "mine" && "bg-primary/10 text-primary",
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              My contacts
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView(activeView === "unassigned" ? "all" : "unassigned")}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                activeView === "unassigned" && "bg-primary/10 text-primary",
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+              Unassigned
+            </button>
+          </FilterGroup>
+
+          <FilterGroup title="Company">
+            {companies.length === 0 ? (
+              <p className="px-2 py-1 text-xs text-muted-foreground">Sem empresas</p>
+            ) : (
+              companies.slice(0, 30).map((c) => (
+                <CheckboxFilter
+                  key={c.id}
+                  label={c.name}
+                  checked={filters.companyIds.includes(c.id)}
+                  onChange={(v) =>
+                    setFilters((f) => ({
+                      ...f,
+                      companyIds: v
+                        ? [...f.companyIds, c.id]
+                        : f.companyIds.filter((x) => x !== c.id),
+                    }))
+                  }
+                />
+              ))
             )}
-            {phone && (
-              <CallDialer
-                defaultTo={phone}
-                contactId={row.id}
-                contactName={name}
-                trigger={
-                  <Button size="icon" variant="ghost" title="Ligar">
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                }
+          </FilterGroup>
+
+          <FilterGroup title="Create date">
+            <RadioFilter
+              name="contacts-created"
+              options={
+                [
+                  ["any", "Qualquer data"],
+                  ["today", "Hoje"],
+                  ["7d", "Últimos 7 dias"],
+                  ["30d", "Últimos 30 dias"],
+                ] as const
+              }
+              value={filters.createdPreset}
+              onChange={(v) => setFilters((f) => ({ ...f, createdPreset: v }))}
+            />
+          </FilterGroup>
+        </FiltersSidebar>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar nome, email, telefone…"
+                className="h-9 pl-8"
               />
-            )}
-            {phone && (
-              <SendWhatsAppDialog
-                defaultTo={phone}
-                contactId={row.id}
-                contactName={name}
-                trigger={
-                  <Button size="icon" variant="ghost" title="Enviar WhatsApp">
-                    <MessageCircle className="h-4 w-4" />
+            </div>
+
+            {selectedIds.size > 0 ? (
+              <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
+                <span className="text-xs font-medium text-primary">
+                  {selectedIds.size} selecionado(s)
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setEnrichIds(Array.from(selectedIds))}
+                >
+                  <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-destructive hover:text-destructive"
+                  onClick={bulkDelete}
+                >
+                  Excluir
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={clearSelection}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Actions <ChevronDown className="ml-1 h-3.5 w-3.5" />
                   </Button>
-                }
-              />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
-        );
-      }}
-    />
-    <BulkEnrichDialog
-      open={!!enrichIds}
-      onOpenChange={(o) => !o && setEnrichIds(null)}
-      ids={enrichIds ?? []}
-      entity="contact"
-      onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
-    />
-    </>
+
+          <div className="min-h-0 flex-1 overflow-auto">
+            <table className="w-full border-separate border-spacing-0 text-sm">
+              <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
+                <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="w-10 border-b px-3 py-2.5">
+                    <HeaderCheckbox
+                      allSelected={allSelected}
+                      someSelected={someSelected}
+                      onToggle={toggleAll}
+                    />
+                  </th>
+                  <Th
+                    sortable
+                    active={sortKey === "first_name"}
+                    dir={sortDir}
+                    onClick={() => onSort("first_name")}
+                  >
+                    Name
+                  </Th>
+                  <Th>Email</Th>
+                  <Th>Phone</Th>
+                  <Th>Job title</Th>
+                  <Th>Company</Th>
+                  <Th>Lifecycle stage</Th>
+                  <Th>Owner</Th>
+                  <Th
+                    sortable
+                    active={sortKey === "updated_at"}
+                    dir={sortDir}
+                    onClick={() => onSort("updated_at")}
+                  >
+                    Last activity
+                  </Th>
+                  <Th
+                    sortable
+                    active={sortKey === "created_at"}
+                    dir={sortDir}
+                    onClick={() => onSort("created_at")}
+                  >
+                    Create date
+                  </Th>
+                  <th className="w-10 border-b px-3 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={11}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
+                      Carregando contatos…
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={11}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
+                      Nenhum contato encontrado com os filtros atuais.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((c) => {
+                    const checked = selectedIds.has(c.id);
+                    const full =
+                      `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+                    const initials =
+                      ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
+                    const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
+                    return (
+                      <tr
+                        key={c.id}
+                        className={cn(
+                          "group h-12 border-b transition-colors hover:bg-primary/5",
+                          checked && "bg-primary/5",
+                        )}
+                      >
+                        <Td className="w-10">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleOne(c.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </Td>
+                        <Td>
+                          <div className="flex items-center gap-2.5">
+                            <InitialsAvatar
+                              text={initials.toUpperCase() || "?"}
+                              seed={c.id}
+                            />
+                            <Link
+                              to="/contacts/$id"
+                              params={{ id: c.id }}
+                              className="truncate font-medium text-primary hover:underline"
+                            >
+                              {full}
+                            </Link>
+                          </div>
+                        </Td>
+                        <Td className="text-muted-foreground">{c.email ?? "—"}</Td>
+                        <Td className="text-muted-foreground">
+                          {c.phone ?? c.mobile_phone ?? "—"}
+                        </Td>
+                        <Td className="text-muted-foreground">{c.job_title ?? "—"}</Td>
+                        <Td>
+                          {c.company_id ? (
+                            <span className="truncate">
+                              {companyMap.get(c.company_id) ?? "—"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </Td>
+                        <Td>
+                          {stage ? (
+                            <Pill tone={stage.tone} label={stage.label} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </Td>
+                        <Td>
+                          {c.owner_id ? (
+                            <InitialsAvatar
+                              text={c.owner_id.slice(0, 2).toUpperCase()}
+                              seed={c.owner_id}
+                              size={6}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </Td>
+                        <Td className="text-muted-foreground">{timeAgo(c.updated_at)}</Td>
+                        <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
+                        <Td className="w-10">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate({
+                                    to: "/contacts/$id",
+                                    params: { id: c.id },
+                                  })
+                                }
+                              >
+                                Abrir
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => removeOne(c.id)}
+                              >
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </Td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            setPage={setPage}
+            setPageSize={setPageSize}
+          />
+        </div>
+      </div>
+
+      <BulkEnrichDialog
+        open={!!enrichIds}
+        onOpenChange={(o) => !o && setEnrichIds(null)}
+        ids={enrichIds ?? []}
+        entity="contact"
+        onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
+      />
+    </div>
   );
 }
