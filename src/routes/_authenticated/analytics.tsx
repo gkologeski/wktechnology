@@ -79,6 +79,7 @@ function AnalyticsPage() {
           <TabsTrigger value="funnel"><Layers className="h-3.5 w-3.5 mr-1" /> Funil</TabsTrigger>
           <TabsTrigger value="velocity"><Gauge className="h-3.5 w-3.5 mr-1" /> Sales Velocity</TabsTrigger>
           <TabsTrigger value="cohort"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort</TabsTrigger>
+          <TabsTrigger value="sentiment"><Smile className="h-3.5 w-3.5 mr-1" /> Sentimento</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
