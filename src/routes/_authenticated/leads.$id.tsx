@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
