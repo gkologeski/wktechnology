@@ -91,7 +91,14 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       if (list.users.length < 200) break;
       page++;
     }
-    if (!foundId) throw new Error("Nenhum usuário cadastrado com esse email. Peça para a pessoa criar a conta primeiro.");
+    // Se não existir, dispara convite por email (cria o usuário e envia link de cadastro)
+    if (!foundId) {
+      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target);
+      if (invErr || !invited?.user) {
+        throw new Error(invErr?.message ?? "Falha ao enviar convite por email.");
+      }
+      foundId = invited.user.id;
+    }
     if (foundId === userId) throw new Error("Você já é o owner do workspace.");
 
     const { error: insErr } = await supabase
