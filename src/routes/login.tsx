@@ -13,9 +13,6 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-export const Route = createFileRoute("/login")({
-  component: LoginPage,
-});
 
 function LoginPage() {
   const { user, loading } = useAuth();
