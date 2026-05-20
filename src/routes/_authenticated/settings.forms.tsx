@@ -217,6 +217,10 @@ function EditorBody({
         <Input value={editing.redirect_url ?? ""} onChange={(e) => update({ redirect_url: e.target.value })} placeholder="https://..." />
       </div>
 
+      <DisplaySection editing={editing} update={update} />
+
+
+
       <div>
         <div className="mb-2 flex items-center justify-between">
           <Label>Campos</Label>
