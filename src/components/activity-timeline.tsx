@@ -114,6 +114,41 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     return out;
   };
 
+  const resolveAutoLinks = async (): Promise<Partial<Record<RelatedKey, string>>> => {
+    const links: Partial<Record<RelatedKey, string>> = { [relatedKey]: relatedId };
+    try {
+      if (relatedKey === "related_deal_id") {
+        const { data: d } = await supabase
+          .from("deals")
+          .select("company_id, primary_contact_id")
+          .eq("id", relatedId)
+          .maybeSingle();
+        if (d?.company_id) links.related_company_id = d.company_id;
+        let contactId = d?.primary_contact_id ?? null;
+        if (!contactId) {
+          const { data: dc } = await supabase
+            .from("deal_contacts")
+            .select("contact_id")
+            .eq("deal_id", relatedId)
+            .limit(1)
+            .maybeSingle();
+          contactId = dc?.contact_id ?? null;
+        }
+        if (contactId) links.related_contact_id = contactId;
+      } else if (relatedKey === "related_contact_id") {
+        const { data: c } = await supabase
+          .from("contacts")
+          .select("company_id")
+          .eq("id", relatedId)
+          .maybeSingle();
+        if (c?.company_id) links.related_company_id = c.company_id;
+      }
+    } catch {
+      // silencioso: vínculo padrão (relatedKey) já está garantido
+    }
+    return links;
+  };
+
   const add = async () => {
     if (!user) return;
     if (!body.trim() && !subject.trim() && pendingFiles.length === 0) {
@@ -121,6 +156,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       return;
     }
     const attachments = await uploadFiles();
+    const autoLinks = await resolveAutoLinks();
     const payload: Record<string, unknown> = {
       owner_id: user.id,
       type,
@@ -129,8 +165,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
       mentions: mentions.map((m) => m.id),
       attachments,
+      ...autoLinks,
     };
-    payload[relatedKey] = relatedId;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await supabase.from("activities").insert(payload as any);
     if (error) return toast.error(error.message);
