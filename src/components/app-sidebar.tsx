@@ -11,8 +11,30 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/lib/auth";
 
+import { useMyRole } from "@/lib/use-my-role";
+
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 type Group = { label: string; icon: React.ComponentType<{ className?: string }>; items: Item[] };
+
+// URLs visíveis apenas para admin (configuração estrutural e dados sensíveis).
+const ADMIN_ONLY = new Set<string>([
+  "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
+  "/settings/audit-log", "/settings/security", "/settings/hubspot-sync",
+  "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
+  "/settings/pipelines", "/integrations", "/settings/email", "/leads/import-hubspot",
+  "/settings/mobile", "/settings/language",
+]);
+// URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
+const MANAGER_PLUS = new Set<string>([
+  "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
+  "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
+  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign",
+  "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
+  "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
+  "/settings/email-templates", "/settings/segments", "/settings/calendars",
+  "/settings/booking", "/reports", "/dashboards", "/analytics",
+  "/campaigns/whatsapp", "/campaigns/email",
+]);
 
 const groups: Group[] = [
   {
@@ -107,7 +129,16 @@ const groups: Group[] = [
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, signOut } = useAuth();
+  const { isAdmin, isManager } = useMyRole();
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
+  const canSee = (url: string) => {
+    if (ADMIN_ONLY.has(url)) return isAdmin;
+    if (MANAGER_PLUS.has(url)) return isManager;
+    return true;
+  };
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => canSee(i.url)) }))
+    .filter((g) => g.items.length > 0);
   const groupHasActive = (g: Group) => g.items.some((i) => isActive(i.url));
 
   return (
@@ -119,7 +150,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <Collapsible key={group.label} defaultOpen={groupHasActive(group)} className="group/collapsible">
             <SidebarGroup>
               <SidebarGroupLabel asChild>
