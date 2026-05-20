@@ -25,6 +25,7 @@ const groups: Group[] = [
       { title: "Exports agendados", url: "/settings/exports", icon: Send },
       { title: "Enriquecimento", url: "/settings/enrichment", icon: Sparkles },
       { title: "Calendários", url: "/settings/calendars", icon: Calendar },
+      { title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
     ],
   },
   {
