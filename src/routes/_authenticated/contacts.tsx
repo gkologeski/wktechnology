@@ -31,6 +31,7 @@ function ContactsPage() {
 
 
   return (
+    <>
     <EntityList<Contact>
       table="contacts"
       title="Contatos"
