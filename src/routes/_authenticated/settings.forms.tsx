@@ -23,10 +23,22 @@ export const Route = createFileRoute("/_authenticated/settings/forms")({
 
 type FieldType = "text" | "email" | "tel" | "textarea" | "select" | "number";
 type FormField = { key: string; label: string; type: FieldType; required?: boolean; options?: string[]; placeholder?: string };
+type DisplayMode = "inline" | "popup" | "slidein";
+type PopupConfig = {
+  trigger?: "load" | "time" | "scroll" | "exit_intent";
+  delay_seconds?: number;
+  scroll_percent?: number;
+  frequency_days?: number;
+  position?: "center" | "bottom-right" | "bottom-left";
+  title?: string;
+  description?: string;
+};
 type FormRow = {
   id: string; name: string; slug: string; target: "lead" | "contact";
   fields: FormField[]; success_message: string; redirect_url: string | null;
   active: boolean; submit_count: number;
+  display_mode: DisplayMode;
+  popup_config: PopupConfig;
 };
 
 const EMPTY_FIELDS: FormField[] = [
@@ -35,6 +47,10 @@ const EMPTY_FIELDS: FormField[] = [
   { key: "phone", label: "Telefone", type: "tel" },
   { key: "message", label: "Mensagem", type: "textarea" },
 ];
+
+const DEFAULT_POPUP: PopupConfig = {
+  trigger: "time", delay_seconds: 5, scroll_percent: 50, frequency_days: 7, position: "center",
+};
 
 function FormsPage() {
   const qc = useQueryClient();
