@@ -68,6 +68,7 @@ import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_aut
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
+import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
@@ -419,6 +420,12 @@ const AuthenticatedCampaignsWhatsappRoute =
     path: '/campaigns/whatsapp',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCampaignsEmailRoute =
+  AuthenticatedCampaignsEmailRouteImport.update({
+    id: '/campaigns/email',
+    path: '/campaigns/email',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   id: '/api/public/twilio/voice',
   path: '/api/public/twilio/voice',
@@ -560,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -638,6 +646,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -720,6 +729,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -802,6 +812,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -880,6 +891,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -961,6 +973,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -1464,6 +1477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsWhatsappRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/campaigns/email': {
+      id: '/_authenticated/campaigns/email'
+      path: '/campaigns/email'
+      fullPath: '/campaigns/email'
+      preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/twilio/voice': {
       id: '/api/public/twilio/voice'
       path: '/api/public/twilio/voice'
@@ -1747,6 +1767,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
+  AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -1767,6 +1788,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
+  AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
