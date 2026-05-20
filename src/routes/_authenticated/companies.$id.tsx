@@ -5,7 +5,6 @@ import { ArrowLeft, Trash2, Building2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
-import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import type { Company, Contact } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -68,7 +67,7 @@ function CompanyDetail() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          <AiSummaryPanel entity="company" entityId={company.id} />
+          {/* AI summary not available for companies */}
           <div className="rounded-lg border bg-card p-4">
             <h2 className="font-semibold text-sm mb-3">Contatos ({contacts.length})</h2>
             {contacts.length === 0 ? (
