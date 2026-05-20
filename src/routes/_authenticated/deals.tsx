@@ -6,13 +6,14 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, LayoutGrid, List as ListIcon, TrendingUp } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Table as TableIcon, TrendingUp } from "lucide-react";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines } from "@/lib/pipelines";
 import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
 import { DealsBoard, type DealLookups } from "@/components/deals/deals-board";
 import { DealsList } from "@/components/deals/deals-list";
 import { DealsForecast } from "@/components/deals/deals-forecast";
+import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 
 export const Route = createFileRoute("/_authenticated/deals")({
