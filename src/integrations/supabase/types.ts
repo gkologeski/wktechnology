@@ -2614,32 +2614,44 @@ export type Database = {
       segments: {
         Row: {
           created_at: string
+          enabled: boolean
           entity: string
           filters: Json
           id: string
           kind: string
+          last_refreshed_at: string | null
+          member_count: number
           name: string
           owner_id: string
+          refresh_interval_minutes: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          enabled?: boolean
           entity: string
           filters?: Json
           id?: string
           kind?: string
+          last_refreshed_at?: string | null
+          member_count?: number
           name: string
           owner_id?: string
+          refresh_interval_minutes?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          enabled?: boolean
           entity?: string
           filters?: Json
           id?: string
           kind?: string
+          last_refreshed_at?: string | null
+          member_count?: number
           name?: string
           owner_id?: string
+          refresh_interval_minutes?: number
           updated_at?: string
         }
         Relationships: []
