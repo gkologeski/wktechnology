@@ -315,7 +315,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   };
 
   return (
-    <div>
+    <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4 sm:p-5">
       <PageHeader
         title={title}
         description={description}
