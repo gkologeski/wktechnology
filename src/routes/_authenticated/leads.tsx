@@ -1,99 +1,60 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { EntityList } from "@/components/entity-list";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { LEAD_STATUSES } from "@/lib/crm";
-import type { Lead } from "@/lib/db-types";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { LEAD_STATUSES } from "@/lib/crm";
+import type { Lead } from "@/lib/db-types";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import {
   ArrowRightLeft,
-  Sparkles,
-  Users,
-  UserPlus,
-  Target,
-  TrendingUp,
-  Flame,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
   Download,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Sparkles,
   Upload,
-  PhoneCall,
-  Mail,
-  Building2,
+  X,
 } from "lucide-react";
-import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/leads")({
   component: LeadsPage,
 });
 
-type LeadStats = {
-  total: number;
-  new7d: number;
-  byStatus: Record<string, number>;
-  bySource: { source: string; count: number }[];
-  avgScore: number;
-  convertedLast30: number;
-};
-
-function useLeadStats() {
-  return useQuery<LeadStats>({
-    queryKey: ["leads", "stats"],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
-
-      const [{ count: total }, { count: new7d }, statusRes, sourceRes, scoreRes, { count: convertedLast30 }] =
-        await Promise.all([
-          supabase.from("leads").select("id", { count: "exact", head: true }),
-          supabase
-            .from("leads")
-            .select("id", { count: "exact", head: true })
-            .gte("created_at", sevenDaysAgo),
-          supabase.from("leads").select("status").limit(5000),
-          supabase.from("leads").select("source").not("source", "is", null).limit(5000),
-          supabase.from("leads").select("score").not("score", "is", null).limit(5000),
-          supabase
-            .from("leads")
-            .select("id", { count: "exact", head: true })
-            .gte("converted_at", thirtyDaysAgo),
-        ]);
-
-      const byStatus: Record<string, number> = {};
-      for (const r of statusRes.data ?? []) {
-        const k = (r as { status: string }).status ?? "new";
-        byStatus[k] = (byStatus[k] ?? 0) + 1;
-      }
-
-      const sourceMap = new Map<string, number>();
-      for (const r of sourceRes.data ?? []) {
-        const s = ((r as { source: string }).source ?? "—").trim() || "—";
-        sourceMap.set(s, (sourceMap.get(s) ?? 0) + 1);
-      }
-      const bySource = [...sourceMap.entries()]
-        .map(([source, count]) => ({ source, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      const scores = (scoreRes.data ?? []).map((r) => (r as { score: number }).score ?? 0);
-      const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-
-      return {
-        total: total ?? 0,
-        new7d: new7d ?? 0,
-        byStatus,
-        bySource,
-        avgScore,
-        convertedLast30: convertedLast30 ?? 0,
-      };
-    },
-  });
-}
+// ---------------------------------------------------------------------------
+// Types & constants
+// ---------------------------------------------------------------------------
 
 const STATUS_TONE: Record<string, { dot: string; bg: string; text: string }> = {
   new: { dot: "bg-sky-500", bg: "bg-sky-500/10", text: "text-sky-700 dark:text-sky-300" },
@@ -102,205 +63,222 @@ const STATUS_TONE: Record<string, { dot: string; bg: string; text: string }> = {
   disqualified: { dot: "bg-rose-500", bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-300" },
 };
 
-function KpiCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone = "primary",
-}: {
-  label: string;
-  value: string | number;
-  hint?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tone?: "primary" | "emerald" | "amber" | "violet" | "rose";
-}) {
-  const tones: Record<string, string> = {
-    primary: "from-primary/15 to-primary/0 text-primary",
-    emerald: "from-emerald-500/15 to-emerald-500/0 text-emerald-600 dark:text-emerald-400",
-    amber: "from-amber-500/15 to-amber-500/0 text-amber-600 dark:text-amber-400",
-    violet: "from-violet-500/15 to-violet-500/0 text-violet-600 dark:text-violet-400",
-    rose: "from-rose-500/15 to-rose-500/0 text-rose-600 dark:text-rose-400",
-  };
-  return (
-    <Card className="relative overflow-hidden border-border/60 p-4 shadow-sm transition hover:shadow-md">
-      <div className={cn("absolute inset-x-0 top-0 h-16 bg-gradient-to-b opacity-70", tones[tone])} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
-            {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
-          </p>
-          {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-        </div>
-        <div className={cn("rounded-lg border border-border/60 bg-background/70 p-2", tones[tone].split(" ").pop())}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-    </Card>
-  );
+type ViewId = "all" | "mine" | "unassigned" | "new_week";
+const VIEWS: { id: ViewId; label: string }[] = [
+  { id: "all", label: "All leads" },
+  { id: "mine", label: "My leads" },
+  { id: "unassigned", label: "Unassigned" },
+  { id: "new_week", label: "New this week" },
+];
+
+type SortKey = "first_name" | "created_at" | "score";
+type SortDir = "asc" | "desc";
+
+type Filters = {
+  status: string[];
+  source: string[];
+  scoreMin: number;
+  scoreMax: number;
+  createdPreset: "any" | "today" | "7d" | "30d";
+};
+
+const DEFAULT_FILTERS: Filters = {
+  status: [],
+  source: [],
+  scoreMin: 0,
+  scoreMax: 100,
+  createdPreset: "any",
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function timeAgo(iso?: string | null) {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.round(diff / 60_000);
+  if (min < 1) return "agora";
+  if (min < 60) return `${min}m`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.round(h / 24);
+  if (d < 30) return `${d}d`;
+  const mo = Math.round(d / 30);
+  if (mo < 12) return `${mo}mo`;
+  return `${Math.round(mo / 12)}a`;
 }
 
-function StatusBreakdown({ byStatus, total }: { byStatus: Record<string, number>; total: number }) {
-  return (
-    <Card className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Distribuição por status</h3>
-        <span className="text-xs text-muted-foreground">{total.toLocaleString("pt-BR")} leads</span>
-      </div>
-      <div className="space-y-3">
-        {LEAD_STATUSES.map((s) => {
-          const count = byStatus[s.value] ?? 0;
-          const pct = total > 0 ? (count / total) * 100 : 0;
-          const tone = STATUS_TONE[s.value] ?? STATUS_TONE.new;
-          return (
-            <div key={s.value}>
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className={cn("h-2 w-2 rounded-full", tone.dot)} />
-                  <span className="font-medium text-foreground">{s.label}</span>
-                </div>
-                <span className="tabular-nums text-muted-foreground">
-                  {count.toLocaleString("pt-BR")} · {pct.toFixed(0)}%
-                </span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className={cn("h-full rounded-full transition-all", tone.dot)}
-                  style={{ width: `${Math.max(pct, 2)}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
-  );
+function initialsOf(lead: Lead) {
+  const a = (lead.first_name ?? "").trim()[0] ?? "";
+  const b = (lead.last_name ?? "").trim()[0] ?? "";
+  return (a + b).toUpperCase() || "?";
 }
 
-function TopSources({ bySource }: { bySource: { source: string; count: number }[] }) {
-  const max = Math.max(1, ...bySource.map((s) => s.count));
-  return (
-    <Card className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Top fontes</h3>
-        <span className="text-xs text-muted-foreground">últimos 5</span>
-      </div>
-      {bySource.length === 0 ? (
-        <p className="py-6 text-center text-xs text-muted-foreground">Sem dados de fonte ainda.</p>
-      ) : (
-        <div className="space-y-2.5">
-          {bySource.map((s) => (
-            <div key={s.source} className="grid grid-cols-[1fr_auto] items-center gap-3">
-              <div>
-                <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="truncate font-medium">{s.source}</span>
-                  <span className="tabular-nums text-muted-foreground">{s.count.toLocaleString("pt-BR")}</span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60"
-                    style={{ width: `${(s.count / max) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Card>
-  );
+function colorFromString(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue} 70% 45%)`;
 }
 
-function LeadsHero({ stats }: { stats?: LeadStats }) {
-  const total = stats?.total ?? 0;
-  const conversion = total > 0 ? ((stats?.byStatus.qualified ?? 0) / total) * 100 : 0;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-background to-violet-500/5 p-6 shadow-sm">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 right-1/3 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl"
-      />
-      <div className="relative flex flex-wrap items-end justify-between gap-6">
-        <div className="max-w-2xl">
-          <div className="mb-2 flex items-center gap-2">
-            <Badge variant="secondary" className="gap-1 bg-background/70 backdrop-blur">
-              <Flame className="h-3 w-3 text-amber-500" />
-              Pipeline de aquisição
-            </Badge>
-            <Badge variant="outline" className="bg-background/70 backdrop-blur">
-              Tempo real
-            </Badge>
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Leads</h1>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Capture, qualifique e converta novos contatos com um fluxo enxuto. Monitore origem, score e velocidade
-            de qualificação em um só lugar.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" asChild className="bg-background/70 backdrop-blur">
-            <Link to="/leads/import-hubspot">
-              <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="bg-background/70 backdrop-blur" disabled>
-            <Download className="mr-1.5 h-4 w-4" /> Exportar
-          </Button>
-        </div>
-      </div>
-
-      <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiCard label="Total de leads" value={total} hint="acumulado" icon={Users} tone="primary" />
-        <KpiCard
-          label="Novos (7 dias)"
-          value={stats?.new7d ?? 0}
-          hint="entradas recentes"
-          icon={UserPlus}
-          tone="violet"
-        />
-        <KpiCard
-          label="Qualificados"
-          value={stats?.byStatus.qualified ?? 0}
-          hint={`${conversion.toFixed(1)}% de conversão`}
-          icon={Target}
-          tone="emerald"
-        />
-        <KpiCard
-          label="Convertidos (30d)"
-          value={stats?.convertedLast30 ?? 0}
-          hint="virados em deal"
-          icon={TrendingUp}
-          tone="amber"
-        />
-        <KpiCard
-          label="Score médio"
-          value={stats?.avgScore ?? 0}
-          hint="potencial de fechamento"
-          icon={Flame}
-          tone="rose"
-        />
-      </div>
-    </div>
-  );
-}
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function LeadsPage() {
+  const location = useLocation();
+  if (location.pathname !== "/leads") return <Outlet />;
+  return <LeadsHubspotView />;
+}
+
+function LeadsHubspotView() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const location = useLocation();
-  const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
-  const { data: stats } = useLeadStats();
+  const navigate = useNavigate();
 
-  // Render nested routes (e.g. /leads/:id, /leads/import-hubspot) without the page chrome
-  if (location.pathname !== "/leads") {
-    return <Outlet />;
-  }
+  const [activeView, setActiveView] = useState<ViewId>("all");
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
+
+  // Fetch sources list once for filter (top values)
+  const { data: sourceOptions } = useQuery({
+    queryKey: ["leads", "sources"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("leads")
+        .select("source")
+        .not("source", "is", null)
+        .limit(2000);
+      const map = new Map<string, number>();
+      for (const r of data ?? []) {
+        const s = ((r as { source: string }).source ?? "").trim();
+        if (!s) continue;
+        map.set(s, (map.get(s) ?? 0) + 1);
+      }
+      return [...map.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20);
+    },
+  });
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: [
+      "leads",
+      "hubspot-list",
+      activeView,
+      filters,
+      sortKey,
+      sortDir,
+      debouncedSearch,
+      page,
+      pageSize,
+      user?.id,
+    ],
+    queryFn: async () => {
+      let q = supabase
+        .from("leads")
+        .select(
+          "id, first_name, last_name, email, phone, company_name, source, score, status, owner_id, created_at",
+          { count: "exact" },
+        );
+
+      // View
+      if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
+      if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "new_week") {
+        const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+        q = q.gte("created_at", since);
+      }
+
+      // Filters
+      if (filters.status.length > 0) q = q.in("status", filters.status as ("new" | "contacted" | "qualified" | "disqualified")[]);
+      if (filters.source.length > 0) q = q.in("source", filters.source);
+      if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
+      if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
+      if (filters.createdPreset !== "any") {
+        const days = filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
+        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+
+      // Search
+      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+      if (term) {
+        q = q.or(
+          [
+            `first_name.ilike.%${term}%`,
+            `last_name.ilike.%${term}%`,
+            `email.ilike.%${term}%`,
+            `company_name.ilike.%${term}%`,
+            `phone.ilike.%${term}%`,
+          ].join(","),
+        );
+      }
+
+      q = q.order(sortKey, { ascending: sortDir === "asc" });
+      q = q.range(page * pageSize, page * pageSize + pageSize - 1);
+
+      const { data, error, count } = await q;
+      if (error) throw error;
+      return { rows: (data ?? []) as Lead[], count: count ?? 0 };
+    },
+  });
+
+  const rows = result?.rows ?? [];
+  const total = result?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
+  const someSelected = rows.some((r) => selectedIds.has(r.id));
+
+  const toggleAll = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) for (const r of rows) next.delete(r.id);
+      else for (const r of rows) next.add(r.id);
+      return next;
+    });
+  const toggleOne = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const hasActiveFilters =
+    filters.status.length > 0 ||
+    filters.source.length > 0 ||
+    filters.scoreMin > 0 ||
+    filters.scoreMax < 100 ||
+    filters.createdPreset !== "any";
 
   const convert = async (lead: Lead) => {
     if (!user) return;
@@ -328,7 +306,6 @@ function LeadsPage() {
       .select("id")
       .single();
     if (cte) return toast.error(cte.message);
-
     const { data: deal, error: de } = await supabase
       .from("deals")
       .insert({
@@ -341,7 +318,6 @@ function LeadsPage() {
       .select("id")
       .single();
     if (de) return toast.error(de.message);
-
     await supabase
       .from("leads")
       .update({
@@ -351,118 +327,506 @@ function LeadsPage() {
         converted_deal_id: deal?.id,
       })
       .eq("id", lead.id);
-
     toast.success("Lead convertido!");
     qc.invalidateQueries();
   };
 
-  return (
-    <div className="space-y-6">
-      <LeadsHero stats={stats} />
+  const removeOne = async (id: string) => {
+    if (!confirm("Excluir este lead?")) return;
+    const { error } = await supabase.from("leads").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Removido");
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  };
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <StatusBreakdown byStatus={stats?.byStatus ?? {}} total={stats?.total ?? 0} />
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Excluir ${ids.length} lead(s)?`)) return;
+    const { error } = await supabase.from("leads").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} excluído(s)`);
+    clearSelection();
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* ─── Top bar ─── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+          </p>
         </div>
-        <TopSources bySource={stats?.bySource ?? []} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/leads/import-hubspot">
+              <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" disabled>
+            <Download className="mr-1.5 h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" disabled>
+            <Plus className="mr-1.5 h-4 w-4" /> Criar lead
+          </Button>
+        </div>
       </div>
 
-      <EntityList<Lead>
-          table="leads"
-          title="Todos os leads"
-          description="Pesquise, segmente e tome ação em massa."
-          detailPath={(id) => `/leads/${id}`}
-          csvEnabled
-          boardStageField="status"
-          boardStages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-          inlineEditable={["status", "source", "company_name"]}
-          searchKeys={["first_name", "last_name", "email", "company_name"]}
-          columns={[
-            {
-              key: "first_name",
-              label: "Lead",
-              render: (r) => <LeadCell lead={r} />,
-            },
-            {
-              key: "company_name",
-              label: "Empresa",
-              render: (r) =>
-                r.company_name ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    {r.company_name}
-                  </span>
+      {/* ─── Views tabs ─── */}
+      <div className="flex items-center gap-1 border-b px-1">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setActiveView(v.id)}
+            className={cn(
+              "relative px-3 py-2 text-sm font-medium transition-colors",
+              activeView === v.id
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {v.label}
+            {activeView === v.id && (
+              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
+        <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
+          <Plus className="mr-1 h-3.5 w-3.5" /> Add view
+        </Button>
+      </div>
+
+      {/* ─── Body: sidebar + table ─── */}
+      <div className="flex min-h-0 flex-1">
+        {/* Filters sidebar */}
+        <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Filters
+            </h2>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-primary"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+              >
+                Clear all
+              </Button>
+            )}
+          </div>
+          <Separator />
+          <div className="flex-1 overflow-y-auto px-3 py-2">
+            <FilterGroup title="Lead Status" defaultOpen>
+              {LEAD_STATUSES.map((s) => {
+                const checked = filters.status.includes(s.value);
+                return (
+                  <label
+                    key={s.value}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) =>
+                        setFilters((f) => ({
+                          ...f,
+                          status: v
+                            ? [...f.status, s.value]
+                            : f.status.filter((x) => x !== s.value),
+                        }))
+                      }
+                    />
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        STATUS_TONE[s.value]?.dot ?? "bg-muted-foreground",
+                      )}
+                    />
+                    <span>{s.label}</span>
+                  </label>
+                );
+              })}
+            </FilterGroup>
+
+            <FilterGroup title="Owner" defaultOpen>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveView(activeView === "mine" ? "all" : "mine")
+                }
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                  activeView === "mine" && "bg-primary/10 text-primary",
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                My leads
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveView(activeView === "unassigned" ? "all" : "unassigned")
+                }
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                  activeView === "unassigned" && "bg-primary/10 text-primary",
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                Unassigned
+              </button>
+            </FilterGroup>
+
+            <FilterGroup title="Source">
+              {(sourceOptions ?? []).length === 0 ? (
+                <p className="px-2 py-1 text-xs text-muted-foreground">Sem fontes ainda</p>
+              ) : (
+                (sourceOptions ?? []).map((s) => {
+                  const checked = filters.source.includes(s.value);
+                  return (
+                    <label
+                      key={s.value}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setFilters((f) => ({
+                            ...f,
+                            source: v
+                              ? [...f.source, s.value]
+                              : f.source.filter((x) => x !== s.value),
+                          }))
+                        }
+                      />
+                      <span className="flex-1 truncate">{s.value}</span>
+                      <span className="text-xs text-muted-foreground">{s.count}</span>
+                    </label>
+                  );
+                })
+              )}
+            </FilterGroup>
+
+            <FilterGroup title="Score">
+              <div className="px-2 py-2">
+                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{filters.scoreMin}</span>
+                  <span>{filters.scoreMax}</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={[filters.scoreMin, filters.scoreMax]}
+                  onValueChange={([min, max]) =>
+                    setFilters((f) => ({ ...f, scoreMin: min, scoreMax: max }))
+                  }
+                />
+              </div>
+            </FilterGroup>
+
+            <FilterGroup title="Create date">
+              {([
+                ["any", "Qualquer data"],
+                ["today", "Hoje"],
+                ["7d", "Últimos 7 dias"],
+                ["30d", "Últimos 30 dias"],
+              ] as const).map(([value, label]) => (
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                >
+                  <input
+                    type="radio"
+                    name="created"
+                    checked={filters.createdPreset === value}
+                    onChange={() =>
+                      setFilters((f) => ({ ...f, createdPreset: value }))
+                    }
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </FilterGroup>
+          </div>
+        </aside>
+
+        {/* Main panel */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar nome, email, empresa…"
+                className="h-9 pl-8"
+              />
+            </div>
+
+            {selectedIds.size > 0 ? (
+              <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
+                <span className="text-xs font-medium text-primary">
+                  {selectedIds.size} selecionado(s)
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setEnrichIds(Array.from(selectedIds))}
+                >
+                  <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-destructive hover:text-destructive"
+                  onClick={bulkDelete}
+                >
+                  Excluir
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={clearSelection}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Actions <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="min-h-0 flex-1 overflow-auto">
+            <table className="w-full border-separate border-spacing-0 text-sm">
+              <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
+                <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="w-10 border-b px-3 py-2.5">
+                    <Checkbox
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el && "indeterminate" in el)
+                          (el as unknown as { indeterminate: boolean }).indeterminate =
+                            !allSelected && someSelected;
+                      }}
+                      onCheckedChange={toggleAll}
+                    />
+                  </th>
+                  <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+                    Name
+                  </Th>
+                  <Th>Email</Th>
+                  <Th>Phone</Th>
+                  <Th>Company</Th>
+                  <Th>Lead Status</Th>
+                  <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
+                    Score
+                  </Th>
+                  <Th>Owner</Th>
+                  <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+                    Create date
+                  </Th>
+                  <th className="w-10 border-b px-3 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                      Carregando leads…
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                      Nenhum lead encontrado com os filtros atuais.
+                    </td>
+                  </tr>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
-                ),
-            },
-            {
-              key: "source",
-              label: "Fonte",
-              render: (r) =>
-                r.source ? (
-                  <Badge variant="outline" className="font-normal">
-                    {r.source}
-                  </Badge>
-                ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
-                ),
-            },
-            {
-              key: "score",
-              label: "Score",
-              render: (r) => <ScoreCell score={r.score ?? 0} />,
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (r) => <StatusPill status={r.status} />,
-            },
-          ]}
-          fields={[
-            { name: "first_name", label: "Nome", required: true },
-            { name: "last_name", label: "Sobrenome" },
-            { name: "email", label: "Email", type: "email" },
-            { name: "phone", label: "Telefone", type: "tel" },
-            { name: "company_name", label: "Empresa" },
-            { name: "source", label: "Fonte (ex: site, indicação)" },
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-            },
-            { name: "notes", label: "Notas", type: "textarea" },
-          ]}
-          defaults={{ status: "new" }}
-          bulkEditFields={[
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-            },
-            { name: "source", label: "Fonte" },
-          ]}
-          bulkActions={(ids) => (
-            <Button variant="outline" size="sm" onClick={() => setEnrichIds(ids)}>
-              <Sparkles className="mr-1 h-4 w-4" /> Enriquecer
-            </Button>
-          )}
-          rowActions={(row) =>
-            row.status !== "qualified" && row.status !== "disqualified" ? (
+                  rows.map((lead) => {
+                    const checked = selectedIds.has(lead.id);
+                    const full =
+                      `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
+                    return (
+                      <tr
+                        key={lead.id}
+                        className={cn(
+                          "group h-12 border-b transition-colors hover:bg-primary/5",
+                          checked && "bg-primary/5",
+                        )}
+                      >
+                        <Td className="w-10">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleOne(lead.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </Td>
+                        <Td>
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                              style={{ background: colorFromString(lead.id) }}
+                            >
+                              {initialsOf(lead)}
+                            </span>
+                            <Link
+                              to="/leads/$id"
+                              params={{ id: lead.id }}
+                              className="truncate font-medium text-primary hover:underline"
+                            >
+                              {full}
+                            </Link>
+                          </div>
+                        </Td>
+                        <Td className="text-muted-foreground">
+                          {lead.email ? <span className="truncate">{lead.email}</span> : "—"}
+                        </Td>
+                        <Td className="text-muted-foreground">{lead.phone ?? "—"}</Td>
+                        <Td>
+                          {lead.company_name ? (
+                            <span className="truncate">{lead.company_name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </Td>
+                        <Td>
+                          <StatusPill status={lead.status} />
+                        </Td>
+                        <Td>
+                          <ScoreCell score={lead.score ?? 0} />
+                        </Td>
+                        <Td>
+                          {lead.owner_id ? (
+                            <span
+                              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                              style={{ background: colorFromString(lead.owner_id) }}
+                              title={lead.owner_id}
+                            >
+                              {lead.owner_id.slice(0, 2).toUpperCase()}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </Td>
+                        <Td className="text-muted-foreground">{timeAgo(lead.created_at)}</Td>
+                        <Td className="w-10">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate({ to: "/leads/$id", params: { id: lead.id } })
+                                }
+                              >
+                                Abrir
+                              </DropdownMenuItem>
+                              {lead.status !== "qualified" && lead.status !== "disqualified" && (
+                                <DropdownMenuItem onClick={() => convert(lead)}>
+                                  <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Converter
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => removeOne(lead.id)}
+                              >
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </Td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-card/40 px-3 py-2 text-xs">
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => setPageSize(Number(v))}
+              >
+                <SelectTrigger className="h-7 w-[88px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[25, 50, 100].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} / page
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground">
+                {total === 0
+                  ? "0 de 0"
+                  : `${(page * pageSize + 1).toLocaleString("pt-BR")}–${Math.min(
+                      total,
+                      (page + 1) * pageSize,
+                    ).toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                title="Converter em contato + empresa + negócio"
-                onClick={() => convert(row)}
+                className="h-7 w-7"
+                disabled={page <= 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
-                <ArrowRightLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-            ) : null
-          }
-        />
-
+              <span className="px-2 tabular-nums text-muted-foreground">
+                {page + 1} / {totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <BulkEnrichDialog
         open={!!enrichIds}
@@ -475,44 +839,81 @@ function LeadsPage() {
   );
 }
 
-function LeadCell({ lead }: { lead: Lead }) {
-  const full = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function FilterGroup({
+  title,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
   return (
-    <div className="min-w-0">
-      <div className="truncate text-sm font-medium">{full}</div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {lead.email && (
-          <span className="inline-flex items-center gap-1 truncate">
-            <Mail className="h-3 w-3" />
-            <span className="truncate">{lead.email}</span>
-          </span>
-        )}
-        {lead.phone && (
-          <span className="inline-flex items-center gap-1">
-            <PhoneCall className="h-3 w-3" />
-            {lead.phone}
-          </span>
-        )}
-      </div>
-    </div>
+    <Collapsible open={open} onOpenChange={setOpen} className="py-1">
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium hover:bg-muted">
+        <span>{title}</span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-1">
+        <div className="space-y-0.5">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
-function ScoreCell({ score }: { score: number }) {
-  const clamped = Math.max(0, Math.min(100, score));
-  const tone =
-    clamped >= 75
-      ? "from-emerald-500 to-emerald-400"
-      : clamped >= 40
-        ? "from-amber-500 to-amber-400"
-        : "from-rose-500 to-rose-400";
+function Th({
+  children,
+  sortable,
+  active,
+  dir,
+  onClick,
+}: {
+  children: React.ReactNode;
+  sortable?: boolean;
+  active?: boolean;
+  dir?: SortDir;
+  onClick?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full bg-gradient-to-r", tone)} style={{ width: `${clamped}%` }} />
-      </div>
-      <span className="w-7 text-right text-xs font-medium tabular-nums">{clamped}</span>
-    </div>
+    <th
+      className={cn(
+        "whitespace-nowrap border-b px-3 py-2.5 font-semibold",
+        sortable && "cursor-pointer select-none hover:text-foreground",
+        active && "text-foreground",
+      )}
+      onClick={onClick}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {sortable && (
+          <ChevronsUpDown
+            className={cn(
+              "h-3 w-3 opacity-50",
+              active && dir === "asc" && "rotate-180 opacity-100",
+              active && dir === "desc" && "opacity-100",
+            )}
+          />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function Td({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <td className={cn("max-w-[260px] truncate border-b px-3 py-2 align-middle", className)}>
+      {children}
+    </td>
   );
 }
 
@@ -532,3 +933,24 @@ function StatusPill({ status }: { status: string }) {
     </span>
   );
 }
+
+function ScoreCell({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(100, score));
+  const tone =
+    clamped >= 75
+      ? "from-emerald-500 to-emerald-400"
+      : clamped >= 40
+        ? "from-amber-500 to-amber-400"
+        : "from-rose-500 to-rose-400";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+        <div className={cn("h-full bg-gradient-to-r", tone)} style={{ width: `${clamped}%` }} />
+      </div>
+      <span className="w-6 text-right text-xs font-medium tabular-nums">{clamped}</span>
+    </div>
+  );
+}
+
+// Silence unused import warning — used only for memo stability if grown
+useMemo;
