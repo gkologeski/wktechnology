@@ -37,6 +37,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
+import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
@@ -81,6 +82,7 @@ import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/tw
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
+import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
@@ -245,6 +247,12 @@ const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
     path: '/workflows',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWebhooksRoute =
+  AuthenticatedSettingsWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsTeamsRoute =
@@ -505,6 +513,12 @@ const ApiPublicHooksWhatsappCampaignTickRoute =
     path: '/api/public/hooks/whatsapp-campaign-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWebhookTickRoute =
+  ApiPublicHooksWebhookTickRouteImport.update({
+    id: '/api/public/hooks/webhook-tick',
+    path: '/api/public/hooks/webhook-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksTwilioWhatsappStatusRoute =
   ApiPublicHooksTwilioWhatsappStatusRouteImport.update({
     id: '/api/public/hooks/twilio-whatsapp-status',
@@ -684,6 +698,7 @@ export interface FileRoutesByFullPath {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -702,6 +717,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -775,6 +791,7 @@ export interface FileRoutesByTo {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
@@ -793,6 +810,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -870,6 +888,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -888,6 +907,7 @@ export interface FileRoutesById {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -965,6 +985,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/webhooks'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations/'
@@ -983,6 +1004,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
@@ -1056,6 +1078,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/webhooks'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations'
@@ -1074,6 +1097,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
@@ -1150,6 +1174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
+    | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
@@ -1168,6 +1193,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
@@ -1208,6 +1234,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
@@ -1416,6 +1443,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/settings/workflows'
       preLoaderRoute: typeof AuthenticatedSettingsWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/webhooks': {
+      id: '/_authenticated/settings/webhooks'
+      path: '/webhooks'
+      fullPath: '/settings/webhooks'
+      preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/teams': {
@@ -1726,6 +1760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWhatsappCampaignTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/webhook-tick': {
+      id: '/api/public/hooks/webhook-tick'
+      path: '/api/public/hooks/webhook-tick'
+      fullPath: '/api/public/hooks/webhook-tick'
+      preLoaderRoute: typeof ApiPublicHooksWebhookTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/twilio-whatsapp-status': {
       id: '/api/public/hooks/twilio-whatsapp-status'
       path: '/api/public/hooks/twilio-whatsapp-status'
@@ -1929,6 +1970,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
+  AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
@@ -1967,6 +2009,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsSubscriptionsRoute,
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
+  AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
@@ -2097,6 +2140,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
+  ApiPublicHooksWebhookTickRoute: ApiPublicHooksWebhookTickRoute,
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
