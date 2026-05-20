@@ -284,7 +284,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
     } else {
       failed++;
     }
-    preview.push({ entity_id: row.id, provider: matchedProvider, update: finalUpdate });
+    preview.push({ entity_id: row.id, provider: matchedProvider, update: finalUpdate as Record<string, string | number | boolean | null> });
   }
 
   if (!dryRun) {
