@@ -162,17 +162,17 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
       .eq("status", "connected");
     if (data.email_account_id) q = q.eq("id", data.email_account_id);
     const { data: rows } = await q.order("created_at", { ascending: false }).limit(1);
-    const acc = rows?.[0] as EmailAccountRow | undefined;
+    const acc = rows?.[0] as Parameters<typeof gmail.ensureAccessToken>[0] | undefined;
     if (!acc) throw new Error("Nenhuma conta Gmail conectada");
-    const token = await ensureAccessToken(acc);
-    const raw = buildRawMime({
+    const token = await gmail.ensureAccessToken(acc);
+    const raw = gmail.buildRawMime({
       from: acc.email,
       to: [data.to],
       subject: `[TESTE] ${data.subject}`,
       bodyHtml: data.body_html || `<p>${data.body_text || ""}</p>`,
       bodyText: data.body_text || "",
     });
-    await gmailSendRaw(token, raw);
+    await gmail.gmailSendRaw(token, raw);
     return { ok: true };
   });
 
