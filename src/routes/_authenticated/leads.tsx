@@ -462,7 +462,7 @@ function LeadsPage() {
             ) : null
           }
         />
-      </Card>
+
 
       <BulkEnrichDialog
         open={!!enrichIds}
