@@ -1,95 +1,85 @@
-# Réplica fiel HubSpot na tela de Leads
+## Objetivo
 
-Reescrevo `/leads` para reproduzir o layout do CRM Index do HubSpot. O `EntityList` genérico permanece intacto (continua servindo Contatos, Empresas, Negócios, Tarefas etc.) — só a tela de Leads ganha esta versão dedicada.
+Aplicar a mesma estratégia de réplica fiel do HubSpot (já feita em Leads) nas telas de **Contatos, Empresas, Negócios e Tarefas**, mantendo consistência visual e de UX entre os módulos.
 
-## Layout final
+## Layout base (igual ao Leads)
+
+Cada tela terá três áreas:
 
 ```text
-┌───────────────────────────────────────────────────────────────────┐
-│ Leads                          [Importar HubSpot] [Exportar] [+ Criar lead] │
-├───────────────────────────────────────────────────────────────────┤
-│ [All leads] [My leads] [Unassigned] [New this week] [+ Add view] │  ← abas
-├──────────────┬────────────────────────────────────────────────────┤
-│ FILTERS      │ 🔍 Buscar nome, email...    [Actions ▾]            │
-│              ├────────────────────────────────────────────────────┤
-│ ▾ Status     │ ☐ │ NAME │ EMAIL │ PHONE │ COMPANY │ STATUS │ ... │
-│   ☐ New      ├────────────────────────────────────────────────────┤
-│   ☐ Qualified│ ☐ │ João  │ ...   │ ...   │ Acme    │ ● New  │ ... │
-│ ▾ Owner      │ ☐ │ Maria │ ...   │ ...   │ Beta    │ ● Qual │ ... │
-│ ▾ Source     │ ...                                                │
-│ ▾ Score      ├────────────────────────────────────────────────────┤
-│ ▾ Create date│ 50 per page  ◀ 1 2 3 4 ▶          1–50 of 1,234   │
-└──────────────┴────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Header: título + busca (debounce 300ms) + "Criar"       │
+├────────────┬─────────────────────────────────────────────┤
+│  Sidebar   │  Tabs de views                              │
+│  filtros   │  ──────────────────────────────────────     │
+│  esquerda  │  Tabela densa (sticky header, h-12 rows,    │
+│  ~260px    │  hover bg-primary/5, checkbox, bulk         │
+│  colapsável│  actions, paginação 25/50/100)              │
+└────────────┴─────────────────────────────────────────────┘
 ```
 
-Hero atual, KPIs, "Distribuição por status" e "Top fontes" saem da tela `/leads` para casar com a estética HubSpot (densa, focada na tabela). Esses widgets continuam disponíveis no Dashboard.
+Componentes reutilizados do Leads: estrutura do shell, paginação, tabs de view, sidebar de filtros — refatorados para receber configuração por módulo.
+
+## Módulos
+
+### Contatos (`/contacts`)
+
+- **Views padrão:** All contacts · My contacts · Unassigned · Created this week
+- **Colunas:** checkbox · Name (link azul + avatar) · Email · Phone · Job title · Company · Lifecycle stage (pill) · Owner · Last activity · Create date
+- **Filtros (sidebar):** Lifecycle stage, Owner, Tags, Create date (preset), Last activity (preset)
+- **Busca:** `.or()` em first_name, last_name, email, phone
+- **Row actions:** Open, Send email, Add to sequence, Delete
+
+### Empresas (`/companies`)
+
+- **Views padrão:** All companies · My companies · Unassigned · Created this week
+- **Colunas:** checkbox · Name (link azul + logo) · Domain · Industry · Employees · City · Country · Owner · Create date
+- **Filtros:** Industry, Size (range), Owner, Country, Create date
+- **Busca:** `.or()` em name, domain, website
+- **Row actions:** Open, View contacts, Delete
+
+### Negócios (`/deals`)
+
+- Tela com **dois modos** (toggle no header, como HubSpot): **Board** (Kanban por pipeline stage — manter o existente) e **Table** (novo, padrão HubSpot)
+- **Views padrão (Table):** All deals · My deals · Closing this month · Won this quarter
+- **Colunas Table:** checkbox · Deal name (link) · Stage (pill colorida) · Amount (BRL) · Close date · Pipeline · Owner · Associated company · Create date
+- **Filtros:** Pipeline, Stage, Owner, Amount (range), Close date (preset), Create date
+- **Busca:** `.or()` em name + associated company
+- **Row actions:** Open, Mark won/lost, Delete
+
+### Tarefas (`/tasks`)
+
+- **Views padrão:** All tasks · My open tasks · Due today · Overdue · Completed
+- **Colunas:** checkbox · Title (link) · Type (pill: call/email/todo) · Priority (pill) · Status · Due date · Associated record · Assignee · Create date
+- **Filtros:** Type, Priority, Status, Assignee, Due date (preset)
+- **Busca:** `.or()` em title, description
+- **Row actions:** Mark complete, Reschedule, Delete
+- A área `/tasks/queues` existente permanece intocada
 
 ## Arquivos
 
-- `src/routes/_authenticated/leads.tsx` — substitui a tela atual pela nova UI HubSpot. Mantém o `<Outlet />` quando `pathname !== "/leads"` para preservar `/leads/:id` e `/leads/import-hubspot`. Mantém `convert(lead)` movida para um menu de ações por linha.
-- `src/components/leads/leads-filters-sidebar.tsx` — sidebar esquerda fixa (~260px), grupos colapsáveis (`Collapsible` do shadcn).
-- `src/components/leads/leads-views-tabs.tsx` — abas das views padrão + "+ Add view".
-- `src/components/leads/leads-table.tsx` — tabela densa: header sticky `bg-muted/50`, linhas `h-12 hover:bg-primary/5`, divisores finos, coluna Name em link azul.
-- `src/components/leads/leads-pagination.tsx` — rodapé com page size (25/50/100) e paginação numérica.
+Por módulo: substituir a tela atual (`contacts.tsx`, `companies.tsx`, `deals.tsx`, `tasks.tsx`) por um shell HubSpot-style, mantendo `<Outlet />` quando há rotas filhas (contacts/$id, companies/$id, tasks/$id, tasks/queues).
 
-Reutiliza `Table`, `Checkbox`, `Button`, `Input`, `Badge`, `DropdownMenu`, `BulkActionBar`, `BulkEnrichDialog` já existentes, e o cliente Supabase atual.
+Componentes compartilhados novos em `src/components/crm/`:
+- `crm-filters-sidebar.tsx` — sidebar genérica controlada por config
+- `crm-views-tabs.tsx` — tabs de views
+- `crm-pagination.tsx` — paginação
+- `crm-table-shell.tsx` — wrapper de tabela densa
 
-## Views padrão (client-side)
-
-| View | Filtro |
-|---|---|
-| All leads | nenhum |
-| My leads | `owner_id = auth.uid()` |
-| Unassigned | `owner_id is null` |
-| New this week | `created_at >= now() - 7d` |
-
-A view ativa controla a query do Supabase.
-
-## Colunas (Padrão HubSpot)
-
-Ordem fixa nesta primeira versão:
-
-1. ☐ checkbox
-2. **Name** (link azul para `/leads/:id`, com avatar circular pequeno à esquerda)
-3. Email (com ícone)
-4. Phone
-5. Company name
-6. Lead Status (pill colorida)
-7. Owner (placeholder enquanto não houver join real)
-8. Create Date (formato relativo "3 days ago")
-
-## Filtros (sidebar esquerda)
-
-- Cada grupo colapsável.
-- Multi-select com checkbox (Status, Owner, Source).
-- Score: slider 0–100.
-- Create date: presets (Today / Last 7d / Last 30d / Custom).
-- Estado em React local; aplicado via `.in()`, `.gte()`, `.eq()` na query.
-- Botão "Clear all" no topo quando há filtro ativo.
-
-## Tabela
-
-- Container `border rounded-md overflow-hidden`.
-- Header: `bg-muted/50`, texto `text-xs font-semibold uppercase tracking-wide`.
-- Linhas `h-12 hover:bg-primary/5`, divisor `border-b border-border/50`.
-- Sort por Name e Create Date no header.
-- Seleção em massa reaproveita `BulkActionBar` (Editar / Excluir / Enriquecer / Converter).
-
-## Paginação
-
-- Page size 25 / 50 / 100 (default 50).
-- Paginação numérica + setas + "X–Y of N".
-- Via `.range()` do Supabase.
+Cada tela define localmente: colunas, views padrão, schema de filtros, lógica de busca/sort/paginação via Supabase (`.range()`, `.in()`, `.or()`, `.order()`).
 
 ## Detalhes técnicos
 
-- `useQuery` com chave `["leads", "hubspot-list", view, filters, sort, page, search]`.
-- `search` aplica `.or("first_name.ilike.%x%,last_name.ilike.%x%,email.ilike.%x%,company_name.ilike.%x%")` com debounce 300ms.
-- Sem mudanças de schema.
+- Paginação e filtros server-side em todas as telas
+- Busca com debounce 300ms
+- Bulk delete e bulk actions específicas por módulo
+- Pills de status reutilizam o padrão `STATUS_TONE` do Leads (sky/violet/emerald/rose/amber)
+- Navegação via `Link to="/contacts/$id"` etc., preservando rotas detalhe
+- Sem alteração em RLS, schema ou business logic — apenas reescrita de UI/presentation
 
-## Fora do escopo desta entrega
+## Fora de escopo
 
-- Persistir views customizadas do usuário (precisaria de tabela `lead_views`).
-- Editor de colunas drag-and-drop.
-- Hover-card / preview lateral ao clicar em linha.
-- Owner real (depende de join com `profiles`).
+- Persistência de views customizadas
+- Editor drag-and-drop de colunas
+- Hover-card de preview na linha
+- Refatoração do Kanban de Deals existente (apenas adicionar o modo Table ao lado)
