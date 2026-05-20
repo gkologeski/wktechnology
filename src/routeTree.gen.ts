@@ -57,6 +57,7 @@ import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsFormsRouteImport } from './routes/_authenticated/settings.forms'
 import { Route as AuthenticatedSettingsExportsRouteImport } from './routes/_authenticated/settings.exports'
 import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authenticated/settings.esign'
+import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_authenticated/settings.enrichment'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
@@ -352,6 +353,12 @@ const AuthenticatedSettingsEsignRoute =
     path: '/esign',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsEnrichmentRoute =
+  AuthenticatedSettingsEnrichmentRouteImport.update({
+    id: '/enrichment',
+    path: '/enrichment',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsEmailTemplatesRoute =
   AuthenticatedSettingsEmailTemplatesRouteImport.update({
     id: '/email-templates',
@@ -549,6 +556,7 @@ export interface FileRoutesByFullPath {
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
@@ -624,6 +632,7 @@ export interface FileRoutesByTo {
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
   '/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
@@ -703,6 +712,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
+  '/_authenticated/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
   '/_authenticated/settings/esign': typeof AuthenticatedSettingsEsignRoute
   '/_authenticated/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/_authenticated/settings/forms': typeof AuthenticatedSettingsFormsRoute
@@ -782,6 +792,7 @@ export interface FileRouteTypes {
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
+    | '/settings/enrichment'
     | '/settings/esign'
     | '/settings/exports'
     | '/settings/forms'
@@ -857,6 +868,7 @@ export interface FileRouteTypes {
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
+    | '/settings/enrichment'
     | '/settings/esign'
     | '/settings/exports'
     | '/settings/forms'
@@ -935,6 +947,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
+    | '/_authenticated/settings/enrichment'
     | '/_authenticated/settings/esign'
     | '/_authenticated/settings/exports'
     | '/_authenticated/settings/forms'
@@ -1346,6 +1359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsEsignRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/enrichment': {
+      id: '/_authenticated/settings/enrichment'
+      path: '/enrichment'
+      fullPath: '/settings/enrichment'
+      preLoaderRoute: typeof AuthenticatedSettingsEnrichmentRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/email-templates': {
       id: '/_authenticated/settings/email-templates'
       path: '/email-templates'
@@ -1579,6 +1599,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
+  AuthenticatedSettingsEnrichmentRoute: typeof AuthenticatedSettingsEnrichmentRoute
   AuthenticatedSettingsEsignRoute: typeof AuthenticatedSettingsEsignRoute
   AuthenticatedSettingsExportsRoute: typeof AuthenticatedSettingsExportsRoute
   AuthenticatedSettingsFormsRoute: typeof AuthenticatedSettingsFormsRoute
@@ -1611,6 +1632,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,
+  AuthenticatedSettingsEnrichmentRoute: AuthenticatedSettingsEnrichmentRoute,
   AuthenticatedSettingsEsignRoute: AuthenticatedSettingsEsignRoute,
   AuthenticatedSettingsExportsRoute: AuthenticatedSettingsExportsRoute,
   AuthenticatedSettingsFormsRoute: AuthenticatedSettingsFormsRoute,
