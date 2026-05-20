@@ -205,12 +205,15 @@ export function SendEmailDialog({
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
             </div>
             <div>
-              <Label>
-                Mensagem{" "}
-                <span className="text-xs text-muted-foreground">
-                  · tokens <code>{"{{first_name}}"}</code> · snippets <code>/atalho</code>
-                </span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label>
+                  Mensagem{" "}
+                  <span className="text-xs text-muted-foreground">
+                    · tokens <code>{"{{first_name}}"}</code> · snippets <code>/atalho</code>
+                  </span>
+                </Label>
+                <SmartComposeMenu channel="email" currentText={body} contactName={contactName} onApply={setBody} />
+              </div>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} />
             </div>
           </div>
