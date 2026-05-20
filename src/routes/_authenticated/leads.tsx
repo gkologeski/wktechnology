@@ -367,8 +367,7 @@ function LeadsPage() {
         <TopSources bySource={stats?.bySource ?? []} />
       </div>
 
-      <Card className="overflow-hidden border-border/60 p-4 shadow-sm sm:p-5">
-        <EntityList<Lead>
+      <EntityList<Lead>
           table="leads"
           title="Todos os leads"
           description="Pesquise, segmente e tome ação em massa."
