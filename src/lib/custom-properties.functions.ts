@@ -42,6 +42,7 @@ const upsertSchema = z.object({
   position: z.number().int().min(0).default(0),
   required: z.boolean().default(false),
   enabled: z.boolean().default(true),
+  ai_prompt: z.string().max(4000).nullable().optional(),
 });
 
 export const listCustomProperties = createServerFn({ method: "POST" })
@@ -50,7 +51,7 @@ export const listCustomProperties = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let q = supabase.from("custom_properties")
-      .select("id, entity, key, label, type, options, position, required, enabled, created_at, updated_at")
+      .select("id, entity, key, label, type, options, position, required, enabled, ai_prompt, created_at, updated_at")
       .eq("owner_id", userId)
       .order("entity", { ascending: true })
       .order("position", { ascending: true });
@@ -75,6 +76,7 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
       position: data.position,
       required: data.required,
       enabled: data.enabled,
+      ai_prompt: data.ai_prompt ?? null,
     };
     if (data.id) {
       const { error } = await supabase.from("custom_properties").update(payload as never).eq("id", data.id).eq("owner_id", userId);
@@ -130,4 +132,71 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
       .eq("owner_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+export const computeAiProperty = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({
+    property_id: z.string().uuid(),
+    entity_id: z.string().uuid(),
+  }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = context.supabase as any;
+    const { data: prop, error: pErr } = await sb
+      .from("custom_properties")
+      .select("entity, key, type, options, ai_prompt, label")
+      .eq("id", data.property_id)
+      .eq("owner_id", userId)
+      .single();
+    if (pErr || !prop) throw new Error("Propriedade não encontrada");
+    if (!prop.ai_prompt) throw new Error("Esta propriedade não tem prompt de IA");
+    const { data: row, error: rErr } = await sb
+      .from(prop.entity)
+      .select("*")
+      .eq("id", data.entity_id)
+      .eq("owner_id", userId)
+      .single();
+    if (rErr || !row) throw new Error("Registro não encontrado");
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+    const ctxJson = JSON.stringify(row, null, 2).slice(0, 8000);
+    const typeHint =
+      prop.type === "boolean" ? "Retorne APENAS 'true' ou 'false'." :
+      prop.type === "number" ? "Retorne APENAS um número decimal." :
+      prop.type === "select" ? `Retorne APENAS um destes valores: ${(prop.options as string[]).join(", ")}` :
+      prop.type === "multiselect" ? `Retorne JSON array com valores entre: ${(prop.options as string[]).join(", ")}` :
+      prop.type === "date" ? "Retorne APENAS uma data no formato YYYY-MM-DD." :
+      "Retorne APENAS o texto final, sem aspas nem explicação.";
+    const res = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: `Você calcula o valor da propriedade "${prop.label}" (${prop.type}). ${typeHint}` },
+          { role: "user", content: `Prompt: ${prop.ai_prompt}\n\nDados do registro (JSON):\n${ctxJson}` },
+        ],
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) throw new Error(`AI Gateway ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const raw = (j.choices?.[0]?.message?.content ?? "").trim();
+    let value: string | number | boolean | string[] | null = raw;
+    if (prop.type === "boolean") value = /^t|true|sim|yes|1$/i.test(raw);
+    else if (prop.type === "number") { const n = parseFloat(raw.replace(",", ".")); value = Number.isFinite(n) ? n : null; }
+    else if (prop.type === "multiselect") { try { const p = JSON.parse(raw); value = Array.isArray(p) ? p.map(String) : []; } catch { value = []; } }
+    const cur = (row.custom_fields ?? {}) as Record<string, unknown>;
+    const next = { ...cur, [prop.key]: value };
+    const { error } = await sb
+      .from(prop.entity)
+      .update({ custom_fields: next })
+      .eq("id", data.entity_id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { value: value as string | number | boolean | string[] | null };
   });

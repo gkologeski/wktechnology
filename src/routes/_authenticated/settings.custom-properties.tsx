@@ -62,6 +62,7 @@ function CustomPropsPage() {
         position: form.position ?? 0,
         required: !!form.required,
         enabled: form.enabled ?? true,
+        ai_prompt: (form as { ai_prompt?: string | null }).ai_prompt ?? null,
       } });
       toast.success("Salvo");
       setOpen(false); setEditing(null);
@@ -191,6 +192,16 @@ function PropertyDialog({
             />
           </div>
         )}
+        <div className="space-y-1">
+          <Label>Prompt de IA (opcional)</Label>
+          <Textarea
+            rows={3}
+            placeholder="Ex.: classifique este lead como Quente, Morno ou Frio com base no histórico."
+            value={(form as { ai_prompt?: string | null }).ai_prompt ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, ai_prompt: e.target.value }))}
+          />
+          <p className="text-[11px] text-muted-foreground">Se preenchido, aparece o botão "Calcular com IA" na ficha do registro.</p>
+        </div>
         <div className="grid grid-cols-3 gap-2 items-center">
           <div className="space-y-1">
             <Label>Ordem</Label>

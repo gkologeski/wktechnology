@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 
 type Props = {
   defaultTo?: string;
@@ -205,7 +206,10 @@ export function SendWhatsAppDialog({
             </>
           ) : (
             <div>
-              <Label>Mensagem</Label>
+              <div className="flex items-center justify-between">
+                <Label>Mensagem</Label>
+                <SmartComposeMenu channel="whatsapp" currentText={body} contactName={contactName} onApply={setBody} />
+              </div>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
             </div>
           )}

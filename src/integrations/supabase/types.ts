@@ -906,6 +906,7 @@ export type Database = {
       }
       custom_properties: {
         Row: {
+          ai_prompt: string | null
           created_at: string
           enabled: boolean
           entity: string
@@ -920,6 +921,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_prompt?: string | null
           created_at?: string
           enabled?: boolean
           entity: string
@@ -934,6 +936,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_prompt?: string | null
           created_at?: string
           enabled?: boolean
           entity?: string
