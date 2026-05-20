@@ -201,7 +201,59 @@ function AnalyticsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="sentiment" className="space-y-4">
+          <SentimentTab />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SentimentTab() {
+  const overviewFn = useServerFn(sentimentOverview);
+  const listFn = useServerFn(listSentiments);
+  const tickFn = useServerFn(runSentimentTick);
+  const ov = useQuery({ queryKey: ["sent-ov"], queryFn: () => overviewFn({ data: { days: 30 } }) });
+  const ls = useQuery({ queryKey: ["sent-ls"], queryFn: () => listFn({ data: { limit: 50 } }) });
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={async () => {
+          try { const r = await tickFn(); toast.success(`Analisadas ${r.processed} mensagens`); ov.refetch(); ls.refetch(); }
+          catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+        }}><Play className="h-3.5 w-3.5 mr-1" />Analisar agora</Button>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="Mensagens analisadas (30d)" value={String(ov.data?.total ?? 0)} />
+        <Kpi label="Positivas" value={String(ov.data?.positive ?? 0)} />
+        <Kpi label="Neutras" value={String(ov.data?.neutral ?? 0)} />
+        <Kpi label="Negativas" value={String(ov.data?.negative ?? 0)} />
+      </div>
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Mensagens recentes</CardTitle></CardHeader>
+        <CardContent>
+          <div className="text-sm divide-y">
+            {(ls.data ?? []).map((r) => (
+              <div key={r.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  {r.label === "positive" ? <Smile className="h-4 w-4 text-emerald-600" />
+                    : r.label === "negative" ? <Frown className="h-4 w-4 text-rose-600" />
+                    : <Meh className="h-4 w-4 text-muted-foreground" />}
+                  <span className="text-xs uppercase">{r.source}</span>
+                  <span className="text-xs text-muted-foreground truncate">{(r.keywords ?? []).slice(0, 4).join(", ")}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {r.emotion && <Badge variant="outline">{r.emotion}</Badge>}
+                  <span>{Number(r.score).toFixed(2)}</span>
+                  <span>{new Date(r.analyzed_at).toLocaleString("pt-BR")}</span>
+                </div>
+              </div>
+            ))}
+            {!ls.data?.length && <p className="text-muted-foreground py-4 text-center">Sem análises ainda.</p>}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
