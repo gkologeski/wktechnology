@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { ActivityTimeline } from "@/components/activity-timeline";
+import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
