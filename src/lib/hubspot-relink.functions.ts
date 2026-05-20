@@ -126,15 +126,17 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     async function loadMap(table: string, ids: string[]) {
       const out = new Map<string, string>();
       if (!ids.length) return out;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
       for (let i = 0; i < ids.length; i += 500) {
         const chunk = ids.slice(i, i + 500);
-        const { data: rows } = await supabase
+        const { data: rows } = await sb
           .from(table)
           .select("id, hs_object_id")
           .eq("owner_id", userId)
           .in("hs_object_id", chunk);
-        for (const r of rows ?? []) {
-          if (r.hs_object_id) out.set(String(r.hs_object_id), r.id as string);
+        for (const r of (rows ?? []) as { id: string; hs_object_id: string | null }[]) {
+          if (r.hs_object_id) out.set(String(r.hs_object_id), r.id);
         }
       }
       return out;
