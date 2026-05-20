@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { EntityList } from "@/components/entity-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
