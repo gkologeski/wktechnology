@@ -315,7 +315,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   };
 
   return (
-    <div>
+    <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4 sm:p-5">
       <PageHeader
         title={title}
         description={description}
@@ -477,15 +477,19 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           )}
         />
       ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
+        <div className="rounded-xl border border-border/60 bg-background overflow-hidden">
           <Table>
-            <TableHeader>
-              <TableRow>
+            <TableHeader className="bg-muted/40">
+              <TableRow className="hover:bg-transparent border-border/60">
                 <TableHead className="w-10">
                   <Checkbox checked={allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false} onCheckedChange={toggleAll} />
                 </TableHead>
-                {visibleColumns.map((c) => <TableHead key={String(c.key)}>{c.label}</TableHead>)}
-                <TableHead className="w-32 text-right whitespace-nowrap">Ações</TableHead>
+                {visibleColumns.map((c) => (
+                  <TableHead key={String(c.key)} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {c.label}
+                  </TableHead>
+                ))}
+                <TableHead className="w-32 text-right whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -497,7 +501,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                 filtered.map((row) => {
                   const sel = selectedIds.has(row.id);
                   return (
-                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 ${detailPath ? "cursor-pointer" : ""}`} onClick={(e) => {
+                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 border-border/50 transition-colors hover:bg-muted/40 ${detailPath ? "cursor-pointer" : ""}`} onClick={(e) => {
                       if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
                       if (detailPath) window.location.href = detailPath(row.id);
                     }}>
