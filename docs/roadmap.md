@@ -93,12 +93,12 @@
 
 ## ⚫ Onda 10 — Plataforma (sob demanda)
 
-42. API pública REST + API keys (G)
-43. Webhooks de saída (M)
-44. Two-way sync HubSpot (G)
-45. Custom Objects (G)
-46. PWA mobile + push (M)
-47. i18n pt/en/es (M)
-48. White-label (M)
+42. **API pública REST + API keys (G)** ✅ — tabela `api_keys` (prefix, key_hash sha256, scopes read/write, expires_at, revoked_at) com RLS owner/admin. `src/lib/api-keys.functions.ts` (list/create/revoke/delete) gera segredo `lvb_<hex>` exibido uma única vez. Validador `authenticateApiKey` em `src/lib/api-keys/auth.server.ts` resolve owner via header Bearer/x-api-key. Rotas REST públicas em `/api/public/v1/contacts`, `/leads`, `/deals` (GET+POST). Página `/settings/api-keys` com criação, revogação e cópia do segredo.
+43. **Webhooks de saída (M)** ✅ — tabelas `outbound_webhooks` (url, secret, events, active) e `webhook_deliveries` (status pending/success/failed/dead, attempt, response_status, next_retry_at). Dispatcher `src/lib/webhooks/dispatcher.server.ts` assina body com HMAC-SHA256 (header `X-Webhook-Signature`), retry exponencial até 5 tentativas. Helper `enqueueWebhookEvent`. Endpoint `/api/public/hooks/webhook-tick` agendado por pg_cron a cada 5 min. Página `/settings/webhooks` para gerenciar endpoints, copiar secret e visualizar entregas.
+44. **Two-way sync HubSpot (G)** ✅ — tabela `hubspot_sync_state` (entity, local_id ↔ hubspot_id, direction, last_synced_at). `src/lib/hubspot-sync.functions.ts` (`pushContactsToHubspot`, `listHubspotSyncState`) cria/atualiza contatos via connector gateway. Página `/settings/hubspot-sync`.
+45. **Custom Objects (G)** ✅ — tabelas `custom_objects` (slug, schema jsonb) e `custom_object_records` (data jsonb). Server fns CRUD em `src/lib/custom-objects.functions.ts`. Página `/settings/custom-objects` com builder de schema (text/number/date/boolean/select/url/email) e Sheet para registros.
+46. **PWA mobile + push (M)** ✅ — `public/manifest.webmanifest`, service worker `public/sw.js` (cache shell + push + notificationclick). Tabela `push_subscriptions` (endpoint único, p256dh, auth). Server fns `registerPushSubscription`/`unregisterPushSubscription`/`listMyPushSubscriptions`. Hook `usePwaInstall` + `registerServiceWorker`. Página `/settings/mobile` com install prompt + permissão de notificações.
+47. **i18n pt/en/es (M)** ✅ — `src/lib/i18n.tsx` com dicionário inline (common + nav + settings), provider em localStorage, hook `useT()`. `I18nProvider` montado no `__root.tsx`. Página `/settings/language` para troca de idioma.
+48. **White-label (M)** ✅ — tabela `workspace_branding` (brand_name, logo_url, favicon_url, primary_color, accent_color, custom_domain, support_email, footer_text). `BrandingProvider` aplica cores via CSS vars, favicon e title dinâmicos. Server fns `getBranding`/`saveBranding`. Página `/settings/branding`.
 
 <!-- item 24 done -->

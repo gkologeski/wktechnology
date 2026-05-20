@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { I18nProvider } from "@/lib/i18n";
+import { BrandingProvider } from "@/lib/branding";
 
 function NotFoundComponent() {
   return (
@@ -63,7 +65,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -106,8 +111,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AuthInvalidator />
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <I18nProvider>
+          <BrandingProvider>
+            <Outlet />
+            <Toaster richColors position="top-right" />
+          </BrandingProvider>
+        </I18nProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

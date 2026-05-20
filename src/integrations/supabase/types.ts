@@ -202,6 +202,48 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          owner_id: string
+          prefix: string
+          revoked_at: string | null
+          scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          last_used_at?: string | null
+          name: string
+          owner_id: string
+          prefix: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          owner_id?: string
+          prefix?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -903,6 +945,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      custom_object_records: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          object_id: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          object_id: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          object_id?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_object_records_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "custom_objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_objects: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          owner_id: string
+          schema: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          schema?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          schema?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       custom_properties: {
         Row: {
@@ -2263,6 +2373,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hubspot_sync_state: {
+        Row: {
+          direction: string
+          entity: string
+          hubspot_id: string
+          id: string
+          last_payload: Json | null
+          last_synced_at: string
+          local_id: string
+          owner_id: string
+        }
+        Insert: {
+          direction?: string
+          entity: string
+          hubspot_id: string
+          id?: string
+          last_payload?: Json | null
+          last_synced_at?: string
+          local_id: string
+          owner_id: string
+        }
+        Update: {
+          direction?: string
+          entity?: string
+          hubspot_id?: string
+          id?: string
+          last_payload?: Json | null
+          last_synced_at?: string
+          local_id?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           config: Json
@@ -2490,6 +2633,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      outbound_webhooks: {
+        Row: {
+          active: boolean
+          created_at: string
+          events: string[]
+          id: string
+          name: string
+          owner_id: string
+          secret: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          events?: string[]
+          id?: string
+          name: string
+          owner_id: string
+          secret: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          events?: string[]
+          id?: string
+          name?: string
+          owner_id?: string
+          secret?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
       }
       pipelines: {
         Row: {
@@ -2823,6 +3002,39 @@ export type Database = {
           role_title?: string | null
           status?: Database["public"]["Enums"]["prospecting_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          owner_id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          owner_id: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          owner_id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -3926,6 +4138,59 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_deliveries: {
+        Row: {
+          attempt: number
+          created_at: string
+          delivered_at: string | null
+          event_type: string
+          id: string
+          next_retry_at: string | null
+          owner_id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          status: Database["public"]["Enums"]["delivery_status"]
+          webhook_id: string
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          delivered_at?: string | null
+          event_type: string
+          id?: string
+          next_retry_at?: string | null
+          owner_id: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          webhook_id: string
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          delivered_at?: string | null
+          event_type?: string
+          id?: string
+          next_retry_at?: string | null
+          owner_id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_campaign_recipients: {
         Row: {
           campaign_id: string
@@ -4304,6 +4569,48 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_branding: {
+        Row: {
+          accent_color: string | null
+          brand_name: string | null
+          created_at: string
+          custom_domain: string | null
+          favicon_url: string | null
+          footer_text: string | null
+          logo_url: string | null
+          owner_id: string
+          primary_color: string | null
+          support_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          brand_name?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          owner_id: string
+          primary_color?: string | null
+          support_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          brand_name?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          owner_id?: string
+          primary_color?: string | null
+          support_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -4351,6 +4658,7 @@ export type Database = {
         | "negotiation"
         | "won"
         | "lost"
+      delivery_status: "pending" | "success" | "failed" | "dead"
       email_broadcast_recipient_status:
         | "pending"
         | "sent"
@@ -4543,6 +4851,7 @@ export const Constants = {
         "won",
         "lost",
       ],
+      delivery_status: ["pending", "success", "failed", "dead"],
       email_broadcast_recipient_status: [
         "pending",
         "sent",

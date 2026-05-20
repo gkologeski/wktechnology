@@ -37,6 +37,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
+import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
@@ -54,7 +55,10 @@ import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
+import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
+import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
 import { Route as AuthenticatedSettingsFormsRouteImport } from './routes/_authenticated/settings.forms'
 import { Route as AuthenticatedSettingsExportsRouteImport } from './routes/_authenticated/settings.exports'
@@ -63,9 +67,12 @@ import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
+import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
+import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
+import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -73,10 +80,14 @@ import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authen
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
+import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
+import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
+import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
@@ -243,6 +254,12 @@ const AuthenticatedSettingsWorkflowsRoute =
     path: '/workflows',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWebhooksRoute =
+  AuthenticatedSettingsWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsTeamsRoute =
   AuthenticatedSettingsTeamsRouteImport.update({
     id: '/teams',
@@ -345,10 +362,28 @@ const AuthenticatedSettingsPipelinesRoute =
     path: '/pipelines',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsMobileRoute =
+  AuthenticatedSettingsMobileRouteImport.update({
+    id: '/mobile',
+    path: '/mobile',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsMacrosRoute =
   AuthenticatedSettingsMacrosRouteImport.update({
     id: '/macros',
     path: '/macros',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsLanguageRoute =
+  AuthenticatedSettingsLanguageRouteImport.update({
+    id: '/language',
+    path: '/language',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsHubspotSyncRoute =
+  AuthenticatedSettingsHubspotSyncRouteImport.update({
+    id: '/hubspot-sync',
+    path: '/hubspot-sync',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsGoalsRoute =
@@ -399,10 +434,22 @@ const AuthenticatedSettingsCustomPropertiesRoute =
     path: '/custom-properties',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsCustomObjectsRoute =
+  AuthenticatedSettingsCustomObjectsRouteImport.update({
+    id: '/custom-objects',
+    path: '/custom-objects',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
     path: '/calendars',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsBrandingRoute =
+  AuthenticatedSettingsBrandingRouteImport.update({
+    id: '/branding',
+    path: '/branding',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsBookingRoute =
@@ -415,6 +462,12 @@ const AuthenticatedSettingsAuditLogRoute =
   AuthenticatedSettingsAuditLogRouteImport.update({
     id: '/audit-log',
     path: '/audit-log',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsApiKeysRoute =
+  AuthenticatedSettingsApiKeysRouteImport.update({
+    id: '/api-keys',
+    path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedLeadsImportHubspotRoute =
@@ -457,6 +510,21 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
+  id: '/api/public/v1/leads',
+  path: '/api/public/v1/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1DealsRoute = ApiPublicV1DealsRouteImport.update({
+  id: '/api/public/v1/deals',
+  path: '/api/public/v1/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ContactsRoute = ApiPublicV1ContactsRouteImport.update({
+  id: '/api/public/v1/contacts',
+  path: '/api/public/v1/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   id: '/api/public/twilio/voice',
   path: '/api/public/twilio/voice',
@@ -478,6 +546,12 @@ const ApiPublicHooksWhatsappCampaignTickRoute =
   ApiPublicHooksWhatsappCampaignTickRouteImport.update({
     id: '/api/public/hooks/whatsapp-campaign-tick',
     path: '/api/public/hooks/whatsapp-campaign-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWebhookTickRoute =
+  ApiPublicHooksWebhookTickRouteImport.update({
+    id: '/api/public/hooks/webhook-tick',
+    path: '/api/public/hooks/webhook-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksTwilioWhatsappStatusRoute =
@@ -629,9 +703,12 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -640,7 +717,10 @@ export interface FileRoutesByFullPath {
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
+  '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -658,6 +738,7 @@ export interface FileRoutesByFullPath {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -676,10 +757,14 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -716,9 +801,12 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -727,7 +815,10 @@ export interface FileRoutesByTo {
   '/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
+  '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -745,6 +836,7 @@ export interface FileRoutesByTo {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
@@ -763,10 +855,14 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -807,9 +903,12 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
+  '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -818,7 +917,10 @@ export interface FileRoutesById {
   '/_authenticated/settings/exports': typeof AuthenticatedSettingsExportsRoute
   '/_authenticated/settings/forms': typeof AuthenticatedSettingsFormsRoute
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
+  '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
+  '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -836,6 +938,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -854,10 +957,14 @@ export interface FileRoutesById {
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -898,9 +1005,12 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/booking'
+    | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -909,7 +1019,10 @@ export interface FileRouteTypes {
     | '/settings/exports'
     | '/settings/forms'
     | '/settings/goals'
+    | '/settings/hubspot-sync'
+    | '/settings/language'
     | '/settings/macros'
+    | '/settings/mobile'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -927,6 +1040,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/webhooks'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations/'
@@ -945,10 +1059,14 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -985,9 +1103,12 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/booking'
+    | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -996,7 +1117,10 @@ export interface FileRouteTypes {
     | '/settings/exports'
     | '/settings/forms'
     | '/settings/goals'
+    | '/settings/hubspot-sync'
+    | '/settings/language'
     | '/settings/macros'
+    | '/settings/mobile'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -1014,6 +1138,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/webhooks'
     | '/settings/workflows'
     | '/tasks/queues'
     | '/integrations'
@@ -1032,10 +1157,14 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1075,9 +1204,12 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
+    | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/booking'
+    | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
+    | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
@@ -1086,7 +1218,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/exports'
     | '/_authenticated/settings/forms'
     | '/_authenticated/settings/goals'
+    | '/_authenticated/settings/hubspot-sync'
+    | '/_authenticated/settings/language'
     | '/_authenticated/settings/macros'
+    | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
@@ -1104,6 +1239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
+    | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
@@ -1122,10 +1258,14 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1159,10 +1299,14 @@ export interface RootRouteChildren {
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
+  ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
+  ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
+  ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -1366,6 +1510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWorkflowsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/webhooks': {
+      id: '/_authenticated/settings/webhooks'
+      path: '/webhooks'
+      fullPath: '/settings/webhooks'
+      preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/teams': {
       id: '/_authenticated/settings/teams'
       path: '/teams'
@@ -1485,11 +1636,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/mobile': {
+      id: '/_authenticated/settings/mobile'
+      path: '/mobile'
+      fullPath: '/settings/mobile'
+      preLoaderRoute: typeof AuthenticatedSettingsMobileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/macros': {
       id: '/_authenticated/settings/macros'
       path: '/macros'
       fullPath: '/settings/macros'
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/language': {
+      id: '/_authenticated/settings/language'
+      path: '/language'
+      fullPath: '/settings/language'
+      preLoaderRoute: typeof AuthenticatedSettingsLanguageRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/hubspot-sync': {
+      id: '/_authenticated/settings/hubspot-sync'
+      path: '/hubspot-sync'
+      fullPath: '/settings/hubspot-sync'
+      preLoaderRoute: typeof AuthenticatedSettingsHubspotSyncRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/goals': {
@@ -1548,11 +1720,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCustomPropertiesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/custom-objects': {
+      id: '/_authenticated/settings/custom-objects'
+      path: '/custom-objects'
+      fullPath: '/settings/custom-objects'
+      preLoaderRoute: typeof AuthenticatedSettingsCustomObjectsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/calendars': {
       id: '/_authenticated/settings/calendars'
       path: '/calendars'
       fullPath: '/settings/calendars'
       preLoaderRoute: typeof AuthenticatedSettingsCalendarsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/branding': {
+      id: '/_authenticated/settings/branding'
+      path: '/branding'
+      fullPath: '/settings/branding'
+      preLoaderRoute: typeof AuthenticatedSettingsBrandingRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/booking': {
@@ -1567,6 +1753,13 @@ declare module '@tanstack/react-router' {
       path: '/audit-log'
       fullPath: '/settings/audit-log'
       preLoaderRoute: typeof AuthenticatedSettingsAuditLogRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/api-keys': {
+      id: '/_authenticated/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/settings/api-keys'
+      preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/leads/import-hubspot': {
@@ -1618,6 +1811,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/v1/leads': {
+      id: '/api/public/v1/leads'
+      path: '/api/public/v1/leads'
+      fullPath: '/api/public/v1/leads'
+      preLoaderRoute: typeof ApiPublicV1LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/deals': {
+      id: '/api/public/v1/deals'
+      path: '/api/public/v1/deals'
+      fullPath: '/api/public/v1/deals'
+      preLoaderRoute: typeof ApiPublicV1DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/contacts': {
+      id: '/api/public/v1/contacts'
+      path: '/api/public/v1/contacts'
+      fullPath: '/api/public/v1/contacts'
+      preLoaderRoute: typeof ApiPublicV1ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/twilio/voice': {
       id: '/api/public/twilio/voice'
       path: '/api/public/twilio/voice'
@@ -1644,6 +1858,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/whatsapp-campaign-tick'
       fullPath: '/api/public/hooks/whatsapp-campaign-tick'
       preLoaderRoute: typeof ApiPublicHooksWhatsappCampaignTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/webhook-tick': {
+      id: '/api/public/hooks/webhook-tick'
+      path: '/api/public/hooks/webhook-tick'
+      fullPath: '/api/public/hooks/webhook-tick'
+      preLoaderRoute: typeof ApiPublicHooksWebhookTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/twilio-whatsapp-status': {
@@ -1819,9 +2040,12 @@ const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
+  AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
+  AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -1830,7 +2054,10 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsExportsRoute: typeof AuthenticatedSettingsExportsRoute
   AuthenticatedSettingsFormsRoute: typeof AuthenticatedSettingsFormsRoute
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
+  AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
+  AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
+  AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
@@ -1848,14 +2075,19 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
+  AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
+  AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
+  AuthenticatedSettingsCustomObjectsRoute:
+    AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
@@ -1866,7 +2098,10 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsExportsRoute: AuthenticatedSettingsExportsRoute,
   AuthenticatedSettingsFormsRoute: AuthenticatedSettingsFormsRoute,
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
+  AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
+  AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
+  AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
@@ -1885,6 +2120,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsSubscriptionsRoute,
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
+  AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
@@ -2015,11 +2251,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
+  ApiPublicHooksWebhookTickRoute: ApiPublicHooksWebhookTickRoute,
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
+  ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
+  ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
+  ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
