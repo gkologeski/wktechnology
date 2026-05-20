@@ -4,10 +4,11 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 
 const CreateContact = z.object({
-  name: z.string().min(1).max(200),
+  first_name: z.string().min(1).max(120),
+  last_name: z.string().max(120).optional(),
   email: z.string().email().optional(),
   phone: z.string().max(40).optional(),
-  company: z.string().max(200).optional(),
+  company_name: z.string().max(200).optional(),
 });
 
 export const Route = createFileRoute("/api/public/v1/contacts")({
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
         const { data } = await supabaseAdmin
           .from("contacts")
-          .select("id, name, email, phone, company, created_at")
+          .select("id, first_name, last_name, email, phone, company_name, created_at")
           .eq("owner_id", auth.ownerId)
           .order("created_at", { ascending: false })
           .limit(limit);
@@ -43,7 +44,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         const { data, error } = await supabaseAdmin
           .from("contacts")
           .insert({ owner_id: auth.ownerId, ...parsed.data })
-          .select("id, name, email, phone, company, created_at")
+          .select("id, first_name, last_name, email, phone, company_name, created_at")
           .single();
         if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         return Response.json({ data });
