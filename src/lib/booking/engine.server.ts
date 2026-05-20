@@ -142,7 +142,9 @@ export async function computeAvailableSlots(
   type Range = { s: number; e: number };
   const busy: Range[] = [
     ...(bookings ?? []).map((b) => ({ s: new Date(b.start_at).getTime(), e: new Date(b.end_at).getTime() })),
-    ...(events ?? []).map((e) => ({ s: new Date(e.start_at).getTime(), e: new Date(e.end_at).getTime() })),
+    ...((events ?? []) as { start_at: string | null; end_at: string | null }[])
+      .filter((e) => e.start_at && e.end_at)
+      .map((e) => ({ s: new Date(e.start_at as string).getTime(), e: new Date(e.end_at as string).getTime() })),
   ].filter((r) => Number.isFinite(r.s) && Number.isFinite(r.e) && r.e > r.s);
 
   const dur = page.duration_minutes * 60_000;
