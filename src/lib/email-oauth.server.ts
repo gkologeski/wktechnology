@@ -11,6 +11,14 @@ export const GMAIL_SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
 ];
 
+export const CALENDAR_SCOPES = [
+  "openid",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/calendar.events",
+];
+
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
@@ -41,7 +49,7 @@ export function signState(payload: Record<string, unknown>): string {
   return `${body}.${sig}`;
 }
 
-export function verifyState(state: string): { user_id: string; return_to?: string; ts: number } {
+export function verifyState(state: string): { user_id: string; return_to?: string; mode?: string; ts: number } {
   const [body, sig] = state.split(".");
   if (!body || !sig) throw new Error("Invalid state");
   const expected = b64url(createHmac("sha256", stateSecret()).update(body).digest());
@@ -51,6 +59,7 @@ export function verifyState(state: string): { user_id: string; return_to?: strin
   const parsed = JSON.parse(b64urlDecode(body).toString("utf8")) as {
     user_id: string;
     return_to?: string;
+    mode?: string;
     ts: number;
   };
   if (Date.now() - parsed.ts > 15 * 60 * 1000) throw new Error("State expired");
@@ -65,6 +74,22 @@ export function buildGmailAuthUrl(opts: { redirectUri: string; state: string }) 
     redirect_uri: opts.redirectUri,
     response_type: "code",
     scope: GMAIL_SCOPES.join(" "),
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state: opts.state,
+  });
+  return `${GOOGLE_AUTH_URL}?${params.toString()}`;
+}
+
+export function buildCalendarAuthUrl(opts: { redirectUri: string; state: string }) {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  if (!clientId) throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID");
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: opts.redirectUri,
+    response_type: "code",
+    scope: CALENDAR_SCOPES.join(" "),
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: "true",

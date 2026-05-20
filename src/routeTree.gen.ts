@@ -61,6 +61,7 @@ import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
+import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -82,6 +83,7 @@ import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
+import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
@@ -380,6 +382,12 @@ const AuthenticatedSettingsCustomPropertiesRoute =
     path: '/custom-properties',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsCalendarsRoute =
+  AuthenticatedSettingsCalendarsRouteImport.update({
+    id: '/calendars',
+    path: '/calendars',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsAuditLogRoute =
   AuthenticatedSettingsAuditLogRouteImport.update({
     id: '/audit-log',
@@ -503,6 +511,12 @@ const ApiPublicHooksEmailBroadcastTickRoute =
     path: '/api/public/hooks/email-broadcast-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCalendarTickRoute =
+  ApiPublicHooksCalendarTickRouteImport.update({
+    id: '/api/public/hooks/calendar-tick',
+    path: '/api/public/hooks/calendar-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
@@ -575,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -606,6 +621,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -654,6 +670,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -685,6 +702,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -737,6 +755,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -768,6 +787,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -820,6 +840,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/calendars'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -851,6 +872,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -899,6 +921,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/settings/audit-log'
+    | '/settings/calendars'
     | '/settings/custom-properties'
     | '/settings/email'
     | '/settings/email-templates'
@@ -930,6 +953,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -981,6 +1005,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/settings/audit-log'
+    | '/_authenticated/settings/calendars'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
@@ -1012,6 +1037,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -1044,6 +1070,7 @@ export interface RootRouteChildren {
   SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
@@ -1428,6 +1455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCustomPropertiesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/calendars': {
+      id: '/_authenticated/settings/calendars'
+      path: '/calendars'
+      fullPath: '/settings/calendars'
+      preLoaderRoute: typeof AuthenticatedSettingsCalendarsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/audit-log': {
       id: '/_authenticated/settings/audit-log'
       path: '/audit-log'
@@ -1575,6 +1609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailBroadcastTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/calendar-tick': {
+      id: '/api/public/hooks/calendar-tick'
+      path: '/api/public/hooks/calendar-tick'
+      fullPath: '/api/public/hooks/calendar-tick'
+      preLoaderRoute: typeof ApiPublicHooksCalendarTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/embed-js': {
       id: '/api/public/forms/embed-js'
       path: '/api/public/forms/embed-js'
@@ -1658,6 +1699,7 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
+  AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -1689,6 +1731,7 @@ interface AuthenticatedSettingsRouteChildren {
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
+  AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
@@ -1821,6 +1864,7 @@ const rootRouteChildren: RootRouteChildren = {
   SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,

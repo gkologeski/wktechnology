@@ -187,6 +187,131 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          last_error: string | null
+          last_status: string | null
+          last_synced_at: string | null
+          owner_id: string
+          primary_calendar_id: string | null
+          provider: string
+          refresh_token: string | null
+          scopes: string[] | null
+          sync_enabled: boolean
+          sync_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          owner_id: string
+          primary_calendar_id?: string | null
+          provider: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          sync_enabled?: boolean
+          sync_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          owner_id?: string
+          primary_calendar_id?: string | null
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          sync_enabled?: boolean
+          sync_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          attendees: Json
+          calendar_account_id: string
+          created_at: string
+          description: string | null
+          end_at: string | null
+          html_link: string | null
+          id: string
+          last_synced_at: string
+          location: string | null
+          owner_id: string
+          provider_event_id: string
+          related_activity_id: string | null
+          start_at: string | null
+          status: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          attendees?: Json
+          calendar_account_id: string
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          html_link?: string | null
+          id?: string
+          last_synced_at?: string
+          location?: string | null
+          owner_id: string
+          provider_event_id: string
+          related_activity_id?: string | null
+          start_at?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          attendees?: Json
+          calendar_account_id?: string
+          created_at?: string
+          description?: string | null
+          end_at?: string | null
+          html_link?: string | null
+          id?: string
+          last_synced_at?: string
+          location?: string | null
+          owner_id?: string
+          provider_event_id?: string
+          related_activity_id?: string | null
+          start_at?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_calendar_account_id_fkey"
+            columns: ["calendar_account_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
