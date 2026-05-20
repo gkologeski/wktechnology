@@ -280,7 +280,6 @@ export async function createPublicBooking(input: {
         last_name: rest.join(" ") || null,
         email: input.invitee_email,
         phone: input.invitee_phone ?? null,
-        source: "booking",
       }).select("id").single();
       contactId = created?.id ?? null;
     }
