@@ -93,6 +93,13 @@ const groups: Group[] = [
       { title: "Segurança (2FA)", url: "/settings/security", icon: KeyRound },
       { title: "Conexão de Email", url: "/settings/email", icon: Mail },
       { title: "Integrações", url: "/integrations", icon: Plug },
+      { title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
+      { title: "Webhooks", url: "/settings/webhooks", icon: Plug },
+      { title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
+      { title: "Objetos custom", url: "/settings/custom-objects", icon: Sliders },
+      { title: "Mobile / PWA", url: "/settings/mobile", icon: Settings },
+      { title: "Idioma", url: "/settings/language", icon: Settings },
+      { title: "White-label", url: "/settings/branding", icon: Settings },
     ],
   },
 ];
