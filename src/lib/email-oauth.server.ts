@@ -49,7 +49,7 @@ export function signState(payload: Record<string, unknown>): string {
   return `${body}.${sig}`;
 }
 
-export function verifyState(state: string): { user_id: string; return_to?: string; ts: number } {
+export function verifyState(state: string): { user_id: string; return_to?: string; mode?: string; ts: number } {
   const [body, sig] = state.split(".");
   if (!body || !sig) throw new Error("Invalid state");
   const expected = b64url(createHmac("sha256", stateSecret()).update(body).digest());
@@ -59,6 +59,7 @@ export function verifyState(state: string): { user_id: string; return_to?: strin
   const parsed = JSON.parse(b64urlDecode(body).toString("utf8")) as {
     user_id: string;
     return_to?: string;
+    mode?: string;
     ts: number;
   };
   if (Date.now() - parsed.ts > 15 * 60 * 1000) throw new Error("State expired");
