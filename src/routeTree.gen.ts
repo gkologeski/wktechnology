@@ -49,6 +49,7 @@ import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
+import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
@@ -79,6 +80,7 @@ import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
+import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
@@ -313,6 +315,12 @@ const AuthenticatedSettingsQuotesRoute =
     path: '/quotes',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsProspectingRoute =
+  AuthenticatedSettingsProspectingRouteImport.update({
+    id: '/prospecting',
+    path: '/prospecting',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsProductsRoute =
   AuthenticatedSettingsProductsRouteImport.update({
     id: '/products',
@@ -490,6 +498,12 @@ const ApiPublicHooksSequencesTickRoute =
     path: '/api/public/hooks/sequences-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSentimentTickRoute =
+  ApiPublicHooksSentimentTickRouteImport.update({
+    id: '/api/public/hooks/sentiment-tick',
+    path: '/api/public/hooks/sentiment-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSegmentsTickRoute =
   ApiPublicHooksSegmentsTickRouteImport.update({
     id: '/api/public/hooks/segments-tick',
@@ -631,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -657,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
+  '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
@@ -716,6 +732,7 @@ export interface FileRoutesByTo {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -742,6 +759,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
+  '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
@@ -805,6 +823,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
@@ -831,6 +850,7 @@ export interface FileRoutesById {
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
+  '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
@@ -894,6 +914,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
     | '/settings/roles'
@@ -920,6 +941,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
+    | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
@@ -979,6 +1001,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
     | '/settings/roles'
@@ -1005,6 +1028,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
+    | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
@@ -1067,6 +1091,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/products'
+    | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/recurring'
     | '/_authenticated/settings/roles'
@@ -1093,6 +1118,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
+    | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
@@ -1129,6 +1155,7 @@ export interface RootRouteChildren {
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
+  ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
@@ -1423,6 +1450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsQuotesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/prospecting': {
+      id: '/_authenticated/settings/prospecting'
+      path: '/prospecting'
+      fullPath: '/settings/prospecting'
+      preLoaderRoute: typeof AuthenticatedSettingsProspectingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/products': {
       id: '/_authenticated/settings/products'
       path: '/products'
@@ -1633,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSequencesTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sentiment-tick': {
+      id: '/api/public/hooks/sentiment-tick'
+      path: '/api/public/hooks/sentiment-tick'
+      fullPath: '/api/public/hooks/sentiment-tick'
+      preLoaderRoute: typeof ApiPublicHooksSentimentTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/segments-tick': {
       id: '/api/public/hooks/segments-tick'
       path: '/api/public/hooks/segments-tick'
@@ -1794,6 +1835,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
+  AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
@@ -1829,6 +1871,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
+  AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
@@ -1967,6 +2010,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
+  ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
