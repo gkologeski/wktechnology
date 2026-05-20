@@ -80,7 +80,7 @@
 
 ## 🔴 Onda 8 — Calendário & Booking (2 semanas)
 
-35. Sync Google/Outlook Calendar (G)
+35. **Sync Google/Outlook Calendar (G)** ✅ (Google) — tabelas `calendar_accounts` (provider, email, tokens, primary_calendar_id, sync_enabled, sync_token, last_synced_at, last_status/error) e `calendar_events` (espelho de eventos com provider_event_id único, attendees jsonb, html_link, related_activity_id) com RLS por owner. OAuth Google reaproveita o mesmo callback (`/api/public/oauth/google-callback`) com `state.mode=calendar` e escopos `calendar` + `calendar.events`. Engine `src/lib/calendar/engine.server.ts` faz pull incremental usando `syncToken` (fallback 410 → full re-sync), upsert/delete de eventos cancelados; e push das `activities` tipo=meeting com `due_date` (cria/atualiza no Google e guarda `gcal_{accountId}` em `external_ids`). Server fns em `src/lib/calendar.functions.ts` (start/list/disconnect/toggle/syncNow/listEvents). Hook `/api/public/hooks/calendar-tick` agendado via pg_cron `*/15 * * * *`. Página `/settings/calendars` com botão "Conectar Google", lista de contas (status, último sync, toggle sync, sync agora, desconectar) e próximos eventos. Entrada "Calendários" no grupo Análises da sidebar. **Outlook:** infra preparada (campo `provider='microsoft'` na tabela), aguardando secrets `MICROSOFT_OAUTH_CLIENT_ID/SECRET` para liberar o fluxo.
 36. Booking pages públicas (G)
 
 ## 🟨 Onda 9 — IA / Breeze (rolling)
