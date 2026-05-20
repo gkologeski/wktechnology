@@ -38,12 +38,12 @@ function ProspectingPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [running, setRunning] = useState<string | null>(null);
 
-  const refresh = async () => setRows(await listFn());
+  const refresh = async () => setRows((await listFn()) as Row[]);
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, []);
 
   const openResults = async (r: Row) => {
     setOpenSearch(r);
-    setResults(await resFn({ data: { search_id: r.id } }));
+    setResults((await resFn({ data: { search_id: r.id } })) as Result[]);
   };
 
   const save = async () => {
