@@ -73,6 +73,9 @@ import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authen
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
+import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
+import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
@@ -457,6 +460,21 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
+  id: '/api/public/v1/leads',
+  path: '/api/public/v1/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1DealsRoute = ApiPublicV1DealsRouteImport.update({
+  id: '/api/public/v1/deals',
+  path: '/api/public/v1/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ContactsRoute = ApiPublicV1ContactsRouteImport.update({
+  id: '/api/public/v1/contacts',
+  path: '/api/public/v1/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   id: '/api/public/twilio/voice',
   path: '/api/public/twilio/voice',
@@ -680,6 +698,9 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -767,6 +788,9 @@ export interface FileRoutesByTo {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -858,6 +882,9 @@ export interface FileRoutesById {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
+  '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
+  '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -949,6 +976,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1036,6 +1066,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1126,6 +1159,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/twilio/voice'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/deals'
+    | '/api/public/v1/leads'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1163,6 +1199,9 @@ export interface RootRouteChildren {
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
+  ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
+  ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
+  ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -1618,6 +1657,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/v1/leads': {
+      id: '/api/public/v1/leads'
+      path: '/api/public/v1/leads'
+      fullPath: '/api/public/v1/leads'
+      preLoaderRoute: typeof ApiPublicV1LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/deals': {
+      id: '/api/public/v1/deals'
+      path: '/api/public/v1/deals'
+      fullPath: '/api/public/v1/deals'
+      preLoaderRoute: typeof ApiPublicV1DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/contacts': {
+      id: '/api/public/v1/contacts'
+      path: '/api/public/v1/contacts'
+      fullPath: '/api/public/v1/contacts'
+      preLoaderRoute: typeof ApiPublicV1ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/twilio/voice': {
       id: '/api/public/twilio/voice'
       path: '/api/public/twilio/voice'
@@ -2020,6 +2080,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
+  ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
+  ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
+  ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
