@@ -77,8 +77,8 @@ import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
+import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
-import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed.js'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
@@ -467,14 +467,14 @@ const ApiPublicHooksEmailSyncTickRoute =
     path: '/api/public/hooks/email-sync-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
+  id: '/api/public/forms/embed-js',
+  path: '/api/public/forms/embed-js',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
   id: '/api/public/forms/$slug',
   path: '/api/public/forms/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
-  id: '/api/public/forms/embed/js',
-  path: '/api/public/forms/embed/js',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFormsSlugSubmitRoute =
@@ -560,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -575,7 +576,6 @@ export interface FileRoutesByFullPath {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
-  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -633,6 +633,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -648,7 +649,6 @@ export interface FileRoutesByTo {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
-  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -710,6 +710,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
+  '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -725,7 +726,6 @@ export interface FileRoutesById {
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
-  '/api/public/forms/embed/js': typeof ApiPublicFormsEmbedJsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -787,6 +787,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/settings/'
     | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -802,7 +803,6 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
-    | '/api/public/forms/embed/js'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -860,6 +860,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/settings'
     | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -875,7 +876,6 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
-    | '/api/public/forms/embed/js'
   id:
     | '__root__'
     | '/'
@@ -936,6 +936,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/api/public/forms/$slug'
+    | '/api/public/forms/embed-js'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -951,7 +952,6 @@ export interface FileRouteTypes {
     | '/api/public/email/click/$messageId'
     | '/api/public/email/pixel/$messageId'
     | '/api/public/forms/$slug/submit'
-    | '/api/public/forms/embed/js'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -965,6 +965,7 @@ export interface RootRouteChildren {
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
+  ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -978,7 +979,6 @@ export interface RootRouteChildren {
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
-  ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1459,18 +1459,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailSyncTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/forms/embed-js': {
+      id: '/api/public/forms/embed-js'
+      path: '/api/public/forms/embed-js'
+      fullPath: '/api/public/forms/embed-js'
+      preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/$slug': {
       id: '/api/public/forms/$slug'
       path: '/api/public/forms/$slug'
       fullPath: '/api/public/forms/$slug'
       preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/forms/embed/js': {
-      id: '/api/public/forms/embed/js'
-      path: '/api/public/forms/embed/js'
-      fullPath: '/api/public/forms/embed/js'
-      preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/forms/$slug/submit': {
@@ -1691,6 +1691,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
+  ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
@@ -1707,8 +1708,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
-  ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
