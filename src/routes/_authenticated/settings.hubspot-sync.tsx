@@ -75,13 +75,16 @@ function HubspotSyncPage() {
         setProgress(`Iniciando ${t}...`);
         let totalProcessed = 0;
         let totalUpdated = 0;
+        let cursor: string | undefined;
         for (let i = 0; i < 1000; i++) {
-          const r = await relink({ data: { type: t, batchSize: 200 } });
+          const r = await relink({ data: { type: t, batchSize: 200, afterId: cursor } });
           totalProcessed += r.processed;
           totalUpdated += r.updated;
           setProgress(`${t}: ${totalProcessed} processadas, ${totalUpdated} vinculadas...`);
-          if (!r.hasMore) break;
+          if (!r.hasMore || !r.nextCursor) break;
+          cursor = r.nextCursor;
         }
+
       }
       toast.success("Re-vinculação completa");
       await load();
