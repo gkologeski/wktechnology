@@ -199,7 +199,9 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       processed: acts.length,
       updated,
       hasMore: acts.length >= data.batchSize,
+      nextCursor: acts[acts.length - 1].id as string,
     };
+
   });
 
 export const countActivitiesToRelink = createServerFn({ method: "POST" })
