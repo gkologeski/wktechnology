@@ -151,6 +151,9 @@ function HubspotSyncPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{pct}%</span>
+                      {(relinkBusy === t || relinkBusy === "all") && (
+                        <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Em andamento" />
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
