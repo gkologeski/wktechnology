@@ -76,11 +76,11 @@ function HubspotSyncPage() {
         let totalProcessed = 0;
         let totalUpdated = 0;
         let cursor: string | undefined;
-        for (let i = 0; i < 1000; i++) {
-          const r = await relink({ data: { type: t, batchSize: 200, afterId: cursor } });
+        while (true) {
+          const r = await relink({ data: { type: t, batchSize: 500, afterId: cursor } });
           totalProcessed += r.processed;
           totalUpdated += r.updated;
-          setProgress(`${t}: ${totalProcessed} processadas, ${totalUpdated} vinculadas...`);
+          setProgress(`${t}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`);
           if (!r.hasMore || !r.nextCursor) break;
           cursor = r.nextCursor;
         }
