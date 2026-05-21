@@ -294,7 +294,19 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       <span className="text-xs text-muted-foreground">• vence {formatDateTime(a.due_date)}</span>
                     )}
                   </div>
-                  {a.body && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{a.body}</p>}
+                  {a.body && (
+                    editingId === a.id ? (
+                      <div className="mt-2 space-y-2">
+                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveEdit(a)}><Check className="h-3 w-3 mr-1" /> Salvar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
+                    )
+                  )}
                   {mens.length > 0 && (
                     <div className="mt-1 flex gap-1 flex-wrap">
                       {mens.map((id) => {
