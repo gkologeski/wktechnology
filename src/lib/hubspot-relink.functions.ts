@@ -38,7 +38,8 @@ async function getAssocBatch(
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   if (!fromIds.length) return out;
-  const BATCH = 1000;
+  const BATCH = 100;
+
   for (let i = 0; i < fromIds.length; i += BATCH) {
     const chunk = fromIds.slice(i, i + BATCH);
     try {
@@ -79,14 +80,15 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     z.object({
       type: z.enum(["note", "task", "call", "meeting", "email"]),
       batchSize: z.number().min(10).max(500).default(200),
+      afterId: z.string().uuid().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const fromObj = ENGAGEMENT_OBJECT[data.type];
 
-    // 1. Buscar atividades com hs_object_id e algum FK nulo
-    const { data: acts, error } = await supabase
+    // 1. Buscar atividades com hs_object_id e algum FK nulo (paginado por id)
+    let q = supabase
       .from("activities")
       .select("id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id")
       .eq("owner_id", userId)
@@ -95,12 +97,16 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       .or(
         "related_contact_id.is.null,related_company_id.is.null,related_deal_id.is.null,related_lead_id.is.null",
       )
+      .order("id", { ascending: true })
       .limit(data.batchSize);
+    if (data.afterId) q = q.gt("id", data.afterId);
+    const { data: acts, error } = await q;
 
     if (error) throw new Error(`Erro lendo atividades: ${error.message}`);
     if (!acts || acts.length === 0) {
-      return { processed: 0, updated: 0, hasMore: false };
+      return { processed: 0, updated: 0, hasMore: false, nextCursor: null as string | null };
     }
+
 
     const hsIds = acts.map((a) => a.hs_object_id!).filter(Boolean);
 
@@ -193,7 +199,9 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       processed: acts.length,
       updated,
       hasMore: acts.length >= data.batchSize,
+      nextCursor: acts[acts.length - 1].id as string,
     };
+
   });
 
 export const countActivitiesToRelink = createServerFn({ method: "POST" })
