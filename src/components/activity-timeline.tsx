@@ -38,6 +38,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [mentionState, setMentionState] = useState<{ open: boolean; query: string; pos: number } | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBody, setEditingBody] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const load = async () => {
