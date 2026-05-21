@@ -151,6 +151,9 @@ function HubspotSyncPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{pct}%</span>
+                      {(relinkBusy === t || relinkBusy === "all") && (
+                        <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Em andamento" />
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -181,10 +184,15 @@ function HubspotSyncPage() {
                 </span>
               )}
             </span>
-            <Button onClick={runRelinkAll} disabled={!!relinkBusy || totalPending === 0}>
-              {relinkBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
-              Re-vincular todas
-            </Button>
+            <div className="flex items-center gap-2">
+              {relinkBusy === "all" && (
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Em andamento" />
+              )}
+              <Button onClick={runRelinkAll} disabled={!!relinkBusy || totalPending === 0}>
+                {relinkBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                Re-vincular todas
+              </Button>
+            </div>
           </div>
           {progress && <p className="text-xs text-muted-foreground">{progress}</p>}
         </CardContent>
