@@ -29,7 +29,7 @@ import Papa from "papaparse";
 type Field = {
   name: string;
   label: string;
-  type?: "text" | "email" | "tel" | "number" | "date" | "textarea" | "select";
+  type?: "text" | "email" | "tel" | "number" | "date" | "textarea" | "select" | "html";
   options?: { value: string; label: string }[];
   required?: boolean;
 };
