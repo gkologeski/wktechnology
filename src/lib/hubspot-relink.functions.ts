@@ -38,7 +38,8 @@ async function getAssocBatch(
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   if (!fromIds.length) return out;
-  const BATCH = 1000;
+  const BATCH = 100;
+
   for (let i = 0; i < fromIds.length; i += BATCH) {
     const chunk = fromIds.slice(i, i + BATCH);
     try {
