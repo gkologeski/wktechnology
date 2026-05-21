@@ -219,12 +219,11 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           )}
         </div>
         <div className="relative">
-          <Textarea
-            ref={textareaRef}
-            placeholder="Adicione uma nota... use @ para mencionar, arraste arquivos para anexar"
+          <RichHtmlEditor
             value={body}
-            onChange={(e) => onBodyChange(e.target.value)}
-            rows={3}
+            onChange={setBody}
+            placeholder="Adicione uma nota... use @ para mencionar, arraste arquivos para anexar"
+            minHeight={96}
           />
           {mentionState?.open && filteredMentions.length > 0 && (
             <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
