@@ -349,9 +349,14 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                   )}
                   <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.created_at)}</div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove(a.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))} title="Editar">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Excluir">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             );
           })}
