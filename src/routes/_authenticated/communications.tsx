@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EntityList } from "@/components/entity-list";
 import { ACTIVITY_TYPES, formatDateTime } from "@/lib/crm";
+import { htmlToPlain } from "@/components/rich-html-editor";
 import type { Activity } from "@/lib/db-types";
 
 const COMM_TYPES = ["call", "email", "meeting"] as const;
