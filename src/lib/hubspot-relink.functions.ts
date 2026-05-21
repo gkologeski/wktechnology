@@ -209,17 +209,33 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const counts: Record<string, number> = {};
+    const stats: Record<string, { total: number; linked: number; pending: number }> = {};
     for (const t of ["note", "task", "call", "meeting", "email"] as const) {
-      const { count } = await supabase
+      const base = supabase
         .from("activities")
         .select("id", { count: "exact", head: true })
         .eq("owner_id", userId)
         .eq("type", t)
-        .not("hs_object_id", "is", null)
-        .or(
-          "related_contact_id.is.null,related_company_id.is.null,related_deal_id.is.null,related_lead_id.is.null",
-        );
-      counts[t] = count ?? 0;
+        .not("hs_object_id", "is", null);
+
+      const [{ count: total }, { count: pending }] = await Promise.all([
+        base,
+        supabase
+          .from("activities")
+          .select("id", { count: "exact", head: true })
+          .eq("owner_id", userId)
+          .eq("type", t)
+          .not("hs_object_id", "is", null)
+          .is("related_contact_id", null)
+          .is("related_company_id", null)
+          .is("related_deal_id", null)
+          .is("related_lead_id", null),
+      ]);
+
+      const totalN = total ?? 0;
+      const pendingN = pending ?? 0;
+      stats[t] = { total: totalN, linked: totalN - pendingN, pending: pendingN };
+      counts[t] = pendingN;
     }
-    return { counts };
+    return { counts, stats };
   });
