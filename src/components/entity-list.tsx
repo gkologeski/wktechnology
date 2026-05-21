@@ -25,6 +25,7 @@ import { PRESET_VIEWS } from "@/lib/preset-views";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Filter, Columns3, Save, Star, X, LayoutGrid, List as ListIcon, ListTodo } from "lucide-react";
 import Papa from "papaparse";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 
 type Field = {
   name: string;
