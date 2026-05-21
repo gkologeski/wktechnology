@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download } from "lucide-react";
+import { StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download, Pencil, Check } from "lucide-react";
 
 const ICONS: Record<ActivityType, ReactNode> = {
   note: <StickyNote className="h-4 w-4" />,
