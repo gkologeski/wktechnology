@@ -188,6 +188,18 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     void load();
   };
 
+  const startEdit = (a: Activity) => {
+    setEditingId(a.id);
+    setEditingBody(a.body ?? "");
+  };
+
+  const saveEdit = async (a: Activity) => {
+    const { error } = await supabase.from("activities").update({ body: editingBody || null }).eq("id", a.id);
+    if (error) return toast.error(error.message);
+    setEditingId(null);
+    void load();
+  };
+
   const downloadAttachment = async (att: Attachment) => {
     const { data, error } = await supabase.storage.from("notes-attachments").createSignedUrl(att.path, 60);
     if (error) return toast.error(error.message);
