@@ -80,14 +80,15 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     z.object({
       type: z.enum(["note", "task", "call", "meeting", "email"]),
       batchSize: z.number().min(10).max(500).default(200),
+      afterId: z.string().uuid().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const fromObj = ENGAGEMENT_OBJECT[data.type];
 
-    // 1. Buscar atividades com hs_object_id e algum FK nulo
-    const { data: acts, error } = await supabase
+    // 1. Buscar atividades com hs_object_id e algum FK nulo (paginado por id)
+    let q = supabase
       .from("activities")
       .select("id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id")
       .eq("owner_id", userId)
@@ -96,12 +97,16 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       .or(
         "related_contact_id.is.null,related_company_id.is.null,related_deal_id.is.null,related_lead_id.is.null",
       )
+      .order("id", { ascending: true })
       .limit(data.batchSize);
+    if (data.afterId) q = q.gt("id", data.afterId);
+    const { data: acts, error } = await q;
 
     if (error) throw new Error(`Erro lendo atividades: ${error.message}`);
     if (!acts || acts.length === 0) {
-      return { processed: 0, updated: 0, hasMore: false };
+      return { processed: 0, updated: 0, hasMore: false, nextCursor: null as string | null };
     }
+
 
     const hsIds = acts.map((a) => a.hs_object_id!).filter(Boolean);
 
