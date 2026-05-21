@@ -672,7 +672,7 @@ function EntityDialog<T extends { id: string }>({
             <div key={f.name} className="space-y-1.5">
               <Label htmlFor={f.name}>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
               {f.type === "html" ? (
-                <RichHtmlEditor value={String(values[f.name] ?? "")} onChange={(v) => set(f.name, v)} minHeight={140} />
+                <RichHtmlEditor value={String(values[f.name] ?? "")} onChange={(v: string) => set(f.name, v)} minHeight={140} />
               ) : f.type === "textarea" ? (
                 <Textarea id={f.name} value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} rows={3} />
               ) : f.type === "select" ? (
