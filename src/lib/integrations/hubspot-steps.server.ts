@@ -1630,6 +1630,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             const due = p.hs_timestamp ?? null;
             const pr = parents[a.id] ?? {};
             const mapped = mapActivity(kind, p);
+            const hsCreated =
+              parseHsDate(p.hs_createdate ?? p.createdate) ??
+              parseHsDate(p.hs_timestamp) ??
+              (a.createdAt ?? null);
+            const hsUpdated =
+              parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate) ??
+              (a.updatedAt ?? null);
             const payload = {
               owner_id: userId,
               type: t.type,
@@ -1644,6 +1651,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               ...mapped,
               external_ids: { hubspot: a.id, hs_kind: kind } as never,
               hs_raw: rawOf(a),
+              ...(hsCreated ? { created_at: hsCreated } : {}),
+              ...(hsUpdated ? { updated_at: hsUpdated } : {}),
             };
             const r = await upsertByHsId(supabase, "activities", userId, a.id, payload);
             if (r.status === "failed") fail++;

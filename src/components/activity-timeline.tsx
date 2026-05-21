@@ -48,6 +48,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       .from("activities")
       .select("*")
       .eq(relatedKey, relatedId)
+      .order("hs_createdate", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setItems((data as Activity[]) ?? []);
@@ -347,7 +348,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       ))}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.created_at)}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.hs_createdate ?? a.created_at)}</div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <Button variant="ghost" size="icon" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))} title="Editar">
