@@ -25,15 +25,26 @@ function HubspotSyncPage() {
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const load = async () => {
     const r = await list({});
     setRows(r.state as Row[]);
+  };
+  const refreshCounts = async () => {
     const c = await countRelink({});
     setCounts(c.counts);
+    setStats(c.stats);
+    setLastUpdate(new Date());
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+    void refreshCounts();
+    const id = setInterval(() => { void refreshCounts(); }, 2000);
+    return () => clearInterval(id);
+  }, []);
 
   const doPush = async () => {
     setBusy(true);
@@ -122,26 +133,54 @@ function HubspotSyncPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
-              <div key={t} className="border rounded p-2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="capitalize font-medium">{t}</span>
-                  <Badge variant={counts[t] ? "default" : "outline"}>{counts[t] ?? 0}</Badge>
+          <div className="space-y-2">
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => {
+              const s = stats[t] ?? { total: 0, linked: 0, pending: 0 };
+              const pct = s.total > 0 ? Math.round((s.linked / s.total) * 100) : 0;
+              return (
+                <div key={t} className="border rounded p-3 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="capitalize font-medium w-16">{t}</span>
+                      <span className="text-muted-foreground tabular-nums">
+                        {s.linked.toLocaleString("pt-BR")} / {s.total.toLocaleString("pt-BR")} vinculadas
+                      </span>
+                      <Badge variant={s.pending ? "default" : "outline"} className="tabular-nums">
+                        {s.pending.toLocaleString("pt-BR")} pendentes
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{pct}%</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!!relinkBusy || !counts[t]}
+                        onClick={() => runRelink(t)}
+                      >
+                        {relinkBusy === t ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-vincular"}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!!relinkBusy || !counts[t]}
-                  onClick={() => runRelink(t)}
-                >
-                  {relinkBusy === t ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-vincular"}
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-sm text-muted-foreground">{totalPending.toLocaleString("pt-BR")} pendentes no total</span>
+            <span className="text-sm text-muted-foreground">
+              {totalPending.toLocaleString("pt-BR")} pendentes no total
+              {lastUpdate && (
+                <span className="ml-2 text-xs">
+                  · atualizado {lastUpdate.toLocaleTimeString("pt-BR")}
+                  <span className="inline-block ml-1 h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                </span>
+              )}
+            </span>
             <Button onClick={runRelinkAll} disabled={!!relinkBusy || totalPending === 0}>
               {relinkBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
               Re-vincular todas
