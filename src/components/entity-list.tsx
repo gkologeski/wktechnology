@@ -25,11 +25,12 @@ import { PRESET_VIEWS } from "@/lib/preset-views";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Filter, Columns3, Save, Star, X, LayoutGrid, List as ListIcon, ListTodo } from "lucide-react";
 import Papa from "papaparse";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 
 type Field = {
   name: string;
   label: string;
-  type?: "text" | "email" | "tel" | "number" | "date" | "textarea" | "select";
+  type?: "text" | "email" | "tel" | "number" | "date" | "textarea" | "select" | "html";
   options?: { value: string; label: string }[];
   required?: boolean;
 };
@@ -670,7 +671,9 @@ function EntityDialog<T extends { id: string }>({
           {fields.map((f) => (
             <div key={f.name} className="space-y-1.5">
               <Label htmlFor={f.name}>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
-              {f.type === "textarea" ? (
+              {f.type === "html" ? (
+                <RichHtmlEditor value={String(values[f.name] ?? "")} onChange={(v: string) => set(f.name, v)} minHeight={140} />
+              ) : f.type === "textarea" ? (
                 <Textarea id={f.name} value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} rows={3} />
               ) : f.type === "select" ? (
                 <select id={f.name} className="w-full h-9 rounded-md border bg-background px-3 text-sm" value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value || null)}>

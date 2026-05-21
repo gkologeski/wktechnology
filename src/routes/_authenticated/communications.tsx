@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EntityList } from "@/components/entity-list";
 import { ACTIVITY_TYPES, formatDateTime } from "@/lib/crm";
+
 import type { Activity } from "@/lib/db-types";
 
 const COMM_TYPES = ["call", "email", "meeting"] as const;
@@ -29,7 +30,7 @@ function CommunicationsPage() {
       fields={[
         { name: "type", label: "Tipo", type: "select", required: true, options: COMM_TYPES.map((t) => ({ value: t, label: ACTIVITY_TYPES.find((a) => a.value === t)!.label })) },
         { name: "subject", label: "Assunto" },
-        { name: "body", label: "Conteúdo", type: "textarea" },
+        { name: "body", label: "Conteúdo", type: "html" },
         { name: "outcome", label: "Resultado" },
         { name: "meeting_location", label: "Local (reunião)" },
         { name: "recording_url", label: "URL da gravação (call)" },

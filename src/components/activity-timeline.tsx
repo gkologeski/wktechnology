@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download } from "lucide-react";
+import { StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download, Pencil, Check } from "lucide-react";
 
 const ICONS: Record<ActivityType, ReactNode> = {
   note: <StickyNote className="h-4 w-4" />,
@@ -38,6 +38,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [mentionState, setMentionState] = useState<{ open: boolean; query: string; pos: number } | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBody, setEditingBody] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const load = async () => {
@@ -186,6 +188,18 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     void load();
   };
 
+  const startEdit = (a: Activity) => {
+    setEditingId(a.id);
+    setEditingBody(a.body ?? "");
+  };
+
+  const saveEdit = async (a: Activity) => {
+    const { error } = await supabase.from("activities").update({ body: editingBody || null }).eq("id", a.id);
+    if (error) return toast.error(error.message);
+    setEditingId(null);
+    void load();
+  };
+
   const downloadAttachment = async (att: Attachment) => {
     const { data, error } = await supabase.storage.from("notes-attachments").createSignedUrl(att.path, 60);
     if (error) return toast.error(error.message);
@@ -219,12 +233,11 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           )}
         </div>
         <div className="relative">
-          <Textarea
-            ref={textareaRef}
-            placeholder="Adicione uma nota... use @ para mencionar, arraste arquivos para anexar"
+          <RichHtmlEditor
             value={body}
-            onChange={(e) => onBodyChange(e.target.value)}
-            rows={3}
+            onChange={setBody}
+            placeholder="Adicione uma nota... use @ para mencionar, arraste arquivos para anexar"
+            minHeight={96}
           />
           {mentionState?.open && filteredMentions.length > 0 && (
             <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
@@ -295,7 +308,19 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       <span className="text-xs text-muted-foreground">• vence {formatDateTime(a.due_date)}</span>
                     )}
                   </div>
-                  {a.body && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{a.body}</p>}
+                  {a.body && (
+                    editingId === a.id ? (
+                      <div className="mt-2 space-y-2">
+                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveEdit(a)}><Check className="h-3 w-3 mr-1" /> Salvar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
+                    )
+                  )}
                   {mens.length > 0 && (
                     <div className="mt-1 flex gap-1 flex-wrap">
                       {mens.map((id) => {
@@ -324,9 +349,14 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                   )}
                   <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.created_at)}</div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => remove(a.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))} title="Editar">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Excluir">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             );
           })}
