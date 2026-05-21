@@ -348,7 +348,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       ))}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.created_at)}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.hs_createdate ?? a.created_at)}</div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <Button variant="ghost" size="icon" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))} title="Editar">
