@@ -25,15 +25,26 @@ function HubspotSyncPage() {
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const load = async () => {
     const r = await list({});
     setRows(r.state as Row[]);
+  };
+  const refreshCounts = async () => {
     const c = await countRelink({});
     setCounts(c.counts);
+    setStats(c.stats);
+    setLastUpdate(new Date());
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+    void refreshCounts();
+    const id = setInterval(() => { void refreshCounts(); }, 2000);
+    return () => clearInterval(id);
+  }, []);
 
   const doPush = async () => {
     setBusy(true);
