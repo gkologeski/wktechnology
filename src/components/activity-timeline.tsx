@@ -48,6 +48,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       .from("activities")
       .select("*")
       .eq(relatedKey, relatedId)
+      .order("hs_createdate", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setItems((data as Activity[]) ?? []);
