@@ -1,0 +1,2 @@
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS relink_checked_at timestamptz;
+CREATE INDEX IF NOT EXISTS idx_activities_relink_checked_at ON public.activities(owner_id, type, relink_checked_at) WHERE hs_object_id IS NOT NULL;

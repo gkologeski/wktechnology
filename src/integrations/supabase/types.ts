@@ -43,6 +43,7 @@ export type Database = {
           related_contact_id: string | null
           related_deal_id: string | null
           related_lead_id: string | null
+          relink_checked_at: string | null
           subject: string | null
           task_priority: string | null
           task_status: string | null
@@ -77,6 +78,7 @@ export type Database = {
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
+          relink_checked_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
@@ -111,6 +113,7 @@ export type Database = {
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
+          relink_checked_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
