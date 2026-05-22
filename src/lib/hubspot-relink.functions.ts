@@ -87,7 +87,11 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const fromObj = ENGAGEMENT_OBJECT[data.type];
 
-    // 1. Buscar atividades com hs_object_id e algum FK nulo (paginado por id)
+    // 1. Buscar atividades com hs_object_id, algum FK nulo e ainda não verificadas
+    //    recentemente. Atividades verificadas nos últimos 30 dias (sem associações
+    //    na HubSpot) são puladas para não reprocessar órfãs eternamente.
+    const CHECK_TTL_DAYS = 30;
+    const cutoff = new Date(Date.now() - CHECK_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
     let q = supabase
       .from("activities")
       .select("id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id")
@@ -97,6 +101,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       .or(
         "related_contact_id.is.null,related_company_id.is.null,related_deal_id.is.null,related_lead_id.is.null",
       )
+      .or(`relink_checked_at.is.null,relink_checked_at.lt.${cutoff}`)
       .order("id", { ascending: true })
       .limit(data.batchSize);
     if (data.afterId) q = q.gt("id", data.afterId);
@@ -188,10 +193,17 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       if (Object.keys(patch).length > 0) {
         const { error: upErr } = await supabase
           .from("activities")
-          .update(patch as never)
+          .update({ ...patch, relink_checked_at: new Date().toISOString() } as never)
           .eq("id", a.id)
           .eq("owner_id", userId);
         if (!upErr) updated++;
+      } else {
+        // Sem associações na HubSpot — marca como verificada para não reprocessar
+        await supabase
+          .from("activities")
+          .update({ relink_checked_at: new Date().toISOString() } as never)
+          .eq("id", a.id)
+          .eq("owner_id", userId);
       }
     }
 
@@ -210,6 +222,8 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const counts: Record<string, number> = {};
     const stats: Record<string, { total: number; linked: number; pending: number }> = {};
+    const CHECK_TTL_DAYS = 30;
+    const cutoff = new Date(Date.now() - CHECK_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
     for (const t of ["note", "task", "call", "meeting", "email"] as const) {
       const base = supabase
         .from("activities")
@@ -229,7 +243,8 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
           .is("related_contact_id", null)
           .is("related_company_id", null)
           .is("related_deal_id", null)
-          .is("related_lead_id", null),
+          .is("related_lead_id", null)
+          .or(`relink_checked_at.is.null,relink_checked_at.lt.${cutoff}`),
       ]);
 
       const totalN = total ?? 0;
