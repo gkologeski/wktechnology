@@ -193,10 +193,17 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       if (Object.keys(patch).length > 0) {
         const { error: upErr } = await supabase
           .from("activities")
-          .update(patch as never)
+          .update({ ...patch, relink_checked_at: new Date().toISOString() } as never)
           .eq("id", a.id)
           .eq("owner_id", userId);
         if (!upErr) updated++;
+      } else {
+        // Sem associações na HubSpot — marca como verificada para não reprocessar
+        await supabase
+          .from("activities")
+          .update({ relink_checked_at: new Date().toISOString() } as never)
+          .eq("id", a.id)
+          .eq("owner_id", userId);
       }
     }
 
