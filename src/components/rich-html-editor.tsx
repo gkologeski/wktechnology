@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Code, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
