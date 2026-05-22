@@ -56,24 +56,43 @@ function HubspotSyncPage() {
     finally { setBusy(false); }
   };
 
+  const cursorKey = (t: ActType) => `hubspot-relink-cursor:${t}`;
+  const getCursor = (t: ActType) => {
+    try { return localStorage.getItem(cursorKey(t)) || undefined; } catch { return undefined; }
+  };
+  const setCursor = (t: ActType, v: string | null) => {
+    try {
+      if (v) localStorage.setItem(cursorKey(t), v);
+      else localStorage.removeItem(cursorKey(t));
+    } catch { /* ignore */ }
+  };
+
   const runRelink = async (type: ActType) => {
     setRelinkBusy(type);
     setProgress("");
     let totalProcessed = 0;
     let totalUpdated = 0;
-    let cursor: string | undefined;
+    let cursor: string | undefined = getCursor(type);
+    if (cursor) setProgress(`${type}: retomando de cursor anterior...`);
     try {
       while (true) {
         const r = await relink({ data: { type, batchSize: 500, afterId: cursor } });
         totalProcessed += r.processed;
         totalUpdated += r.updated;
         setProgress(`${type}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`);
-        if (!r.hasMore || !r.nextCursor) break;
+        if (!r.hasMore || !r.nextCursor) {
+          setCursor(type, null);
+          break;
+        }
         cursor = r.nextCursor;
+        setCursor(type, cursor);
       }
       toast.success(`${type}: ${totalProcessed} processadas, ${totalUpdated} vinculadas`);
       await load();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) {
+      // mantém cursor salvo para retomar depois
+      toast.error((e as Error).message);
+    }
     finally { setRelinkBusy(null); setProgress(""); }
   };
 
@@ -86,14 +105,19 @@ function HubspotSyncPage() {
         setProgress(`Iniciando ${t}...`);
         let totalProcessed = 0;
         let totalUpdated = 0;
-        let cursor: string | undefined;
+        let cursor: string | undefined = getCursor(t);
+        if (cursor) setProgress(`${t}: retomando de cursor anterior...`);
         while (true) {
           const r = await relink({ data: { type: t, batchSize: 500, afterId: cursor } });
           totalProcessed += r.processed;
           totalUpdated += r.updated;
           setProgress(`${t}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`);
-          if (!r.hasMore || !r.nextCursor) break;
+          if (!r.hasMore || !r.nextCursor) {
+            setCursor(t, null);
+            break;
+          }
           cursor = r.nextCursor;
+          setCursor(t, cursor);
         }
 
       }
@@ -102,6 +126,7 @@ function HubspotSyncPage() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setRelinkBusy(null); setProgress(""); }
   };
+
 
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
