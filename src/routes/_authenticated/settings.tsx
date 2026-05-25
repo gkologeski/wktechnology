@@ -12,7 +12,7 @@ const tabs = [
   { to: "/settings/security", label: "Segurança" },
   { to: "/settings/pipelines", label: "Pipelines" },
   { to: "/settings/custom-properties", label: "Propriedades" },
-  { to: "/settings/teams", label: "Equipe" },
+  { to: "/settings/teams", label: "Usuários" },
   { to: "/settings/roles", label: "Permissões" },
   { to: "/settings/audit-log", label: "Auditoria" },
 ] as const;

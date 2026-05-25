@@ -109,7 +109,7 @@ const groups: Group[] = [
     label: "Configuração", icon: Settings, items: [
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },
-      { title: "Equipe", url: "/settings/teams", icon: UsersRound },
+      { title: "Usuários", url: "/settings/teams", icon: UsersRound },
       { title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
       { title: "Auditoria", url: "/settings/audit-log", icon: ScrollText },
       { title: "Segurança (2FA)", url: "/settings/security", icon: KeyRound },
