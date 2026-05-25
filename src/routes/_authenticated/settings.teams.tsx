@@ -171,9 +171,7 @@ function UsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-email">E-mail</Label>
-            <div className="space-y-3 py-2">
+
               <div className="space-y-1.5">
                 <Label htmlFor="invite-name">Nome completo <span className="text-destructive">*</span></Label>
                 <Input
