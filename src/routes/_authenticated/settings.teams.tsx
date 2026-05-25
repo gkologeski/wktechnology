@@ -74,6 +74,8 @@ function UsersPage() {
   // invite dialog
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
   const [inviting, setInviting] = useState(false);
 
@@ -101,15 +103,24 @@ function UsersPage() {
     });
   }, [rows, query, roleFilter]);
 
+  const canInvite = email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
+
   const handleInvite = async () => {
-    if (!email.trim()) return;
+    if (!canInvite) return;
     setInviting(true);
     try {
-      await inviteFn({ data: { email: email.trim(), role } });
+      await inviteFn({ data: {
+        email: email.trim(),
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        role,
+      } });
       toast.success("Convite enviado", {
         description: `${email.trim()} receberá um e-mail para acessar o workspace.`,
       });
       setEmail("");
+      setFullName("");
+      setPhone("");
       setRole("member");
       setInviteOpen(false);
       await refresh();
@@ -117,6 +128,7 @@ function UsersPage() {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
     } finally { setInviting(false); }
   };
+
 
   const handleRole = async (user_id: string, r: TeamRole) => {
     try {
@@ -159,15 +171,35 @@ function UsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2">
+
               <div className="space-y-1.5">
-                <Label htmlFor="invite-email">E-mail</Label>
+                <Label htmlFor="invite-name">Nome completo <span className="text-destructive">*</span></Label>
+                <Input
+                  id="invite-name"
+                  placeholder="Maria da Silva"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-email">E-mail <span className="text-destructive">*</span></Label>
                 <Input
                   id="invite-email"
                   type="email"
                   placeholder="pessoa@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-phone">Telefone celular <span className="text-destructive">*</span></Label>
+                <Input
+                  id="invite-phone"
+                  type="tel"
+                  placeholder="(11) 98765-4321"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -193,7 +225,8 @@ function UsersPage() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</Button>
-              <Button onClick={handleInvite} disabled={inviting || !email.trim()}>
+              <Button onClick={handleInvite} disabled={inviting || !canInvite}>
+
                 <Mail className="h-4 w-4 mr-2" />
                 {inviting ? "Enviando…" : "Enviar convite"}
               </Button>
