@@ -126,7 +126,6 @@ function LeadDetail() {
       center={
         <>
           <AiSummaryPanel entity="lead" entityId={lead.id} />
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
         </>
       }

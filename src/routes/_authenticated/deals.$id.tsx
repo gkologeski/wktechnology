@@ -96,7 +96,6 @@ function DealDetail() {
       center={
         <>
           <AiSummaryPanel entity="deal" entityId={deal.id} />
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
         </>
       }

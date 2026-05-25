@@ -89,7 +89,6 @@ function CompanyDetail() {
       }
       center={
         <>
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_company_id" relatedId={company.id} />
         </>
       }
