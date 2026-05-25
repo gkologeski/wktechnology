@@ -74,6 +74,8 @@ function UsersPage() {
   // invite dialog
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
   const [inviting, setInviting] = useState(false);
 
@@ -101,15 +103,24 @@ function UsersPage() {
     });
   }, [rows, query, roleFilter]);
 
+  const canInvite = email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
+
   const handleInvite = async () => {
-    if (!email.trim()) return;
+    if (!canInvite) return;
     setInviting(true);
     try {
-      await inviteFn({ data: { email: email.trim(), role } });
+      await inviteFn({ data: {
+        email: email.trim(),
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        role,
+      } });
       toast.success("Convite enviado", {
         description: `${email.trim()} receberá um e-mail para acessar o workspace.`,
       });
       setEmail("");
+      setFullName("");
+      setPhone("");
       setRole("member");
       setInviteOpen(false);
       await refresh();
@@ -117,6 +128,7 @@ function UsersPage() {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
     } finally { setInviting(false); }
   };
+
 
   const handleRole = async (user_id: string, r: TeamRole) => {
     try {
