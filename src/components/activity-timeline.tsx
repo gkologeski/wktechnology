@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 // Select removed — type is now a tab nav
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
 import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
