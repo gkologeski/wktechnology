@@ -8,6 +8,8 @@ import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
+import { RecordLayout } from "@/components/record/record-layout";
+import { AssociationsPanel } from "@/components/record/associations-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
@@ -68,8 +70,8 @@ function LeadDetail() {
     void load();
   };
 
-  return (
-    <div className="space-y-4">
+  const header = (
+    <>
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/leads"><ArrowLeft className="h-4 w-4 mr-1" /> Leads</Link>
@@ -94,38 +96,40 @@ function LeadDetail() {
           </div>
         </div>
         <div className="mt-4">
-          <StageTracker
-            stages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-            current={lead.status}
-            onChange={setStatus}
-          />
+          <StageTracker stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))} current={lead.status} onChange={setStatus} />
         </div>
       </div>
+    </>
+  );
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
+  return (
+    <RecordLayout
+      header={header}
+      left={
+        <PropertiesPanel
+          entity="leads" table="leads" row={lead as unknown as Record<string, unknown> & { id: string }}
+          props={[
+            { key: "first_name", label: "Nome", primary: true },
+            { key: "last_name", label: "Sobrenome", primary: true },
+            { key: "email", label: "Email", type: "email", primary: true },
+            { key: "phone", label: "Telefone", type: "tel", primary: true },
+            { key: "company_name", label: "Empresa", primary: true },
+            { key: "source", label: "Fonte", primary: true },
+            { key: "label", label: "Label" },
+            { key: "score", label: "Score", type: "number" },
+            { key: "notes", label: "Notas" },
+          ]}
+          onSaved={load}
+        />
+      }
+      center={
+        <>
           <AiSummaryPanel entity="lead" entityId={lead.id} />
           <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
-        </div>
-        <aside className="space-y-4">
-          <PropertiesPanel
-            entity="leads" table="leads" row={lead as unknown as Record<string, unknown> & { id: string }}
-            props={[
-              { key: "first_name", label: "Nome", primary: true },
-              { key: "last_name", label: "Sobrenome", primary: true },
-              { key: "email", label: "Email", type: "email", primary: true },
-              { key: "phone", label: "Telefone", type: "tel", primary: true },
-              { key: "company_name", label: "Empresa", primary: true },
-              { key: "source", label: "Fonte", primary: true },
-              { key: "label", label: "Label" },
-              { key: "score", label: "Score", type: "number" },
-              { key: "notes", label: "Notas" },
-            ]}
-            onSaved={load}
-          />
-        </aside>
-      </div>
-    </div>
+        </>
+      }
+      right={<AssociationsPanel entity="lead" entityId={lead.id} />}
+    />
   );
 }
