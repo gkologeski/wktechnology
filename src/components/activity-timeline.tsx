@@ -212,8 +212,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     : [];
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-4 space-y-3"
+    <div className="space-y-6">
+      {/* Tabbed composer */}
+      <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -221,68 +222,92 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           if (files.length) setPendingFiles((p) => [...p, ...files]);
         }}
       >
-        <div className="flex flex-wrap gap-2">
-          <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ACTIVITY_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
-          {type === "task" && (
-            <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
-          )}
-        </div>
-        <div className="relative">
-          <RichHtmlEditor
-            value={body}
-            onChange={setBody}
-            placeholder="Adicione uma nota... use @ para mencionar, arraste arquivos para anexar"
-            minHeight={96}
-          />
-          {mentionState?.open && filteredMentions.length > 0 && (
-            <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
-              {filteredMentions.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => insertMention(m)}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-                >
-                  <AtSign className="h-3 w-3 text-muted-foreground" />
-                  {m.name}
-                </button>
+        <nav className="flex border-b border-border/60 overflow-x-auto">
+          {ACTIVITY_TYPES.map((t) => {
+            const active = type === t.value;
+            return (
+              <button
+                key={t.value}
+                onClick={() => setType(t.value as ActivityType)}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+                  active
+                    ? "text-primary border-b-2 border-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
+                }`}
+              >
+                <span className={active ? "text-primary" : "text-muted-foreground"}>{ICONS[t.value as ActivityType]}</span>
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="p-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
+            {type === "task" && (
+              <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+            )}
+          </div>
+          <div className="relative">
+            <RichHtmlEditor
+              value={body}
+              onChange={setBody}
+              placeholder="Comece a digitar... use @ para mencionar, arraste arquivos para anexar"
+              minHeight={96}
+            />
+            {mentionState?.open && filteredMentions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
+                {filteredMentions.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => insertMention(m)}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+                  >
+                    <AtSign className="h-3 w-3 text-muted-foreground" />
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pendingFiles.map((f, i) => (
+                <Badge key={i} variant="secondary" className="gap-1">
+                  <Paperclip className="h-3 w-3" /> {f.name}
+                  <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
               ))}
             </div>
           )}
-        </div>
-        {pendingFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {pendingFiles.map((f, i) => (
-              <Badge key={i} variant="secondary" className="gap-1">
-                <Paperclip className="h-3 w-3" /> {f.name}
-                <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
+          <div className="flex justify-between items-center pt-3 border-t border-border/60">
+            <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) setPendingFiles((p) => [...p, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <Paperclip className="h-4 w-4" /> Anexar
+            </label>
+            <Button onClick={add} size="sm" className="rounded-xl shadow-md shadow-primary/20 font-semibold">
+              Salvar {ACTIVITY_TYPES.find(t => t.value === type)?.label}
+            </Button>
           </div>
-        )}
-        <div className="flex justify-between items-center">
-          <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-            <input
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                if (files.length) setPendingFiles((p) => [...p, ...files]);
-                e.target.value = "";
-              }}
-            />
-            <Paperclip className="inline h-4 w-4 mr-1" /> Anexar
-          </label>
-          <Button onClick={add} size="sm">Adicionar</Button>
         </div>
+      </div>
+
+      {/* Timeline rail */}
+      <div className="flex items-center gap-4">
+        <div className="h-px flex-1 bg-border/60" />
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
+        <div className="h-px flex-1 bg-border/60" />
       </div>
 
       {loading ? (
@@ -290,25 +315,31 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       ) : items.length === 0 ? (
         <div className="text-sm text-muted-foreground text-center py-6">Nenhuma atividade ainda.</div>
       ) : (
-        <ol className="space-y-2">
+        <ol className="space-y-5">
           {items.map((a) => {
             const atts = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
             const mens = (a as unknown as { mentions?: string[] }).mentions ?? [];
             return (
-              <li key={a.id} className="rounded-lg border bg-card p-3 flex gap-3">
-                <div className="mt-1 text-muted-foreground">{ICONS[a.type as ActivityType]}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-sm">
-                    {a.type === "task" && (
-                      <Checkbox checked={a.completed} onCheckedChange={() => toggleDone(a)} />
-                    )}
-                    <span className={`font-medium ${a.completed ? "line-through text-muted-foreground" : ""}`}>
-                      {a.subject || ACTIVITY_TYPES.find((t) => t.value === a.type)?.label}
-                    </span>
-                    {a.due_date && (
-                      <span className="text-xs text-muted-foreground">• vence {formatDateTime(a.due_date)}</span>
-                    )}
+              <li key={a.id} className="relative pl-10">
+                <div className="absolute left-[11px] top-8 bottom-[-1.25rem] w-[2px] bg-border/60 last:hidden" />
+                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary/10 border-4 border-background flex items-center justify-center text-primary z-10">
+                  {ICONS[a.type as ActivityType]}
+                </div>
+                <div className="bg-card rounded-2xl p-5 border border-border/60 shadow-sm">
+                  <div className="flex justify-between items-start gap-3 mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {a.type === "task" && (
+                        <Checkbox checked={a.completed} onCheckedChange={() => toggleDone(a)} />
+                      )}
+                      <h4 className={`text-sm font-semibold text-foreground truncate ${a.completed ? "line-through text-muted-foreground" : ""}`}>
+                        {a.subject || ACTIVITY_TYPES.find((t) => t.value === a.type)?.label}
+                      </h4>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(a.hs_createdate ?? a.created_at)}</span>
                   </div>
+                  {a.due_date && (
+                    <p className="text-xs text-muted-foreground mb-1">Vence {formatDateTime(a.due_date)}</p>
+                  )}
                   {a.body && (
                     editingId === a.id ? (
                       <div className="mt-2 space-y-2">
@@ -323,7 +354,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     )
                   )}
                   {mens.length > 0 && (
-                    <div className="mt-1 flex gap-1 flex-wrap">
+                    <div className="mt-2 flex gap-1 flex-wrap">
                       {mens.map((id) => {
                         const tm = team.find((t) => t.id === id);
                         return (
@@ -336,27 +367,26 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     </div>
                   )}
                   {atts.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {atts.map((att, i) => (
                         <button
                           key={i}
                           onClick={() => downloadAttachment(att)}
-                          className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs hover:bg-muted"
+                          className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs hover:bg-muted"
                         >
                           <Download className="h-3 w-3" /> {att.name}
                         </button>
                       ))}
                     </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-1">{formatDateTime(a.hs_createdate ?? a.created_at)}</div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))} title="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Excluir">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}>
+                      <Pencil className="h-3 w-3 mr-1" /> Editar
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(a.id)}>
+                      <Trash2 className="h-3 w-3 mr-1" /> Excluir
+                    </Button>
+                  </div>
                 </div>
               </li>
             );
