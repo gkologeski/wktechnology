@@ -72,7 +72,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z.object({
-      email: z.string().email().max(255),
+      email: z.string().trim().email().max(255),
+      full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
+      phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
       role: TeamRole,
     }).parse(i)
   )
@@ -93,13 +95,22 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     }
     // Se não existir, dispara convite por email (cria o usuário e envia link de cadastro)
     if (!foundId) {
-      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target);
+      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
+        data: { full_name: data.full_name, phone: data.phone },
+      });
       if (invErr || !invited?.user) {
         throw new Error(invErr?.message ?? "Falha ao enviar convite por email.");
       }
       foundId = invited.user.id;
     }
     if (foundId === userId) throw new Error("Você já é o owner do workspace.");
+
+    // Garante profile com nome e telefone
+    await supabaseAdmin.from("profiles").upsert({
+      id: foundId,
+      full_name: data.full_name,
+      phone: data.phone,
+    } as never, { onConflict: "id" });
 
     const { error: insErr } = await supabase
       .from("team_members")
@@ -118,6 +129,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
 
     return { ok: true, user_id: foundId };
   });
+
 
 export const updateTeamMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
