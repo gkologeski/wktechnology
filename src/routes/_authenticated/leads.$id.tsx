@@ -71,35 +71,36 @@ function LeadDetail() {
   };
 
   const header = (
-    <>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/leads"><ArrowLeft className="h-4 w-4 mr-1" /> Leads</Link>
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={convert}><ArrowRightLeft className="h-4 w-4 mr-1" /> Converter</Button>
-          <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
-        </div>
-      </div>
-
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">{lead.first_name} {lead.last_name ?? ""}</h1>
-            <p className="text-sm text-muted-foreground">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-5 min-w-0">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link to="/leads"><ArrowLeft className="h-4 w-4" /></Link>
+          </Button>
+          <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20 border-4 border-card">
+            {(lead.first_name?.[0] ?? "?").toUpperCase()}{(lead.last_name?.[0] ?? "").toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground truncate">{lead.first_name} {lead.last_name ?? ""}</h1>
+              <Badge variant="outline" className="rounded-full px-3 bg-primary/10 text-primary border-primary/20">Score: {lead.score ?? 0}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground truncate mt-0.5">
               {lead.company_name && <span>{lead.company_name} · </span>}
               {lead.email ?? "sem email"}
             </p>
           </div>
-          <div className="text-right">
-            <Badge variant="outline">Score: {lead.score ?? 0}</Badge>
-          </div>
         </div>
-        <div className="mt-4">
-          <StageTracker stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))} current={lead.status} onChange={setStatus} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="rounded-xl gap-2" onClick={convert}><ArrowRightLeft className="h-4 w-4 text-muted-foreground" /> Converter</Button>
+          <div className="h-8 w-px bg-border mx-1" />
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </>
+      <StageTracker stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))} current={lead.status} onChange={setStatus} />
+    </div>
   );
 
   return (
@@ -125,7 +126,6 @@ function LeadDetail() {
       center={
         <>
           <AiSummaryPanel entity="lead" entityId={lead.id} />
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
         </>
       }

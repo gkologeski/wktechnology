@@ -36,34 +36,33 @@ function CompanyDetail() {
   };
 
   const header = (
-    <>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/companies"><ArrowLeft className="h-4 w-4 mr-1" /> Empresas</Link>
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-5 min-w-0">
+        <Button variant="ghost" size="icon" asChild className="rounded-full">
+          <Link to="/companies"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
-      </div>
-
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-violet-500/20 text-primary">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold">{company.name}</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-              {company.industry && <Badge variant="outline">{company.industry}</Badge>}
-              {company.city && <span>{company.city}{company.state ? `/${company.state}` : ""}</span>}
-              {company.website && (
-                <a href={company.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                  {company.website} <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </p>
-          </div>
+        <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
+          <Building2 className="h-7 w-7" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+            {company.industry && <Badge variant="outline" className="rounded-full">{company.industry}</Badge>}
+            {company.city && <span>{company.city}{company.state ? `/${company.state}` : ""}</span>}
+            {company.website && (
+              <a href={company.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                {company.website} <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </p>
         </div>
       </div>
-    </>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 
   return (
@@ -90,7 +89,6 @@ function CompanyDetail() {
       }
       center={
         <>
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_company_id" relatedId={company.id} />
         </>
       }

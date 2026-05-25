@@ -49,44 +49,46 @@ function ContactDetail() {
   const phone = (contact.phone || contact.mobile_phone) as string | undefined;
 
   const header = (
-    <>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/contacts"><ArrowLeft className="h-4 w-4 mr-1" /> Contatos</Link>
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-5 min-w-0">
+        <Button variant="ghost" size="icon" asChild className="rounded-full">
+          <Link to="/contacts"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <div className="flex gap-2">
-          {contact.email && (
-            <SendEmailDialog defaultTo={contact.email} contactId={contact.id} contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><Mail className="h-4 w-4 mr-1" /> Email</Button>} />
-          )}
-          {phone && (
-            <CallDialer defaultTo={phone} contactId={contact.id} contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><Phone className="h-4 w-4 mr-1" /> Ligar</Button>} />
-          )}
-          {phone && (
-            <SendWhatsAppDialog defaultTo={phone} contactId={contact.id} contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><MessageCircle className="h-4 w-4 mr-1" /> WhatsApp</Button>} />
-          )}
-          <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
+        <div className="relative shrink-0">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20 border-4 border-card">
+            {(contact.first_name?.[0] ?? "?").toUpperCase()}{(contact.last_name?.[0] ?? "").toUpperCase()}
+          </div>
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground truncate">{fullName}</h1>
+          <p className="text-muted-foreground text-sm truncate">
+            {contact.job_title && <span>{contact.job_title}</span>}
+            {contact.job_title && company && <span> em </span>}
+            {company && <Link to="/companies/$id" params={{ id: company.id }} className="text-primary hover:underline">{company.name}</Link>}
+            {!contact.job_title && !company && <span>{contact.email ?? "sem email"}</span>}
+          </p>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-violet-500/20 text-sm font-semibold text-primary">
-            {(contact.first_name?.[0] ?? "?").toUpperCase()}{(contact.last_name?.[0] ?? "").toUpperCase()}
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold">{fullName}</h1>
-            <p className="text-sm text-muted-foreground">
-              {contact.job_title && <span>{contact.job_title} · </span>}
-              {company && <Link to="/companies/$id" params={{ id: company.id }} className="text-primary hover:underline">{company.name}</Link>}
-              {!company && <span>{contact.email ?? "sem email"}</span>}
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        {contact.email && (
+          <SendEmailDialog defaultTo={contact.email} contactId={contact.id} contactName={fullName}
+            trigger={<Button variant="outline" className="rounded-xl gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> Email</Button>} />
+        )}
+        {phone && (
+          <CallDialer defaultTo={phone} contactId={contact.id} contactName={fullName}
+            trigger={<Button variant="outline" className="rounded-xl gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> Ligar</Button>} />
+        )}
+        {phone && (
+          <SendWhatsAppDialog defaultTo={phone} contactId={contact.id} contactName={fullName}
+            trigger={<Button className="rounded-xl gap-2 shadow-md shadow-primary/20"><MessageCircle className="h-4 w-4" /> WhatsApp</Button>} />
+        )}
+        <div className="h-8 w-px bg-border mx-1" />
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -110,7 +112,6 @@ function ContactDetail() {
       center={
         <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
-          <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
         </>
       }
