@@ -173,13 +173,35 @@ function UsersPage() {
             <div className="space-y-3 py-2">
               <div className="space-y-1.5">
                 <Label htmlFor="invite-email">E-mail</Label>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-name">Nome completo <span className="text-destructive">*</span></Label>
+                <Input
+                  id="invite-name"
+                  placeholder="Maria da Silva"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-email">E-mail <span className="text-destructive">*</span></Label>
                 <Input
                   id="invite-email"
                   type="email"
                   placeholder="pessoa@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-phone">Telefone celular <span className="text-destructive">*</span></Label>
+                <Input
+                  id="invite-phone"
+                  type="tel"
+                  placeholder="(11) 98765-4321"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -205,7 +227,8 @@ function UsersPage() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</Button>
-              <Button onClick={handleInvite} disabled={inviting || !email.trim()}>
+              <Button onClick={handleInvite} disabled={inviting || !canInvite}>
+
                 <Mail className="h-4 w-4 mr-2" />
                 {inviting ? "Enviando…" : "Enviar convite"}
               </Button>
