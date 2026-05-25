@@ -446,12 +446,7 @@ export function HeaderCheckbox({
 }) {
   return (
     <Checkbox
-      checked={allSelected}
-      ref={(el) => {
-        if (el && "indeterminate" in el)
-          (el as unknown as { indeterminate: boolean }).indeterminate =
-            !allSelected && someSelected;
-      }}
+      checked={allSelected ? true : someSelected ? "indeterminate" : false}
       onCheckedChange={onToggle}
     />
   );
