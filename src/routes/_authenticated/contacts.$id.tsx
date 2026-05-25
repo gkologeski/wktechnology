@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
+import { RecordLayout } from "@/components/record/record-layout";
+import { AssociationsPanel } from "@/components/record/associations-panel";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
@@ -46,36 +48,24 @@ function ContactDetail() {
   const fullName = `${contact.first_name} ${contact.last_name ?? ""}`.trim() || "Sem nome";
   const phone = (contact.phone || contact.mobile_phone) as string | undefined;
 
-  return (
-    <div className="space-y-4">
+  const header = (
+    <>
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/contacts"><ArrowLeft className="h-4 w-4 mr-1" /> Contatos</Link>
         </Button>
         <div className="flex gap-2">
           {contact.email && (
-            <SendEmailDialog
-              defaultTo={contact.email}
-              contactId={contact.id}
-              contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><Mail className="h-4 w-4 mr-1" /> Email</Button>}
-            />
+            <SendEmailDialog defaultTo={contact.email} contactId={contact.id} contactName={fullName}
+              trigger={<Button size="sm" variant="outline"><Mail className="h-4 w-4 mr-1" /> Email</Button>} />
           )}
           {phone && (
-            <CallDialer
-              defaultTo={phone}
-              contactId={contact.id}
-              contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><Phone className="h-4 w-4 mr-1" /> Ligar</Button>}
-            />
+            <CallDialer defaultTo={phone} contactId={contact.id} contactName={fullName}
+              trigger={<Button size="sm" variant="outline"><Phone className="h-4 w-4 mr-1" /> Ligar</Button>} />
           )}
           {phone && (
-            <SendWhatsAppDialog
-              defaultTo={phone}
-              contactId={contact.id}
-              contactName={fullName}
-              trigger={<Button size="sm" variant="outline"><MessageCircle className="h-4 w-4 mr-1" /> WhatsApp</Button>}
-            />
+            <SendWhatsAppDialog defaultTo={phone} contactId={contact.id} contactName={fullName}
+              trigger={<Button size="sm" variant="outline"><MessageCircle className="h-4 w-4 mr-1" /> WhatsApp</Button>} />
           )}
           <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
         </div>
@@ -96,29 +86,35 @@ function ContactDetail() {
           </div>
         </div>
       </div>
+    </>
+  );
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
+  return (
+    <RecordLayout
+      header={header}
+      left={
+        <PropertiesPanel
+          entity="contacts" table="contacts" row={contact as unknown as Record<string, unknown> & { id: string }}
+          props={[
+            { key: "first_name", label: "Nome", primary: true },
+            { key: "last_name", label: "Sobrenome", primary: true },
+            { key: "email", label: "Email", type: "email", primary: true },
+            { key: "phone", label: "Telefone", type: "tel", primary: true },
+            { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+            { key: "job_title", label: "Cargo", primary: true },
+            { key: "notes", label: "Notas" },
+          ]}
+          onSaved={load}
+        />
+      }
+      center={
+        <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
           <h2 className="font-semibold text-sm">Atividades</h2>
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
-        </div>
-        <aside>
-          <PropertiesPanel
-            entity="contacts" table="contacts" row={contact as unknown as Record<string, unknown> & { id: string }}
-            props={[
-              { key: "first_name", label: "Nome", primary: true },
-              { key: "last_name", label: "Sobrenome", primary: true },
-              { key: "email", label: "Email", type: "email", primary: true },
-              { key: "phone", label: "Telefone", type: "tel", primary: true },
-              { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
-              { key: "job_title", label: "Cargo", primary: true },
-              { key: "notes", label: "Notas" },
-            ]}
-            onSaved={load}
-          />
-        </aside>
-      </div>
-    </div>
+        </>
+      }
+      right={<AssociationsPanel entity="contact" entityId={contact.id} companyId={contact.company_id} />}
+    />
   );
 }
