@@ -14,6 +14,19 @@ const Checkbox = React.forwardRef<
     <CheckboxPrimitive.Root
       ref={ref}
       checked={checked}
+      style={
+        isActive
+          ? {
+              backgroundColor: "var(--color-primary)",
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+            }
+          : {
+              backgroundColor: "var(--color-card)",
+              borderColor: "var(--color-input)",
+              color: "transparent",
+            }
+      }
       className={cn(
         "grid place-content-center peer h-4 w-4 shrink-0 cursor-pointer rounded-sm border-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
         isActive
