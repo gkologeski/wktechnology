@@ -45,35 +45,32 @@ function DealDetail() {
   };
 
   const header = (
-    <>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/deals"><ArrowLeft className="h-4 w-4 mr-1" /> Negócios</Link>
-        </Button>
-        <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
-      </div>
-
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-violet-500/20 text-primary">
-              <Briefcase className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">{deal.name}</h1>
-              <p className="text-sm text-muted-foreground">
-                {formatCurrency(deal.value, deal.currency)}
-                {deal.expected_close_date && <span> · Fechamento {new Date(deal.expected_close_date).toLocaleDateString("pt-BR")}</span>}
-              </p>
-            </div>
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-5 min-w-0">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link to="/deals"><ArrowLeft className="h-4 w-4" /></Link>
+          </Button>
+          <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
+            <Briefcase className="h-7 w-7" />
           </div>
-          <Badge variant="outline" className="capitalize">{deal.stage}</Badge>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground truncate">{deal.name}</h1>
+              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{deal.stage}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {formatCurrency(deal.value, deal.currency)}
+              {deal.expected_close_date && <span> · Fechamento {new Date(deal.expected_close_date).toLocaleDateString("pt-BR")}</span>}
+            </p>
+          </div>
         </div>
-        <div className="mt-4">
-          <StageTracker stages={DEAL_STAGES.map(s => ({ value: s.value, label: s.label }))} current={deal.stage} onChange={setStage} />
-        </div>
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
-    </>
+      <StageTracker stages={DEAL_STAGES.map(s => ({ value: s.value, label: s.label }))} current={deal.stage} onChange={setStage} />
+    </div>
   );
 
   return (
