@@ -2,8 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Building2, User, Briefcase, Ticket as TicketIcon, ListTodo, Mail, Paperclip, MessageCircle, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Building2, User, Briefcase, Ticket as TicketIcon, ListTodo, Mail, Paperclip } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export type AssociationEntity = "contact" | "lead" | "company" | "deal";
