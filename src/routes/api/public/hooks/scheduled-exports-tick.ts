@@ -2,11 +2,14 @@
 // de exportação de relatórios vencidos.
 import { createFileRoute } from "@tanstack/react-router";
 import { tickScheduledExports } from "@/lib/scheduled-exports/engine.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/scheduled-exports-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const result = await tickScheduledExports(25);
           return Response.json({ ok: true, ...result });
@@ -18,7 +21,7 @@ export const Route = createFileRoute("/api/public/hooks/scheduled-exports-tick")
           );
         }
       },
-      GET: async () => Response.json({ ok: true, info: "POST to tick" }),
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });

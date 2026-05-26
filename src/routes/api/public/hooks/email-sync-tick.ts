@@ -1,21 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { runAllAccountsSync } from "@/lib/gmail-sync.functions";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/email-sync-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Allow either an apikey header (Supabase anon) or service role header.
-        const apikey = request.headers.get("apikey");
-        const auth = request.headers.get("authorization") ?? "";
-        const expectedAnon = process.env.SUPABASE_PUBLISHABLE_KEY;
-        const expectedService = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const bearer = auth.replace(/^Bearer\s+/i, "");
-        const ok =
-          (!!expectedAnon && (apikey === expectedAnon || bearer === expectedAnon)) ||
-          (!!expectedService && (apikey === expectedService || bearer === expectedService));
-        if (!ok) return new Response("Unauthorized", { status: 401 });
-
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const summary = await runAllAccountsSync();
           return Response.json({ ok: true, ...summary });
