@@ -21,12 +21,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import {
   Trash2, UserPlus, Search, ShieldCheck, ShieldAlert, User as UserIcon,
-  Check, Mail, Crown, Pencil,
+  Check, Mail, Crown, Pencil, Clock, Send,
 } from "lucide-react";
 import {
   listTeamMembers, inviteTeamMember, updateTeamMemberRole, updateTeamMember, removeTeamMember,
+  resendTeamInvite,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
+
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
   component: UsersPage,
