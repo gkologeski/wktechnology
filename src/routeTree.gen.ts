@@ -108,6 +108,7 @@ import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
+import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -674,6 +675,12 @@ const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
   path: '/api/public/booking/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminRescheduleCronRoute =
+  ApiPublicAdminRescheduleCronRouteImport.update({
+    id: '/api/public/admin/reschedule-cron',
+    path: '/api/public/admin/reschedule-cron',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSettingsRolesRoleIdRoute =
   AuthenticatedSettingsRolesRoleIdRouteImport.update({
     id: '/$roleId',
@@ -794,6 +801,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -899,6 +907,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -1008,6 +1017,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -1117,6 +1127,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/settings/'
     | '/settings/roles/$roleId'
+    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -1222,6 +1233,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/settings'
     | '/settings/roles/$roleId'
+    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -1330,6 +1342,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/_authenticated/settings/roles/$roleId'
+    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -1373,6 +1386,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
@@ -2096,6 +2110,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/reschedule-cron': {
+      id: '/api/public/admin/reschedule-cron'
+      path: '/api/public/admin/reschedule-cron'
+      fullPath: '/api/public/admin/reschedule-cron'
+      preLoaderRoute: typeof ApiPublicAdminRescheduleCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings/roles/$roleId': {
       id: '/_authenticated/settings/roles/$roleId'
       path: '/$roleId'
@@ -2429,6 +2450,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
