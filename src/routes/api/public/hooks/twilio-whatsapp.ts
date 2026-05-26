@@ -4,6 +4,7 @@
 // (Pode ser testado via sandbox antes de número de produção.)
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { verifyTwilioSignature } from "@/lib/twilio-signature.server";
 
 function strip(s: string | null | undefined) {
   return (s ?? "").replace(/^whatsapp:/, "");
@@ -83,8 +84,13 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
       POST: async ({ request }) => {
         try {
           const text = await request.text();
+          if (!verifyTwilioSignature(request, text)) {
+            console.warn("[twilio-whatsapp] invalid signature");
+            return new Response("Forbidden", { status: 403 });
+          }
           const params = new URLSearchParams(text);
           const data = Object.fromEntries(params.entries());
+
 
           const from = strip(data.From); // contato
           const to = strip(data.To); // nosso número Twilio
