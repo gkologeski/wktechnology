@@ -67,6 +67,8 @@ function UsersPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
+  const resendFn = useServerFn(resendTeamInvite);
+
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
   const [rows, setRows] = useState<Row[]>([]);
