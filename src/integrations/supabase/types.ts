@@ -4972,6 +4972,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
     }
     Enums: {
