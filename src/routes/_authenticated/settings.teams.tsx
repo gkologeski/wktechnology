@@ -83,6 +83,40 @@ function UsersPage() {
   // remove dialog
   const [toRemove, setToRemove] = useState<Row | null>(null);
 
+  // edit dialog
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState<TeamRole>("member");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (r: Row) => {
+    setEditing(r);
+    setEditName(r.full_name || "");
+    setEditPhone(r.phone || "");
+    setEditRole(r.role);
+  };
+
+  const canSaveEdit = editName.trim().length >= 2 && editPhone.trim().length >= 8;
+
+  const handleSaveEdit = async () => {
+    if (!editing || !canSaveEdit) return;
+    setSavingEdit(true);
+    try {
+      await updateMemberFn({ data: {
+        member_user_id: editing.user_id,
+        full_name: editName.trim(),
+        phone: editPhone.trim(),
+        role: editRole,
+      } });
+      toast.success("Usuário atualizado");
+      setEditing(null);
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally { setSavingEdit(false); }
+  };
+
   const refresh = async () => {
     setLoading(true);
     try { setRows(await listFn()); } finally { setLoading(false); }
