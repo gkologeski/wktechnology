@@ -2,6 +2,7 @@
 // Configure como StatusCallback (já enviado automaticamente em cada envio).
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { verifyTwilioSignature } from "@/lib/twilio-signature.server";
 
 export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp-status")({
   server: {
@@ -10,6 +11,10 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp-status")
       POST: async ({ request }) => {
         try {
           const text = await request.text();
+          if (!verifyTwilioSignature(request, text)) {
+            console.warn("[twilio-status] invalid signature");
+            return new Response("Forbidden", { status: 403 });
+          }
           const params = new URLSearchParams(text);
           const sid = params.get("MessageSid") ?? params.get("SmsSid");
           const status = params.get("MessageStatus") ?? params.get("SmsStatus");
