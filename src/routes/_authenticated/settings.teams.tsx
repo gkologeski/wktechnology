@@ -473,6 +473,73 @@ function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize nome, telefone {editing?.is_owner ? "" : "e papel "}do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-name">Nome completo <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input id="edit-email" value={editing?.email || ""} disabled />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-phone">Telefone celular <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-phone"
+                type="tel"
+                placeholder="(11) 98765-4321"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+              />
+            </div>
+            {!editing?.is_owner && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-role">Papel</Label>
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as TeamRole)}>
+                  <SelectTrigger id="edit-role"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TEAM_ROLE_LABELS) as TeamRole[]).map((k) => {
+                      const Icon = ROLE_ICONS[k];
+                      return (
+                        <SelectItem key={k} value={k}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <span>{TEAM_ROLE_LABELS[k]}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground pt-1">{ROLE_DESCRIPTIONS[editRole]}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit || !canSaveEdit}>
+              {savingEdit ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
   );
 }
