@@ -84,6 +84,7 @@ import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
@@ -535,6 +536,12 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
   id: '/api/public/v1/leads',
   path: '/api/public/v1/leads',
@@ -794,6 +801,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -896,6 +904,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1002,6 +1011,7 @@ export interface FileRoutesById {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1108,6 +1118,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/lovable/email/queue/process'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1210,6 +1221,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/lovable/email/queue/process'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1315,6 +1327,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/lovable/email/queue/process'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1356,6 +1369,7 @@ export interface RootRouteChildren {
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -1888,6 +1902,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/leads': {
       id: '/api/public/v1/leads'
       path: '/api/public/v1/leads'
@@ -2377,6 +2398,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
@@ -2384,13 +2406,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
