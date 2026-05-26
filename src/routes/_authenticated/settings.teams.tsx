@@ -424,7 +424,19 @@ function UsersPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
+                      {r.pending && !r.is_owner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResend(r.user_id)}
+                          aria-label="Reenviar convite"
+                          title="Reenviar convite"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
                       {!r.is_owner && (
+
                         <Button
                           variant="ghost"
                           size="icon"
