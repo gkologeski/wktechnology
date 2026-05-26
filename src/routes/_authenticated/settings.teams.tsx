@@ -21,10 +21,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import {
   Trash2, UserPlus, Search, ShieldCheck, ShieldAlert, User as UserIcon,
-  Check, Mail, Crown,
+  Check, Mail, Crown, Pencil,
 } from "lucide-react";
 import {
-  listTeamMembers, inviteTeamMember, updateTeamMemberRole, removeTeamMember,
+  listTeamMembers, inviteTeamMember, updateTeamMemberRole, updateTeamMember, removeTeamMember,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
 
@@ -63,6 +63,7 @@ function UsersPage() {
   const listFn = useServerFn(listTeamMembers);
   const inviteFn = useServerFn(inviteTeamMember);
   const updateFn = useServerFn(updateTeamMemberRole);
+  const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
@@ -81,6 +82,40 @@ function UsersPage() {
 
   // remove dialog
   const [toRemove, setToRemove] = useState<Row | null>(null);
+
+  // edit dialog
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState<TeamRole>("member");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (r: Row) => {
+    setEditing(r);
+    setEditName(r.full_name || "");
+    setEditPhone(r.phone || "");
+    setEditRole(r.role);
+  };
+
+  const canSaveEdit = editName.trim().length >= 2 && editPhone.trim().length >= 8;
+
+  const handleSaveEdit = async () => {
+    if (!editing || !canSaveEdit) return;
+    setSavingEdit(true);
+    try {
+      await updateMemberFn({ data: {
+        member_user_id: editing.user_id,
+        full_name: editName.trim(),
+        phone: editPhone.trim(),
+        role: editRole,
+      } });
+      toast.success("Usuário atualizado");
+      setEditing(null);
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally { setSavingEdit(false); }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -356,16 +391,26 @@ function UsersPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!r.is_owner && (
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setToRemove(r)}
-                        aria-label="Remover usuário"
+                        onClick={() => openEdit(r)}
+                        aria-label="Editar usuário"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
+                      {!r.is_owner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setToRemove(r)}
+                          aria-label="Remover usuário"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -428,6 +473,71 @@ function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize nome, telefone {editing?.is_owner ? "" : "e papel "}do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-name">Nome completo <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input id="edit-email" value={editing?.email || ""} disabled />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-phone">Telefone celular <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-phone"
+                type="tel"
+                placeholder="(11) 98765-4321"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+              />
+            </div>
+            {!editing?.is_owner && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-role">Papel</Label>
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as TeamRole)}>
+                  <SelectTrigger id="edit-role"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TEAM_ROLE_LABELS) as TeamRole[]).map((k) => {
+                      const Icon = ROLE_ICONS[k];
+                      return (
+                        <SelectItem key={k} value={k}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <span>{TEAM_ROLE_LABELS[k]}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground pt-1">{ROLE_DESCRIPTIONS[editRole]}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit || !canSaveEdit}>
+              {savingEdit ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

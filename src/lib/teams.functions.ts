@@ -29,9 +29,10 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, phone")
       .in("id", ids);
     const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
+    const phoneById = new Map((profiles ?? []).map((p) => [p.id as string, ((p as { phone?: string | null }).phone ?? "") as string]));
 
     // Buscar emails via admin (auth.users)
     const emailById = new Map<string, string>();
@@ -48,6 +49,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       id: "owner",
       user_id: userId,
       full_name: nameById.get(userId) || "Você",
+      phone: phoneById.get(userId) ?? "",
       email: emailById.get(userId) ?? "",
       role: "admin" as TeamRole,
       is_owner: true,
@@ -58,6 +60,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       id: m.id as string,
       user_id: m.member_user_id as string,
       full_name: nameById.get(m.member_user_id as string) || "",
+      phone: phoneById.get(m.member_user_id as string) ?? "",
       email: emailById.get(m.member_user_id as string) ?? "",
       role: m.role as TeamRole,
       is_owner: false,
@@ -150,6 +153,51 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
     await supabase.from("user_roles").insert({
       workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
     } as never);
+    return { ok: true };
+  });
+
+/** Atualiza nome, telefone e papel de um membro do workspace. */
+export const updateTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      member_user_id: z.string().uuid(),
+      full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
+      phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
+      role: TeamRole,
+    }).parse(i)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const isOwner = data.member_user_id === userId;
+
+    const { error: pErr } = await supabaseAdmin.from("profiles").upsert({
+      id: data.member_user_id,
+      full_name: data.full_name,
+      phone: data.phone,
+    } as never, { onConflict: "id" });
+    if (pErr) throw new Error(pErr.message);
+
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(data.member_user_id, {
+        user_metadata: { full_name: data.full_name, phone: data.phone },
+      });
+    } catch { /* ignore */ }
+
+    if (!isOwner) {
+      const { error } = await supabase
+        .from("team_members")
+        .update({ role: data.role } as never)
+        .eq("workspace_owner_id", userId)
+        .eq("member_user_id", data.member_user_id);
+      if (error) throw new Error(error.message);
+
+      await supabase.from("user_roles").delete()
+        .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
+      await supabase.from("user_roles").insert({
+        workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
+      } as never);
+    }
     return { ok: true };
   });
 
