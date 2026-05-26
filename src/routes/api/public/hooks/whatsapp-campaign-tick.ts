@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
