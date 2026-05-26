@@ -29,9 +29,10 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, phone")
       .in("id", ids);
     const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
+    const phoneById = new Map((profiles ?? []).map((p) => [p.id as string, ((p as { phone?: string | null }).phone ?? "") as string]));
 
     // Buscar emails via admin (auth.users)
     const emailById = new Map<string, string>();
@@ -48,6 +49,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       id: "owner",
       user_id: userId,
       full_name: nameById.get(userId) || "Você",
+      phone: phoneById.get(userId) ?? "",
       email: emailById.get(userId) ?? "",
       role: "admin" as TeamRole,
       is_owner: true,
@@ -58,6 +60,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       id: m.id as string,
       user_id: m.member_user_id as string,
       full_name: nameById.get(m.member_user_id as string) || "",
+      phone: phoneById.get(m.member_user_id as string) ?? "",
       email: emailById.get(m.member_user_id as string) ?? "",
       role: m.role as TeamRole,
       is_owner: false,
