@@ -1,0 +1,1 @@
+ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS invited_at timestamptz NOT NULL DEFAULT now();

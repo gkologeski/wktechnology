@@ -1,89 +1,70 @@
-# Perfis de acesso configuráveis
 
-Transformar `/settings/roles` em um gerenciador completo de perfis de acesso, no estilo do HubSpot dos anexos: o admin cria perfis personalizados, escolhe permissões por objeto (Contatos, Empresas, Leads, Negócios, Tickets, Tarefas, etc.) com escopo (Nenhum / Próprios / Equipe / Todos), e ferramentas extras (importar, exportar, exclusão em massa, comunicar, etc.). Cada membro do workspace passa a ter um perfil atribuído.
+## Problema
 
-## O que muda
+Hoje `inviteTeamMember` chama `supabaseAdmin.auth.admin.inviteUserByEmail(email, { data: {...} })` **sem `redirectTo`**. O Supabase então usa o `SITE_URL` padrão (raiz do app). O link no email vira algo como:
 
-- Hoje só existem 3 papéis fixos (admin / gestor / membro).
-- Passa a existir uma tabela de **perfis de acesso** por workspace, totalmente editáveis.
-- Cada perfil guarda um **conjunto de permissões granular** (objeto + ação + escopo + flags de ferramentas).
-- Os perfis padrão (Admin, Gestor, Membro) ficam pré-criados e marcados como "sistema" (não podem ser excluídos, podem ser duplicados).
-
-## Telas
-
-### `/settings/roles` (lista de perfis)
-- Tabela com: nome do perfil, descrição, nº de usuários, badge "Sistema" / "Personalizado", ações (editar, duplicar, excluir).
-- Botão **"Criar perfil"** (em branco) e **"Duplicar"** (clona um existente).
-- Atribuição de perfil por usuário também aparece aqui (com mesma UX atual de Select por linha do membro).
-
-### `/settings/roles/$roleId` (editor do perfil)
-Layout em duas colunas, inspirado no HubSpot:
-
-```text
-+--------------------------------------------------------------+
-| Editando perfil: [Nome editável]              [Cancelar][Salvar]
-+----------------+---------------------------------------------+
-| Categorias     |  Permissões                                 |
-| - CRM          |  Contatos                                   |
-|   - Objetos    |    Visualizar:  [Todos ▼]                   |
-|   - Ferramentas|    Editar:      [Próprios ▼]                |
-| - Marketing    |    Criar:       [LIGADO]                    |
-| - Vendas       |    Excluir:     [Equipe ▼]                  |
-| - Atendimento  |  Empresas                                   |
-|                |    ...                                      |
-+----------------+---------------------------------------------+
+```
+https://<site>/#access_token=...&refresh_token=...&type=invite
 ```
 
-- **Sidebar** com as categorias (CRM › Objetos / Ferramentas, Marketing, Vendas, Atendimento, Relatórios, Conta).
-- **Conteúdo** mostra cada objeto/ferramenta com seus controles.
-- Escopo padrão por ação: `nenhum | proprios | equipe | todos`.
-- Ferramentas (booleanos): `comunicar`, `importar`, `exportar`, `exclusao_em_massa`, `gerenciar_workflows`, `gerenciar_propriedades`, `gerenciar_pipelines`, `acessar_logs`, `gerenciar_integracoes`, `gerenciar_billing`, `gerenciar_usuarios`.
+Como a raiz redireciona para `/login` (ou `/dashboard` se já logado), o convidado:
+- vê a tela de **login** (sem saber qual senha usar — ele nunca cadastrou uma),
+- ou, se o navegador consumir o hash silenciosamente, fica logado sem nunca definir senha/nome.
 
-## Objetos cobertos
-Contatos, Empresas, Leads, Negócios, Tickets, Tarefas, Notas, Chamadas, Reuniões, E-mails, Atividades, Produtos, Cotações.
+Não existe uma rota dedicada para "aceitar convite e definir senha". É exatamente o mesmo padrão do `/reset-password`, mas para `type=invite`.
 
-## Banco de dados
+## Solução
 
-Três tabelas novas (por workspace, com RLS):
+### 1. Nova rota pública `/accept-invite` (`src/routes/accept-invite.tsx`)
 
-- `access_profiles` — perfis configuráveis
-  - nome, descrição, is_system (bool), is_default (bool)
-- `access_profile_permissions` — permissões por objeto
-  - perfil_id, object_key, view_scope, edit_scope, create_enabled, delete_scope
-- `access_profile_tools` — flags de ferramentas
-  - perfil_id, tool_key, enabled
+- Detecta `type=invite` (ou `type=recovery` se quisermos compatível) no `window.location.hash` **e** escuta `onAuthStateChange` para o evento `SIGNED_IN`/`USER_UPDATED` que o Supabase dispara quando consome o hash.
+- Mostra um card "Bem-vindo(a) ao workspace" com:
+  - Nome completo (pré-preenchido com `user.user_metadata.full_name` do convite, editável)
+  - Telefone (pré-preenchido com `user_metadata.phone`, editável)
+  - Nova senha + confirmação (mínimo 6)
+- Ao submeter:
+  1. `supabase.auth.updateUser({ password, data: { full_name, phone } })`
+  2. `upsert` em `profiles` com nome e telefone (via uma nova server fn `completeInviteProfile` para garantir RLS-safe).
+  3. Redireciona para `/dashboard`.
+- Se não houver sessão de convite válida (hash ausente / expirado), mostra mensagem "Convite inválido ou expirado" com link para `/login`.
+- É rota **pública** (não fica sob `_authenticated`), igual a `/reset-password`.
 
-A tabela `team_members` ganha `access_profile_id` (referência ao perfil).
-A coluna `role` antiga continua existindo para compatibilidade (mapeada automaticamente a partir do perfil escolhido: admin/manager/member).
+### 2. Passar `redirectTo` no convite
 
-Seed automático na primeira abertura do workspace: cria os 3 perfis de sistema (Admin, Gestor, Membro) com as permissões equivalentes ao comportamento atual.
+Em `src/lib/teams.functions.ts`, ajustar:
 
-## Server functions novas (`src/lib/access-profiles.functions.ts`)
-- `listAccessProfiles()` — lista perfis + contagem de usuários.
-- `getAccessProfile(id)` — perfil + todas as permissões e ferramentas.
-- `createAccessProfile({ name, description, copyFrom? })` — cria perfil (opcionalmente duplicando outro).
-- `updateAccessProfile({ id, name, description, permissions, tools })` — salva tudo num único call.
-- `deleteAccessProfile(id)` — bloqueia se for sistema ou se houver usuários atribuídos.
-- `assignProfileToUser({ user_id, profile_id })` — substitui o Select de papel atual.
+```ts
+supabaseAdmin.auth.admin.inviteUserByEmail(target, {
+  data: { full_name, phone },
+  redirectTo: `${process.env.SITE_URL ?? "..."}/accept-invite`,
+})
+```
 
-## Aplicação das permissões
-Hook `useAccessPermissions()` no frontend (consulta o perfil do usuário logado uma vez por sessão) que expõe:
-- `can(object, action, recordOwnerId?)` → boolean, considerando escopo.
-- `tool(toolKey)` → boolean.
+Como `process.env.SITE_URL` não é confiável no Worker, vamos enviar a origem a partir do cliente: adicionar um campo opcional `redirect_origin` no input do server fn (preenchido com `window.location.origin` no momento do convite). O handler monta `redirectTo = redirect_origin + "/accept-invite"`.
 
-Componentes existentes que escondem botões por papel passam a usar esse hook (botão Excluir, Importar, etc.). Esta primeira iteração foca em **definir e gravar** as permissões; a aplicação em todas as telas é incremental — começamos pelos pontos óbvios (botões de excluir, exportar, importar, configurações).
+### 3. Reenvio e estado "pendente"
 
-## Detalhes técnicos
+- Marcar um membro como **pendente** quando ainda não confirmou o email. A coluna `team_members` ainda não tem isso, então adicionamos `invited_at timestamptz` e usamos `auth.users.email_confirmed_at` (lido via `supabaseAdmin.auth.admin.getUserById`) para derivar `pending: boolean` no `listTeamMembers`.
+- Na tabela em `/settings/teams`, exibir badge **"Pendente"** ao lado do nome e um botão **"Reenviar convite"** que chama uma nova server fn `resendTeamInvite` (re-executa `inviteUserByEmail` com o mesmo `redirectTo`).
+- Migration mínima: `ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS invited_at timestamptz DEFAULT now();` (sem mudanças de RLS).
 
-- Migration única cria as 3 tabelas + RLS (apenas admin do workspace lê/escreve perfis; membros leem o próprio perfil).
-- Trigger de seed roda no primeiro acesso de um workspace que ainda não tem perfis.
-- `assignProfileToUser` continua espelhando `user_roles.role` para manter políticas SQL existentes funcionando (admin/manager/member derivado).
-- Página atual `/settings/roles` é totalmente reescrita.
-- Rota nova `/settings/roles/$roleId` para o editor.
+### 4. Tratamento de usuário já existente
 
-## Fora de escopo desta entrega
-- Aplicar a checagem `can()` em **todas** as telas/endpoints existentes (vai sendo feito conforme cada tela for tocada).
-- Permissões por propriedade (field-level) — fica para uma próxima.
-- Permissões de relatórios/dashboards individuais — fica para uma próxima.
+`inviteUserByEmail` falha com "User already registered" se o email já tem conta. Hoje o código só cai nesse caminho quando NÃO encontra o usuário via `listUsers`. Vamos manter a busca, mas: se o usuário existe e **ainda não confirmou** (`email_confirmed_at == null`), reenviar invite; se já confirmou, apenas adicionar em `team_members` (fluxo atual).
 
-Confirma que posso seguir com essa abordagem?
+### 5. UX no email
+
+O template padrão do Supabase para "Invite user" já existe e funciona com `redirectTo`. Nenhuma mudança de template é necessária nesta entrega — apenas garantir que o link aponta para `/accept-invite`. Customização visual do email fica fora do escopo.
+
+## Arquivos afetados
+
+- **Novo**: `src/routes/accept-invite.tsx`
+- **Editado**: `src/lib/teams.functions.ts` (passar `redirectTo`, novo `resendTeamInvite`, expor `pending` no `listTeamMembers`, nova `completeInviteProfile`)
+- **Editado**: `src/routes/_authenticated/settings.teams.tsx` (passar `redirect_origin` no invite, badge "Pendente", botão "Reenviar convite")
+- **Migration**: adicionar `team_members.invited_at`
+
+## Fora de escopo
+
+- Customização visual do email de convite (template Lovable/Supabase).
+- Expiração custom do link (mantém o padrão de 24h do Supabase).
+- Permitir convidar múltiplos usuários de uma vez.
