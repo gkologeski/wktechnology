@@ -2,8 +2,11 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, User as UserIcon,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -191,10 +194,27 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => signOut()} tooltip="Sair">
-              <LogOut className="h-4 w-4" />
-              <span className="truncate">{user?.email ?? "Sair"}</span>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton tooltip={user?.email ?? "Conta"}>
+                  <UserIcon className="h-4 w-4" />
+                  <span className="truncate">{user?.email ?? "Conta"}</span>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
