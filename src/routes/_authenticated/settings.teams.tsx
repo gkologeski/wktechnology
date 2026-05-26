@@ -153,6 +153,7 @@ function UsersPage() {
         full_name: fullName.trim(),
         phone: phone.trim(),
         role,
+        redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
       } });
       toast.success("Convite enviado", {
         description: `${email.trim()} receberá um e-mail para acessar o workspace.`,
@@ -167,6 +168,19 @@ function UsersPage() {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
     } finally { setInviting(false); }
   };
+
+  const handleResend = async (user_id: string) => {
+    try {
+      await resendFn({ data: {
+        member_user_id: user_id,
+        redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
+      } });
+      toast.success("Convite reenviado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao reenviar");
+    }
+  };
+
 
 
   const handleRole = async (user_id: string, r: TeamRole) => {
