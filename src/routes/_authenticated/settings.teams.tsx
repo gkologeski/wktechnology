@@ -63,6 +63,7 @@ function UsersPage() {
   const listFn = useServerFn(listTeamMembers);
   const inviteFn = useServerFn(inviteTeamMember);
   const updateFn = useServerFn(updateTeamMemberRole);
+  const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
