@@ -4769,7 +4769,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      workspace_branding_public: {
+        Row: {
+          accent_color: string | null
+          brand_name: string | null
+          custom_domain: string | null
+          favicon_url: string | null
+          footer_text: string | null
+          logo_url: string | null
+          primary_color: string | null
+          support_email: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          brand_name?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          support_email?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          brand_name?: string | null
+          custom_domain?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          support_email?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _add_billing_interval: {
