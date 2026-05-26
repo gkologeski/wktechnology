@@ -227,7 +227,9 @@ async function processCampaign(camp: Campaign) {
 export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         const nowIso = new Date().toISOString();
         const { data: camps, error } = await supabaseAdmin
           .from("whatsapp_campaigns")
