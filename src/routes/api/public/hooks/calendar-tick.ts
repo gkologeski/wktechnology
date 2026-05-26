@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { tickAllCalendars } from "@/lib/calendar/engine.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/calendar-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const res = await tickAllCalendars();
           return Response.json({ ok: true, ...res });
@@ -13,7 +16,7 @@ export const Route = createFileRoute("/api/public/hooks/calendar-tick")({
           return Response.json({ ok: false, error: msg }, { status: 500 });
         }
       },
-      GET: async () => Response.json({ ok: true, hint: "POST to run" }),
+      GET: async () => Response.json({ ok: true, hint: "POST with Bearer CRON_SECRET to run" }),
     },
   },
 });

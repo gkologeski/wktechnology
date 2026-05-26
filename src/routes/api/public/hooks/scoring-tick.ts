@@ -1,13 +1,14 @@
-// Endpoint chamado pelo pg_cron para aplicar regras de Lead Scoring
-// contra a fila workflow_events.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickScoring } from "@/lib/scoring/engine.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/scoring-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const result = await tickScoring(supabaseAdmin, 200);
           return Response.json({ ok: true, ...result });
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/scoring-tick")({
           );
         }
       },
-      GET: async () => Response.json({ ok: true, info: "POST to tick" }),
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });

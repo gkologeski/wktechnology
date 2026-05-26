@@ -1,11 +1,14 @@
 // Endpoint chamado pelo pg_cron a cada minuto para processar broadcasts pendentes.
 import { createFileRoute } from "@tanstack/react-router";
 import { tickEmailBroadcasts } from "@/lib/email-broadcast/engine.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/email-broadcast-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const r = await tickEmailBroadcasts(5);
           return Response.json({ ok: true, ...r });
@@ -17,7 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/email-broadcast-tick")({
           );
         }
       },
-      GET: async () => Response.json({ ok: true, info: "POST to tick" }),
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });

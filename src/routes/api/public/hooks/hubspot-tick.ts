@@ -1,17 +1,15 @@
-// Cron-callable endpoint: avança UM step de qualquer job HubSpot que esteja
-// 'queued' ou 'running'. Chamado pelo pg_cron a cada minuto e garante que
-// jobs progridam mesmo quando ninguém está olhando o wizard.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickOnce } from "@/lib/integrations/hubspot-tick.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
-          // Executa somente 1 tick por chamada. Cada tick já tem checkpoint,
-          // então encadear vários aqui pode estourar o limite do servidor.
           const results = [await tickOnce(supabaseAdmin)];
           return Response.json({ ok: true, results });
         } catch (e) {
@@ -22,7 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
           );
         }
       },
-      GET: async () => Response.json({ ok: true, info: "POST to tick" }),
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });
