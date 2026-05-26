@@ -391,16 +391,26 @@ function UsersPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!r.is_owner && (
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setToRemove(r)}
-                        aria-label="Remover usuário"
+                        onClick={() => openEdit(r)}
+                        aria-label="Editar usuário"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
+                      {!r.is_owner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setToRemove(r)}
+                          aria-label="Remover usuário"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
