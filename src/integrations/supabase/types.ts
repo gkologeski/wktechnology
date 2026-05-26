@@ -5035,7 +5035,7 @@ export type Database = {
         | "canceled"
         | "past_due"
         | "completed"
-      team_role: "owner" | "admin" | "member"
+      team_role: "owner" | "admin" | "member" | "manager"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "new" | "open" | "waiting" | "resolved" | "closed"
     }
@@ -5234,7 +5234,7 @@ export const Constants = {
         "past_due",
         "completed",
       ],
-      team_role: ["owner", "admin", "member"],
+      team_role: ["owner", "admin", "member", "manager"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["new", "open", "waiting", "resolved", "closed"],
     },
