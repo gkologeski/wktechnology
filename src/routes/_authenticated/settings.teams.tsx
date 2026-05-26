@@ -541,5 +541,3 @@ function UsersPage() {
     </div>
   );
 }
-  );
-}
