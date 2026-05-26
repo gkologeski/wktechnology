@@ -4,10 +4,13 @@ import { getRequest } from "@tanstack/react-start/server";
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
-  const url = new URL(request.url);
-  if (url.pathname.startsWith("/lovable/")) {
-    return next();
+const errorMiddleware = createMiddleware().server(async ({ next }) => {
+  const req = getRequest();
+  if (req) {
+    const url = new URL(req.url);
+    if (url.pathname.startsWith("/lovable/")) {
+      return next();
+    }
   }
   try {
     return await next();
