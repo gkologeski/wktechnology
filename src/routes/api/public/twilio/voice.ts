@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { verifyTwilioSignature } from "@/lib/twilio-signature.server";
 
 /**
  * TwiML endpoint hit by Twilio when a WebRTC client initiates an outbound call
@@ -14,7 +15,12 @@ export const Route = createFileRoute("/api/public/twilio/voice")({
           return new Response("Twilio caller ID not configured", { status: 500 });
         }
 
-        const form = await request.formData();
+        const rawBody = await request.text();
+        if (!verifyTwilioSignature(request, rawBody)) {
+          console.warn("[twilio-voice] invalid signature");
+          return new Response("Forbidden", { status: 403 });
+        }
+        const form = new URLSearchParams(rawBody);
         const to = (form.get("To") ?? "").toString().trim();
 
         // Basic E.164 validation to keep this endpoint from being weaponized.
