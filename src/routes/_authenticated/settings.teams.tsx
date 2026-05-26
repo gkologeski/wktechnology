@@ -376,6 +376,12 @@ function UsersPage() {
                               <Crown className="h-3 w-3" />owner
                             </Badge>
                           )}
+                          {r.pending && !r.is_owner && (
+                            <Badge variant="outline" className="gap-1 text-amber-600 border-amber-300">
+                              <Clock className="h-3 w-3" />Pendente
+                            </Badge>
+                          )}
+
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{r.email || "—"}</p>
                       </div>
