@@ -21,7 +21,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const { data: members } = await supabase
       .from("team_members")
-      .select("id, member_user_id, role, created_at")
+      .select("id, member_user_id, role, created_at, invited_at")
       .eq("workspace_owner_id", userId)
       .order("created_at", { ascending: true });
 
@@ -36,13 +36,15 @@ export const listTeamMembers = createServerFn({ method: "GET" })
     const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
     const phoneById = new Map((profiles ?? []).map((p) => [p.id as string, ((p as { phone?: string | null }).phone ?? "") as string]));
 
-    // Buscar emails via admin (auth.users)
+    // Buscar email + status de confirmação via admin (auth.users)
     const emailById = new Map<string, string>();
+    const confirmedById = new Map<string, boolean>();
     await Promise.all(
       ids.map(async (id) => {
         try {
           const { data } = await supabaseAdmin.auth.admin.getUserById(id);
           if (data.user?.email) emailById.set(id, data.user.email);
+          confirmedById.set(id, Boolean(data.user?.email_confirmed_at || data.user?.last_sign_in_at));
         } catch { /* ignore */ }
       })
     );
@@ -55,6 +57,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       email: emailById.get(userId) ?? "",
       role: "admin" as TeamRole,
       is_owner: true,
+      pending: false,
       created_at: null as string | null,
     };
 
@@ -66,11 +69,13 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       email: emailById.get(m.member_user_id as string) ?? "",
       role: m.role as TeamRole,
       is_owner: false,
+      pending: !confirmedById.get(m.member_user_id as string),
       created_at: m.created_at as string,
     }));
 
     return [ownerRow, ...memberRows];
   });
+
 
 /** Convida (adiciona) um membro pelo email. Usuário precisa já existir no sistema. */
 export const inviteTeamMember = createServerFn({ method: "POST" })
