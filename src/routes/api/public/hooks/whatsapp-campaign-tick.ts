@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
@@ -227,7 +228,9 @@ async function processCampaign(camp: Campaign) {
 export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         const nowIso = new Date().toISOString();
         const { data: camps, error } = await supabaseAdmin
           .from("whatsapp_campaigns")

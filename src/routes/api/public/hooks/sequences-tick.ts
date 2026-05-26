@@ -1,13 +1,14 @@
-// Endpoint chamado pelo pg_cron a cada minuto para processar enrollments
-// de sequências cujo next_run_at já passou.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickSequences } from "@/lib/sequences/engine.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/sequences-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
         try {
           const result = await tickSequences(supabaseAdmin, 100);
           return Response.json({ ok: true, ...result });
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/sequences-tick")({
           );
         }
       },
-      GET: async () => Response.json({ ok: true, info: "POST to tick" }),
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });
