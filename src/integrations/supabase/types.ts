@@ -4269,6 +4269,7 @@ export type Database = {
           access_profile_id: string | null
           created_at: string
           id: string
+          invited_at: string
           member_user_id: string
           role: Database["public"]["Enums"]["team_role"]
           workspace_owner_id: string
@@ -4277,6 +4278,7 @@ export type Database = {
           access_profile_id?: string | null
           created_at?: string
           id?: string
+          invited_at?: string
           member_user_id: string
           role?: Database["public"]["Enums"]["team_role"]
           workspace_owner_id: string
@@ -4285,6 +4287,7 @@ export type Database = {
           access_profile_id?: string | null
           created_at?: string
           id?: string
+          invited_at?: string
           member_user_id?: string
           role?: Database["public"]["Enums"]["team_role"]
           workspace_owner_id?: string

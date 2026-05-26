@@ -21,12 +21,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import {
   Trash2, UserPlus, Search, ShieldCheck, ShieldAlert, User as UserIcon,
-  Check, Mail, Crown, Pencil,
+  Check, Mail, Crown, Pencil, Clock, Send,
 } from "lucide-react";
 import {
   listTeamMembers, inviteTeamMember, updateTeamMemberRole, updateTeamMember, removeTeamMember,
+  resendTeamInvite,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
+
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
   component: UsersPage,
@@ -65,6 +67,8 @@ function UsersPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
+  const resendFn = useServerFn(resendTeamInvite);
+
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
   const [rows, setRows] = useState<Row[]>([]);
@@ -149,6 +153,7 @@ function UsersPage() {
         full_name: fullName.trim(),
         phone: phone.trim(),
         role,
+        redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
       } });
       toast.success("Convite enviado", {
         description: `${email.trim()} receberá um e-mail para acessar o workspace.`,
@@ -163,6 +168,19 @@ function UsersPage() {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
     } finally { setInviting(false); }
   };
+
+  const handleResend = async (user_id: string) => {
+    try {
+      await resendFn({ data: {
+        member_user_id: user_id,
+        redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
+      } });
+      toast.success("Convite reenviado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao reenviar");
+    }
+  };
+
 
 
   const handleRole = async (user_id: string, r: TeamRole) => {
@@ -358,6 +376,12 @@ function UsersPage() {
                               <Crown className="h-3 w-3" />owner
                             </Badge>
                           )}
+                          {r.pending && !r.is_owner && (
+                            <Badge variant="outline" className="gap-1 text-amber-600 border-amber-300">
+                              <Clock className="h-3 w-3" />Pendente
+                            </Badge>
+                          )}
+
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{r.email || "—"}</p>
                       </div>
@@ -400,7 +424,19 @@ function UsersPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
+                      {r.pending && !r.is_owner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResend(r.user_id)}
+                          aria-label="Reenviar convite"
+                          title="Reenviar convite"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
                       {!r.is_owner && (
+
                         <Button
                           variant="ghost"
                           size="icon"

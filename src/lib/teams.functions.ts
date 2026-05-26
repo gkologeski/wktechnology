@@ -21,7 +21,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const { data: members } = await supabase
       .from("team_members")
-      .select("id, member_user_id, role, created_at")
+      .select("id, member_user_id, role, created_at, invited_at")
       .eq("workspace_owner_id", userId)
       .order("created_at", { ascending: true });
 
@@ -36,13 +36,15 @@ export const listTeamMembers = createServerFn({ method: "GET" })
     const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
     const phoneById = new Map((profiles ?? []).map((p) => [p.id as string, ((p as { phone?: string | null }).phone ?? "") as string]));
 
-    // Buscar emails via admin (auth.users)
+    // Buscar email + status de confirmação via admin (auth.users)
     const emailById = new Map<string, string>();
+    const confirmedById = new Map<string, boolean>();
     await Promise.all(
       ids.map(async (id) => {
         try {
           const { data } = await supabaseAdmin.auth.admin.getUserById(id);
           if (data.user?.email) emailById.set(id, data.user.email);
+          confirmedById.set(id, Boolean(data.user?.email_confirmed_at || data.user?.last_sign_in_at));
         } catch { /* ignore */ }
       })
     );
@@ -55,6 +57,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       email: emailById.get(userId) ?? "",
       role: "admin" as TeamRole,
       is_owner: true,
+      pending: false,
       created_at: null as string | null,
     };
 
@@ -66,11 +69,13 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       email: emailById.get(m.member_user_id as string) ?? "",
       role: m.role as TeamRole,
       is_owner: false,
+      pending: !confirmedById.get(m.member_user_id as string),
       created_at: m.created_at as string,
     }));
 
     return [ownerRow, ...memberRows];
   });
+
 
 /** Convida (adiciona) um membro pelo email. Usuário precisa já existir no sistema. */
 export const inviteTeamMember = createServerFn({ method: "POST" })
@@ -81,27 +86,38 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
       phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
       role: TeamRole,
+      redirect_origin: z.string().trim().url().max(255).optional(),
     }).parse(i)
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const target = data.email.trim().toLowerCase();
+    const redirectTo = data.redirect_origin
+      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
+      : undefined;
 
     // Achar user_id por email via admin
     let foundId: string | null = null;
+    let alreadyConfirmed = false;
     let page = 1;
-    const target = data.email.trim().toLowerCase();
     while (page <= 20) {
       const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
       if (error) throw new Error(error.message);
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === target);
-      if (u) { foundId = u.id; break; }
+      if (u) {
+        foundId = u.id;
+        alreadyConfirmed = Boolean(u.email_confirmed_at || u.last_sign_in_at);
+        break;
+      }
       if (list.users.length < 200) break;
       page++;
     }
-    // Se não existir, dispara convite por email (cria o usuário e envia link de cadastro)
-    if (!foundId) {
+
+    // Se não existir OU existir mas ainda não confirmou, envia (re)convite
+    if (!foundId || !alreadyConfirmed) {
       const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
         data: { full_name: data.full_name, phone: data.phone },
+        redirectTo,
       });
       if (invErr || !invited?.user) {
         throw new Error(invErr?.message ?? "Falha ao enviar convite por email.");
@@ -134,6 +150,64 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
 
     return { ok: true, user_id: foundId };
   });
+
+/** Reenvia o email de convite para um membro pendente. */
+export const resendTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      member_user_id: z.string().uuid(),
+      redirect_origin: z.string().trim().url().max(255).optional(),
+    }).parse(i)
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // garante que o usuário é membro do workspace
+    const { data: tm, error: tmErr } = await supabaseAdmin
+      .from("team_members")
+      .select("id")
+      .eq("workspace_owner_id", userId)
+      .eq("member_user_id", data.member_user_id)
+      .maybeSingle();
+    if (tmErr) throw new Error(tmErr.message);
+    if (!tm) throw new Error("Membro não encontrado neste workspace.");
+
+    const { data: u, error: uErr } = await supabaseAdmin.auth.admin.getUserById(data.member_user_id);
+    if (uErr || !u.user?.email) throw new Error(uErr?.message ?? "Email do usuário não encontrado.");
+
+    const redirectTo = data.redirect_origin
+      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
+      : undefined;
+    const meta = (u.user.user_metadata ?? {}) as { full_name?: string; phone?: string };
+    const { error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(u.user.email, {
+      data: { full_name: meta.full_name, phone: meta.phone },
+      redirectTo,
+    });
+    if (invErr) throw new Error(invErr.message);
+    return { ok: true };
+  });
+
+/** Chamado pela página /accept-invite após o usuário definir senha — grava nome/telefone no profile. */
+export const completeInviteProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      full_name: z.string().trim().min(2).max(120),
+      phone: z.string().trim().min(8).max(32),
+    }).parse(i)
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin.from("profiles").upsert({
+      id: userId,
+      full_name: data.full_name,
+      phone: data.phone,
+    } as never, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 
 export const updateTeamMemberRole = createServerFn({ method: "POST" })
