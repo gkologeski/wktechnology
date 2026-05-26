@@ -21,10 +21,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import {
   Trash2, UserPlus, Search, ShieldCheck, ShieldAlert, User as UserIcon,
-  Check, Mail, Crown,
+  Check, Mail, Crown, Pencil,
 } from "lucide-react";
 import {
-  listTeamMembers, inviteTeamMember, updateTeamMemberRole, removeTeamMember,
+  listTeamMembers, inviteTeamMember, updateTeamMemberRole, updateTeamMember, removeTeamMember,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
 
