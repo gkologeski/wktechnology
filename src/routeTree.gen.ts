@@ -107,6 +107,7 @@ import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
+import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
@@ -667,6 +668,12 @@ const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
   path: '/api/public/booking/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRolesRoleIdRoute =
+  AuthenticatedSettingsRolesRoleIdRouteImport.update({
+    id: '/$roleId',
+    path: '/$roleId',
+    getParentRoute: () => AuthenticatedSettingsRolesRoute,
+  } as any)
 const ApiPublicFormsSlugSubmitRoute =
   ApiPublicFormsSlugSubmitRouteImport.update({
     id: '/submit',
@@ -763,7 +770,7 @@ export interface FileRoutesByFullPath {
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -779,6 +786,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -866,7 +874,7 @@ export interface FileRoutesByTo {
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -882,6 +890,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -973,7 +982,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -989,6 +998,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -1096,6 +1106,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
+    | '/settings/roles/$roleId'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -1199,6 +1210,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations'
     | '/settings'
+    | '/settings/roles/$roleId'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -1305,6 +1317,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
+    | '/_authenticated/settings/roles/$roleId'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -2063,6 +2076,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/roles/$roleId': {
+      id: '/_authenticated/settings/roles/$roleId'
+      path: '/$roleId'
+      fullPath: '/settings/roles/$roleId'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
+      parentRoute: typeof AuthenticatedSettingsRolesRoute
+    }
     '/api/public/forms/$slug/submit': {
       id: '/api/public/forms/$slug/submit'
       path: '/submit'
@@ -2175,6 +2195,21 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedSettingsRolesRouteChildren {
+  AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
+}
+
+const AuthenticatedSettingsRolesRouteChildren: AuthenticatedSettingsRolesRouteChildren =
+  {
+    AuthenticatedSettingsRolesRoleIdRoute:
+      AuthenticatedSettingsRolesRoleIdRoute,
+  }
+
+const AuthenticatedSettingsRolesRouteWithChildren =
+  AuthenticatedSettingsRolesRoute._addFileChildren(
+    AuthenticatedSettingsRolesRouteChildren,
+  )
+
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
@@ -2201,7 +2236,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
-  AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
+  AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRouteWithChildren
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
@@ -2245,7 +2280,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
-  AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
+  AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRouteWithChildren,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
@@ -2406,13 +2441,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
