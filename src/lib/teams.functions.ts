@@ -27,7 +27,9 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const ids = Array.from(new Set([userId, ...(members ?? []).map((m) => m.member_user_id as string)]));
 
-    const { data: profiles } = await supabase
+    // Use admin client: profiles RLS only allows reading own row, but the
+    // workspace owner needs name/phone of every member to render the list.
+    const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, phone")
       .in("id", ids);
