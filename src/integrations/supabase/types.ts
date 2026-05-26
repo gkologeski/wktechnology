@@ -14,6 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_profile_permissions: {
+        Row: {
+          create_enabled: boolean
+          delete_scope: Database["public"]["Enums"]["access_scope"]
+          edit_scope: Database["public"]["Enums"]["access_scope"]
+          id: string
+          object_key: string
+          profile_id: string
+          view_scope: Database["public"]["Enums"]["access_scope"]
+        }
+        Insert: {
+          create_enabled?: boolean
+          delete_scope?: Database["public"]["Enums"]["access_scope"]
+          edit_scope?: Database["public"]["Enums"]["access_scope"]
+          id?: string
+          object_key: string
+          profile_id: string
+          view_scope?: Database["public"]["Enums"]["access_scope"]
+        }
+        Update: {
+          create_enabled?: boolean
+          delete_scope?: Database["public"]["Enums"]["access_scope"]
+          edit_scope?: Database["public"]["Enums"]["access_scope"]
+          id?: string
+          object_key?: string
+          profile_id?: string
+          view_scope?: Database["public"]["Enums"]["access_scope"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_profile_permissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "access_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_profile_tools: {
+        Row: {
+          enabled: boolean
+          id: string
+          profile_id: string
+          tool_key: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          profile_id: string
+          tool_key: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          profile_id?: string
+          tool_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_profile_tools_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "access_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_profiles: {
+        Row: {
+          base_role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+          workspace_owner_id: string
+        }
+        Insert: {
+          base_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          workspace_owner_id: string
+        }
+        Update: {
+          base_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          workspace_owner_id?: string
+        }
+        Relationships: []
+      }
       activities: {
         Row: {
           attachments: Json
@@ -4166,6 +4266,7 @@ export type Database = {
       }
       team_members: {
         Row: {
+          access_profile_id: string | null
           created_at: string
           id: string
           member_user_id: string
@@ -4173,6 +4274,7 @@ export type Database = {
           workspace_owner_id: string
         }
         Insert: {
+          access_profile_id?: string | null
           created_at?: string
           id?: string
           member_user_id: string
@@ -4180,13 +4282,22 @@ export type Database = {
           workspace_owner_id: string
         }
         Update: {
+          access_profile_id?: string | null
           created_at?: string
           id?: string
           member_user_id?: string
           role?: Database["public"]["Enums"]["team_role"]
           workspace_owner_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_members_access_profile_id_fkey"
+            columns: ["access_profile_id"]
+            isOneToOne: false
+            referencedRelation: "access_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
@@ -4858,8 +4969,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
     }
     Enums: {
+      access_scope: "none" | "own" | "team" | "all"
       activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
@@ -5052,6 +5165,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_scope: ["none", "own", "team", "all"],
       activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
