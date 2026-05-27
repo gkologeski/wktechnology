@@ -301,74 +301,64 @@ function LeadsHubspotView() {
     filters.scoreMax < 100 ||
     filters.createdPreset !== "any";
 
-  const convert = async (lead: Lead) => {
+  const convert = (lead: Lead) => {
     if (!user) return;
-    if (!confirm(`Converter "${lead.first_name}" em Contato + Empresa + Negócio?`)) return;
-    let companyId: string | null = null;
-    if (lead.company_name) {
-      const { data: c, error: ce } = await supabase
-        .from("companies")
-        .insert({ owner_id: user.id, name: lead.company_name })
-        .select("id")
-        .single();
-      if (ce) return toast.error(ce.message);
-      companyId = c?.id ?? null;
-    }
-    const { data: contact, error: cte } = await supabase
-      .from("contacts")
-      .insert({
-        owner_id: user.id,
-        first_name: lead.first_name,
-        last_name: lead.last_name,
-        email: lead.email,
-        phone: lead.phone,
-        company_id: companyId,
-      })
-      .select("id")
-      .single();
-    if (cte) return toast.error(cte.message);
-    const { data: deal, error: de } = await supabase
-      .from("deals")
-      .insert({
-        owner_id: user.id,
-        name: `Negócio - ${lead.first_name} ${lead.last_name ?? ""}`.trim(),
-        stage: "qualified",
-        company_id: companyId,
-        primary_contact_id: contact?.id,
-      })
-      .select("id")
-      .single();
-    if (de) return toast.error(de.message);
-    await supabase
-      .from("leads")
-      .update({
-        status: "qualified",
-        converted_at: new Date().toISOString(),
-        converted_contact_id: contact?.id,
-        converted_deal_id: deal?.id,
-      })
-      .eq("id", lead.id);
-    toast.success("Lead convertido!");
-    qc.invalidateQueries();
+    setPendingAction({
+      title: "Converter lead",
+      description: `Será criado um Contato${lead.company_name ? " vinculado à empresa correspondente (reutilizada se já existir)" : ""} e um Negócio em estágio Qualificado para "${lead.first_name ?? ""} ${lead.last_name ?? ""}".`.trim(),
+      confirmLabel: "Converter",
+      run: async () => {
+        const res = await convertLead(lead, user.id);
+        toast.success(res.reusedCompany ? "Convertido (empresa reutilizada)" : "Lead convertido!");
+        qc.invalidateQueries();
+      },
+    });
   };
 
-  const removeOne = async (id: string) => {
-    if (!confirm("Excluir este lead?")) return;
-    const { error } = await supabase.from("leads").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Removido");
-    qc.invalidateQueries({ queryKey: ["leads"] });
+  const removeOne = (id: string) => {
+    setPendingAction({
+      title: "Excluir lead",
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      destructive: true,
+      run: async () => {
+        const { error } = await supabase.from("leads").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+        toast.success("Removido");
+        qc.invalidateQueries({ queryKey: ["leads"] });
+      },
+    });
   };
 
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} lead(s)?`)) return;
-    const { error } = await supabase.from("leads").delete().in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluído(s)`);
-    clearSelection();
-    qc.invalidateQueries({ queryKey: ["leads"] });
+    setPendingAction({
+      title: `Excluir ${ids.length} lead(s)`,
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      destructive: true,
+      run: async () => {
+        const { error } = await supabase.from("leads").delete().in("id", ids);
+        if (error) throw new Error(error.message);
+        toast.success(`${ids.length} excluído(s)`);
+        clearSelection();
+        qc.invalidateQueries({ queryKey: ["leads"] });
+      },
+    });
+  };
+
+  const runPendingAction = async () => {
+    if (!pendingAction) return;
+    setActionBusy(true);
+    try {
+      await pendingAction.run();
+      setPendingAction(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao executar");
+    } finally {
+      setActionBusy(false);
+    }
   };
 
   return (
