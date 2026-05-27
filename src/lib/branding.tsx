@@ -1,4 +1,4 @@
-// White-label / branding por workspace.
+// White-label / branding por workspace ativo.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -21,20 +21,63 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) { setBranding(null); return; }
-    (async () => {
+    let cancelled = false;
+
+    const load = async () => {
+      // Resolve active workspace
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active_workspace_id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      let workspaceId = profile?.active_workspace_id as string | null | undefined;
+      if (!workspaceId) {
+        const { data: member } = await supabase
+          .from("workspace_members")
+          .select("workspace_id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle();
+        workspaceId = member?.workspace_id;
+      }
+      if (!workspaceId || cancelled) return;
+
       const { data } = await supabase
         .from("workspace_branding")
         .select("brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text")
-        .eq("owner_id", user.id)
+        .eq("workspace_id", workspaceId)
         .maybeSingle();
-      if (data) setBranding(data as Branding);
-    })();
+      if (!cancelled && data) setBranding(data as Branding);
+      else if (!cancelled) setBranding(null);
+    };
+
+    load();
+
+    // Re-load when active workspace changes (workspace switcher updates profiles)
+    const channel = supabase
+      .channel(`branding:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        () => load(),
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   useEffect(() => {
-    if (!branding) return;
     if (typeof document === "undefined") return;
     const root = document.documentElement;
+    if (!branding) {
+      root.style.removeProperty("--primary");
+      root.style.removeProperty("--accent");
+      return;
+    }
     if (branding.primary_color) root.style.setProperty("--primary", branding.primary_color);
     if (branding.accent_color) root.style.setProperty("--accent", branding.accent_color);
     if (branding.favicon_url) {
