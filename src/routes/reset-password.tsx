@@ -71,7 +71,7 @@ function ResetPasswordPage() {
             <form onSubmit={sendEmail} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <EmailInput id="email" required value={email} onChange={setEmail} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>Enviar link</Button>
               <div className="text-sm text-muted-foreground text-center">

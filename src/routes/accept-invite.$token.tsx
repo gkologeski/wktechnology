@@ -130,7 +130,7 @@ function AcceptInviteTokenPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-phone">Telefone celular</Label>
-                <Input id="ait-phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <PhoneInput id="ait-phone" required value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-pass">{info.user_exists ? "Defina/atualize sua senha" : "Crie uma senha"}</Label>

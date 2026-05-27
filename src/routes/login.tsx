@@ -57,7 +57,7 @@ function LoginPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <EmailInput id="email" required value={email} onChange={setEmail} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>

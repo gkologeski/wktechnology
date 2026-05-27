@@ -187,7 +187,7 @@ function EmailBroadcastsPage() {
               <div className="border-t pt-3">
                 <Label>Enviar email de teste</Label>
                 <div className="flex gap-2 mt-1">
-                  <Input type="email" placeholder="voce@exemplo.com" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+                  <EmailInput placeholder="voce@exemplo.com" value={testTo} onChange={setTestTo} />
                   <Button type="button" variant="outline" onClick={() => testMut.mutate()} disabled={testMut.isPending}>
                     <Send className="h-4 w-4 mr-2" />Teste
                   </Button>

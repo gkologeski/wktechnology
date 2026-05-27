@@ -132,8 +132,8 @@ function EsignPage() {
                   <div key={i} className="grid grid-cols-[1fr_1fr_70px_auto] gap-2 items-end">
                     <Input placeholder="Nome" value={s.name}
                       onChange={(e) => { const ns = [...draft.signers]; ns[i] = { ...s, name: e.target.value }; setDraft({ ...draft, signers: ns }); }} />
-                    <Input placeholder="email@exemplo.com" type="email" value={s.email}
-                      onChange={(e) => { const ns = [...draft.signers]; ns[i] = { ...s, email: e.target.value }; setDraft({ ...draft, signers: ns }); }} />
+                    <EmailInput placeholder="email@exemplo.com" value={s.email}
+                      onChange={(v) => { const ns = [...draft.signers]; ns[i] = { ...s, email: v }; setDraft({ ...draft, signers: ns }); }} />
                     <Input placeholder="Ord." type="number" min={1} value={s.sign_order}
                       onChange={(e) => { const ns = [...draft.signers]; ns[i] = { ...s, sign_order: Number(e.target.value) || 1 }; setDraft({ ...draft, signers: ns }); }} />
                     <Button size="icon" variant="ghost" onClick={() => setDraft({ ...draft, signers: draft.signers.filter((_, j) => j !== i) })}>
@@ -277,7 +277,7 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                 ))}
                 <div className="grid grid-cols-[1fr_1fr_70px_auto] gap-2 items-end pt-2">
                   <Input placeholder="Nome" value={newSigner.name} onChange={(e) => setNewSigner({ ...newSigner, name: e.target.value })} />
-                  <Input placeholder="Email" type="email" value={newSigner.email} onChange={(e) => setNewSigner({ ...newSigner, email: e.target.value })} />
+                  <EmailInput placeholder="Email" value={newSigner.email} onChange={(v) => setNewSigner({ ...newSigner, email: v })} />
                   <Input placeholder="Ord." type="number" min={1} value={newSigner.sign_order} onChange={(e) => setNewSigner({ ...newSigner, sign_order: Number(e.target.value) || 1 })} />
                   <Button size="sm" onClick={async () => {
                     if (!newSigner.name || !newSigner.email) return;

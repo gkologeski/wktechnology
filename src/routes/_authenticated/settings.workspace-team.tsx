@@ -121,8 +121,8 @@ function WorkspaceTeamPage() {
                 <form onSubmit={submit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="wi-email">Email do convidado</Label>
-                    <Input id="wi-email" type="email" required value={form.email}
-                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+                    <EmailInput id="wi-email" required value={form.email}
+                      onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Papel</Label>

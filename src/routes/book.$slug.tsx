@@ -149,11 +149,11 @@ function PublicBookingPage() {
               </div>
               <div className="space-y-2">
                 <Label>E-mail *</Label>
-                <Input type="email" value={form.invitee_email} onChange={(e) => setForm({ ...form, invitee_email: e.target.value })} required />
+                <EmailInput value={form.invitee_email} onChange={(v) => setForm({ ...form, invitee_email: v })} required />
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
-                <Input value={form.invitee_phone} onChange={(e) => setForm({ ...form, invitee_phone: e.target.value })} />
+                <PhoneInput value={form.invitee_phone} onChange={(v) => setForm({ ...form, invitee_phone: v })} />
               </div>
               <div className="space-y-2">
                 <Label>Observações</Label>

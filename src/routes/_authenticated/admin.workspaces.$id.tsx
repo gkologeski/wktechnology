@@ -129,13 +129,13 @@ function WorkspaceDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="m-email">Email</Label>
-                  <Input id="m-email" type="email" required value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+                  <EmailInput id="m-email" required value={form.email}
+                    onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="m-phone">Telefone (opcional)</Label>
-                  <Input id="m-phone" value={form.phone}
-                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+                  <PhoneInput id="m-phone" value={form.phone}
+                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
                 </div>
                 <div className="space-y-2">
                   <Label>Papel</Label>

@@ -112,7 +112,7 @@ function AcceptInvitePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-phone">Telefone celular</Label>
-                <Input id="ai-phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <PhoneInput id="ai-phone" required value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass">Nova senha</Label>

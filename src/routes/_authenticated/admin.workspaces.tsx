@@ -113,13 +113,13 @@ function WorkspacesAdminPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ws-admin-email">Email do admin</Label>
-                  <Input id="ws-admin-email" type="email" required value={form.admin_email}
-                    onChange={(e) => setForm((f) => ({ ...f, admin_email: e.target.value }))} />
+                  <EmailInput id="ws-admin-email" required value={form.admin_email}
+                    onChange={(v) => setForm((f) => ({ ...f, admin_email: v }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ws-admin-phone">Telefone (opcional)</Label>
-                  <Input id="ws-admin-phone" value={form.admin_phone}
-                    onChange={(e) => setForm((f) => ({ ...f, admin_phone: e.target.value }))} />
+                  <PhoneInput id="ws-admin-phone" value={form.admin_phone}
+                    onChange={(v) => setForm((f) => ({ ...f, admin_phone: v }))} />
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
