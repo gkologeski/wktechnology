@@ -2935,6 +2935,24 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       playbook_responses: {
         Row: {
           completed_at: string | null
@@ -4881,6 +4899,121 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: string
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: string
+          token: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: string
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_members: {
+        Row: {
+          invited_by: string | null
+          joined_at: string
+          role: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          created_by: string
+          custom_domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          custom_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          custom_domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       workspace_branding_public: {
@@ -4926,6 +5059,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_user_workspaces: { Args: never; Returns: string[] }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -4942,7 +5076,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_platform_admin: { Args: { _user: string }; Returns: boolean }
       is_workspace_admin: {
+        Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
+      is_workspace_admin_v2: {
+        Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
+      is_workspace_member: {
         Args: { _user: string; _workspace: string }
         Returns: boolean
       }
