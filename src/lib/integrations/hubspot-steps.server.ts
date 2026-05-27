@@ -1381,6 +1381,85 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         });
       }
 
+      const dealProps = await loadHsProperties("deals");
+      const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
+
+      // Delta mode: target_ids pre-injetados (reconciliação). Pula pagination e faz batchRead direto.
+      if (Array.isArray(resume.target_ids) && resume.discovery_complete) {
+        const targetIds = resume.target_ids;
+        let idx = (resume.read_index as number) ?? 0;
+        const CHUNK = 100;
+        while (idx < targetIds.length) {
+          if (isExpired()) { partial = true; break; }
+          const chunkIds = targetIds.slice(idx, idx + CHUNK);
+          const recs = await batchRead("deals", chunkIds, dealPropsList);
+          const [dealCompanies, dealContacts] = await Promise.all([
+            getAssocMany("deals", chunkIds, "companies", 20),
+            getAssocMany("deals", chunkIds, "contacts", 20),
+          ]);
+          const parentCompanyHsIds = Array.from(
+            new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
+          );
+          const companyMap = parentCompanyHsIds.length
+            ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+            : new Map<string, string>();
+
+          const tasks: { hsId: string; payload: Record<string, unknown>; contactHsIds: string[] }[] = [];
+          for (const d of recs) {
+            const p = d.properties;
+            const hsCompanyId = (dealCompanies.get(d.id) ?? [])[0];
+            const localCompanyId = hsCompanyId ? companyMap.get(hsCompanyId) ?? null : null;
+            const stageInfo = p.dealstage ? stageMap[p.dealstage] : undefined;
+            const hsPipelineId = p.pipeline ?? stageInfo?.hsPipelineId ?? null;
+            const localPipelineId = hsPipelineId ? pipelineMap[hsPipelineId] ?? null : null;
+            const legacyStage: "new" | "won" | "lost" = stageInfo?.legacy ?? "new";
+            const mapped = mapDeal(p);
+            tasks.push({
+              hsId: d.id,
+              contactHsIds: dealContacts.get(d.id) ?? [],
+              payload: {
+                owner_id: userId,
+                name: p.dealname ?? "Sem nome",
+                value: p.amount ? Number(p.amount) : 0,
+                currency: "BRL",
+                stage: legacyStage,
+                stage_id: p.dealstage ?? null,
+                pipeline_id: localPipelineId,
+                company_id: localCompanyId,
+                expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+                ...mapped,
+                external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: hsPipelineId } as never,
+                hs_raw: rawOf(d),
+                deleted_at: null,
+              },
+            });
+          }
+
+          const results = await upsertBatchByHsId(supabase, "deals", userId, tasks);
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            const t = tasks[j];
+            if (r.status === "failed") { fail++; continue; }
+            imported.push(t.hsId);
+            ok++;
+            if (r.status === "inserted" && r.localId) {
+              const inserts = t.contactHsIds
+                .map((cid) => contactMap.get(cid))
+                .filter((lc): lc is string => !!lc)
+                .map((lc) => ({ deal_id: r.localId as string, contact_id: lc }));
+              if (inserts.length) {
+                await supabase.from("deal_contacts").insert(inserts);
+              }
+            }
+          }
+
+          idx += chunkIds.length;
+          await persistCursor({ read_index: idx });
+          await bump(ok, fail, targetIds.length);
+        }
+        if (partial) await persistCursor({ read_index: idx });
+      } else {
+
       if (resume.discovered === undefined) {
         const total = await searchTotal("deals");
         await patchItemBefore(supabase, itemId, { discovered: total });
@@ -1390,9 +1469,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         });
       }
 
-      const dealProps = await loadHsProperties("deals");
-      const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
       const propsParam = dealPropsList.join(",");
+
 
       let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
       let page = (resume.page as number | undefined) ?? 1;
