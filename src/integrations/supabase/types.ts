@@ -120,6 +120,7 @@ export type Database = {
           body: string | null
           completed: boolean
           created_at: string
+          deleted_at: string | null
           disposition: string | null
           due_date: string | null
           duration_ms: number | null
@@ -156,6 +157,7 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
           duration_ms?: number | null
@@ -192,6 +194,7 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
           duration_ms?: number | null
@@ -762,6 +765,7 @@ export type Database = {
           country: string | null
           created_at: string
           custom_fields: Json
+          deleted_at: string | null
           description: string | null
           domain: string | null
           external_ids: Json
@@ -800,6 +804,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           description?: string | null
           domain?: string | null
           external_ids?: Json
@@ -838,6 +843,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           description?: string | null
           domain?: string | null
           external_ids?: Json
@@ -937,6 +943,7 @@ export type Database = {
           country: string | null
           created_at: string
           custom_fields: Json
+          deleted_at: string | null
           email: string | null
           external_ids: Json
           first_name: string
@@ -977,6 +984,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           email?: string | null
           external_ids?: Json
           first_name: string
@@ -1017,6 +1025,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           email?: string | null
           external_ids?: Json
           first_name?: string
@@ -1597,6 +1606,7 @@ export type Database = {
           currency: string
           custom_fields: Json
           dealtype: string | null
+          deleted_at: string | null
           description: string | null
           expected_close_date: string | null
           external_ids: Json
@@ -1628,6 +1638,7 @@ export type Database = {
           currency?: string
           custom_fields?: Json
           dealtype?: string | null
+          deleted_at?: string | null
           description?: string | null
           expected_close_date?: string | null
           external_ids?: Json
@@ -1659,6 +1670,7 @@ export type Database = {
           currency?: string
           custom_fields?: Json
           dealtype?: string | null
+          deleted_at?: string | null
           description?: string | null
           expected_close_date?: string | null
           external_ids?: Json
@@ -3105,6 +3117,7 @@ export type Database = {
           converted_deal_id: string | null
           created_at: string
           custom_fields: Json
+          deleted_at: string | null
           email: string | null
           external_ids: Json
           first_name: string
@@ -3135,6 +3148,7 @@ export type Database = {
           converted_deal_id?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           email?: string | null
           external_ids?: Json
           first_name: string
@@ -3165,6 +3179,7 @@ export type Database = {
           converted_deal_id?: string | null
           created_at?: string
           custom_fields?: Json
+          deleted_at?: string | null
           email?: string | null
           external_ids?: Json
           first_name?: string
