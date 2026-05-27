@@ -59,7 +59,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       .channel(`branding:${user.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
         () => load(),
       )
       .subscribe();
