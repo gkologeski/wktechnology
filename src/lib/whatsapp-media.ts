@@ -22,8 +22,12 @@ export async function uploadWhatsAppMedia(file: File): Promise<{
     .from(BUCKET)
     .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
   if (error) throw new Error(error.message);
-  const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return { url: pub.publicUrl, contentType: file.type || "application/octet-stream" };
+  // Bucket é privado: gera URL assinada de 24h (Twilio busca a mídia no envio).
+  const { data: signed, error: sErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24);
+  if (sErr || !signed?.signedUrl) throw new Error(sErr?.message ?? "Falha ao gerar URL da mídia");
+  return { url: signed.signedUrl, contentType: file.type || "application/octet-stream" };
 }
 
 export type WaMediaKind = "image" | "audio" | "video" | "pdf" | "file";
