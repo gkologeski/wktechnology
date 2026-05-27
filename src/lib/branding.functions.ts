@@ -1,14 +1,41 @@
-// Server fns para branding (white-label).
+// Server fns para branding (white-label) — por workspace ativo.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function resolveActiveWorkspace(
+  supabase: Awaited<ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth>> extends never ? never : any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  userId: string,
+): Promise<string> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.active_workspace_id) return profile.active_workspace_id as string;
+
+  // Fallback: first workspace the user belongs to
+  const { data: member } = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (!member?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
+  return member.workspace_id as string;
+}
 
 export const getBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase.from("workspace_branding").select("*").eq("owner_id", userId).maybeSingle();
-    return { branding: data };
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    const { data } = await supabase
+      .from("workspace_branding")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    return { branding: data, workspace_id: workspaceId };
   });
 
 export const saveBranding = createServerFn({ method: "POST" })
@@ -31,9 +58,12 @@ export const saveBranding = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
     const { error } = await supabase.from("workspace_branding").upsert({
-      owner_id: userId, ...data,
-    }, { onConflict: "owner_id" });
+      owner_id: userId,
+      workspace_id: workspaceId,
+      ...data,
+    }, { onConflict: "workspace_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
