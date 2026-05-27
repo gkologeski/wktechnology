@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         if (errorParam) {
           return htmlResponse(
             "Falha no Google",
-            `<h1>Google retornou erro</h1><p>${errorParam}</p><p><a href="/settings/email">Voltar</a></p>`,
+            `<h1>Google retornou erro</h1><p>${esc(errorParam)}</p><p><a href="/settings/email">Voltar</a></p>`,
             400,
           );
         }
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         } catch (e) {
           return htmlResponse(
             "State inválido",
-            `<h1>State inválido</h1><p>${e instanceof Error ? e.message : ""}</p>`,
+            `<h1>State inválido</h1><p>${esc(e instanceof Error ? e.message : "")}</p>`,
             400,
           );
         }
