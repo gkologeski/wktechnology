@@ -2555,6 +2555,7 @@ export type Database = {
           owner_id: string
           signer_id: string | null
           user_agent: string | null
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2566,6 +2567,7 @@ export type Database = {
           owner_id: string
           signer_id?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2577,6 +2579,7 @@ export type Database = {
           owner_id?: string
           signer_id?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2591,6 +2594,13 @@ export type Database = {
             columns: ["signer_id"]
             isOneToOne: false
             referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_audit_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2611,6 +2621,7 @@ export type Database = {
           status: Database["public"]["Enums"]["esign_doc_status"]
           title: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           body?: string
@@ -2627,6 +2638,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["esign_doc_status"]
           title: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           body?: string
@@ -2643,6 +2655,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["esign_doc_status"]
           title?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2657,6 +2670,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_documents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2680,6 +2700,7 @@ export type Database = {
           status: Database["public"]["Enums"]["esign_signer_status"]
           user_agent: string | null
           viewed_at: string | null
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2699,6 +2720,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["esign_signer_status"]
           user_agent?: string | null
           viewed_at?: string | null
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2718,6 +2740,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["esign_signer_status"]
           user_agent?: string | null
           viewed_at?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2725,6 +2748,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_signers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2741,6 +2771,7 @@ export type Database = {
           owner_id: string
           referer: string | null
           user_agent: string | null
+          workspace_id: string
         }
         Insert: {
           contact_id?: string | null
@@ -2753,6 +2784,7 @@ export type Database = {
           owner_id: string
           referer?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Update: {
           contact_id?: string | null
@@ -2765,6 +2797,7 @@ export type Database = {
           owner_id?: string
           referer?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2772,6 +2805,13 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2792,6 +2832,7 @@ export type Database = {
           success_message: string
           target: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           active?: boolean
@@ -2808,6 +2849,7 @@ export type Database = {
           success_message?: string
           target?: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           active?: boolean
@@ -2824,8 +2866,17 @@ export type Database = {
           success_message?: string
           target?: string
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "forms_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goals: {
         Row: {
@@ -2842,6 +2893,7 @@ export type Database = {
           target_user_id: string | null
           target_value: number
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2857,6 +2909,7 @@ export type Database = {
           target_user_id?: string | null
           target_value?: number
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2872,8 +2925,17 @@ export type Database = {
           target_user_id?: string | null
           target_value?: number
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hubspot_owners: {
         Row: {
@@ -2924,6 +2986,7 @@ export type Database = {
           last_synced_at: string
           local_id: string
           owner_id: string
+          workspace_id: string
         }
         Insert: {
           direction?: string
@@ -2934,6 +2997,7 @@ export type Database = {
           last_synced_at?: string
           local_id: string
           owner_id: string
+          workspace_id?: string
         }
         Update: {
           direction?: string
@@ -2944,8 +3008,17 @@ export type Database = {
           last_synced_at?: string
           local_id?: string
           owner_id?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hubspot_sync_state_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integrations: {
         Row: {
@@ -2959,6 +3032,7 @@ export type Database = {
           provider: string
           status: Database["public"]["Enums"]["integration_status"]
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           config?: Json
@@ -2971,6 +3045,7 @@ export type Database = {
           provider: string
           status?: Database["public"]["Enums"]["integration_status"]
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           config?: Json
@@ -2983,8 +3058,17 @@ export type Database = {
           provider?: string
           status?: Database["public"]["Enums"]["integration_status"]
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "integrations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
@@ -3015,6 +3099,7 @@ export type Database = {
           stage_id: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           company_name?: string | null
@@ -3044,6 +3129,7 @@ export type Database = {
           stage_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           company_name?: string | null
@@ -3073,8 +3159,17 @@ export type Database = {
           stage_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       macros: {
         Row: {
@@ -3087,6 +3182,7 @@ export type Database = {
           owner_id: string
           shortcut: string | null
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           body: string
@@ -3098,6 +3194,7 @@ export type Database = {
           owner_id?: string
           shortcut?: string | null
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           body?: string
@@ -3109,8 +3206,17 @@ export type Database = {
           owner_id?: string
           shortcut?: string | null
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "macros_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_sentiments: {
         Row: {
