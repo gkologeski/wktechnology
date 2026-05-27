@@ -1,70 +1,97 @@
+# Multi-tenancy real + super-admin + white-label
 
-## Problema
+São 80 tabelas com `owner_id` hoje. A migração é grande, então vou fazer em **4 fases**, sem quebrar o app entre elas. Você aprova fase a fase.
 
-Hoje `inviteTeamMember` chama `supabaseAdmin.auth.admin.inviteUserByEmail(email, { data: {...} })` **sem `redirectTo`**. O Supabase então usa o `SITE_URL` padrão (raiz do app). O link no email vira algo como:
+---
+
+## Fase 1 — Fundação (banco)
+
+Novas tabelas:
+- `workspaces` — id, name, slug, logo_url, primary_color, custom_domain, created_by, status, timestamps
+- `workspace_members` — workspace_id, user_id, role (admin/manager/member), invited_by, joined_at
+- `platform_admins` — user_id (= super-admins globais; você entra aqui)
+- `workspace_invites` — workspace_id, email, role, token, expires_at, accepted_at
+
+Funções SECURITY DEFINER:
+- `is_platform_admin(_user uuid)` — true se está em `platform_admins`
+- `is_workspace_member(_ws uuid, _user uuid)` — true se membro ou platform_admin
+- `current_user_workspaces()` — workspaces visíveis ao usuário atual
+
+Não toca em nenhuma tabela de dados ainda. App continua funcionando.
+
+---
+
+## Fase 2 — Backfill + coluna `workspace_id`
+
+- Cria 1 workspace **"WK Technology"** apontando para o seu `auth.uid()` (você vira `created_by` e primeiro `admin`).
+- Para cada um dos 80 tabelas com `owner_id`:
+  - `ADD COLUMN workspace_id uuid`
+  - `UPDATE ... SET workspace_id = (workspace da WK Technology)` (todos os dados atuais)
+  - `NOT NULL` + FK → `workspaces(id)` + index
+- Outros usuários que já existem (se houver) viram members do mesmo workspace, ou ganham workspace próprio — me confirma na execução.
+
+App continua usando `owner_id` para autorias; `workspace_id` é o eixo de tenant.
+
+---
+
+## Fase 3 — RLS e server functions
+
+- Reescreve todas as policies das 80 tabelas para:
+  - `USING (is_workspace_member(workspace_id, auth.uid()) OR is_platform_admin(auth.uid()))`
+  - `WITH CHECK` idem + força `workspace_id` ao do usuário no INSERT (via trigger).
+- Trigger `set_workspace_on_insert` em cada tabela (preenche workspace_id se não vier).
+- Atualiza os `createServerFn` que hoje filtram por `owner_id` para usarem o workspace ativo do usuário (via context). Adiciona resolver de "workspace ativo" (cookie/localStorage `active_workspace_id`).
+- `team_members`, `user_roles`, `access_profiles` passam a ser por workspace (já são).
+- Mantém `owner_id` para "criador do registro" (auditoria), mas não é mais a chave de isolamento.
+
+---
+
+## Fase 4 — UX: super-admin, convites, white-label
+
+- **Desabilita signup público** (`disable_signup: true`). Remove `/signup` da UI; mantém só `/login` e `/accept-invite`.
+- **`/admin/workspaces`** (só platform_admin): listar/criar workspaces + cadastrar 1º admin de cada workspace (cria user via service-role + envia convite por email).
+- **Workspace switcher** no topbar (se usuário pertence a >1 — você verá todos como platform_admin).
+- **Branding por workspace**: tabela `workspace_branding` já existe; conecta no `BrandingProvider` por workspace ativo. Logo, nome, cor primária.
+- **Domínio próprio por workspace**: campo `custom_domain` em `workspaces`. Resolve workspace ativo pelo host (`req.headers.host`). Setup DNS do cliente → CNAME para o app + você habilita no Lovable (custom domain por projeto). *Observação: Lovable hoje suporta 1 domínio por projeto — para domínio por workspace de verdade precisa de um domínio coringa (`*.seudominio.com`) ou config manual. Confirmo o approach na fase 4.*
+- **Remover branding Lovable visível**: badge "Edit with Lovable" pode ser desligado em Publish Settings; revisar textos.
+
+---
+
+## Detalhes técnicos (resumo)
 
 ```
-https://<site>/#access_token=...&refresh_token=...&type=invite
+workspaces(id, name, slug UNIQUE, logo_url, primary_color, custom_domain UNIQUE NULL, created_by, status, created_at, updated_at)
+workspace_members(workspace_id, user_id, role, PRIMARY KEY(workspace_id, user_id))
+platform_admins(user_id PRIMARY KEY)
+workspace_invites(id, workspace_id, email, role, token UNIQUE, expires_at, accepted_at)
+
+-- helper
+is_platform_admin(u) := EXISTS(SELECT 1 FROM platform_admins WHERE user_id=u)
+is_workspace_member(w, u) := is_platform_admin(u) OR EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=w AND user_id=u)
 ```
 
-Como a raiz redireciona para `/login` (ou `/dashboard` se já logado), o convidado:
-- vê a tela de **login** (sem saber qual senha usar — ele nunca cadastrou uma),
-- ou, se o navegador consumir o hash silenciosamente, fica logado sem nunca definir senha/nome.
-
-Não existe uma rota dedicada para "aceitar convite e definir senha". É exatamente o mesmo padrão do `/reset-password`, mas para `type=invite`.
-
-## Solução
-
-### 1. Nova rota pública `/accept-invite` (`src/routes/accept-invite.tsx`)
-
-- Detecta `type=invite` (ou `type=recovery` se quisermos compatível) no `window.location.hash` **e** escuta `onAuthStateChange` para o evento `SIGNED_IN`/`USER_UPDATED` que o Supabase dispara quando consome o hash.
-- Mostra um card "Bem-vindo(a) ao workspace" com:
-  - Nome completo (pré-preenchido com `user.user_metadata.full_name` do convite, editável)
-  - Telefone (pré-preenchido com `user_metadata.phone`, editável)
-  - Nova senha + confirmação (mínimo 6)
-- Ao submeter:
-  1. `supabase.auth.updateUser({ password, data: { full_name, phone } })`
-  2. `upsert` em `profiles` com nome e telefone (via uma nova server fn `completeInviteProfile` para garantir RLS-safe).
-  3. Redireciona para `/dashboard`.
-- Se não houver sessão de convite válida (hash ausente / expirado), mostra mensagem "Convite inválido ou expirado" com link para `/login`.
-- É rota **pública** (não fica sob `_authenticated`), igual a `/reset-password`.
-
-### 2. Passar `redirectTo` no convite
-
-Em `src/lib/teams.functions.ts`, ajustar:
-
-```ts
-supabaseAdmin.auth.admin.inviteUserByEmail(target, {
-  data: { full_name, phone },
-  redirectTo: `${process.env.SITE_URL ?? "..."}/accept-invite`,
-})
+Policies em cada tabela de dados:
+```sql
+USING ( is_workspace_member(workspace_id, auth.uid()) )
+WITH CHECK ( is_workspace_member(workspace_id, auth.uid()) )
 ```
 
-Como `process.env.SITE_URL` não é confiável no Worker, vamos enviar a origem a partir do cliente: adicionar um campo opcional `redirect_origin` no input do server fn (preenchido com `window.location.origin` no momento do convite). O handler monta `redirectTo = redirect_origin + "/accept-invite"`.
+---
 
-### 3. Reenvio e estado "pendente"
+## Riscos / pontos de atenção
 
-- Marcar um membro como **pendente** quando ainda não confirmou o email. A coluna `team_members` ainda não tem isso, então adicionamos `invited_at timestamptz` e usamos `auth.users.email_confirmed_at` (lido via `supabaseAdmin.auth.admin.getUserById`) para derivar `pending: boolean` no `listTeamMembers`.
-- Na tabela em `/settings/teams`, exibir badge **"Pendente"** ao lado do nome e um botão **"Reenviar convite"** que chama uma nova server fn `resendTeamInvite` (re-executa `inviteUserByEmail` com o mesmo `redirectTo`).
-- Migration mínima: `ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS invited_at timestamptz DEFAULT now();` (sem mudanças de RLS).
+1. **Reescrita massiva de policies** — 80 tabelas, ~300 policies. Vou gerar via SQL dinâmico para reduzir erro humano.
+2. **Server functions** — várias dezenas usam `owner_id = userId`. Vou trocar pela resolução de workspace ativo + checagem de membership.
+3. **HubSpot/Twilio/Gmail tokens** — hoje são per-owner; viram per-workspace. Cada workspace tem suas próprias conexões.
+4. **Domínio por workspace** — depende do que o Lovable suporta no plano atual. Posso entregar via subdomínios coringas (mais simples).
+5. **Migração não tem rollback** — vou tirar snapshot lógico (export do banco) antes da Fase 2.
 
-### 4. Tratamento de usuário já existente
+---
 
-`inviteUserByEmail` falha com "User already registered" se o email já tem conta. Hoje o código só cai nesse caminho quando NÃO encontra o usuário via `listUsers`. Vamos manter a busca, mas: se o usuário existe e **ainda não confirmou** (`email_confirmed_at == null`), reenviar invite; se já confirmou, apenas adicionar em `team_members` (fluxo atual).
+## Próximo passo
 
-### 5. UX no email
+Aprovando o plano, eu começo pela **Fase 1** (puramente aditiva, zero risco). Você revisa antes da Fase 2.
 
-O template padrão do Supabase para "Invite user" já existe e funciona com `redirectTo`. Nenhuma mudança de template é necessária nesta entrega — apenas garantir que o link aponta para `/accept-invite`. Customização visual do email fica fora do escopo.
-
-## Arquivos afetados
-
-- **Novo**: `src/routes/accept-invite.tsx`
-- **Editado**: `src/lib/teams.functions.ts` (passar `redirectTo`, novo `resendTeamInvite`, expor `pending` no `listTeamMembers`, nova `completeInviteProfile`)
-- **Editado**: `src/routes/_authenticated/settings.teams.tsx` (passar `redirect_origin` no invite, badge "Pendente", botão "Reenviar convite")
-- **Migration**: adicionar `team_members.invited_at`
-
-## Fora de escopo
-
-- Customização visual do email de convite (template Lovable/Supabase).
-- Expiração custom do link (mantém o padrão de 24h do Supabase).
-- Permitir convidar múltiplos usuários de uma vez.
+Confirma também:
+- **Seu e-mail/user_id** para entrar em `platform_admins` (uso `auth.uid()` do usuário logado se preferir).
+- Se há **outros usuários** já cadastrados além de você que precisam ir para um workspace diferente do WK Technology.
