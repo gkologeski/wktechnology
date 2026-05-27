@@ -1567,6 +1567,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         await bump(ok, fail);
         if (!nextAfter) break;
       }
+      }
     } else if (step === "leads") {
       // Importa o objeto NATIVO de Leads do HubSpot (/crm/v3/objects/leads),
       // paginando com cursor — não depende da importação de contatos.
