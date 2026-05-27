@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const ACCESS_OBJECTS: Array<{ key: string; label: string; category: "crm" | "marketing" | "sales" | "service" }> = [
   { key: "contacts",   label: "Contatos",   category: "crm" },
