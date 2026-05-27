@@ -157,3 +157,21 @@
   * { border-color: var(--color-border); }
   body { background-color: var(--color-background); color: var(--color-foreground); font-feature-settings: "cv11", "ss01"; }
 }
+
+/* react-phone-number-input — theme bridge */
+.phone-input-wrapper .PhoneInputCountry {
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 1.25rem;
+  height: 0.9rem;
+  box-shadow: 0 0 0 1px hsl(var(--border) / 0.4);
+}
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+  opacity: 0.5;
+  margin-left: 2px;
+}
+.phone-input-wrapper input:disabled { cursor: not-allowed; opacity: 0.6; }

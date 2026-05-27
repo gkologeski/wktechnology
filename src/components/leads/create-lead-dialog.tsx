@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -13,6 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EmailInput } from "@/components/ui/email-input";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { SourceCombobox } from "@/components/leads/source-combobox";
+import { ensureLeadSource } from "@/lib/lead-sources";
+import { isEmail, isPhone } from "@/lib/validators";
+import { Building2 } from "lucide-react";
+
+type CompanyMatch = { id: string; name: string };
 
 export function CreateLeadDialog({
   open,
@@ -33,13 +41,62 @@ export function CreateLeadDialog({
     company_name: "",
     source: "",
   });
+  const [companyMatches, setCompanyMatches] = useState<CompanyMatch[]>([]);
+  const lastSearchedRef = useRef<string>("");
 
-  const reset = () => setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
+  const reset = () => {
+    setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
+    setCompanyMatches([]);
+    lastSearchedRef.current = "";
+  };
+
+  // Empresa: a partir de 3 caracteres, busca matches e mostra toast informativo
+  useEffect(() => {
+    if (!user) return;
+    const q = form.company_name.trim();
+    if (q.length < 3) {
+      setCompanyMatches([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("owner_id", user.id)
+        .ilike("name", `%${q}%`)
+        .order("name", { ascending: true })
+        .limit(5);
+      if (error) return;
+      const matches = (data ?? []) as CompanyMatch[];
+      setCompanyMatches(matches);
+      // Evita repetir o toast para a mesma busca
+      if (matches.length > 0 && lastSearchedRef.current !== q) {
+        lastSearchedRef.current = q;
+        toast.info(
+          matches.length === 1
+            ? `1 empresa parecida encontrada: ${matches[0].name}`
+            : `${matches.length} empresas parecidas encontradas`,
+          { description: "Clique em uma para reutilizar." },
+        );
+      } else if (matches.length === 0) {
+        lastSearchedRef.current = q;
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [form.company_name, user]);
 
   const submit = async () => {
     if (!user) return;
     if (!form.first_name.trim()) {
       toast.error("Informe ao menos o nome");
+      return;
+    }
+    if (form.email && !isEmail(form.email)) {
+      toast.error("Email inválido");
+      return;
+    }
+    if (form.phone && !isPhone(form.phone)) {
+      toast.error("Telefone inválido");
       return;
     }
     setSaving(true);
@@ -59,6 +116,10 @@ export function CreateLeadDialog({
         .select("id")
         .single();
       if (error) throw error;
+      // Persiste fonte nova no catálogo
+      if (form.source.trim()) {
+        await ensureLeadSource(user.id, form.source.trim());
+      }
       toast.success("Lead criado");
       reset();
       onOpenChange(false);
@@ -90,21 +151,35 @@ export function CreateLeadDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <EmailInput id="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="source">Fonte</Label>
-              <Input id="source" placeholder="manual, site, indicação…" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Telefone</Label>
+            <PhoneInput id="phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
             <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+            {companyMatches.length > 0 && (
+              <div className="rounded-md border bg-muted/30 p-2 space-y-1">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Empresas parecidas</p>
+                {companyMatches.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
+                    onClick={() => setForm({ ...form, company_name: c.name })}
+                  >
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Fonte</Label>
+            <SourceCombobox value={form.source} onChange={(v) => setForm({ ...form, source: v })} />
           </div>
         </div>
         <DialogFooter>

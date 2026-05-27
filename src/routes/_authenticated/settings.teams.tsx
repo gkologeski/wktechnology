@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -237,22 +239,21 @@ function UsersPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="invite-email">E-mail <span className="text-destructive">*</span></Label>
-                <Input
+                <EmailInput
                   id="invite-email"
-                  type="email"
                   placeholder="pessoa@empresa.com"
+                  required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={setEmail}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="invite-phone">Telefone celular <span className="text-destructive">*</span></Label>
-                <Input
+                <PhoneInput
                   id="invite-phone"
-                  type="tel"
-                  placeholder="(11) 98765-4321"
+                  required
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={setPhone}
                 />
               </div>
               <div className="space-y-1.5">
@@ -535,12 +536,11 @@ function UsersPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-phone">Telefone celular <span className="text-destructive">*</span></Label>
-              <Input
+              <PhoneInput
                 id="edit-phone"
-                type="tel"
-                placeholder="(11) 98765-4321"
+                required
                 value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
+                onChange={setEditPhone}
               />
             </div>
             {!editing?.is_owner && (

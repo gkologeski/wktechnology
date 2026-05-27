@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -130,7 +131,7 @@ function AcceptInviteTokenPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-phone">Telefone celular</Label>
-                <Input id="ait-phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <PhoneInput id="ait-phone" required value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-pass">{info.user_exists ? "Defina/atualize sua senha" : "Crie uma senha"}</Label>

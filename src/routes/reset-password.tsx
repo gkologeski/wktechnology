@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -71,7 +72,7 @@ function ResetPasswordPage() {
             <form onSubmit={sendEmail} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <EmailInput id="email" required value={email} onChange={setEmail} />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>Enviar link</Button>
               <div className="text-sm text-muted-foreground text-center">

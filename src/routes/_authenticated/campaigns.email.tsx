@@ -17,6 +17,7 @@ import {
 import { listEmailTemplates } from "@/lib/email-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -187,7 +188,7 @@ function EmailBroadcastsPage() {
               <div className="border-t pt-3">
                 <Label>Enviar email de teste</Label>
                 <div className="flex gap-2 mt-1">
-                  <Input type="email" placeholder="voce@exemplo.com" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+                  <EmailInput placeholder="voce@exemplo.com" value={testTo} onChange={setTestTo} />
                   <Button type="button" variant="outline" onClick={() => testMut.mutate()} disabled={testMut.isPending}>
                     <Send className="h-4 w-4 mr-2" />Teste
                   </Button>

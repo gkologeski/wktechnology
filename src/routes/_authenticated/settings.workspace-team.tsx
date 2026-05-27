@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -121,8 +122,8 @@ function WorkspaceTeamPage() {
                 <form onSubmit={submit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="wi-email">Email do convidado</Label>
-                    <Input id="wi-email" type="email" required value={form.email}
-                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+                    <EmailInput id="wi-email" required value={form.email}
+                      onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Papel</Label>

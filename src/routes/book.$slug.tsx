@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, Clock, MapPin, CheckCircle2 } from "lucide-react";
@@ -149,11 +151,11 @@ function PublicBookingPage() {
               </div>
               <div className="space-y-2">
                 <Label>E-mail *</Label>
-                <Input type="email" value={form.invitee_email} onChange={(e) => setForm({ ...form, invitee_email: e.target.value })} required />
+                <EmailInput value={form.invitee_email} onChange={(v) => setForm({ ...form, invitee_email: v })} required />
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
-                <Input value={form.invitee_phone} onChange={(e) => setForm({ ...form, invitee_phone: e.target.value })} />
+                <PhoneInput value={form.invitee_phone} onChange={(v) => setForm({ ...form, invitee_phone: v })} />
               </div>
               <div className="space-y-2">
                 <Label>Observações</Label>

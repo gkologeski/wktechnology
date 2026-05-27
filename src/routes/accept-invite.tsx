@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -112,7 +113,7 @@ function AcceptInvitePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-phone">Telefone celular</Label>
-                <Input id="ai-phone" type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <PhoneInput id="ai-phone" required value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass">Nova senha</Label>

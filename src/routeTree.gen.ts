@@ -61,6 +61,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
@@ -405,6 +406,12 @@ const AuthenticatedSettingsMacrosRoute =
   AuthenticatedSettingsMacrosRouteImport.update({
     id: '/macros',
     path: '/macros',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsLeadSourcesRoute =
+  AuthenticatedSettingsLeadSourcesRouteImport.update({
+    id: '/lead-sources',
+    path: '/lead-sources',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsLanguageRoute =
@@ -804,6 +811,7 @@ export interface FileRoutesByFullPath {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
+  '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -914,6 +922,7 @@ export interface FileRoutesByTo {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
+  '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -1028,6 +1037,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
+  '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
@@ -1142,6 +1152,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/language'
+    | '/settings/lead-sources'
     | '/settings/macros'
     | '/settings/mobile'
     | '/settings/pipelines'
@@ -1252,6 +1263,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/language'
+    | '/settings/lead-sources'
     | '/settings/macros'
     | '/settings/mobile'
     | '/settings/pipelines'
@@ -1365,6 +1377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/hubspot-sync'
     | '/_authenticated/settings/language'
+    | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/pipelines'
@@ -1830,6 +1843,13 @@ declare module '@tanstack/react-router' {
       path: '/macros'
       fullPath: '/settings/macros'
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/lead-sources': {
+      id: '/_authenticated/settings/lead-sources'
+      path: '/lead-sources'
+      fullPath: '/settings/lead-sources'
+      preLoaderRoute: typeof AuthenticatedSettingsLeadSourcesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/language': {
@@ -2347,6 +2367,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
+  AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
@@ -2392,6 +2413,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsGoalsRoute: AuthenticatedSettingsGoalsRoute,
   AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
+  AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
