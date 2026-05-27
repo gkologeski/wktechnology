@@ -1722,6 +1722,7 @@ export type Database = {
           scopes: string[]
           status: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           access_token?: string | null
@@ -1738,6 +1739,7 @@ export type Database = {
           scopes?: string[]
           status?: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           access_token?: string | null
@@ -1754,8 +1756,17 @@ export type Database = {
           scopes?: string[]
           status?: string
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_accounts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_broadcast_recipients: {
         Row: {
@@ -1771,6 +1782,7 @@ export type Database = {
           sent_at: string | null
           status: Database["public"]["Enums"]["email_broadcast_recipient_status"]
           variables: Json
+          workspace_id: string
         }
         Insert: {
           broadcast_id: string
@@ -1785,6 +1797,7 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
           variables?: Json
+          workspace_id?: string
         }
         Update: {
           broadcast_id?: string
@@ -1799,6 +1812,7 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
           variables?: Json
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -1820,6 +1834,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcast_recipients_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1847,6 +1868,7 @@ export type Database = {
           template_id: string | null
           total: number
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           body_html?: string | null
@@ -1870,6 +1892,7 @@ export type Database = {
           template_id?: string | null
           total?: number
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           body_html?: string | null
@@ -1893,6 +1916,7 @@ export type Database = {
           template_id?: string | null
           total?: number
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -1914,6 +1938,13 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_broadcasts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1947,6 +1978,7 @@ export type Database = {
           thread_id: string | null
           to_emails: string[]
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           account_id: string
@@ -1976,6 +2008,7 @@ export type Database = {
           thread_id?: string | null
           to_emails?: string[]
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           account_id?: string
@@ -2005,6 +2038,7 @@ export type Database = {
           thread_id?: string | null
           to_emails?: string[]
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2019,6 +2053,13 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2094,6 +2135,7 @@ export type Database = {
           owner_id: string
           shortcut: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           body: string
@@ -2102,6 +2144,7 @@ export type Database = {
           owner_id?: string
           shortcut: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           body?: string
@@ -2110,8 +2153,17 @@ export type Database = {
           owner_id?: string
           shortcut?: string
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_snippets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_templates: {
         Row: {
@@ -2123,6 +2175,7 @@ export type Database = {
           owner_id: string
           subject: string | null
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           body_html?: string | null
@@ -2133,6 +2186,7 @@ export type Database = {
           owner_id?: string
           subject?: string | null
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           body_html?: string | null
@@ -2143,8 +2197,17 @@ export type Database = {
           owner_id?: string
           subject?: string | null
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_threads: {
         Row: {
@@ -2162,6 +2225,7 @@ export type Database = {
           snippet: string | null
           subject: string | null
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           account_id: string
@@ -2178,6 +2242,7 @@ export type Database = {
           snippet?: string | null
           subject?: string | null
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           account_id?: string
@@ -2194,6 +2259,7 @@ export type Database = {
           snippet?: string | null
           subject?: string | null
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2231,6 +2297,13 @@ export type Database = {
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "email_threads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_tracking_events: {
@@ -2243,6 +2316,7 @@ export type Database = {
           owner_id: string
           url: string | null
           user_agent: string | null
+          workspace_id: string
         }
         Insert: {
           event_type: string
@@ -2253,6 +2327,7 @@ export type Database = {
           owner_id: string
           url?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Update: {
           event_type?: string
@@ -2263,6 +2338,7 @@ export type Database = {
           owner_id?: string
           url?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2270,6 +2346,13 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_tracking_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2306,6 +2389,7 @@ export type Database = {
           owner_id: string
           reason: string | null
           token: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2314,6 +2398,7 @@ export type Database = {
           owner_id: string
           reason?: string | null
           token?: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2322,8 +2407,17 @@ export type Database = {
           owner_id?: string
           reason?: string | null
           token?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_unsubscribes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enrichment_job_items: {
         Row: {
@@ -2387,6 +2481,7 @@ export type Database = {
           succeeded: number
           total: number
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2408,6 +2503,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2429,6 +2525,7 @@ export type Database = {
           succeeded?: number
           total?: number
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2436,6 +2533,13 @@ export type Database = {
             columns: ["integration_id"]
             isOneToOne: false
             referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrichment_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
