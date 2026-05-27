@@ -68,7 +68,7 @@ function LoginPage() {
             </Button>
             <div className="text-sm text-muted-foreground text-center space-y-1">
               <div><Link to="/reset-password" className="text-primary hover:underline">Esqueci minha senha</Link></div>
-              <div>Não tem conta? <Link to="/signup" className="text-primary hover:underline">Criar conta</Link></div>
+              <div className="text-xs">O acesso é por convite. Solicite a um administrador do workspace.</div>
             </div>
           </form>
         </CardContent>
