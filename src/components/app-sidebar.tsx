@@ -135,6 +135,7 @@ export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, signOut } = useAuth();
   const { isAdmin, isManager } = useMyRole();
+  const { isPlatformAdmin } = useIsPlatformAdmin();
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
   const canSee = (url: string) => {
     if (ADMIN_ONLY.has(url)) return isAdmin;
