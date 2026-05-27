@@ -380,7 +380,7 @@ function LeadsHubspotView() {
           <Button variant="outline" size="sm" disabled>
             <Download className="mr-1.5 h-4 w-4" /> Exportar
           </Button>
-          <Button size="sm" disabled>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead
           </Button>
         </div>
