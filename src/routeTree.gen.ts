@@ -20,6 +20,7 @@ import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
+import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -172,6 +173,11 @@ const BookSlugRoute = BookSlugRouteImport.update({
   id: '/book/$slug',
   path: '/book/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => AcceptInviteRoute,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
@@ -740,7 +746,7 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -758,6 +764,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -850,7 +857,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -866,6 +873,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -960,7 +968,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -978,6 +986,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -1090,6 +1099,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1198,6 +1208,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1309,6 +1320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1403,7 +1415,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AcceptInviteRoute: typeof AcceptInviteRoute
+  AcceptInviteRoute: typeof AcceptInviteRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -1519,6 +1531,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/book/$slug'
       preLoaderRoute: typeof BookSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/accept-invite/$token': {
+      id: '/accept-invite/$token'
+      path: '/$token'
+      fullPath: '/accept-invite/$token'
+      preLoaderRoute: typeof AcceptInviteTokenRouteImport
+      parentRoute: typeof AcceptInviteRoute
     }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
@@ -2473,6 +2492,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AcceptInviteRouteChildren {
+  AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
+}
+
+const AcceptInviteRouteChildren: AcceptInviteRouteChildren = {
+  AcceptInviteTokenRoute: AcceptInviteTokenRoute,
+}
+
+const AcceptInviteRouteWithChildren = AcceptInviteRoute._addFileChildren(
+  AcceptInviteRouteChildren,
+)
+
 interface ApiPublicBookingSlugRouteChildren {
   ApiPublicBookingSlugSubmitRoute: typeof ApiPublicBookingSlugSubmitRoute
 }
@@ -2498,7 +2529,7 @@ const ApiPublicFormsSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AcceptInviteRoute: AcceptInviteRoute,
+  AcceptInviteRoute: AcceptInviteRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
