@@ -5901,6 +5901,7 @@ export type Database = {
         Returns: string
       }
       current_user_workspaces: { Args: never; Returns: string[] }
+      default_workspace_for_user: { Args: { _user: string }; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
