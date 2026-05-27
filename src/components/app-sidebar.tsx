@@ -188,6 +188,16 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="gap-1">
         <SidebarMenu>
+          {isPlatformAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Super-admin" isActive={path.startsWith("/admin/workspaces")}>
+                <Link to="/admin/workspaces">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Super-admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Configurações" isActive={path === "/settings"}>
               <Link to="/settings">
