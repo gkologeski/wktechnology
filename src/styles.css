@@ -175,3 +175,14 @@
   margin-left: 2px;
 }
 .phone-input-wrapper input:disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* Garantir legibilidade de qualquer texto selecionado em todo o sistema */
+::selection {
+  background-color: color-mix(in oklab, var(--primary) 25%, transparent);
+  color: #000;
+}
+::-moz-selection {
+  background-color: color-mix(in oklab, var(--primary) 25%, transparent);
+  color: #000;
+}
+
