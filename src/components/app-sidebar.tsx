@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 
 
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
@@ -149,11 +150,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-4">
+      <SidebarHeader className="px-3 py-4 gap-2">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground grid place-items-center text-sm">C</div>
           <span className="group-data-[collapsible=icon]:hidden">CRM</span>
         </Link>
+        <div className="group-data-[collapsible=icon]:hidden">
+          <WorkspaceSwitcher />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         {visibleGroups.map((group) => (

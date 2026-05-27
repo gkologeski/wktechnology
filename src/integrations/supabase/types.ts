@@ -3556,6 +3556,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_workspace_id: string | null
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -3564,6 +3565,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_workspace_id?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -3572,6 +3574,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_workspace_id?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -3579,7 +3582,15 @@ export type Database = {
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_workspace_id_fkey"
+            columns: ["active_workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_history: {
         Row: {

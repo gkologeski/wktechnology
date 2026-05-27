@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS active_workspace_id uuid REFERENCES public.workspaces(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_profiles_active_workspace ON public.profiles(active_workspace_id);
