@@ -159,6 +159,15 @@ function LeadsHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    run: () => Promise<void>;
+  } | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
