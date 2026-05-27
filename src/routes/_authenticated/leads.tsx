@@ -846,6 +846,37 @@ function LeadsHubspotView() {
         entity="lead"
         onDone={() => qc.invalidateQueries({ queryKey: ["leads"] })}
       />
+
+      <CreateLeadDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          qc.invalidateQueries({ queryKey: ["leads"] });
+          navigate({ to: "/leads/$id", params: { id } });
+        }}
+      />
+
+      <AlertDialog
+        open={!!pendingAction}
+        onOpenChange={(v) => !actionBusy && !v && setPendingAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingAction?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{pendingAction?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={runPendingAction}
+              disabled={actionBusy}
+              className={pendingAction?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+            >
+              {actionBusy ? "Processando…" : pendingAction?.confirmLabel ?? "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
