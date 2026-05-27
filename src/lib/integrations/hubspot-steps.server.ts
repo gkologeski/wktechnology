@@ -1104,6 +1104,48 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const propsParam = allProps.length
         ? allProps.join(",")
         : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
+
+      // Delta mode: target_ids pre-injetados (reconciliação). Pula pagination/search e faz batchRead direto.
+      if (Array.isArray(resume.target_ids) && resume.discovery_complete) {
+        const targetIds = resume.target_ids;
+        const propsList = allProps.length ? allProps : ["name","domain","industry","numberofemployees","phone","city","state","zip","address","website"];
+        let idx = (resume.read_index as number) ?? 0;
+        const CHUNK = 100;
+        while (idx < targetIds.length) {
+          if (isExpired()) { partial = true; break; }
+          const chunkIds = targetIds.slice(idx, idx + CHUNK);
+          const recs = await batchRead("companies", chunkIds, propsList);
+          for (const c of recs) {
+            const p = c.properties;
+            if (!p.name) { fail++; continue; }
+            const mapped = mapCompany(p);
+            const payload = {
+              owner_id: userId,
+              name: p.name,
+              domain: p.domain ?? null,
+              industry: p.industry ?? null,
+              size: p.numberofemployees ?? null,
+              phone: p.phone ?? null,
+              city: p.city ?? null,
+              state: p.state ?? null,
+              cep: p.zip ?? null,
+              address: p.address ?? null,
+              website: p.website ?? null,
+              ...mapped,
+              external_ids: { hubspot: c.id } as never,
+              hs_raw: rawOf(c),
+              deleted_at: null,
+            };
+            const r = await upsertByHsId(supabase, "companies", userId, c.id, payload);
+            if (r.status === "failed") fail++;
+            else { imported.push(c.id); ok++; }
+          }
+          idx += chunkIds.length;
+          await persistCursor({ read_index: idx });
+          await bump(ok, fail, targetIds.length);
+        }
+        if (partial) await persistCursor({ read_index: idx });
+      } else {
       const alreadyProcessed = ok + fail;
       let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
       let page = Math.floor(alreadyProcessed / 100) + 1;
