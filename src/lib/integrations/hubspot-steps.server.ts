@@ -1588,7 +1588,63 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         "createdate",
         "lastmodifieddate",
       ];
-      const propsParam = (leadProps.length ? leadProps : fallbackProps).join(",");
+      const propsList = leadProps.length ? leadProps : fallbackProps;
+      const propsParam = propsList.join(",");
+
+      // Delta mode: target_ids pre-injetados (reconciliação). Pula pagination e faz batchRead direto.
+      if (Array.isArray(resume.target_ids) && resume.discovery_complete) {
+        const targetIds = resume.target_ids;
+        let idx = (resume.read_index as number) ?? 0;
+        const CHUNK = 100;
+        while (idx < targetIds.length) {
+          if (isExpired()) { partial = true; break; }
+          const chunkIds = targetIds.slice(idx, idx + CHUNK);
+          const recs = await batchRead("leads", chunkIds, propsList);
+          const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
+          for (const c of recs) {
+            const p = c.properties;
+            const mapped = mapLead(p);
+            let first = (p.hs_associated_contact_firstname ?? "") as string;
+            let last = (p.hs_associated_contact_lastname ?? null) as string | null;
+            if (!first) {
+              const full = ((p.hs_lead_name_calculated ?? p.hs_lead_name ?? "") as string).trim();
+              if (full) {
+                const parts = full.split(/\s+/);
+                first = parts[0];
+                last = parts.slice(1).join(" ") || last;
+              }
+            }
+            if (!first) first = (p.hs_associated_contact_email ?? "Sem nome") as string;
+            tasks.push({
+              hsId: c.id,
+              payload: {
+                owner_id: userId,
+                first_name: first,
+                last_name: last,
+                email: p.hs_associated_contact_email ?? null,
+                phone: null,
+                company_name: p.hs_associated_company_name ?? null,
+                source: p.hs_lead_source ?? p.hs_analytics_source ?? "hubspot",
+                status: "new",
+                ...mapped,
+                external_ids: { hubspot: c.id } as never,
+                hs_raw: rawOf(c),
+                deleted_at: null,
+              },
+            });
+          }
+          const results = await upsertBatchByHsId(supabase, "leads", userId, tasks);
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            if (r.status === "failed") fail++;
+            else { imported.push(tasks[j].hsId); ok++; }
+          }
+          idx += chunkIds.length;
+          await persistCursor({ read_index: idx });
+          await bump(ok, fail, targetIds.length);
+        }
+        if (partial) await persistCursor({ read_index: idx });
+      } else {
 
       if (resume.discovered === undefined) {
         const total = await searchTotal("leads");
@@ -1598,6 +1654,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           message: `Total no HubSpot: ${total} leads`,
         });
       }
+
 
       let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
       let page = (resume.page as number | undefined) ?? 1;
