@@ -305,7 +305,9 @@ export const listProfileAssignments = createServerFn({ method: "GET" })
       .eq("workspace_owner_id", userId);
 
     const ids = Array.from(new Set([userId, ...((members ?? []).map((m) => (m as { member_user_id: string }).member_user_id))]));
-    const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", ids);
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const emailById = new Map((authList?.users ?? []).map((u) => [u.id, u.email ?? ""]));
     const nameById = new Map((profiles ?? []).map((p) => [(p as { id: string }).id, (p as { full_name: string | null }).full_name ?? ""]));
 
     return ids.map((id) => {
