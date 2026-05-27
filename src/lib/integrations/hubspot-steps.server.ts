@@ -1243,6 +1243,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         if (!after) break;
       }
       await patchItemBefore(supabase, itemId, { discovered: ok + fail });
+      }
+
     } else if (step === "contacts") {
       // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
       // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
