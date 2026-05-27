@@ -4,6 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowRightLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
@@ -13,6 +23,7 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
+import { convertLead } from "@/lib/lead-convert";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
@@ -24,6 +35,9 @@ function LeadDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [lead, setLead] = useState<Lead | null>(null);
+  const [confirmConvert, setConfirmConvert] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("leads").select("*").eq("id", id).single();
@@ -39,35 +53,34 @@ function LeadDetail() {
     void load();
   };
 
-  const remove = async () => {
-    if (!confirm("Excluir lead?")) return;
-    await supabase.from("leads").delete().eq("id", lead.id);
-    toast.success("Excluído");
-    navigate({ to: "/leads" });
+  const doDelete = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+      if (error) throw error;
+      toast.success("Excluído");
+      navigate({ to: "/leads" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
+    }
   };
 
-  const convert = async () => {
+  const doConvert = async () => {
     if (!user) return;
-    if (!confirm("Converter em Contato + Empresa + Negócio?")) return;
-    let companyId: string | null = null;
-    if (lead.company_name) {
-      const { data: c } = await supabase.from("companies").insert({ owner_id: user.id, name: lead.company_name }).select("id").single();
-      companyId = c?.id ?? null;
+    setBusy(true);
+    try {
+      const res = await convertLead(lead, user.id);
+      toast.success(res.reusedCompany ? "Lead convertido (empresa existente reutilizada)" : "Lead convertido!");
+      setConfirmConvert(false);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao converter");
+    } finally {
+      setBusy(false);
     }
-    const { data: contact } = await supabase.from("contacts").insert({
-      owner_id: user.id, first_name: lead.first_name, last_name: lead.last_name,
-      email: lead.email, phone: lead.phone, company_id: companyId,
-    }).select("id").single();
-    const { data: deal } = await supabase.from("deals").insert({
-      owner_id: user.id, name: `Negócio - ${lead.first_name}`, stage: "qualified",
-      company_id: companyId, primary_contact_id: contact?.id,
-    }).select("id").single();
-    await supabase.from("leads").update({
-      status: "qualified", converted_at: new Date().toISOString(),
-      converted_contact_id: contact?.id, converted_deal_id: deal?.id,
-    }).eq("id", lead.id);
-    toast.success("Convertido!");
-    void load();
   };
 
   const header = (
@@ -92,9 +105,11 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-xl gap-2" onClick={convert}><ArrowRightLeft className="h-4 w-4 text-muted-foreground" /> Converter</Button>
+          <Button variant="outline" className="rounded-xl gap-2" onClick={() => setConfirmConvert(true)}>
+            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" /> Converter
+          </Button>
           <div className="h-8 w-px bg-border mx-1" />
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => setConfirmDelete(true)}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -104,32 +119,66 @@ function LeadDetail() {
   );
 
   return (
-    <RecordLayout
-      header={header}
-      left={
-        <PropertiesPanel
-          entity="leads" table="leads" row={lead as unknown as Record<string, unknown> & { id: string }}
-          props={[
-            { key: "first_name", label: "Nome", primary: true },
-            { key: "last_name", label: "Sobrenome", primary: true },
-            { key: "email", label: "Email", type: "email", primary: true },
-            { key: "phone", label: "Telefone", type: "tel", primary: true },
-            { key: "company_name", label: "Empresa", primary: true },
-            { key: "source", label: "Fonte", primary: true },
-            { key: "label", label: "Label" },
-            { key: "score", label: "Score", type: "number" },
-            { key: "notes", label: "Notas" },
-          ]}
-          onSaved={load}
-        />
-      }
-      center={
-        <>
-          <AiSummaryPanel entity="lead" entityId={lead.id} />
-          <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
-        </>
-      }
-      right={<AssociationsPanel entity="lead" entityId={lead.id} />}
-    />
+    <>
+      <RecordLayout
+        header={header}
+        left={
+          <PropertiesPanel
+            entity="leads" table="leads" row={lead as unknown as Record<string, unknown> & { id: string }}
+            props={[
+              { key: "first_name", label: "Nome", primary: true },
+              { key: "last_name", label: "Sobrenome", primary: true },
+              { key: "email", label: "Email", type: "email", primary: true },
+              { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "company_name", label: "Empresa", primary: true },
+              { key: "source", label: "Fonte", primary: true },
+              { key: "label", label: "Label" },
+              { key: "score", label: "Score", type: "number" },
+              { key: "notes", label: "Notas" },
+            ]}
+            onSaved={load}
+          />
+        }
+        center={
+          <>
+            <AiSummaryPanel entity="lead" entityId={lead.id} />
+            <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
+          </>
+        }
+        right={<AssociationsPanel entity="lead" entityId={lead.id} />}
+      />
+
+      <AlertDialog open={confirmConvert} onOpenChange={(v) => !busy && setConfirmConvert(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Converter lead</AlertDialogTitle>
+            <AlertDialogDescription>
+              Será criado um Contato {lead.company_name ? "vinculado à empresa correspondente (reutilizada se já existir) " : ""}e um Negócio em estágio <strong>Qualificado</strong>. O lead será marcado como qualificado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={doConvert} disabled={busy}>
+              {busy ? "Convertendo…" : "Converter"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lead</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {busy ? "Excluindo…" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
