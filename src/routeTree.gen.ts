@@ -20,6 +20,7 @@ import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
+import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -38,6 +39,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
+import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
@@ -173,6 +175,11 @@ const BookSlugRoute = BookSlugRouteImport.update({
   path: '/book/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => AcceptInviteRoute,
+} as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -268,6 +275,12 @@ const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedTasksRoute,
 } as any)
+const AuthenticatedSettingsWorkspaceTeamRoute =
+  AuthenticatedSettingsWorkspaceTeamRouteImport.update({
+    id: '/workspace-team',
+    path: '/workspace-team',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
@@ -740,7 +753,7 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -758,6 +771,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -811,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -850,7 +865,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -866,6 +881,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -919,6 +935,7 @@ export interface FileRoutesByTo {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
@@ -960,7 +977,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/accept-invite': typeof AcceptInviteRoute
+  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -978,6 +995,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
+  '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -1031,6 +1049,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -1090,6 +1109,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1143,6 +1163,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/settings/workspace-team'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations/'
@@ -1198,6 +1219,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1251,6 +1273,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/settings/workspace-team'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations'
@@ -1309,6 +1332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/accept-invite/$token'
     | '/book/$slug'
     | '/portal/$token'
     | '/quote/$token'
@@ -1362,6 +1386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/settings/workspace-team'
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
@@ -1403,7 +1428,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AcceptInviteRoute: typeof AcceptInviteRoute
+  AcceptInviteRoute: typeof AcceptInviteRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -1519,6 +1544,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/book/$slug'
       preLoaderRoute: typeof BookSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/accept-invite/$token': {
+      id: '/accept-invite/$token'
+      path: '/$token'
+      fullPath: '/accept-invite/$token'
+      preLoaderRoute: typeof AcceptInviteTokenRouteImport
+      parentRoute: typeof AcceptInviteRoute
     }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
@@ -1645,6 +1677,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
       parentRoute: typeof AuthenticatedTasksRoute
+    }
+    '/_authenticated/settings/workspace-team': {
+      id: '/_authenticated/settings/workspace-team'
+      path: '/workspace-team'
+      fullPath: '/settings/workspace-team'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceTeamRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -2329,6 +2368,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
+  AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -2374,6 +2414,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
+  AuthenticatedSettingsWorkspaceTeamRoute:
+    AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
@@ -2473,6 +2515,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AcceptInviteRouteChildren {
+  AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
+}
+
+const AcceptInviteRouteChildren: AcceptInviteRouteChildren = {
+  AcceptInviteTokenRoute: AcceptInviteTokenRoute,
+}
+
+const AcceptInviteRouteWithChildren = AcceptInviteRoute._addFileChildren(
+  AcceptInviteRouteChildren,
+)
+
 interface ApiPublicBookingSlugRouteChildren {
   ApiPublicBookingSlugSubmitRoute: typeof ApiPublicBookingSlugSubmitRoute
 }
@@ -2498,7 +2552,7 @@ const ApiPublicFormsSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AcceptInviteRoute: AcceptInviteRoute,
+  AcceptInviteRoute: AcceptInviteRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
