@@ -313,9 +313,10 @@ export const listProfileAssignments = createServerFn({ method: "GET" })
     return ids.map((id) => {
       const member = (members ?? []).find((m) => (m as { member_user_id: string }).member_user_id === id) as
         | { access_profile_id: string | null } | undefined;
+      const name = nameById.get(id) || emailById.get(id) || (id === userId ? "Você (owner)" : id.slice(0, 8));
       return {
         user_id: id,
-        full_name: nameById.get(id) || (id === userId ? "Você (owner)" : id.slice(0, 8)),
+        full_name: name,
         is_owner: id === userId,
         access_profile_id: member?.access_profile_id ?? null,
       };
