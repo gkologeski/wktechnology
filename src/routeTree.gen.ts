@@ -39,6 +39,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
+import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
@@ -274,6 +275,12 @@ const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedTasksRoute,
 } as any)
+const AuthenticatedSettingsWorkspaceTeamRoute =
+  AuthenticatedSettingsWorkspaceTeamRouteImport.update({
+    id: '/workspace-team',
+    path: '/workspace-team',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
@@ -818,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -927,6 +935,7 @@ export interface FileRoutesByTo {
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
@@ -1040,6 +1049,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
@@ -1153,6 +1163,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/settings/workspace-team'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations/'
@@ -1262,6 +1273,7 @@ export interface FileRouteTypes {
     | '/settings/teams'
     | '/settings/webhooks'
     | '/settings/workflows'
+    | '/settings/workspace-team'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/integrations'
@@ -1374,6 +1386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/settings/workspace-team'
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
@@ -1664,6 +1677,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
       parentRoute: typeof AuthenticatedTasksRoute
+    }
+    '/_authenticated/settings/workspace-team': {
+      id: '/_authenticated/settings/workspace-team'
+      path: '/workspace-team'
+      fullPath: '/settings/workspace-team'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkspaceTeamRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -2348,6 +2368,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
+  AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -2393,6 +2414,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
+  AuthenticatedSettingsWorkspaceTeamRoute:
+    AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
