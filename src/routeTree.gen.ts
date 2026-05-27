@@ -85,6 +85,7 @@ import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
@@ -110,6 +111,7 @@ import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/form
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
+import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
@@ -544,6 +546,12 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminWorkspacesRoute =
+  AuthenticatedAdminWorkspacesRouteImport.update({
+    id: '/admin/workspaces',
+    path: '/admin/workspaces',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -687,6 +695,12 @@ const AuthenticatedSettingsRolesRoleIdRoute =
     path: '/$roleId',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
   } as any)
+const AuthenticatedAdminWorkspacesIdRoute =
+  AuthenticatedAdminWorkspacesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
+  } as any)
 const ApiPublicFormsSlugSubmitRoute =
   ApiPublicFormsSlugSubmitRouteImport.update({
     id: '/submit',
@@ -749,6 +763,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -800,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -855,6 +871,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -906,6 +923,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -965,6 +983,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1016,6 +1035,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1075,6 +1095,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/admin/workspaces'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -1126,6 +1147,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations/'
     | '/settings/'
+    | '/admin/workspaces/$id'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1181,6 +1203,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/admin/workspaces'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -1232,6 +1255,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/integrations'
     | '/settings'
+    | '/admin/workspaces/$id'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1290,6 +1314,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/_authenticated/admin/workspaces'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/companies/$id'
@@ -1341,6 +1366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
+    | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1949,6 +1975,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/workspaces': {
+      id: '/_authenticated/admin/workspaces'
+      path: '/admin/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -2123,6 +2156,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/roles/$roleId'
       preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
+    }
+    '/_authenticated/admin/workspaces/$id': {
+      id: '/_authenticated/admin/workspaces/$id'
+      path: '/$id'
+      fullPath: '/admin/workspaces/$id'
+      preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
+      parentRoute: typeof AuthenticatedAdminWorkspacesRoute
     }
     '/api/public/forms/$slug/submit': {
       id: '/api/public/forms/$slug/submit'
@@ -2370,6 +2410,20 @@ const AuthenticatedTasksRouteChildren: AuthenticatedTasksRouteChildren = {
 const AuthenticatedTasksRouteWithChildren =
   AuthenticatedTasksRoute._addFileChildren(AuthenticatedTasksRouteChildren)
 
+interface AuthenticatedAdminWorkspacesRouteChildren {
+  AuthenticatedAdminWorkspacesIdRoute: typeof AuthenticatedAdminWorkspacesIdRoute
+}
+
+const AuthenticatedAdminWorkspacesRouteChildren: AuthenticatedAdminWorkspacesRouteChildren =
+  {
+    AuthenticatedAdminWorkspacesIdRoute: AuthenticatedAdminWorkspacesIdRoute,
+  }
+
+const AuthenticatedAdminWorkspacesRouteWithChildren =
+  AuthenticatedAdminWorkspacesRoute._addFileChildren(
+    AuthenticatedAdminWorkspacesRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
@@ -2385,6 +2439,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
+  AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
@@ -2406,6 +2461,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
+  AuthenticatedAdminWorkspacesRoute:
+    AuthenticatedAdminWorkspacesRouteWithChildren,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,

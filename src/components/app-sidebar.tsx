@@ -15,6 +15,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useAuth } from "@/lib/auth";
 
 import { useMyRole } from "@/lib/use-my-role";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+
 
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 type Group = { label: string; icon: React.ComponentType<{ className?: string }>; items: Item[] };
@@ -133,6 +135,7 @@ export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, signOut } = useAuth();
   const { isAdmin, isManager } = useMyRole();
+  const { isPlatformAdmin } = useIsPlatformAdmin();
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
   const canSee = (url: string) => {
     if (ADMIN_ONLY.has(url)) return isAdmin;
@@ -185,6 +188,16 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="gap-1">
         <SidebarMenu>
+          {isPlatformAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Super-admin" isActive={path.startsWith("/admin/workspaces")}>
+                <Link to="/admin/workspaces">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Super-admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Configurações" isActive={path === "/settings"}>
               <Link to="/settings">
