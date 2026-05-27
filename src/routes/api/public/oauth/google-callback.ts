@@ -143,7 +143,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(
             "Falha ao conectar",
-            `<h1>Falha ao conectar</h1><p>${msg}</p><p><a href="/settings/calendars">Voltar</a></p>`,
+            `<h1>Falha ao conectar</h1><p>${esc(msg)}</p><p><a href="/settings/calendars">Voltar</a></p>`,
             500,
           );
         }
