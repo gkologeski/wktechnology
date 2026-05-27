@@ -3,18 +3,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function resolveActiveWorkspace(
-  supabase: Awaited<ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth>> extends never ? never : any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  userId: string,
-): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("active_workspace_id")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .maybeSingle();
   if (profile?.active_workspace_id) return profile.active_workspace_id as string;
 
-  // Fallback: first workspace the user belongs to
   const { data: member } = await supabase
     .from("workspace_members")
     .select("workspace_id")

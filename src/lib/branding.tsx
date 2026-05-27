@@ -28,7 +28,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("active_workspace_id")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .maybeSingle();
 
       let workspaceId = profile?.active_workspace_id as string | null | undefined;
