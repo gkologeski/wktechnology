@@ -1744,6 +1744,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         await bump(ok, fail);
         if (!nextAfter) break;
       }
+      }
 
     } else if (step.startsWith("activities-")) {
       const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
