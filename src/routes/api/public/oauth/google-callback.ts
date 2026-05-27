@@ -8,9 +8,18 @@ import {
   verifyState,
 } from "@/lib/email-oauth.server";
 
+function esc(s: string) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function htmlResponse(title: string, body: string, status = 200) {
   return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
+    `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
 <style>body{font-family:system-ui;background:#0b0b0c;color:#e7e7ea;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}main{max-width:480px;padding:32px;border:1px solid #2a2a2e;border-radius:12px;background:#141416}h1{margin:0 0 8px;font-size:18px}p{margin:6px 0;color:#a1a1aa;font-size:14px}a{color:#60a5fa}</style>
 </head><body><main>${body}</main></body></html>`,
     { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
@@ -29,7 +38,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         if (errorParam) {
           return htmlResponse(
             "Falha no Google",
-            `<h1>Google retornou erro</h1><p>${errorParam}</p><p><a href="/settings/email">Voltar</a></p>`,
+            `<h1>Google retornou erro</h1><p>${esc(errorParam)}</p><p><a href="/settings/email">Voltar</a></p>`,
             400,
           );
         }
@@ -43,7 +52,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         } catch (e) {
           return htmlResponse(
             "State inválido",
-            `<h1>State inválido</h1><p>${e instanceof Error ? e.message : ""}</p>`,
+            `<h1>State inválido</h1><p>${esc(e instanceof Error ? e.message : "")}</p>`,
             400,
           );
         }
@@ -134,7 +143,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(
             "Falha ao conectar",
-            `<h1>Falha ao conectar</h1><p>${msg}</p><p><a href="/settings/calendars">Voltar</a></p>`,
+            `<h1>Falha ao conectar</h1><p>${esc(msg)}</p><p><a href="/settings/calendars">Voltar</a></p>`,
             500,
           );
         }
