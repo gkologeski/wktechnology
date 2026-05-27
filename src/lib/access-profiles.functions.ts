@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const ACCESS_OBJECTS: Array<{ key: string; label: string; category: "crm" | "marketing" | "sales" | "service" }> = [
   { key: "contacts",   label: "Contatos",   category: "crm" },
@@ -304,15 +305,18 @@ export const listProfileAssignments = createServerFn({ method: "GET" })
       .eq("workspace_owner_id", userId);
 
     const ids = Array.from(new Set([userId, ...((members ?? []).map((m) => (m as { member_user_id: string }).member_user_id))]));
-    const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", ids);
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const emailById = new Map((authList?.users ?? []).map((u) => [u.id, u.email ?? ""]));
     const nameById = new Map((profiles ?? []).map((p) => [(p as { id: string }).id, (p as { full_name: string | null }).full_name ?? ""]));
 
     return ids.map((id) => {
       const member = (members ?? []).find((m) => (m as { member_user_id: string }).member_user_id === id) as
         | { access_profile_id: string | null } | undefined;
+      const name = nameById.get(id) || emailById.get(id) || (id === userId ? "Você (owner)" : id.slice(0, 8));
       return {
         user_id: id,
-        full_name: nameById.get(id) || (id === userId ? "Você (owner)" : id.slice(0, 8)),
+        full_name: name,
         is_owner: id === userId,
         access_profile_id: member?.access_profile_id ?? null,
       };
