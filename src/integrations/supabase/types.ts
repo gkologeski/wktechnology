@@ -185,7 +185,7 @@ export type Database = {
           task_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           attachments?: Json
@@ -296,7 +296,7 @@ export type Database = {
           updated_at?: string
           window_from?: string | null
           window_to?: string | null
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -353,7 +353,7 @@ export type Database = {
           revoked_at?: string | null
           scopes?: string[]
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -461,7 +461,7 @@ export type Database = {
           timezone?: string
           title: string
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           active?: boolean
@@ -545,7 +545,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           timezone?: string | null
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           activity_id?: string | null
@@ -644,7 +644,7 @@ export type Database = {
           sync_enabled?: boolean
           sync_token?: string | null
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           access_token?: string | null
@@ -714,7 +714,7 @@ export type Database = {
           status?: string | null
           title?: string | null
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           all_day?: boolean
@@ -828,7 +828,7 @@ export type Database = {
           type?: string | null
           updated_at?: string
           website?: string | null
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           address?: string | null
@@ -897,7 +897,7 @@ export type Database = {
           source?: string | null
           subscription_type_id: string
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           contact_id?: string
@@ -1005,7 +1005,7 @@ export type Database = {
           twitter_handle?: string | null
           updated_at?: string
           website?: string | null
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           address?: string | null
