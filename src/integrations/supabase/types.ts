@@ -5970,6 +5970,7 @@ export type Database = {
       }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
+      shares_workspace_with: { Args: { _other: string }; Returns: boolean }
     }
     Enums: {
       access_scope: "none" | "own" | "team" | "all"
