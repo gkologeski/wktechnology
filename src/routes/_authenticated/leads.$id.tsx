@@ -52,12 +52,14 @@ function LeadDetail() {
     await supabase.from("leads").update({ status: v as any }).eq("id", lead.id);
     void load();
   };
-
   const doDelete = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+      const { data, error } = await supabase.from("leads").delete().eq("id", lead.id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Você não tem permissão para excluir este lead.");
+      }
       toast.success("Excluído");
       navigate({ to: "/leads" });
     } catch (e) {
@@ -65,6 +67,8 @@ function LeadDetail() {
     } finally {
       setBusy(false);
       setConfirmDelete(false);
+    }
+  };
     }
   };
 
