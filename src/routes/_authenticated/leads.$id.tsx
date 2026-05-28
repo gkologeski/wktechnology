@@ -18,6 +18,7 @@ import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
+import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
@@ -55,11 +56,7 @@ function LeadDetail() {
   const doDelete = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("leads").delete().eq("id", lead.id).select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        throw new Error("Você não tem permissão para excluir este lead.");
-      }
+      await deleteLeadsByIds(supabase, [lead.id]);
       toast.success("Excluído");
       navigate({ to: "/leads" });
     } catch (e) {

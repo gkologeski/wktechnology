@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { convertLead } from "@/lib/lead-convert";
+import { deleteLeadsByIds } from "@/lib/lead-delete";
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -322,8 +323,7 @@ function LeadsHubspotView() {
       confirmLabel: "Excluir",
       destructive: true,
       run: async () => {
-        const { error } = await supabase.from("leads").delete().eq("id", id);
-        if (error) throw new Error(error.message);
+        await deleteLeadsByIds(supabase, [id]);
         toast.success("Removido");
         qc.invalidateQueries({ queryKey: ["leads"] });
       },
@@ -339,9 +339,8 @@ function LeadsHubspotView() {
       confirmLabel: "Excluir",
       destructive: true,
       run: async () => {
-        const { error } = await supabase.from("leads").delete().in("id", ids);
-        if (error) throw new Error(error.message);
-        toast.success(`${ids.length} excluído(s)`);
+        const n = await deleteLeadsByIds(supabase, ids);
+        toast.success(`${n} excluído(s)`);
         clearSelection();
         qc.invalidateQueries({ queryKey: ["leads"] });
       },
