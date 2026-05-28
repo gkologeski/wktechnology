@@ -163,7 +163,7 @@ function HubspotSyncPage() {
         break;
       }
       cursor = r.nextAfter;
-      setReconcileCursor(t, cursor);
+      setReconcileCursor(t, cursor ?? null);
     }
     return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
   };
