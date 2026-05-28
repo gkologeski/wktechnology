@@ -334,7 +334,7 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
       }
       if (Number(nextAfter) >= 10000) {
         const last = r.results?.at(-1);
-        const before = last?.properties?.hs_lastmodifieddate ?? last?.updatedAt;
+        const before = last?.properties?.[tsProp] ?? last?.properties?.hs_lastmodifieddate ?? last?.updatedAt;
         cursor = before ? { before } : {};
       } else {
         cursor = { ...cursor, after: nextAfter };
