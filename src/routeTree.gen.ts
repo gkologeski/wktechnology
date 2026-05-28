@@ -51,7 +51,6 @@ import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings.security'
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
-import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
@@ -89,6 +88,7 @@ import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
+import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
@@ -348,12 +348,6 @@ const AuthenticatedSettingsRotationRoute =
     path: '/rotation',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsRolesRoute =
-  AuthenticatedSettingsRolesRouteImport.update({
-    id: '/roles',
-    path: '/roles',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
 const AuthenticatedSettingsRecurringRoute =
   AuthenticatedSettingsRecurringRouteImport.update({
     id: '/recurring',
@@ -572,6 +566,12 @@ const AuthenticatedAdminWorkspacesRoute =
     path: '/admin/workspaces',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsRolesIndexRoute =
+  AuthenticatedSettingsRolesIndexRouteImport.update({
+    id: '/roles/',
+    path: '/roles/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -711,9 +711,9 @@ const ApiPublicAdminRescheduleCronRoute =
   } as any)
 const AuthenticatedSettingsRolesRoleIdRoute =
   AuthenticatedSettingsRolesRoleIdRouteImport.update({
-    id: '/$roleId',
-    path: '/$roleId',
-    getParentRoute: () => AuthenticatedSettingsRolesRoute,
+    id: '/roles/$roleId',
+    path: '/roles/$roleId',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedAdminWorkspacesIdRoute =
   AuthenticatedAdminWorkspacesIdRouteImport.update({
@@ -821,7 +821,6 @@ export interface FileRoutesByFullPath {
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -864,6 +863,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -932,7 +932,6 @@ export interface FileRoutesByTo {
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -975,6 +974,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1047,7 +1047,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -1090,6 +1089,7 @@ export interface FileRoutesById {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1162,7 +1162,6 @@ export interface FileRouteTypes {
     | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
-    | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
     | '/settings/security'
@@ -1205,6 +1204,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/settings/roles/'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1273,7 +1273,6 @@ export interface FileRouteTypes {
     | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
-    | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
     | '/settings/security'
@@ -1316,6 +1315,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/settings/roles'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1387,7 +1387,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/recurring'
-    | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
     | '/_authenticated/settings/scoring'
     | '/_authenticated/settings/security'
@@ -1430,6 +1429,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/_authenticated/settings/roles/'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1775,13 +1775,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRotationRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/roles': {
-      id: '/_authenticated/settings/roles'
-      path: '/roles'
-      fullPath: '/settings/roles'
-      preLoaderRoute: typeof AuthenticatedSettingsRolesRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
     '/_authenticated/settings/recurring': {
       id: '/_authenticated/settings/recurring'
       path: '/recurring'
@@ -2041,6 +2034,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/roles/': {
+      id: '/_authenticated/settings/roles/'
+      path: '/roles'
+      fullPath: '/settings/roles/'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -2211,10 +2211,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/settings/roles/$roleId': {
       id: '/_authenticated/settings/roles/$roleId'
-      path: '/$roleId'
+      path: '/roles/$roleId'
       fullPath: '/settings/roles/$roleId'
       preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
-      parentRoute: typeof AuthenticatedSettingsRolesRoute
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/admin/workspaces/$id': {
       id: '/_authenticated/admin/workspaces/$id'
@@ -2335,21 +2335,6 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
-interface AuthenticatedSettingsRolesRouteChildren {
-  AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
-}
-
-const AuthenticatedSettingsRolesRouteChildren: AuthenticatedSettingsRolesRouteChildren =
-  {
-    AuthenticatedSettingsRolesRoleIdRoute:
-      AuthenticatedSettingsRolesRoleIdRoute,
-  }
-
-const AuthenticatedSettingsRolesRouteWithChildren =
-  AuthenticatedSettingsRolesRoute._addFileChildren(
-    AuthenticatedSettingsRolesRouteChildren,
-  )
-
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
@@ -2377,7 +2362,6 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
-  AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRouteWithChildren
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
@@ -2391,6 +2375,8 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
+  AuthenticatedSettingsRolesIndexRoute: typeof AuthenticatedSettingsRolesIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -2423,7 +2409,6 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
-  AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRouteWithChildren,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
@@ -2439,6 +2424,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsWorkspaceTeamRoute:
     AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsRolesRoleIdRoute: AuthenticatedSettingsRolesRoleIdRoute,
+  AuthenticatedSettingsRolesIndexRoute: AuthenticatedSettingsRolesIndexRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
@@ -2617,3 +2604,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
