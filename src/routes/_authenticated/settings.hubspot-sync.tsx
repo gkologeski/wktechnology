@@ -54,6 +54,18 @@ function HubspotSyncPage() {
   useEffect(() => {
     void load();
     void refreshCounts();
+    try {
+      const acts: Record<string, boolean> = {};
+      for (const t of ["note", "task", "call", "meeting", "email"]) {
+        acts[t] = !!localStorage.getItem(`hubspot-reconcile-cursor:${t}`);
+      }
+      setReconcileCursors(acts);
+      const ents: Record<string, boolean> = {};
+      for (const t of ["contact", "company", "deal", "lead"]) {
+        ents[t] = !!localStorage.getItem(`hubspot-reconcile-entity-cursor:${t}`);
+      }
+      setEntityCursors(ents);
+    } catch { /* ignore */ }
     const id = setInterval(() => { void refreshCounts(); }, 2000);
     return () => clearInterval(id);
   }, []);
