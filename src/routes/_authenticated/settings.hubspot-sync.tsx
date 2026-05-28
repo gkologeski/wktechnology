@@ -403,18 +403,35 @@ function HubspotSyncPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant="outline"
-                disabled={!!reconcileBusy}
-                onClick={() => runReconcile(t)}
-              >
-                {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
-                <span className="capitalize">{t}</span>
-              </Button>
-            ))}
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => {
+              const resuming = !!reconcileCursors[t];
+              return (
+                <div key={t} className="inline-flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant={resuming ? "default" : "outline"}
+                    disabled={!!reconcileBusy}
+                    onClick={() => runReconcile(t)}
+                    title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
+                  >
+                    {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    <span className="capitalize">{t}</span>
+                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                  </Button>
+                  {resuming && !reconcileBusy && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-1 text-xs text-muted-foreground"
+                      onClick={() => setReconcileCursor(t, null)}
+                      title="Limpar cursor e recomeçar do início"
+                    >
+                      reset
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
             <div className="ml-auto">
               <Button onClick={runReconcileAll} disabled={!!reconcileBusy}>
                 {reconcileBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
