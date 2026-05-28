@@ -89,6 +89,7 @@ import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
+import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
@@ -572,6 +573,12 @@ const AuthenticatedAdminWorkspacesRoute =
     path: '/admin/workspaces',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsRolesIndexRoute =
+  AuthenticatedSettingsRolesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRolesRoute,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -864,6 +871,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -932,7 +940,6 @@ export interface FileRoutesByTo {
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
-  '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
@@ -975,6 +982,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1090,6 +1098,7 @@ export interface FileRoutesById {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -1205,6 +1214,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/settings/roles/'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1273,7 +1283,6 @@ export interface FileRouteTypes {
     | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/recurring'
-    | '/settings/roles'
     | '/settings/rotation'
     | '/settings/scoring'
     | '/settings/security'
@@ -1316,6 +1325,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/settings/roles'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -1430,6 +1440,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/lovable/email/queue/process'
+    | '/_authenticated/settings/roles/'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -2041,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/roles/': {
+      id: '/_authenticated/settings/roles/'
+      path: '/'
+      fullPath: '/settings/roles/'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRolesRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -2337,12 +2355,14 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedSettingsRolesRouteChildren {
   AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
+  AuthenticatedSettingsRolesIndexRoute: typeof AuthenticatedSettingsRolesIndexRoute
 }
 
 const AuthenticatedSettingsRolesRouteChildren: AuthenticatedSettingsRolesRouteChildren =
   {
     AuthenticatedSettingsRolesRoleIdRoute:
       AuthenticatedSettingsRolesRoleIdRoute,
+    AuthenticatedSettingsRolesIndexRoute: AuthenticatedSettingsRolesIndexRoute,
   }
 
 const AuthenticatedSettingsRolesRouteWithChildren =
