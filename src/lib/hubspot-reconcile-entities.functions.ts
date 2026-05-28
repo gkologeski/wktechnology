@@ -268,15 +268,17 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
     let imported = 0;
     let failed = 0;
 
+    const tsProp = entity === "contact" ? "lastmodifieddate" : "hs_lastmodifieddate";
+
     for (let page = 0; page < data.pages; page++) {
-      const filters = [{ propertyName: "hs_lastmodifieddate", operator: "GTE", value: "0" }] as Record<string, string>[];
+      const filters = [{ propertyName: tsProp, operator: "GTE", value: "0" }] as Record<string, string>[];
       const beforeValue = hsSearchDateValue(cursor.before);
-      if (beforeValue) filters.push({ propertyName: "hs_lastmodifieddate", operator: "LT", value: beforeValue });
+      if (beforeValue) filters.push({ propertyName: tsProp, operator: "LT", value: beforeValue });
 
       const searchBody: Record<string, unknown> = {
         limit: 100,
-        properties: ["hs_object_id", "hs_lastmodifieddate"],
-        sorts: [{ propertyName: "hs_lastmodifieddate", direction: "DESCENDING" }],
+        properties: ["hs_object_id", tsProp],
+        sorts: [{ propertyName: tsProp, direction: "DESCENDING" }],
         filterGroups: [{ filters }],
       };
       if (cursor.after) searchBody.after = cursor.after;
@@ -285,6 +287,7 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
         results?: HsRec[];
         paging?: { next?: { after?: string } };
       };
+
       const ids = (r.results ?? []).map((x) => x.id).filter(Boolean);
       if (ids.length === 0) {
         cursor = {};
