@@ -7,12 +7,7 @@ const SUPABASE_ANON =
 
 export const EMAIL = process.env.E2E_USER_EMAIL ?? "";
 export const PASSWORD = process.env.E2E_USER_PASSWORD ?? "";
-
-if (!EMAIL || !PASSWORD) {
-  throw new Error(
-    "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD no ambiente antes de rodar os testes E2E.",
-  );
-}
+export const hasE2ECredentials = Boolean(EMAIL && PASSWORD);
 
 /** Cria um cliente supabase admin "como usuário" para seed/cleanup. */
 export function makeUserClient(): SupabaseClient {

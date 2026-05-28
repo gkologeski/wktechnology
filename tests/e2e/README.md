@@ -1,6 +1,6 @@
 # E2E Tests (Playwright)
 
-Cobertura: fluxo completo **Lead → Empresa → Contato → Negócio** pela tela de detalhes, mais os novos diálogos de confirmação (AlertDialog de exclusão e `ConfirmCountDialog` com validação de quantidade).
+Cobertura: smoke test público automático da tela de login. Com credenciais de teste, também roda o fluxo completo **Lead → Empresa → Contato → Negócio** e os diálogos de confirmação.
 
 ## Pré-requisitos
 
@@ -9,7 +9,7 @@ Cobertura: fluxo completo **Lead → Empresa → Contato → Negócio** pela tel
    bun run test:e2e:install
    ```
 
-2. **Variáveis de ambiente** — usuário de teste com perfil Admin:
+2. **Opcional: variáveis de ambiente** — usuário de teste com perfil Admin para rodar os testes autenticados:
    ```bash
    export E2E_USER_EMAIL="seu-teste@exemplo.com"
    export E2E_USER_PASSWORD="..."
@@ -17,7 +17,7 @@ Cobertura: fluxo completo **Lead → Empresa → Contato → Negócio** pela tel
    export E2E_BASE_URL="https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app"
    ```
 
-   > Estas credenciais também ficam salvas como **secrets do projeto** (`E2E_USER_EMAIL` / `E2E_USER_PASSWORD`), mas só são injetadas em código backend. Para rodar Playwright localmente, exporte-as no seu shell.
+   > Sem essas variáveis, `bun run test:e2e` roda apenas os testes públicos automáticos e pula os testes autenticados.
 
 ## Rodar
 
@@ -27,6 +27,10 @@ bun run test:e2e:ui       # modo UI interativo
 ```
 
 ## O que é testado
+
+### `public-smoke.spec.ts`
+- Abre `/login` sem autenticação
+- Valida título, email, senha e botão Entrar
 
 ### `lead-convert-flow.spec.ts`
 - Seed de um Lead via Supabase

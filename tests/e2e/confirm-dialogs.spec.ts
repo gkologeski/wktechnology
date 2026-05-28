@@ -1,4 +1,4 @@
-import { test, expect } from "./helpers/auth";
+import { test, expect, hasE2ECredentials } from "./helpers/auth";
 
 /**
  * Diálogos de confirmação:
@@ -7,6 +7,10 @@ import { test, expect } from "./helpers/auth";
  *  3. ConfirmCountDialog de exclusão em massa de empresas (/companies)
  *     — exige digitar o número para liberar o botão.
  */
+test.skip(
+  !hasE2ECredentials,
+  "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD para rodar os testes autenticados.",
+);
 
 async function seedLead(supa: any, userId: string, suffix: string) {
   const { data, error } = await supa
