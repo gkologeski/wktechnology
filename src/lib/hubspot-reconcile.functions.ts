@@ -66,6 +66,23 @@ function parseHsNum(v: string | null | undefined): number | null {
 
 type HsProps = Record<string, string | null | undefined>;
 type HsRec = { id: string; properties: HsProps; createdAt?: string; updatedAt?: string };
+type SearchCursor = { after?: string; before?: string };
+
+function parseCursor(raw: string | undefined): SearchCursor {
+  if (!raw) return {};
+  try {
+    const decoded = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as SearchCursor;
+    return { after: decoded.after, before: decoded.before };
+  } catch {
+    if (/^\d+$/.test(raw) && Number(raw) < 10000) return { after: raw };
+    return {};
+  }
+}
+
+function encodeCursor(cursor: SearchCursor): string | undefined {
+  if (!cursor.after && !cursor.before) return undefined;
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
 
 function buildPayload(kind: Kind, ownerId: string, rec: HsRec) {
   const p = rec.properties;
@@ -122,7 +139,7 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
     const kind = data.type as Kind;
     const obj = KIND_TO_OBJECT[kind];
 
-    let after = data.after;
+    let cursor = parseCursor(data.after);
     let scanned = 0;
     let missingCount = 0;
     let imported = 0;
