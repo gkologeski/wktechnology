@@ -1,4 +1,4 @@
-import { test, expect } from "./helpers/auth";
+import { test, expect, hasE2ECredentials } from "./helpers/auth";
 
 /**
  * Fluxo completo: cria Lead → abre tela de detalhes → Converter (AlertDialog)
@@ -6,6 +6,11 @@ import { test, expect } from "./helpers/auth";
  *   → exclui o lead na tela de detalhes (AlertDialog)
  *   → cleanup dos registros derivados via supabase.
  */
+test.skip(
+  !hasE2ECredentials,
+  "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD para rodar os testes autenticados.",
+);
+
 test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)", async ({
   authedPage: page,
   supa,
