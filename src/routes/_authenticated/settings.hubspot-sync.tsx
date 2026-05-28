@@ -22,9 +22,12 @@ function HubspotSyncPage() {
   const list = useServerFn(listHubspotSyncState);
   const relink = useServerFn(relinkHubspotActivities);
   const countRelink = useServerFn(countActivitiesToRelink);
+  const reconcile = useServerFn(reconcileHubspotActivities);
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
+  const [reconcileBusy, setReconcileBusy] = useState<ActType | "all" | null>(null);
+  const [reconcileProgress, setReconcileProgress] = useState<string>("");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
