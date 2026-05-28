@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { pushContactsToHubspot, listHubspotSyncState } from "@/lib/hubspot-sync.functions";
 import { relinkHubspotActivities, countActivitiesToRelink } from "@/lib/hubspot-relink.functions";
 import { reconcileHubspotActivities } from "@/lib/hubspot-reconcile.functions";
+import { reconcileHubspotEntities } from "@/lib/hubspot-reconcile-entities.functions";
 import { Loader2, ArrowUpDown, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
 
 type Row = { id: string; entity: string; local_id: string; hubspot_id: string; last_synced_at: string; direction: string };
 type ActType = "note" | "task" | "call" | "meeting" | "email";
+type EntityType = "contact" | "company" | "deal" | "lead";
+const ENTITY_LABEL: Record<EntityType, string> = { contact: "Contatos", company: "Empresas", deal: "Negócios", lead: "Leads" };
 
 function HubspotSyncPage() {
   const push = useServerFn(pushContactsToHubspot);
@@ -23,11 +26,14 @@ function HubspotSyncPage() {
   const relink = useServerFn(relinkHubspotActivities);
   const countRelink = useServerFn(countActivitiesToRelink);
   const reconcile = useServerFn(reconcileHubspotActivities);
+  const reconcileEntity = useServerFn(reconcileHubspotEntities);
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
   const [reconcileBusy, setReconcileBusy] = useState<ActType | "all" | null>(null);
   const [reconcileProgress, setReconcileProgress] = useState<string>("");
+  const [entityBusy, setEntityBusy] = useState<EntityType | "all" | null>(null);
+  const [entityProgress, setEntityProgress] = useState<string>("");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
@@ -203,6 +209,78 @@ function HubspotSyncPage() {
     }
   };
 
+  const entityCursorKey = (t: EntityType) => `hubspot-reconcile-entity-cursor:${t}`;
+  const getEntityCursor = (t: EntityType) => {
+    try { return localStorage.getItem(entityCursorKey(t)) || undefined; } catch { return undefined; }
+  };
+  const setEntityCursor = (t: EntityType, v: string | null) => {
+    try {
+      if (v) localStorage.setItem(entityCursorKey(t), v);
+      else localStorage.removeItem(entityCursorKey(t));
+    } catch { /* ignore */ }
+  };
+
+  const runEntityOne = async (t: EntityType) => {
+    let totalScanned = 0;
+    let totalMissing = 0;
+    let totalImported = 0;
+    let totalFailed = 0;
+    let cursor: string | undefined = getEntityCursor(t);
+    if (cursor) setEntityProgress(`${ENTITY_LABEL[t]}: retomando varredura...`);
+    while (true) {
+      const r = await reconcileEntity({ data: { entity: t, after: cursor, pages: 3 } });
+      totalScanned += r.scanned;
+      totalMissing += r.missing;
+      totalImported += r.imported;
+      totalFailed += r.failed;
+      setEntityProgress(
+        `${ENTITY_LABEL[t]}: ${totalScanned.toLocaleString("pt-BR")} verificados, ${totalImported.toLocaleString("pt-BR")} importados${totalFailed ? `, ${totalFailed} falhas` : ""}`,
+      );
+      if (!r.hasMore || !r.nextAfter) {
+        setEntityCursor(t, null);
+        break;
+      }
+      cursor = r.nextAfter;
+      setEntityCursor(t, cursor ?? null);
+    }
+    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+  };
+
+  const runEntity = async (t: EntityType) => {
+    setEntityBusy(t);
+    setEntityProgress("");
+    try {
+      const r = await runEntityOne(t);
+      toast.success(`${ENTITY_LABEL[t]}: ${r.imported} novos importados (${r.scanned} verificados)`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEntityBusy(null);
+      setEntityProgress("");
+    }
+  };
+
+  const runEntityAll = async () => {
+    setEntityBusy("all");
+    setEntityProgress("");
+    try {
+      let importedAll = 0;
+      for (const t of ["company", "contact", "deal", "lead"] as EntityType[]) {
+        setEntityProgress(`Iniciando ${ENTITY_LABEL[t]}...`);
+        const r = await runEntityOne(t);
+        importedAll += r.imported;
+      }
+      toast.success(`Reconciliação concluída: ${importedAll} novos importados`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEntityBusy(null);
+      setEntityProgress("");
+    }
+  };
+
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
@@ -331,6 +409,41 @@ function HubspotSyncPage() {
           {reconcileProgress && <p className="text-xs text-muted-foreground">{reconcileProgress}</p>}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Verificar registros novos no HubSpot — Entidades</CardTitle>
+          <CardDescription>
+            Varre o HubSpot (mais recentes primeiro) e importa as Empresas, Contatos, Negócios e Leads
+            que ainda não existem aqui. Não altera registros já presentes. Associações entre eles
+            (contato↔empresa, negócio↔contato) ficam para o fluxo de importação completa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant="outline"
+                disabled={!!entityBusy}
+                onClick={() => runEntity(t)}
+              >
+                {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                <span>{ENTITY_LABEL[t]}</span>
+              </Button>
+            ))}
+            <div className="ml-auto">
+              <Button onClick={runEntityAll} disabled={!!entityBusy}>
+                {entityBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Verificar todas as entidades
+              </Button>
+            </div>
+          </div>
+          {entityProgress && <p className="text-xs text-muted-foreground">{entityProgress}</p>}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader><CardTitle>Mapeamentos ativos</CardTitle></CardHeader>
