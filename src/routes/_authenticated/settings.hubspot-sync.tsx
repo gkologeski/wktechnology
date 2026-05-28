@@ -411,6 +411,41 @@ function HubspotSyncPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Verificar registros novos no HubSpot — Entidades</CardTitle>
+          <CardDescription>
+            Varre o HubSpot (mais recentes primeiro) e importa as Empresas, Contatos, Negócios e Leads
+            que ainda não existem aqui. Não altera registros já presentes. Associações entre eles
+            (contato↔empresa, negócio↔contato) ficam para o fluxo de importação completa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant="outline"
+                disabled={!!entityBusy}
+                onClick={() => runEntity(t)}
+              >
+                {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                <span>{ENTITY_LABEL[t]}</span>
+              </Button>
+            ))}
+            <div className="ml-auto">
+              <Button onClick={runEntityAll} disabled={!!entityBusy}>
+                {entityBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Verificar todas as entidades
+              </Button>
+            </div>
+          </div>
+          {entityProgress && <p className="text-xs text-muted-foreground">{entityProgress}</p>}
+        </CardContent>
+      </Card>
+
+
+      <Card>
         <CardHeader><CardTitle>Mapeamentos ativos</CardTitle></CardHeader>
         <CardContent>
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum mapeamento ainda.</p> :
