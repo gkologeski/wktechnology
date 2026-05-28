@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { pushContactsToHubspot, listHubspotSyncState } from "@/lib/hubspot-sync.functions";
 import { relinkHubspotActivities, countActivitiesToRelink } from "@/lib/hubspot-relink.functions";
-import { Loader2, ArrowUpDown, Link2 } from "lucide-react";
+import { reconcileHubspotActivities } from "@/lib/hubspot-reconcile.functions";
+import { Loader2, ArrowUpDown, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
@@ -21,9 +22,12 @@ function HubspotSyncPage() {
   const list = useServerFn(listHubspotSyncState);
   const relink = useServerFn(relinkHubspotActivities);
   const countRelink = useServerFn(countActivitiesToRelink);
+  const reconcile = useServerFn(reconcileHubspotActivities);
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
+  const [reconcileBusy, setReconcileBusy] = useState<ActType | "all" | null>(null);
+  const [reconcileProgress, setReconcileProgress] = useState<string>("");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
@@ -127,6 +131,77 @@ function HubspotSyncPage() {
     finally { setRelinkBusy(null); setProgress(""); }
   };
 
+  const reconcileCursorKey = (t: ActType) => `hubspot-reconcile-cursor:${t}`;
+  const getReconcileCursor = (t: ActType) => {
+    try { return localStorage.getItem(reconcileCursorKey(t)) || undefined; } catch { return undefined; }
+  };
+  const setReconcileCursor = (t: ActType, v: string | null) => {
+    try {
+      if (v) localStorage.setItem(reconcileCursorKey(t), v);
+      else localStorage.removeItem(reconcileCursorKey(t));
+    } catch { /* ignore */ }
+  };
+
+  const runReconcileOne = async (t: ActType) => {
+    let totalScanned = 0;
+    let totalMissing = 0;
+    let totalImported = 0;
+    let totalFailed = 0;
+    let cursor: string | undefined = getReconcileCursor(t);
+    if (cursor) setReconcileProgress(`${t}: retomando varredura...`);
+    while (true) {
+      const r = await reconcile({ data: { type: t, after: cursor, pages: 3 } });
+      totalScanned += r.scanned;
+      totalMissing += r.missing;
+      totalImported += r.imported;
+      totalFailed += r.failed;
+      setReconcileProgress(
+        `${t}: ${totalScanned.toLocaleString("pt-BR")} verificados, ${totalImported.toLocaleString("pt-BR")} importados${totalFailed ? `, ${totalFailed} falhas` : ""}`,
+      );
+      if (!r.hasMore || !r.nextAfter) {
+        setReconcileCursor(t, null);
+        break;
+      }
+      cursor = r.nextAfter;
+      setReconcileCursor(t, cursor);
+    }
+    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+  };
+
+  const runReconcile = async (t: ActType) => {
+    setReconcileBusy(t);
+    setReconcileProgress("");
+    try {
+      const r = await runReconcileOne(t);
+      toast.success(`${t}: ${r.imported} novos importados (${r.scanned} verificados)`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReconcileBusy(null);
+      setReconcileProgress("");
+    }
+  };
+
+  const runReconcileAll = async () => {
+    setReconcileBusy("all");
+    setReconcileProgress("");
+    try {
+      let importedAll = 0;
+      for (const t of ["note", "task", "call", "meeting", "email"] as ActType[]) {
+        setReconcileProgress(`Iniciando ${t}...`);
+        const r = await runReconcileOne(t);
+        importedAll += r.imported;
+      }
+      toast.success(`Reconciliação concluída: ${importedAll} novos importados`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReconcileBusy(null);
+      setReconcileProgress("");
+    }
+  };
 
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
@@ -220,6 +295,40 @@ function HubspotSyncPage() {
             </div>
           </div>
           {progress && <p className="text-xs text-muted-foreground">{progress}</p>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Verificar registros novos no HubSpot</CardTitle>
+          <CardDescription>
+            Varre o HubSpot (mais recentes primeiro) e importa para o sistema as notes, tasks, calls, meetings
+            e emails que ainda não existem aqui. Não altera registros já presentes. Para vincular contato/empresa/negócio/lead,
+            use "Re-vincular" acima depois da importação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant="outline"
+                disabled={!!reconcileBusy}
+                onClick={() => runReconcile(t)}
+              >
+                {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                <span className="capitalize">{t}</span>
+              </Button>
+            ))}
+            <div className="ml-auto">
+              <Button onClick={runReconcileAll} disabled={!!reconcileBusy}>
+                {reconcileBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Verificar todos
+              </Button>
+            </div>
+          </div>
+          {reconcileProgress && <p className="text-xs text-muted-foreground">{reconcileProgress}</p>}
         </CardContent>
       </Card>
 
