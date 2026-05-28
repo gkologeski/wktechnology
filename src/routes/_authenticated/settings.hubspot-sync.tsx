@@ -17,6 +17,8 @@ export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
 
 type Row = { id: string; entity: string; local_id: string; hubspot_id: string; last_synced_at: string; direction: string };
 type ActType = "note" | "task" | "call" | "meeting" | "email";
+type EntityType = "contact" | "company" | "deal" | "lead";
+const ENTITY_LABEL: Record<EntityType, string> = { contact: "Contatos", company: "Empresas", deal: "Negócios", lead: "Leads" };
 
 function HubspotSyncPage() {
   const push = useServerFn(pushContactsToHubspot);
