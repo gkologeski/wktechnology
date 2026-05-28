@@ -760,6 +760,7 @@ export type Database = {
         Row: {
           address: string | null
           annualrevenue: number | null
+          assigned_user_id: string | null
           cep: string | null
           city: string | null
           country: string | null
@@ -799,6 +800,7 @@ export type Database = {
         Insert: {
           address?: string | null
           annualrevenue?: number | null
+          assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
           country?: string | null
@@ -838,6 +840,7 @@ export type Database = {
         Update: {
           address?: string | null
           annualrevenue?: number | null
+          assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
           country?: string | null
@@ -935,6 +938,7 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          assigned_user_id: string | null
           cep: string | null
           city: string | null
           company_id: string | null
@@ -976,6 +980,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
           company_id?: string | null
@@ -1017,6 +1022,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
           company_id?: string | null
@@ -1599,6 +1605,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          assigned_user_id: string | null
           closed_lost_reason: string | null
           closed_won_reason: string | null
           company_id: string | null
@@ -1631,6 +1638,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
           company_id?: string | null
@@ -1663,6 +1671,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
           company_id?: string | null
@@ -3111,6 +3120,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_user_id: string | null
           company_name: string | null
           converted_at: string | null
           converted_contact_id: string | null
@@ -3142,6 +3152,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_user_id?: string | null
           company_name?: string | null
           converted_at?: string | null
           converted_contact_id?: string | null
@@ -3173,6 +3184,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_user_id?: string | null
           company_name?: string | null
           converted_at?: string | null
           converted_contact_id?: string | null
@@ -6013,6 +6025,24 @@ export type Database = {
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
+      user_can_act: {
+        Args: {
+          _action: string
+          _object: string
+          _row_assignee: string
+          _row_owner: string
+        }
+        Returns: boolean
+      }
+      user_scope_for: {
+        Args: {
+          _action: string
+          _object: string
+          _user: string
+          _workspace: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       access_scope: "none" | "own" | "team" | "all"
