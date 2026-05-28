@@ -34,6 +34,8 @@ function HubspotSyncPage() {
   const [reconcileProgress, setReconcileProgress] = useState<string>("");
   const [entityBusy, setEntityBusy] = useState<EntityType | "all" | null>(null);
   const [entityProgress, setEntityProgress] = useState<string>("");
+  const [reconcileCursors, setReconcileCursors] = useState<Record<string, boolean>>({});
+  const [entityCursors, setEntityCursors] = useState<Record<string, boolean>>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
@@ -52,6 +54,18 @@ function HubspotSyncPage() {
   useEffect(() => {
     void load();
     void refreshCounts();
+    try {
+      const acts: Record<string, boolean> = {};
+      for (const t of ["note", "task", "call", "meeting", "email"]) {
+        acts[t] = !!localStorage.getItem(`hubspot-reconcile-cursor:${t}`);
+      }
+      setReconcileCursors(acts);
+      const ents: Record<string, boolean> = {};
+      for (const t of ["contact", "company", "deal", "lead"]) {
+        ents[t] = !!localStorage.getItem(`hubspot-reconcile-entity-cursor:${t}`);
+      }
+      setEntityCursors(ents);
+    } catch { /* ignore */ }
     const id = setInterval(() => { void refreshCounts(); }, 2000);
     return () => clearInterval(id);
   }, []);
@@ -146,6 +160,7 @@ function HubspotSyncPage() {
       if (v) localStorage.setItem(reconcileCursorKey(t), v);
       else localStorage.removeItem(reconcileCursorKey(t));
     } catch { /* ignore */ }
+    setReconcileCursors((s) => ({ ...s, [t]: !!v }));
   };
 
   const runReconcileOne = async (t: ActType) => {
@@ -218,6 +233,7 @@ function HubspotSyncPage() {
       if (v) localStorage.setItem(entityCursorKey(t), v);
       else localStorage.removeItem(entityCursorKey(t));
     } catch { /* ignore */ }
+    setEntityCursors((s) => ({ ...s, [t]: !!v }));
   };
 
   const runEntityOne = async (t: EntityType) => {
@@ -387,18 +403,35 @@ function HubspotSyncPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant="outline"
-                disabled={!!reconcileBusy}
-                onClick={() => runReconcile(t)}
-              >
-                {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
-                <span className="capitalize">{t}</span>
-              </Button>
-            ))}
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => {
+              const resuming = !!reconcileCursors[t];
+              return (
+                <div key={t} className="inline-flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant={resuming ? "default" : "outline"}
+                    disabled={!!reconcileBusy}
+                    onClick={() => runReconcile(t)}
+                    title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
+                  >
+                    {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    <span className="capitalize">{t}</span>
+                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                  </Button>
+                  {resuming && !reconcileBusy && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-1 text-xs text-muted-foreground"
+                      onClick={() => setReconcileCursor(t, null)}
+                      title="Limpar cursor e recomeçar do início"
+                    >
+                      reset
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
             <div className="ml-auto">
               <Button onClick={runReconcileAll} disabled={!!reconcileBusy}>
                 {reconcileBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
@@ -421,18 +454,35 @@ function HubspotSyncPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant="outline"
-                disabled={!!entityBusy}
-                onClick={() => runEntity(t)}
-              >
-                {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
-                <span>{ENTITY_LABEL[t]}</span>
-              </Button>
-            ))}
+            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => {
+              const resuming = !!entityCursors[t];
+              return (
+                <div key={t} className="inline-flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant={resuming ? "default" : "outline"}
+                    disabled={!!entityBusy}
+                    onClick={() => runEntity(t)}
+                    title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
+                  >
+                    {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    <span>{ENTITY_LABEL[t]}</span>
+                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                  </Button>
+                  {resuming && !entityBusy && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-1 text-xs text-muted-foreground"
+                      onClick={() => setEntityCursor(t, null)}
+                      title="Limpar cursor e recomeçar do início"
+                    >
+                      reset
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
             <div className="ml-auto">
               <Button onClick={runEntityAll} disabled={!!entityBusy}>
                 {entityBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
