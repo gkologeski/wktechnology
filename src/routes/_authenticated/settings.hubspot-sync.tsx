@@ -209,6 +209,78 @@ function HubspotSyncPage() {
     }
   };
 
+  const entityCursorKey = (t: EntityType) => `hubspot-reconcile-entity-cursor:${t}`;
+  const getEntityCursor = (t: EntityType) => {
+    try { return localStorage.getItem(entityCursorKey(t)) || undefined; } catch { return undefined; }
+  };
+  const setEntityCursor = (t: EntityType, v: string | null) => {
+    try {
+      if (v) localStorage.setItem(entityCursorKey(t), v);
+      else localStorage.removeItem(entityCursorKey(t));
+    } catch { /* ignore */ }
+  };
+
+  const runEntityOne = async (t: EntityType) => {
+    let totalScanned = 0;
+    let totalMissing = 0;
+    let totalImported = 0;
+    let totalFailed = 0;
+    let cursor: string | undefined = getEntityCursor(t);
+    if (cursor) setEntityProgress(`${ENTITY_LABEL[t]}: retomando varredura...`);
+    while (true) {
+      const r = await reconcileEntity({ data: { entity: t, after: cursor, pages: 3 } });
+      totalScanned += r.scanned;
+      totalMissing += r.missing;
+      totalImported += r.imported;
+      totalFailed += r.failed;
+      setEntityProgress(
+        `${ENTITY_LABEL[t]}: ${totalScanned.toLocaleString("pt-BR")} verificados, ${totalImported.toLocaleString("pt-BR")} importados${totalFailed ? `, ${totalFailed} falhas` : ""}`,
+      );
+      if (!r.hasMore || !r.nextAfter) {
+        setEntityCursor(t, null);
+        break;
+      }
+      cursor = r.nextAfter;
+      setEntityCursor(t, cursor ?? null);
+    }
+    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+  };
+
+  const runEntity = async (t: EntityType) => {
+    setEntityBusy(t);
+    setEntityProgress("");
+    try {
+      const r = await runEntityOne(t);
+      toast.success(`${ENTITY_LABEL[t]}: ${r.imported} novos importados (${r.scanned} verificados)`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEntityBusy(null);
+      setEntityProgress("");
+    }
+  };
+
+  const runEntityAll = async () => {
+    setEntityBusy("all");
+    setEntityProgress("");
+    try {
+      let importedAll = 0;
+      for (const t of ["company", "contact", "deal", "lead"] as EntityType[]) {
+        setEntityProgress(`Iniciando ${ENTITY_LABEL[t]}...`);
+        const r = await runEntityOne(t);
+        importedAll += r.imported;
+      }
+      toast.success(`Reconciliação concluída: ${importedAll} novos importados`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEntityBusy(null);
+      setEntityProgress("");
+    }
+  };
+
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
