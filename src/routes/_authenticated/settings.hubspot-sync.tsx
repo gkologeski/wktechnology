@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { pushContactsToHubspot, listHubspotSyncState } from "@/lib/hubspot-sync.functions";
 import { relinkHubspotActivities, countActivitiesToRelink } from "@/lib/hubspot-relink.functions";
 import { reconcileHubspotActivities } from "@/lib/hubspot-reconcile.functions";
+import { reconcileHubspotEntities } from "@/lib/hubspot-reconcile-entities.functions";
 import { Loader2, ArrowUpDown, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
