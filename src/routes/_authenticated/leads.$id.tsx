@@ -69,8 +69,6 @@ function LeadDetail() {
       setConfirmDelete(false);
     }
   };
-    }
-  };
 
   const doConvert = async () => {
     if (!user) return;
