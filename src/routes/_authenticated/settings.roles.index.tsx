@@ -17,7 +17,7 @@ import {
   listProfileAssignments, assignProfileToUser,
 } from "@/lib/access-profiles.functions";
 
-export const Route = createFileRoute("/_authenticated/settings/roles")({
+export const Route = createFileRoute("/_authenticated/settings/roles/")({
   component: RolesPage,
 });
 
