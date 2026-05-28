@@ -454,18 +454,35 @@ function HubspotSyncPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant="outline"
-                disabled={!!entityBusy}
-                onClick={() => runEntity(t)}
-              >
-                {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
-                <span>{ENTITY_LABEL[t]}</span>
-              </Button>
-            ))}
+            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => {
+              const resuming = !!entityCursors[t];
+              return (
+                <div key={t} className="inline-flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant={resuming ? "default" : "outline"}
+                    disabled={!!entityBusy}
+                    onClick={() => runEntity(t)}
+                    title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
+                  >
+                    {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    <span>{ENTITY_LABEL[t]}</span>
+                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                  </Button>
+                  {resuming && !entityBusy && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-1 text-xs text-muted-foreground"
+                      onClick={() => setEntityCursor(t, null)}
+                      title="Limpar cursor e recomeçar do início"
+                    >
+                      reset
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
             <div className="ml-auto">
               <Button onClick={runEntityAll} disabled={!!entityBusy}>
                 {entityBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
