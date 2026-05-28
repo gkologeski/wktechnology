@@ -131,6 +131,77 @@ function HubspotSyncPage() {
     finally { setRelinkBusy(null); setProgress(""); }
   };
 
+  const reconcileCursorKey = (t: ActType) => `hubspot-reconcile-cursor:${t}`;
+  const getReconcileCursor = (t: ActType) => {
+    try { return localStorage.getItem(reconcileCursorKey(t)) || undefined; } catch { return undefined; }
+  };
+  const setReconcileCursor = (t: ActType, v: string | null) => {
+    try {
+      if (v) localStorage.setItem(reconcileCursorKey(t), v);
+      else localStorage.removeItem(reconcileCursorKey(t));
+    } catch { /* ignore */ }
+  };
+
+  const runReconcileOne = async (t: ActType) => {
+    let totalScanned = 0;
+    let totalMissing = 0;
+    let totalImported = 0;
+    let totalFailed = 0;
+    let cursor: string | undefined = getReconcileCursor(t);
+    if (cursor) setReconcileProgress(`${t}: retomando varredura...`);
+    while (true) {
+      const r = await reconcile({ data: { type: t, after: cursor, pages: 3 } });
+      totalScanned += r.scanned;
+      totalMissing += r.missing;
+      totalImported += r.imported;
+      totalFailed += r.failed;
+      setReconcileProgress(
+        `${t}: ${totalScanned.toLocaleString("pt-BR")} verificados, ${totalImported.toLocaleString("pt-BR")} importados${totalFailed ? `, ${totalFailed} falhas` : ""}`,
+      );
+      if (!r.hasMore || !r.nextAfter) {
+        setReconcileCursor(t, null);
+        break;
+      }
+      cursor = r.nextAfter;
+      setReconcileCursor(t, cursor);
+    }
+    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+  };
+
+  const runReconcile = async (t: ActType) => {
+    setReconcileBusy(t);
+    setReconcileProgress("");
+    try {
+      const r = await runReconcileOne(t);
+      toast.success(`${t}: ${r.imported} novos importados (${r.scanned} verificados)`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReconcileBusy(null);
+      setReconcileProgress("");
+    }
+  };
+
+  const runReconcileAll = async () => {
+    setReconcileBusy("all");
+    setReconcileProgress("");
+    try {
+      let importedAll = 0;
+      for (const t of ["note", "task", "call", "meeting", "email"] as ActType[]) {
+        setReconcileProgress(`Iniciando ${t}...`);
+        const r = await runReconcileOne(t);
+        importedAll += r.imported;
+      }
+      toast.success(`Reconciliação concluída: ${importedAll} novos importados`);
+      await refreshCounts();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReconcileBusy(null);
+      setReconcileProgress("");
+    }
+  };
 
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0);
 
