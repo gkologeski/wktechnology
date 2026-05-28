@@ -4,7 +4,6 @@ import { amIPlatformAdmin } from "@/lib/platform-admin.functions";
 import { useAuth } from "@/lib/auth";
 
 export function useIsPlatformAdmin() {
-export function useIsPlatformAdmin() {
   const { user, session, loading } = useAuth();
   const fn = useServerFn(amIPlatformAdmin);
   const q = useQuery({
@@ -15,6 +14,4 @@ export function useIsPlatformAdmin() {
     retry: false,
   });
   return { isPlatformAdmin: q.data?.is_admin ?? false, loading: q.isLoading };
-}
-
 }
