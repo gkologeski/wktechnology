@@ -133,7 +133,9 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
         limit: 100,
         properties: ["hs_object_id"],
         sorts: [{ propertyName: "hs_lastmodifieddate", direction: "DESCENDING" }],
-        filterGroups: [],
+        filterGroups: [
+          { filters: [{ propertyName: "hs_lastmodifieddate", operator: "GTE", value: "0" }] },
+        ],
       };
       if (after) searchBody.after = after;
 
