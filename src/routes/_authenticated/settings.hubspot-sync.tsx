@@ -221,6 +221,7 @@ function HubspotSyncPage() {
       if (v) localStorage.setItem(entityCursorKey(t), v);
       else localStorage.removeItem(entityCursorKey(t));
     } catch { /* ignore */ }
+    setEntityCursors((s) => ({ ...s, [t]: !!v }));
   };
 
   const runEntityOne = async (t: EntityType) => {
