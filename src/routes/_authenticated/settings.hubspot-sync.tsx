@@ -148,6 +148,7 @@ function HubspotSyncPage() {
       if (v) localStorage.setItem(reconcileCursorKey(t), v);
       else localStorage.removeItem(reconcileCursorKey(t));
     } catch { /* ignore */ }
+    setReconcileCursors((s) => ({ ...s, [t]: !!v }));
   };
 
   const runReconcileOne = async (t: ActType) => {
