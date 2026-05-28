@@ -32,6 +32,8 @@ function HubspotSyncPage() {
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
   const [reconcileBusy, setReconcileBusy] = useState<ActType | "all" | null>(null);
   const [reconcileProgress, setReconcileProgress] = useState<string>("");
+  const [entityBusy, setEntityBusy] = useState<EntityType | "all" | null>(null);
+  const [entityProgress, setEntityProgress] = useState<string>("");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
   const [progress, setProgress] = useState<string>("");
