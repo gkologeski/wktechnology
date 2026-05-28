@@ -299,6 +299,40 @@ function HubspotSyncPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Verificar registros novos no HubSpot</CardTitle>
+          <CardDescription>
+            Varre o HubSpot (mais recentes primeiro) e importa para o sistema as notes, tasks, calls, meetings
+            e emails que ainda não existem aqui. Não altera registros já presentes. Para vincular contato/empresa/negócio/lead,
+            use "Re-vincular" acima depois da importação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {(["note", "task", "call", "meeting", "email"] as ActType[]).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant="outline"
+                disabled={!!reconcileBusy}
+                onClick={() => runReconcile(t)}
+              >
+                {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                <span className="capitalize">{t}</span>
+              </Button>
+            ))}
+            <div className="ml-auto">
+              <Button onClick={runReconcileAll} disabled={!!reconcileBusy}>
+                {reconcileBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Verificar todos
+              </Button>
+            </div>
+          </div>
+          {reconcileProgress && <p className="text-xs text-muted-foreground">{reconcileProgress}</p>}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Mapeamentos ativos</CardTitle></CardHeader>
         <CardContent>
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum mapeamento ainda.</p> :
