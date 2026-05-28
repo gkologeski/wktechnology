@@ -26,6 +26,7 @@ function HubspotSyncPage() {
   const relink = useServerFn(relinkHubspotActivities);
   const countRelink = useServerFn(countActivitiesToRelink);
   const reconcile = useServerFn(reconcileHubspotActivities);
+  const reconcileEntity = useServerFn(reconcileHubspotEntities);
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
