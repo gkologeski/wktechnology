@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
+import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import {
   CheckboxFilter,
   FilterGroup,
