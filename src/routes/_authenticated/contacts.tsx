@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+
 import {
   DATE_PRESET_OPTIONS,
   getDateRange,
