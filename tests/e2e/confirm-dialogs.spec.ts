@@ -12,11 +12,13 @@ test.skip(
   "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD para rodar os testes autenticados.",
 );
 
-async function seedLead(supa: any, userId: string, suffix: string) {
+async function seedLead(supa: any, userId: string, workspaceId: string, suffix: string) {
   const { data, error } = await supa
     .from("leads")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
+      assigned_user_id: userId,
       first_name: `Bulk${suffix}`,
       last_name: "Del",
       email: `bulk+${suffix}@example.com`,
@@ -32,8 +34,9 @@ test("AlertDialog de exclusão na tela de detalhes do lead", async ({
   authedPage: page,
   supa,
   userId,
+  workspaceId,
 }) => {
-  const id = await seedLead(supa, userId, `det-${Date.now()}`);
+  const id = await seedLead(supa, userId, workspaceId, `det-${Date.now()}`);
   await page.goto(`/leads/${id}`);
 
   // Botão lixeira no header
@@ -58,11 +61,12 @@ test("AlertDialog de exclusão em massa de leads (/leads)", async ({
   authedPage: page,
   supa,
   userId,
+  workspaceId,
 }) => {
   const ts = Date.now();
   const ids = [
-    await seedLead(supa, userId, `b1-${ts}`),
-    await seedLead(supa, userId, `b2-${ts}`),
+    await seedLead(supa, userId, workspaceId, `b1-${ts}`),
+    await seedLead(supa, userId, workspaceId, `b2-${ts}`),
   ];
 
   await page.goto("/leads");
@@ -94,12 +98,13 @@ test("ConfirmCountDialog — exige digitar a quantidade (companies)", async ({
   authedPage: page,
   supa,
   userId,
+  workspaceId,
 }) => {
   const ts = Date.now();
   const names = [`E2E Bulk Co A ${ts}`, `E2E Bulk Co B ${ts}`];
   const inserted = await supa
     .from("companies")
-    .insert(names.map((name) => ({ owner_id: userId, name })))
+    .insert(names.map((name) => ({ owner_id: userId, workspace_id: workspaceId, assigned_user_id: userId, name })))
     .select("id");
   const ids = (inserted.data ?? []).map((r: any) => r.id);
   expect(ids.length).toBe(2);
