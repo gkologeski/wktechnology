@@ -547,14 +547,18 @@ function CompaniesHubspotView() {
                         </Td>
                         <Td>
                           {c.owner_id ? (
-                            <InitialsAvatar
-                              text={c.owner_id.slice(0, 2).toUpperCase()}
-                              seed={c.owner_id}
-                              size={6}
-                            />
+                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+                              <InitialsAvatar
+                                text={initialsFor(c.owner_id)}
+                                seed={c.owner_id}
+                                size={6}
+                              />
+                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
+
                         </Td>
                         <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
                         <Td className="w-10">
