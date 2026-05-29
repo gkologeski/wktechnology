@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
+import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -93,6 +94,7 @@ function CompaniesHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -230,12 +232,18 @@ function CompaniesHubspotView() {
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
+    if (!selectedIds.size) return;
+    setBulkDeleteOpen(true);
+  };
+  const confirmBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} empresa(s)?`)) return;
     const { error } = await supabase.from("companies").delete().in("id", ids);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(`${ids.length} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["companies"] });
@@ -577,6 +585,13 @@ function CompaniesHubspotView() {
           />
         </div>
       </div>
+      <ConfirmCountDialog
+        open={bulkDeleteOpen}
+        setOpen={setBulkDeleteOpen}
+        count={selectedIds.size}
+        entity="empresa(s)"
+        onConfirm={confirmBulkDelete}
+      />
     </div>
   );
 }
