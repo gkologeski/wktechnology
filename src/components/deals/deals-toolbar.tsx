@@ -43,7 +43,7 @@ export function DealsToolbar({
   const chips: { key: keyof DealFilters; label: string; clear: () => void }[] = [];
   if (filters.ownerId) {
     const o = owners.find((x) => x.id === filters.ownerId);
-    chips.push({ key: "ownerId", label: `Owner: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
+    chips.push({ key: "ownerId", label: `Responsável: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
   }
   if (filters.period !== "all") {
     chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "all") });
@@ -88,9 +88,9 @@ export function DealsToolbar({
         </div>
 
         <Select value={filters.ownerId || "all"} onValueChange={(v) => setF("ownerId", v === "all" ? "" : v)}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Owner" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Responsável" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos owners</SelectItem>
+            <SelectItem value="all">Todos os responsáveis</SelectItem>
             {owners.map((o) => (
               <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
             ))}

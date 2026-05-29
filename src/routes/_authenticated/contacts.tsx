@@ -60,10 +60,10 @@ const LIFECYCLE_STAGES = [
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS = [
-  { id: "all" as const, label: "All contacts" },
-  { id: "mine" as const, label: "My contacts" },
-  { id: "unassigned" as const, label: "Unassigned" },
-  { id: "new_week" as const, label: "Created this week" },
+  { id: "all" as const, label: "Todos os contatos" },
+  { id: "mine" as const, label: "Meus contatos" },
+  { id: "unassigned" as const, label: "Sem responsável" },
+  { id: "new_week" as const, label: "Criados esta semana" },
 ];
 
 type SortKey = "first_name" | "created_at" | "updated_at";
@@ -271,7 +271,7 @@ function ContactsHubspotView() {
             ))}
           </FilterGroup>
 
-          <FilterGroup title="Owner" defaultOpen>
+          <FilterGroup title="Responsável" defaultOpen>
             <button
               type="button"
               onClick={() => setActiveView(activeView === "mine" ? "all" : "mine")}
@@ -281,7 +281,7 @@ function ContactsHubspotView() {
               )}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              My contacts
+              Meus contatos
             </button>
             <button
               type="button"
@@ -292,11 +292,11 @@ function ContactsHubspotView() {
               )}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-              Unassigned
+              Sem responsável
             </button>
           </FilterGroup>
 
-          <FilterGroup title="Company">
+          <FilterGroup title="Empresa">
             {companies.length === 0 ? (
               <p className="px-2 py-1 text-xs text-muted-foreground">Sem empresas</p>
             ) : (

@@ -50,10 +50,10 @@ export const Route = createFileRoute("/_authenticated/companies")({
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS = [
-  { id: "all" as const, label: "All companies" },
-  { id: "mine" as const, label: "My companies" },
-  { id: "unassigned" as const, label: "Unassigned" },
-  { id: "new_week" as const, label: "Created this week" },
+  { id: "all" as const, label: "Todas as empresas" },
+  { id: "mine" as const, label: "Minhas empresas" },
+  { id: "unassigned" as const, label: "Sem responsável" },
+  { id: "new_week" as const, label: "Criadas esta semana" },
 ];
 
 type SortKey = "name" | "created_at" | "updated_at";

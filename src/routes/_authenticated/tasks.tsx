@@ -49,11 +49,11 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 type ViewId = "all" | "mine_open" | "due_today" | "overdue" | "completed";
 const VIEWS = [
-  { id: "all" as const, label: "All tasks" },
-  { id: "mine_open" as const, label: "My open tasks" },
-  { id: "due_today" as const, label: "Due today" },
-  { id: "overdue" as const, label: "Overdue" },
-  { id: "completed" as const, label: "Completed" },
+  { id: "all" as const, label: "Todas as tarefas" },
+  { id: "mine_open" as const, label: "Minhas tarefas abertas" },
+  { id: "due_today" as const, label: "Vencem hoje" },
+  { id: "overdue" as const, label: "Atrasadas" },
+  { id: "completed" as const, label: "Concluídas" },
 ];
 
 const STATUS_TONE: Record<string, keyof typeof TONES> = {
