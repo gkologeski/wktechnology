@@ -109,10 +109,10 @@ export function DealsToolbar({
           </SelectContent>
         </Select>
 
-        <Select value={filters.period} onValueChange={(v) => setF("period", v as DealFilters["period"])}>
+        <Select value={filters.period} onValueChange={(v) => setF("period", v as DealPeriod)}>
           <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(Object.keys(PERIOD_LABELS) as DealFilters["period"][]).map((k) => (
+            {PERIOD_ORDER.map((k) => (
               <SelectItem key={k} value={k}>{PERIOD_LABELS[k]}</SelectItem>
             ))}
           </SelectContent>
