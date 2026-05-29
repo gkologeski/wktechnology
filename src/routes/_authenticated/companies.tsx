@@ -582,6 +582,13 @@ function CompaniesHubspotView() {
           />
         </div>
       </div>
+      <ConfirmCountDialog
+        open={bulkDeleteOpen}
+        setOpen={setBulkDeleteOpen}
+        count={selectedIds.size}
+        entity="empresa(s)"
+        onConfirm={confirmBulkDelete}
+      />
     </div>
   );
 }
