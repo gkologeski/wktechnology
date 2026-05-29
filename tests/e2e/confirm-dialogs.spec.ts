@@ -9,7 +9,7 @@ import { test, expect, hasE2ECredentials } from "./helpers/auth";
  */
 test.skip(
   !hasE2ECredentials,
-  "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD para rodar os testes autenticados.",
+  "Defina E2E_USER_EMAIL/E2E_USER_PASSWORD ou E2E_EMAIL/E2E_PASSWORD para rodar os testes autenticados.",
 );
 
 async function seedLead(supa: any, userId: string, workspaceId: string, suffix: string) {
@@ -71,7 +71,7 @@ test("AlertDialog de exclusão em massa de leads (/leads)", async ({
 
   await page.goto("/leads");
   // Filtra para garantir que aparecem
-  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Search" i]').first().fill("Bulk");
+  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]').first().fill(String(ts));
   await page.waitForTimeout(500);
 
   // Seleciona as duas primeiras linhas via checkbox
@@ -110,7 +110,7 @@ test("ConfirmCountDialog — exige digitar a quantidade (companies)", async ({
   expect(ids.length).toBe(2);
 
   await page.goto("/companies");
-  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Search" i]').first().fill(`E2E Bulk Co`);
+  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]').first().fill(String(ts));
   await page.waitForTimeout(500);
 
   const rowCbs = page.locator('table tbody input[type="checkbox"], table tbody [role="checkbox"]');

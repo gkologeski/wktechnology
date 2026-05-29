@@ -5,8 +5,8 @@ const SUPABASE_URL = "https://czrmhtzaeonzjmbgbabz.supabase.co";
 const SUPABASE_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cm1odHphZW9uemptYmdiYWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MTM4ODcsImV4cCI6MjA5NDM4OTg4N30.NZt1xBOm8e8Bcl6LKDRsfBBCY2sg_JXtMBjx8hb7sBg";
 
-export const EMAIL = process.env.E2E_USER_EMAIL ?? "";
-export const PASSWORD = process.env.E2E_USER_PASSWORD ?? "";
+export const EMAIL = process.env.E2E_USER_EMAIL ?? process.env.E2E_EMAIL ?? "";
+export const PASSWORD = process.env.E2E_USER_PASSWORD ?? process.env.E2E_PASSWORD ?? "";
 export const hasE2ECredentials = Boolean(EMAIL && PASSWORD);
 
 /** Cria um cliente supabase admin "como usuário" para seed/cleanup. */

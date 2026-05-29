@@ -19,8 +19,8 @@ for (const file of [".env.test.local", ".env.local"]) {
  * E2E tests against the public app URL.
  *
  * Required env vars (set locally before `bun run test:e2e`):
- *   E2E_USER_EMAIL    — login of an Admin/workspace owner test account
- *   E2E_USER_PASSWORD — password
+ *   E2E_USER_EMAIL    — login of an Admin/workspace owner test account (or E2E_EMAIL)
+ *   E2E_USER_PASSWORD — password (or E2E_PASSWORD)
  *   E2E_BASE_URL      — (optional) override; defaults to the public CRM URL
  *
  * Install browsers once:  bunx playwright install chromium

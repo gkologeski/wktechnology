@@ -8,7 +8,7 @@ import { test, expect, hasE2ECredentials } from "./helpers/auth";
  */
 test.skip(
   !hasE2ECredentials,
-  "Defina E2E_USER_EMAIL e E2E_USER_PASSWORD para rodar os testes autenticados.",
+  "Defina E2E_USER_EMAIL/E2E_USER_PASSWORD ou E2E_EMAIL/E2E_PASSWORD para rodar os testes autenticados.",
 );
 
 test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)", async ({
@@ -80,6 +80,7 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
     .from("deals")
     .select("id, name, stage, company_id, primary_contact_id")
     .eq("primary_contact_id", contact!.id)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   expect(deal?.id, "negócio não foi criado").toBeTruthy();
   expect(deal!.stage).toBe("qualified");

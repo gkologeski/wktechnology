@@ -13,6 +13,7 @@ Cobertura: smoke test público automático da tela de login. Com credenciais de 
    ```bash
    export E2E_USER_EMAIL="seu-teste@exemplo.com"
    export E2E_USER_PASSWORD="..."
+   # ou use E2E_EMAIL / E2E_PASSWORD
    # opcional — por padrão usa a URL de preview do projeto
    export E2E_BASE_URL="https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app"
    ```
