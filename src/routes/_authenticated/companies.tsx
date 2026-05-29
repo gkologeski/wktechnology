@@ -440,20 +440,20 @@ function CompaniesHubspotView() {
                   >
                     Name
                   </Th>
-                  <Th>Domain</Th>
-                  <Th>Industry</Th>
-                  <Th>Size</Th>
-                  <Th>City</Th>
+                  <Th>Domínio</Th>
+                  <Th>Setor</Th>
+                  <Th>Porte</Th>
+                  <Th>Cidade</Th>
                   <Th>UF</Th>
                   <Th>ABM</Th>
-                  <Th>Owner</Th>
+                  <Th>Responsável</Th>
                   <Th
                     sortable
                     active={sortKey === "created_at"}
                     dir={sortDir}
                     onClick={() => onSort("created_at")}
                   >
-                    Create date
+                    Criada em
                   </Th>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>

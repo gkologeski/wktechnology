@@ -644,18 +644,18 @@ function LeadsHubspotView() {
                     />
                   </th>
                   <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
-                    Name
+                    Nome
                   </Th>
-                  <Th>Email</Th>
-                  <Th>Phone</Th>
-                  <Th>Company</Th>
-                  <Th>Lead Status</Th>
+                  <Th>E-mail</Th>
+                  <Th>Telefone</Th>
+                  <Th>Empresa</Th>
+                  <Th>Status do lead</Th>
                   <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
                     Score
                   </Th>
-                  <Th>Owner</Th>
+                  <Th>Responsável</Th>
                   <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
-                    Create date
+                    Criado em
                   </Th>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>

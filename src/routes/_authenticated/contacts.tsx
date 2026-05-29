@@ -411,14 +411,14 @@ function ContactsHubspotView() {
                     dir={sortDir}
                     onClick={() => onSort("first_name")}
                   >
-                    Name
+                    Nome
                   </Th>
-                  <Th>Email</Th>
-                  <Th>Phone</Th>
-                  <Th>Job title</Th>
-                  <Th>Company</Th>
-                  <Th>Lifecycle stage</Th>
-                  <Th>Owner</Th>
+                  <Th>E-mail</Th>
+                  <Th>Telefone</Th>
+                  <Th>Cargo</Th>
+                  <Th>Empresa</Th>
+                  <Th>Etapa do ciclo</Th>
+                  <Th>Responsável</Th>
                   <Th
                     sortable
                     active={sortKey === "updated_at"}

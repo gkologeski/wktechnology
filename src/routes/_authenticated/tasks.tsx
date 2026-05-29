@@ -410,19 +410,19 @@ function TasksHubspotView() {
                     dir={sortDir}
                     onClick={() => onSort("subject")}
                   >
-                    Title
+                    Título
                   </Th>
                   <Th>Status</Th>
-                  <Th>Priority</Th>
+                  <Th>Prioridade</Th>
                   <Th
                     sortable
                     active={sortKey === "due_date"}
                     dir={sortDir}
                     onClick={() => onSort("due_date")}
                   >
-                    Due date
+                    Vencimento
                   </Th>
-                  <Th>Assignee</Th>
+                  <Th>Responsável</Th>
                   <Th
                     sortable
                     active={sortKey === "created_at"}

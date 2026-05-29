@@ -37,7 +37,7 @@ export function DealsList({
             <TableHead className="text-[11px] uppercase tracking-wide w-[30%]">Negócio</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide">Empresa</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide">Contato</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wide">Owner</TableHead>
+            <TableHead className="text-[11px] uppercase tracking-wide">Responsável</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide text-right">Valor</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide">Fechamento</TableHead>
           </TableRow>
