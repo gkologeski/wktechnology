@@ -93,6 +93,8 @@ type Filters = {
   scoreMin: number;
   scoreMax: number;
   createdPreset: "any" | "today" | "7d" | "30d";
+  ownerIds: string[];
+  includeUnassigned: boolean;
 };
 
 const DEFAULT_FILTERS: Filters = {
@@ -101,6 +103,8 @@ const DEFAULT_FILTERS: Filters = {
   scoreMin: 0,
   scoreMax: 100,
   createdPreset: "any",
+  ownerIds: [],
+  includeUnassigned: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -239,6 +243,14 @@ function LeadsHubspotView() {
       if (filters.createdPreset !== "any") {
         const days = filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
         q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+      // Responsável (multi-select + sem responsável)
+      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+      } else if (filters.ownerIds.length > 0) {
+        q = q.in("owner_id", filters.ownerIds);
+      } else if (filters.includeUnassigned) {
+        q = q.is("owner_id", null);
       }
 
       // Search
