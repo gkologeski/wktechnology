@@ -195,23 +195,19 @@ function LeadsHubspotView() {
     queryKey: ["leads", "sources"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("leads")
-        .select("source")
-        .not("source", "is", null)
-        .limit(2000);
-      const map = new Map<string, number>();
-      for (const r of data ?? []) {
-        const s = ((r as { source: string }).source ?? "").trim();
-        if (!s) continue;
-        map.set(s, (map.get(s) ?? 0) + 1);
-      }
-      return [...map.entries()]
-        .map(([value, count]) => ({ value, count }))
-        .sort((a, b) => b.count - a.count)
+      const { data, error } = await supabase.rpc("leads_source_facets", {
+        p_limit: 50,
+      });
+      if (error) throw error;
+      return (data ?? [])
+        .map((r: { value: string; count: number }) => ({
+          value: r.value,
+          count: Number(r.count),
+        }))
         .slice(0, 20);
     },
   });
+
 
   const { data: result, isLoading } = useQuery({
     queryKey: [
