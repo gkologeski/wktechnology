@@ -16,12 +16,12 @@ for (const file of [".env.test.local", ".env.local"]) {
 }
 
 /**
- * E2E tests against the published preview URL.
+ * E2E tests against the public app URL.
  *
  * Required env vars (set locally before `bun run test:e2e`):
  *   E2E_USER_EMAIL    — login of an Admin/workspace owner test account
  *   E2E_USER_PASSWORD — password
- *   E2E_BASE_URL      — (optional) override; defaults to the project preview URL
+ *   E2E_BASE_URL      — (optional) override; defaults to the public CRM URL
  *
  * Install browsers once:  bunx playwright install chromium
  */
@@ -36,7 +36,7 @@ export default defineConfig({
   use: {
     baseURL:
       process.env.E2E_BASE_URL ??
-      "https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app",
+      "https://crm.wktechnology.com.br",
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
