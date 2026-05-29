@@ -381,14 +381,7 @@ function CompaniesHubspotView() {
           <FilterGroup title="Data de criação">
             <RadioFilter
               name="companies-created"
-              options={
-                [
-                  ["any", "Qualquer data"],
-                  ["today", "Hoje"],
-                  ["7d", "Últimos 7 dias"],
-                  ["30d", "Últimos 30 dias"],
-                ] as const
-              }
+              options={DATE_PRESET_OPTIONS}
               value={filters.createdPreset}
               onChange={(v) => setFilters((f) => ({ ...f, createdPreset: v }))}
             />
