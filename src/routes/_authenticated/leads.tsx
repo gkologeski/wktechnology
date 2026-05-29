@@ -99,7 +99,7 @@ type Filters = {
   source: string[];
   scoreMin: number;
   scoreMax: number;
-  createdPreset: "any" | "today" | "7d" | "30d";
+  createdPreset: DatePreset;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
