@@ -28,9 +28,12 @@ function DealsPage() {
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
     period: "any",
+    customStart: "",
+    customEnd: "",
     minValue: "",
     search: "",
   });
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
