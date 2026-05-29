@@ -93,6 +93,8 @@ function CompaniesPage() {
 
 function CompaniesHubspotView() {
   const { user } = useAuth();
+  const { nameFor, initialsFor } = useWorkspaceMembers();
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const enrichCeps = useServerFn(enrichCompaniesAddress);
