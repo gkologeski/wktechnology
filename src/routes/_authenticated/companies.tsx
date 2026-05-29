@@ -180,10 +180,15 @@ function CompaniesHubspotView() {
       if (filters.state.length) q = q.in("state", filters.state);
       if (filters.targetOnly) q = q.eq("is_target_account", true);
       if (filters.createdPreset !== "any") {
-        const { start, end } = getDateRange(filters.createdPreset);
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
         if (start) q = q.gte("created_at", start.toISOString());
         if (end) q = q.lt("created_at", end.toISOString());
       }
+
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
       } else if (filters.ownerIds.length > 0) {
