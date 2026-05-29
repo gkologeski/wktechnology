@@ -232,10 +232,13 @@ function CompaniesHubspotView() {
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
+    if (!selectedIds.size) return;
+    setBulkDeleteOpen(true);
+  };
+  const confirmBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} empresa(s)?`)) return;
     const { error } = await supabase.from("companies").delete().in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} excluída(s)`);
