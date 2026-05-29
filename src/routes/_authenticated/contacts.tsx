@@ -167,10 +167,15 @@ function ContactsHubspotView() {
       if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
       if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
       if (filters.createdPreset !== "any") {
-        const { start, end } = getDateRange(filters.createdPreset);
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
         if (start) q = q.gte("created_at", start.toISOString());
         if (end) q = q.lt("created_at", end.toISOString());
       }
+
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
       } else if (filters.ownerIds.length > 0) {
