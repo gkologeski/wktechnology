@@ -103,6 +103,7 @@ type Filters = {
   scoreMin: number;
   scoreMax: number;
   createdPreset: DatePreset;
+  createdCustom: CustomRange;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
@@ -113,9 +114,11 @@ const DEFAULT_FILTERS: Filters = {
   scoreMin: 0,
   scoreMax: 100,
   createdPreset: "any",
+  createdCustom: {},
   ownerIds: [],
   includeUnassigned: false,
 };
+
 
 // ---------------------------------------------------------------------------
 // Helpers
