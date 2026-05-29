@@ -25,7 +25,8 @@ export async function loginViaUI(page: Page) {
   }
   await page.locator('input[type="email"]').first().fill(EMAIL);
   await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole("button", { name: /entrar|sign in|login/i }).first().click();
+  // Evita clicar no botão "Entrar com Google" — usa o submit do formulário.
+  await page.locator('form button[type="submit"]').first().click();
   // Aguarda redirecionar para alguma rota autenticada
   await page.waitForURL((url) => !/\/(login|auth)/.test(url.pathname), { timeout: 20_000 });
 }
