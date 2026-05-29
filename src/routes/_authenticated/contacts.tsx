@@ -82,6 +82,7 @@ type Filters = {
   lifecycle: string[];
   companyIds: string[];
   createdPreset: DatePreset;
+  createdCustom: CustomRange;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
@@ -89,9 +90,11 @@ const DEFAULT_FILTERS: Filters = {
   lifecycle: [],
   companyIds: [],
   createdPreset: "any",
+  createdCustom: {},
   ownerIds: [],
   includeUnassigned: false,
 };
+
 
 function ContactsPage() {
   const location = useLocation();
