@@ -5965,6 +5965,14 @@ export type Database = {
         }
         Returns: string
       }
+      companies_facets: {
+        Args: { p_limit?: number }
+        Returns: {
+          count: number
+          facet: string
+          value: string
+        }[]
+      }
       current_user_workspaces: { Args: never; Returns: string[] }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
       delete_email: {
@@ -5995,6 +6003,13 @@ export type Database = {
       is_workspace_member: {
         Args: { _user: string; _workspace: string }
         Returns: boolean
+      }
+      leads_source_facets: {
+        Args: { p_limit?: number }
+        Returns: {
+          count: number
+          value: string
+        }[]
       }
       lookup_stage_sla: {
         Args: {
