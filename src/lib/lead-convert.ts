@@ -24,6 +24,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
       .from("companies")
       .select("id")
       .eq("owner_id", ownerId)
+      .eq("workspace_id", lead.workspace_id)
       .ilike("name", rawName)
       .limit(1)
       .maybeSingle();
