@@ -29,6 +29,8 @@ import {
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+
 import {
   DATE_PRESET_OPTIONS,
   getDateRange,
@@ -91,6 +93,8 @@ function CompaniesPage() {
 
 function CompaniesHubspotView() {
   const { user } = useAuth();
+  const { nameFor, initialsFor } = useWorkspaceMembers();
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const enrichCeps = useServerFn(enrichCompaniesAddress);
@@ -543,14 +547,18 @@ function CompaniesHubspotView() {
                         </Td>
                         <Td>
                           {c.owner_id ? (
-                            <InitialsAvatar
-                              text={c.owner_id.slice(0, 2).toUpperCase()}
-                              seed={c.owner_id}
-                              size={6}
-                            />
+                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+                              <InitialsAvatar
+                                text={initialsFor(c.owner_id)}
+                                seed={c.owner_id}
+                                size={6}
+                              />
+                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
+
                         </Td>
                         <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
                         <Td className="w-10">
