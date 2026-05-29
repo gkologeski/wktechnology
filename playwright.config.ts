@@ -1,4 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
+import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+// Carrega .env.test.local (não commitado) se existir
+for (const file of [".env.test.local", ".env.local"]) {
+  const path = resolve(process.cwd(), file);
+  if (!existsSync(path)) continue;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
+    if (!m) continue;
+    const [, key, rawValue] = m;
+    if (process.env[key]) continue;
+    process.env[key] = rawValue.replace(/^["']|["']$/g, "");
+  }
+}
 
 /**
  * E2E tests against the published preview URL.
