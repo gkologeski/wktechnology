@@ -160,6 +160,8 @@ function LeadsPage() {
 
 function LeadsHubspotView() {
   const { user } = useAuth();
+  const { nameFor, initialsFor } = useWorkspaceMembers();
+
   const qc = useQueryClient();
   const navigate = useNavigate();
 
