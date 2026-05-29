@@ -174,9 +174,9 @@ function CompaniesHubspotView() {
       if (filters.state.length) q = q.in("state", filters.state);
       if (filters.targetOnly) q = q.eq("is_target_account", true);
       if (filters.createdPreset !== "any") {
-        const days =
-          filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
-        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+        const { start, end } = getDateRange(filters.createdPreset);
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
       }
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
