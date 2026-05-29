@@ -30,6 +30,11 @@ import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
+  DATE_PRESET_OPTIONS,
+  getDateRange,
+  type DatePreset,
+} from "@/lib/date-presets";
+import {
   CheckboxFilter,
   FilterGroup,
   FiltersSidebar,
@@ -63,7 +68,7 @@ type Filters = {
   industry: string[];
   size: string[];
   state: string[];
-  createdPreset: "any" | "today" | "7d" | "30d";
+  createdPreset: DatePreset;
   targetOnly: boolean;
   ownerIds: string[];
   includeUnassigned: boolean;
@@ -169,9 +174,9 @@ function CompaniesHubspotView() {
       if (filters.state.length) q = q.in("state", filters.state);
       if (filters.targetOnly) q = q.eq("is_target_account", true);
       if (filters.createdPreset !== "any") {
-        const days =
-          filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
-        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+        const { start, end } = getDateRange(filters.createdPreset);
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
       }
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
@@ -376,14 +381,7 @@ function CompaniesHubspotView() {
           <FilterGroup title="Data de criação">
             <RadioFilter
               name="companies-created"
-              options={
-                [
-                  ["any", "Qualquer data"],
-                  ["today", "Hoje"],
-                  ["7d", "Últimos 7 dias"],
-                  ["30d", "Últimos 30 dias"],
-                ] as const
-              }
+              options={DATE_PRESET_OPTIONS}
               value={filters.createdPreset}
               onChange={(v) => setFilters((f) => ({ ...f, createdPreset: v }))}
             />

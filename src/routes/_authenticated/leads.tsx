@@ -36,6 +36,12 @@ import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
+  DATE_PRESETS,
+  DATE_PRESET_LABELS,
+  getDateRange,
+  type DatePreset,
+} from "@/lib/date-presets";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -93,7 +99,7 @@ type Filters = {
   source: string[];
   scoreMin: number;
   scoreMax: number;
-  createdPreset: "any" | "today" | "7d" | "30d";
+  createdPreset: DatePreset;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
@@ -242,8 +248,9 @@ function LeadsHubspotView() {
       if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
       if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
       if (filters.createdPreset !== "any") {
-        const days = filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
-        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+        const { start, end } = getDateRange(filters.createdPreset);
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
       }
       // Responsável (multi-select + sem responsável)
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
@@ -533,12 +540,7 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Data de criação">
-              {([
-                ["any", "Qualquer data"],
-                ["today", "Hoje"],
-                ["7d", "Últimos 7 dias"],
-                ["30d", "Últimos 30 dias"],
-              ] as const).map(([value, label]) => (
+              {DATE_PRESETS.map((value) => (
                 <label
                   key={value}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
@@ -552,7 +554,7 @@ function LeadsHubspotView() {
                     }
                     className="h-3.5 w-3.5 accent-primary"
                   />
-                  <span>{label}</span>
+                  <span>{DATE_PRESET_LABELS[value]}</span>
                 </label>
               ))}
             </FilterGroup>

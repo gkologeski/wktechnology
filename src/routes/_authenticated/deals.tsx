@@ -10,6 +10,7 @@ import { Plus, LayoutGrid, List as ListIcon, Table as TableIcon, TrendingUp } fr
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines } from "@/lib/pipelines";
 import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
+import { getDateRange } from "@/lib/date-presets";
 import { DealsBoard, type DealLookups } from "@/components/deals/deals-board";
 import { DealsList } from "@/components/deals/deals-list";
 import { DealsForecast } from "@/components/deals/deals-forecast";
@@ -20,35 +21,13 @@ export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsPage,
 });
 
-function startOf(period: DealFilters["period"]): { start?: Date; end?: Date } {
-  const now = new Date();
-  if (period === "this_week") {
-    const d = new Date(now);
-    const day = d.getDay();
-    const diff = (day + 6) % 7; // monday
-    d.setDate(d.getDate() - diff);
-    d.setHours(0, 0, 0, 0);
-    const end = new Date(d);
-    end.setDate(end.getDate() + 7);
-    return { start: d, end };
-  }
-  if (period === "this_month") {
-    return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 1) };
-  }
-  if (period === "this_quarter") {
-    const q = Math.floor(now.getMonth() / 3);
-    return { start: new Date(now.getFullYear(), q * 3, 1), end: new Date(now.getFullYear(), q * 3 + 3, 1) };
-  }
-  return {};
-}
-
 function DealsPage() {
   const { user } = useAuth();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
 
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
-    period: "all",
+    period: "any",
     minValue: "",
     search: "",
   });
@@ -105,7 +84,10 @@ function DealsPage() {
   }, [deals, lookups, profiles]);
 
   const filtered = useMemo(() => {
-    const { start, end } = startOf(filters.period);
+    const { start, end } =
+      filters.period === "overdue" || filters.period === "no_date"
+        ? {}
+        : getDateRange(filters.period);
     const min = Number(filters.minValue) || 0;
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {

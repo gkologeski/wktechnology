@@ -5,22 +5,34 @@ import { Badge } from "@/components/ui/badge";
 import { Search, X, Settings2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
+import {
+  DATE_PRESETS,
+  DATE_PRESET_LABELS,
+  type DatePreset,
+} from "@/lib/date-presets";
+
+export type DealPeriod = DatePreset | "overdue" | "no_date";
 
 export type DealFilters = {
   ownerId: string; // "" = all
-  period: "all" | "overdue" | "this_week" | "this_month" | "this_quarter" | "no_date";
+  period: DealPeriod;
   minValue: string;
   search: string;
 };
 
-export const PERIOD_LABELS: Record<DealFilters["period"], string> = {
-  all: "Qualquer data",
+export const PERIOD_LABELS: Record<DealPeriod, string> = {
+  ...DATE_PRESET_LABELS,
+  any: "Qualquer data",
   overdue: "Atrasados",
-  this_week: "Esta semana",
-  this_month: "Este mês",
-  this_quarter: "Este trimestre",
   no_date: "Sem data",
 };
+
+// Ordem exibida no dropdown.
+const PERIOD_ORDER: DealPeriod[] = [
+  ...DATE_PRESETS,
+  "overdue",
+  "no_date",
+];
 
 export function DealsToolbar({
   pipelines,
@@ -45,8 +57,8 @@ export function DealsToolbar({
     const o = owners.find((x) => x.id === filters.ownerId);
     chips.push({ key: "ownerId", label: `Responsável: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
   }
-  if (filters.period !== "all") {
-    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "all") });
+  if (filters.period !== "any") {
+    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "any") });
   }
   if (filters.minValue) {
     chips.push({ key: "minValue", label: `≥ ${filters.minValue}`, clear: () => setF("minValue", "") });
@@ -97,10 +109,10 @@ export function DealsToolbar({
           </SelectContent>
         </Select>
 
-        <Select value={filters.period} onValueChange={(v) => setF("period", v as DealFilters["period"])}>
+        <Select value={filters.period} onValueChange={(v) => setF("period", v as DealPeriod)}>
           <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(Object.keys(PERIOD_LABELS) as DealFilters["period"][]).map((k) => (
+            {PERIOD_ORDER.map((k) => (
               <SelectItem key={k} value={k}>{PERIOD_LABELS[k]}</SelectItem>
             ))}
           </SelectContent>
@@ -132,7 +144,7 @@ export function DealsToolbar({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() => setFilters({ ownerId: "", period: "all", minValue: "", search: filters.search })}
+            onClick={() => setFilters({ ownerId: "", period: "any", minValue: "", search: filters.search })}
           >
             Limpar
           </Button>
