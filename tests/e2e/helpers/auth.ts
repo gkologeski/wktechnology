@@ -35,6 +35,7 @@ export const test = base.extend<{
   authedPage: Page;
   supa: SupabaseClient;
   userId: string;
+  workspaceId: string;
 }>({
   supa: async ({}, use) => {
     const supa = makeUserClient();
@@ -48,6 +49,42 @@ export const test = base.extend<{
   userId: async ({ supa }, use) => {
     const { data } = await supa.auth.getUser();
     await use(data.user!.id);
+  },
+  workspaceId: async ({ supa, userId }, use) => {
+    const { data: profile } = await supa
+      .from("profiles")
+      .select("active_workspace_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const activeWorkspaceId = (profile as { active_workspace_id?: string | null } | null)
+      ?.active_workspace_id;
+
+    if (activeWorkspaceId) {
+      const { data: activeMember } = await supa
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", userId)
+        .eq("workspace_id", activeWorkspaceId)
+        .maybeSingle();
+
+      if (activeMember?.workspace_id) {
+        await use(activeMember.workspace_id as string);
+        return;
+      }
+    }
+
+    const { data: member, error } = await supa
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new Error("Falha ao buscar workspace E2E: " + error.message);
+    if (!member?.workspace_id) throw new Error("Usuário E2E não pertence a nenhum workspace.");
+
+    await use(member.workspace_id as string);
   },
   authedPage: async ({ page }, use) => {
     await loginViaUI(page);
