@@ -73,6 +73,7 @@ type Filters = {
   size: string[];
   state: string[];
   createdPreset: DatePreset;
+  createdCustom: CustomRange;
   targetOnly: boolean;
   ownerIds: string[];
   includeUnassigned: boolean;
@@ -82,10 +83,12 @@ const DEFAULT_FILTERS: Filters = {
   size: [],
   state: [],
   createdPreset: "any",
+  createdCustom: {},
   targetOnly: false,
   ownerIds: [],
   includeUnassigned: false,
 };
+
 
 function CompaniesPage() {
   const location = useLocation();
