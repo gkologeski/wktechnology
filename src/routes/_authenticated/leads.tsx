@@ -724,16 +724,19 @@ function LeadsHubspotView() {
                         </Td>
                         <Td>
                           {lead.owner_id ? (
-                            <span
-                              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                              style={{ background: colorFromString(lead.owner_id) }}
-                              title={lead.owner_id}
-                            >
-                              {lead.owner_id.slice(0, 2).toUpperCase()}
-                            </span>
+                            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
+                              <span
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                                style={{ background: colorFromString(lead.owner_id) }}
+                              >
+                                {initialsFor(lead.owner_id)}
+                              </span>
+                              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
+
                         </Td>
                         <Td className="text-muted-foreground">{timeAgo(lead.created_at)}</Td>
                         <Td className="w-10">
