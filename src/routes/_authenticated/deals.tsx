@@ -21,27 +21,16 @@ export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsPage,
 });
 
-function startOf(period: DealFilters["period"]): { start?: Date; end?: Date } {
-  const now = new Date();
-  if (period === "this_week") {
-    const d = new Date(now);
-    const day = d.getDay();
-    const diff = (day + 6) % 7; // monday
-    d.setDate(d.getDate() - diff);
-    d.setHours(0, 0, 0, 0);
-    const end = new Date(d);
-    end.setDate(end.getDate() + 7);
-    return { start: d, end };
-  }
-  if (period === "this_month") {
-    return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 1) };
-  }
-  if (period === "this_quarter") {
-    const q = Math.floor(now.getMonth() / 3);
-    return { start: new Date(now.getFullYear(), q * 3, 1), end: new Date(now.getFullYear(), q * 3 + 3, 1) };
-  }
-  return {};
-}
+function DealsPage() {
+  const { user } = useAuth();
+  const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
+
+  const [filters, setFilters] = useState<DealFilters>({
+    ownerId: "",
+    period: "any",
+    minValue: "",
+    search: "",
+  });
 
 function DealsPage() {
   const { user } = useAuth();
