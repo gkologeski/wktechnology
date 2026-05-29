@@ -38,11 +38,12 @@ import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import {
-  DATE_PRESETS,
-  DATE_PRESET_LABELS,
   getDateRange,
+  type CustomRange,
   type DatePreset,
 } from "@/lib/date-presets";
+import { DateFilter } from "@/components/date-filter";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,6 +103,7 @@ type Filters = {
   scoreMin: number;
   scoreMax: number;
   createdPreset: DatePreset;
+  createdCustom: CustomRange;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
@@ -112,9 +114,11 @@ const DEFAULT_FILTERS: Filters = {
   scoreMin: 0,
   scoreMax: 100,
   createdPreset: "any",
+  createdCustom: {},
   ownerIds: [],
   includeUnassigned: false,
 };
+
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -248,10 +252,15 @@ function LeadsHubspotView() {
       if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
       if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
       if (filters.createdPreset !== "any") {
-        const { start, end } = getDateRange(filters.createdPreset);
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
         if (start) q = q.gte("created_at", start.toISOString());
         if (end) q = q.lt("created_at", end.toISOString());
       }
+
       // Responsável (multi-select + sem responsável)
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
@@ -540,24 +549,16 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Data de criação">
-              {DATE_PRESETS.map((value) => (
-                <label
-                  key={value}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                >
-                  <input
-                    type="radio"
-                    name="created"
-                    checked={filters.createdPreset === value}
-                    onChange={() =>
-                      setFilters((f) => ({ ...f, createdPreset: value }))
-                    }
-                    className="h-3.5 w-3.5 accent-primary"
-                  />
-                  <span>{DATE_PRESET_LABELS[value]}</span>
-                </label>
-              ))}
+              <DateFilter
+                name="leads-created"
+                value={filters.createdPreset}
+                custom={filters.createdCustom}
+                onChange={({ value, custom }) =>
+                  setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+                }
+              />
             </FilterGroup>
+
           </div>
         </aside>
 

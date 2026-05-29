@@ -30,10 +30,12 @@ import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import {
-  DATE_PRESET_OPTIONS,
   getDateRange,
+  type CustomRange,
   type DatePreset,
 } from "@/lib/date-presets";
+import { DateFilter } from "@/components/date-filter";
+
 import {
   CheckboxFilter,
   FilterGroup,
@@ -80,6 +82,7 @@ type Filters = {
   lifecycle: string[];
   companyIds: string[];
   createdPreset: DatePreset;
+  createdCustom: CustomRange;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
@@ -87,9 +90,11 @@ const DEFAULT_FILTERS: Filters = {
   lifecycle: [],
   companyIds: [],
   createdPreset: "any",
+  createdCustom: {},
   ownerIds: [],
   includeUnassigned: false,
 };
+
 
 function ContactsPage() {
   const location = useLocation();
@@ -162,10 +167,15 @@ function ContactsHubspotView() {
       if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
       if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
       if (filters.createdPreset !== "any") {
-        const { start, end } = getDateRange(filters.createdPreset);
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
         if (start) q = q.gte("created_at", start.toISOString());
         if (end) q = q.lt("created_at", end.toISOString());
       }
+
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
         q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
       } else if (filters.ownerIds.length > 0) {
@@ -324,13 +334,16 @@ function ContactsHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Data de criação">
-            <RadioFilter
+            <DateFilter
               name="contacts-created"
-              options={DATE_PRESET_OPTIONS}
               value={filters.createdPreset}
-              onChange={(v) => setFilters((f) => ({ ...f, createdPreset: v }))}
+              custom={filters.createdCustom}
+              onChange={({ value, custom }) =>
+                setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+              }
             />
           </FilterGroup>
+
         </FiltersSidebar>
 
         <div className="flex min-w-0 flex-1 flex-col">

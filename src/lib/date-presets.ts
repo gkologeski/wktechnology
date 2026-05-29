@@ -1,11 +1,18 @@
 // Presets de data padronizados em todo o sistema.
-// Use `getDateRange(preset)` para obter `{ start, end }` (end exclusivo).
+// Use `getDateRange(preset, now?, custom?)` para obter `{ start, end }` (end exclusivo).
 
 export type DatePreset =
   | "any"
   | "today"
   | "yesterday"
   | "tomorrow"
+  | "last_7d"
+  | "last_14d"
+  | "last_30d"
+  | "last_60d"
+  | "last_90d"
+  | "last_180d"
+  | "last_365d"
   | "this_week"
   | "last_week"
   | "next_week"
@@ -20,13 +27,21 @@ export type DatePreset =
   | "next_semester"
   | "this_year"
   | "last_year"
-  | "next_year";
+  | "next_year"
+  | "custom";
 
 export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
   any: "Qualquer data",
   today: "Hoje",
   yesterday: "Ontem",
   tomorrow: "Amanhã",
+  last_7d: "Últimos 7 dias",
+  last_14d: "Últimos 14 dias",
+  last_30d: "Últimos 30 dias",
+  last_60d: "Últimos 60 dias",
+  last_90d: "Últimos 90 dias",
+  last_180d: "Últimos 180 dias",
+  last_365d: "Últimos 365 dias",
   this_week: "Esta semana",
   last_week: "Semana passada",
   next_week: "Próxima semana",
@@ -42,6 +57,7 @@ export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
   this_year: "Este ano",
   last_year: "Ano passado",
   next_year: "Próximo ano",
+  custom: "Personalizar…",
 };
 
 // Ordem canônica usada pelos seletores.
@@ -50,6 +66,13 @@ export const DATE_PRESETS: DatePreset[] = [
   "today",
   "yesterday",
   "tomorrow",
+  "last_7d",
+  "last_14d",
+  "last_30d",
+  "last_60d",
+  "last_90d",
+  "last_180d",
+  "last_365d",
   "this_week",
   "last_week",
   "next_week",
@@ -65,6 +88,7 @@ export const DATE_PRESETS: DatePreset[] = [
   "this_year",
   "last_year",
   "next_year",
+  "custom",
 ];
 
 // Opções no formato esperado por RadioFilter (readonly [value, label]).
@@ -83,18 +107,28 @@ function addDays(d: Date, n: number): Date {
   return x;
 }
 
+export type CustomRange = { start?: string; end?: string };
+
 /**
  * Retorna o intervalo [start, end) correspondente ao preset.
- * `any` retorna `{}` (sem filtro).
+ * `any` retorna `{}` (sem filtro). Para `custom`, passe `custom` com
+ * strings ISO (YYYY-MM-DD) para `start`/`end` (inclusive).
  * Semana inicia na segunda-feira. Semestres = jan-jun / jul-dez.
  */
 export function getDateRange(
   preset: DatePreset,
   now: Date = new Date(),
+  custom?: CustomRange,
 ): { start?: Date; end?: Date } {
   if (preset === "any") return {};
 
   const today = startOfDay(now);
+
+  if (preset === "custom") {
+    const start = custom?.start ? startOfDay(new Date(custom.start)) : undefined;
+    const end = custom?.end ? addDays(startOfDay(new Date(custom.end)), 1) : undefined;
+    return { start, end };
+  }
 
   switch (preset) {
     case "today":
@@ -103,6 +137,21 @@ export function getDateRange(
       return { start: addDays(today, -1), end: today };
     case "tomorrow":
       return { start: addDays(today, 1), end: addDays(today, 2) };
+  }
+
+  // Últimos N dias = [today - N, today + 1) — inclui hoje
+  const lastN: Partial<Record<DatePreset, number>> = {
+    last_7d: 7,
+    last_14d: 14,
+    last_30d: 30,
+    last_60d: 60,
+    last_90d: 90,
+    last_180d: 180,
+    last_365d: 365,
+  };
+  if (preset in lastN) {
+    const n = lastN[preset]!;
+    return { start: addDays(today, -(n - 1)), end: addDays(today, 1) };
   }
 
   // Semana ISO (segunda a domingo)

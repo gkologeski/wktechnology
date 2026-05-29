@@ -28,9 +28,12 @@ function DealsPage() {
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
     period: "any",
+    customStart: "",
+    customEnd: "",
     minValue: "",
     search: "",
   });
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
@@ -87,8 +90,12 @@ function DealsPage() {
     const range =
       filters.period === "overdue" || filters.period === "no_date"
         ? { start: undefined, end: undefined }
-        : getDateRange(filters.period);
+        : getDateRange(filters.period, new Date(), {
+            start: filters.customStart || undefined,
+            end: filters.customEnd || undefined,
+          });
     const { start, end } = range;
+
     const min = Number(filters.minValue) || 0;
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {
