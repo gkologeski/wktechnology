@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
+import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +94,8 @@ type Filters = {
   scoreMin: number;
   scoreMax: number;
   createdPreset: "any" | "today" | "7d" | "30d";
+  ownerIds: string[];
+  includeUnassigned: boolean;
 };
 
 const DEFAULT_FILTERS: Filters = {
@@ -101,6 +104,8 @@ const DEFAULT_FILTERS: Filters = {
   scoreMin: 0,
   scoreMax: 100,
   createdPreset: "any",
+  ownerIds: [],
+  includeUnassigned: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -239,6 +244,14 @@ function LeadsHubspotView() {
       if (filters.createdPreset !== "any") {
         const days = filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
         q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+      // Responsável (multi-select + sem responsável)
+      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+      } else if (filters.ownerIds.length > 0) {
+        q = q.in("owner_id", filters.ownerIds);
+      } else if (filters.includeUnassigned) {
+        q = q.is("owner_id", null);
       }
 
       // Search
@@ -425,13 +438,13 @@ function LeadsHubspotView() {
                 className="h-7 px-2 text-xs text-primary"
                 onClick={() => setFilters(DEFAULT_FILTERS)}
               >
-                Clear all
+                Limpar tudo
               </Button>
             )}
           </div>
           <Separator />
           <div className="flex-1 overflow-y-auto px-3 py-2">
-            <FilterGroup title="Lead Status" defaultOpen>
+            <FilterGroup title="Status do lead" defaultOpen>
               {LEAD_STATUSES.map((s) => {
                 const checked = filters.status.includes(s.value);
                 return (
@@ -463,32 +476,12 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Responsável" defaultOpen>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveView(activeView === "mine" ? "all" : "mine")
+              <OwnerFilter
+                value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
+                onChange={(v: OwnerFilterValue) =>
+                  setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
                 }
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                  activeView === "mine" && "bg-primary/10 text-primary",
-                )}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Meus leads
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveView(activeView === "unassigned" ? "all" : "unassigned")
-                }
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                  activeView === "unassigned" && "bg-primary/10 text-primary",
-                )}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                Sem responsável
-              </button>
+              />
             </FilterGroup>
 
             <FilterGroup title="Origem">
@@ -539,7 +532,7 @@ function LeadsHubspotView() {
               </div>
             </FilterGroup>
 
-            <FilterGroup title="Create date">
+            <FilterGroup title="Data de criação">
               {([
                 ["any", "Qualquer data"],
                 ["today", "Hoje"],

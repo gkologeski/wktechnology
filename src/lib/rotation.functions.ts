@@ -72,28 +72,52 @@ export const deleteRotationRule = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Lista os membros do workspace (o dono + team_members). */
+/** Lista os membros do workspace (o dono + team_members). Funciona para owner ou membro. */
 export const listWorkspaceMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: members } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Descobre o workspace_owner_id do usuário (ele próprio se for dono, ou via team_members).
+    const { data: myMembership } = await supabase
+      .from("team_members")
+      .select("workspace_owner_id")
+      .eq("member_user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    const workspaceOwnerId = (myMembership?.workspace_owner_id as string | undefined) ?? userId;
+
+    // Usa admin client para conseguir ler todos os membros mesmo quando o caller não é o dono.
+    const { data: members } = await supabaseAdmin
       .from("team_members")
       .select("member_user_id, role")
-      .eq("workspace_owner_id", userId);
+      .eq("workspace_owner_id", workspaceOwnerId);
 
-    const ids = Array.from(new Set([userId, ...((members ?? []).map((m) => m.member_user_id as string))]));
-    const { data: profiles } = await supabase
+    const ids = Array.from(
+      new Set([workspaceOwnerId, ...((members ?? []).map((m) => m.member_user_id as string))]),
+    );
+    const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name")
       .in("id", ids);
 
     const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
-    return ids.map((id) => ({
-      user_id: id,
-      full_name: nameById.get(id) || (id === userId ? "Você (admin)" : id.slice(0, 8)),
-      is_owner: id === userId,
-    }));
+    return ids
+      .map((id) => ({
+        user_id: id,
+        full_name:
+          nameById.get(id) ||
+          (id === workspaceOwnerId ? "Workspace (admin)" : id.slice(0, 8)),
+        is_owner: id === workspaceOwnerId,
+        is_me: id === userId,
+      }))
+      .sort((a, b) => {
+        if (a.is_me !== b.is_me) return a.is_me ? -1 : 1;
+        if (a.is_owner !== b.is_owner) return a.is_owner ? -1 : 1;
+        return a.full_name.localeCompare(b.full_name);
+      });
   });
 
 /** Aplica rotação manualmente em um registro (debug/uso pontual). */

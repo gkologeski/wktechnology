@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
+import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -72,11 +73,15 @@ type Filters = {
   lifecycle: string[];
   companyIds: string[];
   createdPreset: "any" | "today" | "7d" | "30d";
+  ownerIds: string[];
+  includeUnassigned: boolean;
 };
 const DEFAULT_FILTERS: Filters = {
   lifecycle: [],
   companyIds: [],
   createdPreset: "any",
+  ownerIds: [],
+  includeUnassigned: false,
 };
 
 function ContactsPage() {
@@ -151,6 +156,13 @@ function ContactsHubspotView() {
         const days =
           filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
         q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+      } else if (filters.ownerIds.length > 0) {
+        q = q.in("owner_id", filters.ownerIds);
+      } else if (filters.includeUnassigned) {
+        q = q.is("owner_id", null);
       }
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
@@ -252,7 +264,7 @@ function ContactsHubspotView() {
           hasActiveFilters={hasActiveFilters}
           onClear={() => setFilters(DEFAULT_FILTERS)}
         >
-          <FilterGroup title="Lifecycle stage" defaultOpen>
+          <FilterGroup title="Etapa do ciclo" defaultOpen>
             {LIFECYCLE_STAGES.map((s) => (
               <CheckboxFilter
                 key={s.value}
@@ -272,28 +284,12 @@ function ContactsHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Responsável" defaultOpen>
-            <button
-              type="button"
-              onClick={() => setActiveView(activeView === "mine" ? "all" : "mine")}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                activeView === "mine" && "bg-primary/10 text-primary",
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              Meus contatos
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView(activeView === "unassigned" ? "all" : "unassigned")}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                activeView === "unassigned" && "bg-primary/10 text-primary",
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-              Sem responsável
-            </button>
+            <OwnerFilter
+              value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
+              onChange={(v: OwnerFilterValue) =>
+                setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+              }
+            />
           </FilterGroup>
 
           <FilterGroup title="Empresa">
@@ -318,7 +314,7 @@ function ContactsHubspotView() {
             )}
           </FilterGroup>
 
-          <FilterGroup title="Create date">
+          <FilterGroup title="Data de criação">
             <RadioFilter
               name="contacts-created"
               options={

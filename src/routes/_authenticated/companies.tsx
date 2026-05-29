@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
+import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -64,6 +65,8 @@ type Filters = {
   state: string[];
   createdPreset: "any" | "today" | "7d" | "30d";
   targetOnly: boolean;
+  ownerIds: string[];
+  includeUnassigned: boolean;
 };
 const DEFAULT_FILTERS: Filters = {
   industry: [],
@@ -71,6 +74,8 @@ const DEFAULT_FILTERS: Filters = {
   state: [],
   createdPreset: "any",
   targetOnly: false,
+  ownerIds: [],
+  includeUnassigned: false,
 };
 
 function CompaniesPage() {
@@ -168,6 +173,13 @@ function CompaniesHubspotView() {
           filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
         q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
       }
+      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+      } else if (filters.ownerIds.length > 0) {
+        q = q.in("owner_id", filters.ownerIds);
+      } else if (filters.includeUnassigned) {
+        q = q.is("owner_id", null);
+      }
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
       if (term) {
@@ -223,7 +235,9 @@ function CompaniesHubspotView() {
     filters.size.length > 0 ||
     filters.state.length > 0 ||
     filters.targetOnly ||
-    filters.createdPreset !== "any";
+    filters.createdPreset !== "any" ||
+    filters.ownerIds.length > 0 ||
+    filters.includeUnassigned;
 
   const removeOne = async (id: string) => {
     if (!confirm("Excluir esta empresa?")) return;
@@ -283,7 +297,7 @@ function CompaniesHubspotView() {
           hasActiveFilters={hasActiveFilters}
           onClear={() => setFilters(DEFAULT_FILTERS)}
         >
-          <FilterGroup title="Industry" defaultOpen>
+          <FilterGroup title="Setor" defaultOpen>
             {(facets?.industry ?? []).length === 0 ? (
               <p className="px-2 py-1 text-xs text-muted-foreground">Sem indústrias</p>
             ) : (
@@ -306,7 +320,7 @@ function CompaniesHubspotView() {
             )}
           </FilterGroup>
 
-          <FilterGroup title="Size">
+          <FilterGroup title="Porte">
             {(facets?.size ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
@@ -323,7 +337,7 @@ function CompaniesHubspotView() {
             ))}
           </FilterGroup>
 
-          <FilterGroup title="State/UF">
+          <FilterGroup title="Estado/UF">
             {(facets?.state ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
@@ -342,7 +356,7 @@ function CompaniesHubspotView() {
             ))}
           </FilterGroup>
 
-          <FilterGroup title="Target account">
+          <FilterGroup title="ABM (Target account)">
             <CheckboxFilter
               label="Apenas ABM"
               checked={filters.targetOnly}
@@ -350,7 +364,16 @@ function CompaniesHubspotView() {
             />
           </FilterGroup>
 
-          <FilterGroup title="Create date">
+          <FilterGroup title="Responsável" defaultOpen>
+            <OwnerFilter
+              value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
+              onChange={(v: OwnerFilterValue) =>
+                setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+              }
+            />
+          </FilterGroup>
+
+          <FilterGroup title="Data de criação">
             <RadioFilter
               name="companies-created"
               options={

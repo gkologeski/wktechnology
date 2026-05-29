@@ -99,9 +99,10 @@ function DealsPage() {
   }, [companies, contacts, profiles, user]);
 
   const ownerOptions = useMemo(() => {
-    const ids = new Set(deals.map((d) => d.owner_id));
+    const ids = new Set<string>(profiles.map((p) => p.id));
+    deals.forEach((d) => { if (d.owner_id) ids.add(d.owner_id); });
     return Array.from(ids).map((id) => ({ id, name: lookups.owners.get(id) ?? id.slice(0, 8) }));
-  }, [deals, lookups]);
+  }, [deals, lookups, profiles]);
 
   const filtered = useMemo(() => {
     const { start, end } = startOf(filters.period);
