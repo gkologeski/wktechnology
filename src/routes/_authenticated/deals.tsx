@@ -84,10 +84,11 @@ function DealsPage() {
   }, [deals, lookups, profiles]);
 
   const filtered = useMemo(() => {
-    const { start, end } =
+    const range =
       filters.period === "overdue" || filters.period === "no_date"
-        ? {}
+        ? { start: undefined, end: undefined }
         : getDateRange(filters.period);
+    const { start, end } = range;
     const min = Number(filters.minValue) || 0;
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {
