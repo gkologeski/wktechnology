@@ -549,24 +549,16 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Data de criação">
-              {DATE_PRESETS.map((value) => (
-                <label
-                  key={value}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                >
-                  <input
-                    type="radio"
-                    name="created"
-                    checked={filters.createdPreset === value}
-                    onChange={() =>
-                      setFilters((f) => ({ ...f, createdPreset: value }))
-                    }
-                    className="h-3.5 w-3.5 accent-primary"
-                  />
-                  <span>{DATE_PRESET_LABELS[value]}</span>
-                </label>
-              ))}
+              <DateFilter
+                name="leads-created"
+                value={filters.createdPreset}
+                custom={filters.createdCustom}
+                onChange={({ value, custom }) =>
+                  setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+                }
+              />
             </FilterGroup>
+
           </div>
         </aside>
 
