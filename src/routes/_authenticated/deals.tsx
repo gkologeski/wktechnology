@@ -31,17 +31,6 @@ function DealsPage() {
     minValue: "",
     search: "",
   });
-
-function DealsPage() {
-  const { user } = useAuth();
-  const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
-
-  const [filters, setFilters] = useState<DealFilters>({
-    ownerId: "",
-    period: "all",
-    minValue: "",
-    search: "",
-  });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
