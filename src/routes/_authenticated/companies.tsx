@@ -240,7 +240,10 @@ function CompaniesHubspotView() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
     const { error } = await supabase.from("companies").delete().in("id", ids);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(`${ids.length} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["companies"] });
