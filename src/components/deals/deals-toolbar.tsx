@@ -57,8 +57,8 @@ export function DealsToolbar({
     const o = owners.find((x) => x.id === filters.ownerId);
     chips.push({ key: "ownerId", label: `Responsável: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
   }
-  if (filters.period !== "all") {
-    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "all") });
+  if (filters.period !== "any") {
+    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "any") });
   }
   if (filters.minValue) {
     chips.push({ key: "minValue", label: `≥ ${filters.minValue}`, clear: () => setF("minValue", "") });
