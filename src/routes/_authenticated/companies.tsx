@@ -94,6 +94,7 @@ function CompaniesHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
