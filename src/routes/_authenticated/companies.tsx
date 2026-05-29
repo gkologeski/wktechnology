@@ -235,7 +235,9 @@ function CompaniesHubspotView() {
     filters.size.length > 0 ||
     filters.state.length > 0 ||
     filters.targetOnly ||
-    filters.createdPreset !== "any";
+    filters.createdPreset !== "any" ||
+    filters.ownerIds.length > 0 ||
+    filters.includeUnassigned;
 
   const removeOne = async (id: string) => {
     if (!confirm("Excluir esta empresa?")) return;
@@ -295,7 +297,7 @@ function CompaniesHubspotView() {
           hasActiveFilters={hasActiveFilters}
           onClear={() => setFilters(DEFAULT_FILTERS)}
         >
-          <FilterGroup title="Industry" defaultOpen>
+          <FilterGroup title="Setor" defaultOpen>
             {(facets?.industry ?? []).length === 0 ? (
               <p className="px-2 py-1 text-xs text-muted-foreground">Sem indústrias</p>
             ) : (
@@ -318,7 +320,7 @@ function CompaniesHubspotView() {
             )}
           </FilterGroup>
 
-          <FilterGroup title="Size">
+          <FilterGroup title="Porte">
             {(facets?.size ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
@@ -335,7 +337,7 @@ function CompaniesHubspotView() {
             ))}
           </FilterGroup>
 
-          <FilterGroup title="State/UF">
+          <FilterGroup title="Estado/UF">
             {(facets?.state ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
@@ -354,7 +356,7 @@ function CompaniesHubspotView() {
             ))}
           </FilterGroup>
 
-          <FilterGroup title="Target account">
+          <FilterGroup title="ABM (Target account)">
             <CheckboxFilter
               label="Apenas ABM"
               checked={filters.targetOnly}
@@ -362,7 +364,16 @@ function CompaniesHubspotView() {
             />
           </FilterGroup>
 
-          <FilterGroup title="Create date">
+          <FilterGroup title="Responsável" defaultOpen>
+            <OwnerFilter
+              value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
+              onChange={(v: OwnerFilterValue) =>
+                setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+              }
+            />
+          </FilterGroup>
+
+          <FilterGroup title="Data de criação">
             <RadioFilter
               name="companies-created"
               options={
