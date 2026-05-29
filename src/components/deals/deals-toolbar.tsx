@@ -5,22 +5,34 @@ import { Badge } from "@/components/ui/badge";
 import { Search, X, Settings2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
+import {
+  DATE_PRESETS,
+  DATE_PRESET_LABELS,
+  type DatePreset,
+} from "@/lib/date-presets";
+
+export type DealPeriod = DatePreset | "overdue" | "no_date";
 
 export type DealFilters = {
   ownerId: string; // "" = all
-  period: "all" | "overdue" | "this_week" | "this_month" | "this_quarter" | "no_date";
+  period: DealPeriod;
   minValue: string;
   search: string;
 };
 
-export const PERIOD_LABELS: Record<DealFilters["period"], string> = {
-  all: "Qualquer data",
+export const PERIOD_LABELS: Record<DealPeriod, string> = {
+  ...DATE_PRESET_LABELS,
+  any: "Qualquer data",
   overdue: "Atrasados",
-  this_week: "Esta semana",
-  this_month: "Este mês",
-  this_quarter: "Este trimestre",
   no_date: "Sem data",
 };
+
+// Ordem exibida no dropdown.
+const PERIOD_ORDER: DealPeriod[] = [
+  ...DATE_PRESETS,
+  "overdue",
+  "no_date",
+];
 
 export function DealsToolbar({
   pipelines,
