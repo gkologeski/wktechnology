@@ -165,7 +165,7 @@ export function DealsToolbar({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() => setFilters({ ownerId: "", period: "any", minValue: "", search: filters.search })}
+            onClick={() => setFilters({ ownerId: "", period: "any", customStart: "", customEnd: "", minValue: "", search: filters.search })}
           >
             Limpar
           </Button>
