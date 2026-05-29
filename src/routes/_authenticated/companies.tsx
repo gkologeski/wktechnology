@@ -68,7 +68,7 @@ type Filters = {
   industry: string[];
   size: string[];
   state: string[];
-  createdPreset: "any" | "today" | "7d" | "30d";
+  createdPreset: DatePreset;
   targetOnly: boolean;
   ownerIds: string[];
   includeUnassigned: boolean;
