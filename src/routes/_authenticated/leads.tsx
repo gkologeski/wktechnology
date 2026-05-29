@@ -78,10 +78,10 @@ const STATUS_TONE: Record<string, { dot: string; bg: string; text: string }> = {
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS: { id: ViewId; label: string }[] = [
-  { id: "all", label: "All leads" },
-  { id: "mine", label: "My leads" },
-  { id: "unassigned", label: "Unassigned" },
-  { id: "new_week", label: "New this week" },
+  { id: "all", label: "Todos os leads" },
+  { id: "mine", label: "Meus leads" },
+  { id: "unassigned", label: "Sem responsável" },
+  { id: "new_week", label: "Novos esta semana" },
 ];
 
 type SortKey = "first_name" | "created_at" | "score";
@@ -462,7 +462,7 @@ function LeadsHubspotView() {
               })}
             </FilterGroup>
 
-            <FilterGroup title="Owner" defaultOpen>
+            <FilterGroup title="Responsável" defaultOpen>
               <button
                 type="button"
                 onClick={() =>
@@ -474,7 +474,7 @@ function LeadsHubspotView() {
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                My leads
+                Meus leads
               </button>
               <button
                 type="button"
@@ -487,11 +487,11 @@ function LeadsHubspotView() {
                 )}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                Unassigned
+                Sem responsável
               </button>
             </FilterGroup>
 
-            <FilterGroup title="Source">
+            <FilterGroup title="Origem">
               {(sourceOptions ?? []).length === 0 ? (
                 <p className="px-2 py-1 text-xs text-muted-foreground">Sem fontes ainda</p>
               ) : (
@@ -644,18 +644,18 @@ function LeadsHubspotView() {
                     />
                   </th>
                   <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
-                    Name
+                    Nome
                   </Th>
-                  <Th>Email</Th>
-                  <Th>Phone</Th>
-                  <Th>Company</Th>
-                  <Th>Lead Status</Th>
+                  <Th>E-mail</Th>
+                  <Th>Telefone</Th>
+                  <Th>Empresa</Th>
+                  <Th>Status do lead</Th>
                   <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
                     Score
                   </Th>
-                  <Th>Owner</Th>
+                  <Th>Responsável</Th>
                   <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
-                    Create date
+                    Criado em
                   </Th>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>

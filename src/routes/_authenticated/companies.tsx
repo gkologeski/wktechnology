@@ -50,10 +50,10 @@ export const Route = createFileRoute("/_authenticated/companies")({
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS = [
-  { id: "all" as const, label: "All companies" },
-  { id: "mine" as const, label: "My companies" },
-  { id: "unassigned" as const, label: "Unassigned" },
-  { id: "new_week" as const, label: "Created this week" },
+  { id: "all" as const, label: "Todas as empresas" },
+  { id: "mine" as const, label: "Minhas empresas" },
+  { id: "unassigned" as const, label: "Sem responsável" },
+  { id: "new_week" as const, label: "Criadas esta semana" },
 ];
 
 type SortKey = "name" | "created_at" | "updated_at";
@@ -440,20 +440,20 @@ function CompaniesHubspotView() {
                   >
                     Name
                   </Th>
-                  <Th>Domain</Th>
-                  <Th>Industry</Th>
-                  <Th>Size</Th>
-                  <Th>City</Th>
+                  <Th>Domínio</Th>
+                  <Th>Setor</Th>
+                  <Th>Porte</Th>
+                  <Th>Cidade</Th>
                   <Th>UF</Th>
                   <Th>ABM</Th>
-                  <Th>Owner</Th>
+                  <Th>Responsável</Th>
                   <Th
                     sortable
                     active={sortKey === "created_at"}
                     dir={sortDir}
                     onClick={() => onSort("created_at")}
                   >
-                    Create date
+                    Criada em
                   </Th>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>

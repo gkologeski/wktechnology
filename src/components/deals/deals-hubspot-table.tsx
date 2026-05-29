@@ -175,16 +175,16 @@ export function DealsHubspotTable({
                 dir={sortDir}
                 onClick={() => onSort("name")}
               >
-                Deal name
+                Nome do negócio
               </Th>
-              <Th>Stage</Th>
+              <Th>Etapa</Th>
               <Th
                 sortable
                 active={sortKey === "value"}
                 dir={sortDir}
                 onClick={() => onSort("value")}
               >
-                Amount
+                Valor
               </Th>
               <Th
                 sortable
@@ -192,18 +192,18 @@ export function DealsHubspotTable({
                 dir={sortDir}
                 onClick={() => onSort("expected_close_date")}
               >
-                Close date
+                Fechamento
               </Th>
               <Th>Pipeline</Th>
-              <Th>Owner</Th>
-              <Th>Company</Th>
+              <Th>Responsável</Th>
+              <Th>Empresa</Th>
               <Th
                 sortable
                 active={sortKey === "created_at"}
                 dir={sortDir}
                 onClick={() => onSort("created_at")}
               >
-                Create date
+                Criado em
               </Th>
               <th className="w-10 border-b px-3 py-2.5" />
             </tr>
