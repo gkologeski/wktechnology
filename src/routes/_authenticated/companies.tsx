@@ -390,13 +390,16 @@ function CompaniesHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Data de criação">
-            <RadioFilter
+            <DateFilter
               name="companies-created"
-              options={DATE_PRESET_OPTIONS}
               value={filters.createdPreset}
-              onChange={(v) => setFilters((f) => ({ ...f, createdPreset: v }))}
+              custom={filters.createdCustom}
+              onChange={({ value, custom }) =>
+                setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+              }
             />
           </FilterGroup>
+
         </FiltersSidebar>
 
         <div className="flex min-w-0 flex-1 flex-col">
