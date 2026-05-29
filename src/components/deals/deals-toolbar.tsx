@@ -121,6 +121,24 @@ export function DealsToolbar({
           </SelectContent>
         </Select>
 
+        {filters.period === "custom" && (
+          <>
+            <Input
+              type="date"
+              value={filters.customStart}
+              onChange={(e) => setF("customStart", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+            <Input
+              type="date"
+              value={filters.customEnd}
+              onChange={(e) => setF("customEnd", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </>
+        )}
+
+
         <Input
           value={filters.minValue}
           onChange={(e) => setF("minValue", e.target.value.replace(/[^0-9.]/g, ""))}
