@@ -29,6 +29,8 @@ import {
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+
 import {
   DATE_PRESET_OPTIONS,
   getDateRange,
