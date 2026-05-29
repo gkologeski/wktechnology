@@ -540,12 +540,7 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Data de criação">
-              {([
-                ["any", "Qualquer data"],
-                ["today", "Hoje"],
-                ["7d", "Últimos 7 dias"],
-                ["30d", "Últimos 30 dias"],
-              ] as const).map(([value, label]) => (
+              {DATE_PRESETS.map((value) => (
                 <label
                   key={value}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
@@ -559,7 +554,7 @@ function LeadsHubspotView() {
                     }
                     className="h-3.5 w-3.5 accent-primary"
                   />
-                  <span>{label}</span>
+                  <span>{DATE_PRESET_LABELS[value]}</span>
                 </label>
               ))}
             </FilterGroup>
