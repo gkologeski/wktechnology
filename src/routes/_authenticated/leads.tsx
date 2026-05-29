@@ -437,13 +437,13 @@ function LeadsHubspotView() {
                 className="h-7 px-2 text-xs text-primary"
                 onClick={() => setFilters(DEFAULT_FILTERS)}
               >
-                Clear all
+                Limpar tudo
               </Button>
             )}
           </div>
           <Separator />
           <div className="flex-1 overflow-y-auto px-3 py-2">
-            <FilterGroup title="Lead Status" defaultOpen>
+            <FilterGroup title="Status do lead" defaultOpen>
               {LEAD_STATUSES.map((s) => {
                 const checked = filters.status.includes(s.value);
                 return (
@@ -475,32 +475,12 @@ function LeadsHubspotView() {
             </FilterGroup>
 
             <FilterGroup title="Responsável" defaultOpen>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveView(activeView === "mine" ? "all" : "mine")
+              <OwnerFilter
+                value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
+                onChange={(v) =>
+                  setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
                 }
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                  activeView === "mine" && "bg-primary/10 text-primary",
-                )}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Meus leads
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveView(activeView === "unassigned" ? "all" : "unassigned")
-                }
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                  activeView === "unassigned" && "bg-primary/10 text-primary",
-                )}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                Sem responsável
-              </button>
+              />
             </FilterGroup>
 
             <FilterGroup title="Origem">
@@ -551,7 +531,7 @@ function LeadsHubspotView() {
               </div>
             </FilterGroup>
 
-            <FilterGroup title="Create date">
+            <FilterGroup title="Data de criação">
               {([
                 ["any", "Qualquer data"],
                 ["today", "Hoje"],
