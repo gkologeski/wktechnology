@@ -77,7 +77,7 @@ type SortKey = "first_name" | "created_at" | "updated_at";
 type Filters = {
   lifecycle: string[];
   companyIds: string[];
-  createdPreset: "any" | "today" | "7d" | "30d";
+  createdPreset: DatePreset;
   ownerIds: string[];
   includeUnassigned: boolean;
 };
