@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
+import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -64,6 +65,8 @@ type Filters = {
   state: string[];
   createdPreset: "any" | "today" | "7d" | "30d";
   targetOnly: boolean;
+  ownerIds: string[];
+  includeUnassigned: boolean;
 };
 const DEFAULT_FILTERS: Filters = {
   industry: [],
@@ -71,6 +74,8 @@ const DEFAULT_FILTERS: Filters = {
   state: [],
   createdPreset: "any",
   targetOnly: false,
+  ownerIds: [],
+  includeUnassigned: false,
 };
 
 function CompaniesPage() {
@@ -167,6 +172,13 @@ function CompaniesHubspotView() {
         const days =
           filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
         q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+      } else if (filters.ownerIds.length > 0) {
+        q = q.in("owner_id", filters.ownerIds);
+      } else if (filters.includeUnassigned) {
+        q = q.is("owner_id", null);
       }
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
