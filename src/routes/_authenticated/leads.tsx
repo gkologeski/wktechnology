@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
+import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -477,7 +478,7 @@ function LeadsHubspotView() {
             <FilterGroup title="Responsável" defaultOpen>
               <OwnerFilter
                 value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
-                onChange={(v) =>
+                onChange={(v: OwnerFilterValue) =>
                   setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
                 }
               />
