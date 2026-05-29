@@ -30,10 +30,12 @@ import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import {
-  DATE_PRESET_OPTIONS,
   getDateRange,
+  type CustomRange,
   type DatePreset,
 } from "@/lib/date-presets";
+import { DateFilter } from "@/components/date-filter";
+
 import {
   CheckboxFilter,
   FilterGroup,
