@@ -15,6 +15,7 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
   authedPage: page,
   supa,
   userId,
+  workspaceId,
 }) => {
   const ts = Date.now();
   const firstName = `E2E${ts}`;
@@ -27,6 +28,8 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
     .from("leads")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
+      assigned_user_id: userId,
       first_name: firstName,
       last_name: lastName,
       email,
@@ -58,6 +61,7 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
     .select("id, name")
     .ilike("name", companyName)
     .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   expect(company?.id, "empresa não foi criada").toBeTruthy();
   const companyId = company!.id as string;
@@ -67,6 +71,7 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
     .select("id, first_name, company_id")
     .eq("email", email)
     .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   expect(contact?.id, "contato não foi criado").toBeTruthy();
   expect(contact!.company_id).toBe(companyId);

@@ -24,6 +24,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
       .from("companies")
       .select("id")
       .eq("owner_id", ownerId)
+      .eq("workspace_id", lead.workspace_id)
       .ilike("name", rawName)
       .limit(1)
       .maybeSingle();
@@ -35,7 +36,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     } else {
       const { data: c, error: ce } = await supabase
         .from("companies")
-        .insert({ owner_id: ownerId, name: rawName })
+        .insert({ owner_id: ownerId, workspace_id: lead.workspace_id, name: rawName })
         .select("id")
         .single();
       if (ce) throw new Error(ce.message);
@@ -47,6 +48,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     .from("contacts")
     .insert({
       owner_id: ownerId,
+      workspace_id: lead.workspace_id,
       first_name: lead.first_name,
       last_name: lead.last_name,
       email: lead.email,
@@ -62,6 +64,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     .from("deals")
     .insert({
       owner_id: ownerId,
+      workspace_id: lead.workspace_id,
       name: dealName || "Novo negócio",
       stage: "qualified",
       company_id: companyId,
