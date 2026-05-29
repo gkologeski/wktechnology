@@ -118,29 +118,26 @@ function CompaniesHubspotView() {
     queryKey: ["companies", "facets"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("industry,size,state")
-        .limit(2000);
-      const tally = (key: "industry" | "size" | "state") => {
-        const map = new Map<string, number>();
-        for (const r of data ?? []) {
-          const v = (r as Record<string, string | null>)[key];
-          if (!v) continue;
-          map.set(v, (map.get(v) ?? 0) + 1);
-        }
-        return [...map.entries()]
-          .map(([value, count]) => ({ value, count }))
-          .sort((a, b) => b.count - a.count)
+      const { data, error } = await supabase.rpc("companies_facets", {
+        p_limit: 50,
+      });
+      if (error) throw error;
+      const pick = (f: "industry" | "size" | "state") =>
+        (data ?? [])
+          .filter((r: { facet: string }) => r.facet === f)
+          .map((r: { value: string; count: number }) => ({
+            value: r.value,
+            count: Number(r.count),
+          }))
           .slice(0, 15);
-      };
       return {
-        industry: tally("industry"),
-        size: tally("size"),
-        state: tally("state"),
+        industry: pick("industry"),
+        size: pick("size"),
+        state: pick("state"),
       };
     },
   });
+
 
   const { data: result, isLoading } = useQuery({
     queryKey: [
