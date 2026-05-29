@@ -248,8 +248,9 @@ function LeadsHubspotView() {
       if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
       if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
       if (filters.createdPreset !== "any") {
-        const days = filters.createdPreset === "today" ? 1 : filters.createdPreset === "7d" ? 7 : 30;
-        q = q.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+        const { start, end } = getDateRange(filters.createdPreset);
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
       }
       // Responsável (multi-select + sem responsável)
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
