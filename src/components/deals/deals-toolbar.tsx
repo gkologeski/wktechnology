@@ -16,9 +16,12 @@ export type DealPeriod = DatePreset | "overdue" | "no_date";
 export type DealFilters = {
   ownerId: string; // "" = all
   period: DealPeriod;
+  customStart: string;
+  customEnd: string;
   minValue: string;
   search: string;
 };
+
 
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
   ...DATE_PRESET_LABELS,
