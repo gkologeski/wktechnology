@@ -917,6 +917,10 @@ function LeadsHubspotView() {
         </div>
       </div>
 
+      <ColumnsEditor />
+
+
+
       <BulkEnrichDialog
         open={!!enrichIds}
         onOpenChange={(o) => !o && setEnrichIds(null)}
