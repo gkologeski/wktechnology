@@ -147,7 +147,6 @@ function LeadDetail() {
         }
         right={
           <>
-            <PrimaryContactPanel leadId={lead.id} />
             <AssociationsPanel entity="lead" entityId={lead.id} />
           </>
         }
