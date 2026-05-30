@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils";
 export type Stage = { value: string; label: string };
 
 export function StageTracker({
-  stages, current, onChange, disabled,
+  stages, current, onChange, disabled, activeClassName,
 }: {
   stages: Stage[];
   current: string;
   onChange?: (v: string) => void;
   disabled?: boolean;
+  activeClassName?: string;
 }) {
   const idx = Math.max(0, stages.findIndex((s) => s.value === current));
   return (
@@ -24,7 +25,7 @@ export function StageTracker({
             onClick={() => onChange?.(s.value)}
             className={cn(
               "flex-1 min-w-[110px] px-3 py-2 text-xs font-medium border-r last:border-r-0 transition-colors text-left",
-              active && "bg-primary text-primary-foreground",
+              active && (activeClassName ?? "bg-primary text-primary-foreground"),
               passed && "bg-muted text-foreground",
               !active && !passed && "text-muted-foreground hover:bg-accent",
               disabled && "cursor-not-allowed opacity-60",
