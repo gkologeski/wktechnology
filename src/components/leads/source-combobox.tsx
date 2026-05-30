@@ -78,7 +78,7 @@ export function SourceCombobox({
                   onSelect={() => { onChange(s.name); setOpen(false); }}
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === s.name ? "opacity-100" : "opacity-0")} />
-                  {s.name}
+                  {leadSourceLabel(s.name)}
                 </CommandItem>
               ))}
               {search.trim() && !exists && (
