@@ -236,7 +236,7 @@ function LeadsHubspotView() {
       let q = supabase
         .from("leads")
         .select(
-          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, created_at, updated_at, custom_fields",
+          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
