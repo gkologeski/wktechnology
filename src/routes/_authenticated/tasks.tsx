@@ -518,7 +518,7 @@ function TasksHubspotView() {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Carregando tarefas…
@@ -527,7 +527,7 @@ function TasksHubspotView() {
                 ) : rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Nenhuma tarefa encontrada com os filtros atuais.
@@ -536,14 +536,6 @@ function TasksHubspotView() {
                 ) : (
                   rows.map((t) => {
                     const checked = selectedIds.has(t.id);
-                    const statusLbl =
-                      TASK_STATUSES.find((s) => s.value === t.task_status)?.label ?? "—";
-                    const priorityLbl =
-                      TASK_PRIORITIES.find((p) => p.value === t.task_priority)?.label ?? "—";
-                    const overdue =
-                      !t.completed &&
-                      t.due_date &&
-                      new Date(t.due_date).getTime() < Date.now();
                     return (
                       <tr
                         key={t.id}
@@ -567,50 +559,11 @@ function TasksHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <Link
-                            to="/tasks/$id"
-                            params={{ id: t.id }}
-                            className={cn(
-                              "truncate font-medium text-primary hover:underline",
-                              t.completed && "line-through",
-                            )}
-                          >
-                            {t.subject || "(sem assunto)"}
-                          </Link>
-                        </Td>
-                        <Td>
-                          <Pill
-                            tone={STATUS_TONE[t.task_status ?? ""] ?? "slate"}
-                            label={statusLbl}
-                          />
-                        </Td>
-                        <Td>
-                          <Pill
-                            tone={PRIORITY_TONE[t.task_priority ?? ""] ?? "slate"}
-                            label={priorityLbl}
-                          />
-                        </Td>
-                        <Td
-                          className={cn(
-                            "text-muted-foreground",
-                            overdue && "font-medium text-rose-600 dark:text-rose-400",
-                          )}
-                        >
-                          {formatDateTime(t.due_date)}
-                        </Td>
-                        <Td>
-                          {t.owner_id ? (
-                            <InitialsAvatar
-                              text={t.owner_id.slice(0, 2).toUpperCase()}
-                              seed={t.owner_id}
-                              size={6}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(t.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(t)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
