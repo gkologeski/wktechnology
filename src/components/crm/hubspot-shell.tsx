@@ -255,8 +255,6 @@ export function Td({
 // Pagination
 // ---------------------------------------------------------------------------
 
-import { TablePagination } from "@/components/table-pagination";
-
 export function Pagination({
   page,
   pageSize,
