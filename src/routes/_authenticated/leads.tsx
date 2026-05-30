@@ -778,41 +778,28 @@ function LeadsHubspotView() {
                       onCheckedChange={toggleAll}
                     />
                   </th>
-                  <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
-                    Nome
-                  </Th>
-                  <Th>E-mail</Th>
-                  <Th>Telefone</Th>
-                  <Th>Empresa</Th>
-                  <Th>Status do lead</Th>
-                  <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
-                    Score
-                  </Th>
-                  <Th>Responsável</Th>
-                  <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
-                    Criado em
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando leads…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhum lead encontrado com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((lead) => {
                     const checked = selectedIds.has(lead.id);
-                    const full =
-                      `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
                     return (
                       <tr
                         key={lead.id}
@@ -828,57 +815,11 @@ function LeadsHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                              style={{ background: colorFromString(lead.id) }}
-                            >
-                              {initialsOf(lead)}
-                            </span>
-                            <Link
-                              to="/leads/$id"
-                              params={{ id: lead.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {full}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">
-                          {lead.email ? <span className="truncate">{lead.email}</span> : "—"}
-                        </Td>
-                        <Td className="text-muted-foreground">{lead.phone ?? "—"}</Td>
-                        <Td>
-                          {lead.company_name ? (
-                            <span className="truncate">{lead.company_name}</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          <StatusPill status={lead.status} />
-                        </Td>
-                        <Td>
-                          <ScoreCell score={lead.score ?? 0} />
-                        </Td>
-                        <Td>
-                          {lead.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
-                              <span
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                                style={{ background: colorFromString(lead.owner_id) }}
-                              >
-                                {initialsFor(lead.owner_id)}
-                              </span>
-                              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(lead.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(lead)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -900,7 +841,7 @@ function LeadsHubspotView() {
                                 Abrir
                               </DropdownMenuItem>
                               {lead.status !== "qualified" && lead.status !== "disqualified" && (
-                                <DropdownMenuItem onClick={() => convert(lead)}>
+                                <DropdownMenuItem onClick={() => convert(lead as unknown as Lead)}>
                                   <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Converter
                                 </DropdownMenuItem>
                               )}
