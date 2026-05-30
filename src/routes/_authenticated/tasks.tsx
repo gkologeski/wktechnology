@@ -616,6 +616,7 @@ function TasksHubspotView() {
           />
         </div>
       </div>
+      <ColumnsEditor />
     </div>
   );
 }
