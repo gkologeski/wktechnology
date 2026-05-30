@@ -178,7 +178,7 @@ export function ViewsTabs<T extends string>({
         </button>
       ))}
       <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
-        <Plus className="mr-1 h-3.5 w-3.5" /> Add view
+        <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar visualização
       </Button>
     </div>
   );
