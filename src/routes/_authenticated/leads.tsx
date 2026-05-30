@@ -36,6 +36,7 @@ import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 import {
   getDateRange,
