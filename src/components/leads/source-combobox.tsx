@@ -71,7 +71,13 @@ export function SourceCombobox({
               )}
             </CommandEmpty>
             <CommandGroup>
-              {sources.map((s) => (
+              {Array.from(
+                sources.reduce((acc, s) => {
+                  const key = leadSourceLabel(s.name).toLowerCase();
+                  if (!acc.has(key)) acc.set(key, s);
+                  return acc;
+                }, new Map<string, typeof sources[number]>()).values(),
+              ).map((s) => (
                 <CommandItem
                   key={s.id}
                   value={s.name}
