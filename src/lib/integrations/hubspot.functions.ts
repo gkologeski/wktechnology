@@ -1505,6 +1505,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             "hs_lead_source",
             "hs_pipeline_stage",
             "hs_pipeline_stage_category",
+            "hs_primary_contact_id",
             "hubspot_owner_id",
           ];
           await appendLog({
