@@ -155,7 +155,7 @@ function ContactsHubspotView() {
       let q = supabase
         .from("contacts")
         .select(
-          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at",
+          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
