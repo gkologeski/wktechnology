@@ -278,7 +278,7 @@ export function Pagination({
           <SelectContent>
             {[25, 50, 100].map((n) => (
               <SelectItem key={n} value={String(n)}>
-                {n} / page
+                {n} / página
               </SelectItem>
             ))}
           </SelectContent>
