@@ -22,6 +22,7 @@ import {
   ChevronsUpDown,
   Plus,
 } from "lucide-react";
+import { TablePagination } from "@/components/table-pagination";
 
 // ---------------------------------------------------------------------------
 // Sidebar
