@@ -180,7 +180,7 @@ export function CreateLeadDialog({
               </div>
             )}
             {companyMatches.length > 0 && (
-              <div className="rounded-md border bg-muted/30 p-2 space-y-1">
+              <div className="rounded-md border bg-muted/30 p-2 space-y-1 max-h-72 overflow-y-auto">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Empresas parecidas</p>
                 {companyMatches.map((c) => (
                   <button
