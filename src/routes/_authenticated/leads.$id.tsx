@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowRightLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CreateDealFromLeadDialog } from "@/components/leads/create-deal-from-lead-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -25,7 +26,6 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
-import { convertLead } from "@/lib/lead-convert";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
@@ -35,9 +35,9 @@ export const Route = createFileRoute("/_authenticated/leads/$id")({
 function LeadDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [lead, setLead] = useState<Lead | null>(null);
-  const [confirmConvert, setConfirmConvert] = useState(false);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -50,6 +50,10 @@ function LeadDetail() {
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const setStatus = async (v: string) => {
+    if (v === "qualified" && lead.status !== "qualified") {
+      setCreateDealOpen(true);
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.from("leads").update({ status: v as any }).eq("id", lead.id);
     void load();
@@ -65,21 +69,6 @@ function LeadDetail() {
     } finally {
       setBusy(false);
       setConfirmDelete(false);
-    }
-  };
-
-  const doConvert = async () => {
-    if (!user) return;
-    setBusy(true);
-    try {
-      const res = await convertLead(lead, user.id);
-      toast.success(res.reusedCompany ? "Lead convertido (empresa existente reutilizada)" : "Lead convertido!");
-      setConfirmConvert(false);
-      void load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao converter");
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -105,10 +94,6 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-xl gap-2" onClick={() => setConfirmConvert(true)}>
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" /> Converter
-          </Button>
-          <div className="h-8 w-px bg-border mx-1" />
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => setConfirmDelete(true)}>
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -162,22 +147,12 @@ function LeadDetail() {
         }
       />
 
-      <AlertDialog open={confirmConvert} onOpenChange={(v) => !busy && setConfirmConvert(v)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Converter lead</AlertDialogTitle>
-            <AlertDialogDescription>
-              Será criado um Contato {lead.company_name ? "vinculado à empresa correspondente (reutilizada se já existir) " : ""}e um Negócio em estágio <strong>Qualificado</strong>. O lead será marcado como qualificado.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={doConvert} disabled={busy}>
-              {busy ? "Convertendo…" : "Converter"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CreateDealFromLeadDialog
+        open={createDealOpen}
+        onOpenChange={setCreateDealOpen}
+        lead={lead}
+        onCreated={() => void load()}
+      />
 
       <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
         <AlertDialogContent>
