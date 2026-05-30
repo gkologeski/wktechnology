@@ -558,29 +558,9 @@ function CompaniesHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  <Th
-                    sortable
-                    active={sortKey === "name"}
-                    dir={sortDir}
-                    onClick={() => onSort("name")}
-                  >
-                    Name
-                  </Th>
-                  <Th>Domínio</Th>
-                  <Th>Setor</Th>
-                  <Th>Porte</Th>
-                  <Th>Cidade</Th>
-                  <Th>UF</Th>
-                  <Th>ABM</Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Criada em
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
