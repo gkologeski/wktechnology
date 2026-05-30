@@ -25,6 +25,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
