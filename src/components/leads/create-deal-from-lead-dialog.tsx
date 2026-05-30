@@ -96,7 +96,7 @@ export function CreateDealFromLeadDialog({
   // company search
   useEffect(() => {
     const q = companyQuery.trim();
-    if (q.length < 2 || (selectedCompany && selectedCompany.name === q)) {
+    if (q.length < 3 || (selectedCompany && selectedCompany.name === q)) {
       setCompanyMatches([]);
       return;
     }
@@ -106,7 +106,7 @@ export function CreateDealFromLeadDialog({
         .select("id, name")
         .ilike("name", `%${q}%`)
         .order("name")
-        .limit(5);
+        .limit(500);
       setCompanyMatches((data ?? []) as Match[]);
     }, 250);
     return () => clearTimeout(t);
@@ -115,7 +115,7 @@ export function CreateDealFromLeadDialog({
   // contact search
   useEffect(() => {
     const q = contactQuery.trim();
-    if (q.length < 2 || (selectedContact && selectedContact.name === q)) {
+    if (q.length < 3 || (selectedContact && selectedContact.name === q)) {
       setContactMatches([]);
       return;
     }
@@ -124,7 +124,7 @@ export function CreateDealFromLeadDialog({
         .from("contacts")
         .select("id, first_name, last_name, email")
         .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(5);
+        .limit(500);
       const matches = (data ?? []).map((c) => ({
         id: c.id as string,
         name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() ||
