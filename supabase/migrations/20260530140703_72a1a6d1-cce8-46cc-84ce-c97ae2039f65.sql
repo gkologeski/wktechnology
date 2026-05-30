@@ -1,0 +1,5 @@
+ALTER TABLE public.workspace_branding
+  ADD COLUMN IF NOT EXISTS radius TEXT,
+  ADD COLUMN IF NOT EXISTS density TEXT,
+  ADD COLUMN IF NOT EXISTS heading_font TEXT,
+  ADD COLUMN IF NOT EXISTS body_font TEXT;
