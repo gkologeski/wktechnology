@@ -42,11 +42,13 @@ export function CreateLeadDialog({
     source: "",
   });
   const [companyMatches, setCompanyMatches] = useState<CompanyMatch[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyMatch | null>(null);
   const lastSearchedRef = useRef<string>("");
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
     setCompanyMatches([]);
+    setSelectedCompany(null);
     lastSearchedRef.current = "";
   };
 
@@ -55,6 +57,10 @@ export function CreateLeadDialog({
     if (!user) return;
     const q = form.company_name.trim();
     if (q.length < 3) {
+      setCompanyMatches([]);
+      return;
+    }
+    if (selectedCompany && selectedCompany.name === q) {
       setCompanyMatches([]);
       return;
     }
@@ -69,7 +75,6 @@ export function CreateLeadDialog({
       if (error) return;
       const matches = (data ?? []) as CompanyMatch[];
       setCompanyMatches(matches);
-      // Evita repetir o toast para a mesma busca
       if (matches.length > 0 && lastSearchedRef.current !== q) {
         lastSearchedRef.current = q;
         toast.info(
@@ -83,7 +88,7 @@ export function CreateLeadDialog({
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [form.company_name, user]);
+  }, [form.company_name, user, selectedCompany]);
 
   const submit = async () => {
     if (!user) return;
@@ -159,7 +164,22 @@ export function CreateLeadDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+            <Input
+              id="company_name"
+              value={form.company_name}
+              onChange={(e) => {
+                if (selectedCompany && e.target.value !== selectedCompany.name) {
+                  setSelectedCompany(null);
+                }
+                setForm({ ...form, company_name: e.target.value });
+              }}
+            />
+            {selectedCompany && (
+              <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <span className="truncate">Vinculada a <strong>{selectedCompany.name}</strong></span>
+              </div>
+            )}
             {companyMatches.length > 0 && (
               <div className="rounded-md border bg-muted/30 p-2 space-y-1">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Empresas parecidas</p>
@@ -168,7 +188,13 @@ export function CreateLeadDialog({
                     key={c.id}
                     type="button"
                     className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
-                    onClick={() => setForm({ ...form, company_name: c.name })}
+                    onClick={() => {
+                      setSelectedCompany(c);
+                      setForm({ ...form, company_name: c.name });
+                      setCompanyMatches([]);
+                      lastSearchedRef.current = c.name;
+                      toast.success(`Empresa selecionada: ${c.name}`);
+                    }}
                   >
                     <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="truncate">{c.name}</span>

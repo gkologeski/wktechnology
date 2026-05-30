@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { listLeadSources, ensureLeadSource, type LeadSource } from "@/lib/lead-sources";
 import { useAuth } from "@/lib/auth";
+import { leadSourceLabel } from "@/lib/lead-source-labels";
 import { toast } from "sonner";
 
 export function SourceCombobox({
@@ -52,7 +53,7 @@ export function SourceCombobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
-          <span className={cn(!value && "text-muted-foreground")}>{value || placeholder}</span>
+          <span className={cn(!value && "text-muted-foreground")}>{value ? leadSourceLabel(value) : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -77,7 +78,7 @@ export function SourceCombobox({
                   onSelect={() => { onChange(s.name); setOpen(false); }}
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === s.name ? "opacity-100" : "opacity-0")} />
-                  {s.name}
+                  {leadSourceLabel(s.name)}
                 </CommandItem>
               ))}
               {search.trim() && !exists && (
