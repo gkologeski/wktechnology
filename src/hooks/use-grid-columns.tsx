@@ -34,7 +34,7 @@ export type UseGridColumnsOptions<T> = {
   customEntity?: CustomEntity;
 };
 
-export function useGridColumns<T extends { custom_fields?: unknown }>({
+export function useGridColumns<T extends object>({
   gridKey,
   columns,
   defaults,
