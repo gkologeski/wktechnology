@@ -1,59 +1,79 @@
-## Objetivo
+# Padrão visual de modais — Sophisticated Canvas
 
-Trazer os 12 usuários (owners) do HubSpot para dentro do sistema, preservando o status (ativo/arquivado), **sem disparar convite por email**. Cada lead/contato/empresa/negócio/atividade vai passar a exibir como proprietário o owner original do HubSpot — hoje todos estão atribuídos a `guilherme@wktechnology.com.br`.
+Aplicar a direção escolhida como padrão de TODOS os modais (Dialog) do sistema, sem alterar campos, ordem ou comportamento. Só linguagem visual.
 
-## Situação atual (já mapeada)
+## 1. Tokens de design (`src/styles.css`)
 
-- A tabela `public.hubspot_owners` já existe e tem **12 owners cacheados** (Aline, Andressa, Carla, Eduarda, Emerson, Financeiro, Grasiele, Guilherme, Marketing, RH, Técnica, Thobias).
-- As tabelas `leads`, `contacts`, `companies`, `deals` e `activities` **já possuem a coluna `hubspot_owner_id text`** preenchida na importação — só não é usada na UI.
-- O campo `assigned_user_id uuid` (proprietário interno) referencia `auth.users`, então owners do HubSpot que ainda não são usuários reais do sistema não podem ser colocados ali diretamente.
+Adicionar/ajustar tokens semânticos usados pelo novo Dialog:
 
-## O que vai ser feito
+- `--dialog-surface` — branco puro
+- `--dialog-border` — slate-200 a 60% de opacidade
+- `--dialog-shadow` — `0 32px 64px -16px rgba(0,0,0,0.12)`
+- `--dialog-radius` — `24px`
+- `--dialog-footer-bg` — slate-50 a 80%
+- `--dialog-divider` — slate-100 a 80%
+- `--input-surface` — slate-50
+- `--input-surface-focus` — branco
+- `--input-border` — slate-200 a 70%
+- `--input-radius` — `12px` (xl)
+- `--ring-primary-soft` — verde primário a 10% (anel de foco 4px)
 
-### 1. Migração — transformar `hubspot_owners` em diretório de "membros pendentes"
+Tudo em `oklch` no styles.css, como o resto do sistema. Sem cor hardcoded em componentes.
 
-Adicionar à tabela `public.hubspot_owners`:
-- `workspace_id uuid` — preencher com o workspace do Guilherme.
-- `mapped_user_id uuid` — null = ainda não vinculado a um usuário real; preenchido quando a pessoa for, no futuro, convidada/criada.
-- `status text` — `active` ou `archived`, espelhando o `archived` do HubSpot.
-- Adicionar GRANTs + RLS para `authenticated` (somente membros do mesmo workspace leem; só workspace owner edita).
-- Auto-mapear o owner `193058059` (Guilherme) para o `auth.uid()` dele.
+## 2. Componente base — `src/components/ui/dialog.tsx`
 
-### 2. Server function `syncHubspotOwners`
+Atualizar as primitivas shadcn para refletir o padrão:
 
-`src/lib/integrations/hubspot-owners.functions.ts` — chama `GET /crm/v3/owners?limit=100&archived=true` e `?archived=false` via gateway e dá upsert em `hubspot_owners` (id, email, first_name, last_name, archived → status). **Não cria registros em `auth.users` e não dispara emails.**
+- `DialogOverlay`: fundo escuro 20% + `backdrop-blur-md`, fade 180ms.
+- `DialogContent`: `max-w-xl` por padrão (variantes `sm`/`md`/`lg`/`xl`), `rounded-[24px]`, sombra premium, borda fina, sem padding interno (deixa pros sub-componentes), entrada com `scale-[0.98] → 1` + fade 180ms.
+- `DialogHeader`: `px-8 pt-8 pb-6`, divisor inferior fino, título 20px bold tracking-tight, descrição 14px slate-500 itálico, botão de fechar redondo com hover slate-100.
+- Nova `DialogBody`: `p-8 space-y-6 max-h-[70vh] overflow-y-auto` (scrollbar fina).
+- `DialogFooter`: `p-6 bg-[--dialog-footer-bg] border-t`, alinhamento à direita, gap-3. Botão secundário (Cancelar) ghost com hover sutil; primário com sombra colorida do verde + `active:scale-[0.98]`.
 
-### 3. UI — nova aba em Configurações
+## 3. Inputs e controles dentro do modal
 
-Rota `/settings/hubspot-users` (link no menu de Configurações):
-- Tabela: Nome, Email, Status (Ativo/Arquivado), "Vinculado a" (usuário real do workspace ou — vazio), "Nº de registros" (leads + contatos + empresas + negócios atribuídos).
-- Botão "Sincronizar do HubSpot" → chama `syncHubspotOwners`.
-- Para cada linha, dropdown "Vincular a usuário do workspace" (opcional, manual e futuro).
-- **Não há botão de convite** — somente cadastro local.
+Atualizar variantes (não criar componentes novos) para que dentro de `DialogBody` os controles assumam o look:
 
-### 4. Exibição do proprietário nos registros
+- `Input`, `Textarea`, `Select trigger`: altura 44px (`h-11`), `rounded-xl`, fundo `--input-surface`, borda `--input-border`, no foco trocam para fundo branco + anel 4px verde 10% + borda verde. Transição `transition-all`.
+- `Label`: 13px semibold, `ml-1`, slate-700.
+- Espaçamento entre grupos: `space-y-6` no body, `space-y-1.5` dentro do grupo.
+- Grids de 2 e 3 colunas (`gap-4`) já suportados.
+- Combobox/autocomplete (busca de empresa/contato): dropdown com `rounded-xl`, sombra-xl, item ativo com fundo verde 50% e bolinha verde — espelhando o protótipo.
 
-Sempre que `assigned_user_id` for null e `hubspot_owner_id` estiver preenchido, mostrar o owner do HubSpot (nome + email + badge "HubSpot") em:
-- Grid de Leads (coluna Proprietário).
-- Painel "Sobre" do detalhe do Lead.
-- Mesma lógica em Contatos, Empresas e Negócios.
+## 4. Botões dos modais
 
-Implementação: hook `useHubspotOwnersMap()` que carrega `hubspot_owners` uma vez (12 linhas) e resolve `hubspot_owner_id → { name, email, status }`.
+- Primário no footer: `bg-primary` (verde do sistema), `rounded-xl`, fonte bold, sombra colorida `0 4px 12px primary/25`, hover sombra mais larga, `active:scale-[0.98]`.
+- Secundário: ghost, `rounded-xl`, hover `bg-slate-200/50`.
+- Garantir que ambos respeitam dark mode via tokens.
 
-### 5. Backfill (one-shot via migração)
+## 5. Migração dos modais existentes
 
-- Atualizar `leads/contacts/companies/deals/activities` com `hubspot_owner_id = '193058059'` para `assigned_user_id = <uuid do Guilherme>` (mapeia o admin atual).
-- Para os demais owners (ainda não vinculados a usuários reais), manter `assigned_user_id` null e exibir o nome do owner do HubSpot via fallback do passo 4.
+Como tudo vira no nível de `Dialog`/`Input`/`Button`, os modais herdam automaticamente. Revisar visualmente e ajustar apenas:
 
-## Aspectos técnicos
+- `src/components/leads/create-deal-from-lead-dialog.tsx` (benchmark)
+- Modais de criar Lead, Contato, Empresa, Negócio (lista)
+- Modal de edição em massa (bulk edit)
+- Modais de confirmação (AlertDialog) — aplicar mesma superfície/raio/sombra, mantendo layout compacto
+- Modais de pipelines/estágios em settings
+- Modais de importação HubSpot
 
-- Endpoint HubSpot: `GET https://connector-gateway.lovable.dev/hubspot/crm/v3/owners` — já temos `HUBSPOT_API_KEY` + `LOVABLE_API_KEY`.
-- RLS de `hubspot_owners`: SELECT para `authenticated` se `workspace_id IN (current_user_workspaces())`; INSERT/UPDATE/DELETE apenas para `workspace_owner_id = auth.uid()`.
-- Nenhum trigger de email é tocado; nenhuma linha é criada em `auth.users`.
-- Filtros e ordenação por proprietário continuam usando `assigned_user_id`; o fallback "via HubSpot" é apenas display. Quando um owner for vinculado (`mapped_user_id` preenchido), um job opcional pode propagar para `assigned_user_id`.
+Para cada um: substituir paddings/divisores ad-hoc pelos novos `DialogHeader`/`DialogBody`/`DialogFooter` quando ainda estiverem inline.
+
+## 6. Dark mode
+
+Definir o mesmo conjunto de tokens em `.dark` no styles.css, mantendo o feeling claro/premium (superfície ligeiramente translúcida, footer um tom acima do body, anel de foco do mesmo verde).
+
+## 7. Verificação
+
+Depois de implementar:
+
+1. Abrir `Criar negócio` a partir de um lead e comparar com o protótipo aprovado.
+2. Abrir `Criar lead`, `Criar contato`, `Criar empresa` e confirmar consistência.
+3. Abrir um `AlertDialog` (ex.: excluir registro) e confirmar que herda o estilo.
+4. Conferir no viewport 978px (que é o que o usuário usa) que `max-w-xl` continua confortável e o scroll interno funciona.
 
 ## Fora de escopo
 
-- Envio de convites por email (explicitamente pedido para **não** fazer).
-- Criação automática de contas no `auth.users` para owners do HubSpot.
-- Sincronização contínua bidirecional de owners (será manual, via botão).
+- Não muda ordem/quantidade de campos.
+- Não vira side-drawer, full-screen ou stepper.
+- Não mexe em lógica de submit, validação ou queries.
