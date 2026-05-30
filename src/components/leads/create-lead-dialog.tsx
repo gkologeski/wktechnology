@@ -68,7 +68,6 @@ export function CreateLeadDialog({
       const { data, error } = await supabase
         .from("companies")
         .select("id, name")
-        .eq("owner_id", user.id)
         .ilike("name", `%${q}%`)
         .order("name", { ascending: true })
         .limit(5);
