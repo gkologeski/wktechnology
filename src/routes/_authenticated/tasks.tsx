@@ -508,33 +508,9 @@ function TasksHubspotView() {
                     />
                   </th>
                   <th className="w-10 border-b px-3 py-2.5" />
-                  <Th
-                    sortable
-                    active={sortKey === "subject"}
-                    dir={sortDir}
-                    onClick={() => onSort("subject")}
-                  >
-                    Título
-                  </Th>
-                  <Th>Status</Th>
-                  <Th>Prioridade</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "due_date"}
-                    dir={sortDir}
-                    onClick={() => onSort("due_date")}
-                  >
-                    Vencimento
-                  </Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Create date
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
