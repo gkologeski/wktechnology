@@ -647,6 +647,7 @@ function CompaniesHubspotView() {
           />
         </div>
       </div>
+      <ColumnsEditor />
       <ConfirmCountDialog
         open={bulkDeleteOpen}
         setOpen={setBulkDeleteOpen}
