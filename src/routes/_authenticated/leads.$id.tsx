@@ -35,9 +35,9 @@ export const Route = createFileRoute("/_authenticated/leads/$id")({
 function LeadDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [lead, setLead] = useState<Lead | null>(null);
-  const [confirmConvert, setConfirmConvert] = useState(false);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -50,6 +50,10 @@ function LeadDetail() {
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const setStatus = async (v: string) => {
+    if (v === "qualified" && lead.status !== "qualified") {
+      setCreateDealOpen(true);
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.from("leads").update({ status: v as any }).eq("id", lead.id);
     void load();
@@ -65,21 +69,6 @@ function LeadDetail() {
     } finally {
       setBusy(false);
       setConfirmDelete(false);
-    }
-  };
-
-  const doConvert = async () => {
-    if (!user) return;
-    setBusy(true);
-    try {
-      const res = await convertLead(lead, user.id);
-      toast.success(res.reusedCompany ? "Lead convertido (empresa existente reutilizada)" : "Lead convertido!");
-      setConfirmConvert(false);
-      void load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao converter");
-    } finally {
-      setBusy(false);
     }
   };
 
