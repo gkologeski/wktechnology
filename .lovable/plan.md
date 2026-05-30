@@ -1,91 +1,58 @@
+# Padronizar paginação do sistema
 
-# Seletor de colunas em todos os grids
+Adotar a direção escolhida (numerada clássica + jump-to-page) como **único** componente de paginação, usado em Leads, Contatos, Empresas, Tarefas, Negócios e nas listagens genéricas.
 
-## Objetivo
-Permitir que cada usuário escolha quais colunas aparecem em cada grid do app (padrão + custom properties), salvando a preferência no banco e sincronizando entre dispositivos.
+## 1. Novo componente reutilizável
 
-## Arquitetura
+Criar `src/components/table-pagination.tsx` exportando `<TablePagination>` com a API:
 
-### 1. Backend — preferências por usuário
-Nova tabela `public.user_grid_preferences`:
-
-```text
-id              uuid PK
-user_id         uuid (auth.uid())
-workspace_id    uuid
-grid_key        text         -- ex: "leads", "contacts", "deals", "tickets"...
-visible_columns text[]       -- ordem + visibilidade
-updated_at      timestamptz
-UNIQUE (user_id, workspace_id, grid_key)
-```
-RLS: usuário só lê/escreve as próprias linhas. GRANTs para `authenticated` + `service_role`.
-
-### 2. Server functions (`src/lib/grid-preferences.functions.ts`)
-- `getGridPreference({ gridKey })` — retorna array de chaves ou null
-- `saveGridPreference({ gridKey, visibleColumns })` — upsert
-
-Ambas protegidas com `requireSupabaseAuth`.
-
-### 3. Hook unificado (`src/hooks/use-grid-columns.ts`)
 ```ts
-useGridColumns(gridKey, allColumns, defaults)
-  → { columns, openEditor, ColumnEditor }
-```
-- Faz fetch via TanStack Query
-- Faz fallback para `defaults` enquanto carrega
-- Mutation com optimistic update + invalidate
-- Inclui custom properties da entidade automaticamente (consulta `custom_properties` por `entity_key`)
-
-### 4. Componente `<GridColumnsButton gridKey={...} allColumns={...} defaults={...} />`
-Botão padrão "Colunas" + dialog. Reutiliza o `ColumnEditorDialog` já existente (que aceita reorder e toggle).
-
-### 5. Integração nos grids
-
-| Grid | Arquivo | gridKey | Custom props entity |
-|---|---|---|---|
-| Leads | `leads.tsx` | `leads` | `lead` |
-| Contatos | `contacts.tsx` | `contacts` | `contact` |
-| Empresas | `companies.tsx` | `companies` | `company` |
-| Negócios | `deals.tsx` | `deals` | `deal` |
-| Tarefas | `tasks` (board+list) | `tasks` | `task` |
-| Tickets | `tickets.tsx` | `tickets` | `ticket` |
-| Produtos | `settings.products.tsx` | `products` | `product` |
-| Cotações | `settings.quotes.tsx` | `quotes` | `quote` |
-| Segmentos, Times, Surveys, Portal, Enrichment, Exports, Campanhas Email | respectivos `settings.*.tsx` / `campaigns.email.tsx` | slug por tela | — (sem custom props) |
-
-Em cada grid:
-1. Definir `ALL_COLUMNS: { key, label, render }` 
-2. Trocar render fixo do `<thead>`/`<tbody>` por loop dinâmico baseado em `columns`
-3. Adicionar `<GridColumnsButton>` na barra de ações
-
-Para grids com custom-properties (CRM), o hook concatena automaticamente:
-```ts
-[...standard, ...customProps.map(p => ({ key: `custom:${p.key}`, label: p.label, render: r => r.properties?.[p.key] }))]
+type Props = {
+  page: number;              // 0-indexed
+  pageSize: number;
+  total: number;
+  onPageChange: (p: number) => void;
+  onPageSizeChange: (n: number) => void;
+  pageSizeOptions?: number[]; // default [25, 50, 100]
+  isLoading?: boolean;
+  entityLabel?: string;       // ex.: "leads", "contatos"
+};
 ```
 
-## Entrega faseada (mesmo PR, ordem de implementação)
+Estrutura visual (fiel ao protótipo aprovado, mas usando os tokens do design system — sem cores hard-coded indigo/slate):
 
-**Fase 1 — base**
-- Migration `user_grid_preferences`
-- Server functions + hook + componente
-- Refactor mínimo do `ColumnEditorDialog` (já existe, só adiciona "restaurar padrão")
+- **Esquerda** — segmented control para `pageSize` (`25 / 50 / 100`). Botão ativo: `bg-primary text-primary-foreground`. Contêiner: `bg-muted` com `border`. Label em caps "Exibir".
+- **Centro** — contador `Mostrando 1–50 de 5.698 {entityLabel}` em `text-muted-foreground` com números em destaque (`text-foreground font-semibold`). Pequeno dot pulsante em `bg-primary`.
+- **Direita** — navegação numerada com algoritmo de janela: `1 … (c-2) (c-1) c (c+1) (c+2) … last`. Botões 36×36, `rounded-xl`. Página ativa: `bg-foreground text-background`. Hover: `bg-muted`. Setas anterior/próxima com hover translate. Divisor vertical + input "Ir para" que aceita Enter e valida o intervalo.
 
-**Fase 2 — CRM principal (com custom props)**
-- Leads, Contatos, Empresas, Negócios
+Comportamentos:
+- Esconder "…" e os botões de borda quando `totalPages ≤ 7`.
+- `total === 0` → mostra "0 de 0" e desabilita os controles.
+- Wrap responsivo: em <640px, as três zonas empilham e o jump fica oculto.
 
-**Fase 3 — Operacional**
-- Tarefas (lista), Tickets
+## 2. Substituições
 
-**Fase 4 — Settings/secundário**
-- Produtos, Cotações, Times, Surveys, Portal, Enrichment, Exports, Segmentos, Campanhas Email
+Trocar a paginação atual nos seguintes arquivos pelo `<TablePagination>`:
 
-## Detalhes técnicos relevantes
-- Sem mudança no `EntityList` interno (já tem column editor); só passar a persistir via novo hook em vez do estado em memória.
-- Loading: render com `defaults` para evitar flash; substitui quando query resolver.
-- Reset: botão "Restaurar padrão" no dialog → `saveGridPreference({ visibleColumns: defaults })`.
-- Performance: 1 query por grid, cache compartilhado entre montagens (queryKey `["grid-pref", gridKey]`).
+- `src/routes/_authenticated/leads.tsx` (rodapé que aparece truncado no print)
+- `src/routes/_authenticated/contacts.tsx`
+- `src/routes/_authenticated/companies.tsx`
+- `src/routes/_authenticated/tasks.tsx`
+- `src/components/entity-list.tsx` → remover `NumberedPagination` interna e passar a usar o novo componente
+- `src/components/deals/deals-hubspot-table.tsx`
 
-## Fora do escopo
-- Múltiplas "views" salvas por grid (só 1 preferência por usuário/grid). Pode virar evolução futura.
-- Reordenar via drag-and-drop (mantém setas ↑↓ atuais).
-- Largura de coluna personalizada.
+Cada substituição apenas troca o JSX do rodapé; estados (`page`, `pageSize`, `total`, `isLoading`) já existem em todos esses arquivos. Nenhuma lógica de query muda.
+
+## 3. Detalhes técnicos
+
+- Componente puro, sem chamadas a Supabase nem efeitos.
+- Usa apenas `Button` e ícones `ChevronLeft/ChevronRight` já presentes no projeto.
+- Input de jump usa estado local; só dispara `onPageChange` no `Enter` ou `blur` com valor válido (`1..totalPages`).
+- `pageSizeOptions` default `[25, 50, 100]`; `entity-list` continua passando `[25, 50, 100, 200]`.
+- Sem mudanças em rotas, RLS, queries ou no header das páginas. Escopo é estritamente o rodapé.
+
+## 4. Validação
+
+- Conferir visual no preview de `/leads` (caso original do bug — combo truncado).
+- Conferir que página atual, contador e botão "próxima" funcionam em `/contacts`, `/companies`, `/tasks` e `/deals`.
+- Conferir que mudar o page size reseta para a página 1 (comportamento já existente no estado pai).
