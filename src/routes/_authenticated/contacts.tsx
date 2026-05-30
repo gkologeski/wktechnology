@@ -522,36 +522,9 @@ function ContactsHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  <Th
-                    sortable
-                    active={sortKey === "first_name"}
-                    dir={sortDir}
-                    onClick={() => onSort("first_name")}
-                  >
-                    Nome
-                  </Th>
-                  <Th>E-mail</Th>
-                  <Th>Telefone</Th>
-                  <Th>Cargo</Th>
-                  <Th>Empresa</Th>
-                  <Th>Etapa do ciclo</Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "updated_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("updated_at")}
-                  >
-                    Last activity
-                  </Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Create date
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
