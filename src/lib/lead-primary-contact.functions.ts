@@ -42,7 +42,6 @@ export const getLeadPrimaryContact = createServerFn({ method: "GET" })
     const { data: lead, error: leadErr } = await supabase
       .from("leads")
       .select("hs_raw, external_ids")
-      // @ts-expect-error column exists at runtime
       .eq("id", data.leadId)
       .single();
     if (leadErr) throw new Error(leadErr.message);
