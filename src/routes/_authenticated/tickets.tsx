@@ -242,7 +242,7 @@ function TicketsPage() {
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
         <TabsList>
-          <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Board</TabsTrigger>
+          <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro</TabsTrigger>
           <TabsTrigger value="list"><ListIcon className="h-3.5 w-3.5 mr-1" /> Lista</TabsTrigger>
         </TabsList>
 
