@@ -27,18 +27,15 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
 
   const q = useQuery({
     queryKey: ["contacts_picker", search, open],
-    enabled: open,
+    enabled: open && search.trim().length >= 3,
     queryFn: async () => {
-      let query = supabase
+      const s = `%${search.trim()}%`;
+      const { data, error } = await supabase
         .from("contacts")
         .select("id, first_name, last_name, email")
+        .or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`)
         .order("created_at", { ascending: false })
-        .limit(50);
-      if (search.trim()) {
-        const s = `%${search.trim()}%`;
-        query = query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
-      }
-      const { data, error } = await query;
+        .limit(500);
       if (error) throw new Error(error.message);
       return (data ?? []) as Contact[];
     },
