@@ -379,12 +379,12 @@ function TasksHubspotView() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Actions <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
-                  <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
                 </DropdownMenuContent>
