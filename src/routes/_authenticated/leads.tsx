@@ -36,6 +36,7 @@ import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useHubspotOwners } from "@/hooks/use-hubspot-owners";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 import {
@@ -167,6 +168,7 @@ function LeadsPage() {
 function LeadsHubspotView() {
   const { user } = useAuth();
   const { nameFor, initialsFor } = useWorkspaceMembers();
+  const hsOwners = useHubspotOwners().data ?? { list: [], byId: new Map() };
 
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -236,7 +238,7 @@ function LeadsHubspotView() {
       let q = supabase
         .from("leads")
         .select(
-          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, created_at, updated_at, custom_fields",
+          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
@@ -399,20 +401,40 @@ function LeadsHubspotView() {
       {
         key: "owner",
         label: "Responsável",
-        render: (lead) =>
-          lead.owner_id ? (
-            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
-              <span
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                style={{ background: colorFromString(lead.owner_id) }}
-              >
-                {initialsFor(lead.owner_id)}
-              </span>
-              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
-            </div>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+        render: (lead) => {
+          const assigned = lead.assigned_user_id as string | null | undefined;
+          const hsId = (lead as unknown as { hubspot_owner_id?: string | null }).hubspot_owner_id;
+          if (assigned) {
+            return (
+              <div className="flex items-center gap-2" title={nameFor(assigned)}>
+                <span
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                  style={{ background: colorFromString(assigned) }}
+                >
+                  {initialsFor(assigned)}
+                </span>
+                <span className="truncate text-sm">{nameFor(assigned)}</span>
+              </div>
+            );
+          }
+          if (hsId) {
+            const o = hsOwners.byId?.get(hsId);
+            const name = o ? (`${o.first_name ?? ""} ${o.last_name ?? ""}`.trim() || o.email || hsId) : hsId;
+            return (
+              <div className="flex items-center gap-2" title={`${name} (HubSpot)`}>
+                <span
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                  style={{ background: colorFromString(hsId) }}
+                >
+                  {(name?.slice(0, 2) ?? "HS").toUpperCase()}
+                </span>
+                <span className="truncate text-sm">{name}</span>
+                <span className="rounded bg-muted px-1 text-[10px] uppercase text-muted-foreground">HS</span>
+              </div>
+            );
+          }
+          return <span className="text-muted-foreground">—</span>;
+        },
       },
       {
         key: "created_at",

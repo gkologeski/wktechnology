@@ -1,58 +1,59 @@
-# Padronizar paginação do sistema
+## Objetivo
 
-Adotar a direção escolhida (numerada clássica + jump-to-page) como **único** componente de paginação, usado em Leads, Contatos, Empresas, Tarefas, Negócios e nas listagens genéricas.
+Trazer os 12 usuários (owners) do HubSpot para dentro do sistema, preservando o status (ativo/arquivado), **sem disparar convite por email**. Cada lead/contato/empresa/negócio/atividade vai passar a exibir como proprietário o owner original do HubSpot — hoje todos estão atribuídos a `guilherme@wktechnology.com.br`.
 
-## 1. Novo componente reutilizável
+## Situação atual (já mapeada)
 
-Criar `src/components/table-pagination.tsx` exportando `<TablePagination>` com a API:
+- A tabela `public.hubspot_owners` já existe e tem **12 owners cacheados** (Aline, Andressa, Carla, Eduarda, Emerson, Financeiro, Grasiele, Guilherme, Marketing, RH, Técnica, Thobias).
+- As tabelas `leads`, `contacts`, `companies`, `deals` e `activities` **já possuem a coluna `hubspot_owner_id text`** preenchida na importação — só não é usada na UI.
+- O campo `assigned_user_id uuid` (proprietário interno) referencia `auth.users`, então owners do HubSpot que ainda não são usuários reais do sistema não podem ser colocados ali diretamente.
 
-```ts
-type Props = {
-  page: number;              // 0-indexed
-  pageSize: number;
-  total: number;
-  onPageChange: (p: number) => void;
-  onPageSizeChange: (n: number) => void;
-  pageSizeOptions?: number[]; // default [25, 50, 100]
-  isLoading?: boolean;
-  entityLabel?: string;       // ex.: "leads", "contatos"
-};
-```
+## O que vai ser feito
 
-Estrutura visual (fiel ao protótipo aprovado, mas usando os tokens do design system — sem cores hard-coded indigo/slate):
+### 1. Migração — transformar `hubspot_owners` em diretório de "membros pendentes"
 
-- **Esquerda** — segmented control para `pageSize` (`25 / 50 / 100`). Botão ativo: `bg-primary text-primary-foreground`. Contêiner: `bg-muted` com `border`. Label em caps "Exibir".
-- **Centro** — contador `Mostrando 1–50 de 5.698 {entityLabel}` em `text-muted-foreground` com números em destaque (`text-foreground font-semibold`). Pequeno dot pulsante em `bg-primary`.
-- **Direita** — navegação numerada com algoritmo de janela: `1 … (c-2) (c-1) c (c+1) (c+2) … last`. Botões 36×36, `rounded-xl`. Página ativa: `bg-foreground text-background`. Hover: `bg-muted`. Setas anterior/próxima com hover translate. Divisor vertical + input "Ir para" que aceita Enter e valida o intervalo.
+Adicionar à tabela `public.hubspot_owners`:
+- `workspace_id uuid` — preencher com o workspace do Guilherme.
+- `mapped_user_id uuid` — null = ainda não vinculado a um usuário real; preenchido quando a pessoa for, no futuro, convidada/criada.
+- `status text` — `active` ou `archived`, espelhando o `archived` do HubSpot.
+- Adicionar GRANTs + RLS para `authenticated` (somente membros do mesmo workspace leem; só workspace owner edita).
+- Auto-mapear o owner `193058059` (Guilherme) para o `auth.uid()` dele.
 
-Comportamentos:
-- Esconder "…" e os botões de borda quando `totalPages ≤ 7`.
-- `total === 0` → mostra "0 de 0" e desabilita os controles.
-- Wrap responsivo: em <640px, as três zonas empilham e o jump fica oculto.
+### 2. Server function `syncHubspotOwners`
 
-## 2. Substituições
+`src/lib/integrations/hubspot-owners.functions.ts` — chama `GET /crm/v3/owners?limit=100&archived=true` e `?archived=false` via gateway e dá upsert em `hubspot_owners` (id, email, first_name, last_name, archived → status). **Não cria registros em `auth.users` e não dispara emails.**
 
-Trocar a paginação atual nos seguintes arquivos pelo `<TablePagination>`:
+### 3. UI — nova aba em Configurações
 
-- `src/routes/_authenticated/leads.tsx` (rodapé que aparece truncado no print)
-- `src/routes/_authenticated/contacts.tsx`
-- `src/routes/_authenticated/companies.tsx`
-- `src/routes/_authenticated/tasks.tsx`
-- `src/components/entity-list.tsx` → remover `NumberedPagination` interna e passar a usar o novo componente
-- `src/components/deals/deals-hubspot-table.tsx`
+Rota `/settings/hubspot-users` (link no menu de Configurações):
+- Tabela: Nome, Email, Status (Ativo/Arquivado), "Vinculado a" (usuário real do workspace ou — vazio), "Nº de registros" (leads + contatos + empresas + negócios atribuídos).
+- Botão "Sincronizar do HubSpot" → chama `syncHubspotOwners`.
+- Para cada linha, dropdown "Vincular a usuário do workspace" (opcional, manual e futuro).
+- **Não há botão de convite** — somente cadastro local.
 
-Cada substituição apenas troca o JSX do rodapé; estados (`page`, `pageSize`, `total`, `isLoading`) já existem em todos esses arquivos. Nenhuma lógica de query muda.
+### 4. Exibição do proprietário nos registros
 
-## 3. Detalhes técnicos
+Sempre que `assigned_user_id` for null e `hubspot_owner_id` estiver preenchido, mostrar o owner do HubSpot (nome + email + badge "HubSpot") em:
+- Grid de Leads (coluna Proprietário).
+- Painel "Sobre" do detalhe do Lead.
+- Mesma lógica em Contatos, Empresas e Negócios.
 
-- Componente puro, sem chamadas a Supabase nem efeitos.
-- Usa apenas `Button` e ícones `ChevronLeft/ChevronRight` já presentes no projeto.
-- Input de jump usa estado local; só dispara `onPageChange` no `Enter` ou `blur` com valor válido (`1..totalPages`).
-- `pageSizeOptions` default `[25, 50, 100]`; `entity-list` continua passando `[25, 50, 100, 200]`.
-- Sem mudanças em rotas, RLS, queries ou no header das páginas. Escopo é estritamente o rodapé.
+Implementação: hook `useHubspotOwnersMap()` que carrega `hubspot_owners` uma vez (12 linhas) e resolve `hubspot_owner_id → { name, email, status }`.
 
-## 4. Validação
+### 5. Backfill (one-shot via migração)
 
-- Conferir visual no preview de `/leads` (caso original do bug — combo truncado).
-- Conferir que página atual, contador e botão "próxima" funcionam em `/contacts`, `/companies`, `/tasks` e `/deals`.
-- Conferir que mudar o page size reseta para a página 1 (comportamento já existente no estado pai).
+- Atualizar `leads/contacts/companies/deals/activities` com `hubspot_owner_id = '193058059'` para `assigned_user_id = <uuid do Guilherme>` (mapeia o admin atual).
+- Para os demais owners (ainda não vinculados a usuários reais), manter `assigned_user_id` null e exibir o nome do owner do HubSpot via fallback do passo 4.
+
+## Aspectos técnicos
+
+- Endpoint HubSpot: `GET https://connector-gateway.lovable.dev/hubspot/crm/v3/owners` — já temos `HUBSPOT_API_KEY` + `LOVABLE_API_KEY`.
+- RLS de `hubspot_owners`: SELECT para `authenticated` se `workspace_id IN (current_user_workspaces())`; INSERT/UPDATE/DELETE apenas para `workspace_owner_id = auth.uid()`.
+- Nenhum trigger de email é tocado; nenhuma linha é criada em `auth.users`.
+- Filtros e ordenação por proprietário continuam usando `assigned_user_id`; o fallback "via HubSpot" é apenas display. Quando um owner for vinculado (`mapped_user_id` preenchido), um job opcional pode propagar para `assigned_user_id`.
+
+## Fora de escopo
+
+- Envio de convites por email (explicitamente pedido para **não** fazer).
+- Criação automática de contas no `auth.users` para owners do HubSpot.
+- Sincronização contínua bidirecional de owners (será manual, via botão).
