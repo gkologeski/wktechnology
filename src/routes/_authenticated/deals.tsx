@@ -43,7 +43,7 @@ function DealsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deals")
-        .select("id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at")
+        .select("id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at,custom_fields")
         .order("created_at", { ascending: false })
         .range(0, 999);
       if (error) throw error;

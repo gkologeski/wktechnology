@@ -29,6 +29,7 @@ import {
   type SortDir,
 } from "@/components/crm/hubspot-shell";
 import type { DealLookups } from "@/components/deals/deals-board";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
@@ -40,6 +41,17 @@ const STAGE_TONE: Record<string, keyof typeof TONES> = {
   won: "emerald",
   lost: "rose",
 };
+
+const DEFAULT_DEAL_COLS = [
+  "name",
+  "stage",
+  "value",
+  "expected_close_date",
+  "pipeline",
+  "owner",
+  "company",
+  "created_at",
+];
 
 export function DealsHubspotTable({
   deals,
@@ -137,26 +149,163 @@ export function DealsHubspotTable({
     return def?.label ?? v ?? "—";
   };
 
+  type DealRow = Deal;
+  const dealColumns = useMemo<GridColumnDef<DealRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome do negócio",
+        header: (
+          <Th sortable active={sortKey === "name"} dir={sortDir} onClick={() => onSort("name")}>
+            Nome do negócio
+          </Th>
+        ),
+        render: (d) => (
+          <button
+            type="button"
+            onClick={() => onOpen(d)}
+            className="truncate text-left font-medium text-primary hover:underline"
+          >
+            {d.name}
+          </button>
+        ),
+      },
+      {
+        key: "stage",
+        label: "Etapa",
+        render: (d) => (
+          <Pill tone={STAGE_TONE[String(d.stage)] ?? "slate"} label={stageLabel(d.stage, d.stage_id)} />
+        ),
+      },
+      {
+        key: "value",
+        label: "Valor",
+        className: "tabular-nums",
+        header: (
+          <Th sortable active={sortKey === "value"} dir={sortDir} onClick={() => onSort("value")}>
+            Valor
+          </Th>
+        ),
+        render: (d) => formatCurrency(Number(d.value ?? 0), d.currency || "BRL"),
+      },
+      {
+        key: "expected_close_date",
+        label: "Fechamento",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "expected_close_date"} dir={sortDir} onClick={() => onSort("expected_close_date")}>
+            Fechamento
+          </Th>
+        ),
+        render: (d) => formatDate(d.expected_close_date),
+      },
+      {
+        key: "pipeline",
+        label: "Pipeline",
+        className: "text-muted-foreground",
+        render: () => pipeline?.name ?? "—",
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (d) =>
+          d.owner_id ? (
+            <InitialsAvatar
+              text={(lookups.owners.get(d.owner_id)?.slice(0, 2) ?? d.owner_id.slice(0, 2)).toUpperCase()}
+              seed={d.owner_id}
+              size={6}
+            />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "company",
+        label: "Empresa",
+        render: (d) =>
+          d.company_id ? (
+            <Link
+              to="/companies/$id"
+              params={{ id: d.company_id }}
+              className="truncate text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {lookups.companies.get(d.company_id) ?? "—"}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "contact",
+        label: "Contato principal",
+        render: (d) =>
+          d.primary_contact_id ? (
+            <span className="truncate">{lookups.contacts.get(d.primary_contact_id) ?? "—"}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "currency",
+        label: "Moeda",
+        className: "text-muted-foreground",
+        render: (d) => d.currency || "BRL",
+      },
+      {
+        key: "updated_at",
+        label: "Atualizado em",
+        className: "text-muted-foreground",
+        render: (d) => timeAgo(d.updated_at),
+      },
+      {
+        key: "created_at",
+        label: "Criado em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criado em
+          </Th>
+        ),
+        render: (d) => timeAgo(d.created_at),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, pipeline, lookups],
+  );
+
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<DealRow>({
+    gridKey: "deals",
+    columns: dealColumns,
+    defaults: DEFAULT_DEAL_COLS,
+    customEntity: "deals",
+  });
+
   return (
     <div className="flex flex-col rounded-md border bg-card">
-      {selectedIds.size > 0 && (
-        <div className="flex items-center gap-2 border-b bg-primary/5 px-3 py-2">
-          <span className="text-xs font-medium text-primary">
-            {selectedIds.size} selecionado(s)
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-destructive hover:text-destructive"
-            onClick={bulkDelete}
-          >
-            Excluir
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
-            <XIcon className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        {selectedIds.size > 0 ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-primary">
+              {selectedIds.size} selecionado(s)
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-destructive hover:text-destructive"
+              onClick={bulkDelete}
+            >
+              Excluir
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
+              <XIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">{total} negócio(s)</span>
+        )}
+        <ColumnsButton />
+      </div>
 
       <div className="overflow-auto">
         <table className="w-full border-separate border-spacing-0 text-sm">
@@ -169,42 +318,9 @@ export function DealsHubspotTable({
                   onToggle={toggleAll}
                 />
               </th>
-              <Th
-                sortable
-                active={sortKey === "name"}
-                dir={sortDir}
-                onClick={() => onSort("name")}
-              >
-                Nome do negócio
-              </Th>
-              <Th>Etapa</Th>
-              <Th
-                sortable
-                active={sortKey === "value"}
-                dir={sortDir}
-                onClick={() => onSort("value")}
-              >
-                Valor
-              </Th>
-              <Th
-                sortable
-                active={sortKey === "expected_close_date"}
-                dir={sortDir}
-                onClick={() => onSort("expected_close_date")}
-              >
-                Fechamento
-              </Th>
-              <Th>Pipeline</Th>
-              <Th>Responsável</Th>
-              <Th>Empresa</Th>
-              <Th
-                sortable
-                active={sortKey === "created_at"}
-                dir={sortDir}
-                onClick={() => onSort("created_at")}
-              >
-                Criado em
-              </Th>
+              {visibleColumns.map((col) =>
+                col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+              )}
               <th className="w-10 border-b px-3 py-2.5" />
             </tr>
           </thead>
@@ -212,7 +328,7 @@ export function DealsHubspotTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={visibleColumns.length + 2}
                   className="px-3 py-16 text-center text-sm text-muted-foreground"
                 >
                   Nenhum negócio encontrado com os filtros atuais.
@@ -221,7 +337,6 @@ export function DealsHubspotTable({
             ) : (
               rows.map((d) => {
                 const checked = selectedIds.has(d.id);
-                const tone = STAGE_TONE[String(d.stage)] ?? "slate";
                 return (
                   <tr
                     key={d.id}
@@ -237,54 +352,11 @@ export function DealsHubspotTable({
                         onClick={(e) => e.stopPropagation()}
                       />
                     </Td>
-                    <Td>
-                      <button
-                        type="button"
-                        onClick={() => onOpen(d)}
-                        className="truncate text-left font-medium text-primary hover:underline"
-                      >
-                        {d.name}
-                      </button>
-                    </Td>
-                    <Td>
-                      <Pill tone={tone} label={stageLabel(d.stage, d.stage_id)} />
-                    </Td>
-                    <Td className="tabular-nums">
-                      {formatCurrency(Number(d.value ?? 0), d.currency || "BRL")}
-                    </Td>
-                    <Td className="text-muted-foreground">
-                      {formatDate(d.expected_close_date)}
-                    </Td>
-                    <Td className="text-muted-foreground">{pipeline?.name ?? "—"}</Td>
-                    <Td>
-                      {d.owner_id ? (
-                        <InitialsAvatar
-                          text={(
-                            lookups.owners.get(d.owner_id)?.slice(0, 2) ??
-                            d.owner_id.slice(0, 2)
-                          ).toUpperCase()}
-                          seed={d.owner_id}
-                          size={6}
-                        />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </Td>
-                    <Td>
-                      {d.company_id ? (
-                        <Link
-                          to="/companies/$id"
-                          params={{ id: d.company_id }}
-                          className="truncate text-primary hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {lookups.companies.get(d.company_id) ?? "—"}
-                        </Link>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </Td>
-                    <Td className="text-muted-foreground">{timeAgo(d.created_at)}</Td>
+                    {visibleColumns.map((col) => (
+                      <Td key={col.key} className={col.className}>
+                        {col.render(d)}
+                      </Td>
+                    ))}
                     <Td className="w-10">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -348,6 +420,8 @@ export function DealsHubspotTable({
         setPage={setPage}
         setPageSize={setPageSize}
       />
+
+      <ColumnsEditor />
     </div>
   );
 }
