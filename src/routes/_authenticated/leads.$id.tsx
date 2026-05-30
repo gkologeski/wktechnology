@@ -94,10 +94,6 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-xl gap-2" onClick={() => setConfirmConvert(true)}>
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" /> Converter
-          </Button>
-          <div className="h-8 w-px bg-border mx-1" />
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => setConfirmDelete(true)}>
             <Trash2 className="h-4 w-4" />
           </Button>
