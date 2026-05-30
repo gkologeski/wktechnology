@@ -70,7 +70,7 @@ export function CreateLeadDialog({
         .select("id, name")
         .ilike("name", `%${q}%`)
         .order("name", { ascending: true })
-        .limit(5);
+        .limit(500);
       if (error) return;
       const matches = (data ?? []) as CompanyMatch[];
       setCompanyMatches(matches);
