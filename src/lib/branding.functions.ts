@@ -41,6 +41,8 @@ export const saveBranding = createServerFn({ method: "POST" })
     brand_name?: string | null; logo_url?: string | null; favicon_url?: string | null;
     primary_color?: string | null; accent_color?: string | null;
     custom_domain?: string | null; support_email?: string | null; footer_text?: string | null;
+    radius?: string | null; density?: string | null;
+    heading_font?: string | null; body_font?: string | null;
   }) =>
     z.object({
       brand_name: z.string().max(120).nullable().optional(),
@@ -51,6 +53,10 @@ export const saveBranding = createServerFn({ method: "POST" })
       custom_domain: z.string().max(200).nullable().optional(),
       support_email: z.string().email().nullable().optional(),
       footer_text: z.string().max(500).nullable().optional(),
+      radius: z.string().max(20).nullable().optional(),
+      density: z.enum(["compact", "cozy", "comfortable"]).nullable().optional(),
+      heading_font: z.string().max(80).nullable().optional(),
+      body_font: z.string().max(80).nullable().optional(),
     }).parse(d)
   )
   .handler(async ({ data, context }) => {
