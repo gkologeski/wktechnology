@@ -280,7 +280,7 @@ export function CreateDealFromLeadDialog({
               placeholder="Buscar ou criar"
             />
             {companyMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
                 {companyMatches.map((m) => (
                   <button
                     key={m.id}
