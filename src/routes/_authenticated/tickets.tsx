@@ -326,41 +326,26 @@ function TicketsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Assunto</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Negócio</TableHead>
+                  {visibleTicketColumns.map((col) => (
+                    <TableHead key={col.key}>{col.label}</TableHead>
+                  ))}
                   <TableHead className="w-[1%]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
                 )}
                 {!isLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum ticket.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Nenhum ticket.</TableCell></TableRow>
                 )}
                 {filtered.map((t) => (
                   <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
-                    <TableCell className="font-medium">{t.subject}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Select value={t.status} onValueChange={(v) => setStatus(t, v as Ticket["status"])}>
-                        <SelectTrigger className="h-8 w-[160px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={PRIORITY_VARIANT[t.priority]}>
-                        {PRIORITIES.find((p) => p.value === t.priority)?.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{contactName(t.contact_id)}</TableCell>
-                    <TableCell>{companyName(t.company_id)}</TableCell>
-                    <TableCell>{dealName(t.deal_id)}</TableCell>
+                    {visibleTicketColumns.map((col) => (
+                      <TableCell key={col.key} className={col.className}>
+                        {col.render(t)}
+                      </TableCell>
+                    ))}
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" onClick={() => remove(t.id)}>
                         <Trash2 className="h-4 w-4" />
