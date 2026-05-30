@@ -1,10 +1,11 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
