@@ -117,7 +117,7 @@ function HubspotUsersPage() {
                           <SelectItem value="__none">— sem vínculo —</SelectItem>
                           {(members.data ?? []).map((m) => (
                             <SelectItem key={m.user_id} value={m.user_id}>
-                              {m.full_name || m.email || m.user_id}
+                              {m.full_name || m.user_id}
                             </SelectItem>
                           ))}
                         </SelectContent>
