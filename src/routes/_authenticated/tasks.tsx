@@ -42,6 +42,7 @@ import {
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -254,6 +255,107 @@ function TasksHubspotView() {
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };
 
+  type TaskRow = Activity;
+  const taskColumns: GridColumnDef<TaskRow>[] = [
+    {
+      key: "subject",
+      label: "Título",
+      header: (
+        <Th sortable active={sortKey === "subject"} dir={sortDir} onClick={() => onSort("subject")}>
+          Título
+        </Th>
+      ),
+      render: (t) => (
+        <Link
+          to="/tasks/$id"
+          params={{ id: t.id }}
+          className={cn(
+            "truncate font-medium text-primary hover:underline",
+            t.completed && "line-through",
+          )}
+        >
+          {t.subject || "(sem assunto)"}
+        </Link>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (t) => (
+        <Pill
+          tone={STATUS_TONE[t.task_status ?? ""] ?? "slate"}
+          label={TASK_STATUSES.find((s) => s.value === t.task_status)?.label ?? "—"}
+        />
+      ),
+    },
+    {
+      key: "priority",
+      label: "Prioridade",
+      render: (t) => (
+        <Pill
+          tone={PRIORITY_TONE[t.task_priority ?? ""] ?? "slate"}
+          label={TASK_PRIORITIES.find((p) => p.value === t.task_priority)?.label ?? "—"}
+        />
+      ),
+    },
+    {
+      key: "due_date",
+      label: "Vencimento",
+      header: (
+        <Th sortable active={sortKey === "due_date"} dir={sortDir} onClick={() => onSort("due_date")}>
+          Vencimento
+        </Th>
+      ),
+      render: (t) => {
+        const overdue = !t.completed && t.due_date && new Date(t.due_date).getTime() < Date.now();
+        return (
+          <span className={cn("text-muted-foreground", overdue && "font-medium text-rose-600 dark:text-rose-400")}>
+            {formatDateTime(t.due_date)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "owner",
+      label: "Responsável",
+      render: (t) =>
+        t.owner_id ? (
+          <InitialsAvatar text={t.owner_id.slice(0, 2).toUpperCase()} seed={t.owner_id} size={6} />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "created_at",
+      label: "Criado em",
+      className: "text-muted-foreground",
+      header: (
+        <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+          Criado em
+        </Th>
+      ),
+      render: (t) => timeAgo(t.created_at),
+    },
+    {
+      key: "updated_at",
+      label: "Atualizado em",
+      className: "text-muted-foreground",
+      render: (t) => timeAgo(t.updated_at),
+    },
+    {
+      key: "type",
+      label: "Tipo",
+      className: "text-muted-foreground",
+      render: (t) => t.type ?? "—",
+    },
+  ];
+  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "owner", "created_at"];
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TaskRow>({
+    gridKey: "tasks",
+    columns: taskColumns,
+    defaults: DEFAULT_TASK_COLS,
+  });
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
@@ -376,19 +478,21 @@ function TasksHubspotView() {
                 </Button>
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
-                  <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1.5">
+                <ColumnsButton />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
 
@@ -404,33 +508,9 @@ function TasksHubspotView() {
                     />
                   </th>
                   <th className="w-10 border-b px-3 py-2.5" />
-                  <Th
-                    sortable
-                    active={sortKey === "subject"}
-                    dir={sortDir}
-                    onClick={() => onSort("subject")}
-                  >
-                    Título
-                  </Th>
-                  <Th>Status</Th>
-                  <Th>Prioridade</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "due_date"}
-                    dir={sortDir}
-                    onClick={() => onSort("due_date")}
-                  >
-                    Vencimento
-                  </Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Create date
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
@@ -438,7 +518,7 @@ function TasksHubspotView() {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Carregando tarefas…
@@ -447,7 +527,7 @@ function TasksHubspotView() {
                 ) : rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Nenhuma tarefa encontrada com os filtros atuais.
@@ -456,14 +536,6 @@ function TasksHubspotView() {
                 ) : (
                   rows.map((t) => {
                     const checked = selectedIds.has(t.id);
-                    const statusLbl =
-                      TASK_STATUSES.find((s) => s.value === t.task_status)?.label ?? "—";
-                    const priorityLbl =
-                      TASK_PRIORITIES.find((p) => p.value === t.task_priority)?.label ?? "—";
-                    const overdue =
-                      !t.completed &&
-                      t.due_date &&
-                      new Date(t.due_date).getTime() < Date.now();
                     return (
                       <tr
                         key={t.id}
@@ -487,50 +559,11 @@ function TasksHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <Link
-                            to="/tasks/$id"
-                            params={{ id: t.id }}
-                            className={cn(
-                              "truncate font-medium text-primary hover:underline",
-                              t.completed && "line-through",
-                            )}
-                          >
-                            {t.subject || "(sem assunto)"}
-                          </Link>
-                        </Td>
-                        <Td>
-                          <Pill
-                            tone={STATUS_TONE[t.task_status ?? ""] ?? "slate"}
-                            label={statusLbl}
-                          />
-                        </Td>
-                        <Td>
-                          <Pill
-                            tone={PRIORITY_TONE[t.task_priority ?? ""] ?? "slate"}
-                            label={priorityLbl}
-                          />
-                        </Td>
-                        <Td
-                          className={cn(
-                            "text-muted-foreground",
-                            overdue && "font-medium text-rose-600 dark:text-rose-400",
-                          )}
-                        >
-                          {formatDateTime(t.due_date)}
-                        </Td>
-                        <Td>
-                          {t.owner_id ? (
-                            <InitialsAvatar
-                              text={t.owner_id.slice(0, 2).toUpperCase()}
-                              seed={t.owner_id}
-                              size={6}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(t.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(t)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -583,6 +616,7 @@ function TasksHubspotView() {
           />
         </div>
       </div>
+      <ColumnsEditor />
     </div>
   );
 }

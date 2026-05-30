@@ -25,6 +25,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -219,6 +220,45 @@ function TicketsPage() {
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
+  type TicketRow = Ticket;
+  const ticketColumns: GridColumnDef<TicketRow>[] = [
+    { key: "subject", label: "Assunto", render: (t) => <span className="font-medium">{t.subject}</span> },
+    {
+      key: "status",
+      label: "Status",
+      render: (t) => (
+        <Select value={t.status} onValueChange={(v) => setStatus(t, v as Ticket["status"])}>
+          <SelectTrigger className="h-8 w-[160px]" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: "priority",
+      label: "Prioridade",
+      render: (t) => (
+        <Badge variant={PRIORITY_VARIANT[t.priority]}>
+          {PRIORITIES.find((p) => p.value === t.priority)?.label}
+        </Badge>
+      ),
+    },
+    { key: "contact", label: "Contato", render: (t) => contactName(t.contact_id) },
+    { key: "company", label: "Empresa", render: (t) => companyName(t.company_id) },
+    { key: "deal", label: "Negócio", render: (t) => dealName(t.deal_id) },
+    { key: "source", label: "Fonte", render: (t) => t.source ?? "—" },
+    { key: "due_at", label: "Vencimento", render: (t) => t.due_at ? new Date(t.due_at).toLocaleString("pt-BR") : "—" },
+    { key: "created_at", label: "Criado em", render: (t) => new Date(t.created_at).toLocaleDateString("pt-BR") },
+    { key: "updated_at", label: "Atualizado em", render: (t) => new Date(t.updated_at).toLocaleDateString("pt-BR") },
+  ];
+  const DEFAULT_TICKET_COLS = ["subject", "status", "priority", "contact", "company", "deal"];
+  const { columns: visibleTicketColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TicketRow>({
+    gridKey: "tickets",
+    columns: ticketColumns,
+    defaults: DEFAULT_TICKET_COLS,
+  });
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -238,6 +278,7 @@ function TicketsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
         />
+        <div className="ml-auto"><ColumnsButton /></div>
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
@@ -285,41 +326,26 @@ function TicketsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Assunto</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Negócio</TableHead>
+                  {visibleTicketColumns.map((col) => (
+                    <TableHead key={col.key}>{col.label}</TableHead>
+                  ))}
                   <TableHead className="w-[1%]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
                 )}
                 {!isLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum ticket.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Nenhum ticket.</TableCell></TableRow>
                 )}
                 {filtered.map((t) => (
                   <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
-                    <TableCell className="font-medium">{t.subject}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Select value={t.status} onValueChange={(v) => setStatus(t, v as Ticket["status"])}>
-                        <SelectTrigger className="h-8 w-[160px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={PRIORITY_VARIANT[t.priority]}>
-                        {PRIORITIES.find((p) => p.value === t.priority)?.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{contactName(t.contact_id)}</TableCell>
-                    <TableCell>{companyName(t.company_id)}</TableCell>
-                    <TableCell>{dealName(t.deal_id)}</TableCell>
+                    {visibleTicketColumns.map((col) => (
+                      <TableCell key={col.key} className={col.className}>
+                        {col.render(t)}
+                      </TableCell>
+                    ))}
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" onClick={() => remove(t.id)}>
                         <Trash2 className="h-4 w-4" />
@@ -428,6 +454,7 @@ function TicketsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ColumnsEditor />
     </div>
   );
 }
