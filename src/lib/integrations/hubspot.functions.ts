@@ -235,12 +235,18 @@ function mapDealStageEnum(label: string | undefined, probability: number | null,
   return "new";
 }
 
-function mapLeadStatusEnum(label: string | undefined): string {
+function mapLeadStatusEnum(category: string | undefined, label?: string | undefined): string {
+  const c = (category ?? "").toUpperCase();
+  if (c === "UNQUALIFIED") return "unqualified";
+  if (c === "QUALIFIED") return "qualified";
+  if (c === "CONNECTED" || c === "ATTEMPTING") return "contacted";
+  if (c === "NEW") return "new";
+  // fallback por label (unqual ANTES de qualif para evitar match parcial)
   const l = (label ?? "").toLowerCase();
-  if (l.includes("qualif")) return "qualified";
-  if (l.includes("contat") || l.includes("contact")) return "contacted";
   if (l.includes("unqual") || l.includes("descart") || l.includes("perdid") || l.includes("lost"))
     return "unqualified";
+  if (l.includes("qualif")) return "qualified";
+  if (l.includes("contat") || l.includes("contact")) return "contacted";
   return "new";
 }
 
