@@ -145,7 +145,12 @@ function LeadDetail() {
             <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
           </>
         }
-        right={<AssociationsPanel entity="lead" entityId={lead.id} />}
+        right={
+          <>
+            <PrimaryContactPanel leadId={lead.id} />
+            <AssociationsPanel entity="lead" entityId={lead.id} />
+          </>
+        }
       />
 
       <AlertDialog open={confirmConvert} onOpenChange={(v) => !busy && setConfirmConvert(v)}>
