@@ -42,11 +42,13 @@ export function CreateLeadDialog({
     source: "",
   });
   const [companyMatches, setCompanyMatches] = useState<CompanyMatch[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyMatch | null>(null);
   const lastSearchedRef = useRef<string>("");
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
     setCompanyMatches([]);
+    setSelectedCompany(null);
     lastSearchedRef.current = "";
   };
 
@@ -55,6 +57,10 @@ export function CreateLeadDialog({
     if (!user) return;
     const q = form.company_name.trim();
     if (q.length < 3) {
+      setCompanyMatches([]);
+      return;
+    }
+    if (selectedCompany && selectedCompany.name === q) {
       setCompanyMatches([]);
       return;
     }
@@ -69,7 +75,6 @@ export function CreateLeadDialog({
       if (error) return;
       const matches = (data ?? []) as CompanyMatch[];
       setCompanyMatches(matches);
-      // Evita repetir o toast para a mesma busca
       if (matches.length > 0 && lastSearchedRef.current !== q) {
         lastSearchedRef.current = q;
         toast.info(
@@ -83,7 +88,7 @@ export function CreateLeadDialog({
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [form.company_name, user]);
+  }, [form.company_name, user, selectedCompany]);
 
   const submit = async () => {
     if (!user) return;
