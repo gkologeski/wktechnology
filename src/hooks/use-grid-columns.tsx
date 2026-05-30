@@ -68,7 +68,7 @@ export function useGridColumns<T extends object>({
         label: p.label,
         group: "Personalizado",
         render: (row: T) => {
-          const cf = (row.custom_fields ?? {}) as Record<string, unknown>;
+          const cf = ((row as { custom_fields?: unknown }).custom_fields ?? {}) as Record<string, unknown>;
           const v = cf[p.key];
           if (v == null || v === "") return <span className="text-muted-foreground">—</span>;
           if (Array.isArray(v)) return <span className="truncate">{v.join(", ")}</span>;
