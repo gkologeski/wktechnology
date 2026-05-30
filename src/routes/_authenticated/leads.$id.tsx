@@ -114,7 +114,17 @@ function LeadDetail() {
           </Button>
         </div>
       </div>
-      <StageTracker stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))} current={lead.status} onChange={setStatus} />
+      <StageTracker
+        stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))}
+        current={lead.status}
+        onChange={setStatus}
+        activeClassName={
+          lead.status === "contacted" ? "bg-black text-white" :
+          lead.status === "qualified" ? "bg-green-600 text-white" :
+          lead.status === "disqualified" ? "bg-red-600 text-white" :
+          undefined
+        }
+      />
     </div>
   );
 
