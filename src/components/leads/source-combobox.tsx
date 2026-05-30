@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { listLeadSources, ensureLeadSource, type LeadSource } from "@/lib/lead-sources";
 import { useAuth } from "@/lib/auth";
+import { leadSourceLabel } from "@/lib/lead-source-labels";
 import { toast } from "sonner";
 
 export function SourceCombobox({
