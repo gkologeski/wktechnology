@@ -5755,42 +5755,54 @@ export type Database = {
       workspace_branding: {
         Row: {
           accent_color: string | null
+          body_font: string | null
           brand_name: string | null
           created_at: string
           custom_domain: string | null
+          density: string | null
           favicon_url: string | null
           footer_text: string | null
+          heading_font: string | null
           logo_url: string | null
           owner_id: string
           primary_color: string | null
+          radius: string | null
           support_email: string | null
           updated_at: string
           workspace_id: string
         }
         Insert: {
           accent_color?: string | null
+          body_font?: string | null
           brand_name?: string | null
           created_at?: string
           custom_domain?: string | null
+          density?: string | null
           favicon_url?: string | null
           footer_text?: string | null
+          heading_font?: string | null
           logo_url?: string | null
           owner_id: string
           primary_color?: string | null
+          radius?: string | null
           support_email?: string | null
           updated_at?: string
           workspace_id?: string
         }
         Update: {
           accent_color?: string | null
+          body_font?: string | null
           brand_name?: string | null
           created_at?: string
           custom_domain?: string | null
+          density?: string | null
           favicon_url?: string | null
           footer_text?: string | null
+          heading_font?: string | null
           logo_url?: string | null
           owner_id?: string
           primary_color?: string | null
+          radius?: string | null
           support_email?: string | null
           updated_at?: string
           workspace_id?: string
