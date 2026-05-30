@@ -558,13 +558,14 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       )}
 
       {!isBoard && totalCount > 0 && (
-        <NumberedPagination
+        <TablePagination
           page={page}
           pageSize={pageSize}
-          totalCount={totalCount}
+          total={totalCount}
           isLoading={isLoading}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          pageSizeOptions={[25, 50, 100, 200]}
         />
       )}
 
