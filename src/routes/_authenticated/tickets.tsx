@@ -278,6 +278,7 @@ function TicketsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
         />
+        <div className="ml-auto"><ColumnsButton /></div>
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
