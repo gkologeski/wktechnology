@@ -22,6 +22,8 @@ export type GridColumnDef<T> = ColumnDef & {
   className?: string;
   /** Optional className for the <th> element. */
   headerClassName?: string;
+  /** Optional custom header content (replaces the default label, e.g. for sortable headers). */
+  header?: React.ReactNode;
 };
 
 export type UseGridColumnsOptions<T> = {
