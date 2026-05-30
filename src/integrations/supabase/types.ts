@@ -2967,9 +2967,12 @@ export type Database = {
           hs_raw: Json | null
           id: string
           last_name: string | null
+          mapped_user_id: string | null
+          status: string
           team_id: string | null
           updated_at: string
           user_id: string | null
+          workspace_id: string
         }
         Insert: {
           archived?: boolean
@@ -2979,9 +2982,12 @@ export type Database = {
           hs_raw?: Json | null
           id: string
           last_name?: string | null
+          mapped_user_id?: string | null
+          status?: string
           team_id?: string | null
           updated_at?: string
           user_id?: string | null
+          workspace_id: string
         }
         Update: {
           archived?: boolean
@@ -2991,9 +2997,12 @@ export type Database = {
           hs_raw?: Json | null
           id?: string
           last_name?: string | null
+          mapped_user_id?: string | null
+          status?: string
           team_id?: string | null
           updated_at?: string
           user_id?: string | null
+          workspace_id?: string
         }
         Relationships: []
       }
