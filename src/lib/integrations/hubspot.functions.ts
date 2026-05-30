@@ -1540,7 +1540,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               phone: null as string | null,
               company_name: p.hs_associated_company_name ?? null,
               source: p.hs_lead_source ?? "hubspot",
-              status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
+              status: mapLeadStatusEnum(p.hs_pipeline_stage_category, stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
             };
