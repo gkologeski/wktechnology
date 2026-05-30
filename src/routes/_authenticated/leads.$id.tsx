@@ -26,7 +26,6 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
-import { convertLead } from "@/lib/lead-convert";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
