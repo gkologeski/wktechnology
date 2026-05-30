@@ -76,6 +76,7 @@ const sections: Section[] = [
     tabs: [
       { to: "/integrations", label: "Conectores" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot" },
+      { to: "/settings/hubspot-users", label: "Usuários HubSpot" },
       { to: "/settings/email-templates", label: "Templates de email" },
     ],
   },
