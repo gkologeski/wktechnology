@@ -164,7 +164,22 @@ export function CreateLeadDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+            <Input
+              id="company_name"
+              value={form.company_name}
+              onChange={(e) => {
+                if (selectedCompany && e.target.value !== selectedCompany.name) {
+                  setSelectedCompany(null);
+                }
+                setForm({ ...form, company_name: e.target.value });
+              }}
+            />
+            {selectedCompany && (
+              <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <span className="truncate">Vinculada a <strong>{selectedCompany.name}</strong></span>
+              </div>
+            )}
             {companyMatches.length > 0 && (
               <div className="rounded-md border bg-muted/30 p-2 space-y-1">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Empresas parecidas</p>
@@ -173,7 +188,13 @@ export function CreateLeadDialog({
                     key={c.id}
                     type="button"
                     className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
-                    onClick={() => setForm({ ...form, company_name: c.name })}
+                    onClick={() => {
+                      setSelectedCompany(c);
+                      setForm({ ...form, company_name: c.name });
+                      setCompanyMatches([]);
+                      lastSearchedRef.current = c.name;
+                      toast.success(`Empresa selecionada: ${c.name}`);
+                    }}
                   >
                     <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="truncate">{c.name}</span>
