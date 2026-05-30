@@ -72,45 +72,86 @@ export const deleteRotationRule = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Lista os membros do workspace (o dono + team_members). Funciona para owner ou membro. */
+/** Lista os membros do workspace ativo do usuário. Resolve nomes a partir de profiles. */
 export const listWorkspaceMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Descobre o workspace_owner_id do usuário (ele próprio se for dono, ou via team_members).
-    const { data: myMembership } = await supabase
+    // Descobre o workspace ativo do usuário (via profiles.active_workspace_id);
+    // se não houver, usa o primeiro workspace do qual ele é membro.
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("active_workspace_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    let activeWorkspaceId =
+      (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
+
+    if (!activeWorkspaceId) {
+      const { data: firstMembership } = await supabaseAdmin
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle();
+      activeWorkspaceId = (firstMembership?.workspace_id as string | undefined) ?? null;
+    }
+
+    // Coleta IDs: membros do workspace ativo + legado (team_members) + o próprio usuário.
+    const ids = new Set<string>([userId]);
+    let workspaceOwnerId: string | null = null;
+
+    if (activeWorkspaceId) {
+      const { data: wsMembers } = await supabaseAdmin
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", activeWorkspaceId);
+      (wsMembers ?? []).forEach((m) => ids.add(m.user_id as string));
+
+      const { data: ws } = await supabaseAdmin
+        .from("workspaces")
+        .select("owner_id")
+        .eq("id", activeWorkspaceId)
+        .maybeSingle();
+      workspaceOwnerId = (ws as { owner_id: string | null } | null)?.owner_id ?? null;
+      if (workspaceOwnerId) ids.add(workspaceOwnerId);
+    }
+
+    // Fallback legado (estrutura antiga baseada em owner_id).
+    const { data: legacyMembership } = await supabaseAdmin
       .from("team_members")
       .select("workspace_owner_id")
       .eq("member_user_id", userId)
       .limit(1)
       .maybeSingle();
-
-    const workspaceOwnerId = (myMembership?.workspace_owner_id as string | undefined) ?? userId;
-
-    // Usa admin client para conseguir ler todos os membros mesmo quando o caller não é o dono.
-    const { data: members } = await supabaseAdmin
+    const legacyOwnerId =
+      (legacyMembership?.workspace_owner_id as string | undefined) ?? userId;
+    ids.add(legacyOwnerId);
+    const { data: legacyMembers } = await supabaseAdmin
       .from("team_members")
-      .select("member_user_id, role")
-      .eq("workspace_owner_id", workspaceOwnerId);
+      .select("member_user_id")
+      .eq("workspace_owner_id", legacyOwnerId);
+    (legacyMembers ?? []).forEach((m) => ids.add(m.member_user_id as string));
 
-    const ids = Array.from(
-      new Set([workspaceOwnerId, ...((members ?? []).map((m) => m.member_user_id as string))]),
-    );
+    const idList = Array.from(ids);
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name")
-      .in("id", ids);
+      .in("id", idList);
 
-    const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
-    return ids
+    const nameById = new Map(
+      (profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]),
+    );
+    return idList
       .map((id) => ({
         user_id: id,
         full_name:
           nameById.get(id) ||
           (id === workspaceOwnerId ? "Workspace (admin)" : id.slice(0, 8)),
-        is_owner: id === workspaceOwnerId,
+        is_owner: id === workspaceOwnerId || id === legacyOwnerId,
         is_me: id === userId,
       }))
       .sort((a, b) => {
