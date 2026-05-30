@@ -155,7 +155,17 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  body { background-color: var(--color-background); color: var(--color-foreground); font-feature-settings: "cv11", "ss01"; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01";
+    font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading, var(--font-body, ui-sans-serif, system-ui));
+  }
+  :root[data-density="compact"] { --density-scale: 0.875; }
+  :root[data-density="comfortable"] { --density-scale: 1.05; }
 }
 
 /* react-phone-number-input — theme bridge */
