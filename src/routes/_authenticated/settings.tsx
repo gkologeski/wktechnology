@@ -10,6 +10,7 @@ const tabs = [
   { to: "/settings", label: "Perfil" },
   { to: "/settings/email", label: "Conexão de Email" },
   { to: "/settings/security", label: "Segurança" },
+  { to: "/settings/branding", label: "White-label" },
   { to: "/settings/pipelines", label: "Pipelines" },
   { to: "/settings/custom-properties", label: "Propriedades" },
   { to: "/settings/lead-sources", label: "Fontes de lead" },
