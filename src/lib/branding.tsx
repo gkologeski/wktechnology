@@ -11,6 +11,10 @@ export type Branding = {
   accent_color: string | null;
   support_email: string | null;
   footer_text: string | null;
+  radius: string | null;
+  density: string | null;
+  heading_font: string | null;
+  body_font: string | null;
 };
 
 const BrandingContext = createContext<Branding | null>(null);
@@ -24,7 +28,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const load = async () => {
-      // Resolve active workspace
       const { data: profile } = await supabase
         .from("profiles")
         .select("active_workspace_id")
@@ -45,7 +48,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
       const { data } = await supabase
         .from("workspace_branding")
-        .select("brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text")
+        .select("brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text, radius, density, heading_font, body_font")
         .eq("workspace_id", workspaceId)
         .maybeSingle();
       if (!cancelled && data) setBranding(data as Branding);
@@ -54,7 +57,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     load();
 
-    // Re-load when active workspace changes (workspace switcher updates profiles)
     const channel = supabase
       .channel(`branding:${user.id}`)
       .on(
@@ -76,10 +78,18 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     if (!branding) {
       root.style.removeProperty("--primary");
       root.style.removeProperty("--accent");
+      root.style.removeProperty("--radius");
+      root.style.removeProperty("--font-heading");
+      root.style.removeProperty("--font-body");
+      root.removeAttribute("data-density");
       return;
     }
     if (branding.primary_color) root.style.setProperty("--primary", branding.primary_color);
     if (branding.accent_color) root.style.setProperty("--accent", branding.accent_color);
+    if (branding.radius) root.style.setProperty("--radius", branding.radius);
+    if (branding.heading_font) root.style.setProperty("--font-heading", branding.heading_font);
+    if (branding.body_font) root.style.setProperty("--font-body", branding.body_font);
+    if (branding.density) root.setAttribute("data-density", branding.density);
     if (branding.favicon_url) {
       let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
       if (!link) {
