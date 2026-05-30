@@ -247,6 +247,94 @@ function CompaniesHubspotView() {
     }
   };
 
+  // ----- Columns ----------------------------------------------------------
+  type CompanyRow = (typeof rows)[number];
+  const companyColumns = useMemo<GridColumnDef<CompanyRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "name"} dir={sortDir} onClick={() => onSort("name")}>
+            Nome
+          </Th>
+        ),
+        render: (c) => {
+          const initials = (c.name ?? "?").slice(0, 2).toUpperCase();
+          return (
+            <div className="flex items-center gap-2.5">
+              <InitialsAvatar text={initials} seed={c.id} />
+              <Link
+                to="/companies/$id"
+                params={{ id: c.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {c.name}
+              </Link>
+            </div>
+          );
+        },
+      },
+      { key: "domain", label: "Domínio", className: "text-muted-foreground", render: (c) => c.domain ?? "—" },
+      { key: "industry", label: "Setor", className: "text-muted-foreground", render: (c) => c.industry ?? "—" },
+      { key: "size", label: "Porte", className: "text-muted-foreground", render: (c) => c.size ?? "—" },
+      { key: "city", label: "Cidade", className: "text-muted-foreground", render: (c) => c.city ?? "—" },
+      { key: "state", label: "UF", className: "text-muted-foreground", render: (c) => c.state ?? "—" },
+      { key: "country", label: "País", className: "text-muted-foreground", render: (c) => c.country ?? "—" },
+      { key: "phone", label: "Telefone", className: "text-muted-foreground", render: (c) => c.phone ?? "—" },
+      {
+        key: "abm",
+        label: "ABM",
+        render: (c) =>
+          c.is_target_account ? (
+            <Pill tone="amber" label={`★ ${c.target_account_tier ?? "Tier"}`} />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (c) =>
+          c.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
+              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "created_at",
+        label: "Criada em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criada em
+          </Th>
+        ),
+        render: (c) => timeAgo(c.created_at),
+      },
+      {
+        key: "updated_at",
+        label: "Atualizada em",
+        className: "text-muted-foreground",
+        render: (c) => timeAgo(c.updated_at),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor],
+  );
+  const DEFAULT_COMPANY_COLS = ["name", "domain", "industry", "size", "city", "state", "abm", "owner", "created_at"];
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<CompanyRow>({
+    gridKey: "companies",
+    columns: companyColumns,
+    defaults: DEFAULT_COMPANY_COLS,
+    customEntity: "companies",
+  });
+
+
   const hasActiveFilters =
     filters.industry.length > 0 ||
     filters.size.length > 0 ||
