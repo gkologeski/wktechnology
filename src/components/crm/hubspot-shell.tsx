@@ -254,6 +254,8 @@ export function Td({
 // Pagination
 // ---------------------------------------------------------------------------
 
+import { TablePagination } from "@/components/table-pagination";
+
 export function Pagination({
   page,
   pageSize,
@@ -267,55 +269,14 @@ export function Pagination({
   setPage: (n: number | ((p: number) => number)) => void;
   setPageSize: (n: number) => void;
 }) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-card/40 px-3 py-2 text-xs">
-      <div className="flex items-center gap-2">
-        <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-          <SelectTrigger className="h-7 w-[88px] text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {[25, 50, 100].map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                {n} / página
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-muted-foreground">
-          {total === 0
-            ? "0 de 0"
-            : `${(page * pageSize + 1).toLocaleString("pt-BR")}–${Math.min(
-                total,
-                (page + 1) * pageSize,
-              ).toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")}`}
-        </span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          disabled={page <= 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="px-2 tabular-nums text-muted-foreground">
-          {page + 1} / {totalPages}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          disabled={page + 1 >= totalPages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    <TablePagination
+      page={page}
+      pageSize={pageSize}
+      total={total}
+      onPageChange={(p) => setPage(p)}
+      onPageSizeChange={setPageSize}
+    />
   );
 }
 
