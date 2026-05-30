@@ -1,10 +1,11 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -154,7 +155,7 @@ function ContactsHubspotView() {
       let q = supabase
         .from("contacts")
         .select(
-          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at",
+          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
@@ -233,6 +234,109 @@ function ContactsHubspotView() {
       setSortDir("asc");
     }
   };
+
+  // ----- Columns ----------------------------------------------------------
+  type ContactRow = (typeof rows)[number];
+  const contactColumns = useMemo<GridColumnDef<ContactRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+            Nome
+          </Th>
+        ),
+        render: (c) => {
+          const full = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+          const initials = ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
+          return (
+            <div className="flex items-center gap-2.5">
+              <InitialsAvatar text={initials.toUpperCase() || "?"} seed={c.id} />
+              <Link
+                to="/contacts/$id"
+                params={{ id: c.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {full}
+              </Link>
+            </div>
+          );
+        },
+      },
+      { key: "email", label: "E-mail", className: "text-muted-foreground", render: (c) => c.email ?? "—" },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (c) => c.phone ?? c.mobile_phone ?? "—",
+      },
+      { key: "job_title", label: "Cargo", className: "text-muted-foreground", render: (c) => c.job_title ?? "—" },
+      {
+        key: "company",
+        label: "Empresa",
+        render: (c) =>
+          c.company_id ? (
+            <span className="truncate">{companyMap.get(c.company_id) ?? "—"}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "lifecycle",
+        label: "Etapa do ciclo",
+        render: (c) => {
+          const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
+          return stage ? <Pill tone={stage.tone} label={stage.label} /> : <span className="text-muted-foreground">—</span>;
+        },
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (c) =>
+          c.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
+              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "updated_at",
+        label: "Última atividade",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "updated_at"} dir={sortDir} onClick={() => onSort("updated_at")}>
+            Última atividade
+          </Th>
+        ),
+        render: (c) => timeAgo(c.updated_at),
+      },
+      {
+        key: "created_at",
+        label: "Criado em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criado em
+          </Th>
+        ),
+        render: (c) => timeAgo(c.created_at),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor, companyMap],
+  );
+  const DEFAULT_CONTACT_COLS = ["name", "email", "phone", "company", "lifecycle", "owner", "created_at"];
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<ContactRow>({
+    gridKey: "contacts",
+    columns: contactColumns,
+    defaults: DEFAULT_CONTACT_COLS,
+    customEntity: "contacts",
+  });
+
 
   const hasActiveFilters =
     filters.lifecycle.length > 0 ||
@@ -389,19 +493,21 @@ function ContactsHubspotView() {
                 </Button>
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
-                  <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1.5">
+                <ColumnsButton />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
 
@@ -416,66 +522,28 @@ function ContactsHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  <Th
-                    sortable
-                    active={sortKey === "first_name"}
-                    dir={sortDir}
-                    onClick={() => onSort("first_name")}
-                  >
-                    Nome
-                  </Th>
-                  <Th>E-mail</Th>
-                  <Th>Telefone</Th>
-                  <Th>Cargo</Th>
-                  <Th>Empresa</Th>
-                  <Th>Etapa do ciclo</Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "updated_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("updated_at")}
-                  >
-                    Last activity
-                  </Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Create date
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando contatos…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhum contato encontrado com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((c) => {
                     const checked = selectedIds.has(c.id);
-                    const full =
-                      `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-                    const initials =
-                      ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
-                    const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
                     return (
                       <tr
                         key={c.id}
@@ -491,59 +559,11 @@ function ContactsHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <InitialsAvatar
-                              text={initials.toUpperCase() || "?"}
-                              seed={c.id}
-                            />
-                            <Link
-                              to="/contacts/$id"
-                              params={{ id: c.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {full}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">{c.email ?? "—"}</Td>
-                        <Td className="text-muted-foreground">
-                          {c.phone ?? c.mobile_phone ?? "—"}
-                        </Td>
-                        <Td className="text-muted-foreground">{c.job_title ?? "—"}</Td>
-                        <Td>
-                          {c.company_id ? (
-                            <span className="truncate">
-                              {companyMap.get(c.company_id) ?? "—"}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {stage ? (
-                            <Pill tone={stage.tone} label={stage.label} />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {c.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-                              <InitialsAvatar
-                                text={initialsFor(c.owner_id)}
-                                seed={c.owner_id}
-                                size={6}
-                              />
-                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.updated_at)}</Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(c)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -559,10 +579,7 @@ function ContactsHubspotView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() =>
-                                  navigate({
-                                    to: "/contacts/$id",
-                                    params: { id: c.id },
-                                  })
+                                  navigate({ to: "/contacts/$id", params: { id: c.id } })
                                 }
                               >
                                 Abrir
@@ -592,7 +609,10 @@ function ContactsHubspotView() {
             setPage={setPage}
             setPageSize={setPageSize}
           />
-        </div>
+      </div>
+
+      <ColumnsEditor />
+
       </div>
 
       <BulkEnrichDialog

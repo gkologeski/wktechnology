@@ -1,11 +1,12 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import type { Company } from "@/lib/db-types";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,7 +166,7 @@ function CompaniesHubspotView() {
       let q = supabase
         .from("companies")
         .select(
-          "id, name, domain, industry, size, city, state, country, phone, owner_id, is_target_account, target_account_tier, created_at, updated_at",
+          "id, name, domain, industry, size, city, state, country, phone, owner_id, is_target_account, target_account_tier, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
@@ -245,6 +246,94 @@ function CompaniesHubspotView() {
       setSortDir("asc");
     }
   };
+
+  // ----- Columns ----------------------------------------------------------
+  type CompanyRow = (typeof rows)[number];
+  const companyColumns = useMemo<GridColumnDef<CompanyRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "name"} dir={sortDir} onClick={() => onSort("name")}>
+            Nome
+          </Th>
+        ),
+        render: (c) => {
+          const initials = (c.name ?? "?").slice(0, 2).toUpperCase();
+          return (
+            <div className="flex items-center gap-2.5">
+              <InitialsAvatar text={initials} seed={c.id} />
+              <Link
+                to="/companies/$id"
+                params={{ id: c.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {c.name}
+              </Link>
+            </div>
+          );
+        },
+      },
+      { key: "domain", label: "Domínio", className: "text-muted-foreground", render: (c) => c.domain ?? "—" },
+      { key: "industry", label: "Setor", className: "text-muted-foreground", render: (c) => c.industry ?? "—" },
+      { key: "size", label: "Porte", className: "text-muted-foreground", render: (c) => c.size ?? "—" },
+      { key: "city", label: "Cidade", className: "text-muted-foreground", render: (c) => c.city ?? "—" },
+      { key: "state", label: "UF", className: "text-muted-foreground", render: (c) => c.state ?? "—" },
+      { key: "country", label: "País", className: "text-muted-foreground", render: (c) => c.country ?? "—" },
+      { key: "phone", label: "Telefone", className: "text-muted-foreground", render: (c) => c.phone ?? "—" },
+      {
+        key: "abm",
+        label: "ABM",
+        render: (c) =>
+          c.is_target_account ? (
+            <Pill tone="amber" label={`★ ${c.target_account_tier ?? "Tier"}`} />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (c) =>
+          c.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
+              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "created_at",
+        label: "Criada em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criada em
+          </Th>
+        ),
+        render: (c) => timeAgo(c.created_at),
+      },
+      {
+        key: "updated_at",
+        label: "Atualizada em",
+        className: "text-muted-foreground",
+        render: (c) => timeAgo(c.updated_at),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor],
+  );
+  const DEFAULT_COMPANY_COLS = ["name", "domain", "industry", "size", "city", "state", "abm", "owner", "created_at"];
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<CompanyRow>({
+    gridKey: "companies",
+    columns: companyColumns,
+    defaults: DEFAULT_COMPANY_COLS,
+    customEntity: "companies",
+  });
+
 
   const hasActiveFilters =
     filters.industry.length > 0 ||
@@ -440,19 +529,21 @@ function CompaniesHubspotView() {
                 </Button>
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
-                  <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1.5">
+                <ColumnsButton />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
 
@@ -467,55 +558,28 @@ function CompaniesHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  <Th
-                    sortable
-                    active={sortKey === "name"}
-                    dir={sortDir}
-                    onClick={() => onSort("name")}
-                  >
-                    Name
-                  </Th>
-                  <Th>Domínio</Th>
-                  <Th>Setor</Th>
-                  <Th>Porte</Th>
-                  <Th>Cidade</Th>
-                  <Th>UF</Th>
-                  <Th>ABM</Th>
-                  <Th>Responsável</Th>
-                  <Th
-                    sortable
-                    active={sortKey === "created_at"}
-                    dir={sortDir}
-                    onClick={() => onSort("created_at")}
-                  >
-                    Criada em
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando empresas…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhuma empresa encontrada com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((c) => {
                     const checked = selectedIds.has(c.id);
-                    const initials = (c.name ?? "?").slice(0, 2).toUpperCase();
                     return (
                       <tr
                         key={c.id}
@@ -531,49 +595,11 @@ function CompaniesHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <InitialsAvatar text={initials} seed={c.id} />
-                            <Link
-                              to="/companies/$id"
-                              params={{ id: c.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {c.name}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">{c.domain ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.industry ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.size ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.city ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.state ?? "—"}</Td>
-                        <Td>
-                          {c.is_target_account ? (
-                            <Pill
-                              tone="amber"
-                              label={`★ ${c.target_account_tier ?? "Tier"}`}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {c.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-                              <InitialsAvatar
-                                text={initialsFor(c.owner_id)}
-                                seed={c.owner_id}
-                                size={6}
-                              />
-                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(c)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -589,10 +615,7 @@ function CompaniesHubspotView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() =>
-                                  navigate({
-                                    to: "/companies/$id",
-                                    params: { id: c.id },
-                                  })
+                                  navigate({ to: "/companies/$id", params: { id: c.id } })
                                 }
                               >
                                 Abrir
@@ -624,6 +647,7 @@ function CompaniesHubspotView() {
           />
         </div>
       </div>
+      <ColumnsEditor />
       <ConfirmCountDialog
         open={bulkDeleteOpen}
         setOpen={setBulkDeleteOpen}
