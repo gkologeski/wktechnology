@@ -147,22 +147,12 @@ function LeadDetail() {
         }
       />
 
-      <AlertDialog open={confirmConvert} onOpenChange={(v) => !busy && setConfirmConvert(v)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Converter lead</AlertDialogTitle>
-            <AlertDialogDescription>
-              Será criado um Contato {lead.company_name ? "vinculado à empresa correspondente (reutilizada se já existir) " : ""}e um Negócio em estágio <strong>Qualificado</strong>. O lead será marcado como qualificado.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={doConvert} disabled={busy}>
-              {busy ? "Convertendo…" : "Converter"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CreateDealFromLeadDialog
+        open={createDealOpen}
+        onOpenChange={setCreateDealOpen}
+        lead={lead}
+        onCreated={() => void load()}
+      />
 
       <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
         <AlertDialogContent>
