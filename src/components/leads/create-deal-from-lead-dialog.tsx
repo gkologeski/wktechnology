@@ -187,13 +187,18 @@ export function CreateDealFromLeadDialog({
       }
 
       const numericValue = value ? Number(value) : 0;
+      const stageEntry = pipeline.stages.find((s) => s.value === stageId);
+      const legacyStage: "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost" =
+        stageEntry?.type === "won" ? "won"
+        : stageEntry?.type === "lost" ? "lost"
+        : "qualified";
       const { data: deal, error: de } = await supabase
         .from("deals")
         .insert({
           owner_id: user.id,
           workspace_id: lead.workspace_id,
           name: name.trim(),
-          stage: stageId as never,
+          stage: legacyStage as never,
           stage_id: stageId,
           pipeline_id: pipeline.id,
           company_id: companyId,
