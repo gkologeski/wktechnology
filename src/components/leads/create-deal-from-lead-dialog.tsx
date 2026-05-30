@@ -96,7 +96,7 @@ export function CreateDealFromLeadDialog({
   // company search
   useEffect(() => {
     const q = companyQuery.trim();
-    if (q.length < 2 || (selectedCompany && selectedCompany.name === q)) {
+    if (q.length < 3 || (selectedCompany && selectedCompany.name === q)) {
       setCompanyMatches([]);
       return;
     }
@@ -106,7 +106,7 @@ export function CreateDealFromLeadDialog({
         .select("id, name")
         .ilike("name", `%${q}%`)
         .order("name")
-        .limit(5);
+        .limit(500);
       setCompanyMatches((data ?? []) as Match[]);
     }, 250);
     return () => clearTimeout(t);
@@ -115,7 +115,7 @@ export function CreateDealFromLeadDialog({
   // contact search
   useEffect(() => {
     const q = contactQuery.trim();
-    if (q.length < 2 || (selectedContact && selectedContact.name === q)) {
+    if (q.length < 3 || (selectedContact && selectedContact.name === q)) {
       setContactMatches([]);
       return;
     }
@@ -124,7 +124,7 @@ export function CreateDealFromLeadDialog({
         .from("contacts")
         .select("id, first_name, last_name, email")
         .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(5);
+        .limit(500);
       const matches = (data ?? []).map((c) => ({
         id: c.id as string,
         name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() ||
@@ -280,7 +280,7 @@ export function CreateDealFromLeadDialog({
               placeholder="Buscar ou criar"
             />
             {companyMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
                 {companyMatches.map((m) => (
                   <button
                     key={m.id}
@@ -301,7 +301,7 @@ export function CreateDealFromLeadDialog({
               placeholder="Buscar contato existente (vazio cria a partir do lead)"
             />
             {contactMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
                 {contactMatches.map((m) => (
                   <button
                     key={m.id}

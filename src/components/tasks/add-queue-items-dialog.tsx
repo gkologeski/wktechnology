@@ -27,18 +27,15 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
 
   const q = useQuery({
     queryKey: ["contacts_picker", search, open],
-    enabled: open,
+    enabled: open && search.trim().length >= 3,
     queryFn: async () => {
-      let query = supabase
+      const s = `%${search.trim()}%`;
+      const { data, error } = await supabase
         .from("contacts")
         .select("id, first_name, last_name, email")
+        .or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`)
         .order("created_at", { ascending: false })
-        .limit(50);
-      if (search.trim()) {
-        const s = `%${search.trim()}%`;
-        query = query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
-      }
-      const { data, error } = await query;
+        .limit(500);
       if (error) throw new Error(error.message);
       return (data ?? []) as Contact[];
     },
@@ -84,22 +81,29 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="max-h-96 overflow-auto rounded border">
-          {q.isLoading && <p className="p-3 text-sm text-muted-foreground">Carregando…</p>}
-          {q.data?.map((c) => (
-            <label key={c.id} className="flex items-center gap-2 border-b px-3 py-2 last:border-0 hover:bg-muted">
-              <Checkbox
-                checked={!!selected[c.id]}
-                onCheckedChange={(v) => setSelected((s) => ({ ...s, [c.id]: !!v }))}
-              />
-              <div className="flex-1">
-                <div className="text-sm font-medium">
-                  {c.first_name} {c.last_name ?? ""}
-                </div>
-                <div className="text-xs text-muted-foreground">{c.email}</div>
-              </div>
-            </label>
-          ))}
-          {q.data?.length === 0 && <p className="p-3 text-sm text-muted-foreground">Sem resultados.</p>}
+          {search.trim().length < 3 ? (
+            <p className="p-3 text-sm text-muted-foreground">Digite ao menos 3 caracteres para buscar.</p>
+          ) : q.isLoading ? (
+            <p className="p-3 text-sm text-muted-foreground">Carregando…</p>
+          ) : (
+            <>
+              {q.data?.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 border-b px-3 py-2 last:border-0 hover:bg-muted">
+                  <Checkbox
+                    checked={!!selected[c.id]}
+                    onCheckedChange={(v) => setSelected((s) => ({ ...s, [c.id]: !!v }))}
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">
+                      {c.first_name} {c.last_name ?? ""}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{c.email}</div>
+                  </div>
+                </label>
+              ))}
+              {q.data?.length === 0 && <p className="p-3 text-sm text-muted-foreground">Sem resultados.</p>}
+            </>
+          )}
         </div>
         <DialogFooter>
           <Button onClick={() => addMut.mutate()} disabled={!count || addMut.isPending}>
