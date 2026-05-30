@@ -531,30 +531,19 @@ function ContactsHubspotView() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando contatos…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhum contato encontrado com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((c) => {
                     const checked = selectedIds.has(c.id);
-                    const full =
-                      `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-                    const initials =
-                      ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
-                    const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
                     return (
                       <tr
                         key={c.id}
@@ -570,59 +559,11 @@ function ContactsHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <InitialsAvatar
-                              text={initials.toUpperCase() || "?"}
-                              seed={c.id}
-                            />
-                            <Link
-                              to="/contacts/$id"
-                              params={{ id: c.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {full}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">{c.email ?? "—"}</Td>
-                        <Td className="text-muted-foreground">
-                          {c.phone ?? c.mobile_phone ?? "—"}
-                        </Td>
-                        <Td className="text-muted-foreground">{c.job_title ?? "—"}</Td>
-                        <Td>
-                          {c.company_id ? (
-                            <span className="truncate">
-                              {companyMap.get(c.company_id) ?? "—"}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {stage ? (
-                            <Pill tone={stage.tone} label={stage.label} />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {c.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-                              <InitialsAvatar
-                                text={initialsFor(c.owner_id)}
-                                seed={c.owner_id}
-                                size={6}
-                              />
-                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.updated_at)}</Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(c)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -638,10 +579,7 @@ function ContactsHubspotView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() =>
-                                  navigate({
-                                    to: "/contacts/$id",
-                                    params: { id: c.id },
-                                  })
+                                  navigate({ to: "/contacts/$id", params: { id: c.id } })
                                 }
                               >
                                 Abrir
