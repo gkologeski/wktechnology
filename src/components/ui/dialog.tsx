@@ -18,7 +18,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-foreground/20 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200",
+      "fixed inset-0 z-50 bg-foreground/25 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200",
       className,
     )}
     {...props}
@@ -36,8 +36,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       data-dialog-content=""
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 flex max-h-[90vh] w-full max-w-xl translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden border border-border/60 bg-card text-card-foreground shadow-[0_32px_64px_-16px_rgb(0_0_0/0.18)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "rounded-[24px]",
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[90vh] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto border border-border/60 bg-card text-card-foreground p-7 rounded-[24px] shadow-[0_32px_64px_-16px_rgb(0_0_0/0.18)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className,
       )}
       {...props}
@@ -55,7 +54,8 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 px-8 pt-8 pb-6 border-b border-border/60 text-left",
+      // negative margins pull the header to the edge so it sits flush with the modal frame
+      "flex flex-col space-y-1.5 -mx-7 -mt-7 px-7 pt-7 pb-5 border-b border-border/60 text-left",
       className,
     )}
     {...props}
@@ -64,20 +64,14 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 DialogHeader.displayName = "DialogHeader";
 
 const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex-1 overflow-y-auto px-8 py-6 space-y-5",
-      className,
-    )}
-    {...props}
-  />
+  <div className={cn("space-y-5", className)} {...props} />
 );
 DialogBody.displayName = "DialogBody";
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse gap-2 px-8 py-5 border-t border-border/60 bg-muted/40 sm:flex-row sm:justify-end sm:gap-3",
+      "flex flex-col-reverse gap-2 -mx-7 -mb-7 px-7 py-5 mt-2 border-t border-border/60 bg-muted/40 sm:flex-row sm:justify-end sm:gap-3",
       className,
     )}
     {...props}
