@@ -1531,14 +1531,29 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 last = parts.slice(1).join(" ") || null;
               }
             }
-            const email = p.hs_associated_contact_email ?? null;
+            // Busca dados do contato primário associado (e-mail/telefone só vivem no contato)
+            const primaryContactId = p.hs_primary_contact_id ?? null;
+            let email: string | null = p.hs_associated_contact_email ?? null;
+            let phone: string | null = null;
+            if (primaryContactId) {
+              const { data: pc } = await supabase
+                .from("contacts")
+                .select("email, phone")
+                .eq("owner_id", userId)
+                .eq("hs_object_id", String(primaryContactId))
+                .maybeSingle();
+              if (pc) {
+                email = email || pc.email || null;
+                phone = pc.phone || null;
+              }
+            }
             const hsStatus = p.hs_pipeline_stage ?? "";
             const stageEntry = hsStatus ? leadPipeline?.stageByValue.get(hsStatus) : undefined;
             const leadData = {
               first_name: first || email || "Sem nome",
               last_name: last,
               email,
-              phone: null as string | null,
+              phone,
               company_name: p.hs_associated_company_name ?? null,
               source: p.hs_lead_source ?? "hubspot",
               status: mapLeadStatusEnum(p.hs_pipeline_stage_category ?? undefined, stageEntry?.label ?? hsStatus) as never,
