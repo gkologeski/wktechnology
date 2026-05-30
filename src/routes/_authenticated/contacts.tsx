@@ -609,7 +609,10 @@ function ContactsHubspotView() {
             setPage={setPage}
             setPageSize={setPageSize}
           />
-        </div>
+      </div>
+
+      <ColumnsEditor />
+
       </div>
 
       <BulkEnrichDialog
