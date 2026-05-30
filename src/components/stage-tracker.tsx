@@ -26,7 +26,7 @@ export function StageTracker({
             className={cn(
               "flex-1 min-w-[110px] px-3 py-2 text-xs font-medium border-r last:border-r-0 transition-colors text-left",
               active && (activeClassName ?? "bg-slate-700 text-white"),
-              passed && "bg-muted text-foreground",
+              passed && "bg-muted text-foreground hover:bg-slate-700 hover:text-white",
               !active && !passed && "text-muted-foreground hover:bg-slate-700 hover:text-white",
               disabled && "cursor-not-allowed opacity-60",
             )}
