@@ -325,6 +325,142 @@ function LeadsHubspotView() {
     }
   };
 
+  // ----- Columns ----------------------------------------------------------
+  type LeadRow = (typeof rows)[number];
+  const leadColumns = useMemo<GridColumnDef<LeadRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+            Nome
+          </Th>
+        ),
+        render: (lead) => {
+          const full = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
+          return (
+            <div className="flex items-center gap-2.5">
+              <span
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: colorFromString(lead.id) }}
+              >
+                {initialsOf(lead as Lead)}
+              </span>
+              <Link
+                to="/leads/$id"
+                params={{ id: lead.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {full}
+              </Link>
+            </div>
+          );
+        },
+      },
+      {
+        key: "email",
+        label: "E-mail",
+        className: "text-muted-foreground",
+        render: (lead) => (lead.email ? <span className="truncate">{lead.email}</span> : "—"),
+      },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (lead) => lead.phone ?? "—",
+      },
+      {
+        key: "company",
+        label: "Empresa",
+        render: (lead) =>
+          lead.company_name ? (
+            <span className="truncate">{lead.company_name}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "status",
+        label: "Status do lead",
+        render: (lead) => <StatusPill status={lead.status} />,
+      },
+      {
+        key: "score",
+        label: "Score",
+        header: (
+          <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
+            Score
+          </Th>
+        ),
+        render: (lead) => <ScoreCell score={lead.score ?? 0} />,
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (lead) =>
+          lead.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
+              <span
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: colorFromString(lead.owner_id) }}
+              >
+                {initialsFor(lead.owner_id)}
+              </span>
+              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "created_at",
+        label: "Criado em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criado em
+          </Th>
+        ),
+        render: (lead) => timeAgo(lead.created_at),
+      },
+      {
+        key: "updated_at",
+        label: "Atualizado em",
+        className: "text-muted-foreground",
+        render: (lead) => timeAgo(lead.updated_at),
+      },
+      {
+        key: "source",
+        label: "Origem",
+        className: "text-muted-foreground",
+        render: (lead) => lead.source ?? "—",
+      },
+      {
+        key: "label",
+        label: "Rótulo",
+        render: (lead) =>
+          lead.label ? (
+            <Badge variant="secondary" className="font-normal">{lead.label}</Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor],
+  );
+
+  const DEFAULT_LEAD_COLS = ["name", "email", "phone", "company", "status", "score", "owner", "created_at"];
+
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<LeadRow>({
+    gridKey: "leads",
+    columns: leadColumns,
+    defaults: DEFAULT_LEAD_COLS,
+    customEntity: "leads",
+  });
+
+
   const hasActiveFilters =
     filters.status.length > 0 ||
     filters.source.length > 0 ||
