@@ -1,30 +1,38 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
 
-export type ColumnDef = { key: string; label: string };
+export type ColumnDef = { key: string; label: string; group?: string };
 
 export function ColumnEditorDialog({
-  open, setOpen, allColumns, value, onApply,
+  open, setOpen, allColumns, value, defaults, onApply, onReset,
 }: {
-  open: boolean; setOpen: (b: boolean) => void;
-  allColumns: ColumnDef[]; value: string[] | null; onApply: (order: string[]) => void;
+  open: boolean;
+  setOpen: (b: boolean) => void;
+  allColumns: ColumnDef[];
+  value: string[] | null;
+  defaults?: string[];
+  onApply: (order: string[]) => void;
+  onReset?: () => void;
 }) {
   const [order, setOrder] = useState<string[]>([]);
   const [visible, setVisible] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (open) {
-      const initial = value && value.length ? value : allColumns.map((c) => c.key);
+      const initial = value && value.length ? value : (defaults && defaults.length ? defaults : allColumns.map((c) => c.key));
       setOrder(initial);
       setVisible(new Set(initial));
+      setQuery("");
     }
-  }, [open, value, allColumns]);
+  }, [open, value, defaults, allColumns]);
 
   const allKeys = allColumns.map((c) => c.key);
-  const fullOrder = [...order, ...allKeys.filter((k) => !order.includes(k))];
+  const fullOrder = [...order.filter((k) => allKeys.includes(k)), ...allKeys.filter((k) => !order.includes(k))];
 
   const move = (key: string, dir: -1 | 1) => {
     const idx = fullOrder.indexOf(key);
@@ -45,24 +53,77 @@ export function ColumnEditorDialog({
     setOpen(false);
   };
 
+  const resetToDefault = () => {
+    const base = defaults && defaults.length ? defaults : allKeys;
+    setOrder(base);
+    setVisible(new Set(base));
+    onReset?.();
+  };
+
+  const filtered = query.trim()
+    ? fullOrder.filter((k) => {
+        const c = allColumns.find((x) => x.key === k);
+        return c && c.label.toLowerCase().includes(query.toLowerCase());
+      })
+    : fullOrder;
+
+  const visibleCount = visible.size;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Editar colunas</DialogTitle></DialogHeader>
-        <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-          {fullOrder.map((key) => {
-            const col = allColumns.find((c) => c.key === key);
-            if (!col) return null;
-            return (
-              <div key={key} className="flex items-center gap-2 p-2 rounded hover:bg-muted">
-                <Checkbox checked={visible.has(key)} onCheckedChange={() => toggle(key)} />
-                <span className="flex-1 text-sm">{col.label}</span>
-                <Button variant="ghost" size="icon" onClick={() => move(key, -1)}><ChevronUp className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => move(key, 1)}><ChevronDown className="h-4 w-4" /></Button>
-              </div>
-            );
-          })}
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar colunas</DialogTitle>
+          <DialogDescription>
+            Marque, desmarque e reordene as colunas exibidas nesta tela. As preferências ficam salvas na sua conta.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar campo…"
+              className="pl-8 h-9"
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{visibleCount} de {allColumns.length} visíveis</span>
+            <button
+              type="button"
+              onClick={resetToDefault}
+              className="inline-flex items-center gap-1 hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" /> Restaurar padrão
+            </button>
+          </div>
+
+          <div className="space-y-0.5 max-h-[55vh] overflow-y-auto rounded border bg-muted/30 p-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-8 text-center text-sm text-muted-foreground">Nenhum campo encontrado.</div>
+            ) : (
+              filtered.map((key) => {
+                const col = allColumns.find((c) => c.key === key);
+                if (!col) return null;
+                return (
+                  <div key={key} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-background">
+                    <Checkbox checked={visible.has(key)} onCheckedChange={() => toggle(key)} />
+                    <span className="flex-1 text-sm truncate">
+                      {col.label}
+                      {col.group ? <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span> : null}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => move(key, -1)}><ChevronUp className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => move(key, 1)}><ChevronDown className="h-3.5 w-3.5" /></Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={apply}>Aplicar</Button>

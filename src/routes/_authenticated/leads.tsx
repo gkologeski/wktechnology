@@ -36,6 +36,7 @@ import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 import {
   getDateRange,
@@ -234,7 +235,7 @@ function LeadsHubspotView() {
       let q = supabase
         .from("leads")
         .select(
-          "id, first_name, last_name, email, phone, company_name, source, score, status, owner_id, created_at",
+          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
@@ -323,6 +324,142 @@ function LeadsHubspotView() {
       setSortDir("asc");
     }
   };
+
+  // ----- Columns ----------------------------------------------------------
+  type LeadRow = (typeof rows)[number];
+  const leadColumns = useMemo<GridColumnDef<LeadRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+            Nome
+          </Th>
+        ),
+        render: (lead) => {
+          const full = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
+          return (
+            <div className="flex items-center gap-2.5">
+              <span
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: colorFromString(lead.id) }}
+              >
+                {initialsOf(lead as Lead)}
+              </span>
+              <Link
+                to="/leads/$id"
+                params={{ id: lead.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {full}
+              </Link>
+            </div>
+          );
+        },
+      },
+      {
+        key: "email",
+        label: "E-mail",
+        className: "text-muted-foreground",
+        render: (lead) => (lead.email ? <span className="truncate">{lead.email}</span> : "—"),
+      },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (lead) => lead.phone ?? "—",
+      },
+      {
+        key: "company",
+        label: "Empresa",
+        render: (lead) =>
+          lead.company_name ? (
+            <span className="truncate">{lead.company_name}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "status",
+        label: "Status do lead",
+        render: (lead) => <StatusPill status={lead.status} />,
+      },
+      {
+        key: "score",
+        label: "Score",
+        header: (
+          <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
+            Score
+          </Th>
+        ),
+        render: (lead) => <ScoreCell score={lead.score ?? 0} />,
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (lead) =>
+          lead.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
+              <span
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ background: colorFromString(lead.owner_id) }}
+              >
+                {initialsFor(lead.owner_id)}
+              </span>
+              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "created_at",
+        label: "Criado em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criado em
+          </Th>
+        ),
+        render: (lead) => timeAgo(lead.created_at),
+      },
+      {
+        key: "updated_at",
+        label: "Atualizado em",
+        className: "text-muted-foreground",
+        render: (lead) => timeAgo(lead.updated_at),
+      },
+      {
+        key: "source",
+        label: "Origem",
+        className: "text-muted-foreground",
+        render: (lead) => lead.source ?? "—",
+      },
+      {
+        key: "label",
+        label: "Rótulo",
+        render: (lead) =>
+          lead.label ? (
+            <Badge variant="secondary" className="font-normal">{lead.label}</Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor],
+  );
+
+  const DEFAULT_LEAD_COLS = ["name", "email", "phone", "company", "status", "score", "owner", "created_at"];
+
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<LeadRow>({
+    gridKey: "leads",
+    columns: leadColumns,
+    defaults: DEFAULT_LEAD_COLS,
+    customEntity: "leads",
+  });
+
 
   const hasActiveFilters =
     filters.status.length > 0 ||
@@ -607,19 +744,21 @@ function LeadsHubspotView() {
                 </Button>
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>Editar colunas</DropdownMenuItem>
-                  <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1.5">
+                <ColumnsButton />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
 
@@ -639,41 +778,28 @@ function LeadsHubspotView() {
                       onCheckedChange={toggleAll}
                     />
                   </th>
-                  <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
-                    Nome
-                  </Th>
-                  <Th>E-mail</Th>
-                  <Th>Telefone</Th>
-                  <Th>Empresa</Th>
-                  <Th>Status do lead</Th>
-                  <Th sortable active={sortKey === "score"} dir={sortDir} onClick={() => onSort("score")}>
-                    Score
-                  </Th>
-                  <Th>Responsável</Th>
-                  <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
-                    Criado em
-                  </Th>
+                  {visibleColumns.map((col) =>
+                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando leads…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhum lead encontrado com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((lead) => {
                     const checked = selectedIds.has(lead.id);
-                    const full =
-                      `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
                     return (
                       <tr
                         key={lead.id}
@@ -689,57 +815,11 @@ function LeadsHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                              style={{ background: colorFromString(lead.id) }}
-                            >
-                              {initialsOf(lead)}
-                            </span>
-                            <Link
-                              to="/leads/$id"
-                              params={{ id: lead.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {full}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">
-                          {lead.email ? <span className="truncate">{lead.email}</span> : "—"}
-                        </Td>
-                        <Td className="text-muted-foreground">{lead.phone ?? "—"}</Td>
-                        <Td>
-                          {lead.company_name ? (
-                            <span className="truncate">{lead.company_name}</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          <StatusPill status={lead.status} />
-                        </Td>
-                        <Td>
-                          <ScoreCell score={lead.score ?? 0} />
-                        </Td>
-                        <Td>
-                          {lead.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(lead.owner_id)}>
-                              <span
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                                style={{ background: colorFromString(lead.owner_id) }}
-                              >
-                                {initialsFor(lead.owner_id)}
-                              </span>
-                              <span className="truncate text-sm">{nameFor(lead.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(lead.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(lead)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -761,7 +841,7 @@ function LeadsHubspotView() {
                                 Abrir
                               </DropdownMenuItem>
                               {lead.status !== "qualified" && lead.status !== "disqualified" && (
-                                <DropdownMenuItem onClick={() => convert(lead)}>
+                                <DropdownMenuItem onClick={() => convert(lead as unknown as Lead)}>
                                   <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Converter
                                 </DropdownMenuItem>
                               )}
@@ -836,6 +916,10 @@ function LeadsHubspotView() {
           </div>
         </div>
       </div>
+
+      <ColumnsEditor />
+
+
 
       <BulkEnrichDialog
         open={!!enrichIds}
@@ -917,12 +1001,14 @@ function Th({
   active,
   dir,
   onClick,
+  className,
 }: {
   children: React.ReactNode;
   sortable?: boolean;
   active?: boolean;
   dir?: SortDir;
   onClick?: () => void;
+  className?: string;
 }) {
   return (
     <th
@@ -930,6 +1016,7 @@ function Th({
         "whitespace-nowrap border-b px-3 py-2.5 font-semibold",
         sortable && "cursor-pointer select-none hover:text-foreground",
         active && "text-foreground",
+        className,
       )}
       onClick={onClick}
     >

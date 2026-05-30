@@ -1,138 +1,91 @@
-# Reorganização do menu (sidebar + /settings)
 
-## Diagnóstico atual
+# Seletor de colunas em todos os grids
 
-A sidebar tem 8 grupos e o grupo **Configuração** virou um "depósito" com 15 itens misturando: estrutura de CRM (Pipelines, Propriedades, Objetos custom), segurança (Usuários, Permissões, Auditoria, 2FA, API Keys), integrações (Email, Webhooks, HubSpot, Integrações) e preferências (Idioma, Mobile, White-label).
+## Objetivo
+Permitir que cada usuário escolha quais colunas aparecem em cada grid do app (padrão + custom properties), salvando a preferência no banco e sincronizando entre dispositivos.
 
-A aba interna `/settings` (top tabs) também mistura **Perfil pessoal** com **Pipelines** e **Usuários do workspace** — três escopos diferentes (eu / workspace / segurança) em um único nível.
+## Arquitetura
 
-Problemas centrais:
-1. **Mistura de escopo**: pessoal × workspace × plataforma no mesmo grupo.
-2. **Mistura de domínio**: CRM-config (Pipelines) ao lado de Segurança (Usuários/Permissões).
-3. **Itens "soltos"** dentro de Análises que são na verdade configuração (Metas, Exports, Enriquecimento, Calendários, Booking).
-4. **Marketing × Automações × Vendas** com fronteiras pouco claras (Templates de email, Sequências, Recorrência).
-
----
-
-## Proposta A — Por domínio de negócio (refino do atual)
-
-Mantém a mentalidade atual mas separa **Configuração** em sub-domínios alinhados a cada área.
+### 1. Backend — preferências por usuário
+Nova tabela `public.user_grid_preferences`:
 
 ```text
-Análises        → Painel, Dashboards, Relatórios, Analytics, Metas
-CRM             → Leads, Contatos, Empresas, Negócios, Tarefas, Filas, Listas
-Vendas          → Produtos, Cotações, Assinaturas eletrônicas, Recorrência
-Suporte         → Tickets, Macros, Pesquisas, Portal do cliente
-Inbox           → Comunicações, Email, WhatsApp, Notas
-Marketing       → Campanhas WhatsApp/Email, Templates, Formulários,
-                  Prospecting, Tipos de assinatura
-Automações      → Workflows, Sequências, Distribuição, SLA, Pontuação, Playbooks
-─────────────── (separador)
-Configurações ▸ (uma única entrada que abre /settings com sub-abas agrupadas)
-   ├ Workspace        → Marca/White-label, Idioma, Mobile/PWA, Calendários, Booking
-   ├ Estrutura CRM    → Pipelines, Propriedades, Objetos custom, Fontes de lead, Enriquecimento
-   ├ Pessoas & Acesso → Usuários, Permissões, Conexão de Email pessoal, 2FA pessoal
-   ├ Segurança        → Auditoria, API Keys, Webhooks, Sessões
-   ├ Integrações      → Integrações, Sync HubSpot, Email transacional
-   └ Conta            → Perfil, Preferências, Notificações
+id              uuid PK
+user_id         uuid (auth.uid())
+workspace_id    uuid
+grid_key        text         -- ex: "leads", "contacts", "deals", "tickets"...
+visible_columns text[]       -- ordem + visibilidade
+updated_at      timestamptz
+UNIQUE (user_id, workspace_id, grid_key)
+```
+RLS: usuário só lê/escreve as próprias linhas. GRANTs para `authenticated` + `service_role`.
+
+### 2. Server functions (`src/lib/grid-preferences.functions.ts`)
+- `getGridPreference({ gridKey })` — retorna array de chaves ou null
+- `saveGridPreference({ gridKey, visibleColumns })` — upsert
+
+Ambas protegidas com `requireSupabaseAuth`.
+
+### 3. Hook unificado (`src/hooks/use-grid-columns.ts`)
+```ts
+useGridColumns(gridKey, allColumns, defaults)
+  → { columns, openEditor, ColumnEditor }
+```
+- Faz fetch via TanStack Query
+- Faz fallback para `defaults` enquanto carrega
+- Mutation com optimistic update + invalidate
+- Inclui custom properties da entidade automaticamente (consulta `custom_properties` por `entity_key`)
+
+### 4. Componente `<GridColumnsButton gridKey={...} allColumns={...} defaults={...} />`
+Botão padrão "Colunas" + dialog. Reutiliza o `ColumnEditorDialog` já existente (que aceita reorder e toggle).
+
+### 5. Integração nos grids
+
+| Grid | Arquivo | gridKey | Custom props entity |
+|---|---|---|---|
+| Leads | `leads.tsx` | `leads` | `lead` |
+| Contatos | `contacts.tsx` | `contacts` | `contact` |
+| Empresas | `companies.tsx` | `companies` | `company` |
+| Negócios | `deals.tsx` | `deals` | `deal` |
+| Tarefas | `tasks` (board+list) | `tasks` | `task` |
+| Tickets | `tickets.tsx` | `tickets` | `ticket` |
+| Produtos | `settings.products.tsx` | `products` | `product` |
+| Cotações | `settings.quotes.tsx` | `quotes` | `quote` |
+| Segmentos, Times, Surveys, Portal, Enrichment, Exports, Campanhas Email | respectivos `settings.*.tsx` / `campaigns.email.tsx` | slug por tela | — (sem custom props) |
+
+Em cada grid:
+1. Definir `ALL_COLUMNS: { key, label, render }` 
+2. Trocar render fixo do `<thead>`/`<tbody>` por loop dinâmico baseado em `columns`
+3. Adicionar `<GridColumnsButton>` na barra de ações
+
+Para grids com custom-properties (CRM), o hook concatena automaticamente:
+```ts
+[...standard, ...customProps.map(p => ({ key: `custom:${p.key}`, label: p.label, render: r => r.properties?.[p.key] }))]
 ```
 
-- **Prós**: mudança incremental, mantém os 7 grupos de operação já conhecidos; só o "balde" de Configurações é reorganizado.
-- **Contras**: a sidebar continua larga; itens de configuração que hoje "vazam" para Análises/Marketing/Vendas continuam vazando.
+## Entrega faseada (mesmo PR, ordem de implementação)
 
----
+**Fase 1 — base**
+- Migration `user_grid_preferences`
+- Server functions + hook + componente
+- Refactor mínimo do `ColumnEditorDialog` (já existe, só adiciona "restaurar padrão")
 
-## Proposta B — Por jornada do usuário (Operação × Configuração × Pessoal)
+**Fase 2 — CRM principal (com custom props)**
+- Leads, Contatos, Empresas, Negócios
 
-Reduz a sidebar para **3 macro-seções** + uma 4ª só de admin. Cada item de `/settings` migra para o grupo de jornada certo.
+**Fase 3 — Operacional**
+- Tarefas (lista), Tickets
 
-```text
-▼ Trabalhar (operação do dia-a-dia)
-   Painel · Leads · Contatos · Empresas · Negócios · Tarefas · Tickets
-   Inbox (Email, WhatsApp, Comunicações, Notas) · Listas
+**Fase 4 — Settings/secundário**
+- Produtos, Cotações, Times, Surveys, Portal, Enrichment, Exports, Segmentos, Campanhas Email
 
-▼ Analisar
-   Dashboards · Relatórios · Analytics · Metas · Exports agendados
+## Detalhes técnicos relevantes
+- Sem mudança no `EntityList` interno (já tem column editor); só passar a persistir via novo hook em vez do estado em memória.
+- Loading: render com `defaults` para evitar flash; substitui quando query resolver.
+- Reset: botão "Restaurar padrão" no dialog → `saveGridPreference({ visibleColumns: defaults })`.
+- Performance: 1 query por grid, cache compartilhado entre montagens (queryKey `["grid-pref", gridKey]`).
 
-▼ Engajar (saída ativa)
-   Campanhas WhatsApp/Email · Sequências · Templates · Formulários ·
-   Prospecting · Macros · Pesquisas · Portal
-
-▼ Configurar  (só admin/manager — abre /settings)
-   ├ Workspace        Marca, Idioma, Mobile, Calendários, Booking
-   ├ Estrutura CRM    Pipelines, Propriedades, Objetos custom, Fontes,
-                       Produtos, Cotações, Recorrência, eSign
-   ├ Automação        Workflows, Distribuição, SLA, Scoring, Playbooks, Enriquecimento
-   ├ Pessoas & Acesso Usuários, Permissões, Times
-   ├ Segurança        2FA, Auditoria, API Keys, Webhooks
-   └ Integrações      Conectores, HubSpot Sync, Email transacional
-
-▼ Minha conta (rodapé / avatar)
-   Perfil · Conexão de email pessoal · 2FA pessoal · Notificações · Preferências
-```
-
-- **Prós**: sidebar enxuta (4 grupos visíveis em vez de 8), separa claramente **o que eu faço** de **como o sistema é configurado**; resolve o caso "Pipelines ao lado de Usuários" colocando Pipelines em *Estrutura CRM* e Usuários em *Pessoas & Acesso*.
-- **Contras**: usuários atuais precisam reaprender onde estão Produtos/Cotações (saem de "Vendas" e viram *Estrutura CRM*); exige um banner de "novidades" temporário.
-
----
-
-## Proposta C — Híbrido por persona (Operacional / Comercial / Admin)
-
-Pensado para CRMs onde o **vendedor**, o **gestor** e o **admin** usam telas muito diferentes. A sidebar destaca o que cada papel acessa.
-
-```text
-▼ Meu dia       (vendedor)
-   Painel · Tarefas · Filas · Inbox · Leads · Negócios
-
-▼ Pipeline      (gestor comercial)
-   Leads · Contatos · Empresas · Negócios · Listas · Produtos · Cotações ·
-   Recorrência · eSign
-
-▼ Atendimento   (suporte)
-   Tickets · Macros · Pesquisas · Portal
-
-▼ Marketing
-   Campanhas · Sequências · Templates · Formulários · Prospecting · Segmentos
-
-▼ Inteligência
-   Dashboards · Relatórios · Analytics · Metas · Exports · Enriquecimento
-
-▼ Administração (gear no topo direito + rota /settings)
-   ├ Workspace (Marca, Idioma, Mobile, Calendários, Booking)
-   ├ Estrutura (Pipelines, Propriedades, Objetos, Fontes, Scoring, SLA, Rotação, Workflows, Playbooks)
-   ├ Acesso (Usuários, Permissões)
-   ├ Segurança (2FA, Auditoria, API Keys, Webhooks)
-   └ Integrações (Conectores, HubSpot)
-
-▸ Avatar (rodapé): Perfil, Email pessoal, 2FA, Notificações, Sair
-```
-
-- **Prós**: cada persona enxerga primeiro o que usa; **Administração some da sidebar principal** e vira um ícone de engrenagem — elimina poluição para vendedor.
-- **Contras**: duplica alguns itens (Leads/Negócios aparecem em "Meu dia" *e* "Pipeline"); exige lógica de filtro por papel mais sofisticada e telemetria para validar.
-
----
-
-## Comparativo rápido
-
-| Critério                              | A (Domínio) | B (Jornada) | C (Persona) |
-|---------------------------------------|-------------|-------------|-------------|
-| Esforço de implementação              | Baixo       | Médio       | Alto        |
-| Curva de reaprendizagem do usuário    | Baixa       | Média       | Alta        |
-| Resolve "Pipelines × Usuários juntos" | Sim         | Sim         | Sim         |
-| Reduz tamanho visual da sidebar       | Não         | **Sim**     | **Sim**     |
-| Separa pessoal × workspace × admin    | Parcial     | **Sim**     | **Sim**     |
-| Escala para novas features            | Médio       | **Bom**     | Bom         |
-
----
-
-## Recomendação: **Proposta B — Jornada do usuário**
-
-Justificativa:
-
-1. **Resolve o problema raiz** que você apontou (Pipelines junto de Usuários). Em B, *Pipelines* fica em **Estrutura CRM** (modelagem de dados) e *Usuários* fica em **Pessoas & Acesso** (segurança/identidade) — escopos claramente distintos.
-2. **Reduz carga cognitiva**: 4 grupos na sidebar em vez de 8, com *Configurar* concentrando tudo que é setup. Hoje o usuário precisa lembrar se "Metas" está em Análises ou Configuração; em B é sempre **Trabalhar/Analisar** para uso e **Configurar** para definir.
-3. **Custo de mudança aceitável**: diferente de C, não exige duplicar itens nem implementar uma nova camada por persona; o controle de visibilidade por papel (`ADMIN_ONLY`/`MANAGER_PLUS`) que já existe continua valendo, só muda o agrupamento.
-4. **Escalabilidade**: novas features de setup (ex.: provedores de IA, billing) entram naturalmente em uma sub-aba de *Configurar* sem inflar a sidebar.
-5. **Espelha padrões consagrados** (HubSpot, Pipedrive, Linear): operação à esquerda sempre visível; configuração concentrada em uma área dedicada com sub-navegação própria; conta pessoal no avatar.
-
-Se aprovar a **Proposta B**, o próximo plano detalhará: novo `app-sidebar.tsx` com 4 grupos, refatoração de `settings.tsx` com sub-abas agrupadas (Workspace / Estrutura CRM / Automação / Pessoas & Acesso / Segurança / Integrações), e mover Perfil/2FA pessoal/Email pessoal para um menu no avatar do rodapé.
+## Fora do escopo
+- Múltiplas "views" salvas por grid (só 1 preferência por usuário/grid). Pode virar evolução futura.
+- Reordenar via drag-and-drop (mantém setas ↑↓ atuais).
+- Largura de coluna personalizada.
