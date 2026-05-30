@@ -1,6 +1,14 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { PageHeader } from "@/components/page-header";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
@@ -9,9 +17,6 @@ export const Route = createFileRoute("/_authenticated/settings")({
 type Tab = { to: string; label: string };
 type Section = { label: string; tabs: Tab[] };
 
-// Sub-navegação de /settings agrupada por sub-domínio (Proposta B).
-// Conta pessoal (Perfil, Email pessoal, 2FA) também aparece aqui para acesso direto,
-// além do menu do avatar no rodapé da sidebar.
 const sections: Section[] = [
   {
     label: "Minha conta",
@@ -84,38 +89,71 @@ const sections: Section[] = [
 
 function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
+  const navigate = useNavigate();
   const isActive = (to: string) =>
     to === "/settings" ? path === "/settings" : path.startsWith(to);
 
+  const currentValue =
+    sections
+      .flatMap((s) => s.tabs)
+      .filter((t) => isActive(t.to))
+      .sort((a, b) => b.to.length - a.to.length)[0]?.to ?? "/settings";
+
   return (
-    <div className="space-y-4">
-      <PageHeader title="Configurações" description="Personalize a operação do CRM." />
-      <nav className="space-y-3 border-b pb-3">
-        {sections.map((section) => (
-          <div key={section.label} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="w-36 shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              {section.label}
-            </span>
-            <div className="flex flex-wrap gap-1">
-              {section.tabs.map((t) => (
-                <Link
-                  key={t.to}
-                  to={t.to}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-sm transition-colors",
-                    isActive(t.to)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  {t.label}
-                </Link>
-              ))}
+    <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
+      {/* Mobile: select */}
+      <div className="mb-4 lg:hidden">
+        <Select value={currentValue} onValueChange={(v) => navigate({ to: v })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {sections.map((section) => (
+              <SelectGroup key={section.label}>
+                <SelectLabel>{section.label}</SelectLabel>
+                {section.tabs.map((t) => (
+                  <SelectItem key={t.to} value={t.to}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop: sidebar */}
+      <aside className="hidden lg:block">
+        <nav className="sticky top-4 space-y-6">
+          {sections.map((section) => (
+            <div key={section.label} className="space-y-1">
+              <div className="px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {section.label}
+              </div>
+              <div className="flex flex-col">
+                {section.tabs.map((t) => (
+                  <Link
+                    key={t.to}
+                    to={t.to}
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm transition-colors",
+                      isActive(t.to)
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    )}
+                  >
+                    {t.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </nav>
-      <Outlet />
+          ))}
+        </nav>
+      </aside>
+
+      <div className="min-w-0 max-w-5xl">
+        <Outlet />
+      </div>
     </div>
   );
 }
