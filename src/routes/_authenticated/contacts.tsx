@@ -235,6 +235,109 @@ function ContactsHubspotView() {
     }
   };
 
+  // ----- Columns ----------------------------------------------------------
+  type ContactRow = (typeof rows)[number];
+  const contactColumns = useMemo<GridColumnDef<ContactRow>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        header: (
+          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+            Nome
+          </Th>
+        ),
+        render: (c) => {
+          const full = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+          const initials = ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
+          return (
+            <div className="flex items-center gap-2.5">
+              <InitialsAvatar text={initials.toUpperCase() || "?"} seed={c.id} />
+              <Link
+                to="/contacts/$id"
+                params={{ id: c.id }}
+                className="truncate font-medium text-primary hover:underline"
+              >
+                {full}
+              </Link>
+            </div>
+          );
+        },
+      },
+      { key: "email", label: "E-mail", className: "text-muted-foreground", render: (c) => c.email ?? "—" },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (c) => c.phone ?? c.mobile_phone ?? "—",
+      },
+      { key: "job_title", label: "Cargo", className: "text-muted-foreground", render: (c) => c.job_title ?? "—" },
+      {
+        key: "company",
+        label: "Empresa",
+        render: (c) =>
+          c.company_id ? (
+            <span className="truncate">{companyMap.get(c.company_id) ?? "—"}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "lifecycle",
+        label: "Etapa do ciclo",
+        render: (c) => {
+          const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
+          return stage ? <Pill tone={stage.tone} label={stage.label} /> : <span className="text-muted-foreground">—</span>;
+        },
+      },
+      {
+        key: "owner",
+        label: "Responsável",
+        render: (c) =>
+          c.owner_id ? (
+            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
+              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
+              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "updated_at",
+        label: "Última atividade",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "updated_at"} dir={sortDir} onClick={() => onSort("updated_at")}>
+            Última atividade
+          </Th>
+        ),
+        render: (c) => timeAgo(c.updated_at),
+      },
+      {
+        key: "created_at",
+        label: "Criado em",
+        className: "text-muted-foreground",
+        header: (
+          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+            Criado em
+          </Th>
+        ),
+        render: (c) => timeAgo(c.created_at),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir, nameFor, initialsFor, companyMap],
+  );
+  const DEFAULT_CONTACT_COLS = ["name", "email", "phone", "company", "lifecycle", "owner", "created_at"];
+  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<ContactRow>({
+    gridKey: "contacts",
+    columns: contactColumns,
+    defaults: DEFAULT_CONTACT_COLS,
+    customEntity: "contacts",
+  });
+
+
   const hasActiveFilters =
     filters.lifecycle.length > 0 ||
     filters.companyIds.length > 0 ||
