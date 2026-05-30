@@ -79,7 +79,6 @@ export const getLeadPrimaryContact = createServerFn({ method: "GET" })
       .select(
         "id, first_name, last_name, email, phone, mobile_phone, job_title, company_name",
       )
-      // @ts-expect-error column exists at runtime
       .eq("hs_object_id", contactId)
       .maybeSingle();
 
