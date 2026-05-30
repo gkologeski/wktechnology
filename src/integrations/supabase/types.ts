@@ -5214,6 +5214,33 @@ export type Database = {
           },
         ]
       }
+      user_grid_preferences: {
+        Row: {
+          created_at: string
+          grid_key: string
+          id: string
+          updated_at: string
+          user_id: string
+          visible_columns: string[]
+        }
+        Insert: {
+          created_at?: string
+          grid_key: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          visible_columns?: string[]
+        }
+        Update: {
+          created_at?: string
+          grid_key?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          visible_columns?: string[]
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
