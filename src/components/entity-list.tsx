@@ -639,29 +639,35 @@ function EntityDialog<T extends { id: string }>({
   const { user } = useAuth();
   const init: Record<string, unknown> = editing ? { ...editing } : { ...(defaults ?? {}) };
   const [values, setValues] = useState<Record<string, unknown>>(init);
+  const [submitting, setSubmitting] = useState(false);
   const set = (k: string, v: unknown) => setValues((s) => ({ ...s, [k]: v }));
 
   const submit = async () => {
-    if (!user) return;
-    const payload: Record<string, unknown> = { ...values };
-    for (const f of fields) {
-      if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
-      if (f.type === "number" && payload[f.name] != null) payload[f.name] = Number(payload[f.name]);
+    if (!user || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = { ...values };
+      for (const f of fields) {
+        if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
+        if (f.type === "number" && payload[f.name] != null) payload[f.name] = Number(payload[f.name]);
+      }
+      payload.owner_id = user.id;
+      let error;
+      if (editing) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ({ error } = await (supabase as any).from(table).update(payload).eq("id", editing.id));
+      } else {
+        delete payload.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ({ error } = await (supabase as any).from(table).insert(payload));
+      }
+      if (error) { toast.error(error.message); return; }
+      toast.success("Salvo");
+      setOpen(false);
+      onSaved();
+    } finally {
+      setSubmitting(false);
     }
-    payload.owner_id = user.id;
-    let error;
-    if (editing) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ error } = await (supabase as any).from(table).update(payload).eq("id", editing.id));
-    } else {
-      delete payload.id;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ error } = await (supabase as any).from(table).insert(payload));
-    }
-    if (error) return toast.error(error.message);
-    toast.success("Salvo");
-    setOpen(false);
-    onSaved();
   };
 
   return (
@@ -690,8 +696,8 @@ function EntityDialog<T extends { id: string }>({
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit}>Salvar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Salvando…" : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
