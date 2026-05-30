@@ -997,12 +997,14 @@ function Th({
   active,
   dir,
   onClick,
+  className,
 }: {
   children: React.ReactNode;
   sortable?: boolean;
   active?: boolean;
   dir?: SortDir;
   onClick?: () => void;
+  className?: string;
 }) {
   return (
     <th
@@ -1010,6 +1012,7 @@ function Th({
         "whitespace-nowrap border-b px-3 py-2.5 font-semibold",
         sortable && "cursor-pointer select-none hover:text-foreground",
         active && "text-foreground",
+        className,
       )}
       onClick={onClick}
     >
