@@ -21,6 +21,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { PrimaryContactPanel } from "@/components/leads/primary-contact-panel";
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
