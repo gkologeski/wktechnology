@@ -220,6 +220,45 @@ function TicketsPage() {
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
+  type TicketRow = Ticket;
+  const ticketColumns: GridColumnDef<TicketRow>[] = [
+    { key: "subject", label: "Assunto", render: (t) => <span className="font-medium">{t.subject}</span> },
+    {
+      key: "status",
+      label: "Status",
+      render: (t) => (
+        <Select value={t.status} onValueChange={(v) => setStatus(t, v as Ticket["status"])}>
+          <SelectTrigger className="h-8 w-[160px]" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: "priority",
+      label: "Prioridade",
+      render: (t) => (
+        <Badge variant={PRIORITY_VARIANT[t.priority]}>
+          {PRIORITIES.find((p) => p.value === t.priority)?.label}
+        </Badge>
+      ),
+    },
+    { key: "contact", label: "Contato", render: (t) => contactName(t.contact_id) },
+    { key: "company", label: "Empresa", render: (t) => companyName(t.company_id) },
+    { key: "deal", label: "Negócio", render: (t) => dealName(t.deal_id) },
+    { key: "source", label: "Fonte", render: (t) => t.source ?? "—" },
+    { key: "due_at", label: "Vencimento", render: (t) => t.due_at ? new Date(t.due_at).toLocaleString("pt-BR") : "—" },
+    { key: "created_at", label: "Criado em", render: (t) => new Date(t.created_at).toLocaleDateString("pt-BR") },
+    { key: "updated_at", label: "Atualizado em", render: (t) => new Date(t.updated_at).toLocaleDateString("pt-BR") },
+  ];
+  const DEFAULT_TICKET_COLS = ["subject", "status", "priority", "contact", "company", "deal"];
+  const { columns: visibleTicketColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TicketRow>({
+    gridKey: "tickets",
+    columns: ticketColumns,
+    defaults: DEFAULT_TICKET_COLS,
+  });
+
   return (
     <div className="space-y-4">
       <PageHeader
