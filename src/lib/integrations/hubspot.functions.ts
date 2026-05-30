@@ -235,12 +235,18 @@ function mapDealStageEnum(label: string | undefined, probability: number | null,
   return "new";
 }
 
-function mapLeadStatusEnum(label: string | undefined): string {
+function mapLeadStatusEnum(category: string | undefined, label?: string | undefined): string {
+  const c = (category ?? "").toUpperCase();
+  if (c === "UNQUALIFIED") return "disqualified";
+  if (c === "QUALIFIED") return "qualified";
+  if (c === "CONNECTED" || c === "ATTEMPTING" || c === "IN_PROGRESS") return "contacted";
+  if (c === "NEW") return "new";
+  // fallback por label (unqual ANTES de qualif para evitar match parcial)
   const l = (label ?? "").toLowerCase();
+  if (l.includes("unqual") || l.includes("descart") || l.includes("perdid") || l.includes("lost"))
+    return "disqualified";
   if (l.includes("qualif")) return "qualified";
   if (l.includes("contat") || l.includes("contact")) return "contacted";
-  if (l.includes("unqual") || l.includes("descart") || l.includes("perdid") || l.includes("lost"))
-    return "unqualified";
   return "new";
 }
 
@@ -1498,6 +1504,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             "hs_associated_company_name",
             "hs_lead_source",
             "hs_pipeline_stage",
+            "hs_pipeline_stage_category",
             "hubspot_owner_id",
           ];
           await appendLog({
@@ -1534,7 +1541,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               phone: null as string | null,
               company_name: p.hs_associated_company_name ?? null,
               source: p.hs_lead_source ?? "hubspot",
-              status: mapLeadStatusEnum(stageEntry?.label ?? hsStatus) as never,
+              status: mapLeadStatusEnum(p.hs_pipeline_stage_category ?? undefined, stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
             };
