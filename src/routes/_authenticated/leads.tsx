@@ -435,7 +435,7 @@ function LeadsHubspotView() {
           </button>
         ))}
         <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
-          <Plus className="mr-1 h-3.5 w-3.5" /> Add view
+          <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar visualização
         </Button>
       </div>
 
@@ -445,7 +445,7 @@ function LeadsHubspotView() {
         <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Filters
+              Filtros
             </h2>
             {hasActiveFilters && (
               <Button
@@ -610,7 +610,7 @@ function LeadsHubspotView() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Actions <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -796,7 +796,7 @@ function LeadsHubspotView() {
                 <SelectContent>
                   {[25, 50, 100].map((n) => (
                     <SelectItem key={n} value={String(n)}>
-                      {n} / page
+                      {n} / página
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -40,7 +40,7 @@ export function FiltersSidebar({
     <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
       <div className="flex items-center justify-between px-4 py-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Filters
+          Filtros
         </h2>
         {hasActiveFilters && (
           <Button
@@ -49,7 +49,7 @@ export function FiltersSidebar({
             className="h-7 px-2 text-xs text-primary"
             onClick={onClear}
           >
-            Clear all
+            Limpar tudo
           </Button>
         )}
       </div>
@@ -178,7 +178,7 @@ export function ViewsTabs<T extends string>({
         </button>
       ))}
       <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
-        <Plus className="mr-1 h-3.5 w-3.5" /> Add view
+        <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar visualização
       </Button>
     </div>
   );
@@ -278,7 +278,7 @@ export function Pagination({
           <SelectContent>
             {[25, 50, 100].map((n) => (
               <SelectItem key={n} value={String(n)}>
-                {n} / page
+                {n} / página
               </SelectItem>
             ))}
           </SelectContent>
