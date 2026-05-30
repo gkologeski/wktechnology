@@ -454,6 +454,7 @@ function TicketsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ColumnsEditor />
     </div>
   );
 }
