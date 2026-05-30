@@ -567,26 +567,19 @@ function CompaniesHubspotView() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Carregando empresas…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="px-3 py-16 text-center text-sm text-muted-foreground"
-                    >
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
                       Nenhuma empresa encontrada com os filtros atuais.
                     </td>
                   </tr>
                 ) : (
                   rows.map((c) => {
                     const checked = selectedIds.has(c.id);
-                    const initials = (c.name ?? "?").slice(0, 2).toUpperCase();
                     return (
                       <tr
                         key={c.id}
@@ -602,49 +595,11 @@ function CompaniesHubspotView() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </Td>
-                        <Td>
-                          <div className="flex items-center gap-2.5">
-                            <InitialsAvatar text={initials} seed={c.id} />
-                            <Link
-                              to="/companies/$id"
-                              params={{ id: c.id }}
-                              className="truncate font-medium text-primary hover:underline"
-                            >
-                              {c.name}
-                            </Link>
-                          </div>
-                        </Td>
-                        <Td className="text-muted-foreground">{c.domain ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.industry ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.size ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.city ?? "—"}</Td>
-                        <Td className="text-muted-foreground">{c.state ?? "—"}</Td>
-                        <Td>
-                          {c.is_target_account ? (
-                            <Pill
-                              tone="amber"
-                              label={`★ ${c.target_account_tier ?? "Tier"}`}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </Td>
-                        <Td>
-                          {c.owner_id ? (
-                            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-                              <InitialsAvatar
-                                text={initialsFor(c.owner_id)}
-                                seed={c.owner_id}
-                                size={6}
-                              />
-                              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-
-                        </Td>
-                        <Td className="text-muted-foreground">{timeAgo(c.created_at)}</Td>
+                        {visibleColumns.map((col) => (
+                          <Td key={col.key} className={col.className}>
+                            {col.render(c)}
+                          </Td>
+                        ))}
                         <Td className="w-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -660,10 +615,7 @@ function CompaniesHubspotView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() =>
-                                  navigate({
-                                    to: "/companies/$id",
-                                    params: { id: c.id },
-                                  })
+                                  navigate({ to: "/companies/$id", params: { id: c.id } })
                                 }
                               >
                                 Abrir
