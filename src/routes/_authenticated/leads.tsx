@@ -445,7 +445,7 @@ function LeadsHubspotView() {
         <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Filters
+              Filtros
             </h2>
             {hasActiveFilters && (
               <Button
