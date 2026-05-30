@@ -696,8 +696,8 @@ function EntityDialog<T extends { id: string }>({
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit}>Salvar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Salvando…" : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
