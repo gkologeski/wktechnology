@@ -42,6 +42,7 @@ import {
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
