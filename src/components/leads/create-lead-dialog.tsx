@@ -17,7 +17,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
-import { isEmail, isPhone, toE164 } from "@/lib/validators";
+import { isEmail, toE164 } from "@/lib/validators";
 import { Building2 } from "lucide-react";
 
 type CompanyMatch = { id: string; name: string };
