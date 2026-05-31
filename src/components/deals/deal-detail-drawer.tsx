@@ -189,32 +189,34 @@ export function DealDetailDrawer({
                 </Select>
               </Field>
               <Field label="Empresa">
-                <Select
-                  value={String(v.company_id ?? "none")}
-                  onValueChange={(val) => set("company_id", val === "none" ? null : val)}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {companies.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EntityCombobox
+                  entity="companies"
+                  select="id, name, industry"
+                  labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+                  hintFrom={(r) => (r as { industry?: string }).industry ?? null}
+                  value={v.company_id ? String(v.company_id) : null}
+                  onChange={(id) => set("company_id", id)}
+                  placeholder="Selecionar empresa…"
+                  icon={Building2}
+                />
               </Field>
               <Field label="Contato principal">
-                <Select
-                  value={String(v.primary_contact_id ?? "none")}
-                  onValueChange={(val) => set("primary_contact_id", val === "none" ? null : val)}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {contacts.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name ?? ""}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EntityCombobox
+                  entity="contacts"
+                  select="id, first_name, last_name, email"
+                  searchColumn="first_name"
+                  orderBy="first_name"
+                  labelFrom={(r) => {
+                    const row = r as { first_name?: string; last_name?: string; email?: string };
+                    const name = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
+                    return name || row.email || "Contato";
+                  }}
+                  hintFrom={(r) => (r as { email?: string }).email ?? null}
+                  value={v.primary_contact_id ? String(v.primary_contact_id) : null}
+                  onChange={(id) => set("primary_contact_id", id)}
+                  placeholder="Selecionar contato…"
+                  icon={User}
+                />
               </Field>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Data prevista">
