@@ -24,6 +24,10 @@ export const ACTIVITY_TYPES = [
   { value: "call", label: "Ligação" },
   { value: "email", label: "Email" },
   { value: "meeting", label: "Reunião" },
+  { value: "sms", label: "SMS" },
+  { value: "postal_mail", label: "Correio Postal" },
+  { value: "linkedin_message", label: "LinkedIn" },
+  { value: "whatsapp", label: "WhatsApp" },
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]["value"];
