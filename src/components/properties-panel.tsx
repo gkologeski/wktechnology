@@ -87,6 +87,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       }
       toSave = normalized;
     }
+    if (def?.type === "email" && toSave) {
+      toSave = toSave.trim();
+      if (!isEmail(toSave)) {
+        toast.error("Email inválido.");
+        return;
+      }
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
