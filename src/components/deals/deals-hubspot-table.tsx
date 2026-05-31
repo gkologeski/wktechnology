@@ -145,11 +145,31 @@ export function DealsHubspotTable({
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
 
+  const STAGE_ENUM_LABEL: Record<string, string> = {
+    new: "Novo",
+    qualified: "Qualificado",
+    proposal: "Proposta",
+    negotiation: "Negociação",
+    won: "Ganho",
+    lost: "Perdido",
+  };
   const stageLabel = (stageValue: string | null | undefined, stageId: string | null) => {
     const v = stageId ?? stageValue ?? "";
-    const def = pipeline?.stages.find((s) => s.value === v);
-    return def?.label ?? v ?? "—";
+    // 1) try the selected pipeline
+    let def = pipeline?.stages.find((s) => s.value === v);
+    // 2) fall back to any pipeline (deal may belong to another funnel)
+    if (!def && allPipelines) {
+      for (const p of allPipelines) {
+        const f = p.stages.find((s) => s.value === v);
+        if (f) { def = f; break; }
+      }
+    }
+    if (def) return def.label;
+    // 3) fall back to the legacy enum stage column
+    if (stageValue && STAGE_ENUM_LABEL[stageValue]) return STAGE_ENUM_LABEL[stageValue];
+    return stageValue ?? "—";
   };
+
 
   type DealRow = Deal;
   const dealColumns = useMemo<GridColumnDef<DealRow>[]>(
