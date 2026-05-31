@@ -83,8 +83,8 @@ export function CreateDealFromLeadDialog({
     setCurrency("BRL");
     setExpectedClose("");
     setDescription("");
-    setCompanyQuery(lead.company_name ?? "");
-    setSelectedCompany(null);
+    setCompany({ id: null, name: lead.company_name ?? "" });
+
     setContactQuery(fullName);
     setSelectedContact(null);
   }, [open, lead, defaultPipeline, pipelines]);
