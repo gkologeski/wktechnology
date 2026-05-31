@@ -199,7 +199,7 @@ export const generateAiSummary = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const msgs = await collectMessages(supabase, data.entity, data.entity_id, data.kind, data.window_days);
     if (msgs.length === 0) {
-      throw new Error("Sem mensagens suficientes nos últimos " + data.window_days + " dias para resumir.");
+      return { skipped: true as const, reason: `Sem mensagens suficientes nos últimos ${data.window_days} dias para resumir.` };
     }
     const prompt = buildPrompt(msgs, data.kind);
     const ai = await callAi(prompt, DEFAULT_MODEL);
