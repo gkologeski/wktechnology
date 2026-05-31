@@ -183,29 +183,34 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             {props.map((p) => (
               <div key={p.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
-                <Input
-                  type={p.type ?? "text"}
-                  defaultValue={String(row[p.key] ?? "")}
-                  onBlur={async (e) => {
-                    const raw = e.target.value;
-                    if (raw === String(row[p.key] ?? "")) return;
-                    let toSave: string | null = raw || null;
-                    if (p.type === "tel" && toSave) {
-                      const n = toE164(toSave);
-                      if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
-                      toSave = n;
-                    }
-                    if (p.type === "email" && toSave) {
-                      toSave = toSave.trim();
-                      if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
-                    }
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
-                    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
-                  }}
-                />
+                {p.type === "company" ? (
+                  <CompanyFieldAll table={table} rowId={row.id} field={p.key} initial={String(row[p.key] ?? "")} onSaved={onSaved} />
+                ) : (
+                  <Input
+                    type={p.type ?? "text"}
+                    defaultValue={String(row[p.key] ?? "")}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      if (raw === String(row[p.key] ?? "")) return;
+                      let toSave: string | null = raw || null;
+                      if (p.type === "tel" && toSave) {
+                        const n = toE164(toSave);
+                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                        toSave = n;
+                      }
+                      if (p.type === "email" && toSave) {
+                        toSave = toSave.trim();
+                        if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
+                )}
               </div>
             ))}
+
           </div>
         </DialogContent>
       </Dialog>
