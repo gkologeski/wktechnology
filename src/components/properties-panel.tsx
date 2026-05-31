@@ -15,6 +15,7 @@ import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
 import { toE164, isEmail } from "@/lib/validators";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
@@ -26,7 +27,8 @@ function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
 }
 
-export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
+export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" };
+
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
@@ -113,24 +115,37 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <div key={p.key} className="group">
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
             {editing === p.key ? (
-              <div className="flex gap-1">
-                <Input
-                  autoFocus
-                  type={p.type ?? "text"}
-                  inputMode={p.type === "tel" ? "tel" : undefined}
-                  value={value}
-                  onChange={(e) =>
-                    setValue(
-                      p.type === "tel" ? sanitizePhoneInput(e.target.value)
-                      : p.type === "email" ? sanitizeEmailInput(e.target.value)
-                      : e.target.value
-                    )
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                  className="h-8"
-                />
-                <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-              </div>
+              p.type === "company" ? (
+                <div className="space-y-2">
+                  <CompanyPicker
+                    value={{ id: null, name: value }}
+                    onChange={(v: CompanyPickerValue) => setValue(v.name)}
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <Input
+                    autoFocus
+                    type={p.type ?? "text"}
+                    inputMode={p.type === "tel" ? "tel" : undefined}
+                    value={value}
+                    onChange={(e) =>
+                      setValue(
+                        p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                        : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                        : e.target.value
+                      )
+                    }
+                    onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                    className="h-8"
+                  />
+                  <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+                </div>
+              )
             ) : (
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-foreground truncate">
@@ -144,6 +159,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 </Button>
               </div>
             )}
+
           </div>
         ))}
       </div>
@@ -167,29 +183,34 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             {props.map((p) => (
               <div key={p.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
-                <Input
-                  type={p.type ?? "text"}
-                  defaultValue={String(row[p.key] ?? "")}
-                  onBlur={async (e) => {
-                    const raw = e.target.value;
-                    if (raw === String(row[p.key] ?? "")) return;
-                    let toSave: string | null = raw || null;
-                    if (p.type === "tel" && toSave) {
-                      const n = toE164(toSave);
-                      if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
-                      toSave = n;
-                    }
-                    if (p.type === "email" && toSave) {
-                      toSave = toSave.trim();
-                      if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
-                    }
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
-                    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
-                  }}
-                />
+                {p.type === "company" ? (
+                  <CompanyFieldAll table={table} rowId={row.id} field={p.key} initial={String(row[p.key] ?? "")} onSaved={onSaved} />
+                ) : (
+                  <Input
+                    type={p.type ?? "text"}
+                    defaultValue={String(row[p.key] ?? "")}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      if (raw === String(row[p.key] ?? "")) return;
+                      let toSave: string | null = raw || null;
+                      if (p.type === "tel" && toSave) {
+                        const n = toE164(toSave);
+                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                        toSave = n;
+                      }
+                      if (p.type === "email" && toSave) {
+                        toSave = toSave.trim();
+                        if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
+                )}
               </div>
             ))}
+
           </div>
         </DialogContent>
       </Dialog>
@@ -227,6 +248,25 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     </div>
   );
 }
+
+function CompanyFieldAll({
+  table, rowId, field, initial, onSaved,
+}: { table: string; rowId: string; field: string; initial: string; onSaved?: () => void }) {
+  const [val, setVal] = useState<CompanyPickerValue>({ id: null, name: initial });
+  const save = async () => {
+    const toSave = val.name.trim() || null;
+    if (toSave === (initial || null)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).update({ [field]: toSave }).eq("id", rowId);
+    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+  };
+  return (
+    <div onBlur={save}>
+      <CompanyPicker value={val} onChange={setVal} />
+    </div>
+  );
+}
+
 
 function CustomFieldRow({
   def, value, onChange, entityId, onComputed,

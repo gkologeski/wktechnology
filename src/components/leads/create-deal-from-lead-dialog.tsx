@@ -21,8 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
+
 
 type Match = { id: string; name: string };
 
@@ -53,13 +55,12 @@ export function CreateDealFromLeadDialog({
   const [description, setDescription] = useState("");
 
   // company / contact
-  const [companyQuery, setCompanyQuery] = useState("");
-  const [companyMatches, setCompanyMatches] = useState<Match[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Match | null>(null);
+  const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
 
   const [contactQuery, setContactQuery] = useState("");
   const [contactMatches, setContactMatches] = useState<Match[]>([]);
   const [selectedContact, setSelectedContact] = useState<Match | null>(null);
+
 
   const [saving, setSaving] = useState(false);
 
@@ -82,8 +83,8 @@ export function CreateDealFromLeadDialog({
     setCurrency("BRL");
     setExpectedClose("");
     setDescription("");
-    setCompanyQuery(lead.company_name ?? "");
-    setSelectedCompany(null);
+    setCompany({ id: null, name: lead.company_name ?? "" });
+
     setContactQuery(fullName);
     setSelectedContact(null);
   }, [open, lead, defaultPipeline, pipelines]);
@@ -97,24 +98,8 @@ export function CreateDealFromLeadDialog({
     }
   }, [pipeline, stageId]);
 
-  // company search
-  useEffect(() => {
-    const q = companyQuery.trim();
-    if (q.length < 3 || (selectedCompany && selectedCompany.name === q)) {
-      setCompanyMatches([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id, name")
-        .ilike("name", `%${q}%`)
-        .order("name")
-        .limit(500);
-      setCompanyMatches((data ?? []) as Match[]);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [companyQuery, selectedCompany]);
+  // company search is handled by <CompanyPicker /> internally.
+
 
   // contact search
   useEffect(() => {
@@ -147,8 +132,9 @@ export function CreateDealFromLeadDialog({
     setSaving(true);
     try {
       // resolve company
-      let companyId: string | null = selectedCompany?.id ?? null;
-      const cName = companyQuery.trim();
+      let companyId: string | null = company.id ?? null;
+      const cName = company.name.trim();
+
       if (!companyId && cName) {
         const { data: existing } = await supabase
           .from("companies")
@@ -276,26 +262,11 @@ export function CreateDealFromLeadDialog({
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          <div className="space-y-1.5 col-span-2 relative">
+          <div className="space-y-1.5 col-span-2">
             <Label>Empresa</Label>
-            <Input
-              value={companyQuery}
-              onChange={(e) => { setCompanyQuery(e.target.value); setSelectedCompany(null); }}
-              placeholder="Buscar ou criar"
-            />
-            {companyMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
-                {companyMatches.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="block w-full text-left px-3 py-2 text-sm hover:bg-accent"
-                    onClick={() => { setSelectedCompany(m); setCompanyQuery(m.name); setCompanyMatches([]); }}
-                  >{m.name}</button>
-                ))}
-              </div>
-            )}
+            <CompanyPicker value={company} onChange={setCompany} />
           </div>
+
 
           <div className="space-y-1.5 col-span-2 relative">
             <Label>Contato</Label>

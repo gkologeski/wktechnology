@@ -16,11 +16,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, LayoutGrid, List as ListIcon, Trash2, Wand2, Building2, User, Briefcase } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Trash2, Wand2, User, Briefcase } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuLabel, DropdownMenuSeparator,
@@ -439,17 +441,17 @@ function TicketsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Empresa</Label>
-              <EntityCombobox
-                entity="companies"
-                select="id, name, industry"
-                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-                hintFrom={(r) => (r as { industry?: string }).industry ?? null}
-                value={draft.company_id ?? null}
-                onChange={(id) => setDraft({ ...draft, company_id: id })}
+              <CompanyPicker
+                mode="pick"
+                value={{
+                  id: draft.company_id ?? null,
+                  name: companies.find((c) => c.id === draft.company_id)?.name ?? "",
+                }}
+                onChange={(cv: CompanyPickerValue) => setDraft({ ...draft, company_id: cv.id })}
                 placeholder="Selecionar empresa…"
-                icon={Building2}
               />
             </div>
+
             <div className="md:col-span-2 space-y-1.5">
               <Label>Negócio</Label>
               <EntityCombobox

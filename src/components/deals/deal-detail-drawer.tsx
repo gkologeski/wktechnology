@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
@@ -18,7 +20,7 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
-import { Database, Trash2, Package, FileText, Building2, User } from "lucide-react";
+import { Database, Trash2, Package, FileText, User } from "lucide-react";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -189,17 +191,17 @@ export function DealDetailDrawer({
                 </Select>
               </Field>
               <Field label="Empresa">
-                <EntityCombobox
-                  entity="companies"
-                  select="id, name, industry"
-                  labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-                  hintFrom={(r) => (r as { industry?: string }).industry ?? null}
-                  value={v.company_id ? String(v.company_id) : null}
-                  onChange={(id) => set("company_id", id)}
+                <CompanyPicker
+                  mode="pick"
+                  value={{ id: (v.company_id as string) || null, name: (v.company_name as string) || "" }}
+                  onChange={(cv: CompanyPickerValue) => {
+                    set("company_id", cv.id);
+                    set("company_name", cv.name);
+                  }}
                   placeholder="Selecionar empresa…"
-                  icon={Building2}
                 />
               </Field>
+
               <Field label="Contato principal">
                 <EntityCombobox
                   entity="contacts"
