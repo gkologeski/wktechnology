@@ -99,8 +99,9 @@ export function CreateLeadDialog({
       toast.error("Email inválido");
       return;
     }
-    if (form.phone && !isPhone(form.phone)) {
-      toast.error("Telefone inválido");
+    const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
+    if (form.phone.trim() && !phoneE164) {
+      toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
       return;
     }
     setSaving(true);
