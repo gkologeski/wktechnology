@@ -282,7 +282,12 @@ function CompaniesHubspotView() {
       { key: "city", label: "Cidade", className: "text-muted-foreground", render: (c) => c.city ?? "—" },
       { key: "state", label: "UF", className: "text-muted-foreground", render: (c) => c.state ?? "—" },
       { key: "country", label: "País", className: "text-muted-foreground", render: (c) => c.country ?? "—" },
-      { key: "phone", label: "Telefone", className: "text-muted-foreground", render: (c) => c.phone ?? "—" },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (c) => (c.phone ? (toE164(c.phone) ?? c.phone) : "—"),
+      },
       {
         key: "abm",
         label: "ABM",
