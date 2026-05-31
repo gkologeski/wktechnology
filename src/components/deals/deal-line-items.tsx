@@ -22,14 +22,6 @@ type LineItem = {
   position: number;
 };
 
-type Product = {
-  id: string;
-  name: string;
-  unit_price: number;
-  currency: string;
-  tax_rate: number;
-  active: boolean;
-};
 
 function lineTotal(li: { quantity: number; unit_price: number; discount_pct: number; tax_rate: number }) {
   const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
