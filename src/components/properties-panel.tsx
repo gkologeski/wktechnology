@@ -73,8 +73,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const display = primary.length ? primary : props.slice(0, 8);
 
   const save = async (key: string) => {
+    const def = props.find((p) => p.key === key);
+    let toSave: string | null = value || null;
+    if (def?.type === "tel" && toSave) {
+      const normalized = toE164(toSave);
+      if (!normalized) {
+        toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
+        return;
+      }
+      toSave = normalized;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update({ [key]: value || null }).eq("id", row.id);
+    const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
     else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
   };
