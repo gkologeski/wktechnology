@@ -17,7 +17,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
-import { isEmail, isPhone, toE164 } from "@/lib/validators";
+import { isEmail, toE164 } from "@/lib/validators";
 import { Building2 } from "lucide-react";
 
 type CompanyMatch = { id: string; name: string };
@@ -99,8 +99,9 @@ export function CreateLeadDialog({
       toast.error("Email inválido");
       return;
     }
-    if (form.phone && !isPhone(form.phone)) {
-      toast.error("Telefone inválido");
+    const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
+    if (form.phone.trim() && !phoneE164) {
+      toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
       return;
     }
     setSaving(true);
@@ -113,7 +114,7 @@ export function CreateLeadDialog({
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
           email: form.email.trim() || null,
-          phone: form.phone.trim() ? (toE164(form.phone.trim()) ?? form.phone.trim()) : null,
+          phone: phoneE164,
           company_name: form.company_name.trim() || null,
           source: form.source.trim() || null,
         })

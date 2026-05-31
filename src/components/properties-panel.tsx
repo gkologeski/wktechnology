@@ -14,6 +14,13 @@ import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
+import { toE164 } from "@/lib/validators";
+
+// E.164-compliant chars only: digits, leading +, plus visual separators.
+const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
+function sanitizePhoneInput(s: string): string {
+  return s.replace(PHONE_INPUT_RE, "");
+}
 
 export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
 
@@ -66,8 +73,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const display = primary.length ? primary : props.slice(0, 8);
 
   const save = async (key: string) => {
+    const def = props.find((p) => p.key === key);
+    let toSave: string | null = value || null;
+    if (def?.type === "tel" && toSave) {
+      const normalized = toE164(toSave);
+      if (!normalized) {
+        toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
+        return;
+      }
+      toSave = normalized;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update({ [key]: value || null }).eq("id", row.id);
+    const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
     else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
   };
@@ -86,13 +103,26 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
             {editing === p.key ? (
               <div className="flex gap-1">
-                <Input autoFocus type={p.type ?? "text"} value={value} onChange={(e) => setValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && save(p.key)} className="h-8" />
+                <Input
+                  autoFocus
+                  type={p.type ?? "text"}
+                  inputMode={p.type === "tel" ? "tel" : undefined}
+                  value={value}
+                  onChange={(e) =>
+                    setValue(p.type === "tel" ? sanitizePhoneInput(e.target.value) : e.target.value)
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                  className="h-8"
+                />
                 <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-foreground truncate">{String(row[p.key] ?? "—")}</span>
+                <span className="text-sm text-foreground truncate">
+                  {p.type === "tel" && row[p.key]
+                    ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+                    : String(row[p.key] ?? "—")}
+                </span>
                 <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
                   onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
                   <Pencil className="h-3 w-3" />
