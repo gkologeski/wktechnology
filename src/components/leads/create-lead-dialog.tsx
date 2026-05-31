@@ -41,53 +41,13 @@ export function CreateLeadDialog({
     company_name: "",
     source: "",
   });
-  const [companyMatches, setCompanyMatches] = useState<CompanyMatch[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<CompanyMatch | null>(null);
-  const lastSearchedRef = useRef<string>("");
+  const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
-    setCompanyMatches([]);
-    setSelectedCompany(null);
-    lastSearchedRef.current = "";
+    setCompany({ id: null, name: "" });
   };
 
-  // Empresa: a partir de 3 caracteres, busca matches e mostra toast informativo
-  useEffect(() => {
-    if (!user) return;
-    const q = form.company_name.trim();
-    if (q.length < 3) {
-      setCompanyMatches([]);
-      return;
-    }
-    if (selectedCompany && selectedCompany.name === q) {
-      setCompanyMatches([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, name")
-        .ilike("name", `%${q}%`)
-        .order("name", { ascending: true })
-        .limit(500);
-      if (error) return;
-      const matches = (data ?? []) as CompanyMatch[];
-      setCompanyMatches(matches);
-      if (matches.length > 0 && lastSearchedRef.current !== q) {
-        lastSearchedRef.current = q;
-        toast.info(
-          matches.length === 1
-            ? `1 empresa parecida encontrada: ${matches[0].name}`
-            : `${matches.length} empresas parecidas encontradas`,
-          { description: "Clique em uma para reutilizar." },
-        );
-      } else if (matches.length === 0) {
-        lastSearchedRef.current = q;
-      }
-    }, 350);
-    return () => clearTimeout(t);
-  }, [form.company_name, user, selectedCompany]);
 
   const submit = async () => {
     if (!user) return;
