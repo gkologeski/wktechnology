@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
+import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -265,12 +266,20 @@ function ContactsHubspotView() {
           );
         },
       },
-      { key: "email", label: "E-mail", className: "text-muted-foreground", render: (c) => c.email ?? "—" },
+      {
+        key: "email",
+        label: "E-mail",
+        className: "text-muted-foreground",
+        render: (c) => (c.email ? <span className="truncate">{c.email}</span> : "—"),
+      },
       {
         key: "phone",
         label: "Telefone",
         className: "text-muted-foreground",
-        render: (c) => c.phone ?? c.mobile_phone ?? "—",
+        render: (c) => {
+          const raw = c.phone ?? c.mobile_phone;
+          return raw ? (toE164(raw) ?? raw) : "—";
+        },
       },
       { key: "job_title", label: "Cargo", className: "text-muted-foreground", render: (c) => c.job_title ?? "—" },
       {

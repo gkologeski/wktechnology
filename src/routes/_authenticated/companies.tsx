@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
+import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -281,7 +282,12 @@ function CompaniesHubspotView() {
       { key: "city", label: "Cidade", className: "text-muted-foreground", render: (c) => c.city ?? "—" },
       { key: "state", label: "UF", className: "text-muted-foreground", render: (c) => c.state ?? "—" },
       { key: "country", label: "País", className: "text-muted-foreground", render: (c) => c.country ?? "—" },
-      { key: "phone", label: "Telefone", className: "text-muted-foreground", render: (c) => c.phone ?? "—" },
+      {
+        key: "phone",
+        label: "Telefone",
+        className: "text-muted-foreground",
+        render: (c) => (c.phone ? (toE164(c.phone) ?? c.phone) : "—"),
+      },
       {
         key: "abm",
         label: "ABM",
