@@ -66,6 +66,8 @@ export function DealsHubspotTable({
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { pipelines: allPipelines } = usePipelines("deal");
+
 
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
