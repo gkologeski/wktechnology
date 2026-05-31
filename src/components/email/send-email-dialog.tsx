@@ -10,6 +10,7 @@ import { listEmailTemplates, listEmailSnippets } from "@/lib/email-templates.fun
 import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isEmail } from "@/lib/validators";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
