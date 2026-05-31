@@ -171,9 +171,20 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   type={p.type ?? "text"}
                   defaultValue={String(row[p.key] ?? "")}
                   onBlur={async (e) => {
-                    if (e.target.value === String(row[p.key] ?? "")) return;
+                    const raw = e.target.value;
+                    if (raw === String(row[p.key] ?? "")) return;
+                    let toSave: string | null = raw || null;
+                    if (p.type === "tel" && toSave) {
+                      const n = toE164(toSave);
+                      if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                      toSave = n;
+                    }
+                    if (p.type === "email" && toSave) {
+                      toSave = toSave.trim();
+                      if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
+                    }
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const { error } = await (supabase as any).from(table).update({ [p.key]: e.target.value || null }).eq("id", row.id);
+                    const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
                     if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
                   }}
                 />
