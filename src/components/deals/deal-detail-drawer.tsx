@@ -194,7 +194,7 @@ export function DealDetailDrawer({
                 <CompanyPicker
                   mode="pick"
                   value={{ id: (v.company_id as string) || null, name: (v.company_name as string) || "" }}
-                  onChange={(cv) => {
+                  onChange={(cv: CompanyPickerValue) => {
                     set("company_id", cv.id);
                     set("company_name", cv.name);
                   }}
