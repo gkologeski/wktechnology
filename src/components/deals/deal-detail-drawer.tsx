@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
