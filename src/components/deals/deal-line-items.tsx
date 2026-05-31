@@ -105,18 +105,24 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
   return (
     <div className="space-y-3">
       <div className="flex gap-2 flex-wrap">
-        <Select value={productPick} onValueChange={(v) => { setProductPick(v); addFromProduct(v); }}>
-          <SelectTrigger className="w-[260px]"><SelectValue placeholder="Adicionar do catálogo…" /></SelectTrigger>
-          <SelectContent>
-            {products.length === 0
-              ? <SelectItem value="__empty" disabled>Nenhum produto ativo</SelectItem>
-              : products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} · {formatCurrency(p.unit_price, p.currency)}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="w-[260px]">
+          <EntityCombobox
+            entity="products"
+            select="id, name, unit_price, currency"
+            filters={{ active: true }}
+            labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
+            hintFrom={(r) => {
+              const row = r as { unit_price?: number; currency?: string };
+              return row.unit_price != null ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL") : null;
+            }}
+            value={null}
+            onChange={(id) => { if (id) addFromProduct(id); }}
+            placeholder="Adicionar do catálogo…"
+            emptyLabel="Nenhum produto"
+            icon={Package}
+            clearable={false}
+          />
+        </div>
         <Button size="sm" variant="outline" onClick={addBlank}><Plus className="h-4 w-4 mr-1" /> Item em branco</Button>
       </div>
 
