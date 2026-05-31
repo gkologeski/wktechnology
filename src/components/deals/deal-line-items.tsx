@@ -50,17 +50,6 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
     },
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["products", "active"],
-    queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from("products").select("*").eq("active", true).order("name");
-      if (error) throw error;
-      return (data ?? []) as Product[];
-    },
-  });
-
   async function addBlank() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
@@ -73,8 +62,10 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function addFromProduct(pid: string) {
-    const p = products.find((x) => x.id === pid);
-    if (!p) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: p, error: perr } = await (supabase as any)
+      .from("products").select("*").eq("id", pid).maybeSingle();
+    if (perr || !p) { toast.error(perr?.message ?? "Produto não encontrado"); return; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
       owner_id: ownerId, deal_id: dealId, product_id: p.id,
@@ -82,7 +73,6 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
       discount_pct: 0, tax_rate: p.tax_rate, position: items.length,
     });
     if (error) { toast.error(error.message); return; }
-    setProductPick("");
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
