@@ -496,6 +496,33 @@ function ContactsHubspotView() {
             ) : (
               <div className="flex items-center gap-1.5">
                 <ColumnsButton />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!user?.id}
+                  onClick={async () => {
+                    if (!user?.id) return;
+                    const t = toast.loading("Vinculando contatos por domínio…");
+                    const { data, error } = await supabase.rpc(
+                      "link_contacts_by_email_domain",
+                      { p_workspace: user.id },
+                    );
+                    toast.dismiss(t);
+                    if (error) {
+                      toast.error(error.message);
+                      return;
+                    }
+                    const n = Number(data ?? 0);
+                    toast.success(
+                      n === 0
+                        ? "Nenhum contato novo foi vinculado"
+                        : `${n} contato${n === 1 ? "" : "s"} vinculado${n === 1 ? "" : "s"} à empresa pelo domínio`,
+                    );
+                    if (n > 0) qc.invalidateQueries({ queryKey: ["contacts"] });
+                  }}
+                >
+                  <Link2 className="mr-1 h-3.5 w-3.5" /> Vincular por domínio
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
