@@ -249,6 +249,25 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   );
 }
 
+function CompanyFieldAll({
+  table, rowId, field, initial, onSaved,
+}: { table: string; rowId: string; field: string; initial: string; onSaved?: () => void }) {
+  const [val, setVal] = useState<CompanyPickerValue>({ id: null, name: initial });
+  const save = async () => {
+    const toSave = val.name.trim() || null;
+    if (toSave === (initial || null)) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).update({ [field]: toSave }).eq("id", rowId);
+    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+  };
+  return (
+    <div onBlur={save}>
+      <CompanyPicker value={val} onChange={setVal} />
+    </div>
+  );
+}
+
+
 function CustomFieldRow({
   def, value, onChange, entityId, onComputed,
 }: { def: CustomProp; value: unknown; onChange: (v: unknown) => void | Promise<void>; entityId: string; onComputed?: () => void }) {
