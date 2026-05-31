@@ -38,6 +38,11 @@ export function BulkEditDialog({
       let v = values[f.name];
       if (v === "" || v === undefined) v = null;
       if (f.type === "number" && v != null) v = Number(v);
+      if (f.type === "email" && v != null) {
+        const s = String(v).trim();
+        if (!isEmail(s)) { toast.error(`${f.label}: email inválido.`); return; }
+        v = s;
+      }
       payload[f.name] = v;
     }
     if (Object.keys(payload).length === 0) {
