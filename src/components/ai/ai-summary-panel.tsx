@@ -63,9 +63,13 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
   const generate = async () => {
     setGenerating(true);
     try {
-      await gen({ data: { entity, entity_id: entityId, kind, window_days: windowDays } });
-      toast.success("Resumo gerado");
-      await load();
+      const res = (await gen({ data: { entity, entity_id: entityId, kind, window_days: windowDays } })) as { skipped?: boolean; reason?: string } | undefined;
+      if (res && res.skipped) {
+        toast.info(res.reason ?? "Sem dados suficientes para resumir.");
+      } else {
+        toast.success("Resumo gerado");
+        await load();
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
