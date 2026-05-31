@@ -38,7 +38,6 @@ function lineTotal(li: { quantity: number; unit_price: number; discount_pct: num
 
 export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; ownerId: string; currency: string }) {
   const qc = useQueryClient();
-  const [productPick, setProductPick] = useState<string>("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["deal_line_items", dealId],
