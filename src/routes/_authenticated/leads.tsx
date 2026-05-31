@@ -194,6 +194,59 @@ function LeadsHubspotView() {
   } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
+  const savedViews = useSavedViews("leads");
+  const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
+
+  const applySavedView = (sv: { id: string; filters: unknown }) => {
+    const f = sv.filters as {
+      kind?: string;
+      activeView?: ViewId;
+      filters?: Filters;
+      sortKey?: SortKey;
+      sortDir?: SortDir;
+    } | null;
+    if (f?.activeView) setActiveView(f.activeView);
+    if (f?.filters) setFilters({ ...DEFAULT_FILTERS, ...f.filters });
+    if (f?.sortKey) setSortKey(f.sortKey);
+    if (f?.sortDir) setSortDir(f.sortDir);
+    setActiveSavedId(sv.id);
+  };
+
+  const saveCurrentView = () => {
+    const name = window.prompt("Nome da nova visualização");
+    if (!name || !name.trim()) return;
+    savedViews.create.mutate(
+      {
+        name: name.trim(),
+        is_shared: false,
+        is_default: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        filters: { kind: "leads-v1", activeView, filters, sortKey, sortDir } as any,
+        quick_filters: [],
+        column_order: null,
+        sort_by: sortKey,
+        sort_dir: sortDir,
+      },
+      {
+        onSuccess: (sv) => {
+          setActiveSavedId(sv.id);
+          toast.success("Visualização salva");
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+      },
+    );
+  };
+
+  const deleteSavedView = (id: string) => {
+    if (!window.confirm("Excluir esta visualização?")) return;
+    savedViews.remove.mutate(id, {
+      onSuccess: () => {
+        if (activeSavedId === id) setActiveSavedId(null);
+        toast.success("Visualização excluída");
+      },
+    });
+  };
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
