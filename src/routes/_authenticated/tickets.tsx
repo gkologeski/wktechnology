@@ -420,33 +420,47 @@ function TicketsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Contato</Label>
-              <Select value={draft.contact_id ?? "none"} onValueChange={(v) => setDraft({ ...draft, contact_id: v === "none" ? null : v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {contacts.map((c) => <SelectItem key={c.id} value={c.id}>{`${c.first_name} ${c.last_name ?? ""}`.trim()}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <EntityCombobox
+                entity="contacts"
+                select="id, first_name, last_name, email"
+                searchColumn="first_name"
+                orderBy="first_name"
+                labelFrom={(r) => {
+                  const row = r as { first_name?: string; last_name?: string; email?: string };
+                  const n = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
+                  return n || row.email || "Contato";
+                }}
+                hintFrom={(r) => (r as { email?: string }).email ?? null}
+                value={draft.contact_id ?? null}
+                onChange={(id) => setDraft({ ...draft, contact_id: id })}
+                placeholder="Selecionar contato…"
+                icon={User}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Empresa</Label>
-              <Select value={draft.company_id ?? "none"} onValueChange={(v) => setDraft({ ...draft, company_id: v === "none" ? null : v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <EntityCombobox
+                entity="companies"
+                select="id, name, industry"
+                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+                hintFrom={(r) => (r as { industry?: string }).industry ?? null}
+                value={draft.company_id ?? null}
+                onChange={(id) => setDraft({ ...draft, company_id: id })}
+                placeholder="Selecionar empresa…"
+                icon={Building2}
+              />
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Negócio</Label>
-              <Select value={draft.deal_id ?? "none"} onValueChange={(v) => setDraft({ ...draft, deal_id: v === "none" ? null : v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {deals.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <EntityCombobox
+                entity="deals"
+                select="id, name, value, currency"
+                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+                value={draft.deal_id ?? null}
+                onChange={(id) => setDraft({ ...draft, deal_id: id })}
+                placeholder="Selecionar negócio…"
+                icon={Briefcase}
+              />
             </div>
           </div>
           <DialogFooter>
