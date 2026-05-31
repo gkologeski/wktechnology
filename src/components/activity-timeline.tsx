@@ -114,7 +114,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           const { data } = await supabase.from("companies").select("phone, name").eq("id", relatedId).maybeSingle();
           if (data) setTarget({ phone: data.phone ?? undefined, name: data.name ?? undefined });
         } else if (relatedKey === "related_deal_id") {
-          const { data: d } = await supabase.from("deals").select("primary_contact_id, title").eq("id", relatedId).maybeSingle();
+          const { data: d } = await supabase.from("deals").select("primary_contact_id, name").eq("id", relatedId).maybeSingle();
           let contactId = d?.primary_contact_id ?? null;
           if (!contactId) {
             const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", relatedId).limit(1).maybeSingle();
@@ -129,7 +129,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
               name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
             });
           } else {
-            setTarget({ name: d?.title ?? undefined });
+            setTarget({ name: d?.name ?? undefined });
           }
         }
       } catch {
