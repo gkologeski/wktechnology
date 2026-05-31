@@ -115,24 +115,37 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <div key={p.key} className="group">
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
             {editing === p.key ? (
-              <div className="flex gap-1">
-                <Input
-                  autoFocus
-                  type={p.type ?? "text"}
-                  inputMode={p.type === "tel" ? "tel" : undefined}
-                  value={value}
-                  onChange={(e) =>
-                    setValue(
-                      p.type === "tel" ? sanitizePhoneInput(e.target.value)
-                      : p.type === "email" ? sanitizeEmailInput(e.target.value)
-                      : e.target.value
-                    )
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                  className="h-8"
-                />
-                <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-              </div>
+              p.type === "company" ? (
+                <div className="space-y-2">
+                  <CompanyPicker
+                    value={{ id: null, name: value }}
+                    onChange={(v: CompanyPickerValue) => setValue(v.name)}
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <Input
+                    autoFocus
+                    type={p.type ?? "text"}
+                    inputMode={p.type === "tel" ? "tel" : undefined}
+                    value={value}
+                    onChange={(e) =>
+                      setValue(
+                        p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                        : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                        : e.target.value
+                      )
+                    }
+                    onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                    className="h-8"
+                  />
+                  <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+                </div>
+              )
             ) : (
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-foreground truncate">
@@ -146,6 +159,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 </Button>
               </div>
             )}
+
           </div>
         ))}
       </div>
