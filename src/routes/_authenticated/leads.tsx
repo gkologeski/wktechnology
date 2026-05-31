@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { convertLead } from "@/lib/lead-convert";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
+import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import {
   ArrowRightLeft,
@@ -192,6 +193,59 @@ function LeadsHubspotView() {
     run: () => Promise<void>;
   } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+
+  const savedViews = useSavedViews("leads");
+  const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
+
+  const applySavedView = (sv: { id: string; filters: unknown }) => {
+    const f = sv.filters as {
+      kind?: string;
+      activeView?: ViewId;
+      filters?: Filters;
+      sortKey?: SortKey;
+      sortDir?: SortDir;
+    } | null;
+    if (f?.activeView) setActiveView(f.activeView);
+    if (f?.filters) setFilters({ ...DEFAULT_FILTERS, ...f.filters });
+    if (f?.sortKey) setSortKey(f.sortKey);
+    if (f?.sortDir) setSortDir(f.sortDir);
+    setActiveSavedId(sv.id);
+  };
+
+  const saveCurrentView = () => {
+    const name = window.prompt("Nome da nova visualização");
+    if (!name || !name.trim()) return;
+    savedViews.create.mutate(
+      {
+        name: name.trim(),
+        is_shared: false,
+        is_default: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        filters: { kind: "leads-v1", activeView, filters, sortKey, sortDir } as any,
+        quick_filters: [],
+        column_order: null,
+        sort_by: sortKey,
+        sort_dir: sortDir,
+      },
+      {
+        onSuccess: (sv) => {
+          setActiveSavedId(sv.id);
+          toast.success("Visualização salva");
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+      },
+    );
+  };
+
+  const deleteSavedView = (id: string) => {
+    if (!window.confirm("Excluir esta visualização?")) return;
+    savedViews.remove.mutate(id, {
+      onSuccess: () => {
+        if (activeSavedId === id) setActiveSavedId(null);
+        toast.success("Visualização excluída");
+      },
+    });
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -575,27 +629,64 @@ function LeadsHubspotView() {
       </div>
 
       {/* ─── Views tabs ─── */}
-      <div className="flex items-center gap-1 border-b px-1">
+      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
         {VIEWS.map((v) => (
           <button
             key={v.id}
             type="button"
-            onClick={() => setActiveView(v.id)}
+            onClick={() => {
+              setActiveView(v.id);
+              setActiveSavedId(null);
+            }}
             className={cn(
-              "relative px-3 py-2 text-sm font-medium transition-colors",
-              activeView === v.id
+              "relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              activeView === v.id && !activeSavedId
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             {v.label}
-            {activeView === v.id && (
+            {activeView === v.id && !activeSavedId && (
               <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
             )}
           </button>
         ))}
-        <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
-          <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar visualização
+        {(savedViews.data ?? []).map((sv) => {
+          const isActive = activeSavedId === sv.id;
+          return (
+            <div
+              key={sv.id}
+              className={cn(
+                "group relative flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <button type="button" onClick={() => applySavedView(sv)}>
+                {sv.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteSavedView(sv.id)}
+                className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-muted"
+                aria-label="Excluir visualização"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              {isActive && (
+                <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+              )}
+            </div>
+          );
+        })}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2 text-muted-foreground"
+          onClick={saveCurrentView}
+          disabled={savedViews.create.isPending}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {savedViews.create.isPending ? "Salvando…" : "Adicionar visualização"}
         </Button>
       </div>
 
