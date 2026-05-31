@@ -120,7 +120,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   inputMode={p.type === "tel" ? "tel" : undefined}
                   value={value}
                   onChange={(e) =>
-                    setValue(p.type === "tel" ? sanitizePhoneInput(e.target.value) : e.target.value)
+                    setValue(
+                      p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                      : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                      : e.target.value
+                    )
                   }
                   onKeyDown={(e) => e.key === "Enter" && save(p.key)}
                   className="h-8"
