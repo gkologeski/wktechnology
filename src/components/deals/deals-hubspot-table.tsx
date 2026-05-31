@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Deal } from "@/lib/db-types";
-import type { Pipeline } from "@/lib/pipelines";
+import { type Pipeline, usePipelines } from "@/lib/pipelines";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
