@@ -189,17 +189,17 @@ export function DealDetailDrawer({
                 </Select>
               </Field>
               <Field label="Empresa">
-                <EntityCombobox
-                  entity="companies"
-                  select="id, name, industry"
-                  labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-                  hintFrom={(r) => (r as { industry?: string }).industry ?? null}
-                  value={v.company_id ? String(v.company_id) : null}
-                  onChange={(id) => set("company_id", id)}
+                <CompanyPicker
+                  mode="pick"
+                  value={{ id: (v.company_id as string) || null, name: (v.company_name as string) || "" }}
+                  onChange={(cv) => {
+                    set("company_id", cv.id);
+                    set("company_name", cv.name);
+                  }}
                   placeholder="Selecionar empresa…"
-                  icon={Building2}
                 />
               </Field>
+
               <Field label="Contato principal">
                 <EntityCombobox
                   entity="contacts"
