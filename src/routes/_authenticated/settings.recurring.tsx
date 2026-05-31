@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
 import {
   listPlans, upsertPlan, deletePlan,
   listSubscriptions, getSubscription, createSubscription, updateSubscriptionStatus, deleteSubscription,
@@ -17,9 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Trash2, Pencil, Pause, Play, XCircle, CheckCircle2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Pencil, Pause, Play, XCircle, CheckCircle2, ExternalLink, User } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/crm";
 
@@ -179,14 +180,7 @@ function SubscriptionsTab() {
   const listPlansFn = useServerFn(listPlans);
   const { data: plans = [] } = useQuery({ queryKey: ["recurring-plans"], queryFn: () => listPlansFn() });
 
-  const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts-mini"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("contacts").select("id, first_name, last_name, email").order("first_name").limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+
 
   const [open, setOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -300,14 +294,22 @@ function SubscriptionsTab() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label>Contato *</Label>
-              <Select value={draft.contact_id} onValueChange={(v) => setDraft({ ...draft, contact_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  {contacts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || c.email || c.id.slice(0,8)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EntityCombobox
+                entity="contacts"
+                select="id, first_name, last_name, email"
+                searchColumn="first_name"
+                orderBy="first_name"
+                labelFrom={(r) => {
+                  const row = r as { first_name?: string; last_name?: string; email?: string };
+                  const n = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
+                  return n || row.email || "Contato";
+                }}
+                hintFrom={(r) => (r as { email?: string }).email ?? null}
+                value={draft.contact_id || null}
+                onChange={(id) => setDraft({ ...draft, contact_id: id ?? "" })}
+                placeholder="Selecionar contato…"
+                icon={User}
+              />
             </div>
             {plans.length > 0 && (
               <div className="space-y-1.5">

@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { Package, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 
@@ -22,14 +22,6 @@ type LineItem = {
   position: number;
 };
 
-type Product = {
-  id: string;
-  name: string;
-  unit_price: number;
-  currency: string;
-  tax_rate: number;
-  active: boolean;
-};
 
 function lineTotal(li: { quantity: number; unit_price: number; discount_pct: number; tax_rate: number }) {
   const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
@@ -38,7 +30,6 @@ function lineTotal(li: { quantity: number; unit_price: number; discount_pct: num
 
 export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; ownerId: string; currency: string }) {
   const qc = useQueryClient();
-  const [productPick, setProductPick] = useState<string>("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["deal_line_items", dealId],
@@ -48,17 +39,6 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
         .from("deal_line_items").select("*").eq("deal_id", dealId).order("position");
       if (error) throw error;
       return (data ?? []) as LineItem[];
-    },
-  });
-
-  const { data: products = [] } = useQuery({
-    queryKey: ["products", "active"],
-    queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from("products").select("*").eq("active", true).order("name");
-      if (error) throw error;
-      return (data ?? []) as Product[];
     },
   });
 
@@ -74,8 +54,10 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function addFromProduct(pid: string) {
-    const p = products.find((x) => x.id === pid);
-    if (!p) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: p, error: perr } = await (supabase as any)
+      .from("products").select("*").eq("id", pid).maybeSingle();
+    if (perr || !p) { toast.error(perr?.message ?? "Produto não encontrado"); return; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
       owner_id: ownerId, deal_id: dealId, product_id: p.id,
@@ -83,7 +65,6 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
       discount_pct: 0, tax_rate: p.tax_rate, position: items.length,
     });
     if (error) { toast.error(error.message); return; }
-    setProductPick("");
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -116,18 +97,24 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
   return (
     <div className="space-y-3">
       <div className="flex gap-2 flex-wrap">
-        <Select value={productPick} onValueChange={(v) => { setProductPick(v); addFromProduct(v); }}>
-          <SelectTrigger className="w-[260px]"><SelectValue placeholder="Adicionar do catálogo…" /></SelectTrigger>
-          <SelectContent>
-            {products.length === 0
-              ? <SelectItem value="__empty" disabled>Nenhum produto ativo</SelectItem>
-              : products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} · {formatCurrency(p.unit_price, p.currency)}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="w-[260px]">
+          <EntityCombobox
+            entity="products"
+            select="id, name, unit_price, currency"
+            filters={{ active: true }}
+            labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
+            hintFrom={(r) => {
+              const row = r as { unit_price?: number; currency?: string };
+              return row.unit_price != null ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL") : null;
+            }}
+            value={null}
+            onChange={(id) => { if (id) addFromProduct(id); }}
+            placeholder="Adicionar do catálogo…"
+            emptyLabel="Nenhum produto"
+            icon={Package}
+            clearable={false}
+          />
+        </div>
         <Button size="sm" variant="outline" onClick={addBlank}><Plus className="h-4 w-4 mr-1" /> Item em branco</Button>
       </div>
 
