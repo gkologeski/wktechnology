@@ -265,12 +265,20 @@ function ContactsHubspotView() {
           );
         },
       },
-      { key: "email", label: "E-mail", className: "text-muted-foreground", render: (c) => c.email ?? "—" },
+      {
+        key: "email",
+        label: "E-mail",
+        className: "text-muted-foreground",
+        render: (c) => (c.email ? <span className="truncate">{c.email}</span> : "—"),
+      },
       {
         key: "phone",
         label: "Telefone",
         className: "text-muted-foreground",
-        render: (c) => c.phone ?? c.mobile_phone ?? "—",
+        render: (c) => {
+          const raw = c.phone ?? c.mobile_phone;
+          return raw ? (toE164(raw) ?? raw) : "—";
+        },
       },
       { key: "job_title", label: "Cargo", className: "text-muted-foreground", render: (c) => c.job_title ?? "—" },
       {
