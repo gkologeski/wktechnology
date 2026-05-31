@@ -15,6 +15,7 @@ import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
 import { toE164, isEmail } from "@/lib/validators";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
@@ -26,7 +27,8 @@ function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
 }
 
-export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
+export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" };
+
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
