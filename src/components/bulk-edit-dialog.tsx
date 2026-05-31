@@ -91,6 +91,11 @@ export function BulkEditDialog({
                     <option value="">— (limpar)</option>
                     {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
+                ) : f.type === "email" ? (
+                  <EmailInput
+                    value={String(values[f.name] ?? "")}
+                    onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
+                  />
                 ) : (
                   <Input
                     type={f.type ?? "text"}
