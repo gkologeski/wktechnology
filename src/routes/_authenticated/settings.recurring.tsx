@@ -301,14 +301,22 @@ function SubscriptionsTab() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label>Contato *</Label>
-              <Select value={draft.contact_id} onValueChange={(v) => setDraft({ ...draft, contact_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  {contacts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || c.email || c.id.slice(0,8)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EntityCombobox
+                entity="contacts"
+                select="id, first_name, last_name, email"
+                searchColumn="first_name"
+                orderBy="first_name"
+                labelFrom={(r) => {
+                  const row = r as { first_name?: string; last_name?: string; email?: string };
+                  const n = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
+                  return n || row.email || "Contato";
+                }}
+                hintFrom={(r) => (r as { email?: string }).email ?? null}
+                value={draft.contact_id || null}
+                onChange={(id) => setDraft({ ...draft, contact_id: id ?? "" })}
+                placeholder="Selecionar contato…"
+                icon={User}
+              />
             </div>
             {plans.length > 0 && (
               <div className="space-y-1.5">
