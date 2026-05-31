@@ -652,6 +652,11 @@ function EntityDialog<T extends { id: string }>({
       for (const f of fields) {
         if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
         if (f.type === "number" && payload[f.name] != null) payload[f.name] = Number(payload[f.name]);
+        if (f.type === "email" && payload[f.name] != null) {
+          const v = String(payload[f.name]).trim();
+          if (!isEmail(v)) { toast.error(`${f.label}: email inválido.`); setSubmitting(false); return; }
+          payload[f.name] = v;
+        }
       }
       payload.owner_id = user.id;
       let error;
