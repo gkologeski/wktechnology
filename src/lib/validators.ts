@@ -1,26 +1,11 @@
 import { isValidPhoneNumber, parsePhoneNumberFromString } from "libphonenumber-js";
 
-// Lightweight RFC-5322-ish email regex, good enough for UI feedback.
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-// Final label (TLD) must be 2-24 letters only — no digits, no hyphen, no extra dots after it.
-const TLD_RE = /^[a-z]{2,24}$/i;
+// Canonical email validation regex (HTML5-style, case-insensitive).
+const EMAIL_RE = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
 
 export function isEmail(v: string | null | undefined): boolean {
   if (!v) return false;
-  const s = v.trim();
-  if (!EMAIL_RE.test(s)) return false;
-  const [local, domain] = s.split("@");
-  if (!local || !domain) return false;
-  const labels = domain.split(".");
-  if (labels.length < 2) return false;
-  if (labels.some((l) => l.length === 0)) return false;
-  // Reject consecutive duplicate labels (e.g. "gmail.com.br.br").
-  for (let i = 1; i < labels.length; i++) {
-    if (labels[i].toLowerCase() === labels[i - 1].toLowerCase()) return false;
-  }
-  // TLD must be alphabetic, 2-24 chars.
-  if (!TLD_RE.test(labels[labels.length - 1])) return false;
-  return true;
+  return EMAIL_RE.test(v.trim());
 }
 
 /** Accepts E.164 format (e.g. +5511999998888). */
