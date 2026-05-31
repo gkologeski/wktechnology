@@ -98,24 +98,8 @@ export function CreateDealFromLeadDialog({
     }
   }, [pipeline, stageId]);
 
-  // company search
-  useEffect(() => {
-    const q = companyQuery.trim();
-    if (q.length < 3 || (selectedCompany && selectedCompany.name === q)) {
-      setCompanyMatches([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id, name")
-        .ilike("name", `%${q}%`)
-        .order("name")
-        .limit(500);
-      setCompanyMatches((data ?? []) as Match[]);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [companyQuery, selectedCompany]);
+  // company search is handled by <CompanyPicker /> internally.
+
 
   // contact search
   useEffect(() => {
