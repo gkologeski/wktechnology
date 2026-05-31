@@ -29,7 +29,7 @@ export const EmailInput = React.forwardRef<HTMLInputElement, EmailInputProps>(
           autoComplete="email"
           spellCheck={false}
           value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value.replace(/\s+/g, ""))}
           onBlur={(e) => { setTouched(true); onBlur?.(e); }}
           aria-invalid={err || undefined}
           className={cn(err && "border-destructive focus-visible:ring-destructive", className)}
