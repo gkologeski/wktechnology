@@ -17,3 +17,21 @@ export function isPhone(v: string | null | undefined): boolean {
     return false;
   }
 }
+
+/**
+ * Normalize a phone string to E.164 (e.g. "+5511999998888").
+ * Returns null if the value cannot be parsed into a valid number.
+ * Assumes Brazil ("BR") as default country when no "+" prefix is present.
+ */
+export function toE164(v: string | null | undefined, defaultCountry: "BR" = "BR"): string | null {
+  if (!v) return null;
+  const raw = String(v).trim();
+  if (!raw) return null;
+  try {
+    const parsed = parsePhoneNumberFromString(raw, raw.startsWith("+") ? undefined : defaultCountry);
+    if (parsed && parsed.isValid()) return parsed.number; // E.164
+  } catch {
+    // fall through
+  }
+  return null;
+}
