@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { convertLead } from "@/lib/lead-convert";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
+import { toE164 } from "@/lib/validators";
 import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import {
@@ -425,7 +426,7 @@ function LeadsHubspotView() {
         key: "phone",
         label: "Telefone",
         className: "text-muted-foreground",
-        render: (lead) => lead.phone ?? "—",
+        render: (lead) => (lead.phone ? (toE164(lead.phone) ?? lead.phone) : "—"),
       },
       {
         key: "company",

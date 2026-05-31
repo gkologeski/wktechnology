@@ -17,7 +17,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
-import { isEmail, isPhone } from "@/lib/validators";
+import { isEmail, isPhone, toE164 } from "@/lib/validators";
 import { Building2 } from "lucide-react";
 
 type CompanyMatch = { id: string; name: string };
@@ -113,7 +113,7 @@ export function CreateLeadDialog({
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
           email: form.email.trim() || null,
-          phone: form.phone.trim() || null,
+          phone: form.phone.trim() ? (toE164(form.phone.trim()) ?? form.phone.trim()) : null,
           company_name: form.company_name.trim() || null,
           source: form.source.trim() || null,
         })
