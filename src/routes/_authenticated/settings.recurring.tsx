@@ -180,14 +180,7 @@ function SubscriptionsTab() {
   const listPlansFn = useServerFn(listPlans);
   const { data: plans = [] } = useQuery({ queryKey: ["recurring-plans"], queryFn: () => listPlansFn() });
 
-  const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts-mini"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("contacts").select("id, first_name, last_name, email").order("first_name").limit(500);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+
 
   const [open, setOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
