@@ -6113,7 +6113,16 @@ export type Database = {
     }
     Enums: {
       access_scope: "none" | "own" | "team" | "all"
-      activity_type: "note" | "task" | "call" | "email" | "meeting" | "whatsapp"
+      activity_type:
+        | "note"
+        | "task"
+        | "call"
+        | "email"
+        | "meeting"
+        | "whatsapp"
+        | "sms"
+        | "postal_mail"
+        | "linkedin_message"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
       booking_status: "confirmed" | "canceled"
@@ -6306,7 +6315,17 @@ export const Constants = {
   public: {
     Enums: {
       access_scope: ["none", "own", "team", "all"],
-      activity_type: ["note", "task", "call", "email", "meeting", "whatsapp"],
+      activity_type: [
+        "note",
+        "task",
+        "call",
+        "email",
+        "meeting",
+        "whatsapp",
+        "sms",
+        "postal_mail",
+        "linkedin_message",
+      ],
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
       booking_status: ["confirmed", "canceled"],
