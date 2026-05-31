@@ -695,6 +695,9 @@ function EntityDialog<T extends { id: string }>({
                   <option value="">—</option>
                   {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
+              ) : f.type === "email" ? (
+                <EmailInput id={f.name} required={f.required}
+                  value={String(values[f.name] ?? "")} onChange={(v) => set(f.name, v)} />
               ) : (
                 <Input id={f.name} type={f.type ?? "text"} required={f.required}
                   value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} />
