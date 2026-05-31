@@ -6059,6 +6059,10 @@ export type Database = {
           value: string
         }[]
       }
+      link_contacts_by_email_domain: {
+        Args: { p_workspace: string }
+        Returns: number
+      }
       lookup_stage_sla: {
         Args: {
           p_entity: string
