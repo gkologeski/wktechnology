@@ -14,6 +14,13 @@ import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
+import { toE164 } from "@/lib/validators";
+
+// E.164-compliant chars only: digits, leading +, plus visual separators.
+const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
+function sanitizePhoneInput(s: string): string {
+  return s.replace(PHONE_INPUT_RE, "");
+}
 
 export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
 
