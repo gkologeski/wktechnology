@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -15,12 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
-import { Building2 } from "lucide-react";
 
-type CompanyMatch = { id: string; name: string };
+
 
 export function CreateLeadDialog({
   open,
