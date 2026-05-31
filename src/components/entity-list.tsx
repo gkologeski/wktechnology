@@ -27,6 +27,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Filter, Columns3, Save, Star, X, LayoutGrid, List as ListIcon, ListTodo } from "lucide-react";
 import Papa from "papaparse";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { EmailInput } from "@/components/ui/email-input";
+import { isEmail } from "@/lib/validators";
 
 type Field = {
   name: string;
@@ -650,6 +652,11 @@ function EntityDialog<T extends { id: string }>({
       for (const f of fields) {
         if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
         if (f.type === "number" && payload[f.name] != null) payload[f.name] = Number(payload[f.name]);
+        if (f.type === "email" && payload[f.name] != null) {
+          const v = String(payload[f.name]).trim();
+          if (!isEmail(v)) { toast.error(`${f.label}: email inválido.`); setSubmitting(false); return; }
+          payload[f.name] = v;
+        }
       }
       payload.owner_id = user.id;
       let error;
@@ -688,6 +695,9 @@ function EntityDialog<T extends { id: string }>({
                   <option value="">—</option>
                   {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
+              ) : f.type === "email" ? (
+                <EmailInput id={f.name} required={f.required}
+                  value={String(values[f.name] ?? "")} onChange={(v) => set(f.name, v)} />
               ) : (
                 <Input id={f.name} type={f.type ?? "text"} required={f.required}
                   value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} />

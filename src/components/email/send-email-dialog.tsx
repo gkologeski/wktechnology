@@ -10,6 +10,7 @@ import { listEmailTemplates, listEmailSnippets } from "@/lib/email-templates.fun
 import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isEmail } from "@/lib/validators";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -221,7 +222,15 @@ export function SendEmailDialog({
 
         <DialogFooter>
           <Button
-            onClick={() => sendMut.mutate()}
+            onClick={() => {
+              const split = (s: string) => s.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+              const toList = split(to);
+              const ccList = split(cc);
+              if (toList.length === 0) { toast.error("Informe ao menos um destinatário."); return; }
+              const bad = [...toList, ...ccList].find((e) => !isEmail(e));
+              if (bad) { toast.error(`Email inválido: ${bad}`); return; }
+              sendMut.mutate();
+            }}
             disabled={!account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending}
           >
             <Send className="mr-2 h-4 w-4" />
