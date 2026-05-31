@@ -132,8 +132,9 @@ export function CreateDealFromLeadDialog({
     setSaving(true);
     try {
       // resolve company
-      let companyId: string | null = selectedCompany?.id ?? null;
-      const cName = companyQuery.trim();
+      let companyId: string | null = company.id ?? null;
+      const cName = company.name.trim();
+
       if (!companyId && cName) {
         const { data: existing } = await supabase
           .from("companies")
