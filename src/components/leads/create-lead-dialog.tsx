@@ -113,7 +113,7 @@ export function CreateLeadDialog({
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
           email: form.email.trim() || null,
-          phone: form.phone.trim() || null,
+          phone: form.phone.trim() ? (toE164(form.phone.trim()) ?? form.phone.trim()) : null,
           company_name: form.company_name.trim() || null,
           source: form.source.trim() || null,
         })
