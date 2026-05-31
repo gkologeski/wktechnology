@@ -441,17 +441,17 @@ function TicketsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Empresa</Label>
-              <EntityCombobox
-                entity="companies"
-                select="id, name, industry"
-                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-                hintFrom={(r) => (r as { industry?: string }).industry ?? null}
-                value={draft.company_id ?? null}
-                onChange={(id) => setDraft({ ...draft, company_id: id })}
+              <CompanyPicker
+                mode="pick"
+                value={{
+                  id: draft.company_id ?? null,
+                  name: companies.find((c) => c.id === draft.company_id)?.name ?? "",
+                }}
+                onChange={(cv: CompanyPickerValue) => setDraft({ ...draft, company_id: cv.id })}
                 placeholder="Selecionar empresa…"
-                icon={Building2}
               />
             </div>
+
             <div className="md:col-span-2 space-y-1.5">
               <Label>Negócio</Label>
               <EntityCombobox
