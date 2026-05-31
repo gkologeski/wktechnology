@@ -262,26 +262,11 @@ export function CreateDealFromLeadDialog({
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          <div className="space-y-1.5 col-span-2 relative">
+          <div className="space-y-1.5 col-span-2">
             <Label>Empresa</Label>
-            <Input
-              value={companyQuery}
-              onChange={(e) => { setCompanyQuery(e.target.value); setSelectedCompany(null); }}
-              placeholder="Buscar ou criar"
-            />
-            {companyMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
-                {companyMatches.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="block w-full text-left px-3 py-2 text-sm hover:bg-accent"
-                    onClick={() => { setSelectedCompany(m); setCompanyQuery(m.name); setCompanyMatches([]); }}
-                  >{m.name}</button>
-                ))}
-              </div>
-            )}
+            <CompanyPicker value={company} onChange={setCompany} />
           </div>
+
 
           <div className="space-y-1.5 col-span-2 relative">
             <Label>Contato</Label>
