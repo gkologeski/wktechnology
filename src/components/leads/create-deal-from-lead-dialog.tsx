@@ -55,13 +55,12 @@ export function CreateDealFromLeadDialog({
   const [description, setDescription] = useState("");
 
   // company / contact
-  const [companyQuery, setCompanyQuery] = useState("");
-  const [companyMatches, setCompanyMatches] = useState<Match[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Match | null>(null);
+  const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
 
   const [contactQuery, setContactQuery] = useState("");
   const [contactMatches, setContactMatches] = useState<Match[]>([]);
   const [selectedContact, setSelectedContact] = useState<Match | null>(null);
+
 
   const [saving, setSaving] = useState(false);
 
