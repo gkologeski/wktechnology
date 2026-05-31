@@ -103,13 +103,26 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
             {editing === p.key ? (
               <div className="flex gap-1">
-                <Input autoFocus type={p.type ?? "text"} value={value} onChange={(e) => setValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && save(p.key)} className="h-8" />
+                <Input
+                  autoFocus
+                  type={p.type ?? "text"}
+                  inputMode={p.type === "tel" ? "tel" : undefined}
+                  value={value}
+                  onChange={(e) =>
+                    setValue(p.type === "tel" ? sanitizePhoneInput(e.target.value) : e.target.value)
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                  className="h-8"
+                />
                 <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-foreground truncate">{String(row[p.key] ?? "—")}</span>
+                <span className="text-sm text-foreground truncate">
+                  {p.type === "tel" && row[p.key]
+                    ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+                    : String(row[p.key] ?? "—")}
+                </span>
                 <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
                   onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
                   <Pencil className="h-3 w-3" />
