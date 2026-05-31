@@ -14,12 +14,16 @@ import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
-import { toE164 } from "@/lib/validators";
+import { toE164, isEmail } from "@/lib/validators";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
 function sanitizePhoneInput(s: string): string {
   return s.replace(PHONE_INPUT_RE, "");
+}
+// Email: no whitespace allowed.
+function sanitizeEmailInput(s: string): string {
+  return s.replace(/\s+/g, "");
 }
 
 export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" };
@@ -83,6 +87,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       }
       toSave = normalized;
     }
+    if (def?.type === "email" && toSave) {
+      toSave = toSave.trim();
+      if (!isEmail(toSave)) {
+        toast.error("Email inválido.");
+        return;
+      }
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
@@ -109,7 +120,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   inputMode={p.type === "tel" ? "tel" : undefined}
                   value={value}
                   onChange={(e) =>
-                    setValue(p.type === "tel" ? sanitizePhoneInput(e.target.value) : e.target.value)
+                    setValue(
+                      p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                      : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                      : e.target.value
+                    )
                   }
                   onKeyDown={(e) => e.key === "Enter" && save(p.key)}
                   className="h-8"
