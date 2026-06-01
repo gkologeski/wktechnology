@@ -37,28 +37,51 @@ type RelatedKey = "related_lead_id" | "related_contact_id" | "related_company_id
 type Attachment = { path: string; name: string; size: number; type: string };
 type TeamMember = { id: string; name: string };
 
-// Registrar (logs textuais)
-const LOG_TABS: { value: ActivityType; label: string }[] = [
-  { value: "note", label: "Nota" },
-  { value: "email", label: "Registrar e-mail" },
-  { value: "call", label: "Registrar chamada" },
-  { value: "meeting", label: "Registrar reunião" },
-  { value: "whatsapp", label: "Registrar WhatsApp" },
-  { value: "sms", label: "Registrar SMS" },
-  { value: "linkedin_message", label: "Registrar LinkedIn" },
-  { value: "postal_mail", label: "Registrar correio" },
+// Ações tipo "Registrar" (composer inline com texto)
+type LogKind = ActivityType;
+const LOG_LABEL: Record<LogKind, string> = {
+  note: "Nota",
+  task: "Tarefa",
+  email: "Registrar e-mail",
+  call: "Registrar chamada",
+  meeting: "Registrar reunião",
+  whatsapp: "Registrar WhatsApp",
+  sms: "Registrar SMS",
+  linkedin_message: "Registrar LinkedIn",
+  postal_mail: "Registrar correio",
+};
+
+type CreateAction = "meeting" | "email" | "call" | "whatsapp" | "sequence" | "linkedin";
+
+type BarAction =
+  | { kind: "log"; value: LogKind; label: string; icon: ReactNode }
+  | { kind: "create"; value: CreateAction; label: string; icon: ReactNode; disabled?: boolean };
+
+// Botões fixos da barra (ordem visual)
+const PINNED_ACTIONS: BarAction[] = [
+  { kind: "log", value: "note", label: "Nota", icon: <StickyNote className="h-5 w-5" /> },
+  { kind: "create", value: "email", label: "E-mail", icon: <Mail className="h-5 w-5" /> },
+  { kind: "create", value: "call", label: "Ligação", icon: <Phone className="h-5 w-5" /> },
+  { kind: "log", value: "task", label: "Tarefa", icon: <ListTodo className="h-5 w-5" /> },
+  { kind: "create", value: "meeting", label: "Reunião", icon: <CalendarDays className="h-5 w-5" /> },
 ];
 
-type CreateAction = "meeting" | "email" | "task" | "call" | "whatsapp" | "sequence" | "linkedin";
-const CREATE_TABS: { value: CreateAction; label: string; icon: ReactNode; disabled?: boolean }[] = [
-  { value: "meeting", label: "Marcar reunião", icon: <CalendarDays className="h-4 w-4" /> },
-  { value: "email", label: "Enviar e-mail", icon: <Mail className="h-4 w-4" /> },
-  { value: "task", label: "Criar tarefa", icon: <ListTodo className="h-4 w-4" /> },
-  { value: "call", label: "Fazer ligação", icon: <Phone className="h-4 w-4" /> },
-  { value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
-  { value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-4 w-4" />, disabled: true },
-  { value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-4 w-4" />, disabled: true },
+// Itens do menu "Mais"
+const MORE_CREATE: BarAction[] = [
+  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
+  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-4 w-4" />, disabled: true },
+  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-4 w-4" />, disabled: true },
 ];
+const MORE_LOG: BarAction[] = [
+  { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-4 w-4" /> },
+  { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-4 w-4" /> },
+  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-4 w-4" /> },
+  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
+  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-4 w-4" /> },
+  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-4 w-4" /> },
+  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-4 w-4" /> },
+];
+
 
 export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: RelatedKey; relatedId: string }) {
   const { user } = useAuth();
