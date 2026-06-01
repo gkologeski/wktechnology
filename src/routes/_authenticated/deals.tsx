@@ -38,6 +38,13 @@ function DealsPage() {
   const [editing, setEditing] = useState<Deal | null>(null);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
 
+  useEffect(() => {
+    const dv = selected?.default_view;
+    if (dv && ["table", "board", "list", "forecast"].includes(dv)) {
+      setView(dv as typeof view);
+    }
+  }, [selected?.id, selected?.default_view]);
+
   const { data: deals = [] } = useQuery({
     queryKey: ["deals", "list"],
     queryFn: async () => {
