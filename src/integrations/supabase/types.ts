@@ -610,6 +610,54 @@ export type Database = {
           },
         ]
       }
+      bug_reports: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          owner_id: string
+          page_url: string | null
+          recording_has_audio: boolean
+          recording_path: string | null
+          status: string
+          subtype: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          kind: string
+          owner_id: string
+          page_url?: string | null
+          recording_has_audio?: boolean
+          recording_path?: string | null
+          status?: string
+          subtype: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          page_url?: string | null
+          recording_has_audio?: boolean
+          recording_path?: string | null
+          status?: string
+          subtype?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       calendar_accounts: {
         Row: {
           access_token: string | null

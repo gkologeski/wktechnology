@@ -1,66 +1,81 @@
 ## Objetivo
 
-Substituir o composer em abas atual do `ActivityTimeline` por uma **barra de ações estilo HubSpot** (igual ao print): uma linha horizontal de botões circulares com ícone + rótulo curto embaixo, e um botão **"Mais"** que abre um menu pesquisável com as ações restantes.
+Criar um botão flutuante "stay-on-top" (sempre visível em qualquer página do app autenticado) que permite ao usuário abrir um chamado interno descrevendo um problema ou solicitando uma nova funcionalidade, com gravação opcional de tela + áudio.
 
-## Layout proposto
+Isso é separado da tabela `tickets` existente (que é de suporte a clientes do CRM). Será uma nova tabela `bug_reports` para feedback interno do produto.
 
-```text
-( ⓦ )   ( 📅 )   ( ✉ )   ( ⓦ+ )   ( ☑ )   ( ··· )
-WhatsApp Reunião  E-mail  Reg.WA   Tarefa  Mais
-```
+## UX
 
-- Botões circulares (~56px), fundo `muted`, ícone centralizado, label `text-xs` truncado embaixo.
-- 5–6 ações fixas visíveis (as mais usadas); o resto vai no menu **Mais**.
-- Hover/focus com anel `primary`, igual aos outros botões do CRM.
-- Clique em qualquer botão **abre o composer/dialog correspondente abaixo da barra** (inline para textos curtos, modal para Reunião/Email/Ligação/WhatsApp).
-- Quando nenhum botão está ativo, mostra apenas a barra (o editor não fica permanentemente aberto como hoje).
+**Botão flutuante**
+- Posição fixa: canto inferior direito, `z-50`, ícone de "bug" / "balão de fala".
+- Visível em todas as rotas dentro de `_authenticated` (montado no layout `_authenticated.tsx`).
+- Arrastável é fora de escopo nesta primeira versão — apenas fixo no canto.
 
-## Ações da barra (ordem padrão, fixas)
+**Dialog do chamado** (ao clicar no botão)
 
-1. **Nota** (`StickyNote`) — composer inline com `RichHtmlEditor` (igual ao atual).
-2. **E-mail** (`Mail`) — abre `SendEmailDialog`.
-3. **Ligação** (`Phone`) — abre `CallDialer`.
-4. **Tarefa** (`CheckSquare`) — composer inline com `due_date`.
-5. **Reunião** (`CalendarDays`) — abre `MeetingDialog`.
-6. **Mais** (`MoreHorizontal`) — abre `Popover` com lista pesquisável.
+Campos:
+1. **Tipo** (Select obrigatório):
+   - "Nova funcionalidade"
+   - "Funcionalidade existente com problema"
+2. **Categoria do problema** (Select obrigatório) — combo principal, ex.: Negócios, Contatos, Empresas, Calendário, E-mail, WhatsApp, Workflows, Configurações, Outro.
+3. **Subtipo** (Select obrigatório) — dependente da categoria, ex.: para "Negócios" → Listagem, Detalhe, Pipeline/Quadro, Criação, etc. Lista mantida em `src/lib/bug-report-taxonomy.ts` (fácil de editar).
+4. **Descrição** (Textarea, max 4000 chars, obrigatório).
+5. **Gravação de tela** (opcional):
+   - Botão "Iniciar gravação" → usa `navigator.mediaDevices.getDisplayMedia({ video: true })`.
+   - Toggle "Incluir minha voz" → quando ligado, também chama `getUserMedia({ audio: true })` e mistura no `MediaRecorder`.
+   - Limite duro de 2 minutos (auto-stop) para evitar arquivos enormes.
+   - Botão "Parar". Exibe preview `<video controls>` do blob gravado, com opção de descartar e regravar.
+6. **Enviar** → faz upload do vídeo (se houver) para Storage, depois insere a linha em `bug_reports`.
 
-## Menu "Mais" (Popover com Command/search)
+Validação com Zod (`type`, `category`, `subtype` obrigatórios; `description` 10–4000 chars).
 
-Agrupado em duas seções, igual ao HubSpot:
+## Backend (migration)
 
-**Criar / iniciar**
-- Enviar WhatsApp → `SendWhatsAppDialog`
-- Inscrever em sequência *(desabilitado, badge "Em breve" 🔒)*
-- Envolver-se no LinkedIn *(desabilitado 🔒)*
+**Tabela `public.bug_reports`**
+- `id uuid pk`
+- `owner_id uuid not null` (auth.uid())
+- `kind text not null check in ('new_feature','existing_broken')`
+- `category text not null`
+- `subtype text not null`
+- `description text not null`
+- `recording_path text` (caminho no bucket)
+- `recording_has_audio boolean default false`
+- `page_url text` (capturada no client com `window.location.href`)
+- `user_agent text`
+- `status text default 'open'` (open/triaged/resolved — base para futuro painel)
+- `created_at`, `updated_at`
 
-**Registrar (histórico de algo já feito)**
-- Registrar SMS → composer inline, `type=sms`
-- Registrar Correio Postal → composer inline, `type=postal_mail`
-- Registrar e-mail → composer inline, `type=email`
-- Registrar ligação → composer inline, `type=call`
-- Registrar mensagem do LinkedIn → composer inline, `type=linkedin_message`
-- Registrar conversa do WhatsApp → composer inline, `type=whatsapp`
-- Registrar reunião → composer inline, `type=meeting` (sem Google Calendar)
+**GRANTs + RLS**
+- `GRANT SELECT, INSERT, UPDATE ON public.bug_reports TO authenticated;`
+- `GRANT ALL TO service_role;`
+- RLS: usuário pode `INSERT`/`SELECT`/`UPDATE` apenas onde `owner_id = auth.uid()`. (Painel de admin/triagem fica para depois.)
 
-Topo do popover tem `Input` de busca filtrando os itens (igual ao print).
+**Storage bucket `bug-reports`** (privado)
+- Policies em `storage.objects`: usuário autenticado pode inserir/ler arquivos no prefixo `${auth.uid()}/...`.
+- Upload do client com path `${user.id}/${reportId}.webm`.
 
-## Comportamento
+## Frontend — arquivos novos
 
-- Ação ativa fica destacada (anel `primary`) enquanto o composer/dialog estiver aberto.
-- Composer inline aparece **abaixo** da barra com: campo Assunto opcional + `RichHtmlEditor` + anexos + botões "Cancelar" / "Salvar". Salvar cria `activities` com o `type` correto.
-- Dialogs (Email/Ligação/Reunião/WhatsApp) continuam reaproveitando os componentes existentes, com pré-preenchimento de e-mail/telefone vindo do contato relacionado (lógica já implementada).
-- Sem reordenação por enquanto: o item "Reordenar botões de atividade" do HubSpot fica fora de escopo.
+- `src/lib/bug-report-taxonomy.ts` — array `{ category, label, subtypes: [{value,label}] }`.
+- `src/components/bug-report/bug-report-button.tsx` — botão flutuante (FAB).
+- `src/components/bug-report/bug-report-dialog.tsx` — Dialog (shadcn) com formulário e estado de gravação.
+- `src/components/bug-report/use-screen-recorder.ts` — hook encapsulando `getDisplayMedia` + `MediaRecorder` + mix de áudio, retornando `{ status, start, stop, blob, reset, error }`.
 
-## Arquivos afetados
+## Frontend — arquivos editados
 
-**Editado**
-- `src/components/activity-timeline.tsx` — remover `Tabs` de Registrar/Criar; adicionar `ActivityActionBar` (barra circular) + `Popover` "Mais" usando `Command`; manter a lógica de inserção/dialogs já existente; reorganizar o estado para "ação selecionada" em vez de "aba ativa".
+- `src/routes/_authenticated.tsx` — montar `<BugReportButton />` no final do layout, fora do `<Outlet />`, para aparecer em todas as páginas autenticadas.
+- `src/integrations/supabase/types.ts` — regenerado automaticamente após a migration.
 
-**Sem mudanças**
-- `MeetingDialog`, `SendEmailDialog`, `CallDialer`, `SendWhatsAppDialog`, `crm.ts`, banco — tudo já existe e fica reaproveitado.
+## Detalhes técnicos
 
-## Fora de escopo
+- Gravação usa MIME `video/webm;codecs=vp9,opus` com fallback para `video/webm`.
+- Quando "incluir voz" está ligado, usar `AudioContext` para mesclar o áudio do desktop (se vier do `getDisplayMedia`) com o microfone num único `MediaStreamTrack`.
+- O preview e o upload usam o `Blob` resultante do `MediaRecorder`; sem servidor intermediário.
+- Captura `window.location.href` e `navigator.userAgent` no momento do envio para ajudar triagem.
 
-- Reordenação drag-and-drop dos botões ("Reordenar botões de atividade").
-- Sub-menus laterais (HubSpot mostra `>` em "Fazer uma ligação" / "Envolva-se no LinkedIn") — abriremos o dialog direto.
-- Persistir preferência do usuário sobre quais 5 botões aparecem fixos.
+## Fora de escopo (esta entrega)
+
+- Tela de admin para listar/triar bug_reports (pode ser próximo passo).
+- Anexar múltiplos arquivos / capturas estáticas — só vídeo + texto.
+- Arrastar o botão flutuante / mudar posição via UI.
+- Notificação por e-mail aos administradores quando um report é criado.
