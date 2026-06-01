@@ -31,6 +31,7 @@ type Pipeline = {
   name: string;
   entity: string;
   is_default: boolean;
+  default_view: string | null;
   stages: Stage[];
 };
 
@@ -38,6 +39,19 @@ const ENTITIES = [
   { value: "deal", label: "Negócios" },
   { value: "lead", label: "Leads" },
 ];
+
+const VIEWS_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
+  deal: [
+    { value: "table", label: "Tabela" },
+    { value: "board", label: "Quadro" },
+    { value: "list", label: "Lista" },
+    { value: "forecast", label: "Previsão" },
+  ],
+  lead: [
+    { value: "table", label: "Tabela" },
+    { value: "board", label: "Quadro" },
+  ],
+};
 
 function slugify(s: string) {
   return s
@@ -59,7 +73,7 @@ function PipelinesSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pipelines")
-        .select("id, name, entity, is_default, stages")
+        .select("id, name, entity, is_default, default_view, stages")
         .order("entity", { ascending: true })
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
@@ -139,6 +153,7 @@ function PipelineEditor({
   const [name, setName] = useState(pipeline?.name ?? "");
   const [entity, setEntity] = useState(pipeline?.entity ?? "deal");
   const [isDefault, setIsDefault] = useState(pipeline?.is_default ?? false);
+  const [defaultView, setDefaultView] = useState<string>(pipeline?.default_view ?? "table");
   const [stages, setStages] = useState<Stage[]>(
     pipeline?.stages?.length
       ? pipeline.stages
@@ -151,6 +166,7 @@ function PipelineEditor({
     setName(pipeline?.name ?? "");
     setEntity(pipeline?.entity ?? "deal");
     setIsDefault(pipeline?.is_default ?? false);
+    setDefaultView(pipeline?.default_view ?? "table");
     setStages(
       pipeline?.stages?.length
         ? pipeline.stages
@@ -208,6 +224,7 @@ function PipelineEditor({
           name: name.trim(),
           entity,
           is_default: isDefault,
+          default_view: defaultView,
           stages: payloadStages as unknown as never,
         });
         if (error) throw error;
@@ -218,6 +235,7 @@ function PipelineEditor({
             name: name.trim(),
             entity,
             is_default: isDefault,
+            default_view: defaultView,
             stages: payloadStages as unknown as never,
           })
           .eq("id", pipeline!.id);
@@ -269,9 +287,22 @@ function PipelineEditor({
             </Select>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={isDefault} onCheckedChange={setIsDefault} id="is-default" />
-          <Label htmlFor="is-default" className="text-sm cursor-pointer">Pipeline padrão</Label>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex items-center gap-2">
+            <Switch checked={isDefault} onCheckedChange={setIsDefault} id="is-default" />
+            <Label htmlFor="is-default" className="text-sm cursor-pointer">Pipeline padrão</Label>
+          </div>
+          <div className="space-y-1 min-w-[200px]">
+            <Label className="text-xs">Visualização padrão</Label>
+            <Select value={defaultView} onValueChange={setDefaultView}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(VIEWS_BY_ENTITY[entity] ?? VIEWS_BY_ENTITY.deal).map((v) => (
+                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">

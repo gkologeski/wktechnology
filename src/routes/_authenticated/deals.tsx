@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
@@ -37,6 +37,13 @@ function DealsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
+
+  useEffect(() => {
+    const dv = selected?.default_view;
+    if (dv && ["table", "board", "list", "forecast"].includes(dv)) {
+      setView(dv as typeof view);
+    }
+  }, [selected?.id, selected?.default_view]);
 
   const { data: deals = [] } = useQuery({
     queryKey: ["deals", "list"],
