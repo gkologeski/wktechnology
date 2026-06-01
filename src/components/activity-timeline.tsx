@@ -281,17 +281,49 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     ? team.filter((m) => m.name.toLowerCase().includes(mentionState.query.toLowerCase())).slice(0, 6)
     : [];
 
-  const handleCreateClick = (action: CreateAction) => {
-    if (action === "task") {
-      // Reuse the log composer in "task" mode (supports due_date)
-      setMode("log");
-      setType("task");
-      return;
-    }
+  const pickLog = (kind: LogKind) => {
+    setType(kind);
+    setComposerOpen(true);
+    setMoreOpen(false);
+  };
+
+  const pickCreate = (action: CreateAction) => {
+    setMoreOpen(false);
     setOpenAction(action);
   };
 
-  const currentLogLabel = LOG_TABS.find((t) => t.value === type)?.label ?? "Atividade";
+  const handleBarClick = (a: BarAction) => {
+    if (a.kind === "log") pickLog(a.value);
+    else pickCreate(a.value);
+  };
+
+  const currentLogLabel = LOG_LABEL[type] ?? "Atividade";
+
+  const renderCircleButton = (a: BarAction, active: boolean) => (
+    <button
+      key={`${a.kind}-${a.value}`}
+      type="button"
+      onClick={() => handleBarClick(a)}
+      disabled={a.kind === "create" && a.disabled}
+      title={a.kind === "create" && a.disabled ? "Em breve" : a.label}
+      className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group ${
+        a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
+      }`}
+    >
+      <span
+        className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+          active
+            ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+            : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+        }`}
+      >
+        {a.icon}
+      </span>
+      <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
+        {a.label}
+      </span>
+    </button>
+  );
 
   return (
     <div className="space-y-6">
@@ -304,139 +336,148 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           if (files.length) setPendingFiles((p) => [...p, ...files]);
         }}
       >
-        {/* Mode switch */}
-        <div className="flex items-center gap-1 px-4 pt-3">
-          <button
-            type="button"
-            onClick={() => setMode("log")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              mode === "log" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Registrar
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("create")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              mode === "create" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Criar
-          </button>
-          <span className="ml-auto text-[11px] text-muted-foreground hidden sm:inline">
-            {mode === "log" ? "Registre algo que já aconteceu" : "Inicie uma nova ação"}
-          </span>
+        {/* HubSpot-style action bar */}
+        <div className="px-4 pt-4 pb-3 flex items-start gap-3 overflow-x-auto">
+          {PINNED_ACTIONS.map((a) =>
+            renderCircleButton(a, composerOpen && a.kind === "log" && a.value === type)
+          )}
+          <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                title="Mais"
+                className="flex flex-col items-center gap-1.5 w-16 shrink-0 group"
+              >
+                <span className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+                  moreOpen
+                    ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+                    : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+                }`}>
+                  <MoreHorizontal className="h-5 w-5" />
+                </span>
+                <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight">Mais</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 p-0">
+              <Command>
+                <CommandInput placeholder="Pesquisar" />
+                <CommandList>
+                  <CommandEmpty>Nenhuma ação encontrada.</CommandEmpty>
+                  <CommandGroup heading="Criar / iniciar">
+                    {MORE_CREATE.map((a) => (
+                      <CommandItem
+                        key={`mc-${a.value}`}
+                        disabled={a.kind === "create" && a.disabled}
+                        onSelect={() => { if (!(a.kind === "create" && a.disabled)) handleBarClick(a); }}
+                        className="gap-3"
+                      >
+                        <span className="text-muted-foreground">{a.icon}</span>
+                        <span className="flex-1">{a.label}</span>
+                        {a.kind === "create" && a.disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                  <CommandSeparator />
+                  <CommandGroup heading="Registrar">
+                    {MORE_LOG.map((a) => (
+                      <CommandItem
+                        key={`ml-${a.value}`}
+                        onSelect={() => handleBarClick(a)}
+                        className="gap-3"
+                      >
+                        <span className="text-muted-foreground">{a.icon}</span>
+                        <span className="flex-1">{a.label}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
-        {mode === "log" ? (
-          <>
-            <nav className="flex border-b border-border/60 overflow-x-auto mt-2">
-              {LOG_TABS.map((t) => {
-                const active = type === t.value;
-                return (
-                  <button
-                    key={t.value}
-                    onClick={() => setType(t.value)}
-                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
-                      active
-                        ? "text-primary border-b-2 border-primary font-semibold"
-                        : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
-                    }`}
-                  >
-                    <span className={active ? "text-primary" : "text-muted-foreground"}>{ICONS[t.value]}</span>
-                    {t.label}
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="p-4 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
-                {type === "task" && (
-                  <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
-                )}
+        {/* Inline composer (only when a "log" action is selected) */}
+        {composerOpen && (
+          <div className="border-t border-border/60 p-4 space-y-3 bg-muted/10">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="text-primary">{ICONS[type]}</span>
+                {currentLogLabel}
               </div>
-              <div className="relative">
-                <RichHtmlEditor
-                  value={body}
-                  onChange={setBody}
-                  placeholder={
-                    type === "task"
-                      ? "Descreva a tarefa..."
-                      : "Descreva o que aconteceu... use @ para mencionar, arraste arquivos para anexar"
-                  }
-                  minHeight={96}
-                />
-                {mentionState?.open && filteredMentions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
-                    {filteredMentions.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => insertMention(m)}
-                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-                      >
-                        <AtSign className="h-3 w-3 text-muted-foreground" />
-                        {m.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {pendingFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {pendingFiles.map((f, i) => (
-                    <Badge key={i} variant="secondary" className="gap-1">
-                      <Paperclip className="h-3 w-3" /> {f.name}
-                      <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setComposerOpen(false); setSubject(""); setBody(""); setDueDate(""); setPendingFiles([]); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
+              {type === "task" && (
+                <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+              )}
+            </div>
+            <div className="relative">
+              <RichHtmlEditor
+                value={body}
+                onChange={setBody}
+                placeholder={
+                  type === "task"
+                    ? "Descreva a tarefa..."
+                    : "Descreva o que aconteceu... use @ para mencionar, arraste arquivos para anexar"
+                }
+                minHeight={96}
+              />
+              {mentionState?.open && filteredMentions.length > 0 && (
+                <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
+                  {filteredMentions.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => insertMention(m)}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+                    >
+                      <AtSign className="h-3 w-3 text-muted-foreground" />
+                      {m.name}
+                    </button>
                   ))}
                 </div>
               )}
-              <div className="flex justify-between items-center pt-3 border-t border-border/60">
-                <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                  <input
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files ?? []);
-                      if (files.length) setPendingFiles((p) => [...p, ...files]);
-                      e.target.value = "";
-                    }}
-                  />
-                  <Paperclip className="h-4 w-4" /> Anexar
-                </label>
-                <Button onClick={add} size="sm" className="rounded-xl shadow-md shadow-primary/20 font-semibold">
-                  Salvar {currentLogLabel}
-                </Button>
-              </div>
             </div>
-          </>
-        ) : (
-          <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {CREATE_TABS.map((t) => (
-              <button
-                key={t.value}
-                disabled={t.disabled}
-                onClick={() => handleCreateClick(t.value)}
-                className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors ${
-                  t.disabled
-                    ? "border-border/40 text-muted-foreground/50 cursor-not-allowed bg-muted/20"
-                    : "border-border/60 hover:bg-muted hover:border-primary/40"
-                }`}
-                title={t.disabled ? "Em breve" : undefined}
+            {pendingFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingFiles.map((f, i) => (
+                  <Badge key={i} variant="secondary" className="gap-1">
+                    <Paperclip className="h-3 w-3" /> {f.name}
+                    <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-3 border-t border-border/60">
+              <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length) setPendingFiles((p) => [...p, ...files]);
+                    e.target.value = "";
+                  }}
+                />
+                <Paperclip className="h-4 w-4" /> Anexar
+              </label>
+              <Button
+                onClick={async () => { await add(); setComposerOpen(false); }}
+                size="sm"
+                className="rounded-xl shadow-md shadow-primary/20 font-semibold"
               >
-                <span className={t.disabled ? "" : "text-primary"}>{t.icon}</span>
-                <span className="text-xs font-medium">{t.label}</span>
-                {t.disabled && <span className="text-[10px] uppercase tracking-wider">em breve</span>}
-              </button>
-            ))}
+                Salvar {currentLogLabel}
+              </Button>
+            </div>
           </div>
         )}
       </div>
+
 
       {/* Action dialogs */}
       <MeetingDialog
