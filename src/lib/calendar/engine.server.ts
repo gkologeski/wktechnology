@@ -292,6 +292,9 @@ export async function pushSingleActivity(accountId: string, activityId: string):
     const msg = e instanceof Error ? e.message : String(e);
     throw new Error(`Falha ao enviar evento ao Google: ${msg.slice(0, 200)}`);
   }
+}
+
+
 
 export async function tickAllCalendars(): Promise<{ processed: number }> {
   const { data: accounts } = await supabaseAdmin
