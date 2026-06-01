@@ -63,6 +63,20 @@ function CalendarsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const test = useMutation({
+    mutationFn: (id: string) => testFn({ data: { id } }).then((r) => ({ ...r, accountId: id })),
+    onSuccess: (r) => {
+      setTestResult(r);
+      if (r.ok) toast.success("Conexão validada com sucesso");
+      else toast.error("Falha na conexão — veja detalhes abaixo");
+      qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+    },
+    onError: (e: Error) => {
+      setTestResult({ accountId: "", ok: false, steps: [{ name: "Chamada ao servidor", status: "error", detail: e.message }] });
+      toast.error(e.message);
+    },
+  });
+
   return (
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
