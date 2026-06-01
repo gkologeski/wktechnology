@@ -293,7 +293,7 @@ export async function pushSingleActivity(accountId: string, activityId: string):
       }) as { id: string; hangoutLink?: string };
       meetLink = ev.hangoutLink ?? null;
       const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
-      const updates: Record<string, unknown> = { external_ids: newExt };
+      const updates: { external_ids: Record<string, string>; meeting_location?: string } = { external_ids: newExt };
       if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
       await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
       return { created: false, updated: true, event_id: ev.id, meet_link: meetLink };
@@ -305,7 +305,7 @@ export async function pushSingleActivity(accountId: string, activityId: string):
     eventId = ev.id;
     meetLink = ev.hangoutLink ?? null;
     const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
-    const updates: Record<string, unknown> = { external_ids: newExt };
+    const updates: { external_ids: Record<string, string>; meeting_location?: string } = { external_ids: newExt };
     if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
     await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
     return { created: true, updated: false, event_id: eventId, meet_link: meetLink };
