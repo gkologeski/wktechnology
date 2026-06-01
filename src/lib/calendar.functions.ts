@@ -14,6 +14,22 @@ export type CalendarTestStep = {
   detail?: string;
 };
 
+function describeGoogleCalendarError(status: number, text: string) {
+  let message = text;
+  try {
+    const parsed = JSON.parse(text) as { error?: { message?: string; status?: string; errors?: Array<{ reason?: string }> } };
+    message = parsed.error?.message || text;
+    const reason = parsed.error?.errors?.[0]?.reason || parsed.error?.status;
+    const disabledMatch = message.match(/project\s+(\d+)/i);
+    if (status === 403 && (reason === "accessNotConfigured" || /calendar api has not been used|it is disabled/i.test(message))) {
+      return `HTTP 403: A Google Calendar API está desativada no projeto Google Cloud${disabledMatch ? ` ${disabledMatch[1]}` : ""} usado pelas credenciais OAuth. Ative a Google Calendar API nesse mesmo projeto e aguarde alguns minutos antes de testar novamente. Detalhe do Google: ${message}`;
+    }
+  } catch {
+    // Keep the original response text when Google does not return JSON.
+  }
+  return `HTTP ${status}: ${message.slice(0, 400)}`;
+}
+
 export const testCalendarConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
@@ -80,7 +96,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const text = await res.text();
-      if (!res.ok) return fail("Listar calendários (API Google)", `HTTP ${res.status}: ${text.slice(0, 400)}`);
+      if (!res.ok) return fail("Listar calendários (API Google)", describeGoogleCalendarError(res.status, text));
       const j = JSON.parse(text) as { items?: Array<{ id: string; summary: string; primary?: boolean }> };
       const items = j.items ?? [];
       calendarCount = items.length;
@@ -97,7 +113,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
       });
       if (!ev.ok) {
         const t = await ev.text();
-        return fail("Ler eventos do calendário principal", `HTTP ${ev.status}: ${t.slice(0, 400)}`);
+        return fail("Ler eventos do calendário principal", describeGoogleCalendarError(ev.status, t));
       }
       steps.push({ name: "Ler eventos do calendário principal", status: "ok" });
     } catch (e) {
