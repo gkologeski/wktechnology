@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   listCalendarAccounts, startCalendarOAuth, disconnectCalendarAccount,
-  setCalendarSyncEnabled, syncCalendarNow, listCalendarEvents,
+  setCalendarSyncEnabled, setCalendarMeetEnabled, syncCalendarNow, listCalendarEvents,
   testCalendarConnection, type CalendarTestStep,
 } from "@/lib/calendar.functions";
 
