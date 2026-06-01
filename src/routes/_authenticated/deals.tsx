@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/deals")({
 
 function DealsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
 
   const [filters, setFilters] = useState<DealFilters>({
@@ -139,8 +140,7 @@ function DealsPage() {
     setDrawerOpen(true);
   };
   const openEdit = (d: Deal) => {
-    setEditing(d);
-    setDrawerOpen(true);
+    navigate({ to: "/deals/$id", params: { id: d.id } });
   };
 
   return (
