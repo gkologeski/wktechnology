@@ -3408,6 +3408,7 @@ export type Database = {
         Row: {
           config: Json
           created_at: string
+          default_view: string | null
           entity: string
           id: string
           is_default: boolean
@@ -3420,6 +3421,7 @@ export type Database = {
         Insert: {
           config?: Json
           created_at?: string
+          default_view?: string | null
           entity: string
           id?: string
           is_default?: boolean
@@ -3432,6 +3434,7 @@ export type Database = {
         Update: {
           config?: Json
           created_at?: string
+          default_view?: string | null
           entity?: string
           id?: string
           is_default?: boolean
