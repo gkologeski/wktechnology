@@ -129,6 +129,27 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   // Contact info resolved from parent entity for action dialogs
   const [target, setTarget] = useState<{ email?: string; phone?: string; contactId?: string; name?: string }>({});
 
+  // Ordem reorganizável das ações (persistida em localStorage)
+  const [order, setOrder] = useState<OrderState>(() => loadOrder());
+  const [dragKey, setDragKey] = useState<string | null>(null);
+
+  const persistOrder = (next: OrderState) => {
+    setOrder(next);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  const moveAction = (key: string, targetList: "pinned" | "more", targetIndex: number) => {
+    const next: OrderState = { pinned: [...order.pinned], more: [...order.more] };
+    const fromPinned = next.pinned.indexOf(key);
+    const fromMore = next.more.indexOf(key);
+    if (fromPinned >= 0) next.pinned.splice(fromPinned, 1);
+    if (fromMore >= 0) next.more.splice(fromMore, 1);
+    const dest = targetList === "pinned" ? next.pinned : next.more;
+    const clamped = Math.max(0, Math.min(targetIndex, dest.length));
+    dest.splice(clamped, 0, key);
+    persistOrder(next);
+  };
+
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
