@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -12,11 +11,10 @@ import {
 export const startGmailOAuth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ return_to: z.string().optional() }).parse(input ?? {}),
+    z.object({ return_to: z.string().optional(), origin: z.string().url() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const host = getRequestHost();
-    const redirectUri = callbackRedirectUri(host);
+    const redirectUri = callbackRedirectUri(data.origin);
     const state = signState({ user_id: context.userId, return_to: data.return_to });
     const url = buildGmailAuthUrl({ redirectUri, state });
     return { url };

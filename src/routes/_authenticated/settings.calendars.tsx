@@ -32,7 +32,7 @@ function CalendarsPage() {
   });
 
   const connect = useMutation({
-    mutationFn: () => startFn({ data: { provider: "google", return_to: "/settings/calendars" } }),
+    mutationFn: () => startFn({ data: { provider: "google", return_to: "/settings/calendars", origin: window.location.origin } }),
     onSuccess: (r) => { window.location.href = r.url; },
     onError: (e: Error) => toast.error(e.message),
   });

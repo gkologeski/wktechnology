@@ -135,7 +135,8 @@ export async function fetchGoogleUserInfo(accessToken: string) {
   return (await res.json()) as { email: string; name?: string; sub: string };
 }
 
-export function callbackRedirectUri(host: string): string {
-  // host comes from getRequestHost() — no scheme
-  return `https://${host}/api/public/oauth/google-callback`;
+export function callbackRedirectUri(origin: string): string {
+  // origin is a full origin like "https://app.example.com" (no trailing slash)
+  const trimmed = origin.replace(/\/+$/, "");
+  return `${trimmed}/api/public/oauth/google-callback`;
 }

@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -14,14 +13,14 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
     z.object({
       provider: z.enum(["google", "microsoft"]).default("google"),
       return_to: z.string().optional(),
+      origin: z.string().url(),
     }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     if (data.provider !== "google") {
       throw new Error("Microsoft Calendar ainda não disponível — em breve.");
     }
-    const host = getRequestHost();
-    const redirectUri = callbackRedirectUri(host);
+    const redirectUri = callbackRedirectUri(data.origin);
     const state = signState({ user_id: context.userId, return_to: data.return_to, mode: "calendar" });
     const url = buildCalendarAuthUrl({ redirectUri, state });
     return { url };

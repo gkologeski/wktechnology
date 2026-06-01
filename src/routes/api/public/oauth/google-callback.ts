@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getRequestHost } from "@tanstack/react-start/server";
+
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   callbackRedirectUri,
@@ -57,7 +57,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           );
         }
 
-        const redirectUri = callbackRedirectUri(getRequestHost());
+        const redirectUri = callbackRedirectUri(new URL(request.url).origin);
         const mode = parsed.mode === "calendar" ? "calendar" : "gmail";
 
         try {
