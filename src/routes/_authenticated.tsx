@@ -76,6 +76,7 @@ function AuthenticatedLayout() {
           </main>
         </div>
       </div>
+      <BugReportButton />
     </SidebarProvider>
   );
 }
