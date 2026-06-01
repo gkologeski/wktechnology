@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { listCalendarAccounts, syncCalendarNow } from "@/lib/calendar.functions";
+import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
 
 type Props = {
