@@ -224,6 +224,7 @@ function PipelineEditor({
           name: name.trim(),
           entity,
           is_default: isDefault,
+          default_view: defaultView,
           stages: payloadStages as unknown as never,
         });
         if (error) throw error;
@@ -234,6 +235,7 @@ function PipelineEditor({
             name: name.trim(),
             entity,
             is_default: isDefault,
+            default_view: defaultView,
             stages: payloadStages as unknown as never,
           })
           .eq("id", pipeline!.id);
