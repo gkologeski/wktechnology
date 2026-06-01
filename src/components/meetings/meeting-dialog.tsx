@@ -49,7 +49,7 @@ export function MeetingDialog({
   const [accountId, setAccountId] = useState<string | null>(null);
 
   const listAccounts = useServerFn(listCalendarAccounts);
-  const syncNow = useServerFn(syncCalendarNow);
+  const pushToCalendar = useServerFn(pushActivityToCalendar);
 
   useEffect(() => {
     if (!open) return;
