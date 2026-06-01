@@ -147,10 +147,20 @@ export const listCalendarAccounts = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("calendar_accounts")
-      .select("id, provider, email, primary_calendar_id, sync_enabled, last_synced_at, last_status, last_error, created_at")
+      .select("id, provider, email, primary_calendar_id, sync_enabled, auto_create_meet_link, last_synced_at, last_status, last_error, created_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { items: data ?? [] };
+  });
+
+export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("calendar_accounts").update({ auto_create_meet_link: data.enabled }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const disconnectCalendarAccount = createServerFn({ method: "POST" })
