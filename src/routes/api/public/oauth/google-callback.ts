@@ -57,7 +57,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           );
         }
 
-        const redirectUri = callbackRedirectUri(getRequestHost());
+        const redirectUri = callbackRedirectUri(new URL(request.url).origin);
         const mode = parsed.mode === "calendar" ? "calendar" : "gmail";
 
         try {
