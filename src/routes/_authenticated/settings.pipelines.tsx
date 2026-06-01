@@ -287,9 +287,22 @@ function PipelineEditor({
             </Select>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={isDefault} onCheckedChange={setIsDefault} id="is-default" />
-          <Label htmlFor="is-default" className="text-sm cursor-pointer">Pipeline padrão</Label>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex items-center gap-2">
+            <Switch checked={isDefault} onCheckedChange={setIsDefault} id="is-default" />
+            <Label htmlFor="is-default" className="text-sm cursor-pointer">Pipeline padrão</Label>
+          </div>
+          <div className="space-y-1 min-w-[200px]">
+            <Label className="text-xs">Visualização padrão</Label>
+            <Select value={defaultView} onValueChange={setDefaultView}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(VIEWS_BY_ENTITY[entity] ?? VIEWS_BY_ENTITY.deal).map((v) => (
+                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">
