@@ -58,6 +58,12 @@ function CalendarsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const toggleMeet = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => toggleMeetFn({ data: { id, enabled } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar_accounts"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => disconnectFn({ data: { id } }),
     onSuccess: () => { toast.success("Calendário desconectado"); qc.invalidateQueries({ queryKey: ["calendar_accounts"] }); },
