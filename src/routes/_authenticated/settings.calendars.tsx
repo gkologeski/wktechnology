@@ -106,9 +106,9 @@ function CalendarsPage() {
           )}
           <div className="divide-y">
             {accounts.data?.items.map((a) => {
-              const row = a as { id: string; provider: string; email: string; sync_enabled: boolean; last_synced_at: string | null; last_status: string | null; last_error: string | null };
+              const row = a as { id: string; provider: string; email: string; sync_enabled: boolean; auto_create_meet_link: boolean; last_synced_at: string | null; last_status: string | null; last_error: string | null };
               return (
-                <div key={row.id} className="flex items-center justify-between p-3">
+                <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
@@ -121,11 +121,15 @@ function CalendarsPage() {
                       {row.last_error && <span className="ml-2 text-destructive">{row.last_error}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-1 text-xs">
                       <Switch checked={row.sync_enabled} onCheckedChange={(v) => toggle.mutate({ id: row.id, enabled: v })} />
                       Sync
-                    </div>
+                    </label>
+                    <label className="flex items-center gap-1 text-xs" title="Cria automaticamente um link do Google Meet para reuniões novas enviadas ao Google Calendar">
+                      <Switch checked={row.auto_create_meet_link} onCheckedChange={(v) => toggleMeet.mutate({ id: row.id, enabled: v })} />
+                      Meet automático
+                    </label>
                     <Button variant="outline" size="sm" onClick={() => test.mutate(row.id)} disabled={test.isPending}>
                       <Stethoscope className="mr-1 h-4 w-4" />
                       {test.isPending && test.variables === row.id ? "Testando..." : "Testar"}
