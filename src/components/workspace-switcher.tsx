@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 export function WorkspaceSwitcher() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const listFn = useServerFn(listMyWorkspaces);
   const setFn = useServerFn(setActiveWorkspace);
   const qc = useQueryClient();
@@ -19,8 +19,9 @@ export function WorkspaceSwitcher() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-workspaces", user?.id],
     queryFn: () => listFn(),
-    enabled: !!user,
+    enabled: !!user && !!session?.access_token,
     staleTime: 60_000,
+    retry: false,
   });
 
   const switchMut = useMutation({
