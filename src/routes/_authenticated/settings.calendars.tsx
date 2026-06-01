@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Calendar, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Calendar, CheckCircle2, Plus, RefreshCw, Stethoscope, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   listCalendarAccounts, startCalendarOAuth, disconnectCalendarAccount,
   setCalendarSyncEnabled, syncCalendarNow, listCalendarEvents,
+  testCalendarConnection, type CalendarTestStep,
 } from "@/lib/calendar.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/calendars")({
