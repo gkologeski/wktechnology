@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/deals")({
 
 function DealsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
 
   const [filters, setFilters] = useState<DealFilters>({
