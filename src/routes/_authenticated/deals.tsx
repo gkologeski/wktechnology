@@ -18,16 +18,19 @@ import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 
 export const Route = createFileRoute("/_authenticated/deals")({
-  component: DealsPage,
+  component: DealsRoute,
 });
+
+function DealsRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/deals") return <Outlet />;
+  return <DealsPage />;
+}
 
 function DealsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
-
-  if (location.pathname !== "/deals") return <Outlet />;
 
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
