@@ -155,11 +155,14 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     const { data, error } = await supabase
       .from("activities")
       .select("*")
-      .eq(relatedKey, relatedId)
-      .order("hs_createdate", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
+      .eq(relatedKey, relatedId);
     if (error) toast.error(error.message);
-    setItems((data as Activity[]) ?? []);
+    const rows = ((data as Activity[]) ?? []).slice().sort((a, b) => {
+      const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
+      const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
+      return tb - ta;
+    });
+    setItems(rows);
     setLoading(false);
   };
 
