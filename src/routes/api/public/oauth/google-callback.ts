@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getRequestHost } from "@tanstack/react-start/server";
+
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   callbackRedirectUri,
