@@ -251,6 +251,12 @@ export function AppSidebar() {
                     Meus chamados
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings/billing">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Planos e cobrança
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="h-4 w-4 mr-2" />
