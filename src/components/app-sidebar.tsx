@@ -245,6 +245,12 @@ export function AppSidebar() {
                     Segurança (2FA)
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/my-bug-reports">
+                    <Bug className="h-4 w-4 mr-2" />
+                    Meus chamados
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="h-4 w-4 mr-2" />
