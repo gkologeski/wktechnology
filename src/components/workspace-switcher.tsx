@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function WorkspaceSwitcher() {
@@ -18,7 +19,14 @@ export function WorkspaceSwitcher() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-workspaces", user?.id],
-    queryFn: () => listFn(),
+    queryFn: async () => {
+      // Double-check the supabase client has a live token before invoking the
+      // protected server fn — avoids "No authorization header" race during
+      // sign-out / token refresh.
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session?.access_token) return { workspaces: [], active_workspace_id: null };
+      return listFn();
+    },
     enabled: !!user && !!session?.access_token,
     staleTime: 60_000,
     retry: false,
