@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +18,14 @@ import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 
 export const Route = createFileRoute("/_authenticated/deals")({
-  component: DealsPage,
+  component: DealsRoute,
 });
+
+function DealsRoute() {
+  const location = useLocation();
+  if (location.pathname !== "/deals") return <Outlet />;
+  return <DealsPage />;
+}
 
 function DealsPage() {
   const { user } = useAuth();
