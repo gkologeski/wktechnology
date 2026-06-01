@@ -24,6 +24,7 @@ function CalendarsPage() {
   const startFn = useServerFn(startCalendarOAuth);
   const disconnectFn = useServerFn(disconnectCalendarAccount);
   const toggleFn = useServerFn(setCalendarSyncEnabled);
+  const toggleMeetFn = useServerFn(setCalendarMeetEnabled);
   const syncFn = useServerFn(syncCalendarNow);
   const eventsFn = useServerFn(listCalendarEvents);
   const testFn = useServerFn(testCalendarConnection);
