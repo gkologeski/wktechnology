@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Calendar, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Calendar, CheckCircle2, Plus, RefreshCw, Stethoscope, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   listCalendarAccounts, startCalendarOAuth, disconnectCalendarAccount,
   setCalendarSyncEnabled, syncCalendarNow, listCalendarEvents,
+  testCalendarConnection, type CalendarTestStep,
 } from "@/lib/calendar.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/calendars")({
@@ -24,6 +26,8 @@ function CalendarsPage() {
   const toggleFn = useServerFn(setCalendarSyncEnabled);
   const syncFn = useServerFn(syncCalendarNow);
   const eventsFn = useServerFn(listCalendarEvents);
+  const testFn = useServerFn(testCalendarConnection);
+  const [testResult, setTestResult] = useState<{ accountId: string; ok: boolean; steps: CalendarTestStep[]; calendar_count?: number; primary_email?: string } | null>(null);
 
   const accounts = useQuery({ queryKey: ["calendar_accounts"], queryFn: () => listFn() });
   const events = useQuery({
@@ -57,6 +61,20 @@ function CalendarsPage() {
     mutationFn: (id: string) => disconnectFn({ data: { id } }),
     onSuccess: () => { toast.success("Calendário desconectado"); qc.invalidateQueries({ queryKey: ["calendar_accounts"] }); },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  const test = useMutation({
+    mutationFn: (id: string) => testFn({ data: { id } }).then((r) => ({ ...r, accountId: id })),
+    onSuccess: (r) => {
+      setTestResult(r);
+      if (r.ok) toast.success("Conexão validada com sucesso");
+      else toast.error("Falha na conexão — veja detalhes abaixo");
+      qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+    },
+    onError: (e: Error) => {
+      setTestResult({ accountId: "", ok: false, steps: [{ name: "Chamada ao servidor", status: "error", detail: e.message }] });
+      toast.error(e.message);
+    },
   });
 
   return (
@@ -101,7 +119,11 @@ function CalendarsPage() {
                       <Switch checked={row.sync_enabled} onCheckedChange={(v) => toggle.mutate({ id: row.id, enabled: v })} />
                       Sync
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => sync.mutate(row.id)} disabled={sync.isPending}>
+                    <Button variant="outline" size="sm" onClick={() => test.mutate(row.id)} disabled={test.isPending}>
+                      <Stethoscope className="mr-1 h-4 w-4" />
+                      {test.isPending && test.variables === row.id ? "Testando..." : "Testar"}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => sync.mutate(row.id)} disabled={sync.isPending} title="Sincronizar agora">
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => { if (confirm("Desconectar calendário?")) remove.mutate(row.id); }}>
@@ -114,6 +136,58 @@ function CalendarsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {testResult && (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {testResult.ok ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-destructive" />
+                )}
+                <h3 className="font-semibold">
+                  {testResult.ok ? "Conexão funcionando" : "Falha na conexão"}
+                  {testResult.primary_email && ` — ${testResult.primary_email}`}
+                </h3>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setTestResult(null)}>Fechar</Button>
+            </div>
+            {testResult.ok && typeof testResult.calendar_count === "number" && (
+              <p className="text-sm text-muted-foreground">
+                {testResult.calendar_count} calendário(s) acessível(is) na conta Google.
+              </p>
+            )}
+            <ol className="space-y-2">
+              {testResult.steps.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  {s.status === "ok" ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  ) : s.status === "error" ? (
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  ) : (
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-medium">{s.name}</div>
+                    {s.detail && (
+                      <div className={s.status === "error" ? "break-words text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                        {s.detail}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+            {!testResult.ok && (
+              <p className="text-xs text-muted-foreground">
+                Dica: se o erro mencionar <code>invalid_grant</code> ou <code>refresh_token</code>, desconecte e reconecte concedendo acesso offline. Se mencionar <code>redirect_uri_mismatch</code>, adicione a URL atual aos URIs autorizados no Google Cloud Console.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Próximos eventos</h2>
