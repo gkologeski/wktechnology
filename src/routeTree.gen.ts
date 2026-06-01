@@ -80,6 +80,7 @@ import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
 import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
+import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings.billing'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -526,6 +527,12 @@ const AuthenticatedSettingsBookingRoute =
     path: '/booking',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsBillingRoute =
+  AuthenticatedSettingsBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsAuditLogRoute =
   AuthenticatedSettingsAuditLogRouteImport.update({
     id: '/audit-log',
@@ -841,6 +848,7 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
@@ -958,6 +966,7 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
@@ -1078,6 +1087,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
+  '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
@@ -1199,6 +1209,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/settings/api-keys'
     | '/settings/audit-log'
+    | '/settings/billing'
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
@@ -1316,6 +1327,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/settings/api-keys'
     | '/settings/audit-log'
+    | '/settings/billing'
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
@@ -1435,6 +1447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
+    | '/_authenticated/settings/billing'
     | '/_authenticated/settings/booking'
     | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
@@ -2054,6 +2067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsBookingRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/billing': {
+      id: '/_authenticated/settings/billing'
+      path: '/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof AuthenticatedSettingsBillingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/audit-log': {
       id: '/_authenticated/settings/audit-log'
       path: '/audit-log'
@@ -2473,6 +2493,7 @@ const AuthenticatedSettingsRolesRouteWithChildren =
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
+  AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
@@ -2517,6 +2538,7 @@ interface AuthenticatedSettingsRouteChildren {
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
+  AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
