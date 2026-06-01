@@ -73,7 +73,7 @@ function PipelinesSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pipelines")
-        .select("id, name, entity, is_default, stages")
+        .select("id, name, entity, is_default, default_view, stages")
         .order("entity", { ascending: true })
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
