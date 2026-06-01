@@ -87,8 +87,10 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const { user } = useAuth();
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<"log" | "create">("log");
-  const [type, setType] = useState<ActivityType>("note");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [type, setType] = useState<LogKind>("note");
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
