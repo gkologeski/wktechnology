@@ -38,6 +38,8 @@ type Props = {
   contactName?: string;
   trigger?: ReactNode;
   onSent?: (conversationId: string) => void;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 };
 
 export function SendWhatsAppDialog({
@@ -46,8 +48,13 @@ export function SendWhatsAppDialog({
   contactName,
   trigger,
   onSent,
+  open: openProp,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChange ?? setOpenState;
+
   const [to, setTo] = useState(defaultTo);
   const [body, setBody] = useState("");
   const [templateName, setTemplateName] = useState<string>("");
