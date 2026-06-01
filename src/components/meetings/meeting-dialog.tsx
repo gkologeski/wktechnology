@@ -94,8 +94,9 @@ export function MeetingDialog({
 
       if (accountId && inserted?.id) {
         try {
-          await pushToCalendar({ data: { account_id: accountId, activity_id: inserted.id } });
-          toast.success("Reunião criada e sincronizada com o Google Calendar.");
+          const r = await pushToCalendar({ data: { account_id: accountId, activity_id: inserted.id } });
+          if (r.meet_link) toast.success(`Reunião criada com Google Meet: ${r.meet_link}`);
+          else toast.success("Reunião criada e sincronizada com o Google Calendar.");
         } catch (e) {
           toast.warning(`Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`);
         }
