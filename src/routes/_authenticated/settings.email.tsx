@@ -65,7 +65,7 @@ function EmailSettings() {
 
   const connect = async () => {
     try {
-      const r = await start({ data: { return_to: "/settings/email" } });
+      const r = await start({ data: { return_to: "/settings/email", origin: window.location.origin } });
       window.location.href = r.url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
