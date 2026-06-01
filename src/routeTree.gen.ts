@@ -28,6 +28,7 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
+import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -221,6 +222,12 @@ const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMyBugReportsRoute =
+  AuthenticatedMyBugReportsRouteImport.update({
+    id: '/my-bug-reports',
+    path: '/my-bug-reports',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -808,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -925,6 +933,7 @@ export interface FileRoutesByTo {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -1043,6 +1052,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1163,6 +1173,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/integrations'
     | '/leads'
+    | '/my-bug-reports'
     | '/notes'
     | '/reports'
     | '/settings'
@@ -1280,6 +1291,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/leads'
+    | '/my-bug-reports'
     | '/notes'
     | '/reports'
     | '/tasks'
@@ -1397,6 +1409,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
     | '/_authenticated/leads'
+    | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
@@ -1675,6 +1688,13 @@ declare module '@tanstack/react-router' {
       path: '/notes'
       fullPath: '/notes'
       preLoaderRoute: typeof AuthenticatedNotesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/my-bug-reports': {
+      id: '/_authenticated/my-bug-reports'
+      path: '/my-bug-reports'
+      fullPath: '/my-bug-reports'
+      preLoaderRoute: typeof AuthenticatedMyBugReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/leads': {
@@ -2601,6 +2621,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
+  AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -2624,6 +2645,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
+  AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
