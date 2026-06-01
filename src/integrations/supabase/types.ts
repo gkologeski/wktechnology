@@ -3502,6 +3502,71 @@ export type Database = {
           },
         ]
       }
+      plan_entitlements: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          key: string
+          limit_int: number | null
+          plan_code: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          key: string
+          limit_int?: number | null
+          plan_code: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          key?: string
+          limit_int?: number | null
+          plan_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_entitlements_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          is_active: boolean
+          name: string
+          price_monthly: number
+          price_yearly: number
+          tier_rank: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          is_active?: boolean
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          tier_rank: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          is_active?: boolean
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          tier_rank?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -5277,6 +5342,30 @@ export type Database = {
           },
         ]
       }
+      usage_counters: {
+        Row: {
+          key: string
+          period_month: string
+          updated_at: string
+          used: number
+          workspace_owner_id: string
+        }
+        Insert: {
+          key: string
+          period_month: string
+          updated_at?: string
+          used?: number
+          workspace_owner_id: string
+        }
+        Update: {
+          key?: string
+          period_month?: string
+          updated_at?: string
+          used?: number
+          workspace_owner_id?: string
+        }
+        Relationships: []
+      }
       user_grid_preferences: {
         Row: {
           created_at: string
@@ -5983,6 +6072,47 @@ export type Database = {
           },
         ]
       }
+      workspace_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string
+          plan_code: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          workspace_owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          plan_code?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_owner_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          plan_code?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_subscriptions_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       workspaces: {
         Row: {
           created_at: string
@@ -6084,6 +6214,15 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_entitlement_limit: {
+        Args: { _key: string; _workspace: string }
+        Returns: number
+      }
+      get_workspace_plan: { Args: { _workspace: string }; Returns: string }
+      has_entitlement: {
+        Args: { _key: string; _workspace: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
