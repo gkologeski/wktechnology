@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar_accounts ADD COLUMN IF NOT EXISTS auto_create_meet_link boolean NOT NULL DEFAULT true;
