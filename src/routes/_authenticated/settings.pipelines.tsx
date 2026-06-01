@@ -153,6 +153,7 @@ function PipelineEditor({
   const [name, setName] = useState(pipeline?.name ?? "");
   const [entity, setEntity] = useState(pipeline?.entity ?? "deal");
   const [isDefault, setIsDefault] = useState(pipeline?.is_default ?? false);
+  const [defaultView, setDefaultView] = useState<string>(pipeline?.default_view ?? "table");
   const [stages, setStages] = useState<Stage[]>(
     pipeline?.stages?.length
       ? pipeline.stages
@@ -165,6 +166,7 @@ function PipelineEditor({
     setName(pipeline?.name ?? "");
     setEntity(pipeline?.entity ?? "deal");
     setIsDefault(pipeline?.is_default ?? false);
+    setDefaultView(pipeline?.default_view ?? "table");
     setStages(
       pipeline?.stages?.length
         ? pipeline.stages
