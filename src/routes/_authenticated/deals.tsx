@@ -24,7 +24,10 @@ export const Route = createFileRoute("/_authenticated/deals")({
 function DealsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
+
+  if (location.pathname !== "/deals") return <Outlet />;
 
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
