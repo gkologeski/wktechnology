@@ -36,8 +36,12 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4 py-12">
+      <h1 className="mb-8 text-5xl md:text-6xl font-bold tracking-tight text-foreground text-center">
+        TechSales <span className="text-primary">CRM</span>
+      </h1>
       <Card className="w-full max-w-md">
+
         <CardHeader>
           <CardTitle>Entrar no CRM</CardTitle>
           <CardDescription>Acesse sua conta para gerenciar seus leads, contatos e negócios.</CardDescription>
