@@ -26,6 +26,8 @@ function CalendarsPage() {
   const toggleFn = useServerFn(setCalendarSyncEnabled);
   const syncFn = useServerFn(syncCalendarNow);
   const eventsFn = useServerFn(listCalendarEvents);
+  const testFn = useServerFn(testCalendarConnection);
+  const [testResult, setTestResult] = useState<{ accountId: string; ok: boolean; steps: CalendarTestStep[]; calendar_count?: number; primary_email?: string } | null>(null);
 
   const accounts = useQuery({ queryKey: ["calendar_accounts"], queryFn: () => listFn() });
   const events = useQuery({
