@@ -74,6 +74,11 @@ function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <div className="mt-4 text-xs text-muted-foreground flex gap-4">
+        <Link to="/privacy" className="hover:underline">Política de Privacidade</Link>
+        <Link to="/terms" className="hover:underline">Termos de Serviço</Link>
+      </div>
     </div>
   );
 }
+
