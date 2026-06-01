@@ -145,7 +145,7 @@ export function AppSidebar() {
       <SidebarHeader className="px-3 py-4 gap-2">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground grid place-items-center text-sm">C</div>
-          <span className="group-data-[collapsible=icon]:hidden">CRM</span>
+          <span className="group-data-[collapsible=icon]:hidden">TechSales CRM</span>
         </Link>
         <div className="group-data-[collapsible=icon]:hidden">
           <WorkspaceSwitcher />
