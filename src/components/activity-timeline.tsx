@@ -14,7 +14,7 @@ import {
   MessageSquare, MessageCircle, Linkedin, Send, Inbox, Workflow, MoreHorizontal, Lock,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
@@ -57,30 +57,51 @@ type BarAction =
   | { kind: "log"; value: LogKind; label: string; icon: ReactNode }
   | { kind: "create"; value: CreateAction; label: string; icon: ReactNode; disabled?: boolean };
 
-// Botões fixos da barra (ordem visual)
-const PINNED_ACTIONS: BarAction[] = [
+const actionKey = (a: BarAction) => `${a.kind}:${a.value}`;
+
+// Catálogo de todas as ações disponíveis
+const ALL_ACTIONS: BarAction[] = [
   { kind: "log", value: "note", label: "Nota", icon: <StickyNote className="h-5 w-5" /> },
   { kind: "create", value: "email", label: "E-mail", icon: <Mail className="h-5 w-5" /> },
   { kind: "create", value: "call", label: "Ligação", icon: <Phone className="h-5 w-5" /> },
   { kind: "log", value: "task", label: "Tarefa", icon: <ListTodo className="h-5 w-5" /> },
   { kind: "create", value: "meeting", label: "Reunião", icon: <CalendarDays className="h-5 w-5" /> },
+  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
+  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-5 w-5" />, disabled: true },
+  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-5 w-5" />, disabled: true },
+  { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-5 w-5" /> },
+  { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-5 w-5" /> },
+  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-5 w-5" /> },
+  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
+  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-5 w-5" /> },
+  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-5 w-5" /> },
+  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-5 w-5" /> },
 ];
+const ACTIONS_BY_KEY: Record<string, BarAction> = Object.fromEntries(ALL_ACTIONS.map((a) => [actionKey(a), a]));
 
-// Itens do menu "Mais"
-const MORE_CREATE: BarAction[] = [
-  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
-  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-4 w-4" />, disabled: true },
-  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-4 w-4" />, disabled: true },
-];
-const MORE_LOG: BarAction[] = [
-  { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-4 w-4" /> },
-  { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-4 w-4" /> },
-  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-4 w-4" /> },
-  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
-  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-4 w-4" /> },
-  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-4 w-4" /> },
-  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-4 w-4" /> },
-];
+const DEFAULT_PINNED = ALL_ACTIONS.slice(0, 5).map(actionKey);
+const DEFAULT_MORE = ALL_ACTIONS.slice(5).map(actionKey);
+
+const STORAGE_KEY = "activity-action-order-v1";
+
+type OrderState = { pinned: string[]; more: string[] };
+
+function loadOrder(): OrderState {
+  if (typeof window === "undefined") return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+    const parsed = JSON.parse(raw) as Partial<OrderState>;
+    const seen = new Set<string>([...(parsed.pinned ?? []), ...(parsed.more ?? [])]);
+    const missing = ALL_ACTIONS.map(actionKey).filter((k) => !seen.has(k));
+    return {
+      pinned: (parsed.pinned ?? DEFAULT_PINNED).filter((k) => k in ACTIONS_BY_KEY),
+      more: [...(parsed.more ?? DEFAULT_MORE).filter((k) => k in ACTIONS_BY_KEY), ...missing],
+    };
+  } catch {
+    return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+  }
+}
 
 
 export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: RelatedKey; relatedId: string }) {
@@ -107,6 +128,27 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
 
   // Contact info resolved from parent entity for action dialogs
   const [target, setTarget] = useState<{ email?: string; phone?: string; contactId?: string; name?: string }>({});
+
+  // Ordem reorganizável das ações (persistida em localStorage)
+  const [order, setOrder] = useState<OrderState>(() => loadOrder());
+  const [dragKey, setDragKey] = useState<string | null>(null);
+
+  const persistOrder = (next: OrderState) => {
+    setOrder(next);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  const moveAction = (key: string, targetList: "pinned" | "more", targetIndex: number) => {
+    const next: OrderState = { pinned: [...order.pinned], more: [...order.more] };
+    const fromPinned = next.pinned.indexOf(key);
+    const fromMore = next.more.indexOf(key);
+    if (fromPinned >= 0) next.pinned.splice(fromPinned, 1);
+    if (fromMore >= 0) next.more.splice(fromMore, 1);
+    const dest = targetList === "pinned" ? next.pinned : next.more;
+    const clamped = Math.max(0, Math.min(targetIndex, dest.length));
+    dest.splice(clamped, 0, key);
+    persistOrder(next);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -299,31 +341,76 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
 
   const currentLogLabel = LOG_LABEL[type] ?? "Atividade";
 
-  const renderCircleButton = (a: BarAction, active: boolean) => (
-    <button
-      key={`${a.kind}-${a.value}`}
-      type="button"
-      onClick={() => handleBarClick(a)}
-      disabled={a.kind === "create" && a.disabled}
-      title={a.kind === "create" && a.disabled ? "Em breve" : a.label}
-      className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group ${
-        a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
-      }`}
-    >
-      <span
-        className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
-          active
-            ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
-            : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
-        }`}
+  const [moreQuery, setMoreQuery] = useState("");
+
+  const onDragStart = (e: React.DragEvent, key: string) => {
+    e.dataTransfer.setData("text/x-action-key", key);
+    e.dataTransfer.effectAllowed = "move";
+    setDragKey(key);
+  };
+  const onDragEnd = () => setDragKey(null);
+  const allowDrop = (e: React.DragEvent) => {
+    if (dragKey || e.dataTransfer.types.includes("text/x-action-key")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+  };
+  const dropOnItem = (e: React.DragEvent, list: "pinned" | "more", index: number) => {
+    const key = e.dataTransfer.getData("text/x-action-key") || dragKey;
+    if (!key) return;
+    e.preventDefault();
+    e.stopPropagation();
+    moveAction(key, list, index);
+    setDragKey(null);
+  };
+  const dropOnList = (e: React.DragEvent, list: "pinned" | "more") => {
+    const key = e.dataTransfer.getData("text/x-action-key") || dragKey;
+    if (!key) return;
+    e.preventDefault();
+    moveAction(key, list, (list === "pinned" ? order.pinned : order.more).length);
+    setDragKey(null);
+  };
+
+  const renderCircleButton = (a: BarAction, active: boolean, index: number) => {
+    const key = actionKey(a);
+    const isDragging = dragKey === key;
+    return (
+      <button
+        key={key}
+        type="button"
+        draggable
+        onDragStart={(e) => onDragStart(e, key)}
+        onDragEnd={onDragEnd}
+        onDragOver={allowDrop}
+        onDrop={(e) => dropOnItem(e, "pinned", index)}
+        onClick={() => handleBarClick(a)}
+        disabled={a.kind === "create" && a.disabled}
+        title={a.kind === "create" && a.disabled ? "Em breve" : `${a.label} (arraste para reordenar)`}
+        className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group cursor-grab active:cursor-grabbing ${
+          a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
+        } ${isDragging ? "opacity-40" : ""}`}
       >
-        {a.icon}
-      </span>
-      <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
-        {a.label}
-      </span>
-    </button>
-  );
+        <span
+          className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+            active
+              ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+              : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+          }`}
+        >
+          {a.icon}
+        </span>
+        <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
+          {a.label}
+        </span>
+      </button>
+    );
+  };
+
+  const pinnedActions = order.pinned.map((k) => ACTIONS_BY_KEY[k]).filter(Boolean);
+  const moreActions = order.more.map((k) => ACTIONS_BY_KEY[k]).filter(Boolean);
+  const moreFiltered = moreActions
+    .map((a, i) => ({ a, i }))
+    .filter(({ a }) => a.label.toLowerCase().includes(moreQuery.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -337,9 +424,13 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         }}
       >
         {/* HubSpot-style action bar */}
-        <div className="px-4 pt-4 pb-3 flex items-start gap-3 overflow-x-auto">
-          {PINNED_ACTIONS.map((a) =>
-            renderCircleButton(a, composerOpen && a.kind === "log" && a.value === type)
+        <div
+          className="px-4 pt-4 pb-3 flex items-start gap-3 overflow-x-auto"
+          onDragOver={allowDrop}
+          onDrop={(e) => dropOnList(e, "pinned")}
+        >
+          {pinnedActions.map((a, i) =>
+            renderCircleButton(a, composerOpen && a.kind === "log" && a.value === type, i)
           )}
           <Popover open={moreOpen} onOpenChange={setMoreOpen}>
             <PopoverTrigger asChild>
@@ -359,42 +450,51 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 p-0">
-              <Command>
-                <CommandInput placeholder="Pesquisar" />
-                <CommandList>
-                  <CommandEmpty>Nenhuma ação encontrada.</CommandEmpty>
-                  <CommandGroup heading="Criar / iniciar">
-                    {MORE_CREATE.map((a) => (
-                      <CommandItem
-                        key={`mc-${a.value}`}
-                        disabled={a.kind === "create" && a.disabled}
-                        onSelect={() => { if (!(a.kind === "create" && a.disabled)) handleBarClick(a); }}
-                        className="gap-3"
-                      >
-                        <span className="text-muted-foreground">{a.icon}</span>
-                        <span className="flex-1">{a.label}</span>
-                        {a.kind === "create" && a.disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                  <CommandSeparator />
-                  <CommandGroup heading="Registrar">
-                    {MORE_LOG.map((a) => (
-                      <CommandItem
-                        key={`ml-${a.value}`}
-                        onSelect={() => handleBarClick(a)}
-                        className="gap-3"
-                      >
-                        <span className="text-muted-foreground">{a.icon}</span>
-                        <span className="flex-1">{a.label}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
+              <div className="p-2 border-b">
+                <Input
+                  value={moreQuery}
+                  onChange={(e) => setMoreQuery(e.target.value)}
+                  placeholder="Pesquisar"
+                  className="h-8"
+                />
+              </div>
+              <div
+                className="max-h-80 overflow-y-auto py-1"
+                onDragOver={allowDrop}
+                onDrop={(e) => dropOnList(e, "more")}
+              >
+                {moreFiltered.length === 0 && (
+                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nenhuma ação encontrada.</p>
+                )}
+                {moreFiltered.map(({ a, i }) => {
+                  const key = actionKey(a);
+                  const disabled = a.kind === "create" && a.disabled;
+                  const isDragging = dragKey === key;
+                  return (
+                    <div
+                      key={`m-${key}`}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, key)}
+                      onDragEnd={onDragEnd}
+                      onDragOver={allowDrop}
+                      onDrop={(e) => dropOnItem(e, "more", i)}
+                      onClick={() => { if (!disabled) handleBarClick(a); }}
+                      className={`flex items-center gap-3 px-3 py-2 mx-1 rounded cursor-grab active:cursor-grabbing hover:bg-muted ${
+                        disabled ? "opacity-50 cursor-not-allowed" : ""
+                      } ${isDragging ? "opacity-40" : ""}`}
+                      title="Arraste para reordenar ou para a barra"
+                    >
+                      <span className="text-muted-foreground">{a.icon}</span>
+                      <span className="flex-1 text-sm">{a.label}</span>
+                      {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </div>
+                  );
+                })}
+              </div>
             </PopoverContent>
           </Popover>
         </div>
+
 
         {/* Inline composer (only when a "log" action is selected) */}
         {composerOpen && (
