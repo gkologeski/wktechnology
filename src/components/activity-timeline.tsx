@@ -57,30 +57,51 @@ type BarAction =
   | { kind: "log"; value: LogKind; label: string; icon: ReactNode }
   | { kind: "create"; value: CreateAction; label: string; icon: ReactNode; disabled?: boolean };
 
-// Botões fixos da barra (ordem visual)
-const PINNED_ACTIONS: BarAction[] = [
+const actionKey = (a: BarAction) => `${a.kind}:${a.value}`;
+
+// Catálogo de todas as ações disponíveis
+const ALL_ACTIONS: BarAction[] = [
   { kind: "log", value: "note", label: "Nota", icon: <StickyNote className="h-5 w-5" /> },
   { kind: "create", value: "email", label: "E-mail", icon: <Mail className="h-5 w-5" /> },
   { kind: "create", value: "call", label: "Ligação", icon: <Phone className="h-5 w-5" /> },
   { kind: "log", value: "task", label: "Tarefa", icon: <ListTodo className="h-5 w-5" /> },
   { kind: "create", value: "meeting", label: "Reunião", icon: <CalendarDays className="h-5 w-5" /> },
+  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
+  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-5 w-5" />, disabled: true },
+  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-5 w-5" />, disabled: true },
+  { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-5 w-5" /> },
+  { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-5 w-5" /> },
+  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-5 w-5" /> },
+  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
+  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-5 w-5" /> },
+  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-5 w-5" /> },
+  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-5 w-5" /> },
 ];
+const ACTIONS_BY_KEY: Record<string, BarAction> = Object.fromEntries(ALL_ACTIONS.map((a) => [actionKey(a), a]));
 
-// Itens do menu "Mais"
-const MORE_CREATE: BarAction[] = [
-  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
-  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-4 w-4" />, disabled: true },
-  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-4 w-4" />, disabled: true },
-];
-const MORE_LOG: BarAction[] = [
-  { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-4 w-4" /> },
-  { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-4 w-4" /> },
-  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-4 w-4" /> },
-  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-4 w-4" /> },
-  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-4 w-4" /> },
-  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-4 w-4" /> },
-  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-4 w-4" /> },
-];
+const DEFAULT_PINNED = ALL_ACTIONS.slice(0, 5).map(actionKey);
+const DEFAULT_MORE = ALL_ACTIONS.slice(5).map(actionKey);
+
+const STORAGE_KEY = "activity-action-order-v1";
+
+type OrderState = { pinned: string[]; more: string[] };
+
+function loadOrder(): OrderState {
+  if (typeof window === "undefined") return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+    const parsed = JSON.parse(raw) as Partial<OrderState>;
+    const seen = new Set<string>([...(parsed.pinned ?? []), ...(parsed.more ?? [])]);
+    const missing = ALL_ACTIONS.map(actionKey).filter((k) => !seen.has(k));
+    return {
+      pinned: (parsed.pinned ?? DEFAULT_PINNED).filter((k) => k in ACTIONS_BY_KEY),
+      more: [...(parsed.more ?? DEFAULT_MORE).filter((k) => k in ACTIONS_BY_KEY), ...missing],
+    };
+  } catch {
+    return { pinned: DEFAULT_PINNED, more: DEFAULT_MORE };
+  }
+}
 
 
 export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: RelatedKey; relatedId: string }) {
