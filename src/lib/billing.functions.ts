@@ -101,7 +101,13 @@ export const getMyPlan = createServerFn({ method: "GET" })
     ];
     await Promise.all(
       entityCounts.map(async ([table, key]) => {
-        const { count } = await supabaseAdmin
+        const { count } = await (supabaseAdmin as unknown as {
+          from: (t: string) => {
+            select: (c: string, o: { count: "exact"; head: true }) => {
+              eq: (a: string, b: string) => { is: (a: string, b: null) => Promise<{ count: number | null }> };
+            };
+          };
+        })
           .from(table)
           .select("id", { count: "exact", head: true })
           .eq("owner_id", owner)
