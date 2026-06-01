@@ -17,6 +17,7 @@ export type Pipeline = {
   name: string;
   entity: string;
   is_default: boolean;
+  default_view?: string | null;
   stages: PipelineStage[];
 };
 
