@@ -1,11 +1,111 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   buildCalendarAuthUrl,
   callbackRedirectUri,
   signState,
 } from "@/lib/email-oauth.server";
+
+export type CalendarTestStep = {
+  name: string;
+  status: "ok" | "error" | "skipped";
+  detail?: string;
+};
+
+export const testCalendarConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; steps: CalendarTestStep[]; calendar_count?: number; primary_email?: string }> => {
+    const steps: CalendarTestStep[] = [];
+    const fail = (name: string, detail: string) => {
+      steps.push({ name, status: "error", detail });
+      return { ok: false, steps };
+    };
+
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      return fail("Credenciais OAuth do Google", "Variáveis GOOGLE_OAUTH_CLIENT_ID/SECRET ausentes no servidor.");
+    }
+    steps.push({ name: "Credenciais OAuth do Google", status: "ok", detail: "Client ID/Secret configurados." });
+
+    const { data: row, error: ownErr } = await context.supabase
+      .from("calendar_accounts").select("id, email").eq("id", data.id).maybeSingle();
+    if (ownErr || !row) return fail("Conta vinculada ao usuário", ownErr?.message || "Conta não encontrada ou sem permissão.");
+    steps.push({ name: "Conta vinculada ao usuário", status: "ok", detail: row.email });
+
+    const { data: full, error: fullErr } = await supabaseAdmin
+      .from("calendar_accounts")
+      .select("id, email, access_token, refresh_token, expires_at, primary_calendar_id")
+      .eq("id", data.id).maybeSingle();
+    if (fullErr || !full) return fail("Carregar tokens", fullErr?.message || "Tokens não encontrados.");
+    if (!full.refresh_token) return fail("Refresh token presente", "Conta sem refresh_token. Desconecte e reconecte concedendo acesso offline.");
+    steps.push({ name: "Refresh token presente", status: "ok" });
+
+    let accessToken = full.access_token as string | null;
+    try {
+      const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: full.refresh_token as string,
+          grant_type: "refresh_token",
+        }).toString(),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        await supabaseAdmin.from("calendar_accounts")
+          .update({ last_status: "error", last_error: `refresh failed: ${res.status} ${text}`.slice(0, 500) })
+          .eq("id", data.id);
+        return fail("Renovar access token", `HTTP ${res.status}: ${text.slice(0, 400)}`);
+      }
+      const j = JSON.parse(text) as { access_token: string; expires_in: number };
+      accessToken = j.access_token;
+      const expiresAt = new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString();
+      await supabaseAdmin.from("calendar_accounts")
+        .update({ access_token: j.access_token, expires_at: expiresAt, last_status: "connected", last_error: null })
+        .eq("id", data.id);
+      steps.push({ name: "Renovar access token", status: "ok", detail: `Expira em ${j.expires_in}s` });
+    } catch (e) {
+      return fail("Renovar access token", e instanceof Error ? e.message : String(e));
+    }
+
+    let calendarCount = 0;
+    try {
+      const res = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const text = await res.text();
+      if (!res.ok) return fail("Listar calendários (API Google)", `HTTP ${res.status}: ${text.slice(0, 400)}`);
+      const j = JSON.parse(text) as { items?: Array<{ id: string; summary: string; primary?: boolean }> };
+      const items = j.items ?? [];
+      calendarCount = items.length;
+      const primary = items.find((i) => i.primary);
+      steps.push({
+        name: "Listar calendários (API Google)",
+        status: "ok",
+        detail: `${items.length} calendário(s). Principal: ${primary?.summary ?? "n/a"}`,
+      });
+
+      const calId = encodeURIComponent(full.primary_calendar_id || primary?.id || "primary");
+      const ev = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events?maxResults=1`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!ev.ok) {
+        const t = await ev.text();
+        return fail("Ler eventos do calendário principal", `HTTP ${ev.status}: ${t.slice(0, 400)}`);
+      }
+      steps.push({ name: "Ler eventos do calendário principal", status: "ok" });
+    } catch (e) {
+      return fail("Listar calendários (API Google)", e instanceof Error ? e.message : String(e));
+    }
+
+    return { ok: true, steps, calendar_count: calendarCount, primary_email: full.email };
+  });
 
 export const startCalendarOAuth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
