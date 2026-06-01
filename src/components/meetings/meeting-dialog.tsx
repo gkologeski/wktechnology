@@ -89,12 +89,12 @@ export function MeetingDialog({
         attachments: { attendees, end_at: endIso },
         [relatedKey]: relatedId,
       };
-      const { error } = await supabase.from("activities").insert(payload as never);
+      const { data: inserted, error } = await supabase.from("activities").insert(payload as never).select("id").single();
       if (error) throw new Error(error.message);
 
-      if (accountId) {
+      if (accountId && inserted?.id) {
         try {
-          await syncNow({ data: { id: accountId } });
+          await pushToCalendar({ data: { account_id: accountId, activity_id: inserted.id } });
           toast.success("Reunião criada e sincronizada com o Google Calendar.");
         } catch (e) {
           toast.warning(`Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`);
