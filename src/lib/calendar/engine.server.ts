@@ -241,10 +241,10 @@ export async function syncCalendarAccount(accountId: string): Promise<{ imported
   }
 }
 
-export async function pushSingleActivity(accountId: string, activityId: string): Promise<{ created: boolean; updated: boolean; event_id: string }> {
+export async function pushSingleActivity(accountId: string, activityId: string): Promise<{ created: boolean; updated: boolean; event_id: string; meet_link: string | null }> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
-    .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at")
+    .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at, auto_create_meet_link")
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
@@ -264,7 +264,9 @@ export async function pushSingleActivity(accountId: string, activityId: string):
   const start = a.due_date as string;
   const att = (a.attachments ?? {}) as { end_at?: string; attendees?: { email: string }[] };
   const end = att.end_at || new Date(new Date(start).getTime() + 30 * 60000).toISOString();
-  const body = {
+  const wantsMeet = !!(account as { auto_create_meet_link?: boolean }).auto_create_meet_link
+    && !/meet\.google\.com|zoom\.us|teams\.microsoft\.com/i.test(a.meeting_location || "");
+  const body: Record<string, unknown> = {
     summary: a.subject || "Reunião",
     description: a.body || "",
     location: a.meeting_location || "",
@@ -272,22 +274,41 @@ export async function pushSingleActivity(accountId: string, activityId: string):
     end: { dateTime: end },
     attendees: att.attendees ?? [],
   };
+  if (wantsMeet && !existingEventId) {
+    body.conferenceData = {
+      createRequest: {
+        requestId: `meet-${a.id}-${Date.now()}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    };
+  }
+  const qs = wantsMeet ? "?conferenceDataVersion=1" : "";
   try {
+    let eventId = existingEventId;
+    let meetLink: string | null = null;
     if (existingEventId) {
-      await gcalFetch(token, `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}`, {
+      const ev = await gcalFetch(token, `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}${qs}`, {
         method: "PATCH",
         body: JSON.stringify(body),
-      });
-      return { created: false, updated: true, event_id: existingEventId };
+      }) as { id: string; hangoutLink?: string };
+      meetLink = ev.hangoutLink ?? null;
+      const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
+      const updates: Record<string, unknown> = { external_ids: newExt };
+      if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
+      await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
+      return { created: false, updated: true, event_id: ev.id, meet_link: meetLink };
     }
-    const ev = await gcalFetch(token, `/calendars/${calId}/events`, {
+    const ev = await gcalFetch(token, `/calendars/${calId}/events${qs}`, {
       method: "POST",
       body: JSON.stringify(body),
-    }) as { id: string };
-    await supabaseAdmin.from("activities")
-      .update({ external_ids: { ...ext, [`gcal_${account.id}`]: ev.id } })
-      .eq("id", a.id);
-    return { created: true, updated: false, event_id: ev.id };
+    }) as { id: string; hangoutLink?: string };
+    eventId = ev.id;
+    meetLink = ev.hangoutLink ?? null;
+    const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
+    const updates: Record<string, unknown> = { external_ids: newExt };
+    if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
+    await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
+    return { created: true, updated: false, event_id: eventId, meet_link: meetLink };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     throw new Error(`Falha ao enviar evento ao Google: ${msg.slice(0, 200)}`);
