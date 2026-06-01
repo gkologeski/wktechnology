@@ -31,6 +31,7 @@ type Pipeline = {
   name: string;
   entity: string;
   is_default: boolean;
+  default_view: string | null;
   stages: Stage[];
 };
 
@@ -38,6 +39,19 @@ const ENTITIES = [
   { value: "deal", label: "Negócios" },
   { value: "lead", label: "Leads" },
 ];
+
+const VIEWS_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
+  deal: [
+    { value: "table", label: "Tabela" },
+    { value: "board", label: "Quadro" },
+    { value: "list", label: "Lista" },
+    { value: "forecast", label: "Previsão" },
+  ],
+  lead: [
+    { value: "table", label: "Tabela" },
+    { value: "board", label: "Quadro" },
+  ],
+};
 
 function slugify(s: string) {
   return s
