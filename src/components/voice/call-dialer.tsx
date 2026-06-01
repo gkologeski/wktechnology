@@ -26,6 +26,8 @@ interface CallDialerProps {
   dealId?: string;
   contactName?: string;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }
 
 function normalizeE164(input: string): string {
@@ -43,8 +45,13 @@ export function CallDialer({
   dealId,
   contactName,
   trigger,
+  open: openProp,
+  onOpenChange,
 }: CallDialerProps) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChange ?? setOpenState;
+
   const [to, setTo] = useState(defaultTo);
   const [status, setStatus] = useState<Status>("idle");
   const [muted, setMuted] = useState(false);

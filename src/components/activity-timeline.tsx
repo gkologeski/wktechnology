@@ -488,51 +488,25 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         relatedId={relatedId}
         onCreated={() => void load()}
       />
-      {openAction === "email" && (
-        <SendEmailDialog
-          defaultTo={target.email ?? ""}
-          contactId={target.contactId}
-          contactName={target.name}
-          trigger={
-            <button
-              ref={(el) => { if (el) setTimeout(() => el.click(), 0); }}
-              className="hidden"
-              aria-hidden
-            />
-          }
-        />
-      )}
-      {openAction === "call" && target.phone && (
-        <CallDialer
-          defaultTo={target.phone}
-          contactId={target.contactId}
-          contactName={target.name}
-          trigger={
-            <button
-              ref={(el) => { if (el) setTimeout(() => el.click(), 0); }}
-              className="hidden"
-              aria-hidden
-            />
-          }
-        />
-      )}
+      <SendEmailDialog
+        open={openAction === "email"}
+        onOpenChange={(v) => !v && setOpenAction(null)}
+        defaultTo={target.email ?? ""}
+        contactId={target.contactId}
+        contactName={target.name}
+      />
       {openAction === "call" && !target.phone && (() => {
         toast.error("Sem telefone disponível para esta entidade.");
         setTimeout(() => setOpenAction(null), 0);
         return null;
       })()}
-      {openAction === "whatsapp" && target.phone && (
-        <SendWhatsAppDialog
+      {target.phone && (
+        <CallDialer
+          open={openAction === "call"}
+          onOpenChange={(v) => !v && setOpenAction(null)}
           defaultTo={target.phone}
           contactId={target.contactId}
           contactName={target.name}
-          trigger={
-            <button
-              ref={(el) => { if (el) setTimeout(() => el.click(), 0); }}
-              className="hidden"
-              aria-hidden
-            />
-          }
         />
       )}
       {openAction === "whatsapp" && !target.phone && (() => {
@@ -540,6 +514,16 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         setTimeout(() => setOpenAction(null), 0);
         return null;
       })()}
+      {target.phone && (
+        <SendWhatsAppDialog
+          open={openAction === "whatsapp"}
+          onOpenChange={(v) => !v && setOpenAction(null)}
+          defaultTo={target.phone}
+          contactId={target.contactId}
+          contactName={target.name}
+        />
+      )}
+
 
       {/* Timeline rail */}
       <div className="flex items-center gap-4">
