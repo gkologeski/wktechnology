@@ -140,8 +140,7 @@ function DealsPage() {
     setDrawerOpen(true);
   };
   const openEdit = (d: Deal) => {
-    setEditing(d);
-    setDrawerOpen(true);
+    navigate({ to: "/deals/$id", params: { id: d.id } });
   };
 
   return (
