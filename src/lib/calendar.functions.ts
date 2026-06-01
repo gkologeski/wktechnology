@@ -185,6 +185,24 @@ export const syncCalendarNow = createServerFn({ method: "POST" })
     return syncCalendarAccount(data.id);
   });
 
+export const pushActivityToCalendar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({
+    account_id: z.string().uuid(),
+    activity_id: z.string().uuid(),
+  }).parse(input))
+  .handler(async ({ data, context }) => {
+    // Verify ownership of both account and activity
+    const { data: acct, error: aErr } = await context.supabase
+      .from("calendar_accounts").select("id").eq("id", data.account_id).maybeSingle();
+    if (aErr || !acct) throw new Error("Calendário não encontrado");
+    const { data: act, error: actErr } = await context.supabase
+      .from("activities").select("id").eq("id", data.activity_id).maybeSingle();
+    if (actErr || !act) throw new Error("Atividade não encontrada");
+    const { pushSingleActivity } = await import("./calendar/engine.server");
+    return pushSingleActivity(data.account_id, data.activity_id);
+  });
+
 export const listCalendarEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({

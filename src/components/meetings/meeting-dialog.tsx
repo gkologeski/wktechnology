@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { listCalendarAccounts, syncCalendarNow } from "@/lib/calendar.functions";
+import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
 
 type Props = {
@@ -49,7 +49,7 @@ export function MeetingDialog({
   const [accountId, setAccountId] = useState<string | null>(null);
 
   const listAccounts = useServerFn(listCalendarAccounts);
-  const syncNow = useServerFn(syncCalendarNow);
+  const pushToCalendar = useServerFn(pushActivityToCalendar);
 
   useEffect(() => {
     if (!open) return;
@@ -89,12 +89,12 @@ export function MeetingDialog({
         attachments: { attendees, end_at: endIso },
         [relatedKey]: relatedId,
       };
-      const { error } = await supabase.from("activities").insert(payload as never);
+      const { data: inserted, error } = await supabase.from("activities").insert(payload as never).select("id").single();
       if (error) throw new Error(error.message);
 
-      if (accountId) {
+      if (accountId && inserted?.id) {
         try {
-          await syncNow({ data: { id: accountId } });
+          await pushToCalendar({ data: { account_id: accountId, activity_id: inserted.id } });
           toast.success("Reunião criada e sincronizada com o Google Calendar.");
         } catch (e) {
           toast.warning(`Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`);

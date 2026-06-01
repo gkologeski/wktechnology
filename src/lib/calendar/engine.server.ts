@@ -241,6 +241,61 @@ export async function syncCalendarAccount(accountId: string): Promise<{ imported
   }
 }
 
+export async function pushSingleActivity(accountId: string, activityId: string): Promise<{ created: boolean; updated: boolean; event_id: string }> {
+  const { data: account, error } = await supabaseAdmin
+    .from("calendar_accounts")
+    .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at")
+    .eq("id", accountId)
+    .maybeSingle();
+  if (error || !account) throw new Error(error?.message || "Conta não encontrada");
+  if (account.provider !== "google") throw new Error("Provider não suportado");
+  const { data: a, error: aErr } = await supabaseAdmin
+    .from("activities")
+    .select("id, subject, body, due_date, meeting_location, external_ids, attachments")
+    .eq("id", activityId)
+    .maybeSingle();
+  if (aErr || !a) throw new Error(aErr?.message || "Atividade não encontrada");
+  if (!a.due_date) throw new Error("Atividade sem data");
+
+  const token = await ensureAccessToken(account as CalendarAccountRow);
+  const calId = encodeURIComponent(account.primary_calendar_id || "primary");
+  const ext = (a.external_ids ?? {}) as Record<string, string>;
+  const existingEventId = ext[`gcal_${account.id}`];
+  const start = a.due_date as string;
+  const att = (a.attachments ?? {}) as { end_at?: string; attendees?: { email: string }[] };
+  const end = att.end_at || new Date(new Date(start).getTime() + 30 * 60000).toISOString();
+  const body = {
+    summary: a.subject || "Reunião",
+    description: a.body || "",
+    location: a.meeting_location || "",
+    start: { dateTime: start },
+    end: { dateTime: end },
+    attendees: att.attendees ?? [],
+  };
+  try {
+    if (existingEventId) {
+      await gcalFetch(token, `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+      return { created: false, updated: true, event_id: existingEventId };
+    }
+    const ev = await gcalFetch(token, `/calendars/${calId}/events`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }) as { id: string };
+    await supabaseAdmin.from("activities")
+      .update({ external_ids: { ...ext, [`gcal_${account.id}`]: ev.id } })
+      .eq("id", a.id);
+    return { created: true, updated: false, event_id: ev.id };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Falha ao enviar evento ao Google: ${msg.slice(0, 200)}`);
+  }
+}
+
+
+
 export async function tickAllCalendars(): Promise<{ processed: number }> {
   const { data: accounts } = await supabaseAdmin
     .from("calendar_accounts")
