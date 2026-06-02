@@ -1767,6 +1767,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         await bump(ok, fail);
         if (!nextAfter) break;
       }
+      }
 
     } else if (step === "tickets") {
       // Fetch ticket pipeline stages once to derive status (open/closed) per stage id.
