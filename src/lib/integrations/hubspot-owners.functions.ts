@@ -45,11 +45,11 @@ async function fetchOwners(archived: boolean): Promise<HSOwner[]> {
 }
 
 async function resolveWorkspaceId(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> },
+  supabase: { rpc: (fn: "default_workspace_for_user", args: { _user: string }) => Promise<{ data: string | null }> },
   userId: string,
 ): Promise<string> {
   const { data } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-  return (data as string | null) ?? userId;
+  return data ?? userId;
 }
 
 export const syncHubspotOwners = createServerFn({ method: "POST" })
