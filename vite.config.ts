@@ -13,15 +13,22 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    resolve: {
-      alias: [
-        // @twilio/voice-sdk imports `events` / `node:events`. Vite externalizes
-        // these for the browser by default, which breaks the build. Redirect
-        // to the `events` npm polyfill so EventEmitter resolves in the client.
-        { find: /^node:events$/, replacement: "events" },
-        { find: /^events$/, replacement: "events/events.js" },
-      ],
-    },
+    plugins: [
+      {
+        // @twilio/voice-sdk imports `node:events` / `events`. Vite's default
+        // browser externalization replaces these with a stub that has no
+        // `EventEmitter` export, breaking the production build. Resolve them
+        // to the `events` npm polyfill before Vite's resolver externalizes.
+        name: "polyfill-node-events",
+        enforce: "pre",
+        resolveId(source) {
+          if (source === "events" || source === "node:events") {
+            return this.resolve("events/events.js");
+          }
+          return null;
+        },
+      },
+    ],
     optimizeDeps: {
       include: ["events", "@twilio/voice-sdk"],
     },
