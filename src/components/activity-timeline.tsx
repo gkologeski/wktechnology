@@ -659,7 +659,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                   {a.body && (
                     editingId === a.id ? (
                       <div className="mt-2 space-y-2">
-                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} />
+                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} mentions={team} />
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(a)}><Check className="h-3 w-3 mr-1" /> Salvar</Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
