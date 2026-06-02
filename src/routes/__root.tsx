@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { I18nProvider } from "@/lib/i18n";
 import { BrandingProvider } from "@/lib/branding";
+import { NewVersionWatcher } from "@/components/new-version-watcher";
 
 function NotFoundComponent() {
   return (
@@ -115,6 +116,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AuthInvalidator />
+        <NewVersionWatcher />
         <I18nProvider>
           <BrandingProvider>
             <Outlet />
