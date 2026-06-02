@@ -13,17 +13,16 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    resolve: {
+      alias: {
+        // @twilio/voice-sdk imports `node:events`, which Vite externalizes for
+        // browser builds. Redirect to the `events` npm polyfill so the client
+        // bundle resolves `EventEmitter`.
+        "node:events": "events",
+      },
+    },
     optimizeDeps: {
       include: ["events", "@twilio/voice-sdk"],
-    },
-    build: {
-      commonjsOptions: {
-        // The `events` npm polyfill is CJS (`module.exports = EventEmitter`).
-        // Rollup needs help to recognize `EventEmitter` as a named export used by
-        // @twilio/voice-sdk's ESM modules.
-        defaultIsModuleExports: "auto",
-        transformMixedEsModules: true,
-      },
     },
   },
 });
