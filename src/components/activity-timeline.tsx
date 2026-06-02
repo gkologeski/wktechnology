@@ -310,9 +310,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     window.open(data.signedUrl, "_blank");
   };
 
-  const filteredMentions = mentionState
-    ? team.filter((m) => m.name.toLowerCase().includes(mentionState.query.toLowerCase())).slice(0, 6)
-    : [];
 
   const pickLog = (kind: LogKind) => {
     setType(kind);
