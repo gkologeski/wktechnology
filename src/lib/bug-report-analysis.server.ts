@@ -48,10 +48,20 @@ type BugReport = {
   user_agent: string | null;
   recording_path: string | null;
   recording_has_audio: boolean | null;
+  owner_id: string;
+  created_at: string;
 };
 
-function buildPrompt(r: BugReport): string {
+type Reporter = {
+  email: string | null;
+  name: string | null;
+};
+
+function buildPrompt(r: BugReport, reporter: Reporter): string {
   const areasBlock = PROJECT_AREAS.map((a) => `- ${a.area}: ${a.hints.join(", ")}`).join("\n");
+  const reporterLine = reporter.email || reporter.name
+    ? `${reporter.name ?? "—"} <${reporter.email ?? "—"}>`
+    : "—";
   return `Você é um engenheiro sênior de software analisando um chamado interno
 de um CRM construído em TanStack Start + Supabase (Lovable Cloud).
 
@@ -60,6 +70,8 @@ provável causa, área do código suspeita e uma PROPOSTA DE CORREÇÃO clara o
 suficiente para um agente de IA (o Lovable) implementar diretamente.
 
 # Chamado
+- Reportado por: ${reporterLine}
+- Quando: ${r.created_at}
 - Tipo: ${kindLabel(r.kind)}
 - Categoria: ${catLabel(r.category)} / ${subLabel(r.category, r.subtype)}
 - URL da página: ${r.page_url ?? "—"}
@@ -85,7 +97,7 @@ Responda APENAS com JSON válido, sem markdown, exatamente neste schema:
   "proposed_fix": "passos concretos de implementação em português, mencionando arquivos e funções específicas quando possível",
   "reproduction_steps": ["passo 1", "passo 2", "..."],
   "confidence": 0.0,
-  "lovable_prompt": "prompt pronto para colar no chat do Lovable que peça a correção, em português, em uma única mensagem curta e direta"
+  "lovable_prompt": "prompt pronto para colar no chat do Lovable que peça a correção, em português, em uma única mensagem. DEVE incluir explicitamente: (1) quem reportou (nome/email), (2) navegador/user-agent resumido (ex.: 'Chrome no macOS'), (3) a URL onde ocorreu, (4) o problema relatado e (5) os arquivos/áreas suspeitos a investigar. Formato sugerido: 'Chamado reportado por <nome> (<email>) em <url> usando <navegador>. Problema: <descrição curta>. Por favor, corrija ... Verifique <arquivos>.'"
 }
 
 Regras:
@@ -154,15 +166,31 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
 export async function analyzeBugReportById(bugReportId: string) {
   const { data: r, error } = await supabaseAdmin
     .from("bug_reports")
-    .select("id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio")
+    .select("id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio, owner_id, created_at")
     .eq("id", bugReportId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!r) throw new Error("Bug report não encontrado");
 
   const report = r as BugReport;
+
+  // Lookup do usuário que reportou (auth.users via admin API).
+  let reporter: Reporter = { email: null, name: null };
   try {
-    const ai = await callAi(buildPrompt(report), DEFAULT_MODEL);
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(report.owner_id);
+    if (u?.user) {
+      const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
+      reporter = {
+        email: u.user.email ?? null,
+        name: (meta.full_name as string) ?? (meta.name as string) ?? null,
+      };
+    }
+  } catch {
+    // segue sem dados do reporter
+  }
+
+  try {
+    const ai = await callAi(buildPrompt(report, reporter), DEFAULT_MODEL);
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("bug_report_analyses")
       .insert({
