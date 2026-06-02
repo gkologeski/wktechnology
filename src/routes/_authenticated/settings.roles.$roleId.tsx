@@ -9,12 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAccessProfile, updateAccessProfile,
   ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS,
 } from "@/lib/access-profiles.functions";
+import { TOOL_REQUIRED_ENTITLEMENT, PLAN_LABELS } from "@/lib/entitlements";
+import { useEntitlements } from "@/lib/use-entitlements";
+import { Link as RouterLink } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/settings/roles/$roleId")({
   component: EditRolePage,
