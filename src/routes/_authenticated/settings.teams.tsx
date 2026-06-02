@@ -30,6 +30,8 @@ import {
   resendTeamInvite,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
+import { useEntitlements } from "@/lib/use-entitlements";
+import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
