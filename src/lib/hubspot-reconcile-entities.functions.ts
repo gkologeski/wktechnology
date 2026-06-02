@@ -346,7 +346,7 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
           })) as { results?: HsRec[] };
           const rows: Record<string, unknown>[] = [];
           for (const rec of rd.results ?? []) {
-            const payload = buildPayload(entity, userId, rec);
+            const payload = entity === "ticket" ? buildTicketPayload(userId, rec) : buildPayload(entity as Exclude<EntityKind, "ticket">, userId, rec);
             if (payload) rows.push(payload);
             else failed++;
           }
