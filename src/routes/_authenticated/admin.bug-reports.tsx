@@ -42,12 +42,19 @@ import {
   type BugReportStatus,
 } from "@/lib/bug-reports.functions";
 import {
+  analyzeBugReport,
+  listBugReportAnalyses,
+} from "@/lib/bug-report-analysis.functions";
+import {
   ShieldAlert,
   Bug,
   Video,
   Trash2,
   ExternalLink,
   RefreshCw,
+  Sparkles,
+  Loader2,
+  Copy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/bug-reports")({
