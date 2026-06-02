@@ -223,17 +223,20 @@ function UsersPage() {
             Convide pessoas, defina permissões e gerencie acessos ao workspace.
           </p>
         </div>
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button><UserPlus className="h-4 w-4 mr-2" />Convidar usuário</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Convidar usuário</DialogTitle>
-              <DialogDescription>
-                O usuário receberá um e-mail com link para criar a conta e acessar o workspace.
-              </DialogDescription>
-            </DialogHeader>
+        <div className="flex flex-col items-end gap-1.5">
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={atLimit} title={atLimit ? "Limite de usuários do plano atingido" : undefined}>
+                <UserPlus className="h-4 w-4 mr-2" />Convidar usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Convidar usuário</DialogTitle>
+                <DialogDescription>
+                  O usuário receberá um e-mail com link para criar a conta e acessar o workspace.
+                </DialogDescription>
+              </DialogHeader>
             <div className="space-y-3 py-2">
 
               <div className="space-y-1.5">
