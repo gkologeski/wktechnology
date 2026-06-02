@@ -70,6 +70,8 @@ provável causa, área do código suspeita e uma PROPOSTA DE CORREÇÃO clara o
 suficiente para um agente de IA (o Lovable) implementar diretamente.
 
 # Chamado
+- Reportado por: ${reporterLine}
+- Quando: ${r.created_at}
 - Tipo: ${kindLabel(r.kind)}
 - Categoria: ${catLabel(r.category)} / ${subLabel(r.category, r.subtype)}
 - URL da página: ${r.page_url ?? "—"}
