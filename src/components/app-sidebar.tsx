@@ -120,6 +120,7 @@ const groups: Group[] = [
       // Integrações
       { section: "Integrações", title: "Integrações", url: "/integrations", icon: Plug },
       { section: "Integrações", title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
+      { section: "Integrações", title: "Usuários HubSpot", url: "/settings/hubspot-users", icon: Plug },
     ],
   },
 ];
