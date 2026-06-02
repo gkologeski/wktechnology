@@ -17,8 +17,8 @@ export function AssociationsPanel({ entity, entityId, companyId }: Props) {
     <>
       {entity === "contact" && companyId && <CompanyCard companyId={companyId} />}
       {(entity === "company" || entity === "deal") && <ContactsCard entity={entity} entityId={entityId} />}
-      {(entity === "contact" || entity === "company") && <DealsCard entity={entity} entityId={entityId} />}
-      {entity !== "lead" && <TicketsCard entity={entity} entityId={entityId} />}
+      {(entity === "contact" || entity === "company") && <DealsCard entity={entity} entityId={entityId} companyId={companyId} />}
+      {entity !== "lead" && <TicketsCard entity={entity} entityId={entityId} companyId={companyId} />}
       <TasksCard entity={entity} entityId={entityId} />
       <EmailsCard entity={entity} entityId={entityId} />
       <AttachmentsCard entity={entity} entityId={entityId} />
@@ -124,31 +124,33 @@ function ContactsCard({ entity, entityId }: { entity: AssociationEntity; entityI
   );
 }
 
-function DealsCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
+function DealsCard({ entity, entityId, companyId }: { entity: AssociationEntity; entityId: string; companyId?: string | null }) {
   const [rows, setRows] = useState<{ id: string; name: string; value: number; stage: string; currency: string }[]>([]);
   useEffect(() => {
     (async () => {
       if (entity === "company") {
-        const { data } = await supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", entityId).limit(20);
+        const { data } = await supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", entityId).limit(50);
         setRows((data ?? []) as never);
         return;
       }
-      // contact: combine deals where contact is primary OR linked via deal_contacts
-      const [{ data: primary }, { data: linked }] = await Promise.all([
-        supabase.from("deals").select("id, name, value, stage, currency").eq("primary_contact_id", entityId).limit(20),
-        supabase.from("deal_contacts").select("deal_id").eq("contact_id", entityId).limit(50),
-      ]);
-      const linkedIds = (linked ?? []).map(r => r.deal_id).filter(Boolean);
-      let extra: typeof primary = [];
+      // contact: combine deals where contact is primary OR linked via deal_contacts OR belong to the same company
+      const primaryP = supabase.from("deals").select("id, name, value, stage, currency").eq("primary_contact_id", entityId).limit(50);
+      const companyP = companyId
+        ? supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", companyId).limit(50)
+        : Promise.resolve({ data: [] as { id: string; name: string; value: number; stage: string; currency: string }[] });
+      const linkedP = supabase.from("deal_contacts").select("deal_id").eq("contact_id", entityId).limit(100);
+      const [primaryRes, companyRes, linkedRes] = await Promise.all([primaryP, companyP, linkedP]);
+      const linkedIds = (linkedRes.data ?? []).map(r => r.deal_id).filter(Boolean);
+      let extra: { id: string; name: string; value: number; stage: string; currency: string }[] = [];
       if (linkedIds.length) {
         const { data } = await supabase.from("deals").select("id, name, value, stage, currency").in("id", linkedIds);
-        extra = data ?? [];
+        extra = (data ?? []) as typeof extra;
       }
-      const map = new Map<string, NonNullable<typeof primary>[number]>();
-      for (const d of [...(primary ?? []), ...(extra ?? [])]) map.set(d.id, d);
-      setRows(Array.from(map.values()).slice(0, 20) as never);
+      const map = new Map<string, typeof extra[number]>();
+      for (const d of [...(primaryRes.data ?? []), ...(companyRes.data ?? []), ...extra]) map.set(d.id, d);
+      setRows(Array.from(map.values()).slice(0, 50));
     })();
-  }, [entity, entityId]);
+  }, [entity, entityId, companyId]);
   return (
     <AssocCard icon={<Briefcase className="w-4 h-4" />} title="Negócios" count={rows.length}>
       {rows.length === 0 ? <Empty label="Nenhum negócio." /> : (
@@ -171,13 +173,22 @@ function DealsCard({ entity, entityId }: { entity: AssociationEntity; entityId: 
   );
 }
 
-function TicketsCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
+function TicketsCard({ entity, entityId, companyId }: { entity: AssociationEntity; entityId: string; companyId?: string | null }) {
   const [rows, setRows] = useState<{ id: string; subject: string; status: string; priority: string }[]>([]);
   useEffect(() => {
-    const col = entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
-    supabase.from("tickets").select("id, subject, status, priority").eq(col, entityId).limit(10)
-      .then(({ data }) => setRows((data ?? []) as never));
-  }, [entity, entityId]);
+    (async () => {
+      const col = entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
+      const { data: direct } = await supabase.from("tickets").select("id, subject, status, priority").eq(col, entityId).limit(50);
+      let companyRows: typeof direct = [];
+      if (entity === "contact" && companyId) {
+        const { data } = await supabase.from("tickets").select("id, subject, status, priority").eq("company_id", companyId).limit(50);
+        companyRows = data ?? [];
+      }
+      const map = new Map<string, NonNullable<typeof direct>[number]>();
+      for (const t of [...(direct ?? []), ...(companyRows ?? [])]) map.set(t.id, t);
+      setRows(Array.from(map.values()).slice(0, 50) as never);
+    })();
+  }, [entity, entityId, companyId]);
   return (
     <AssocCard icon={<TicketIcon className="w-4 h-4" />} title="Tickets" count={rows.length}>
       {rows.length === 0 ? <Empty label="Nenhum ticket." /> : (
