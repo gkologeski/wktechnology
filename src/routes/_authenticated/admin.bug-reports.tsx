@@ -93,18 +93,40 @@ function BugReportsAdminPage() {
   const updateFn = useServerFn(updateBugReportStatus);
   const deleteFn = useServerFn(deleteBugReport);
   const recUrlFn = useServerFn(getBugReportRecordingUrl);
+  const analyzeFn = useServerFn(analyzeBugReport);
+  const listAnalysesFn = useServerFn(listBugReportAnalyses);
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<BugReportStatus | "all">("open");
   const [kind, setKind] = useState<"new_feature" | "existing_broken" | "all">("all");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["admin-bug-reports", status, kind],
     enabled: isPlatformAdmin,
     queryFn: () => listFn({ data: { status, kind } }),
   });
+
+  const reportIds = useMemo(
+    () => ((list.data ?? []) as Array<{ id: string }>).map((r) => r.id),
+    [list.data],
+  );
+
+  const analyses = useQuery({
+    queryKey: ["admin-bug-report-analyses", reportIds],
+    enabled: isPlatformAdmin && reportIds.length > 0,
+    queryFn: () => listAnalysesFn({ data: { bug_report_ids: reportIds } }),
+  });
+
+  const latestByReport = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const a of ((analyses.data ?? []) as Array<{ bug_report_id: string }>)) {
+      if (!m.has(a.bug_report_id)) m.set(a.bug_report_id, a);
+    }
+    return m;
+  }, [analyses.data]);
 
   const update = useMutation({
     mutationFn: (vars: { id: string; status: BugReportStatus }) => updateFn({ data: vars }),
@@ -124,6 +146,28 @@ function BugReportsAdminPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao remover"),
   });
 
+  const runAnalyze = async (id: string) => {
+    setAnalyzingId(id);
+    try {
+      await analyzeFn({ data: { bug_report_id: id } });
+      toast.success("Análise gerada");
+      await qc.invalidateQueries({ queryKey: ["admin-bug-report-analyses"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar análise");
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
+  const copyPrompt = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Prompt copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
   const openVideo = async (path: string) => {
     try {
       const { url } = await recUrlFn({ data: { path } });
@@ -133,6 +177,7 @@ function BugReportsAdminPage() {
       toast.error(e instanceof Error ? e.message : "Não foi possível abrir o vídeo");
     }
   };
+
 
   const rows = list.data ?? [];
 
