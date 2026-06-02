@@ -6,6 +6,20 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const WsRole = z.enum(["admin", "member"]);
 
+const CANONICAL_APP_URL = "https://crm.wktechnology.com.br";
+function resolveInviteOrigin(origin: string | undefined): string {
+  if (!origin) return CANONICAL_APP_URL;
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    if (host.endsWith("lovable.app") || host.endsWith("lovable.dev") || host.endsWith("lovableproject.com")) {
+      return CANONICAL_APP_URL;
+    }
+    return origin.replace(/\/+$/, "");
+  } catch {
+    return CANONICAL_APP_URL;
+  }
+}
+
 async function assertPlatformAdmin(userId: string) {
   const { data, error } = await supabaseAdmin
     .from("platform_admins")
@@ -100,9 +114,7 @@ export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
       page++;
     }
 
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     if (!userIdFound) {
       const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
@@ -211,9 +223,7 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
       page++;
     }
 
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     if (!userIdFound || !alreadyConfirmed) {
       const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {

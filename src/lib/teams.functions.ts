@@ -7,6 +7,27 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
 
+/** URL canônica de produção do CRM — usada para links de convite por email. */
+const CANONICAL_APP_URL = "https://crm.wktechnology.com.br";
+
+/**
+ * Resolve o origin para o link do convite. Se vier de um host do Lovable
+ * (preview/sandbox/dev), substitui pela URL canônica de produção para que
+ * o convidado caia no CRM e não no editor do Lovable.
+ */
+function resolveInviteOrigin(origin: string | undefined): string {
+  if (!origin) return CANONICAL_APP_URL;
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    if (host.endsWith("lovable.app") || host.endsWith("lovable.dev") || host.endsWith("lovableproject.com")) {
+      return CANONICAL_APP_URL;
+    }
+    return origin.replace(/\/+$/, "");
+  } catch {
+    return CANONICAL_APP_URL;
+  }
+}
+
 export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   admin: "Admin",
   manager: "Gestor",
@@ -92,9 +113,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const target = data.email.trim().toLowerCase();
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     // ---- Enforcement: limite de usuários do plano ----
     // O owner do workspace conta como 1 usuário. Comparamos
@@ -199,9 +218,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
     const { data: u, error: uErr } = await supabaseAdmin.auth.admin.getUserById(data.member_user_id);
     if (uErr || !u.user?.email) throw new Error(uErr?.message ?? "Email do usuário não encontrado.");
 
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
     const meta = (u.user.user_metadata ?? {}) as { full_name?: string; phone?: string };
     const { error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(u.user.email, {
       data: { full_name: meta.full_name, phone: meta.phone },
