@@ -13,6 +13,15 @@ import { lookupInviteByToken, consumeInvite } from "@/lib/workspace-invites.func
 
 export const Route = createFileRoute("/accept-invite/$token")({
   component: AcceptInviteTokenPage,
+  head: () => ({
+    meta: [
+      { title: "Aceitar convite — WK Technology CRM" },
+      { name: "description", content: "Conclua seu cadastro no workspace do WK Technology CRM utilizando o convite recebido." },
+      { property: "og:title", content: "Aceitar convite — WK Technology CRM" },
+      { property: "og:description", content: "Conclua seu cadastro no workspace do WK Technology CRM." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 type InviteInfo = {

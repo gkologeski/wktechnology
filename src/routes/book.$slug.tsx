@@ -10,7 +10,15 @@ import { CalendarDays, Clock, MapPin, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/book/$slug")({
   component: PublicBookingPage,
-  head: () => ({ meta: [{ title: "Agendar reunião" }] }),
+  head: () => ({
+    meta: [
+      { title: "Agendar reunião — WK Technology CRM" },
+      { name: "description", content: "Escolha um horário disponível para agendar uma reunião." },
+      { property: "og:title", content: "Agendar reunião — WK Technology CRM" },
+      { property: "og:description", content: "Escolha um horário disponível para agendar uma reunião." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 type PageInfo = {

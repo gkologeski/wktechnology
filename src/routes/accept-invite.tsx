@@ -13,6 +13,15 @@ import { completeInviteProfile } from "@/lib/teams.functions";
 
 export const Route = createFileRoute("/accept-invite")({
   component: AcceptInvitePage,
+  head: () => ({
+    meta: [
+      { title: "Aceitar convite — WK Technology CRM" },
+      { name: "description", content: "Confirme seus dados e crie uma senha para acessar o workspace do WK Technology CRM." },
+      { property: "og:title", content: "Aceitar convite — WK Technology CRM" },
+      { property: "og:description", content: "Conclua seu acesso ao workspace do WK Technology CRM." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 function AcceptInvitePage() {

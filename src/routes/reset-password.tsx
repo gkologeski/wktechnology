@@ -10,6 +10,16 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
+  head: () => ({
+    meta: [
+      { title: "Recuperar senha — WK Technology CRM" },
+      { name: "description", content: "Solicite a redefinição de senha da sua conta no WK Technology CRM." },
+      { property: "og:title", content: "Recuperar senha — WK Technology CRM" },
+      { property: "og:description", content: "Solicite a redefinição de senha da sua conta." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/reset-password" },
+    ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/reset-password" }],
+  }),
 });
 
 function ResetPasswordPage() {
