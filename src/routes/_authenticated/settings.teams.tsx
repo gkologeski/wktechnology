@@ -146,7 +146,14 @@ function UsersPage() {
     });
   }, [rows, query, roleFilter]);
 
-  const canInvite = email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
+  // Limite de usuários do plano (owner + membros). null = ilimitado.
+  const ents = useEntitlements();
+  const usersInfo = ents.info(ENT.USERS_MAX);
+  const usersLimit: number | null = usersInfo.limit;
+  const usersUsed = 1 + rows.length; // owner + membros
+  const atLimit = usersLimit !== null && usersUsed >= usersLimit;
+
+  const canInvite = !atLimit && email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
 
   const handleInvite = async () => {
     if (!canInvite) return;
