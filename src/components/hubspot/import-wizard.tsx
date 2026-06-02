@@ -13,6 +13,7 @@ import {
   Target,
   UserPlus,
   Activity,
+  LifeBuoy,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
-type Obj = "companies" | "contacts" | "deals" | "leads" | "activities";
+type Obj = "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities";
 
 const OBJECTS: {
   key: Obj;
