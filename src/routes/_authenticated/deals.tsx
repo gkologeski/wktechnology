@@ -113,7 +113,7 @@ function DealsPage() {
     const min = Number(filters.minValue) || 0;
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {
-      if (selected?.id && d.pipeline_id && d.pipeline_id !== selected.id) return false;
+      if (selected?.id && d.pipeline_id !== selected.id) return false;
       if (filters.ownerId && d.owner_id !== filters.ownerId) return false;
       if (min > 0 && Number(d.value || 0) < min) return false;
       if (filters.period === "overdue") {
