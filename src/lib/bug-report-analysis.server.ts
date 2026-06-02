@@ -48,10 +48,20 @@ type BugReport = {
   user_agent: string | null;
   recording_path: string | null;
   recording_has_audio: boolean | null;
+  owner_id: string;
+  created_at: string;
 };
 
-function buildPrompt(r: BugReport): string {
+type Reporter = {
+  email: string | null;
+  name: string | null;
+};
+
+function buildPrompt(r: BugReport, reporter: Reporter): string {
   const areasBlock = PROJECT_AREAS.map((a) => `- ${a.area}: ${a.hints.join(", ")}`).join("\n");
+  const reporterLine = reporter.email || reporter.name
+    ? `${reporter.name ?? "—"} <${reporter.email ?? "—"}>`
+    : "—";
   return `Você é um engenheiro sênior de software analisando um chamado interno
 de um CRM construído em TanStack Start + Supabase (Lovable Cloud).
 
