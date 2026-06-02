@@ -212,6 +212,7 @@ export function HubspotImportWizard() {
           contacts: scope.contacts,
           deals: scope.deals,
           leads: scope.leads,
+          tickets: scope.tickets,
           activities: scope.activities,
           maxCompanies,
         },
