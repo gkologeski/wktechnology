@@ -299,6 +299,17 @@ function UsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {usersLimit !== null && (
+          <p className={`text-xs ${atLimit ? "text-destructive" : "text-muted-foreground"}`}>
+            {usersUsed} de {usersLimit} usuários ({PLAN_LABELS[ents.plan]}).{" "}
+            {atLimit && (
+              <Link to="/settings/billing" className="underline underline-offset-2">
+                Fazer upgrade
+              </Link>
+            )}
+          </p>
+        )}
+        </div>
       </div>
 
       {/* Stats */}
