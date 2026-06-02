@@ -66,6 +66,13 @@ const OBJECTS: {
     description: "Objeto Leads nativo do HubSpot (independente de empresas).",
   },
   {
+    key: "tickets",
+    label: "Tickets",
+    icon: LifeBuoy,
+    deps: [],
+    description: "Tickets de suporte do HubSpot (independente de empresas).",
+  },
+  {
     key: "activities",
     label: "Atividades",
     icon: Activity,
@@ -85,6 +92,7 @@ export function HubspotImportWizard() {
     contacts: true,
     deals: false,
     leads: false,
+    tickets: false,
     activities: false,
   });
   const [clearScope, setClearScope] = useState<Record<Obj, boolean>>({
@@ -92,6 +100,7 @@ export function HubspotImportWizard() {
     contacts: false,
     deals: false,
     leads: false,
+    tickets: false,
     activities: false,
   });
   const [maxCompanies, setMaxCompanies] = useState(200);
