@@ -96,6 +96,30 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
       : undefined;
 
+    // ---- Enforcement: limite de usuários do plano ----
+    // O owner do workspace conta como 1 usuário. Comparamos
+    // (1 owner + nº de team_members atuais) com get_entitlement_limit('users.max').
+    {
+      const [{ data: limitRow }, { count: currentMembers }] = await Promise.all([
+        supabaseAdmin.rpc("get_entitlement_limit", {
+          _workspace: userId, _key: "users.max",
+        } as never),
+        supabaseAdmin
+          .from("team_members")
+          .select("id", { count: "exact", head: true })
+          .eq("workspace_owner_id", userId),
+      ]);
+      const limit = (limitRow as number | null) ?? null; // null = ilimitado
+      const used = 1 + (currentMembers ?? 0); // +1 = owner
+      if (limit !== null && used + 1 > limit) {
+        throw new Error(
+          `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`
+        );
+      }
+    }
+
+
+
     // Achar user_id por email via admin
     let foundId: string | null = null;
     let alreadyConfirmed = false;

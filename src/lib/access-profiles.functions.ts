@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { TOOL_REQUIRED_ENTITLEMENT } from "@/lib/entitlements";
 
 export const ACCESS_OBJECTS: Array<{ key: string; label: string; category: "crm" | "marketing" | "sales" | "service" }> = [
   { key: "contacts",   label: "Contatos",   category: "crm" },
@@ -217,10 +218,20 @@ export const updateAccessProfile = createServerFn({ method: "POST" })
       }
     }
     if (data.tools?.length) {
+      // Server-side enforcement: tools cuja entitlement não é habilitada
+      // pelo plano atual do workspace são forçadas a enabled=false.
       for (const t of data.tools) {
+        let enabled = t.enabled;
+        const reqKey = TOOL_REQUIRED_ENTITLEMENT[t.tool_key];
+        if (reqKey) {
+          const { data: ok } = await supabase.rpc("has_entitlement", {
+            _workspace: userId, _key: reqKey,
+          } as never);
+          if (!ok) enabled = false;
+        }
         const { error } = await supabase
           .from("access_profile_tools")
-          .upsert({ profile_id: data.id, ...t } as never, { onConflict: "profile_id,tool_key" });
+          .upsert({ profile_id: data.id, tool_key: t.tool_key, enabled } as never, { onConflict: "profile_id,tool_key" });
         if (error) throw new Error(error.message);
       }
     }

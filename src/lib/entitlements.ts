@@ -58,6 +58,18 @@ export const ENT = {
   WHITE_LABEL: "feature.white_label",
 } as const;
 
+/**
+ * Mapa tool (matriz de permissões) → entitlement requerido pelo plano.
+ * Quando o plano do workspace não habilita o entitlement, o switch da tool
+ * no editor de perfis é forçado a "desligado" e desabilitado, com badge
+ * indicando o plano mínimo necessário.
+ *
+ * Tools sem entrada aqui não têm gate de plano (continuam livres).
+ */
+export const TOOL_REQUIRED_ENTITLEMENT: Partial<Record<string, string>> = {
+  manage_workflows: "feature.workflows",
+};
+
 export type EntKey = (typeof ENT)[keyof typeof ENT];
 
 export type PlanCode = "free" | "bronze" | "prata" | "ouro";

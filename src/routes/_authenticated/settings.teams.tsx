@@ -1,5 +1,5 @@
 // Página /settings/teams — gerenciar usuários do workspace (papéis, convites, remoção).
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,6 +30,8 @@ import {
   resendTeamInvite,
   TEAM_ROLE_LABELS, type TeamRole,
 } from "@/lib/teams.functions";
+import { useEntitlements } from "@/lib/use-entitlements";
+import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
@@ -144,7 +146,14 @@ function UsersPage() {
     });
   }, [rows, query, roleFilter]);
 
-  const canInvite = email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
+  // Limite de usuários do plano (owner + membros). null = ilimitado.
+  const ents = useEntitlements();
+  const usersInfo = ents.info(ENT.USERS_MAX);
+  const usersLimit: number | null = usersInfo.limit;
+  const usersUsed = 1 + rows.length; // owner + membros
+  const atLimit = usersLimit !== null && usersUsed >= usersLimit;
+
+  const canInvite = !atLimit && email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
 
   const handleInvite = async () => {
     if (!canInvite) return;
@@ -214,17 +223,20 @@ function UsersPage() {
             Convide pessoas, defina permissões e gerencie acessos ao workspace.
           </p>
         </div>
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button><UserPlus className="h-4 w-4 mr-2" />Convidar usuário</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Convidar usuário</DialogTitle>
-              <DialogDescription>
-                O usuário receberá um e-mail com link para criar a conta e acessar o workspace.
-              </DialogDescription>
-            </DialogHeader>
+        <div className="flex flex-col items-end gap-1.5">
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={atLimit} title={atLimit ? "Limite de usuários do plano atingido" : undefined}>
+                <UserPlus className="h-4 w-4 mr-2" />Convidar usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Convidar usuário</DialogTitle>
+                <DialogDescription>
+                  O usuário receberá um e-mail com link para criar a conta e acessar o workspace.
+                </DialogDescription>
+              </DialogHeader>
             <div className="space-y-3 py-2">
 
               <div className="space-y-1.5">
@@ -287,6 +299,17 @@ function UsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {usersLimit !== null && (
+          <p className={`text-xs ${atLimit ? "text-destructive" : "text-muted-foreground"}`}>
+            {usersUsed} de {usersLimit} usuários ({PLAN_LABELS[ents.plan]}).{" "}
+            {atLimit && (
+              <Link to="/settings/billing" className="underline underline-offset-2">
+                Fazer upgrade
+              </Link>
+            )}
+          </p>
+        )}
+        </div>
       </div>
 
       {/* Stats */}

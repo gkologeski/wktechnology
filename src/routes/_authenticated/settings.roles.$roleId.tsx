@@ -9,12 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAccessProfile, updateAccessProfile,
   ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS,
 } from "@/lib/access-profiles.functions";
+import { TOOL_REQUIRED_ENTITLEMENT, PLAN_LABELS } from "@/lib/entitlements";
+import { useEntitlements } from "@/lib/use-entitlements";
 
 export const Route = createFileRoute("/_authenticated/settings/roles/$roleId")({
   component: EditRolePage,
@@ -37,6 +39,7 @@ function EditRolePage() {
   const navigate = useNavigate();
   const getFn = useServerFn(getAccessProfile);
   const updateFn = useServerFn(updateAccessProfile);
+  const ents = useEntitlements();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -199,15 +202,41 @@ function EditRolePage() {
                 {visibleTools.map((t) => {
                   const v = tools[t.key];
                   if (!v) return null;
+                  const reqKey = TOOL_REQUIRED_ENTITLEMENT[t.key];
+                  const locked = !!reqKey && !ents.loading && !ents.isEnabled(reqKey);
+                  const effectiveEnabled = locked ? false : v.enabled;
                   return (
-                    <div key={t.key} className="flex items-center justify-between border rounded-md p-3">
+                    <div key={t.key} className={`flex items-center justify-between border rounded-md p-3 ${locked ? "bg-muted/30" : ""}`}>
                       <div className="min-w-0 pr-3">
-                        <div className="text-sm font-medium">{t.label}</div>
-                        <div className="text-xs text-muted-foreground">{t.description}</div>
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          {t.label}
+                          {locked && (
+                            <Badge variant="outline" className="gap-1 text-[10px] font-normal">
+                              <Lock className="h-3 w-3" />
+                              Requer plano superior
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {t.description}
+                          {locked && (
+                            <>
+                              {" "}
+                              <Link to="/settings/billing" className="underline underline-offset-2">
+                                Fazer upgrade do plano {PLAN_LABELS[ents.plan]}
+                              </Link>
+                              .
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{v.enabled ? "Ligado" : "Desligado"}</span>
-                        <Switch checked={v.enabled} onCheckedChange={(val) => updateTool(t.key, val)} />
+                        <span className="text-xs text-muted-foreground">{effectiveEnabled ? "Ligado" : "Desligado"}</span>
+                        <Switch
+                          checked={effectiveEnabled}
+                          disabled={locked}
+                          onCheckedChange={(val) => updateTool(t.key, val)}
+                        />
                       </div>
                     </div>
                   );
