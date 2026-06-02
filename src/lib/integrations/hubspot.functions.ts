@@ -556,6 +556,7 @@ const ScopeSchema = z
     contacts: z.boolean().default(true),
     deals: z.boolean().default(true),
     leads: z.boolean().default(false),
+    tickets: z.boolean().default(false),
     activities: z.boolean().default(false),
     maxCompanies: z.number().int().min(1).max(2000).optional(),
     maxPerObject: z.number().int().min(1).max(2000).optional(),
@@ -568,7 +569,7 @@ type Scope = z.infer<typeof ScopeSchema>;
 
 type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
 
-const STEP_ORDER = ["companies", "contacts", "deals", "leads", "activities"] as const;
+const STEP_ORDER = ["companies", "contacts", "deals", "leads", "tickets", "activities"] as const;
 type StepName = (typeof STEP_ORDER)[number];
 
 const STEP_DEPS: Record<StepName, StepName[]> = {
@@ -576,6 +577,7 @@ const STEP_DEPS: Record<StepName, StepName[]> = {
   contacts: ["companies"],
   deals: ["companies", "contacts"],
   leads: [],
+  tickets: [],
   activities: ["contacts", "companies", "deals"],
 };
 
@@ -593,6 +595,9 @@ function planSteps(scope: Scope): StepName[] {
   }
   if (scope.leads) {
     wanted.add("leads");
+  }
+  if (scope.tickets) {
+    wanted.add("tickets");
   }
   if (scope.activities) {
     wanted.add("companies");
