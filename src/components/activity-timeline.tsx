@@ -527,21 +527,11 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     : "Descreva o que aconteceu... use @ para mencionar, arraste arquivos para anexar"
                 }
                 minHeight={96}
+                mentions={team}
+                onMentionAdd={(m) => {
+                  if (!mentions.find((x) => x.id === m.id)) setMentions((prev) => [...prev, m]);
+                }}
               />
-              {mentionState?.open && filteredMentions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
-                  {filteredMentions.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => insertMention(m)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-                    >
-                      <AtSign className="h-3 w-3 text-muted-foreground" />
-                      {m.name}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
             {pendingFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
