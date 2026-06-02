@@ -10,7 +10,6 @@ const ICONS = {
   deals: Target,
   leads: UserPlus,
   tickets: LifeBuoy,
-  tickets: LifeBuoy,
   activities: Activity,
 } as const;
 
@@ -19,7 +18,6 @@ const LABELS: Record<keyof typeof ICONS, string> = {
   contacts: "Contatos",
   deals: "Negócios",
   leads: "Leads",
-  tickets: "Tickets",
   tickets: "Tickets",
   activities: "Atividades",
 };
