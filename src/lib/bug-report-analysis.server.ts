@@ -166,15 +166,31 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
 export async function analyzeBugReportById(bugReportId: string) {
   const { data: r, error } = await supabaseAdmin
     .from("bug_reports")
-    .select("id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio")
+    .select("id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio, owner_id, created_at")
     .eq("id", bugReportId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!r) throw new Error("Bug report não encontrado");
 
   const report = r as BugReport;
+
+  // Lookup do usuário que reportou (auth.users via admin API).
+  let reporter: Reporter = { email: null, name: null };
   try {
-    const ai = await callAi(buildPrompt(report), DEFAULT_MODEL);
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(report.owner_id);
+    if (u?.user) {
+      const meta = (u.user.user_metadata ?? {}) as Record<string, unknown>;
+      reporter = {
+        email: u.user.email ?? null,
+        name: (meta.full_name as string) ?? (meta.name as string) ?? null,
+      };
+    }
+  } catch {
+    // segue sem dados do reporter
+  }
+
+  try {
+    const ai = await callAi(buildPrompt(report, reporter), DEFAULT_MODEL);
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("bug_report_analyses")
       .insert({
