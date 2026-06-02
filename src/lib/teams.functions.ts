@@ -218,9 +218,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
     const { data: u, error: uErr } = await supabaseAdmin.auth.admin.getUserById(data.member_user_id);
     if (uErr || !u.user?.email) throw new Error(uErr?.message ?? "Email do usuário não encontrado.");
 
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
     const meta = (u.user.user_metadata ?? {}) as { full_name?: string; phone?: string };
     const { error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(u.user.email, {
       data: { full_name: meta.full_name, phone: meta.phone },
