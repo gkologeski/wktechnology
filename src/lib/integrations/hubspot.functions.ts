@@ -661,17 +661,19 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
         contacts: z.boolean().optional(),
         deals: z.boolean().optional(),
         leads: z.boolean().optional(),
+        tickets: z.boolean().optional(),
         activities: z.boolean().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const tables: ("companies" | "contacts" | "deals" | "leads" | "activities")[] = [];
+    const tables: ("companies" | "contacts" | "deals" | "leads" | "tickets" | "activities")[] = [];
     if (data.companies) tables.push("companies");
     if (data.contacts) tables.push("contacts");
     if (data.deals) tables.push("deals");
     if (data.leads) tables.push("leads");
+    if (data.tickets) tables.push("tickets");
     if (data.activities) tables.push("activities");
 
     const result: Record<string, number> = {};
