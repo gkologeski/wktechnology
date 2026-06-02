@@ -134,9 +134,8 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: prof } = await supabase
-      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
-    const workspaceId = (prof?.active_workspace_id as string | null) ?? userId;
+    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+    const workspaceId = (wsData as string | null) ?? userId;
 
     const { data: owners } = await supabase
       .from("hubspot_owners")
