@@ -17,7 +17,7 @@ import {
 } from "@/lib/access-profiles.functions";
 import { TOOL_REQUIRED_ENTITLEMENT, PLAN_LABELS } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/use-entitlements";
-import { Link as RouterLink } from "@tanstack/react-router";
+import { useEntitlements } from "@/lib/use-entitlements";
 
 export const Route = createFileRoute("/_authenticated/settings/roles/$roleId")({
   component: EditRolePage,
