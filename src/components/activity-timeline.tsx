@@ -117,11 +117,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [dueDate, setDueDate] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [mentionState, setMentionState] = useState<{ open: boolean; query: string; pos: number } | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
