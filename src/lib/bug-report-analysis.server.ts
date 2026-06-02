@@ -97,7 +97,7 @@ Responda APENAS com JSON válido, sem markdown, exatamente neste schema:
   "proposed_fix": "passos concretos de implementação em português, mencionando arquivos e funções específicas quando possível",
   "reproduction_steps": ["passo 1", "passo 2", "..."],
   "confidence": 0.0,
-  "lovable_prompt": "prompt pronto para colar no chat do Lovable que peça a correção, em português, em uma única mensagem curta e direta"
+  "lovable_prompt": "prompt pronto para colar no chat do Lovable que peça a correção, em português, em uma única mensagem. DEVE incluir explicitamente: (1) quem reportou (nome/email), (2) navegador/user-agent resumido (ex.: 'Chrome no macOS'), (3) a URL onde ocorreu, (4) o problema relatado e (5) os arquivos/áreas suspeitos a investigar. Formato sugerido: 'Chamado reportado por <nome> (<email>) em <url> usando <navegador>. Problema: <descrição curta>. Por favor, corrija ... Verifique <arquivos>.'"
 }
 
 Regras:
