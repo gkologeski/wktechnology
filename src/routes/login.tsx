@@ -12,6 +12,16 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  head: () => ({
+    meta: [
+      { title: "Entrar — WK Technology CRM" },
+      { name: "description", content: "Acesse sua conta no WK Technology CRM para gerenciar leads, contatos e negócios." },
+      { property: "og:title", content: "Entrar — WK Technology CRM" },
+      { property: "og:description", content: "Acesse sua conta no WK Technology CRM." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/login" }],
+  }),
 });
 
 

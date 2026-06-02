@@ -1,0 +1,11 @@
+# WK Technology CRM
+
+> Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas. O acesso é restrito a usuários convidados pelo administrador do workspace.
+
+## Pages
+
+- [Login](/login): Tela de entrada para usuários do CRM.
+- [Acesso por convite](/signup): Explicação de como obter acesso (apenas via convite).
+- [Recuperar senha](/reset-password): Solicitar redefinição de senha.
+- [Política de Privacidade](/privacy): Como tratamos seus dados.
+- [Termos de Serviço](/terms): Condições de uso do CRM.

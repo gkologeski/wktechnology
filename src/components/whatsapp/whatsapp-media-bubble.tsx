@@ -14,7 +14,7 @@ export function WhatsAppMediaBubble({ url, contentType, className }: Props) {
       <a href={url} target="_blank" rel="noreferrer" className={className}>
         <img
           src={url}
-          alt="Mídia"
+          alt="Imagem enviada na conversa do WhatsApp"
           className="max-h-64 max-w-full rounded-md object-cover"
           loading="lazy"
         />

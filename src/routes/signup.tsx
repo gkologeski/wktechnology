@@ -4,11 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export const Route = createFileRoute("/signup")({
   component: SignupClosedPage,
+  head: () => ({
+    meta: [
+      { title: "Acesso por convite — WK Technology CRM" },
+      { name: "description", content: "O cadastro no WK Technology CRM é feito apenas por convite enviado pelo administrador do workspace." },
+      { property: "og:title", content: "Acesso por convite — WK Technology CRM" },
+      { property: "og:description", content: "O cadastro no WK Technology CRM é feito apenas por convite." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/signup" },
+    ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/signup" }],
+  }),
 });
 
 function SignupClosedPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+      <h1 className="sr-only">Acesso por convite ao WK Technology CRM</h1>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Acesso por convite</CardTitle>
