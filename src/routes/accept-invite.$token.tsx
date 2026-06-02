@@ -109,6 +109,7 @@ function AcceptInviteTokenPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+      <h1 className="sr-only">Aceitar convite no WK Technology CRM</h1>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Aceitar convite</CardTitle>
