@@ -42,12 +42,19 @@ import {
   type BugReportStatus,
 } from "@/lib/bug-reports.functions";
 import {
+  analyzeBugReport,
+  listBugReportAnalyses,
+} from "@/lib/bug-report-analysis.functions";
+import {
   ShieldAlert,
   Bug,
   Video,
   Trash2,
   ExternalLink,
   RefreshCw,
+  Sparkles,
+  Loader2,
+  Copy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/bug-reports")({
@@ -86,18 +93,40 @@ function BugReportsAdminPage() {
   const updateFn = useServerFn(updateBugReportStatus);
   const deleteFn = useServerFn(deleteBugReport);
   const recUrlFn = useServerFn(getBugReportRecordingUrl);
+  const analyzeFn = useServerFn(analyzeBugReport);
+  const listAnalysesFn = useServerFn(listBugReportAnalyses);
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<BugReportStatus | "all">("open");
   const [kind, setKind] = useState<"new_feature" | "existing_broken" | "all">("all");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["admin-bug-reports", status, kind],
     enabled: isPlatformAdmin,
     queryFn: () => listFn({ data: { status, kind } }),
   });
+
+  const reportIds = useMemo(
+    () => ((list.data ?? []) as Array<{ id: string }>).map((r) => r.id),
+    [list.data],
+  );
+
+  const analyses = useQuery({
+    queryKey: ["admin-bug-report-analyses", reportIds],
+    enabled: isPlatformAdmin && reportIds.length > 0,
+    queryFn: () => listAnalysesFn({ data: { bug_report_ids: reportIds } }),
+  });
+
+  const latestByReport = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const a of ((analyses.data ?? []) as Array<{ bug_report_id: string }>)) {
+      if (!m.has(a.bug_report_id)) m.set(a.bug_report_id, a);
+    }
+    return m;
+  }, [analyses.data]);
 
   const update = useMutation({
     mutationFn: (vars: { id: string; status: BugReportStatus }) => updateFn({ data: vars }),
@@ -117,6 +146,28 @@ function BugReportsAdminPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao remover"),
   });
 
+  const runAnalyze = async (id: string) => {
+    setAnalyzingId(id);
+    try {
+      await analyzeFn({ data: { bug_report_id: id } });
+      toast.success("Análise gerada");
+      await qc.invalidateQueries({ queryKey: ["admin-bug-report-analyses"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar análise");
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
+  const copyPrompt = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Prompt copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
   const openVideo = async (path: string) => {
     try {
       const { url } = await recUrlFn({ data: { path } });
@@ -126,6 +177,7 @@ function BugReportsAdminPage() {
       toast.error(e instanceof Error ? e.message : "Não foi possível abrir o vídeo");
     }
   };
+
 
   const rows = list.data ?? [];
 
@@ -274,7 +326,135 @@ function BugReportsAdminPage() {
                   {r.user_agent && (
                     <p className="text-[10px] text-muted-foreground truncate">{r.user_agent as string}</p>
                   )}
+
+                  {(() => {
+                    const a = latestByReport.get(r.id as string);
+                    const isAnalyzing = analyzingId === r.id;
+                    return (
+                      <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs font-medium">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Análise por IA
+                            {a?.severity && (
+                              <Badge
+                                variant={
+                                  a.severity === "critical" || a.severity === "high"
+                                    ? "destructive"
+                                    : a.severity === "medium"
+                                      ? "default"
+                                      : "secondary"
+                                }
+                              >
+                                {a.severity}
+                              </Badge>
+                            )}
+                            {typeof a?.confidence === "number" && (
+                              <Badge variant="outline">
+                                confiança {Math.round(a.confidence * 100)}%
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isAnalyzing}
+                            onClick={() => runAnalyze(r.id as string)}
+                          >
+                            {isAnalyzing ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4 mr-2" />
+                            )}
+                            {a ? "Reanalisar" : "Analisar com IA"}
+                          </Button>
+                        </div>
+
+                        {!a && !isAnalyzing && (
+                          <p className="text-xs text-muted-foreground">
+                            Ainda sem análise. Clique em "Analisar com IA" para gerar resumo,
+                            causa provável e proposta de correção.
+                          </p>
+                        )}
+
+                        {a?.status === "error" && (
+                          <p className="text-xs text-destructive">
+                            Erro na última análise: {a.error}
+                          </p>
+                        )}
+
+                        {a?.status === "ok" && (
+                          <div className="space-y-2 text-xs">
+                            {a.summary && <p className="text-foreground">{a.summary}</p>}
+                            {a.suspected_area && (
+                              <p>
+                                <span className="text-muted-foreground">Área suspeita: </span>
+                                <span className="font-medium">{a.suspected_area}</span>
+                              </p>
+                            )}
+                            {Array.isArray(a.suspected_files) && a.suspected_files.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {a.suspected_files.map((f: string) => (
+                                  <code
+                                    key={f}
+                                    className="rounded bg-background border px-1.5 py-0.5 text-[10px]"
+                                  >
+                                    {f}
+                                  </code>
+                                ))}
+                              </div>
+                            )}
+                            {a.root_cause && (
+                              <details>
+                                <summary className="cursor-pointer text-muted-foreground">
+                                  Causa provável
+                                </summary>
+                                <p className="mt-1 whitespace-pre-wrap">{a.root_cause}</p>
+                              </details>
+                            )}
+                            {a.proposed_fix && (
+                              <details open>
+                                <summary className="cursor-pointer text-muted-foreground">
+                                  Proposta de correção
+                                </summary>
+                                <p className="mt-1 whitespace-pre-wrap">{a.proposed_fix}</p>
+                              </details>
+                            )}
+                            {Array.isArray(a.reproduction_steps) &&
+                              a.reproduction_steps.length > 0 && (
+                                <details>
+                                  <summary className="cursor-pointer text-muted-foreground">
+                                    Passos para reproduzir
+                                  </summary>
+                                  <ol className="mt-1 list-decimal pl-5 space-y-0.5">
+                                    {a.reproduction_steps.map((s: string, i: number) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ol>
+                                </details>
+                              )}
+                            {a.lovable_prompt && (
+                              <div className="pt-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyPrompt(a.lovable_prompt)}
+                                >
+                                  <Copy className="h-3 w-3 mr-2" />
+                                  Copiar prompt para o Lovable
+                                </Button>
+                              </div>
+                            )}
+                            <p className="text-[10px] text-muted-foreground">
+                              {a.model} · {format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
+
               </Card>
             );
           })}

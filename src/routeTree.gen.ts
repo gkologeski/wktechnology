@@ -117,6 +117,7 @@ import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
+import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
@@ -741,6 +742,12 @@ const ApiPublicHooksCalendarTickRoute =
     path: '/api/public/hooks/calendar-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBugReportAnalyzeRoute =
+  ApiPublicHooksBugReportAnalyzeRouteImport.update({
+    id: '/api/public/hooks/bug-report-analyze',
+    path: '/api/public/hooks/bug-report-analyze',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
@@ -904,6 +911,7 @@ export interface FileRoutesByFullPath {
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -1022,6 +1030,7 @@ export interface FileRoutesByTo {
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -1145,6 +1154,7 @@ export interface FileRoutesById {
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -1268,6 +1278,7 @@ export interface FileRouteTypes {
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -1386,6 +1397,7 @@ export interface FileRouteTypes {
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -1508,6 +1520,7 @@ export interface FileRouteTypes {
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -1556,6 +1569,7 @@ export interface RootRouteChildren {
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
@@ -2339,6 +2353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCalendarTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/bug-report-analyze': {
+      id: '/api/public/hooks/bug-report-analyze'
+      path: '/api/public/hooks/bug-report-analyze'
+      fullPath: '/api/public/hooks/bug-report-analyze'
+      preLoaderRoute: typeof ApiPublicHooksBugReportAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/embed-js': {
       id: '/api/public/forms/embed-js'
       path: '/api/public/forms/embed-js'
@@ -2759,6 +2780,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
@@ -2789,13 +2811,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

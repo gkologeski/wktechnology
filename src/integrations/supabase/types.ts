@@ -610,6 +610,68 @@ export type Database = {
           },
         ]
       }
+      bug_report_analyses: {
+        Row: {
+          bug_report_id: string
+          confidence: number | null
+          created_at: string
+          error: string | null
+          id: string
+          lovable_prompt: string | null
+          model: string
+          proposed_fix: string | null
+          reproduction_steps: Json
+          root_cause: string | null
+          severity: string | null
+          status: string
+          summary: string | null
+          suspected_area: string | null
+          suspected_files: Json
+        }
+        Insert: {
+          bug_report_id: string
+          confidence?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          lovable_prompt?: string | null
+          model: string
+          proposed_fix?: string | null
+          reproduction_steps?: Json
+          root_cause?: string | null
+          severity?: string | null
+          status?: string
+          summary?: string | null
+          suspected_area?: string | null
+          suspected_files?: Json
+        }
+        Update: {
+          bug_report_id?: string
+          confidence?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          lovable_prompt?: string | null
+          model?: string
+          proposed_fix?: string | null
+          reproduction_steps?: Json
+          root_cause?: string | null
+          severity?: string | null
+          status?: string
+          summary?: string | null
+          suspected_area?: string | null
+          suspected_files?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bug_report_analyses_bug_report_id_fkey"
+            columns: ["bug_report_id"]
+            isOneToOne: false
+            referencedRelation: "bug_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bug_reports: {
         Row: {
           category: string
