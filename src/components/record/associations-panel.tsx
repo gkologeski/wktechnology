@@ -17,8 +17,8 @@ export function AssociationsPanel({ entity, entityId, companyId }: Props) {
     <>
       {entity === "contact" && companyId && <CompanyCard companyId={companyId} />}
       {(entity === "company" || entity === "deal") && <ContactsCard entity={entity} entityId={entityId} />}
-      {(entity === "contact" || entity === "company") && <DealsCard entity={entity} entityId={entityId} />}
-      {entity !== "lead" && <TicketsCard entity={entity} entityId={entityId} />}
+      {(entity === "contact" || entity === "company") && <DealsCard entity={entity} entityId={entityId} companyId={companyId} />}
+      {entity !== "lead" && <TicketsCard entity={entity} entityId={entityId} companyId={companyId} />}
       <TasksCard entity={entity} entityId={entityId} />
       <EmailsCard entity={entity} entityId={entityId} />
       <AttachmentsCard entity={entity} entityId={entityId} />
