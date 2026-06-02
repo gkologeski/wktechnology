@@ -326,7 +326,135 @@ function BugReportsAdminPage() {
                   {r.user_agent && (
                     <p className="text-[10px] text-muted-foreground truncate">{r.user_agent as string}</p>
                   )}
+
+                  {(() => {
+                    const a = latestByReport.get(r.id as string);
+                    const isAnalyzing = analyzingId === r.id;
+                    return (
+                      <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs font-medium">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Análise por IA
+                            {a?.severity && (
+                              <Badge
+                                variant={
+                                  a.severity === "critical" || a.severity === "high"
+                                    ? "destructive"
+                                    : a.severity === "medium"
+                                      ? "default"
+                                      : "secondary"
+                                }
+                              >
+                                {a.severity}
+                              </Badge>
+                            )}
+                            {typeof a?.confidence === "number" && (
+                              <Badge variant="outline">
+                                confiança {Math.round(a.confidence * 100)}%
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isAnalyzing}
+                            onClick={() => runAnalyze(r.id as string)}
+                          >
+                            {isAnalyzing ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4 mr-2" />
+                            )}
+                            {a ? "Reanalisar" : "Analisar com IA"}
+                          </Button>
+                        </div>
+
+                        {!a && !isAnalyzing && (
+                          <p className="text-xs text-muted-foreground">
+                            Ainda sem análise. Clique em "Analisar com IA" para gerar resumo,
+                            causa provável e proposta de correção.
+                          </p>
+                        )}
+
+                        {a?.status === "error" && (
+                          <p className="text-xs text-destructive">
+                            Erro na última análise: {a.error}
+                          </p>
+                        )}
+
+                        {a?.status === "ok" && (
+                          <div className="space-y-2 text-xs">
+                            {a.summary && <p className="text-foreground">{a.summary}</p>}
+                            {a.suspected_area && (
+                              <p>
+                                <span className="text-muted-foreground">Área suspeita: </span>
+                                <span className="font-medium">{a.suspected_area}</span>
+                              </p>
+                            )}
+                            {Array.isArray(a.suspected_files) && a.suspected_files.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {a.suspected_files.map((f: string) => (
+                                  <code
+                                    key={f}
+                                    className="rounded bg-background border px-1.5 py-0.5 text-[10px]"
+                                  >
+                                    {f}
+                                  </code>
+                                ))}
+                              </div>
+                            )}
+                            {a.root_cause && (
+                              <details>
+                                <summary className="cursor-pointer text-muted-foreground">
+                                  Causa provável
+                                </summary>
+                                <p className="mt-1 whitespace-pre-wrap">{a.root_cause}</p>
+                              </details>
+                            )}
+                            {a.proposed_fix && (
+                              <details open>
+                                <summary className="cursor-pointer text-muted-foreground">
+                                  Proposta de correção
+                                </summary>
+                                <p className="mt-1 whitespace-pre-wrap">{a.proposed_fix}</p>
+                              </details>
+                            )}
+                            {Array.isArray(a.reproduction_steps) &&
+                              a.reproduction_steps.length > 0 && (
+                                <details>
+                                  <summary className="cursor-pointer text-muted-foreground">
+                                    Passos para reproduzir
+                                  </summary>
+                                  <ol className="mt-1 list-decimal pl-5 space-y-0.5">
+                                    {a.reproduction_steps.map((s: string, i: number) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ol>
+                                </details>
+                              )}
+                            {a.lovable_prompt && (
+                              <div className="pt-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyPrompt(a.lovable_prompt)}
+                                >
+                                  <Copy className="h-3 w-3 mr-2" />
+                                  Copiar prompt para o Lovable
+                                </Button>
+                              </div>
+                            )}
+                            <p className="text-[10px] text-muted-foreground">
+                              {a.model} · {format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
+
               </Card>
             );
           })}
