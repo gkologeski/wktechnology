@@ -1028,6 +1028,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       if (scope.contacts) objects.push({ key: "contacts", remote: () => searchTotal("contacts"), localTable: "contacts" });
       if (scope.deals) objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
       if (scope.leads) objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
+      if (scope.tickets) objects.push({ key: "tickets", remote: () => searchTotal("tickets"), localTable: "tickets" });
       if (scope.activities) {
         objects.push({
           key: "activities",
