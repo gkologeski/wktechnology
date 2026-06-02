@@ -551,7 +551,7 @@ async function loadMapForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
   const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
@@ -566,7 +566,7 @@ async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<string[]> {
   const { data: items } = await supabase
@@ -587,7 +587,7 @@ async function loadImportedHsIdsForStep(
 async function scanLocalHubspotMap(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
@@ -609,7 +609,7 @@ async function scanLocalHubspotMap(
 async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   ids: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -637,7 +637,7 @@ type UpsertTask = { hsId: string; payload: Record<string, unknown> };
 /** Compare existing row vs incoming payload by HS id; insert/update/skip. */
 async function upsertByHsId(
   supabase: SupabaseClient,
-  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities",
   ownerId: string,
   hsId: string,
   payload: Record<string, unknown>,
@@ -679,7 +679,7 @@ async function upsertByHsId(
 
 async function upsertBatchByHsId(
   supabase: SupabaseClient,
-  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities",
   ownerId: string,
   tasks: UpsertTask[],
 ): Promise<UpsertResult[]> {
@@ -1023,7 +1023,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     if (step === "compare") {
       // Count remote (HubSpot) vs local for each planned object and log the diff.
       // Steps where local >= remote are marked to be skipped (no fetch).
-      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "activities" }[] = [];
+      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities" }[] = [];
       if (scope.companies !== false) objects.push({ key: "companies", remote: () => searchTotal("companies"), localTable: "companies" });
       if (scope.contacts) objects.push({ key: "contacts", remote: () => searchTotal("contacts"), localTable: "contacts" });
       if (scope.deals) objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
