@@ -30,7 +30,11 @@ export default defineConfig({
       },
     ],
     optimizeDeps: {
-      include: ["events", "@twilio/voice-sdk"],
+      // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
+      // resolves its `node:events` imports through our `polyfill-node-events`
+      // plugin (esbuild's prebundler does not run that plugin).
+      exclude: ["@twilio/voice-sdk"],
+      include: ["events"],
     },
   },
 });
