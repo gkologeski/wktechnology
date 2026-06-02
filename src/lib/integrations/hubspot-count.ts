@@ -7,6 +7,7 @@ export type CountObjectKey =
   | "contacts"
   | "deals"
   | "leads"
+  | "tickets"
   | "activities";
 
 export type CountDeps = {
