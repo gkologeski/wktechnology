@@ -492,6 +492,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       if (key === "contacts") return searchTotal("contacts");
       if (key === "deals") return searchTotal("deals");
       if (key === "leads") return searchTotal("leads");
+      if (key === "tickets") return searchTotal("tickets");
       const parts = await Promise.all([
         searchTotal("notes"),
         searchTotal("calls"),
