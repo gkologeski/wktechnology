@@ -113,9 +113,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const target = data.email.trim().toLowerCase();
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     // ---- Enforcement: limite de usuários do plano ----
     // O owner do workspace conta como 1 usuário. Comparamos
