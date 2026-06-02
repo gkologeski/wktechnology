@@ -39,6 +39,7 @@ function EditRolePage() {
   const navigate = useNavigate();
   const getFn = useServerFn(getAccessProfile);
   const updateFn = useServerFn(updateAccessProfile);
+  const ents = useEntitlements();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
