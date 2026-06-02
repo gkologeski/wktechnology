@@ -391,6 +391,7 @@ export type StepName =
   | "contacts"
   | "deals"
   | "leads"
+  | "tickets"
   | "activities-notes"
   | "activities-calls"
   | "activities-meetings"
@@ -403,6 +404,7 @@ export const STEP_DEPS: Record<StepName, StepName[]> = {
   contacts: ["compare"],
   deals: ["compare"],
   leads: ["compare"],
+  tickets: ["compare"],
   "activities-notes": ["compare"],
   "activities-calls": ["compare"],
   "activities-meetings": ["compare"],
@@ -416,6 +418,7 @@ const STEP_ORDER: StepName[] = [
   "contacts",
   "deals",
   "leads",
+  "tickets",
   "activities-notes",
   "activities-calls",
   "activities-meetings",
@@ -428,6 +431,7 @@ export type Scope = {
   contacts: boolean;
   deals: boolean;
   leads: boolean;
+  tickets: boolean;
   activities: boolean;
   maxCompanies: number;
 };
@@ -439,6 +443,7 @@ export function planSteps(scope: Scope): StepName[] {
   if (scope.contacts) wanted.add("contacts");
   if (scope.deals) wanted.add("deals");
   if (scope.leads) wanted.add("leads");
+  if (scope.tickets) wanted.add("tickets");
   if (scope.activities) {
     wanted.add("activities-notes");
     wanted.add("activities-calls");
