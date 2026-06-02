@@ -7,6 +7,27 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
 
+/** URL canônica de produção do CRM — usada para links de convite por email. */
+const CANONICAL_APP_URL = "https://crm.wktechnology.com.br";
+
+/**
+ * Resolve o origin para o link do convite. Se vier de um host do Lovable
+ * (preview/sandbox/dev), substitui pela URL canônica de produção para que
+ * o convidado caia no CRM e não no editor do Lovable.
+ */
+function resolveInviteOrigin(origin: string | undefined): string {
+  if (!origin) return CANONICAL_APP_URL;
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    if (host.endsWith("lovable.app") || host.endsWith("lovable.dev") || host.endsWith("lovableproject.com")) {
+      return CANONICAL_APP_URL;
+    }
+    return origin.replace(/\/+$/, "");
+  } catch {
+    return CANONICAL_APP_URL;
+  }
+}
+
 export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   admin: "Admin",
   manager: "Gestor",
