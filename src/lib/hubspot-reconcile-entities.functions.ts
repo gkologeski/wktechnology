@@ -32,20 +32,22 @@ async function hsPost(path: string, body: object) {
   return data;
 }
 
-type EntityKind = "contact" | "company" | "deal" | "lead";
+type EntityKind = "contact" | "company" | "deal" | "lead" | "ticket";
 
 const ENTITY_TO_OBJECT: Record<EntityKind, string> = {
   contact: "contacts",
   company: "companies",
   deal: "deals",
   lead: "leads",
+  ticket: "tickets",
 };
 
-const ENTITY_TO_TABLE: Record<EntityKind, "contacts" | "companies" | "deals" | "leads"> = {
+const ENTITY_TO_TABLE: Record<EntityKind, "contacts" | "companies" | "deals" | "leads" | "tickets"> = {
   contact: "contacts",
   company: "companies",
   deal: "deals",
   lead: "leads",
+  ticket: "tickets",
 };
 
 const PROPS_BY_ENTITY: Record<EntityKind, string[]> = {
@@ -78,6 +80,12 @@ const PROPS_BY_ENTITY: Record<EntityKind, string[]> = {
     "hs_lead_source", "hs_analytics_source", "hs_analytics_source_data_1",
     "hs_pipeline_stage", "hubspot_owner_id", "hs_object_id",
     "createdate", "lastmodifieddate", "hs_lastmodifieddate",
+  ],
+  ticket: [
+    "subject", "content", "hs_pipeline", "hs_pipeline_stage", "hs_ticket_priority",
+    "hs_ticket_category", "source_type", "hubspot_owner_id", "hs_object_id",
+    "createdate", "hs_createdate", "hs_lastmodifieddate",
+    "closed_date", "time_to_close", "hs_resolution",
   ],
 };
 
