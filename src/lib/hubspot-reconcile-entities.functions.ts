@@ -255,11 +255,36 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
   };
 }
 
+function buildTicketPayload(ownerId: string, rec: HsRec): Record<string, unknown> | null {
+  const p = rec.properties;
+  const subject = (p.subject ?? `Ticket ${rec.id}`) as string;
+  const prMap: Record<string, string> = { LOW: "low", MEDIUM: "medium", HIGH: "high", URGENT: "urgent" };
+  const priority = prMap[(p.hs_ticket_priority ?? "").toUpperCase()] ?? "medium";
+  // status mapping fica simplificado; o importador completo já mapeia via pipelines.
+  const closed = !!p.closed_date;
+  const status = closed ? "closed" : "open";
+  return {
+    owner_id: ownerId,
+    subject,
+    description: p.content ?? null,
+    status,
+    priority,
+    source: p.source_type ?? "hubspot",
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? rec.id,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
+    resolved_at: parseHsDate(p.closed_date),
+    external_ids: { hubspot: rec.id, hs_pipeline: p.hs_pipeline ?? null, hs_pipeline_stage: p.hs_pipeline_stage ?? null } as never,
+    hs_raw: rawOf(rec),
+  };
+}
+
 export const reconcileHubspotEntities = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      entity: z.enum(["contact", "company", "deal", "lead"]),
+      entity: z.enum(["contact", "company", "deal", "lead", "ticket"]),
       after: z.string().optional(),
       pages: z.number().min(1).max(5).default(3),
     }),
