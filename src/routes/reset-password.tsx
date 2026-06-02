@@ -62,6 +62,7 @@ function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+      <h1 className="sr-only">Recuperar senha do WK Technology CRM</h1>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{recoveryMode ? "Nova senha" : "Recuperar senha"}</CardTitle>
