@@ -12,4 +12,18 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    optimizeDeps: {
+      include: ["events", "@twilio/voice-sdk"],
+    },
+    build: {
+      commonjsOptions: {
+        // The `events` npm polyfill is CJS (`module.exports = EventEmitter`).
+        // Rollup needs help to recognize `EventEmitter` as a named export used by
+        // @twilio/voice-sdk's ESM modules.
+        defaultIsModuleExports: "auto",
+        transformMixedEsModules: true,
+      },
+    },
+  },
 });
