@@ -13,6 +13,7 @@ import {
   Target,
   UserPlus,
   Activity,
+  LifeBuoy,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
 
-type Obj = "companies" | "contacts" | "deals" | "leads" | "activities";
+type Obj = "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities";
 
 const OBJECTS: {
   key: Obj;
@@ -65,6 +66,13 @@ const OBJECTS: {
     description: "Objeto Leads nativo do HubSpot (independente de empresas).",
   },
   {
+    key: "tickets",
+    label: "Tickets",
+    icon: LifeBuoy,
+    deps: [],
+    description: "Tickets de suporte do HubSpot (independente de empresas).",
+  },
+  {
     key: "activities",
     label: "Atividades",
     icon: Activity,
@@ -84,6 +92,7 @@ export function HubspotImportWizard() {
     contacts: true,
     deals: false,
     leads: false,
+    tickets: false,
     activities: false,
   });
   const [clearScope, setClearScope] = useState<Record<Obj, boolean>>({
@@ -91,6 +100,7 @@ export function HubspotImportWizard() {
     contacts: false,
     deals: false,
     leads: false,
+    tickets: false,
     activities: false,
   });
   const [maxCompanies, setMaxCompanies] = useState(200);
@@ -202,6 +212,7 @@ export function HubspotImportWizard() {
           contacts: scope.contacts,
           deals: scope.deals,
           leads: scope.leads,
+          tickets: scope.tickets,
           activities: scope.activities,
           maxCompanies,
         },

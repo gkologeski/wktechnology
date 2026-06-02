@@ -266,6 +266,23 @@ function mapActivity(kind: string, p: HsProps) {
   };
 }
 
+function mapTicket(p: HsProps) {
+  return {
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+  };
+}
+
+function mapHsTicketPriority(v: string | null | undefined): "low" | "medium" | "high" | "urgent" {
+  const s = (v ?? "").toLowerCase();
+  if (s === "low") return "low";
+  if (s === "high") return "high";
+  if (s === "urgent") return "urgent";
+  return "medium";
+}
+
 function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updatedAt?: string }) {
   return {
     id: rec.id,
@@ -391,6 +408,7 @@ export type StepName =
   | "contacts"
   | "deals"
   | "leads"
+  | "tickets"
   | "activities-notes"
   | "activities-calls"
   | "activities-meetings"
@@ -403,6 +421,7 @@ export const STEP_DEPS: Record<StepName, StepName[]> = {
   contacts: ["compare"],
   deals: ["compare"],
   leads: ["compare"],
+  tickets: ["compare"],
   "activities-notes": ["compare"],
   "activities-calls": ["compare"],
   "activities-meetings": ["compare"],
@@ -416,6 +435,7 @@ const STEP_ORDER: StepName[] = [
   "contacts",
   "deals",
   "leads",
+  "tickets",
   "activities-notes",
   "activities-calls",
   "activities-meetings",
@@ -428,6 +448,7 @@ export type Scope = {
   contacts: boolean;
   deals: boolean;
   leads: boolean;
+  tickets: boolean;
   activities: boolean;
   maxCompanies: number;
 };
@@ -439,6 +460,7 @@ export function planSteps(scope: Scope): StepName[] {
   if (scope.contacts) wanted.add("contacts");
   if (scope.deals) wanted.add("deals");
   if (scope.leads) wanted.add("leads");
+  if (scope.tickets) wanted.add("tickets");
   if (scope.activities) {
     wanted.add("activities-notes");
     wanted.add("activities-calls");
@@ -529,7 +551,7 @@ async function loadMapForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
   const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
@@ -544,7 +566,7 @@ async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
   userId: string,
   jobId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<string[]> {
   const { data: items } = await supabase
@@ -565,7 +587,7 @@ async function loadImportedHsIdsForStep(
 async function scanLocalHubspotMap(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
@@ -587,7 +609,7 @@ async function scanLocalHubspotMap(
 async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
   userId: string,
-  table: "companies" | "contacts" | "deals" | "leads",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   ids: string[],
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -615,7 +637,7 @@ type UpsertTask = { hsId: string; payload: Record<string, unknown> };
 /** Compare existing row vs incoming payload by HS id; insert/update/skip. */
 async function upsertByHsId(
   supabase: SupabaseClient,
-  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities",
   ownerId: string,
   hsId: string,
   payload: Record<string, unknown>,
@@ -657,7 +679,7 @@ async function upsertByHsId(
 
 async function upsertBatchByHsId(
   supabase: SupabaseClient,
-  table: "companies" | "contacts" | "deals" | "leads" | "activities",
+  table: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities",
   ownerId: string,
   tasks: UpsertTask[],
 ): Promise<UpsertResult[]> {
@@ -1001,11 +1023,12 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     if (step === "compare") {
       // Count remote (HubSpot) vs local for each planned object and log the diff.
       // Steps where local >= remote are marked to be skipped (no fetch).
-      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "activities" }[] = [];
+      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities" }[] = [];
       if (scope.companies !== false) objects.push({ key: "companies", remote: () => searchTotal("companies"), localTable: "companies" });
       if (scope.contacts) objects.push({ key: "contacts", remote: () => searchTotal("contacts"), localTable: "contacts" });
       if (scope.deals) objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
       if (scope.leads) objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
+      if (scope.tickets) objects.push({ key: "tickets", remote: () => searchTotal("tickets"), localTable: "tickets" });
       if (scope.activities) {
         objects.push({
           key: "activities",
@@ -1744,6 +1767,146 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         await bump(ok, fail);
         if (!nextAfter) break;
       }
+      }
+
+    } else if (step === "tickets") {
+      // Fetch ticket pipeline stages once to derive status (open/closed) per stage id.
+      const stageState = new Map<string, "open" | "closed">();
+      try {
+        const pr = (await hsFetch("/crm/v3/pipelines/tickets")) as {
+          results?: { stages?: { id: string; metadata?: { ticketState?: string } }[] }[];
+        };
+        for (const p of pr.results ?? []) {
+          for (const s of p.stages ?? []) {
+            const st = String(s.metadata?.ticketState ?? "").toUpperCase();
+            stageState.set(String(s.id), st === "CLOSED" ? "closed" : "open");
+          }
+        }
+      } catch {
+        // stage map is best-effort; default to 'new'
+      }
+
+      const ticketProps = await loadHsProperties("tickets");
+      const fallbackProps = [
+        "subject",
+        "content",
+        "hs_pipeline",
+        "hs_pipeline_stage",
+        "hs_ticket_priority",
+        "hs_ticket_category",
+        "source_type",
+        "hubspot_owner_id",
+        "hs_object_id",
+        "createdate",
+        "hs_lastmodifieddate",
+        "closed_date",
+      ];
+      const propsList = ticketProps.length ? ticketProps : fallbackProps;
+      const propsParam = propsList.join(",");
+
+      // Load local maps so we can fill FK columns from associations.
+      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
+      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
+      const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
+
+      if (resume.discovered === undefined) {
+        const total = await searchTotal("tickets");
+        await patchItemBefore(supabase, itemId, { discovered: total });
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Total no HubSpot: ${total} tickets`,
+        });
+      }
+
+      let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
+      let page = (resume.page as number | undefined) ?? 1;
+
+      type TicketsPage = {
+        results: (HSRec & { createdAt?: string; updatedAt?: string })[];
+        paging?: { next?: { after: string } };
+      };
+      const fetchPage = async (cursor?: string): Promise<TicketsPage> => {
+        const params: Record<string, string> = { limit: "100", properties: propsParam };
+        if (cursor) params.after = cursor;
+        return (await hsFetch("/crm/v3/objects/tickets", params)) as TicketsPage;
+      };
+
+      let nextPromise: Promise<TicketsPage> | null = fetchPage(after);
+      while (nextPromise) {
+        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+        const res: TicketsPage = await nextPromise;
+        if (!res.results?.length) break;
+        const nextAfter: string | undefined = res.paging?.next?.after;
+        nextPromise = nextAfter ? fetchPage(nextAfter) : null;
+
+        const pageIds = res.results.map((r) => r.id);
+        const [tContacts, tCompanies, tDeals] = await Promise.all([
+          getAssocMany("tickets", pageIds, "contacts", 20),
+          getAssocMany("tickets", pageIds, "companies", 20),
+          getAssocMany("tickets", pageIds, "deals", 20),
+        ]);
+
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Página ${page}: ${res.results.length} tickets`,
+          count: res.results.length,
+        });
+
+        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
+        for (const t of res.results) {
+          const p = t.properties;
+          const stageId = p.hs_pipeline_stage ?? null;
+          const status = stageId ? (stageState.get(String(stageId)) ?? "new") : "new";
+          const priority = mapHsTicketPriority(p.hs_ticket_priority);
+          const contactHs = (tContacts.get(t.id) ?? [])[0];
+          const companyHs = (tCompanies.get(t.id) ?? [])[0];
+          const dealHs = (tDeals.get(t.id) ?? [])[0];
+          const mapped = mapTicket(p);
+          tasks.push({
+            hsId: t.id,
+            payload: {
+              owner_id: userId,
+              subject: p.subject ?? "Sem assunto",
+              description: p.content ?? null,
+              status,
+              priority,
+              source: p.source_type ?? "hubspot",
+              contact_id: contactHs ? contactMap.get(contactHs) ?? null : null,
+              company_id: companyHs ? companyMap.get(companyHs) ?? null : null,
+              deal_id: dealHs ? dealMap.get(dealHs) ?? null : null,
+              custom_fields: {
+                hs_pipeline: p.hs_pipeline ?? null,
+                hs_pipeline_stage: stageId,
+                hs_ticket_category: p.hs_ticket_category ?? null,
+              } as never,
+              ...mapped,
+              external_ids: { hubspot: t.id, hs_pipeline_stage: stageId } as never,
+              hs_raw: rawOf(t),
+              deleted_at: null,
+            },
+          });
+        }
+
+        const results = await upsertBatchByHsId(supabase, "tickets", userId, tasks);
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === "failed") {
+            fail++;
+            await appendLog(supabase, jobId, {
+              level: "warn", step,
+              message: `Falha ticket ${tasks[j].hsId}: ${r.error}`,
+            });
+          } else {
+            imported.push(tasks[j].hsId);
+            ok++;
+          }
+        }
+
+        after = nextAfter;
+        page++;
+        await persistCursor({ cursor: after ?? null, page });
+        await bump(ok, fail);
+        if (!nextAfter) break;
       }
 
     } else if (step.startsWith("activities-")) {

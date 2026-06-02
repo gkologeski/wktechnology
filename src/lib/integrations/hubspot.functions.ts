@@ -385,14 +385,15 @@ async function syncLeadPipeline(
 }
 
 // ─────────────────────────── Counts (preview) ─────────────────────────────────
-const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "activities"]);
+const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "tickets", "activities"]);
 type ObjectKey = z.infer<typeof ObjectKey>;
 
-const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads" | "activities"> = {
+const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"> = {
   companies: "companies",
   contacts: "contacts",
   deals: "deals",
   leads: "leads",
+  tickets: "tickets",
   activities: "activities",
 };
 
@@ -491,6 +492,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
       if (key === "contacts") return searchTotal("contacts");
       if (key === "deals") return searchTotal("deals");
       if (key === "leads") return searchTotal("leads");
+      if (key === "tickets") return searchTotal("tickets");
       const parts = await Promise.all([
         searchTotal("notes"),
         searchTotal("calls"),
@@ -554,6 +556,7 @@ const ScopeSchema = z
     contacts: z.boolean().default(true),
     deals: z.boolean().default(true),
     leads: z.boolean().default(false),
+    tickets: z.boolean().default(false),
     activities: z.boolean().default(false),
     maxCompanies: z.number().int().min(1).max(2000).optional(),
     maxPerObject: z.number().int().min(1).max(2000).optional(),
@@ -566,7 +569,7 @@ type Scope = z.infer<typeof ScopeSchema>;
 
 type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
 
-const STEP_ORDER = ["companies", "contacts", "deals", "leads", "activities"] as const;
+const STEP_ORDER = ["companies", "contacts", "deals", "leads", "tickets", "activities"] as const;
 type StepName = (typeof STEP_ORDER)[number];
 
 const STEP_DEPS: Record<StepName, StepName[]> = {
@@ -574,6 +577,7 @@ const STEP_DEPS: Record<StepName, StepName[]> = {
   contacts: ["companies"],
   deals: ["companies", "contacts"],
   leads: [],
+  tickets: [],
   activities: ["contacts", "companies", "deals"],
 };
 
@@ -591,6 +595,9 @@ function planSteps(scope: Scope): StepName[] {
   }
   if (scope.leads) {
     wanted.add("leads");
+  }
+  if (scope.tickets) {
+    wanted.add("tickets");
   }
   if (scope.activities) {
     wanted.add("companies");
@@ -654,17 +661,19 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
         contacts: z.boolean().optional(),
         deals: z.boolean().optional(),
         leads: z.boolean().optional(),
+        tickets: z.boolean().optional(),
         activities: z.boolean().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const tables: ("companies" | "contacts" | "deals" | "leads" | "activities")[] = [];
+    const tables: ("companies" | "contacts" | "deals" | "leads" | "tickets" | "activities")[] = [];
     if (data.companies) tables.push("companies");
     if (data.contacts) tables.push("contacts");
     if (data.deals) tables.push("deals");
     if (data.leads) tables.push("leads");
+    if (data.tickets) tables.push("tickets");
     if (data.activities) tables.push("activities");
 
     const result: Record<string, number> = {};

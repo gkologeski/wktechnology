@@ -1,4 +1,4 @@
-import { Building2, Users, Target, UserPlus, Activity, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import { Building2, Users, Target, UserPlus, Activity, LifeBuoy, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
 import { useAnimatedNumber } from "@/hooks/use-animated-number";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,7 @@ const ICONS = {
   contacts: Users,
   deals: Target,
   leads: UserPlus,
+  tickets: LifeBuoy,
   activities: Activity,
 } as const;
 
@@ -17,6 +18,7 @@ const LABELS: Record<keyof typeof ICONS, string> = {
   contacts: "Contatos",
   deals: "Negócios",
   leads: "Leads",
+  tickets: "Tickets",
   activities: "Atividades",
 };
 

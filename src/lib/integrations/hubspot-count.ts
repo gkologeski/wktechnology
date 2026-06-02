@@ -7,6 +7,7 @@ export type CountObjectKey =
   | "contacts"
   | "deals"
   | "leads"
+  | "tickets"
   | "activities";
 
 export type CountDeps = {
@@ -60,6 +61,24 @@ export async function computePlannedCount(
     let n = 0;
     for (const p of props) if (p.properties?.lifecyclestage === "lead") n++;
     return n;
+  }
+
+  if (key === "tickets") {
+    // Tickets vinculados às empresas do escopo (ou diretamente a contatos/negócios).
+    const [viaCompanies, contacts, deals] = await Promise.all([
+      deps.unionAssocIds("companies", companyIds, "tickets"),
+      deps.unionAssocIds("companies", companyIds, "contacts"),
+      deps.unionAssocIds("companies", companyIds, "deals"),
+    ]);
+    const [viaContacts, viaDeals] = await Promise.all([
+      deps.unionAssocIds("contacts", [...contacts], "tickets"),
+      deps.unionAssocIds("deals", [...deals], "tickets"),
+    ]);
+    const merged = new Set<string>();
+    for (const x of viaCompanies) merged.add(x);
+    for (const x of viaContacts) merged.add(x);
+    for (const x of viaDeals) merged.add(x);
+    return merged.size;
   }
 
   // activities
