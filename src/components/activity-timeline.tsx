@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent, extractMentionIds } from "@/components/rich-html-editor";
 import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -117,11 +117,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [dueDate, setDueDate] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [mentionState, setMentionState] = useState<{ open: boolean; query: string; pos: number } | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
@@ -228,16 +226,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     })();
   }, [user]);
 
-  const insertMention = (member: TeamMember) => {
-    if (!mentionState) return;
-    const before = body.slice(0, mentionState.pos);
-    const after = body.slice((textareaRef.current?.selectionStart) ?? body.length);
-    setBody(`${before}@${member.name} ${after}`);
-    setMentionState(null);
-    if (!mentions.find((x) => x.id === member.id)) {
-      setMentions((prev) => [...prev, member]);
-    }
-  };
 
   const uploadFiles = async (): Promise<Attachment[]> => {
     if (!user || pendingFiles.length === 0) return [];
@@ -285,7 +273,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       subject: subject || null,
       body: body || null,
       due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
-      mentions: mentions.map((m) => m.id),
+      mentions: extractMentionIds(body),
       attachments,
       ...autoLinks,
     };
@@ -322,9 +310,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     window.open(data.signedUrl, "_blank");
   };
 
-  const filteredMentions = mentionState
-    ? team.filter((m) => m.name.toLowerCase().includes(mentionState.query.toLowerCase())).slice(0, 6)
-    : [];
 
   const pickLog = (kind: LogKind) => {
     setType(kind);
@@ -527,21 +512,11 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     : "Descreva o que aconteceu... use @ para mencionar, arraste arquivos para anexar"
                 }
                 minHeight={96}
+                mentions={team}
+                onMentionAdd={(m) => {
+                  if (!mentions.find((x) => x.id === m.id)) setMentions((prev) => [...prev, m]);
+                }}
               />
-              {mentionState?.open && filteredMentions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-64 rounded-md border bg-popover p-1 shadow-md">
-                  {filteredMentions.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => insertMention(m)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-                    >
-                      <AtSign className="h-3 w-3 text-muted-foreground" />
-                      {m.name}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
             {pendingFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -669,7 +644,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                   {a.body && (
                     editingId === a.id ? (
                       <div className="mt-2 space-y-2">
-                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} />
+                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} mentions={team} />
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(a)}><Check className="h-3 w-3 mr-1" /> Salvar</Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
