@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
+import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
@@ -122,6 +123,7 @@ function ContactsHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -384,7 +386,7 @@ function ContactsHubspotView() {
           <Button variant="outline" size="sm" disabled>
             <Download className="mr-1.5 h-4 w-4" /> Exportar
           </Button>
-          <Button size="sm" disabled>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar contato
           </Button>
         </div>
@@ -658,6 +660,12 @@ function ContactsHubspotView() {
         ids={enrichIds ?? []}
         entity="contact"
         onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
+      />
+
+      <CreateContactDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
       />
     </div>
   );
