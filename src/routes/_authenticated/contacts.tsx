@@ -661,6 +661,12 @@ function ContactsHubspotView() {
         entity="contact"
         onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
       />
+
+      <CreateContactDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
+      />
     </div>
   );
 }
