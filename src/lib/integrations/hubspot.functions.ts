@@ -385,14 +385,15 @@ async function syncLeadPipeline(
 }
 
 // ─────────────────────────── Counts (preview) ─────────────────────────────────
-const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "activities"]);
+const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "tickets", "activities"]);
 type ObjectKey = z.infer<typeof ObjectKey>;
 
-const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads" | "activities"> = {
+const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"> = {
   companies: "companies",
   contacts: "contacts",
   deals: "deals",
   leads: "leads",
+  tickets: "tickets",
   activities: "activities",
 };
 
