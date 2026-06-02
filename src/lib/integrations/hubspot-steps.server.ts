@@ -266,6 +266,23 @@ function mapActivity(kind: string, p: HsProps) {
   };
 }
 
+function mapTicket(p: HsProps) {
+  return {
+    hubspot_owner_id: p.hubspot_owner_id ?? null,
+    hs_object_id: p.hs_object_id ?? null,
+    hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
+  };
+}
+
+function mapHsTicketPriority(v: string | null | undefined): "low" | "medium" | "high" | "urgent" {
+  const s = (v ?? "").toLowerCase();
+  if (s === "low") return "low";
+  if (s === "high") return "high";
+  if (s === "urgent") return "urgent";
+  return "medium";
+}
+
 function rawOf(rec: { id: string; properties: HsProps; createdAt?: string; updatedAt?: string }) {
   return {
     id: rec.id,
