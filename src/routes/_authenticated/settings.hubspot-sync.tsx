@@ -61,7 +61,7 @@ function HubspotSyncPage() {
       }
       setReconcileCursors(acts);
       const ents: Record<string, boolean> = {};
-      for (const t of ["contact", "company", "deal", "lead"]) {
+      for (const t of ["contact", "company", "deal", "lead", "ticket"]) {
         ents[t] = !!localStorage.getItem(`hubspot-reconcile-entity-cursor:${t}`);
       }
       setEntityCursors(ents);
@@ -282,7 +282,7 @@ function HubspotSyncPage() {
     setEntityProgress("");
     try {
       let importedAll = 0;
-      for (const t of ["company", "contact", "deal", "lead"] as EntityType[]) {
+      for (const t of ["company", "contact", "deal", "lead", "ticket"] as EntityType[]) {
         setEntityProgress(`Iniciando ${ENTITY_LABEL[t]}...`);
         const r = await runEntityOne(t);
         importedAll += r.imported;
@@ -454,7 +454,7 @@ function HubspotSyncPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(["company", "contact", "deal", "lead"] as EntityType[]).map((t) => {
+            {(["company", "contact", "deal", "lead", "ticket"] as EntityType[]).map((t) => {
               const resuming = !!entityCursors[t];
               return (
                 <div key={t} className="inline-flex items-center gap-1">
