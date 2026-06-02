@@ -285,7 +285,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       subject: subject || null,
       body: body || null,
       due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
-      mentions: mentions.map((m) => m.id),
+      mentions: extractMentionIds(body),
       attachments,
       ...autoLinks,
     };
