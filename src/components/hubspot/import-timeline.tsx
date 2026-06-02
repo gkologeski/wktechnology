@@ -50,7 +50,7 @@ type Item = {
   after: { succeeded?: number; failed?: number; finished_at?: string } | null;
 };
 
-const KNOWN_STEPS: CounterStep[] = ["companies", "contacts", "deals", "leads", "activities"];
+const KNOWN_STEPS: CounterStep[] = ["companies", "contacts", "deals", "leads", "tickets", "activities"];
 
 function fmtElapsed(startedAt: string | null, finishedAt: string | null): string {
   if (!startedAt) return "00:00:00";
