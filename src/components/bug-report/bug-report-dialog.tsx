@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { Loader2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import { Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,6 +53,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
   const [description, setDescription] = useState("");
   const [includeMic, setIncludeMic] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [minimized, setMinimized] = useState(false);
 
   const recorder = useScreenRecorder();
 
@@ -67,16 +68,33 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     setSubtype("");
     setDescription("");
     setIncludeMic(true);
+    setMinimized(false);
     recorder.reset();
   };
 
   const handleClose = (next: boolean) => {
+    // Ignore close attempts triggered when we minimize the dialog during recording
+    if (!next && minimized) return;
     if (!next) {
       if (recorder.status === "recording") recorder.stop();
       resetAll();
     }
     onOpenChange(next);
   };
+
+  const handleStartRecording = async () => {
+    await recorder.start({ includeMic });
+  };
+
+  // Once the recorder is actively recording, hide the dialog so the user can
+  // interact with the page being recorded. Restore it when recording stops.
+  useEffect(() => {
+    if (recorder.status === "recording" && open) {
+      setMinimized(true);
+    } else if (recorder.status === "stopped" || recorder.status === "error") {
+      setMinimized(false);
+    }
+  }, [recorder.status, open]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -133,134 +151,148 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
   };
 
   const recording = recorder.status === "recording";
+  const dialogVisible = open && !minimized;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Abrir chamado</DialogTitle>
-          <DialogDescription>
-            Descreva o problema ou sugira uma melhoria. Você pode anexar uma gravação de tela.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={dialogVisible} onOpenChange={handleClose}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Abrir chamado</DialogTitle>
+            <DialogDescription>
+              Descreva o problema ou sugira uma melhoria. Você pode anexar uma gravação de tela.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Tipo</Label>
-            <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {BUG_KINDS.map((k) => (
-                  <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select
-                value={category}
-                onValueChange={(v) => { setCategory(v); setSubtype(""); }}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <Label>Tipo</Label>
+              <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {BUG_CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  {BUG_KINDS.map((k) => (
+                    <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Subtipo</Label>
-              <Select value={subtype} onValueChange={setSubtype} disabled={!category}>
-                <SelectTrigger><SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} /></SelectTrigger>
-                <SelectContent>
-                  {subtypes.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Descrição</Label>
-            <Textarea
-              rows={5}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="O que você esperava? O que aconteceu? Em qual tela?"
-              maxLength={4000}
-            />
-            <p className="text-xs text-muted-foreground text-right">{description.length}/4000</p>
-          </div>
-
-          <div className="rounded-lg border p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Gravação de tela (opcional)</p>
-                <p className="text-xs text-muted-foreground">Limite de 2 minutos por gravação.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {includeMic ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                <Switch
-                  checked={includeMic}
-                  onCheckedChange={setIncludeMic}
-                  disabled={recording}
-                  aria-label="Incluir microfone"
-                />
-                <span className="text-xs">Microfone</span>
-              </div>
-            </div>
-
-            {recorder.status === "idle" && (
-              <Button type="button" variant="secondary" onClick={() => recorder.start({ includeMic })}>
-                <Video className="h-4 w-4 mr-2" /> Iniciar gravação
-              </Button>
-            )}
-
-            {recording && (
-              <div className="flex items-center gap-3">
-                <Button type="button" variant="destructive" onClick={recorder.stop}>
-                  <Square className="h-4 w-4 mr-2" /> Parar
-                </Button>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="tabular-nums">{fmtTime(recorder.elapsedMs)}</span>
-                  <span className="text-muted-foreground">/ {fmtTime(recorder.maxDurationMs)}</span>
-                </div>
-              </div>
-            )}
-
-            {recorder.status === "stopped" && recorder.previewUrl && (
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <video src={recorder.previewUrl} controls className="w-full rounded border bg-black" />
-                <div className="flex gap-2">
-                  <Button type="button" variant="ghost" size="sm" onClick={recorder.reset}>
-                    <X className="h-4 w-4 mr-2" /> Descartar e regravar
-                  </Button>
+                <Label>Categoria</Label>
+                <Select
+                  value={category}
+                  onValueChange={(v) => { setCategory(v); setSubtype(""); }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {BUG_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Subtipo</Label>
+                <Select value={subtype} onValueChange={setSubtype} disabled={!category}>
+                  <SelectTrigger><SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} /></SelectTrigger>
+                  <SelectContent>
+                    {subtypes.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea
+                rows={5}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="O que você esperava? O que aconteceu? Em qual tela?"
+                maxLength={4000}
+              />
+              <p className="text-xs text-muted-foreground text-right">{description.length}/4000</p>
+            </div>
+
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Gravação de tela (opcional)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ao iniciar, esta janela será ocultada para você gravar a tela livremente. Limite de 2 minutos.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {includeMic ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                  <Switch
+                    checked={includeMic}
+                    onCheckedChange={setIncludeMic}
+                    disabled={recording}
+                    aria-label="Incluir microfone"
+                  />
+                  <span className="text-xs">Microfone</span>
                 </div>
               </div>
-            )}
 
-            {recorder.status === "error" && recorder.error && (
-              <p className="text-sm text-destructive">{recorder.error}</p>
-            )}
+              {recorder.status === "idle" && (
+                <Button type="button" variant="secondary" onClick={handleStartRecording}>
+                  <Video className="h-4 w-4 mr-2" /> Iniciar gravação
+                </Button>
+              )}
+
+              {recorder.status === "stopped" && recorder.previewUrl && (
+                <div className="space-y-2">
+                  <video src={recorder.previewUrl} controls className="w-full rounded border bg-black" />
+                  <div className="flex gap-2">
+                    <Button type="button" variant="ghost" size="sm" onClick={recorder.reset}>
+                      <X className="h-4 w-4 mr-2" /> Descartar e regravar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {recorder.status === "error" && recorder.error && (
+                <p className="text-sm text-destructive">{recorder.error}</p>
+              )}
+            </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => handleClose(false)} disabled={submitting}>
-            Cancelar
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => handleClose(false)} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Enviar chamado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating control while recording — dialog is hidden so the page is visible/recordable */}
+      {open && minimized && recording && (
+        <div className="fixed bottom-5 right-5 z-[100] flex items-center gap-3 rounded-full bg-background border shadow-lg px-4 py-2">
+          <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-sm tabular-nums font-medium">{fmtTime(recorder.elapsedMs)}</span>
+          <span className="text-xs text-muted-foreground">/ {fmtTime(recorder.maxDurationMs)}</span>
+          <Button type="button" size="sm" variant="destructive" onClick={recorder.stop}>
+            <Square className="h-3.5 w-3.5 mr-1" /> Parar
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Enviar chamado
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setMinimized(false)}
+            aria-label="Mostrar formulário"
+            title="Mostrar formulário"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </>
   );
 }
