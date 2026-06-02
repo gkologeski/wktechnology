@@ -5,11 +5,40 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const eventsPolyfillPath = require.resolve("events/events.js");
 
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+  },
+  vite: {
+    plugins: [
+      {
+        // @twilio/voice-sdk imports `node:events` / `events`. Vite's default
+        // browser externalization replaces these with a stub that has no
+        // `EventEmitter` export, breaking the production build. Resolve them
+        // to the `events` npm polyfill before Vite's resolver externalizes.
+        name: "polyfill-node-events",
+        enforce: "pre",
+        resolveId(source) {
+          if (source === "events" || source === "node:events") {
+            return eventsPolyfillPath;
+          }
+          return null;
+        },
+      },
+    ],
+    optimizeDeps: {
+      // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
+      // resolves its `node:events` imports through our `polyfill-node-events`
+      // plugin (esbuild's prebundler does not run that plugin).
+      exclude: ["@twilio/voice-sdk"],
+      include: ["events"],
+    },
   },
 });
