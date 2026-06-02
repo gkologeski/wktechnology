@@ -48,17 +48,16 @@ export const syncHubspotOwners = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-
-    // workspace ativo do usuário
-    const { data: prof } = await supabase
-      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
-    const workspaceId = (prof?.active_workspace_id as string | null) ?? userId;
+    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+    const workspaceId = (wsData as string | null) ?? userId;
 
     const active = await fetchOwners(false);
     const archived = await fetchOwners(true);
     const all = [...active, ...archived];
 
     let upserted = 0;
+    let failed = 0;
+    let firstError: string | null = null;
     for (const o of all) {
       const row = {
         id: o.id,
@@ -74,7 +73,15 @@ export const syncHubspotOwners = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       };
       const { error } = await supabase.from("hubspot_owners").upsert(row, { onConflict: "id" });
-      if (!error) upserted++;
+      if (error) {
+        failed++;
+        if (!firstError) firstError = error.message;
+      } else {
+        upserted++;
+      }
+    }
+    if (upserted === 0 && failed > 0 && firstError) {
+      throw new Error(`Falha ao salvar owners: ${firstError}`);
     }
 
     // auto-mapeia por email para profiles existentes (sem convidar ninguém)
@@ -103,10 +110,8 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RebindSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    const { data: prof } = await supabase
-      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
-    const workspaceId = (prof?.active_workspace_id as string | null) ?? userId;
+    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+    const workspaceId = (wsData as string | null) ?? userId;
 
     const { error } = await supabase
       .from("hubspot_owners")
@@ -129,9 +134,8 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: prof } = await supabase
-      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
-    const workspaceId = (prof?.active_workspace_id as string | null) ?? userId;
+    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+    const workspaceId = (wsData as string | null) ?? userId;
 
     const { data: owners } = await supabase
       .from("hubspot_owners")
