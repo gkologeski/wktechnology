@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import DOMPurify from "isomorphic-dompurify";
-import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Code, Eraser } from "lucide-react";
+import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Code, Eraser, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const SANITIZE_CONFIG = {
@@ -8,7 +8,7 @@ const SANITIZE_CONFIG = {
     "p", "br", "strong", "b", "em", "i", "u", "s", "a", "ul", "ol", "li",
     "blockquote", "code", "pre", "h1", "h2", "h3", "h4", "span", "div",
   ],
-  ALLOWED_ATTR: ["href", "target", "rel", "class", "style"],
+  ALLOWED_ATTR: ["href", "target", "rel", "class", "style", "data-user-id", "data-mention", "contenteditable"],
 };
 
 export function sanitizeHtml(html: string): string {
@@ -23,24 +23,40 @@ export function htmlToPlain(html: string): string {
   return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
 }
 
+export function extractMentionIds(html: string | null | undefined): string[] {
+  if (!html) return [];
+  const ids = new Set<string>();
+  const re = /data-user-id="([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) ids.add(m[1]);
+  return [...ids];
+}
+
 export function HtmlContent({ html, className }: { html: string | null | undefined; className?: string }) {
   return (
     <div
-      className={`prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 ${className ?? ""}`}
+      className={`prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 [&_.mention]:inline-block [&_.mention]:rounded [&_.mention]:bg-primary/10 [&_.mention]:text-primary [&_.mention]:px-1 [&_.mention]:font-medium ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: sanitizeHtml(html ?? "") }}
     />
   );
 }
+
+export type MentionCandidate = { id: string; name: string };
 
 type Props = {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: number;
+  mentions?: MentionCandidate[];
+  onMentionAdd?: (m: MentionCandidate) => void;
 };
 
-export function RichHtmlEditor({ value, onChange, placeholder, minHeight = 96 }: Props) {
+export function RichHtmlEditor({ value, onChange, placeholder, minHeight = 96, mentions, onMentionAdd }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionPos, setMentionPos] = useState<{ top: number; left: number } | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   // Keep DOM in sync when value changes externally (e.g. cleared after submit)
   useEffect(() => {
@@ -48,7 +64,8 @@ export function RichHtmlEditor({ value, onChange, placeholder, minHeight = 96 }:
     if (!el) return;
     const current = el.innerHTML;
     const next = sanitizeHtml(value ?? "");
-    if (current !== next) el.innerHTML = next;
+    if (current !== next && document.activeElement !== el) el.innerHTML = next;
+    else if (current !== next && !current) el.innerHTML = next;
   }, [value]);
 
   const exec = (cmd: string, arg?: string) => {
@@ -62,8 +79,78 @@ export function RichHtmlEditor({ value, onChange, placeholder, minHeight = 96 }:
     exec("createLink", url);
   };
 
+  const closeMentions = () => {
+    setMentionQuery(null);
+    setMentionPos(null);
+    setActiveIdx(0);
+  };
+
+  const detectMention = useCallback(() => {
+    if (!mentions || mentions.length === 0) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) { closeMentions(); return; }
+    const range = sel.getRangeAt(0);
+    if (!ref.current.contains(range.startContainer)) { closeMentions(); return; }
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) { closeMentions(); return; }
+    const textBefore = (node.textContent ?? "").slice(0, range.startOffset);
+    const match = /@([^\s@<>]*)$/.exec(textBefore);
+    if (!match) { closeMentions(); return; }
+    setMentionQuery(match[1]);
+    setActiveIdx(0);
+    // Position popover
+    const rect = range.getBoundingClientRect();
+    const editorRect = ref.current.getBoundingClientRect();
+    setMentionPos({ top: rect.bottom - editorRect.top + 4, left: rect.left - editorRect.left });
+  }, [mentions]);
+
+  const insertMention = (m: MentionCandidate) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const range = sel.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const text = node.textContent ?? "";
+    const before = text.slice(0, range.startOffset);
+    const after = text.slice(range.startOffset);
+    const match = /@([^\s@<>]*)$/.exec(before);
+    if (!match) return;
+    const start = before.length - match[0].length;
+    // Split text node: keep before-@ in original
+    (node as Text).textContent = before.slice(0, start) + after;
+    // Re-set selection to insertion point in same node
+    const newRange = document.createRange();
+    newRange.setStart(node, start);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    // Build mention span
+    const span = document.createElement("span");
+    span.className = "mention";
+    span.setAttribute("data-user-id", m.id);
+    span.setAttribute("data-mention", "true");
+    span.setAttribute("contenteditable", "false");
+    span.textContent = `@${m.name}`;
+    const space = document.createTextNode("\u00A0");
+    newRange.insertNode(space);
+    newRange.insertNode(span);
+    // Move caret after space
+    const afterRange = document.createRange();
+    afterRange.setStartAfter(space);
+    afterRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(afterRange);
+    onChange(sanitizeHtml(ref.current.innerHTML));
+    onMentionAdd?.(m);
+    closeMentions();
+  };
+
+  const filtered = mentionQuery !== null && mentions
+    ? mentions.filter((m) => m.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6)
+    : [];
+
   return (
-    <div className="rounded-md border bg-background">
+    <div className="rounded-md border bg-background relative">
       <div className="flex flex-wrap items-center gap-0.5 border-b px-1 py-1">
         <ToolBtn onClick={() => exec("bold")} title="Negrito"><Bold className="h-3.5 w-3.5" /></ToolBtn>
         <ToolBtn onClick={() => exec("italic")} title="Itálico"><Italic className="h-3.5 w-3.5" /></ToolBtn>
@@ -81,17 +168,49 @@ export function RichHtmlEditor({ value, onChange, placeholder, minHeight = 96 }:
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder}
-        onInput={(e) => onChange(sanitizeHtml((e.target as HTMLDivElement).innerHTML))}
+        onInput={(e) => {
+          onChange(sanitizeHtml((e.target as HTMLDivElement).innerHTML));
+          detectMention();
+        }}
+        onKeyDown={(e) => {
+          if (mentionQuery !== null && filtered.length > 0) {
+            if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => (i + 1) % filtered.length); return; }
+            if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => (i - 1 + filtered.length) % filtered.length); return; }
+            if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertMention(filtered[activeIdx]); return; }
+            if (e.key === "Escape") { e.preventDefault(); closeMentions(); return; }
+          }
+        }}
+        onKeyUp={() => detectMention()}
+        onMouseUp={() => detectMention()}
+        onBlur={() => setTimeout(closeMentions, 150)}
         onPaste={(e) => {
-          // Allow paste — sanitize after
           setTimeout(() => {
             if (ref.current) onChange(sanitizeHtml(ref.current.innerHTML));
           }, 0);
           void e;
         }}
-        className="prose prose-sm max-w-none dark:prose-invert px-3 py-2 focus:outline-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground"
+        className="prose prose-sm max-w-none dark:prose-invert px-3 py-2 focus:outline-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 [&_.mention]:inline-block [&_.mention]:rounded [&_.mention]:bg-primary/10 [&_.mention]:text-primary [&_.mention]:px-1 [&_.mention]:font-medium empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground"
         style={{ minHeight }}
       />
+      {mentionQuery !== null && filtered.length > 0 && mentionPos && (
+        <div
+          className="absolute z-50 w-64 rounded-md border bg-popover p-1 shadow-md"
+          style={{ top: mentionPos.top + 36, left: mentionPos.left }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {filtered.map((m, i) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => insertMention(m)}
+              className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted ${i === activeIdx ? "bg-muted" : ""}`}
+            >
+              <AtSign className="h-3 w-3 text-muted-foreground" />
+              {m.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
