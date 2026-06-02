@@ -134,25 +134,20 @@ function DealsCard({ entity, entityId, companyId }: { entity: AssociationEntity;
         return;
       }
       // contact: combine deals where contact is primary OR linked via deal_contacts OR belong to the same company
-      const queries: Promise<{ data: { id: string; name: string; value: number; stage: string; currency: string }[] | null }>[] = [
-        supabase.from("deals").select("id, name, value, stage, currency").eq("primary_contact_id", entityId).limit(50),
-      ];
-      if (companyId) {
-        queries.push(supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", companyId).limit(50));
-      }
-      const [{ data: primary }, companyRes] = await Promise.all([
-        queries[0],
-        companyId ? queries[1] : Promise.resolve({ data: [] as typeof rows }),
-      ]);
-      const { data: linked } = await supabase.from("deal_contacts").select("deal_id").eq("contact_id", entityId).limit(100);
-      const linkedIds = (linked ?? []).map(r => r.deal_id).filter(Boolean);
-      let extra: typeof rows = [];
+      const primaryP = supabase.from("deals").select("id, name, value, stage, currency").eq("primary_contact_id", entityId).limit(50);
+      const companyP = companyId
+        ? supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", companyId).limit(50)
+        : Promise.resolve({ data: [] as { id: string; name: string; value: number; stage: string; currency: string }[] });
+      const linkedP = supabase.from("deal_contacts").select("deal_id").eq("contact_id", entityId).limit(100);
+      const [primaryRes, companyRes, linkedRes] = await Promise.all([primaryP, companyP, linkedP]);
+      const linkedIds = (linkedRes.data ?? []).map(r => r.deal_id).filter(Boolean);
+      let extra: { id: string; name: string; value: number; stage: string; currency: string }[] = [];
       if (linkedIds.length) {
         const { data } = await supabase.from("deals").select("id, name, value, stage, currency").in("id", linkedIds);
-        extra = (data ?? []) as typeof rows;
+        extra = (data ?? []) as typeof extra;
       }
-      const map = new Map<string, typeof rows[number]>();
-      for (const d of [...(primary ?? []), ...(companyRes.data ?? []), ...extra]) map.set(d.id, d);
+      const map = new Map<string, typeof extra[number]>();
+      for (const d of [...(primaryRes.data ?? []), ...(companyRes.data ?? []), ...extra]) map.set(d.id, d);
       setRows(Array.from(map.values()).slice(0, 50));
     })();
   }, [entity, entityId, companyId]);
