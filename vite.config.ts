@@ -27,7 +27,7 @@ export default defineConfig({
         enforce: "pre",
         resolveId(source) {
           if (source === "events" || source === "node:events") {
-            return this.resolve("events/events.js");
+            return eventsPolyfillPath;
           }
           return null;
         },
