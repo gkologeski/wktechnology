@@ -223,9 +223,7 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
       page++;
     }
 
-    const redirectTo = data.redirect_origin
-      ? `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite`
-      : undefined;
+    const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     if (!userIdFound || !alreadyConfirmed) {
       const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
