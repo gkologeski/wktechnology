@@ -5338,8 +5338,15 @@ export type Database = {
           created_at: string
           custom_fields: Json
           deal_id: string | null
+          deleted_at: string | null
           description: string | null
           due_at: string | null
+          external_ids: Json
+          hs_createdate: string | null
+          hs_lastmodifieddate: string | null
+          hs_object_id: string | null
+          hs_raw: Json | null
+          hubspot_owner_id: string | null
           id: string
           owner_id: string
           pipeline_id: string | null
@@ -5358,8 +5365,15 @@ export type Database = {
           created_at?: string
           custom_fields?: Json
           deal_id?: string | null
+          deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          external_ids?: Json
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           owner_id: string
           pipeline_id?: string | null
@@ -5378,8 +5392,15 @@ export type Database = {
           created_at?: string
           custom_fields?: Json
           deal_id?: string | null
+          deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          external_ids?: Json
+          hs_createdate?: string | null
+          hs_lastmodifieddate?: string | null
+          hs_object_id?: string | null
+          hs_raw?: Json | null
+          hubspot_owner_id?: string | null
           id?: string
           owner_id?: string
           pipeline_id?: string | null
