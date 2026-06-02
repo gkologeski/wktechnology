@@ -220,7 +220,6 @@ export const updateAccessProfile = createServerFn({ method: "POST" })
     if (data.tools?.length) {
       // Server-side enforcement: tools cuja entitlement não é habilitada
       // pelo plano atual do workspace são forçadas a enabled=false.
-      const { TOOL_REQUIRED_ENTITLEMENT } = await import("@/lib/entitlements");
       for (const t of data.tools) {
         let enabled = t.enabled;
         const reqKey = TOOL_REQUIRED_ENTITLEMENT[t.tool_key];
