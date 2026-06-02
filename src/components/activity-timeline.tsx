@@ -226,16 +226,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     })();
   }, [user]);
 
-  const insertMention = (member: TeamMember) => {
-    if (!mentionState) return;
-    const before = body.slice(0, mentionState.pos);
-    const after = body.slice((textareaRef.current?.selectionStart) ?? body.length);
-    setBody(`${before}@${member.name} ${after}`);
-    setMentionState(null);
-    if (!mentions.find((x) => x.id === member.id)) {
-      setMentions((prev) => [...prev, member]);
-    }
-  };
 
   const uploadFiles = async (): Promise<Attachment[]> => {
     if (!user || pendingFiles.length === 0) return [];
