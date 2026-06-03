@@ -224,6 +224,7 @@ function BugReportsAdminPage() {
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="unresolved">Não resolvidos</SelectItem>
               <SelectItem value="all">Todos ({counts.all ?? 0})</SelectItem>
               {BUG_REPORT_STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
