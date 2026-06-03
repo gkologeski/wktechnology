@@ -51,11 +51,13 @@ export function TicketsBoard({
   tickets,
   lookups,
   onOpen,
+  askResolutionNote,
 }: {
   pipeline: Pipeline;
   tickets: TicketRow[];
   lookups: { contacts: Map<string, string>; companies: Map<string, string>; owners: Map<string, string> };
   onOpen: (t: TicketRow) => void;
+  askResolutionNote?: (count?: number) => Promise<string | null>;
 }) {
   const qc = useQueryClient();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
@@ -91,6 +93,12 @@ export function TicketsBoard({
         : "open";
     if (t.status === nextStatus) return;
 
+    let resolutionNote: string | null = null;
+    if (nextStatus === "resolved" && askResolutionNote) {
+      resolutionNote = await askResolutionNote(1);
+      if (!resolutionNote) return;
+    }
+
     qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
       old.map((x) => (x.id === id ? { ...x, status: nextStatus } : x)),
     );
@@ -108,7 +116,13 @@ export function TicketsBoard({
       qc.invalidateQueries({ queryKey: ["tickets"] });
       return;
     }
-    notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
+    notifyStatus({
+      data: {
+        ticket_id: id,
+        new_status: nextStatus,
+        ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
+      },
+    }).catch(() => {});
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
