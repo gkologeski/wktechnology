@@ -186,7 +186,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     const target = data.email.trim().toLowerCase();
     const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
@@ -196,15 +198,15 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     {
       const [{ data: limitRow }, { count: currentMembers }] = await Promise.all([
         supabaseAdmin.rpc("get_entitlement_limit", {
-          _workspace: userId, _key: "users.max",
+          _workspace: workspace.id, _key: "users.max",
         } as never),
         supabaseAdmin
-          .from("team_members")
+          .from("workspace_members")
           .select("id", { count: "exact", head: true })
-          .eq("workspace_owner_id", userId),
+          .eq("workspace_id", workspace.id),
       ]);
       const limit = (limitRow as number | null) ?? null; // null = ilimitado
-      const used = 1 + (currentMembers ?? 0); // +1 = owner
+      const used = currentMembers ?? 0;
       if (limit !== null && used + 1 > limit) {
         throw new Error(
           `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`
@@ -242,7 +244,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       }
       foundId = invited.user.id;
     }
-    if (foundId === userId) throw new Error("Você já é o owner do workspace.");
+    if (foundId === userId) throw new Error("Você já é membro deste workspace.");
 
     // Garante profile com nome e telefone
     await supabaseAdmin.from("profiles").upsert({
@@ -251,20 +253,21 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       phone: data.phone,
     } as never, { onConflict: "id" });
 
-    const { error: insErr } = await supabase
-      .from("team_members")
-      .insert({ workspace_owner_id: userId, member_user_id: foundId, role: data.role } as never);
+    const { error: insErr } = await supabaseAdmin
+      .from("workspace_members")
+      .insert({ workspace_id: workspace.id, user_id: foundId, role: data.role, invited_by: userId } as never);
     if (insErr) {
       if (insErr.code === "23505") throw new Error("Esse usuário já é membro do workspace.");
       throw new Error(insErr.message);
     }
 
     // Espelha no user_roles
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", foundId);
-    await supabase.from("user_roles").insert({
-      workspace_owner_id: userId, user_id: foundId, role: data.role,
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", foundId);
+    await supabaseAdmin.from("user_roles").insert({
+      workspace_owner_id: workspace.id, user_id: foundId, role: data.role,
     } as never);
+    await syncLegacyRole(workspace.id, foundId, data.role);
 
     return { ok: true, user_id: foundId };
   });
@@ -280,12 +283,14 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     // garante que o usuário é membro do workspace
     const { data: tm, error: tmErr } = await supabaseAdmin
-      .from("team_members")
+      .from("workspace_members")
       .select("id")
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id)
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id)
       .maybeSingle();
     if (tmErr) throw new Error(tmErr.message);
     if (!tm) throw new Error("Membro não encontrado neste workspace.");
