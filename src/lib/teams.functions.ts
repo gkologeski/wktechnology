@@ -337,19 +337,24 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
     z.object({ member_user_id: z.string().uuid(), role: TeamRole }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("team_members")
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    if (data.member_user_id === userId) throw new Error("Você não pode alterar seu próprio papel.");
+
+    const { error } = await supabaseAdmin
+      .from("workspace_members")
       .update({ role: data.role } as never)
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id);
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
-    await supabase.from("user_roles").insert({
-      workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("user_roles").insert({
+      workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
     } as never);
+    await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     return { ok: true };
   });
 
@@ -365,7 +370,9 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     const isOwner = data.member_user_id === userId;
 
     const { error: pErr } = await supabaseAdmin.from("profiles").upsert({
@@ -382,18 +389,19 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     } catch { /* ignore */ }
 
     if (!isOwner) {
-      const { error } = await supabase
-        .from("team_members")
+      const { error } = await supabaseAdmin
+        .from("workspace_members")
         .update({ role: data.role } as never)
-        .eq("workspace_owner_id", userId)
-        .eq("member_user_id", data.member_user_id);
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", data.member_user_id);
       if (error) throw new Error(error.message);
 
-      await supabase.from("user_roles").delete()
-        .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
-      await supabase.from("user_roles").insert({
-        workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
+      await supabaseAdmin.from("user_roles").delete()
+        .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+      await supabaseAdmin.from("user_roles").insert({
+        workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
       } as never);
+      await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     }
     return { ok: true };
   });
@@ -402,15 +410,21 @@ export const removeTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ member_user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("team_members")
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    if (data.member_user_id === userId) throw new Error("Você não pode remover a si mesmo.");
+
+    const { error } = await supabaseAdmin
+      .from("workspace_members")
       .delete()
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id);
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("team_members").delete()
+      .eq("workspace_owner_id", workspace.id).eq("member_user_id", data.member_user_id);
     return { ok: true };
   });
