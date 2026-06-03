@@ -28,6 +28,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { TicketsSidebar, filterByView, type ViewKey } from "@/components/tickets/tickets-sidebar";
 import { TicketsBoard } from "@/components/tickets/tickets-board";
 import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
