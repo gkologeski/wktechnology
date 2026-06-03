@@ -1,10 +1,12 @@
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, type DragEndEvent } from "@dnd-kit/core";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { TicketCard } from "./ticket-card";
+import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import type { TicketRow, TicketStatus } from "./types";
 
 function Column({
