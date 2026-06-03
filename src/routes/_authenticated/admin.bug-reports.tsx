@@ -315,6 +315,14 @@ function BugReportsAdminPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm whitespace-pre-wrap">{r.description as string}</p>
+                  {r.status === "resolved" && (r as { resolution_text?: string }).resolution_text && (
+                    <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        O status deste chamado foi atualizado para <strong>Resolvido</strong>.
+                      </p>
+                      <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2 text-xs">
                     {r.recording_path && (
                       <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
