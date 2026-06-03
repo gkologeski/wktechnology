@@ -13,7 +13,7 @@ type Props = {
   hintFrom?: (row: Record<string, unknown>) => string | null;
   filters?: Record<string, string | number | boolean | null>;
   placeholder?: string;
-  onPick: (id: string) => void | Promise<void>;
+  onPick: (id: string) => unknown | Promise<unknown>;
   onCreateNew?: () => void;
   /** label shown next to the + button trigger. Default: "Adicionar" */
   label?: string;
