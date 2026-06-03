@@ -1,10 +1,12 @@
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, type DragEndEvent } from "@dnd-kit/core";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { TicketCard } from "./ticket-card";
+import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import type { TicketRow, TicketStatus } from "./types";
 
 function Column({
@@ -56,6 +58,7 @@ export function TicketsBoard({
   onOpen: (t: TicketRow) => void;
 }) {
   const qc = useQueryClient();
+  const notifyStatus = useServerFn(notifyTicketStatusChange);
 
   const grouped = useMemo(() => {
     const map: Record<string, TicketRow[]> = {};
@@ -103,7 +106,9 @@ export function TicketsBoard({
     if (error) {
       toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["tickets"] });
+      return;
     }
+    notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));

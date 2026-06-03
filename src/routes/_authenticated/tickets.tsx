@@ -37,6 +37,8 @@ import { filterByView, type ViewKey } from "@/components/tickets/tickets-sidebar
 import { TicketsBoard } from "@/components/tickets/tickets-board";
 import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
 import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
+import { useServerFn } from "@tanstack/react-start";
+import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -57,6 +59,7 @@ const VIEW_TABS: { key: ViewKey; label: string }[] = [
 function TicketsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines, selected: pipeline, selectedId, setSelectedId } = usePipelines("ticket");
 
   const [view, setView] = useState<ViewKey>("all");
@@ -159,6 +162,9 @@ function TicketsPage() {
       ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id }));
     }
     if (error) { toast.error(error.message); return; }
+    if (editing && editing.status !== payload.status) {
+      notifyStatus({ data: { ticket_id: editing.id, new_status: payload.status } }).catch(() => {});
+    }
     toast.success(editing ? "Ticket atualizado." : "Ticket criado.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["tickets"] });
@@ -190,6 +196,11 @@ function TicketsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
     if (error) { toast.error(error.message); return; }
+    if (patch.status) {
+      for (const id of ids) {
+        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(() => {});
+      }
+    }
     toast.success(`${ids.length} ticket(s) atualizado(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
