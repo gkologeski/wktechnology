@@ -62,15 +62,23 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspace_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    // Garante que o usuário é membro do workspace
-    const { data: m, error: mErr } = await supabaseAdmin
-      .from("workspace_members")
-      .select("workspace_id")
+    // Platform admins podem alternar para qualquer workspace.
+    const { data: pa } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
       .eq("user_id", context.userId)
-      .eq("workspace_id", data.workspace_id)
       .maybeSingle();
-    if (mErr) throw new Error(mErr.message);
-    if (!m) throw new Error("Você não é membro desse workspace.");
+
+    if (!pa) {
+      const { data: m, error: mErr } = await supabaseAdmin
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", context.userId)
+        .eq("workspace_id", data.workspace_id)
+        .maybeSingle();
+      if (mErr) throw new Error(mErr.message);
+      if (!m) throw new Error("Você não é membro desse workspace.");
+    }
 
     const { error } = await supabaseAdmin
       .from("profiles")
@@ -78,3 +86,4 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
