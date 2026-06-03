@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { PageHeader } from "@/components/page-header";
+import { usePipelines } from "@/lib/pipelines";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,73 +17,42 @@ import {
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
-
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, LayoutGrid, List as ListIcon, Trash2, Wand2, User, Briefcase } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, User, X, UserCheck, ArrowRightLeft } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-  DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { TicketsSidebar, filterByView, type ViewKey } from "@/components/tickets/tickets-sidebar";
+import { TicketsBoard } from "@/components/tickets/tickets-board";
+import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
+import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
 });
 
-const STATUSES = [
-  { value: "new", label: "Novo" },
-  { value: "open", label: "Em atendimento" },
-  { value: "waiting", label: "Aguardando cliente" },
-  { value: "resolved", label: "Resolvido" },
-  { value: "closed", label: "Fechado" },
-] as const;
-
-const PRIORITIES = [
-  { value: "low", label: "Baixa" },
-  { value: "medium", label: "Média" },
-  { value: "high", label: "Alta" },
-  { value: "urgent", label: "Urgente" },
-] as const;
-
-const PRIORITY_VARIANT: Record<string, "secondary" | "default" | "destructive" | "outline"> = {
-  low: "outline",
-  medium: "secondary",
-  high: "default",
-  urgent: "destructive",
-};
-
-type Ticket = {
-  id: string;
-  owner_id: string;
-  subject: string;
-  description: string | null;
-  status: typeof STATUSES[number]["value"];
-  priority: typeof PRIORITIES[number]["value"];
-  source: string | null;
-  assignee_id: string | null;
-  contact_id: string | null;
-  company_id: string | null;
-  deal_id: string | null;
-  due_at: string | null;
-  resolved_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-type Draft = Partial<Ticket>;
+type Layout = "table" | "split" | "board";
+type Draft = Partial<TicketRow>;
 
 function TicketsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [view, setView] = useState<"board" | "list">("board");
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Ticket | null>(null);
-  const [draft, setDraft] = useState<Draft>({});
+  const { selected: pipeline } = usePipelines("ticket");
+
+  const [view, setView] = useState<ViewKey>("all");
+  const [layout, setLayout] = useState<Layout>("table");
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<TicketRow | null>(null);
+  const [draft, setDraft] = useState<Draft>({});
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -94,7 +63,7 @@ function TicketsPage() {
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as Ticket[];
+      return (data ?? []) as TicketRow[];
     },
   });
 
@@ -106,63 +75,42 @@ function TicketsPage() {
     queryKey: ["companies", "select"],
     queryFn: async () => (await supabase.from("companies").select("id,name").order("name")).data ?? [],
   });
-  const { data: deals = [] } = useQuery({
-    queryKey: ["deals", "select"],
-    queryFn: async () => (await supabase.from("deals").select("id,name").order("name")).data ?? [],
-  });
-  const { data: macros = [] } = useQuery({
-    queryKey: ["macros", "enabled"],
-    queryFn: async () =>
-      (await supabase.from("macros").select("id,name,shortcut,category,body").eq("enabled", true).order("name")).data ?? [],
+  const { data: members = [] } = useQuery({
+    queryKey: ["workspace-members", "tickets"],
+    queryFn: async () => (await supabase.from("workspace_members").select("user_id,full_name,email")).data ?? [],
   });
 
-  function applyMacro(body: string) {
-    const contact = contacts.find((c) => c.id === draft.contact_id);
-    const company = companies.find((c) => c.id === draft.company_id);
-    const firstName = contact?.first_name ?? "";
-    const fullName = contact ? `${contact.first_name} ${contact.last_name ?? ""}`.trim() : "";
-    const text = body
-      .replaceAll("{{contact_first_name}}", firstName)
-      .replaceAll("{{contact_name}}", fullName)
-      .replaceAll("{{company_name}}", company?.name ?? "")
-      .replaceAll("{{ticket_subject}}", draft.subject ?? "")
-      .replaceAll("{{agent_name}}", user?.email ?? "");
-    const current = draft.description ?? "";
-    setDraft({ ...draft, description: current ? `${current}\n\n${text}` : text });
-    toast.success("Macro aplicada.");
-  }
+  const lookups = useMemo(() => {
+    const contactMap = new Map<string, string>();
+    for (const c of contacts) contactMap.set(c.id, `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Contato");
+    const companyMap = new Map<string, string>();
+    for (const c of companies) companyMap.set(c.id, c.name);
+    const ownerMap = new Map<string, string>();
+    for (const m of members) ownerMap.set(m.user_id, m.full_name || m.email || "Usuário");
+    return { contacts: contactMap, companies: companyMap, owners: ownerMap };
+  }, [contacts, companies, members]);
 
-  const contactName = (id: string | null) => {
-    if (!id) return "—";
-    const c = contacts.find((x) => x.id === id);
-    return c ? `${c.first_name} ${c.last_name ?? ""}`.trim() : "—";
-  };
-  const companyName = (id: string | null) => companies.find((x) => x.id === id)?.name ?? "—";
-  const dealName = (id: string | null) => deals.find((x) => x.id === id)?.name ?? "—";
-
+  // Apply view + search + priority filter
   const filtered = useMemo(() => {
+    let list = filterByView(tickets, view, user?.id ?? null);
+    if (priorityFilter !== "all") list = list.filter((t) => t.priority === priorityFilter);
     const q = search.trim().toLowerCase();
-    if (!q) return tickets;
-    return tickets.filter((t) =>
-      [t.subject, t.description ?? "", companyName(t.company_id), contactName(t.contact_id)]
-        .join(" ").toLowerCase().includes(q)
-    );
-  }, [tickets, search, contacts, companies]);
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, Ticket[]>();
-    STATUSES.forEach((s) => map.set(s.value, []));
-    filtered.forEach((t) => map.get(t.status)?.push(t));
-    return map;
-  }, [filtered]);
+    if (q) {
+      list = list.filter((t) => {
+        const contact = t.contact_id ? lookups.contacts.get(t.contact_id) ?? "" : "";
+        const company = t.company_id ? lookups.companies.get(t.company_id) ?? "" : "";
+        return [t.subject, t.description ?? "", contact, company].join(" ").toLowerCase().includes(q);
+      });
+    }
+    return list;
+  }, [tickets, view, priorityFilter, search, lookups, user?.id]);
 
   function openNew() {
     setEditing(null);
-    setDraft({ status: "new", priority: "medium" });
+    setDraft({ status: "new", priority: "medium", assignee_id: user?.id });
     setOpen(true);
   }
-
-  function openEdit(t: Ticket) {
+  function openEdit(t: TicketRow) {
     setEditing(t);
     setDraft({ ...t });
     setOpen(true);
@@ -185,9 +133,11 @@ function TicketsPage() {
       deal_id: draft.deal_id || null,
       assignee_id: draft.assignee_id || user.id,
       due_at: draft.due_at || null,
-      resolved_at: draft.status === "resolved" || draft.status === "closed"
-        ? (editing?.resolved_at ?? new Date().toISOString())
-        : null,
+      pipeline_id: pipeline?.id ?? null,
+      resolved_at:
+        draft.status === "resolved" || draft.status === "closed"
+          ? editing?.resolved_at ?? new Date().toISOString()
+          : null,
     };
     let error;
     if (editing) {
@@ -204,164 +154,266 @@ function TicketsPage() {
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
-  async function remove(id: string) {
+  async function removeOne(id: string) {
     if (!confirm("Excluir este ticket?")) return;
     const { error } = await supabase.from("tickets").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
-  async function setStatus(t: Ticket, status: Ticket["status"]) {
-    const patch = {
-      status,
-      resolved_at: (status === "resolved" || status === "closed") && !t.resolved_at
-        ? new Date().toISOString()
-        : t.resolved_at,
-    };
-    const { error } = await supabase.from("tickets").update(patch).eq("id", t.id);
+  function toggle(id: string) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((t) => t.id)));
+  }
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  async function bulkUpdate(patch: Partial<TicketRow>) {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
     if (error) { toast.error(error.message); return; }
+    toast.success(`${ids.length} ticket(s) atualizado(s).`);
+    clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
-  type TicketRow = Ticket;
-  const ticketColumns: GridColumnDef<TicketRow>[] = [
-    { key: "subject", label: "Assunto", render: (t) => <span className="font-medium">{t.subject}</span> },
-    {
-      key: "status",
-      label: "Status",
-      render: (t) => (
-        <Select value={t.status} onValueChange={(v) => setStatus(t, v as Ticket["status"])}>
-          <SelectTrigger className="h-8 w-[160px]" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      ),
-    },
-    {
-      key: "priority",
-      label: "Prioridade",
-      render: (t) => (
-        <Badge variant={PRIORITY_VARIANT[t.priority]}>
-          {PRIORITIES.find((p) => p.value === t.priority)?.label}
-        </Badge>
-      ),
-    },
-    { key: "contact", label: "Contato", render: (t) => contactName(t.contact_id) },
-    { key: "company", label: "Empresa", render: (t) => companyName(t.company_id) },
-    { key: "deal", label: "Negócio", render: (t) => dealName(t.deal_id) },
-    { key: "source", label: "Fonte", render: (t) => t.source ?? "—" },
-    { key: "due_at", label: "Vencimento", render: (t) => t.due_at ? new Date(t.due_at).toLocaleString("pt-BR") : "—" },
-    { key: "created_at", label: "Criado em", render: (t) => new Date(t.created_at).toLocaleDateString("pt-BR") },
-    { key: "updated_at", label: "Atualizado em", render: (t) => new Date(t.updated_at).toLocaleDateString("pt-BR") },
-  ];
-  const DEFAULT_TICKET_COLS = ["subject", "status", "priority", "contact", "company", "deal"];
-  const { columns: visibleTicketColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TicketRow>({
-    gridKey: "tickets",
-    columns: ticketColumns,
-    defaults: DEFAULT_TICKET_COLS,
-  });
+  async function bulkDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`Excluir ${selected.size} ticket(s)?`)) return;
+    const ids = Array.from(selected);
+    const { error } = await supabase.from("tickets").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${ids.length} ticket(s) excluído(s).`);
+    clearSelection();
+    qc.invalidateQueries({ queryKey: ["tickets"] });
+  }
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="Tickets"
-        description="Atendimento e suporte estilo HubSpot Service."
-        actions={
-          <Button size="sm" onClick={openNew}>
+    <div className="-m-4 md:-m-6 flex h-[calc(100vh-3.5rem)] bg-background">
+      <TicketsSidebar tickets={tickets} userId={user?.id ?? null} current={view} onChange={setView} />
+
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Toolbar */}
+        <header className="border-b bg-card px-4 py-2.5 flex items-center gap-2 flex-wrap">
+          <div>
+            <h1 className="text-lg font-semibold leading-tight">Help Desk</h1>
+            <p className="text-[11px] text-[var(--hs-text-muted)]">
+              {filtered.length} {filtered.length === 1 ? "ticket" : "tickets"}
+            </p>
+          </div>
+
+          <div className="ml-4 relative flex-1 max-w-md">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--hs-text-muted)]" />
+            <Input
+              placeholder="Buscar tickets…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-8"
+            />
+          </div>
+
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas prioridades</SelectItem>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="table" className="text-xs h-6 px-2"><Rows3 className="h-3.5 w-3.5 mr-1" />Tabela</TabsTrigger>
+              <TabsTrigger value="split" className="text-xs h-6 px-2"><Columns2 className="h-3.5 w-3.5 mr-1" />Split</TabsTrigger>
+              <TabsTrigger value="board" className="text-xs h-6 px-2"><LayoutGrid className="h-3.5 w-3.5 mr-1" />Quadro</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <Button size="sm" onClick={openNew} className="h-8 bg-[var(--hs-orange)] text-[var(--hs-orange-foreground)] hover:bg-[var(--hs-orange)]/90">
             <Plus className="h-4 w-4 mr-1" /> Novo ticket
           </Button>
-        }
-      />
+        </header>
 
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Buscar por assunto, descrição, contato, empresa…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
-        />
-        <div className="ml-auto"><ColumnsButton /></div>
-      </div>
+        {/* Bulk bar */}
+        {selected.size > 0 && layout === "table" && (
+          <div className="border-b bg-[var(--hs-orange)]/8 px-4 py-2 flex items-center gap-2 text-sm">
+            <span className="font-medium">{selected.size} selecionado(s)</span>
+            <div className="h-4 w-px bg-border mx-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7"><UserCheck className="h-3.5 w-3.5 mr-1" />Atribuir</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {members.map((m) => (
+                  <DropdownMenuItem key={m.user_id} onSelect={() => bulkUpdate({ assignee_id: m.user_id })}>
+                    {m.full_name || m.email}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7"><ArrowRightLeft className="h-3.5 w-3.5 mr-1" />Status</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {STATUSES.map((s) => (
+                  <DropdownMenuItem key={s.value} onSelect={() => bulkUpdate({ status: s.value })}>
+                    {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7">Prioridade</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {PRIORITIES.map((p) => (
+                  <DropdownMenuItem key={p.value} onSelect={() => bulkUpdate({ priority: p.value })}>
+                    {p.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={bulkDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
 
-      <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
-        <TabsList>
-          <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro</TabsTrigger>
-          <TabsTrigger value="list"><ListIcon className="h-3.5 w-3.5 mr-1" /> Lista</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="board" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {STATUSES.map((s) => {
-              const items = grouped.get(s.value) ?? [];
-              return (
-                <div key={s.value} className="rounded-lg border bg-card">
-                  <div className="px-3 py-2 border-b flex items-center justify-between">
-                    <div className="text-sm font-medium">{s.label}</div>
-                    <Badge variant="secondary">{items.length}</Badge>
-                  </div>
-                  <div className="p-2 space-y-2 min-h-[80px] max-h-[70vh] overflow-auto">
-                    {items.map((t) => (
-                      <button
+        {/* Body */}
+        <div className="flex-1 overflow-auto p-4">
+          {isLoading ? (
+            <div className="text-center text-sm text-[var(--hs-text-muted)] py-12">Carregando tickets…</div>
+          ) : layout === "board" ? (
+            pipeline ? (
+              <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} />
+            ) : (
+              <div className="text-center text-sm text-[var(--hs-text-muted)] py-12">Configurando pipeline…</div>
+            )
+          ) : layout === "split" ? (
+            <TicketsSplitView tickets={filtered} lookups={lookups} onOpenFull={openEdit} />
+          ) : (
+            <div className="rounded-md border bg-card overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={filtered.length > 0 && selected.size === filtered.length}
+                        onCheckedChange={toggleAll}
+                      />
+                    </TableHead>
+                    <TableHead>Assunto</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Atribuído a</TableHead>
+                    <TableHead>Criado</TableHead>
+                    <TableHead className="w-8" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-[var(--hs-text-muted)] py-10">
+                        Nenhum ticket nesta view.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {filtered.map((t) => {
+                    const ownerName = t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined;
+                    return (
+                      <TableRow
                         key={t.id}
+                        className="cursor-pointer"
                         onClick={() => openEdit(t)}
-                        className="w-full text-left rounded-md border p-2 hover:bg-accent transition-colors"
                       >
-                        <div className="text-sm font-medium line-clamp-2">{t.subject}</div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant={PRIORITY_VARIANT[t.priority]} className="capitalize">
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggle(t.id)} />
+                        </TableCell>
+                        <TableCell className="font-medium max-w-[320px]">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-block h-3 w-0.5 rounded-sm shrink-0"
+                              style={{ background: PRIORITY_COLOR_VAR[t.priority] }}
+                              aria-hidden
+                            />
+                            <span className="truncate">{t.subject}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            style={{
+                              background: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 14%, transparent)`,
+                              color: PRIORITY_COLOR_VAR[t.priority],
+                              borderColor: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 35%, transparent)`,
+                            }}
+                          >
                             {PRIORITIES.find((p) => p.value === t.priority)?.label}
                           </Badge>
-                          {t.contact_id && <span className="truncate">{contactName(t.contact_id)}</span>}
-                        </div>
-                      </button>
-                    ))}
-                    {items.length === 0 && <p className="text-xs text-muted-foreground px-1 py-2">Vazio</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </TabsContent>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="font-normal">
+                            {STATUSES.find((s) => s.value === t.status)?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[var(--hs-text-muted)]">
+                          {t.contact_id ? lookups.contacts.get(t.contact_id) ?? "—" : "—"}
+                        </TableCell>
+                        <TableCell className="text-[var(--hs-text-muted)]">
+                          {t.company_id ? lookups.companies.get(t.company_id) ?? "—" : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {ownerName ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5 text-[9px]">
+                                <AvatarFallback className="bg-secondary text-secondary-foreground">
+                                  {ownerName.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs">{ownerName}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[var(--hs-text-muted)]">Não atribuído</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-[var(--hs-text-muted)] tabular-nums">
+                          {new Date(t.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeOne(t.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </div>
 
-        <TabsContent value="list" className="mt-4">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {visibleTicketColumns.map((col) => (
-                    <TableHead key={col.key}>{col.label}</TableHead>
-                  ))}
-                  <TableHead className="w-[1%]" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading && (
-                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
-                )}
-                {!isLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={visibleTicketColumns.length + 1} className="text-center text-muted-foreground py-8">Nenhum ticket.</TableCell></TableRow>
-                )}
-                {filtered.map((t) => (
-                  <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
-                    {visibleTicketColumns.map((col) => (
-                      <TableCell key={col.key} className={col.className}>
-                        {col.render(t)}
-                      </TableCell>
-                    ))}
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" onClick={() => remove(t.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-      </Tabs>
-
+      {/* Dialog: create/edit ticket */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -373,43 +425,35 @@ function TicketsPage() {
               <Input value={draft.subject ?? ""} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label>Descrição</Label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" className="h-7">
-                      <Wand2 className="h-3.5 w-3.5 mr-1" /> Aplicar macro
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="max-h-80 overflow-auto w-64">
-                    <DropdownMenuLabel>Respostas prontas</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {macros.length === 0 && (
-                      <div className="px-2 py-3 text-xs text-muted-foreground">Nenhuma macro ativa.</div>
-                    )}
-                    {macros.map((m) => (
-                      <DropdownMenuItem key={m.id} onSelect={() => applyMacro(m.body)} className="flex flex-col items-start gap-0.5">
-                        <span className="text-sm">{m.name}</span>
-                        {m.category && <span className="text-[10px] text-muted-foreground">{m.category}</span>}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <Label>Descrição</Label>
               <Textarea rows={4} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <Select value={draft.status ?? "new"} onValueChange={(v) => setDraft({ ...draft, status: v as Ticket["status"] })}>
+              <Select value={draft.status ?? "new"} onValueChange={(v) => setDraft({ ...draft, status: v as TicketRow["status"] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
-              <Select value={draft.priority ?? "medium"} onValueChange={(v) => setDraft({ ...draft, priority: v as Ticket["priority"] })}>
+              <Select value={draft.priority ?? "medium"} onValueChange={(v) => setDraft({ ...draft, priority: v as TicketRow["priority"] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Atribuído a</Label>
+              <Select
+                value={draft.assignee_id ?? ""}
+                onValueChange={(v) => setDraft({ ...draft, assignee_id: v || null })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>{m.full_name || m.email}</SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
@@ -451,7 +495,6 @@ function TicketsPage() {
                 placeholder="Selecionar empresa…"
               />
             </div>
-
             <div className="md:col-span-2 space-y-1.5">
               <Label>Negócio</Label>
               <EntityCombobox
@@ -467,11 +510,12 @@ function TicketsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={save}>{editing ? "Salvar" : "Criar"}</Button>
+            <Button onClick={save} className="bg-[var(--hs-orange)] text-[var(--hs-orange-foreground)] hover:bg-[var(--hs-orange)]/90">
+              {editing ? "Salvar" : "Criar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <ColumnsEditor />
     </div>
   );
 }
