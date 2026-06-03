@@ -78,6 +78,7 @@ function AuthenticatedLayout() {
         </div>
       </div>
       <BugReportButton />
+      <ChatTrigger />
     </SidebarProvider>
   );
 }
