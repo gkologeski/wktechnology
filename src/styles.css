@@ -160,6 +160,14 @@
   --hs-stage-4: oklch(0.76 0.16 90);
   --hs-stage-won: oklch(0.68 0.16 150);
   --hs-stage-lost: oklch(0.66 0.2 27);
+
+  --priority-low: oklch(0.62 0.04 250);
+  --priority-medium: oklch(0.76 0.16 90);
+  --priority-high: oklch(0.72 0.18 45);
+  --priority-urgent: oklch(0.66 0.2 27);
+  --sla-ok: oklch(0.68 0.16 150);
+  --sla-warn: oklch(0.76 0.16 90);
+  --sla-breached: oklch(0.66 0.2 27);
 }
 
 @layer base {
