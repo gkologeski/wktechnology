@@ -40,7 +40,7 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
           qc.invalidateQueries({ queryKey: ["chat", "messages", row.conversation_id] });
           if (row.sender_user_id === user.id) return;
           if (activeRef.current === row.conversation_id) return;
-          const who = resolveSender ? resolveSender(row.sender_user_id) : "Nova mensagem";
+          const who = resolveRef.current ? resolveRef.current(row.sender_user_id) : "Nova mensagem";
           toast(who, {
             description: row.body?.slice(0, 140) ?? "(anexo)",
           });
