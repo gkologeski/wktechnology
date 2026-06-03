@@ -46,6 +46,7 @@ import {
   listBugReportAnalyses,
 } from "@/lib/bug-report-analysis.functions";
 import { BugReportResolutionDialog } from "@/components/bug-report/resolution-dialog";
+import { notifyBugReportStatusChange } from "@/lib/bug-reports-notify.functions";
 import {
   ShieldAlert,
   Bug,
@@ -96,6 +97,7 @@ function BugReportsAdminPage() {
   const recUrlFn = useServerFn(getBugReportRecordingUrl);
   const analyzeFn = useServerFn(analyzeBugReport);
   const listAnalysesFn = useServerFn(listBugReportAnalyses);
+  const notifyFn = useServerFn(notifyBugReportStatusChange);
   const qc = useQueryClient();
 
   const [status, setStatus] = useState<BugReportStatus | "all" | "unresolved">("unresolved");
@@ -131,7 +133,24 @@ function BugReportsAdminPage() {
   }, [analyses.data]);
 
   const update = useMutation({
-    mutationFn: (vars: { id: string; status: BugReportStatus; resolution_text?: string }) => updateFn({ data: vars }),
+    mutationFn: async (vars: { id: string; status: BugReportStatus; resolution_text?: string }) => {
+      const res = await updateFn({ data: vars });
+      try {
+        const r = await notifyFn({
+          data: {
+            bug_report_id: vars.id,
+            new_status: vars.status,
+            ...(vars.resolution_text ? { resolution_text: vars.resolution_text } : {}),
+          },
+        });
+        if (!r?.ok) {
+          toast.warning("Status atualizado, mas a mensagem ao solicitante não pôde ser enviada.");
+        }
+      } catch {
+        toast.warning("Status atualizado, mas a mensagem ao solicitante não pôde ser enviada.");
+      }
+      return res;
+    },
     onSuccess: () => {
       toast.success("Status atualizado");
       qc.invalidateQueries({ queryKey: ["admin-bug-reports"] });
