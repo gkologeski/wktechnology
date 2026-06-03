@@ -11,32 +11,30 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-export function ResolutionDialog({
+export function BugReportResolutionDialog({
   open,
   onOpenChange,
   onConfirm,
-  count = 1,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onConfirm: (note: string) => void | Promise<void>;
-  count?: number;
+  onConfirm: (text: string) => void | Promise<void>;
 }) {
-  const [note, setNote] = useState("");
+  const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setNote("");
+      setText("");
       setSaving(false);
     }
   }, [open]);
 
   const confirm = async () => {
-    if (!note.trim()) return;
+    if (!text.trim()) return;
     setSaving(true);
     try {
-      await onConfirm(note.trim());
+      await onConfirm(text.trim());
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -49,27 +47,25 @@ export function ResolutionDialog({
         <DialogHeader>
           <DialogTitle>Resolução do chamado</DialogTitle>
           <DialogDescription>
-            {count > 1
-              ? `Descreva a resolução aplicada aos ${count} chamados. O texto será incluído na DM enviada ao solicitante.`
-              : "Descreva a resolução aplicada. O texto será incluído na DM enviada ao solicitante."}
+            Descreva a resolução aplicada. O texto será exibido junto à mensagem de mudança de status para quem abriu o chamado.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5 py-2">
-          <Label htmlFor="resolution-note">Texto de resolução *</Label>
+          <Label htmlFor="br-resolution-text">Texto de resolução *</Label>
           <Textarea
-            id="resolution-note"
+            id="br-resolution-text"
             rows={5}
             autoFocus
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Ex.: Reiniciamos o serviço X e validamos com o usuário."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ex.: Corrigimos o erro X e validamos com o usuário."
           />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={confirm} disabled={saving || !note.trim()}>
+          <Button onClick={confirm} disabled={saving || !text.trim()}>
             {saving ? "Salvando…" : "Marcar como resolvido"}
           </Button>
         </DialogFooter>

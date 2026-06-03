@@ -1,0 +1,1 @@
+ALTER TABLE public.bug_reports ADD COLUMN IF NOT EXISTS resolution_text TEXT; ALTER TABLE public.bug_reports ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;

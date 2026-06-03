@@ -86,14 +86,21 @@ export const updateBugReportStatus = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         status: z.enum(STATUSES),
+        resolution_text: z.string().trim().min(1).max(4000).optional(),
       })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context.userId);
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.status === "resolved") {
+      if (data.resolution_text) patch.resolution_text = data.resolution_text;
+      patch.resolved_at = new Date().toISOString();
+    }
     const { error } = await supabaseAdmin
       .from("bug_reports")
-      .update({ status: data.status })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

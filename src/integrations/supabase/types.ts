@@ -701,6 +701,8 @@ export type Database = {
           page_url: string | null
           recording_has_audio: boolean
           recording_path: string | null
+          resolution_text: string | null
+          resolved_at: string | null
           status: string
           subtype: string
           updated_at: string
@@ -716,6 +718,8 @@ export type Database = {
           page_url?: string | null
           recording_has_audio?: boolean
           recording_path?: string | null
+          resolution_text?: string | null
+          resolved_at?: string | null
           status?: string
           subtype: string
           updated_at?: string
@@ -731,6 +735,8 @@ export type Database = {
           page_url?: string | null
           recording_has_audio?: boolean
           recording_path?: string | null
+          resolution_text?: string | null
+          resolved_at?: string | null
           status?: string
           subtype?: string
           updated_at?: string
