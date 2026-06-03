@@ -59,6 +59,7 @@ const VIEW_TABS: { key: ViewKey; label: string }[] = [
 function TicketsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines, selected: pipeline, selectedId, setSelectedId } = usePipelines("ticket");
 
   const [view, setView] = useState<ViewKey>("all");
