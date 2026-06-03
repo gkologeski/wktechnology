@@ -37,6 +37,7 @@ export function NewVersionWatcher() {
     };
 
     const check = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       const fp = await fetchFingerprint();
       if (cancelled || !fp) return;
       if (initialFingerprint.current === null) {
