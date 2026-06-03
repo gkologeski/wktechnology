@@ -100,7 +100,8 @@ export function TicketsBoard({
     if (nextStatus === "resolved" || nextStatus === "closed") {
       patch.resolved_at = t.resolved_at ?? new Date().toISOString();
     }
-    const { error } = await supabase.from("tickets").update(patch).eq("id", id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("tickets").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["tickets"] });
