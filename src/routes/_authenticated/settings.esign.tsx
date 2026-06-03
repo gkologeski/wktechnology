@@ -271,7 +271,7 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                     </div>
                     {s.signed_at && (
                       <div className="text-xs text-muted-foreground">
-                        Assinado em {new Date(s.signed_at).toLocaleString("pt-BR")} · IP {s.ip_address ?? "—"}
+                        Assinado em {new Date(s.signed_at).toLocaleString("pt-BR")}
                       </div>
                     )}
                   </div>
