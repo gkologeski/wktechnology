@@ -39,7 +39,6 @@ import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
 import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
-import { ResolutionDialog } from "@/components/tickets/resolution-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -72,10 +71,8 @@ function TicketsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
-  const [resolveCtx, setResolveCtx] = useState<{ resolve: (n: string | null) => void; count: number } | null>(null);
 
-  const askResolutionNote = (count = 1) =>
-    new Promise<string | null>((resolve) => setResolveCtx({ resolve, count }));
+
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -143,18 +140,10 @@ function TicketsPage() {
       toast.error("Informe um assunto.");
       return;
     }
-    const nextStatus = draft.status ?? "new";
-    const isTransitionToResolved =
-      !!editing && editing.status !== "resolved" && nextStatus === "resolved";
-    let resolutionNote: string | null = null;
-    if (isTransitionToResolved) {
-      resolutionNote = await askResolutionNote(1);
-      if (!resolutionNote) return; // cancelled
-    }
     const payload = {
       subject: draft.subject!,
       description: draft.description ?? null,
-      status: nextStatus,
+      status: draft.status ?? "new",
       priority: draft.priority ?? "medium",
       source: draft.source ?? null,
       contact_id: draft.contact_id || null,
@@ -164,7 +153,7 @@ function TicketsPage() {
       due_at: draft.due_at || null,
       pipeline_id: pipeline?.id ?? null,
       resolved_at:
-        nextStatus === "resolved" || nextStatus === "closed"
+        (draft.status ?? "new") === "resolved" || (draft.status ?? "new") === "closed"
           ? editing?.resolved_at ?? new Date().toISOString()
           : null,
     };
@@ -176,13 +165,7 @@ function TicketsPage() {
     }
     if (error) { toast.error(error.message); return; }
     if (editing && editing.status !== payload.status) {
-      notifyStatus({
-        data: {
-          ticket_id: editing.id,
-          new_status: payload.status,
-          ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
-        },
-      }).catch(() => {});
+      notifyStatus({ data: { ticket_id: editing.id, new_status: payload.status } }).catch(() => {});
     }
     toast.success(editing ? "Ticket atualizado." : "Ticket criado.");
     setOpen(false);
@@ -212,23 +195,12 @@ function TicketsPage() {
   async function bulkUpdate(patch: Partial<TicketRow>) {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
-    let resolutionNote: string | null = null;
-    if (patch.status === "resolved") {
-      resolutionNote = await askResolutionNote(ids.length);
-      if (!resolutionNote) return;
-    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
     if (error) { toast.error(error.message); return; }
     if (patch.status) {
       for (const id of ids) {
-        notifyStatus({
-          data: {
-            ticket_id: id,
-            new_status: patch.status as string,
-            ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
-          },
-        }).catch(() => {});
+        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(() => {});
       }
     }
     toast.success(`${ids.length} ticket(s) atualizado(s).`);
