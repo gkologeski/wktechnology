@@ -13,8 +13,8 @@ import { ArrowLeft, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAccessProfile, updateAccessProfile,
-  ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS,
 } from "@/lib/access-profiles.functions";
+import { ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS } from "@/lib/access-profiles.constants";
 import { TOOL_REQUIRED_ENTITLEMENT, PLAN_LABELS } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/use-entitlements";
 
