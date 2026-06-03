@@ -76,10 +76,7 @@ function TicketsPage() {
     queryKey: ["companies", "select"],
     queryFn: async () => (await supabase.from("companies").select("id,name").order("name")).data ?? [],
   });
-  const { data: members = [] } = useQuery({
-    queryKey: ["workspace-members", "tickets"],
-    queryFn: async () => (await supabase.from("workspace_members").select("user_id,full_name,email")).data ?? [],
-  });
+  const { data: members = [] } = useWorkspaceMembers();
 
   const lookups = useMemo(() => {
     const contactMap = new Map<string, string>();
