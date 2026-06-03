@@ -12,19 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { markRead } from "@/lib/chat.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useAuth } from "@/lib/auth";
-import { ChatThread } from "./chat-thread";
+import { ChatThread, type Conv } from "./chat-thread";
 import { NewConversationDialog } from "./new-conversation-dialog";
-
-type Conv = {
-  id: string;
-  kind: "dm" | "group";
-  title: string | null;
-  last_message_at: string | null;
-  last_message_preview: string | null;
-  last_message_sender: string | null;
-  unread_count: number;
-  member_user_ids: string[];
-};
 
 function formatTime(iso: string | null) {
   if (!iso) return "";
