@@ -352,6 +352,7 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
     if (data.member_user_id === userId) throw new Error("Você não pode alterar seu próprio papel.");
+    await assertTargetMember(workspace.id, data.member_user_id);
 
     const { error } = await supabaseAdmin
       .from("workspace_members")
@@ -385,6 +386,7 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
     const isOwner = data.member_user_id === userId;
+    await assertTargetMember(workspace.id, data.member_user_id);
 
     const { error: pErr } = await supabaseAdmin.from("profiles").upsert({
       id: data.member_user_id,
