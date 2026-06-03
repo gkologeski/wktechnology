@@ -100,6 +100,15 @@
   --hs-stage-4: oklch(0.74 0.14 90);  /* amber */
   --hs-stage-won: oklch(0.65 0.16 150); /* green */
   --hs-stage-lost: oklch(0.62 0.2 27);  /* red */
+
+  /* Ticket priority */
+  --priority-low: oklch(0.72 0.04 250);
+  --priority-medium: oklch(0.74 0.14 90);
+  --priority-high: oklch(0.7 0.17 45);
+  --priority-urgent: oklch(0.62 0.2 27);
+  --sla-ok: oklch(0.65 0.16 150);
+  --sla-warn: oklch(0.74 0.14 90);
+  --sla-breached: oklch(0.62 0.2 27);
 }
 
 .dark {
