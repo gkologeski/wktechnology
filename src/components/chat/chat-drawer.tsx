@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, ArrowLeft, Users, MessageSquare } from "lucide-react";
+import { Plus, ArrowLeft, Users, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useAuth } from "@/lib/auth";
 import { ChatThread, type Conv } from "./chat-thread";
 import { NewConversationDialog } from "./new-conversation-dialog";
+import { useChatSoundEnabled, playMessageSound } from "@/lib/chat-sound";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function formatTime(iso: string | null) {
   if (!iso) return "";
@@ -43,6 +45,7 @@ export function ChatDrawer({
   const [newOpen, setNewOpen] = useState(false);
   const qc = useQueryClient();
   const markFn = useServerFn(markRead);
+  const [soundOn, setSoundOn] = useChatSoundEnabled();
 
   const markMut = useMutation({
     mutationFn: (cid: string) => markFn({ data: { conversation_id: cid } }),
@@ -89,10 +92,37 @@ export function ChatDrawer({
                 )}
               </span>
               {!active && (
-                <Button size="sm" onClick={() => setNewOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nova
-                </Button>
+                <div className="flex items-center gap-1">
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={soundOn ? "Desativar som de mensagens" : "Ativar som de mensagens"}
+                          aria-pressed={soundOn}
+                          onClick={() => {
+                            const next = !soundOn;
+                            setSoundOn(next);
+                            if (next) {
+                              // tocar amostra ao ativar (também desbloqueia o AudioContext)
+                              setTimeout(() => playMessageSound(), 0);
+                            }
+                          }}
+                        >
+                          {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {soundOn ? "Som de mensagens ativado" : "Som de mensagens desativado"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <Button size="sm" onClick={() => setNewOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Nova
+                  </Button>
+                </div>
               )}
             </SheetTitle>
           </SheetHeader>
