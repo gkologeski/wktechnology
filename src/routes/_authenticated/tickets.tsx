@@ -602,6 +602,21 @@ function TicketsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ResolutionDialog
+        open={!!resolveCtx}
+        count={resolveCtx?.count ?? 1}
+        onOpenChange={(v) => {
+          if (!v && resolveCtx) {
+            resolveCtx.resolve(null);
+            setResolveCtx(null);
+          }
+        }}
+        onConfirm={(note) => {
+          resolveCtx?.resolve(note);
+          setResolveCtx(null);
+        }}
+      />
     </div>
   );
 }
