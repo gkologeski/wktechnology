@@ -110,6 +110,17 @@ async function assertCanManageWorkspace(workspaceId: string, userId: string) {
   if (!data || data.role !== "admin") throw new Error("Apenas admins do workspace podem gerenciar usuários.");
 }
 
+async function assertTargetMember(workspaceId: string, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Membro não encontrado neste workspace.");
+}
+
 async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRole) {
   await supabaseAdmin.from("team_members").upsert({
     workspace_owner_id: workspaceId,
