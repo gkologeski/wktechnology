@@ -13,12 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import {
   listAllWorkspaces,
   createWorkspaceWithAdmin,
+  inviteUserToWorkspace,
 } from "@/lib/platform-admin.functions";
-import { Plus, Building2, ShieldAlert, Users, ChevronRight } from "lucide-react";
+import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   component: WorkspacesAdminPage,
