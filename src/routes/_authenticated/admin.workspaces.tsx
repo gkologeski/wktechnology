@@ -13,12 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import {
   listAllWorkspaces,
   createWorkspaceWithAdmin,
+  inviteUserToWorkspace,
 } from "@/lib/platform-admin.functions";
-import { Plus, Building2, ShieldAlert, Users, ChevronRight } from "lucide-react";
+import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   component: WorkspacesAdminPage,
@@ -28,6 +30,7 @@ function WorkspacesAdminPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const listFn = useServerFn(listAllWorkspaces);
   const createFn = useServerFn(createWorkspaceWithAdmin);
+  const inviteFn = useServerFn(inviteUserToWorkspace);
   const qc = useQueryClient();
 
   const list = useQuery({
@@ -38,6 +41,15 @@ function WorkspacesAdminPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", admin_email: "", admin_name: "", admin_phone: "" });
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    workspace_id: "",
+    email: "",
+    full_name: "",
+    phone: "",
+    role: "member" as "admin" | "member",
+  });
 
   const create = useMutation({
     mutationFn: async () => createFn({
@@ -57,6 +69,26 @@ function WorkspacesAdminPage() {
       qc.invalidateQueries({ queryKey: ["admin-workspaces"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar workspace"),
+  });
+
+  const invite = useMutation({
+    mutationFn: async () => inviteFn({
+      data: {
+        workspace_id: inviteForm.workspace_id,
+        email: inviteForm.email.trim(),
+        full_name: inviteForm.full_name.trim(),
+        phone: inviteForm.phone.trim() || undefined,
+        role: inviteForm.role,
+        redirect_origin: window.location.origin,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Convite enviado!");
+      setInviteOpen(false);
+      setInviteForm({ workspace_id: "", email: "", full_name: "", phone: "", role: "member" });
+      qc.invalidateQueries({ queryKey: ["admin-workspaces"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao convidar usuário"),
   });
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
@@ -80,13 +112,86 @@ function WorkspacesAdminPage() {
     create.mutate();
   };
 
+  const submitInvite = (e: FormEvent) => {
+    e.preventDefault();
+    if (!inviteForm.workspace_id || !inviteForm.email || !inviteForm.full_name) {
+      toast.error("Selecione um workspace e preencha nome e email.");
+      return;
+    }
+    invite.mutate();
+  };
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
         title="Workspaces da plataforma"
         description="Crie novos workspaces (empresas) e gerencie seus administradores."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
+          <div className="flex gap-2">
+            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline"><UserPlus className="h-4 w-4 mr-2" />Convidar usuário</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Convidar usuário</DialogTitle>
+                  <DialogDescription>
+                    Escolha o workspace ao qual o usuário será adicionado. Ele receberá um email para definir senha.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submitInvite} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Workspace</Label>
+                    <Select
+                      value={inviteForm.workspace_id}
+                      onValueChange={(v) => setInviteForm((f) => ({ ...f, workspace_id: v }))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione um workspace" /></SelectTrigger>
+                      <SelectContent>
+                        {(list.data ?? []).map((w) => (
+                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="iu-name">Nome completo</Label>
+                    <Input id="iu-name" required value={inviteForm.full_name}
+                      onChange={(e) => setInviteForm((f) => ({ ...f, full_name: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="iu-email">Email</Label>
+                    <EmailInput id="iu-email" required value={inviteForm.email}
+                      onChange={(v) => setInviteForm((f) => ({ ...f, email: v }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="iu-phone">Telefone (opcional)</Label>
+                    <PhoneInput id="iu-phone" value={inviteForm.phone}
+                      onChange={(v) => setInviteForm((f) => ({ ...f, phone: v }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Papel</Label>
+                    <Select
+                      value={inviteForm.role}
+                      onValueChange={(v) => setInviteForm((f) => ({ ...f, role: v as "admin" | "member" }))}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin do workspace</SelectItem>
+                        <SelectItem value="member">Membro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</Button>
+                    <Button type="submit" disabled={invite.isPending}>
+                      {invite.isPending ? "Enviando…" : "Enviar convite"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Novo workspace</Button>
             </DialogTrigger>
@@ -132,6 +237,7 @@ function WorkspacesAdminPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
