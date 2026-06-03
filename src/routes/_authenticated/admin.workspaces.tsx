@@ -30,6 +30,7 @@ function WorkspacesAdminPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const listFn = useServerFn(listAllWorkspaces);
   const createFn = useServerFn(createWorkspaceWithAdmin);
+  const inviteFn = useServerFn(inviteUserToWorkspace);
   const qc = useQueryClient();
 
   const list = useQuery({
@@ -40,6 +41,15 @@ function WorkspacesAdminPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", admin_email: "", admin_name: "", admin_phone: "" });
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    workspace_id: "",
+    email: "",
+    full_name: "",
+    phone: "",
+    role: "member" as "admin" | "member",
+  });
 
   const create = useMutation({
     mutationFn: async () => createFn({
@@ -59,6 +69,26 @@ function WorkspacesAdminPage() {
       qc.invalidateQueries({ queryKey: ["admin-workspaces"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar workspace"),
+  });
+
+  const invite = useMutation({
+    mutationFn: async () => inviteFn({
+      data: {
+        workspace_id: inviteForm.workspace_id,
+        email: inviteForm.email.trim(),
+        full_name: inviteForm.full_name.trim(),
+        phone: inviteForm.phone.trim() || undefined,
+        role: inviteForm.role,
+        redirect_origin: window.location.origin,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Convite enviado!");
+      setInviteOpen(false);
+      setInviteForm({ workspace_id: "", email: "", full_name: "", phone: "", role: "member" });
+      qc.invalidateQueries({ queryKey: ["admin-workspaces"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao convidar usuário"),
   });
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
