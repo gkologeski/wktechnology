@@ -38,11 +38,11 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
     // 2) Descobre quem abriu o chamado via audit_logs ('created')
     const { data: createdEvt } = await supabaseAdmin
       .from("audit_logs")
-      .select("actor_user_id, at")
+      .select("actor_user_id, created_at")
       .eq("entity", "tickets")
       .eq("entity_id", data.ticket_id)
       .eq("action", "created")
-      .order("at", { ascending: true })
+      .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
     let opener = (createdEvt as { actor_user_id: string | null } | null)?.actor_user_id ?? null;
