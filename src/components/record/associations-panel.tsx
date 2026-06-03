@@ -1,8 +1,16 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, User, Briefcase, Ticket as TicketIcon, ListTodo, Mail, Paperclip } from "lucide-react";
+import { Building2, User, Briefcase, Ticket as TicketIcon, ListTodo, Mail, Paperclip, X } from "lucide-react";
+import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { AddAssociation } from "@/components/record/add-association";
+import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
+import {
+  QuickCreateCompanyDialog,
+  QuickCreateDealDialog,
+  QuickCreateTicketDialog,
+} from "@/components/record/quick-create-dialogs";
 
 export type AssociationEntity = "contact" | "lead" | "company" | "deal";
 
@@ -15,10 +23,18 @@ type Props = {
 export function AssociationsPanel({ entity, entityId, companyId }: Props) {
   return (
     <>
-      {entity === "contact" && companyId && <CompanyCard companyId={companyId} />}
-      {(entity === "company" || entity === "deal") && <ContactsCard entity={entity} entityId={entityId} />}
-      {(entity === "contact" || entity === "company") && <DealsCard entity={entity} entityId={entityId} companyId={companyId} />}
-      {entity !== "lead" && <TicketsCard entity={entity} entityId={entityId} companyId={companyId} />}
+      {(entity === "contact" || entity === "deal") && (
+        <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
+      )}
+      {(entity === "company" || entity === "deal") && (
+        <ContactsCard entity={entity} entityId={entityId} />
+      )}
+      {(entity === "contact" || entity === "company") && (
+        <DealsCard entity={entity} entityId={entityId} companyId={companyId} />
+      )}
+      {entity !== "lead" && (
+        <TicketsCard entity={entity} entityId={entityId} companyId={companyId} />
+      )}
       <TasksCard entity={entity} entityId={entityId} />
       <EmailsCard entity={entity} entityId={entityId} />
       <AttachmentsCard entity={entity} entityId={entityId} />
@@ -29,18 +45,19 @@ export function AssociationsPanel({ entity, entityId, companyId }: Props) {
 /* ───────────── card primitive ───────────── */
 
 function AssocCard({
-  icon, title, count, children,
-}: { icon: ReactNode; title: string; count?: number; children: ReactNode }) {
+  icon, title, count, action, children,
+}: { icon: ReactNode; title: string; count?: number; action?: ReactNode; children: ReactNode }) {
   return (
     <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{icon}</span>
           <h3 className="text-sm font-bold text-foreground">{title}</h3>
+          {typeof count === "number" && (
+            <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums">{count}</span>
+          )}
         </div>
-        {typeof count === "number" && (
-          <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums">{count}</span>
-        )}
+        {action}
       </div>
       {children}
     </div>
@@ -57,75 +74,200 @@ const relCol = (entity: AssociationEntity) =>
   : entity === "lead" ? "related_lead_id"
   : "related_contact_id";
 
-/* ───────────── cards ───────────── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
 
-function CompanyCard({ companyId }: { companyId: string }) {
+/* ───────────── Company card (entity = contact|deal) ───────────── */
+
+function CompanyCard({
+  entity, entityId, companyId,
+}: { entity: "contact" | "deal"; entityId: string; companyId: string | null }) {
   const [c, setC] = useState<{ id: string; name: string; industry: string | null; domain: string | null } | null>(null);
-  useEffect(() => {
-    supabase.from("companies").select("id, name, industry, domain").eq("id", companyId).maybeSingle()
-      .then(({ data }) => setC(data as never));
-  }, [companyId]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(companyId);
+
+  const load = useCallback(async (id: string | null) => {
+    if (!id) { setC(null); return; }
+    const { data } = await supabase.from("companies").select("id, name, industry, domain").eq("id", id).maybeSingle();
+    setC(data as never);
+  }, []);
+
+  useEffect(() => { setCurrentId(companyId); }, [companyId]);
+  useEffect(() => { void load(currentId); }, [currentId, load]);
+
+  const associate = async (id: string) => {
+    const table = entity === "contact" ? "contacts" : "deals";
+    const { error } = await sb.from(table).update({ company_id: id }).eq("id", entityId);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa vinculada");
+    setCurrentId(id);
+  };
+
+  const unlink = async () => {
+    const table = entity === "contact" ? "contacts" : "deals";
+    const { error } = await sb.from(table).update({ company_id: null }).eq("id", entityId);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa desvinculada");
+    setCurrentId(null);
+  };
+
   return (
-    <AssocCard icon={<Building2 className="w-4 h-4" />} title="Empresa" count={c ? 1 : 0}>
-      {!c ? <Empty label="—" /> : (
-        <Link to="/companies/$id" params={{ id: c.id }} className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-muted-foreground shrink-0">
-            {c.name?.[0]?.toUpperCase() ?? "?"}
+    <>
+      <AssocCard
+        icon={<Building2 className="w-4 h-4" />}
+        title="Empresa"
+        count={c ? 1 : 0}
+        action={
+          <AddAssociation
+            entity="companies"
+            select="id, name, domain"
+            searchColumn="name"
+            labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
+            hintFrom={(r) => (r as { domain?: string }).domain ?? null}
+            placeholder="Buscar empresa…"
+            onPick={associate}
+            onCreateNew={() => setCreateOpen(true)}
+            label={c ? "Trocar" : "Adicionar"}
+          />
+        }
+      >
+        {!c ? <Empty label="Nenhuma empresa vinculada." /> : (
+          <div className="flex items-center gap-3 group">
+            <Link to="/companies/$id" params={{ id: c.id }} className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-muted-foreground shrink-0">
+                {c.name?.[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground group-hover:text-primary truncate">{c.name}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{c.domain || c.industry || "—"}</p>
+              </div>
+            </Link>
+            <button onClick={unlink} className="p-1 text-muted-foreground hover:text-destructive rounded" aria-label="Remover">
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground group-hover:text-primary truncate">{c.name}</p>
-            <p className="text-[11px] text-muted-foreground truncate">{c.domain || c.industry || "—"}</p>
-          </div>
-        </Link>
-      )}
-    </AssocCard>
+        )}
+      </AssocCard>
+      <QuickCreateCompanyDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => void associate(id)}
+      />
+    </>
   );
 }
 
-function ContactsCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
+/* ───────────── Contacts card (entity = company|deal) ───────────── */
+
+function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entityId: string }) {
   const [rows, setRows] = useState<{ id: string; first_name: string; last_name: string | null; job_title: string | null }[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  const refresh = () => setTick((t) => t + 1);
+
   useEffect(() => {
     (async () => {
       if (entity === "company") {
-        const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").eq("company_id", entityId).limit(10);
+        const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").eq("company_id", entityId).limit(50);
         setRows((data ?? []) as never);
-      } else if (entity === "deal") {
-        const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(10);
-        const ids = (dc ?? []).map(r => r.contact_id);
+      } else {
+        const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(50);
+        const ids = (dc ?? []).map((r) => r.contact_id);
         if (ids.length) {
           const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").in("id", ids);
           setRows((data ?? []) as never);
-        }
+        } else { setRows([]); }
       }
     })();
-  }, [entity, entityId]);
+  }, [entity, entityId, tick]);
+
+  const associate = async (contactId: string) => {
+    if (entity === "company") {
+      const { error } = await sb.from("contacts").update({ company_id: entityId }).eq("id", contactId);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("deal_contacts").insert({ deal_id: entityId, contact_id: contactId });
+      if (error && error.code !== "23505") return toast.error(error.message);
+    }
+    toast.success("Contato vinculado");
+    refresh();
+  };
+
+  const unlink = async (contactId: string) => {
+    if (entity === "company") {
+      const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("deal_contacts").delete().eq("deal_id", entityId).eq("contact_id", contactId);
+      if (error) return toast.error(error.message);
+    }
+    refresh();
+  };
+
   return (
-    <AssocCard icon={<User className="w-4 h-4" />} title="Contatos" count={rows.length}>
-      {rows.length === 0 ? <Empty label="Nenhum contato vinculado." /> : (
-        <ul className="space-y-2">
-          {rows.map(c => (
-            <li key={c.id}>
-              <Link to="/contacts/$id" params={{ id: c.id }} className="flex items-center gap-2.5 group">
-                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                  {(c.first_name?.[0] ?? "?").toUpperCase()}{(c.last_name?.[0] ?? "").toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">
-                    {`${c.first_name} ${c.last_name ?? ""}`.trim() || "Sem nome"}
-                  </p>
-                  {c.job_title && <p className="text-[10px] text-muted-foreground truncate">{c.job_title}</p>}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </AssocCard>
+    <>
+      <AssocCard
+        icon={<User className="w-4 h-4" />}
+        title="Contatos"
+        count={rows.length}
+        action={
+          <AddAssociation
+            entity="contacts"
+            select="id, first_name, last_name, email"
+            searchColumn="first_name"
+            labelFrom={(r) => {
+              const x = r as { first_name?: string; last_name?: string; email?: string };
+              return `${x.first_name ?? ""} ${x.last_name ?? ""}`.trim() || x.email || "Contato";
+            }}
+            hintFrom={(r) => (r as { email?: string }).email ?? null}
+            placeholder="Buscar contato…"
+            onPick={associate}
+            onCreateNew={() => setCreateOpen(true)}
+          />
+        }
+      >
+        {rows.length === 0 ? <Empty label="Nenhum contato vinculado." /> : (
+          <ul className="space-y-2">
+            {rows.map((c) => (
+              <li key={c.id} className="flex items-center gap-2.5 group">
+                <Link to="/contacts/$id" params={{ id: c.id }} className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                    {(c.first_name?.[0] ?? "?").toUpperCase()}{(c.last_name?.[0] ?? "").toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">
+                      {`${c.first_name} ${c.last_name ?? ""}`.trim() || "Sem nome"}
+                    </p>
+                    {c.job_title && <p className="text-[10px] text-muted-foreground truncate">{c.job_title}</p>}
+                  </div>
+                </Link>
+                <button onClick={() => unlink(c.id)} className="p-1 text-muted-foreground hover:text-destructive rounded" aria-label="Remover">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AssocCard>
+      <CreateContactDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => void associate(id)}
+      />
+    </>
   );
 }
 
-function DealsCard({ entity, entityId, companyId }: { entity: AssociationEntity; entityId: string; companyId?: string | null }) {
+/* ───────────── Deals card (entity = contact|company) ───────────── */
+
+function DealsCard({
+  entity, entityId, companyId,
+}: { entity: "contact" | "company"; entityId: string; companyId?: string | null }) {
   const [rows, setRows] = useState<{ id: string; name: string; value: number; stage: string; currency: string }[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  const refresh = () => setTick((t) => t + 1);
+
   useEffect(() => {
     (async () => {
       if (entity === "company") {
@@ -133,48 +275,96 @@ function DealsCard({ entity, entityId, companyId }: { entity: AssociationEntity;
         setRows((data ?? []) as never);
         return;
       }
-      // contact: combine deals where contact is primary OR linked via deal_contacts OR belong to the same company
       const primaryP = supabase.from("deals").select("id, name, value, stage, currency").eq("primary_contact_id", entityId).limit(50);
       const companyP = companyId
         ? supabase.from("deals").select("id, name, value, stage, currency").eq("company_id", companyId).limit(50)
         : Promise.resolve({ data: [] as { id: string; name: string; value: number; stage: string; currency: string }[] });
       const linkedP = supabase.from("deal_contacts").select("deal_id").eq("contact_id", entityId).limit(100);
       const [primaryRes, companyRes, linkedRes] = await Promise.all([primaryP, companyP, linkedP]);
-      const linkedIds = (linkedRes.data ?? []).map(r => r.deal_id).filter(Boolean);
-      let extra: { id: string; name: string; value: number; stage: string; currency: string }[] = [];
+      const linkedIds = (linkedRes.data ?? []).map((r) => r.deal_id).filter(Boolean);
+      let extra: typeof rows = [];
       if (linkedIds.length) {
         const { data } = await supabase.from("deals").select("id, name, value, stage, currency").in("id", linkedIds);
         extra = (data ?? []) as typeof extra;
       }
-      const map = new Map<string, typeof extra[number]>();
+      const map = new Map<string, typeof rows[number]>();
       for (const d of [...(primaryRes.data ?? []), ...(companyRes.data ?? []), ...extra]) map.set(d.id, d);
       setRows(Array.from(map.values()).slice(0, 50));
     })();
-  }, [entity, entityId, companyId]);
+  }, [entity, entityId, companyId, tick]);
+
+  const associate = async (dealId: string) => {
+    if (entity === "company") {
+      const { error } = await sb.from("deals").update({ company_id: entityId }).eq("id", dealId);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await sb.from("deal_contacts").insert({ deal_id: dealId, contact_id: entityId });
+      if (error && error.code !== "23505") return toast.error(error.message);
+    }
+    toast.success("Negócio vinculado");
+    refresh();
+  };
+
   return (
-    <AssocCard icon={<Briefcase className="w-4 h-4" />} title="Negócios" count={rows.length}>
-      {rows.length === 0 ? <Empty label="Nenhum negócio." /> : (
-        <ul className="space-y-2">
-          {rows.map(d => (
-            <li key={d.id}>
-              <Link to="/deals/$id" params={{ id: d.id }}
-                className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors">
-                <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(d.value, d.currency)}</span>
-                  <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium capitalize">{d.stage}</span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </AssocCard>
+    <>
+      <AssocCard
+        icon={<Briefcase className="w-4 h-4" />}
+        title="Negócios"
+        count={rows.length}
+        action={
+          <AddAssociation
+            entity="deals"
+            select="id, name, value, currency"
+            searchColumn="name"
+            labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
+            hintFrom={(r) => {
+              const x = r as { value?: number; currency?: string };
+              return x.value != null ? formatCurrency(x.value, x.currency ?? "BRL") : null;
+            }}
+            placeholder="Buscar negócio…"
+            onPick={associate}
+            onCreateNew={() => setCreateOpen(true)}
+          />
+        }
+      >
+        {rows.length === 0 ? <Empty label="Nenhum negócio." /> : (
+          <ul className="space-y-2">
+            {rows.map((d) => (
+              <li key={d.id}>
+                <Link to="/deals/$id" params={{ id: d.id }}
+                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors">
+                  <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(d.value, d.currency)}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium capitalize">{d.stage}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AssocCard>
+      <QuickCreateDealDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        defaultCompanyId={entity === "company" ? entityId : companyId ?? null}
+        defaultContactId={entity === "contact" ? entityId : null}
+        onCreated={() => refresh()}
+      />
+    </>
   );
 }
 
-function TicketsCard({ entity, entityId, companyId }: { entity: AssociationEntity; entityId: string; companyId?: string | null }) {
+/* ───────────── Tickets card ───────────── */
+
+function TicketsCard({
+  entity, entityId, companyId,
+}: { entity: AssociationEntity; entityId: string; companyId?: string | null }) {
   const [rows, setRows] = useState<{ id: string; subject: string; status: string; priority: string }[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  const refresh = () => setTick((t) => t + 1);
+
   useEffect(() => {
     (async () => {
       const col = entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
@@ -188,22 +378,76 @@ function TicketsCard({ entity, entityId, companyId }: { entity: AssociationEntit
       for (const t of [...(direct ?? []), ...(companyRows ?? [])]) map.set(t.id, t);
       setRows(Array.from(map.values()).slice(0, 50) as never);
     })();
-  }, [entity, entityId, companyId]);
+  }, [entity, entityId, companyId, tick]);
+
+  const fkCol = entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
+
+  const associate = async (ticketId: string) => {
+    const { error } = await sb.from("tickets").update({ [fkCol]: entityId }).eq("id", ticketId);
+    if (error) return toast.error(error.message);
+    toast.success("Ticket vinculado");
+    refresh();
+  };
+
+  const unlink = async (ticketId: string) => {
+    const { error } = await sb.from("tickets").update({ [fkCol]: null }).eq("id", ticketId);
+    if (error) return toast.error(error.message);
+    refresh();
+  };
+
   return (
-    <AssocCard icon={<TicketIcon className="w-4 h-4" />} title="Tickets" count={rows.length}>
-      {rows.length === 0 ? <Empty label="Nenhum ticket." /> : (
-        <ul className="space-y-2">
-          {rows.map(t => (
-            <li key={t.id} className="text-xs">
-              <p className="font-semibold text-foreground truncate">{t.subject}</p>
-              <p className="text-[10px] text-muted-foreground">{t.status} · {t.priority}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </AssocCard>
+    <>
+      <AssocCard
+        icon={<TicketIcon className="w-4 h-4" />}
+        title="Tickets"
+        count={rows.length}
+        action={
+          entity === "lead" ? undefined : (
+            <AddAssociation
+              entity="tickets"
+              select="id, subject, status, priority"
+              searchColumn="subject"
+              labelFrom={(r) => String((r as { subject?: string }).subject ?? "—")}
+              hintFrom={(r) => {
+                const x = r as { status?: string; priority?: string };
+                return [x.status, x.priority].filter(Boolean).join(" · ") || null;
+              }}
+              placeholder="Buscar ticket…"
+              onPick={associate}
+              onCreateNew={() => setCreateOpen(true)}
+            />
+          )
+        }
+      >
+        {rows.length === 0 ? <Empty label="Nenhum ticket." /> : (
+          <ul className="space-y-2">
+            {rows.map((t) => (
+              <li key={t.id} className="text-xs flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-foreground truncate">{t.subject}</p>
+                  <p className="text-[10px] text-muted-foreground">{t.status} · {t.priority}</p>
+                </div>
+                <button onClick={() => unlink(t.id)} className="p-1 text-muted-foreground hover:text-destructive rounded" aria-label="Remover">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AssocCard>
+      <QuickCreateTicketDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        defaultCompanyId={entity === "company" ? entityId : companyId ?? null}
+        defaultContactId={entity === "contact" ? entityId : null}
+        defaultDealId={entity === "deal" ? entityId : null}
+        onCreated={() => refresh()}
+      />
+    </>
   );
 }
+
+/* ───────────── unchanged read-only cards ───────────── */
 
 function TasksCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
   const [rows, setRows] = useState<{ id: string; subject: string | null; due_date: string | null }[]>([]);
@@ -216,7 +460,7 @@ function TasksCard({ entity, entityId }: { entity: AssociationEntity; entityId: 
     <AssocCard icon={<ListTodo className="w-4 h-4" />} title="Tarefas abertas" count={rows.length}>
       {rows.length === 0 ? <Empty label="Nenhuma tarefa aberta." /> : (
         <ul className="space-y-2">
-          {rows.map(t => (
+          {rows.map((t) => (
             <li key={t.id}>
               <Link to="/tasks/$id" params={{ id: t.id }} className="block group">
                 <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">{t.subject || "(sem assunto)"}</p>
@@ -241,7 +485,7 @@ function EmailsCard({ entity, entityId }: { entity: AssociationEntity; entityId:
     <AssocCard icon={<Mail className="w-4 h-4" />} title="Emails recentes" count={rows.length}>
       {rows.length === 0 ? <Empty label="Nenhum email." /> : (
         <ul className="space-y-2">
-          {rows.map(e => (
+          {rows.map((e) => (
             <li key={e.id} className="text-xs">
               <p className="font-semibold text-foreground truncate">{e.subject || "(sem assunto)"}</p>
               <p className="text-[10px] text-muted-foreground">{formatDateTime(e.hs_createdate ?? e.created_at)}</p>
