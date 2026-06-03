@@ -97,7 +97,7 @@ function BugReportsAdminPage() {
   const listAnalysesFn = useServerFn(listBugReportAnalyses);
   const qc = useQueryClient();
 
-  const [status, setStatus] = useState<BugReportStatus | "all">("open");
+  const [status, setStatus] = useState<BugReportStatus | "all" | "unresolved">("unresolved");
   const [kind, setKind] = useState<"new_feature" | "existing_broken" | "all">("all");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
