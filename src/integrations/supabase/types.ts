@@ -887,6 +887,150 @@ export type Database = {
           },
         ]
       }
+      chat_conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string
+          last_read_at: string | null
+          muted: boolean
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          last_read_at?: string | null
+          muted?: boolean
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          muted?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          last_message_at: string | null
+          title: string | null
+          updated_at: string
+          workspace_owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: string
+          last_message_at?: string | null
+          title?: string | null
+          updated_at?: string
+          workspace_owner_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          last_message_at?: string | null
+          title?: string | null
+          updated_at?: string
+          workspace_owner_id?: string
+        }
+        Relationships: []
+      }
+      chat_message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          body: string | null
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          sender_user_id: string
+          workspace_owner_id: string
+        }
+        Insert: {
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_user_id: string
+          workspace_owner_id: string
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_user_id?: string
+          workspace_owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -6331,6 +6475,10 @@ export type Database = {
           _user: string
           _workspace: string
         }
+        Returns: boolean
+      }
+      is_chat_member: {
+        Args: { _conv: string; _user: string }
         Returns: boolean
       }
       is_platform_admin: { Args: { _user: string }; Returns: boolean }

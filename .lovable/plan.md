@@ -1,58 +1,86 @@
-## Objetivo
+# Mensageiro interno do workspace
 
-Substituir a página atual `/tickets` por uma área de Help Desk no estilo HubSpot Service Hub, com três layouts (Tabela, Split, Quadro), sidebar de visualizações salvas, ações em lote e drawer de detalhe rico.
+Chat em tempo real entre membros do mesmo workspace, com conversas diretas (1-1), grupos, anexos de arquivo/imagem e notificações (badge + toast + push).
 
-## Referência visual (HubSpot Help Desk)
+## Experiência do usuário
 
-- **Sidebar esquerda (~240px)**: lista de "views" — *Inbox / Não atribuídos / Meus abertos / Todos abertos / Urgentes / Vencidos / Fechados hoje*, com contador ao lado. Botão "+ Nova view".
-- **Toolbar superior**: busca, seletor de pipeline, filtros (status, prioridade, dono, fonte, data), seletor de layout (Tabela / Split / Quadro), ordenação, "Novo ticket".
-- **Layout Tabela**: linhas densas, checkbox de seleção, colunas customizáveis, badges de prioridade coloridos (Baixa cinza, Média amarelo, Alta laranja, Urgente vermelho), avatar do dono, SLA com cor (verde/âmbar/vermelho).
-- **Layout Split**: lista compacta à esquerda (assunto, contato, prioridade, tempo) + painel direito com o ticket aberto (cabeçalho, abas Conversa/Comentários/Histórico, timeline de atividades, e propriedades à direita).
-- **Layout Quadro (kanban)**: colunas = estágios do pipeline (não status genérico). Cards arrastáveis entre colunas com drag-and-drop, mostrando assunto, contato, prioridade, SLA e tempo aberto.
-- **Bulk action bar** aparece flutuante ao selecionar (Atribuir, Mudar estágio, Mudar prioridade, Fechar, Excluir).
-- **Drawer de detalhe** (ao abrir um ticket no modo tabela/quadro): 3 colunas — Sobre o ticket (esq), Conversa/Atividade (centro), Associações + Propriedades (dir), igual ao record layout existente.
+- **Ícone "Mensagens"** no header (ao lado de Bug report), com badge de não lidas atualizado em tempo real.
+- **Drawer flutuante** abre pela direita em qualquer tela:
+  - Coluna esquerda: lista de conversas (avatar, último trecho, hora, contador).
+  - Coluna direita: thread da conversa selecionada (mensagens, composer, botão de anexo).
+  - Header da thread: nome/avatares + ação "Adicionar membros" (grupos).
+- **Nova conversa**: botão `+` abre seletor de membros do workspace (reutiliza `use-workspace-members`). Selecionar 1 → DM; selecionar 2+ → grupo (com campo de nome opcional).
+- **Anexos**: clip no composer, até 10 arquivos/20MB cada, preview inline (imagens) ou card com nome+tamanho (outros).
+- **Toast** quando chega mensagem e a conversa não está aberta.
+- **Push** (service worker já existe + tabela `push_subscriptions`): notificação nativa quando a aba está fechada/em background.
+- **Read receipts simples**: "visto por N" no rodapé da última mensagem em grupos; check duplo em DMs.
 
-## Escopo das mudanças (frontend apenas)
+## Arquitetura técnica
 
-### 1. Pipeline de tickets (já existe `pipelines`/`pipeline_stages` no DB)
-- Garantir que `tickets.pipeline_id` e `tickets.stage_id` são usados; se a coluna não existir, **adicionar via migração simples** apenas para alimentar o board (com fallback para `status` quando vazio).
-- Settings de pipelines de ticket já são acessíveis em `/settings/pipelines` — sem alterações.
+### Banco (migration)
 
-### 2. Reescrita de `src/routes/_authenticated/tickets.tsx`
-Transformar em layout 2 colunas: `<TicketsSidebar />` + `<TicketsWorkspace />`.
+Quatro tabelas novas em `public`, todas com `workspace_owner_id` e RLS exigindo `is_workspace_member`:
 
-### 3. Novos componentes em `src/components/tickets/`
-- `tickets-sidebar.tsx` — views salvas + contadores (query agregada).
-- `tickets-toolbar.tsx` — busca, pipeline picker, filtros, layout switch, novo ticket.
-- `tickets-table.tsx` — reusa `useGridColumns`, adiciona checkbox de seleção e bulk bar.
-- `tickets-split-view.tsx` — lista compacta + preview (reusa `RecordLayout` de `src/components/record/`).
-- `tickets-board.tsx` — kanban por `stage_id`, drag-and-drop com `@dnd-kit` (já no projeto via deals-board).
-- `ticket-card.tsx` — card compartilhado entre split e board.
-- `ticket-bulk-bar.tsx` — barra de ação flutuante.
-- `ticket-drawer.tsx` — drawer/full-page para detalhe usando `RecordLayout` existente.
+- `chat_conversations` — id, workspace_owner_id, kind (`dm`|`group`), title (nullable), created_by, created_at, updated_at, last_message_at.
+- `chat_conversation_members` — conversation_id, user_id, joined_at, last_read_at, muted. PK composta.
+- `chat_messages` — id, conversation_id, workspace_owner_id, sender_user_id, body (text), created_at, edited_at, deleted_at.
+- `chat_message_attachments` — id, message_id, storage_path, file_name, mime_type, size_bytes.
 
-### 4. Design tokens
-- Cores de prioridade e SLA via tokens em `src/styles.css` (`--priority-urgent`, `--sla-breached`, etc.) para manter o tema.
-- Sem cores hard-coded nos componentes.
+Função `is_chat_member(conv_id, user)` SECURITY DEFINER (lê `chat_conversation_members`) para evitar recursão em RLS.
 
-## Não-escopo
-- Não mexer em sincronização HubSpot (já feita em turnos anteriores).
-- Não criar inbox de e-mail/conversa nova — reusa a timeline de atividades existente.
-- Não alterar permissões/RLS.
+Trigger `chat_messages_after_insert`: atualiza `last_message_at` da conversa e dispara `pg_notify`/edge para push (ver abaixo).
 
-## Diagrama
+Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages, chat_conversations, chat_conversation_members`.
 
-```text
-┌──────────────┬─────────────────────────────────────────────┐
-│ Views        │ Toolbar: busca | pipeline | filtros | view │
-│  Inbox    12 ├─────────────────────────────────────────────┤
-│  Meus      4 │                                             │
-│  Não atrib 6 │   [ Tabela | Split | Quadro ]               │
-│  Urgentes  2 │                                             │
-│  Vencidos  1 │   <conteúdo do layout escolhido>            │
-│  + Nova view │                                             │
-└──────────────┴─────────────────────────────────────────────┘
-```
+GRANTs: `SELECT, INSERT, UPDATE, DELETE` para `authenticated`; `ALL` para `service_role`. Sem `anon`.
 
-## Entrega
-Quando aprovado, implemento na ordem: tokens → sidebar+toolbar → table → board → split → drawer → bulk bar.
+### Storage
+
+Bucket privado `chat-attachments`. Path: `{workspace_id}/{conversation_id}/{message_id}/{filename}`. RLS em `storage.objects` permite leitura/escrita apenas a membros da conversa (usa `is_chat_member`).
+
+### Server functions (`src/lib/chat.functions.ts`)
+
+Todas com `requireSupabaseAuth`:
+
+- `listConversations()` — conversas do usuário no workspace ativo + contagem de não lidas + último trecho.
+- `getOrCreateDM({ other_user_id })` — idempotente (procura DM existente entre os dois).
+- `createGroup({ title, member_user_ids })`.
+- `addGroupMembers({ conversation_id, user_ids })`.
+- `listMessages({ conversation_id, before?, limit })` — paginação reversa.
+- `sendMessage({ conversation_id, body, attachments[] })` — attachments já enviados ao Storage; insere mensagem + linhas em `chat_message_attachments`.
+- `markRead({ conversation_id })` — atualiza `last_read_at`.
+- `signAttachmentUrl({ attachment_id })` — gera URL assinada (60 s).
+
+### Frontend
+
+Novos arquivos:
+
+- `src/components/chat/chat-drawer.tsx` — Sheet shadcn com layout 2 colunas.
+- `src/components/chat/conversation-list.tsx`
+- `src/components/chat/conversation-thread.tsx`
+- `src/components/chat/message-composer.tsx` (anexos + envio).
+- `src/components/chat/new-conversation-dialog.tsx`
+- `src/components/chat/chat-trigger.tsx` — botão do header com badge.
+- `src/hooks/use-chat-realtime.ts` — assina canais Supabase Realtime, invalida React Query, dispara toast.
+- `src/hooks/use-unread-count.ts`.
+
+Montagem:
+- `chat-trigger` adicionado em `src/components/page-header.tsx` (área de ações globais).
+- Estado de drawer aberto/fechado em contexto leve (`ChatProvider` em `src/routes/_authenticated/route.tsx`).
+
+### Push
+
+Reaproveita `push_subscriptions` + `public/sw.js`. Trigger no banco enfileira evento; novo handler `src/routes/api/public/hooks/chat-push-tick.ts` (autenticado via `CRON_SECRET`) consome a fila e dispara web-push para membros offline. Agendamento via `reschedule_lovable_cron` (cron de 1 min) — adiciona entrada ao array existente.
+
+## Entregáveis (ordem de execução)
+
+1. Migration: tabelas, função `is_chat_member`, RLS, GRANTs, trigger de `last_message_at`, publicação realtime.
+2. Bucket `chat-attachments` + policies em `storage.objects`.
+3. `chat.functions.ts` (server fns).
+4. Componentes do drawer + hooks de realtime/unread.
+5. Integração no header e provider em `_authenticated/route.tsx`.
+6. Handler de push + entrada no cron.
+
+## Fora do escopo (podem vir depois)
+
+Reactions/emojis, threads aninhadas, busca full-text, edição/exclusão pelo usuário, menções `@user` com highlight, status online/digitando, chamadas de voz/vídeo.
