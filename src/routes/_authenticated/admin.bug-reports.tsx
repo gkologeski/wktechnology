@@ -97,7 +97,7 @@ function BugReportsAdminPage() {
   const listAnalysesFn = useServerFn(listBugReportAnalyses);
   const qc = useQueryClient();
 
-  const [status, setStatus] = useState<BugReportStatus | "all">("open");
+  const [status, setStatus] = useState<BugReportStatus | "all" | "unresolved">("unresolved");
   const [kind, setKind] = useState<"new_feature" | "existing_broken" | "all">("all");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -224,6 +224,7 @@ function BugReportsAdminPage() {
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="unresolved">Não resolvidos</SelectItem>
               <SelectItem value="all">Todos ({counts.all ?? 0})</SelectItem>
               {BUG_REPORT_STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
