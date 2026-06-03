@@ -99,7 +99,8 @@ export const updateBugReportStatus = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin
       .from("bug_reports")
-      .update(patch)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
