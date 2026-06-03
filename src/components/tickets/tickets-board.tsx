@@ -42,14 +42,7 @@ function Column({
   );
 }
 
-const STATUS_MAP: Record<string, TicketStatus> = {
-  new: "new",
-  open: "open",
-  waiting_on_contact: "waiting",
-  waiting_on_us: "open",
-  closed: "closed",
-  resolved: "resolved",
-};
+const VALID_STATUSES: TicketStatus[] = ["new", "open", "waiting", "resolved", "closed"];
 
 export function TicketsBoard({
   pipeline,
@@ -68,13 +61,12 @@ export function TicketsBoard({
     const map: Record<string, TicketRow[]> = {};
     for (const s of pipeline.stages) map[s.value] = [];
     const firstStage = pipeline.stages[0]?.value;
+    const wonStage = pipeline.stages.find((s) => s.type === "won")?.value;
     for (const t of tickets) {
-      // map ticket.status -> stage value when possible
-      const key =
-        pipeline.stages.find((s) => s.value === t.status)?.value ??
-        pipeline.stages.find((s) => (s.type === "won" && (t.status === "closed" || t.status === "resolved")))
-          ?.value ??
-        firstStage;
+      // Prefer exact stage value == ticket.status; fall back to won stage for resolved/closed; else first stage
+      let key: string | undefined = pipeline.stages.find((s) => s.value === t.status)?.value;
+      if (!key && (t.status === "resolved" || t.status === "closed")) key = wonStage;
+      if (!key) key = firstStage;
       if (key && map[key]) map[key].push(t);
     }
     return map;
@@ -89,7 +81,11 @@ export function TicketsBoard({
     const newStage = pipeline.stages.find((s) => s.value === overId);
     if (!newStage) return;
 
-    const nextStatus: TicketStatus = STATUS_MAP[overId] ?? (newStage.type === "won" ? "closed" : "open");
+    const nextStatus: TicketStatus = (VALID_STATUSES as string[]).includes(overId)
+      ? (overId as TicketStatus)
+      : newStage.type === "won"
+        ? "closed"
+        : "open";
     if (t.status === nextStatus) return;
 
     qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
@@ -99,6 +95,8 @@ export function TicketsBoard({
     const patch: Record<string, unknown> = { status: nextStatus, pipeline_id: pipeline.id };
     if (nextStatus === "resolved" || nextStatus === "closed") {
       patch.resolved_at = t.resolved_at ?? new Date().toISOString();
+    } else {
+      patch.resolved_at = null;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).eq("id", id);
