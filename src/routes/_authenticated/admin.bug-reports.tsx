@@ -45,6 +45,7 @@ import {
   analyzeBugReport,
   listBugReportAnalyses,
 } from "@/lib/bug-report-analysis.functions";
+import { BugReportResolutionDialog } from "@/components/bug-report/resolution-dialog";
 import {
   ShieldAlert,
   Bug,
@@ -102,6 +103,7 @@ function BugReportsAdminPage() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["admin-bug-reports", status, kind],
@@ -129,13 +131,21 @@ function BugReportsAdminPage() {
   }, [analyses.data]);
 
   const update = useMutation({
-    mutationFn: (vars: { id: string; status: BugReportStatus }) => updateFn({ data: vars }),
+    mutationFn: (vars: { id: string; status: BugReportStatus; resolution_text?: string }) => updateFn({ data: vars }),
     onSuccess: () => {
       toast.success("Status atualizado");
       qc.invalidateQueries({ queryKey: ["admin-bug-reports"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao atualizar"),
   });
+
+  const handleStatusChange = (id: string, newStatus: BugReportStatus) => {
+    if (newStatus === "resolved") {
+      setResolvingId(id);
+      return;
+    }
+    update.mutate({ id, status: newStatus });
+  };
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -281,7 +291,7 @@ function BugReportsAdminPage() {
                     <div className="flex items-center gap-2">
                       <Select
                         value={r.status as string}
-                        onValueChange={(v) => update.mutate({ id: r.id as string, status: v as BugReportStatus })}
+                        onValueChange={(v) => handleStatusChange(r.id as string, v as BugReportStatus)}
                       >
                         <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
