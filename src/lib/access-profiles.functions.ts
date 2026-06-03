@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TOOL_REQUIRED_ENTITLEMENT } from "@/lib/entitlements";
 
+import { ACCESS_OBJECTS, ACCESS_TOOLS } from "./access-profiles.constants";
 export { ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS } from "./access-profiles.constants";
 
 const Scope = z.enum(["none", "own", "team", "all"]);
