@@ -1,70 +1,58 @@
 ## Objetivo
 
-Adicionar análise automática por IA aos chamados em `/admin/bug-reports`, gerando: resumo do problema, causa provável, arquivos/áreas do código suspeitos e uma proposta de correção — com opção de re-analisar sob demanda.
+Substituir a página atual `/tickets` por uma área de Help Desk no estilo HubSpot Service Hub, com três layouts (Tabela, Split, Quadro), sidebar de visualizações salvas, ações em lote e drawer de detalhe rico.
 
-## Como funciona
+## Referência visual (HubSpot Help Desk)
 
-1. **Trigger automático**: ao inserir um novo registro em `bug_reports` (via trigger no Postgres → `pg_net` → endpoint público), a IA é chamada uma vez automaticamente.
-2. **Trigger manual**: botão "Analisar com IA" / "Reanalisar" em cada card no inbox admin.
-3. **Transcrição opcional**: se o chamado tem gravação com áudio, transcrever via Lovable AI (Gemini multimodal aceita áudio) antes da análise — assim a IA "ouve" o que o usuário disse.
-4. **Análise estruturada**: usar Lovable AI Gateway (`google/gemini-2.5-pro`) com tool-calling para retornar JSON tipado: `summary`, `severity`, `suspected_area`, `suspected_files[]`, `root_cause_hypothesis`, `proposed_fix`, `reproduction_steps[]`, `confidence`.
-5. **Contexto enviado à IA**: descrição + categoria/subtipo + page_url + user_agent + transcrição (se houver) + uma lista enxuta de rotas/componentes do projeto (gerada em build) para guiar `suspected_files`.
-6. **Exibição**: nova seção em cada card do inbox mostrando a análise, com badges (severidade, confiança) e bloco copiável "Prompt para o Lovable" pronto para colar — que abre o problema já formatado para você implementar a correção.
+- **Sidebar esquerda (~240px)**: lista de "views" — *Inbox / Não atribuídos / Meus abertos / Todos abertos / Urgentes / Vencidos / Fechados hoje*, com contador ao lado. Botão "+ Nova view".
+- **Toolbar superior**: busca, seletor de pipeline, filtros (status, prioridade, dono, fonte, data), seletor de layout (Tabela / Split / Quadro), ordenação, "Novo ticket".
+- **Layout Tabela**: linhas densas, checkbox de seleção, colunas customizáveis, badges de prioridade coloridos (Baixa cinza, Média amarelo, Alta laranja, Urgente vermelho), avatar do dono, SLA com cor (verde/âmbar/vermelho).
+- **Layout Split**: lista compacta à esquerda (assunto, contato, prioridade, tempo) + painel direito com o ticket aberto (cabeçalho, abas Conversa/Comentários/Histórico, timeline de atividades, e propriedades à direita).
+- **Layout Quadro (kanban)**: colunas = estágios do pipeline (não status genérico). Cards arrastáveis entre colunas com drag-and-drop, mostrando assunto, contato, prioridade, SLA e tempo aberto.
+- **Bulk action bar** aparece flutuante ao selecionar (Atribuir, Mudar estágio, Mudar prioridade, Fechar, Excluir).
+- **Drawer de detalhe** (ao abrir um ticket no modo tabela/quadro): 3 colunas — Sobre o ticket (esq), Conversa/Atividade (centro), Associações + Propriedades (dir), igual ao record layout existente.
 
-## Arquitetura técnica
+## Escopo das mudanças (frontend apenas)
+
+### 1. Pipeline de tickets (já existe `pipelines`/`pipeline_stages` no DB)
+- Garantir que `tickets.pipeline_id` e `tickets.stage_id` são usados; se a coluna não existir, **adicionar via migração simples** apenas para alimentar o board (com fallback para `status` quando vazio).
+- Settings de pipelines de ticket já são acessíveis em `/settings/pipelines` — sem alterações.
+
+### 2. Reescrita de `src/routes/_authenticated/tickets.tsx`
+Transformar em layout 2 colunas: `<TicketsSidebar />` + `<TicketsWorkspace />`.
+
+### 3. Novos componentes em `src/components/tickets/`
+- `tickets-sidebar.tsx` — views salvas + contadores (query agregada).
+- `tickets-toolbar.tsx` — busca, pipeline picker, filtros, layout switch, novo ticket.
+- `tickets-table.tsx` — reusa `useGridColumns`, adiciona checkbox de seleção e bulk bar.
+- `tickets-split-view.tsx` — lista compacta + preview (reusa `RecordLayout` de `src/components/record/`).
+- `tickets-board.tsx` — kanban por `stage_id`, drag-and-drop com `@dnd-kit` (já no projeto via deals-board).
+- `ticket-card.tsx` — card compartilhado entre split e board.
+- `ticket-bulk-bar.tsx` — barra de ação flutuante.
+- `ticket-drawer.tsx` — drawer/full-page para detalhe usando `RecordLayout` existente.
+
+### 4. Design tokens
+- Cores de prioridade e SLA via tokens em `src/styles.css` (`--priority-urgent`, `--sla-breached`, etc.) para manter o tema.
+- Sem cores hard-coded nos componentes.
+
+## Não-escopo
+- Não mexer em sincronização HubSpot (já feita em turnos anteriores).
+- Não criar inbox de e-mail/conversa nova — reusa a timeline de atividades existente.
+- Não alterar permissões/RLS.
+
+## Diagrama
 
 ```text
-bug_reports INSERT
-   │
-   ▼ (trigger SQL → pg_net.http_post)
-/api/public/hooks/bug-report-analyze  (valida CRON_SECRET)
-   │
-   ▼
-analyzeBugReport() server fn
-   ├─ baixa gravação (signed URL) → Gemini (áudio→texto) [se houver]
-   ├─ monta prompt + contexto do projeto
-   ├─ chama Lovable AI Gateway (tool-calling, JSON estruturado)
-   └─ grava em bug_report_analyses (1:N por reanálises)
+┌──────────────┬─────────────────────────────────────────────┐
+│ Views        │ Toolbar: busca | pipeline | filtros | view │
+│  Inbox    12 ├─────────────────────────────────────────────┤
+│  Meus      4 │                                             │
+│  Não atrib 6 │   [ Tabela | Split | Quadro ]               │
+│  Urgentes  2 │                                             │
+│  Vencidos  1 │   <conteúdo do layout escolhido>            │
+│  + Nova view │                                             │
+└──────────────┴─────────────────────────────────────────────┘
 ```
 
-### Mudanças no schema
-
-Nova tabela `bug_report_analyses`:
-- `id`, `bug_report_id (fk)`, `created_at`
-- `model`, `transcript` (text, nullable)
-- `summary`, `severity` (low/medium/high/critical), `suspected_area`
-- `suspected_files` (jsonb array), `root_cause`, `proposed_fix`
-- `reproduction_steps` (jsonb), `confidence` (0–1)
-- `lovable_prompt` (text, copiável)
-- RLS: só platform admins leem; service_role escreve.
-
-Trigger `AFTER INSERT ON bug_reports` → `pg_net.http_post` para o endpoint com `CRON_SECRET`.
-
-### Server functions (TanStack)
-
-- `src/lib/bug-report-analysis.functions.ts`
-  - `analyzeBugReport({ id, force? })` — protegido por `requireSupabaseAuth` + `assertPlatformAdmin`; usado pelo botão manual.
-  - `listAnalyses({ bugReportId })` — lista histórico.
-- `src/lib/bug-report-analysis.server.ts` — helpers: transcrição, montagem de prompt, chamada ao Gateway, persistência.
-
-### Endpoint público (webhook do trigger)
-
-- `src/routes/api/public/hooks/bug-report-analyze.ts` — valida `Authorization: Bearer <CRON_SECRET>`, lê `bug_report_id` do body, chama o helper.
-
-### UI
-
-- `src/routes/_authenticated/admin.bug-reports.tsx`: por card, mostrar a análise mais recente (collapsible), badges, botão "Reanalisar", botão "Copiar prompt para o Lovable".
-
-### Modelo e custo
-
-- Texto: `google/gemini-3-flash-preview` por padrão (rápido/barato); upgrade para `gemini-2.5-pro` quando `severity=critical` ou houver transcrição longa.
-- Áudio→texto: `google/gemini-2.5-pro` (multimodal).
-- Reanálises ficam atrás do botão; trigger automático roda uma vez por chamado.
-
-## Fora do escopo desta entrega
-
-- Aplicar a correção sozinho no código (a IA só **propõe**; você cola o prompt aqui).
-- Notificações por e-mail/Slack.
-- Agrupamento automático de chamados duplicados (pode ser uma evolução).
-
-Confirma que sigo por aí? Se quiser, posso já incluir também: (a) agrupamento de chamados similares por embeddings, (b) notificação no app quando uma análise “critical” chegar.
+## Entrega
+Quando aprovado, implemento na ordem: tokens → sidebar+toolbar → table → board → split → drawer → bulk bar.

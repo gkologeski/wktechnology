@@ -44,7 +44,16 @@ export function defaultDealStages(): PipelineStage[] {
 
 const LS_KEY = (entity: string) => `pipeline:selected:${entity}`;
 
-export function usePipelines(entity: "deal" | "lead" = "deal") {
+export function defaultTicketStages(): PipelineStage[] {
+  return [
+    { value: "new", label: "Novo", color: "var(--hs-stage-1)", type: "open" },
+    { value: "waiting_on_contact", label: "Aguardando contato", color: "var(--hs-stage-2)", type: "open" },
+    { value: "waiting_on_us", label: "Aguardando nós", color: "var(--hs-stage-3)", type: "open" },
+    { value: "closed", label: "Fechado", color: "var(--hs-stage-won)", type: "won" },
+  ];
+}
+
+export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -71,12 +80,16 @@ export function usePipelines(entity: "deal" | "lead" = "deal") {
     if (!user || q.isLoading || q.data === undefined) return;
     if (q.data.length > 0) return;
     (async () => {
+      const seedStages =
+        entity === "ticket" ? defaultTicketStages() : defaultDealStages();
+      const seedName =
+        entity === "deal" ? "Pipeline padrão" : entity === "lead" ? "Funil de Leads" : "Pipeline de Tickets";
       const { error } = await supabase.from("pipelines").insert({
         owner_id: user.id,
         entity,
-        name: entity === "deal" ? "Pipeline padrão" : "Funil de Leads",
+        name: seedName,
         is_default: true,
-        stages: defaultDealStages() as unknown as never,
+        stages: seedStages as unknown as never,
       });
       if (!error) qc.invalidateQueries({ queryKey: ["pipelines", entity] });
     })();

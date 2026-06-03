@@ -1,0 +1,136 @@
+import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, type DragEndEvent } from "@dnd-kit/core";
+import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { Pipeline, PipelineStage } from "@/lib/pipelines";
+import { TicketCard } from "./ticket-card";
+import type { TicketRow, TicketStatus } from "./types";
+
+function Column({
+  stage,
+  count,
+  children,
+}: {
+  stage: PipelineStage;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.value });
+  const color = stage.color || "var(--hs-stage-1)";
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col w-[300px] shrink-0 rounded-md bg-[var(--hs-surface)] border border-[var(--hs-divider)] ${
+        isOver ? "ring-2 ring-[var(--hs-orange)]" : ""
+      }`}
+    >
+      <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="inline-block h-2 w-2 rounded-sm shrink-0" style={{ background: color }} />
+          <span className="text-[11px] font-semibold uppercase tracking-wide truncate">{stage.label}</span>
+          <span className="ml-auto text-[11px] text-[var(--hs-text-muted)] tabular-nums">{count}</span>
+        </div>
+      </div>
+      <div className="p-2 space-y-1.5 flex-1 min-h-[200px] overflow-y-auto max-h-[calc(100vh-260px)]">
+        {children}
+        {count === 0 && (
+          <p className="text-xs text-[var(--hs-text-muted)] text-center py-6">Vazio</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const STATUS_MAP: Record<string, TicketStatus> = {
+  new: "new",
+  open: "open",
+  waiting_on_contact: "waiting",
+  waiting_on_us: "open",
+  closed: "closed",
+  resolved: "resolved",
+};
+
+export function TicketsBoard({
+  pipeline,
+  tickets,
+  lookups,
+  onOpen,
+}: {
+  pipeline: Pipeline;
+  tickets: TicketRow[];
+  lookups: { contacts: Map<string, string>; companies: Map<string, string>; owners: Map<string, string> };
+  onOpen: (t: TicketRow) => void;
+}) {
+  const qc = useQueryClient();
+
+  const grouped = useMemo(() => {
+    const map: Record<string, TicketRow[]> = {};
+    for (const s of pipeline.stages) map[s.value] = [];
+    const firstStage = pipeline.stages[0]?.value;
+    for (const t of tickets) {
+      // map ticket.status -> stage value when possible
+      const key =
+        pipeline.stages.find((s) => s.value === t.status)?.value ??
+        pipeline.stages.find((s) => (s.type === "won" && (t.status === "closed" || t.status === "resolved")))
+          ?.value ??
+        firstStage;
+      if (key && map[key]) map[key].push(t);
+    }
+    return map;
+  }, [tickets, pipeline]);
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    const id = String(e.active.id);
+    const overId = e.over?.id as string | undefined;
+    if (!overId) return;
+    const t = tickets.find((x) => x.id === id);
+    if (!t) return;
+    const newStage = pipeline.stages.find((s) => s.value === overId);
+    if (!newStage) return;
+
+    const nextStatus: TicketStatus = STATUS_MAP[overId] ?? (newStage.type === "won" ? "closed" : "open");
+    if (t.status === nextStatus) return;
+
+    qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
+      old.map((x) => (x.id === id ? { ...x, status: nextStatus } : x)),
+    );
+
+    const patch: Record<string, unknown> = { status: nextStatus, pipeline_id: pipeline.id };
+    if (nextStatus === "resolved" || nextStatus === "closed") {
+      patch.resolved_at = t.resolved_at ?? new Date().toISOString();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("tickets").update(patch).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+    }
+  };
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  return (
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <div className="flex gap-2 overflow-x-auto pb-4">
+        {pipeline.stages.map((s) => {
+          const rows = grouped[s.value] ?? [];
+          return (
+            <Column key={s.value} stage={s} count={rows.length}>
+              {rows.map((t) => (
+                <TicketCard
+                  key={t.id}
+                  ticket={t}
+                  contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
+                  companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
+                  ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
+                  onClick={() => onOpen(t)}
+                />
+              ))}
+            </Column>
+          );
+        })}
+      </div>
+    </DndContext>
+  );
+}
