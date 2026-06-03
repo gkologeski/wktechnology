@@ -212,12 +212,23 @@ function TicketsPage() {
   async function bulkUpdate(patch: Partial<TicketRow>) {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
+    let resolutionNote: string | null = null;
+    if (patch.status === "resolved") {
+      resolutionNote = await askResolutionNote(ids.length);
+      if (!resolutionNote) return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
     if (error) { toast.error(error.message); return; }
     if (patch.status) {
       for (const id of ids) {
-        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(() => {});
+        notifyStatus({
+          data: {
+            ticket_id: id,
+            new_status: patch.status as string,
+            ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
+          },
+        }).catch(() => {});
       }
     }
     toast.success(`${ids.length} ticket(s) atualizado(s).`);
