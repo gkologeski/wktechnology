@@ -56,11 +56,13 @@ export const getIntegration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ provider: z.string().min(1).max(40) }).parse(input))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    // Scoped to the row owner; oauth_tokens/credentials_secret_ref are owner-only.
     const { data: row, error } = await supabase
       .from("integrations")
-      .select("*")
+      .select("id, provider, status, config, oauth_tokens, credentials_secret_ref, last_used_at, created_at, updated_at")
       .eq("provider", data.provider)
+      .eq("owner_id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return { integration: row };

@@ -83,8 +83,10 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: row } = await supabase.from("outbound_webhooks")
+    const { userId } = context;
+    // `secret` is owner-only via RLS; use admin client scoped to owner_id.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("outbound_webhooks")
       .select("secret").eq("id", data.id).eq("owner_id", userId).maybeSingle();
     return { secret: row?.secret as string | undefined };
   });

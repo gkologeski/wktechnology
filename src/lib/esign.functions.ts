@@ -12,7 +12,7 @@ export const listEsignDocuments = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("esign_documents")
-      .select("*, esign_signers(*)")
+      .select("*, esign_signers(id, document_id, owner_id, name, email, sign_order, status, public_token, viewed_at, signed_at, signed_name, declined_at, decline_reason, created_at)")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -25,7 +25,7 @@ export const getEsignDocument = createServerFn({ method: "GET" })
     const { supabase } = context;
     const [{ data: doc, error: e1 }, { data: signers, error: e2 }, { data: audit, error: e3 }] = await Promise.all([
       supabase.from("esign_documents").select("*").eq("id", data.id).single(),
-      supabase.from("esign_signers").select("*").eq("document_id", data.id).order("sign_order"),
+      supabase.from("esign_signers").select("id, document_id, owner_id, name, email, sign_order, status, public_token, viewed_at, signed_at, signed_name, declined_at, decline_reason, created_at").eq("document_id", data.id).order("sign_order"),
       supabase.from("esign_audit").select("*").eq("document_id", data.id).order("created_at", { ascending: false }),
     ]);
     if (e1) throw new Error(e1.message);
