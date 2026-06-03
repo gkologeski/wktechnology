@@ -202,7 +202,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
         } as never),
         supabaseAdmin
           .from("workspace_members")
-          .select("id", { count: "exact", head: true })
+          .select("workspace_id", { count: "exact", head: true })
           .eq("workspace_id", workspace.id),
       ]);
       const limit = (limitRow as number | null) ?? null; // null = ilimitado
@@ -288,7 +288,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
     // garante que o usuário é membro do workspace
     const { data: tm, error: tmErr } = await supabaseAdmin
       .from("workspace_members")
-      .select("id")
+      .select("workspace_id")
       .eq("workspace_id", workspace.id)
       .eq("user_id", data.member_user_id)
       .maybeSingle();
