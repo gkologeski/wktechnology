@@ -12,7 +12,7 @@ export const listEsignDocuments = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("esign_documents")
-      .select("*, esign_signers(*)")
+      .select("*, esign_signers(id, document_id, owner_id, name, email, sign_order, status, public_token, viewed_at, signed_at, signed_name, declined_at, decline_reason, created_at)")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
