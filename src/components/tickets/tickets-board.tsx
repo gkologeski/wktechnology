@@ -106,7 +106,9 @@ export function TicketsBoard({
     if (error) {
       toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["tickets"] });
+      return;
     }
+    notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
