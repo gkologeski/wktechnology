@@ -18,6 +18,7 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
       .object({
         ticket_id: z.string().uuid(),
         new_status: z.string().min(1).max(40),
+        resolution_note: z.string().trim().min(1).max(4000).optional(),
       })
       .parse(i),
   )
@@ -102,7 +103,10 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
 
     // 5) Envia a mensagem
     const label = STATUS_LABEL[data.new_status] ?? data.new_status;
-    const body = `O status do chamado "${subject}" foi atualizado para *${label}* e já está em tratativa.`;
+    let body = `O status do chamado "${subject}" foi atualizado para *${label}* e já está em tratativa.`;
+    if (data.resolution_note && data.new_status === "resolved") {
+      body += `\n\n*Resolução:* ${data.resolution_note}`;
+    }
 
     const { error: msgErr } = await supabaseAdmin
       .from("chat_messages")
