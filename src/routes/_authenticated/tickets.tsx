@@ -39,6 +39,7 @@ import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
 import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
+import { ResolutionDialog } from "@/components/tickets/resolution-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -71,6 +72,10 @@ function TicketsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const [resolveCtx, setResolveCtx] = useState<{ resolve: (n: string | null) => void; count: number } | null>(null);
+
+  const askResolutionNote = (count = 1) =>
+    new Promise<string | null>((resolve) => setResolveCtx({ resolve, count }));
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
