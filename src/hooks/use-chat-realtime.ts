@@ -59,5 +59,5 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [qc, user?.id, resolveSender]);
+  }, [qc, user?.id]);
 }
