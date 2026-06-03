@@ -84,7 +84,7 @@ function TicketsPage() {
     const companyMap = new Map<string, string>();
     for (const c of companies) companyMap.set(c.id, c.name);
     const ownerMap = new Map<string, string>();
-    for (const m of members) ownerMap.set(m.user_id, m.full_name || m.email || "Usuário");
+    for (const m of members) ownerMap.set(m.user_id, m.full_name || "Usuário");
     return { contacts: contactMap, companies: companyMap, owners: ownerMap };
   }, [contacts, companies, members]);
 
@@ -256,7 +256,7 @@ function TicketsPage() {
               <DropdownMenuContent>
                 {members.map((m) => (
                   <DropdownMenuItem key={m.user_id} onSelect={() => bulkUpdate({ assignee_id: m.user_id })}>
-                    {m.full_name || m.email}
+                    {m.full_name}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -449,7 +449,7 @@ function TicketsPage() {
                 <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
                 <SelectContent>
                   {members.map((m) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>{m.full_name || m.email}</SelectItem>
+                    <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
