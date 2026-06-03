@@ -80,11 +80,25 @@ export function CreateContactDialog({
       onOpenChange(false);
       onCreated?.(data!.id);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao criar contato");
+      // Supabase PostgrestError não é instanceof Error — extrair message/code/details diretamente.
+      const err = e as { message?: string; code?: string; details?: string; hint?: string } | null;
+      const code = err?.code;
+      const raw = err?.message || err?.details || "";
+      // eslint-disable-next-line no-console
+      console.error("[create-contact] insert failed", { code, message: err?.message, details: err?.details, hint: err?.hint });
+      let friendly = "Não foi possível criar o contato.";
+      if (code === "23505") friendly = "Já existe um contato com esses dados (duplicado).";
+      else if (code === "23503") friendly = "Empresa selecionada não é mais válida. Selecione outra ou deixe em branco.";
+      else if (code === "23514") friendly = "Algum campo está com valor inválido.";
+      else if (code === "42501" || /row-level security/i.test(raw)) friendly = "Você não tem permissão para criar contatos neste workspace.";
+      else if (/plan_limit_exceeded/i.test(raw)) friendly = "Limite de contatos do plano atingido. Faça upgrade para criar mais.";
+      else if (raw) friendly = raw;
+      toast.error(friendly);
     } finally {
       setSaving(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
