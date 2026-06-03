@@ -460,7 +460,7 @@ function TicketsPage() {
 
         <TabsContent value="board" className="mt-4">
           {pipeline ? (
-            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} askResolutionNote={askResolutionNote} />
+            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} />
           ) : (
             <p className="text-sm text-muted-foreground">Configurando pipeline…</p>
           )}
@@ -574,21 +574,6 @@ function TicketsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ResolutionDialog
-        open={!!resolveCtx}
-        count={resolveCtx?.count ?? 1}
-        onOpenChange={(v) => {
-          if (!v && resolveCtx) {
-            resolveCtx.resolve(null);
-            setResolveCtx(null);
-          }
-        }}
-        onConfirm={(note) => {
-          resolveCtx?.resolve(note);
-          setResolveCtx(null);
-        }}
-      />
     </div>
   );
 }
