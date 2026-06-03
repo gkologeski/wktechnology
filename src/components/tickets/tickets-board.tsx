@@ -58,6 +58,7 @@ export function TicketsBoard({
   onOpen: (t: TicketRow) => void;
 }) {
   const qc = useQueryClient();
+  const notifyStatus = useServerFn(notifyTicketStatusChange);
 
   const grouped = useMemo(() => {
     const map: Record<string, TicketRow[]> = {};
