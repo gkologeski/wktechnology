@@ -486,6 +486,16 @@ function BugReportsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BugReportResolutionDialog
+        open={!!resolvingId}
+        onOpenChange={(v) => { if (!v) setResolvingId(null); }}
+        onConfirm={async (text) => {
+          if (!resolvingId) return;
+          await update.mutateAsync({ id: resolvingId, status: "resolved", resolution_text: text });
+          setResolvingId(null);
+        }}
+      />
     </div>
   );
 }
