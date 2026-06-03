@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
 import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
+import { ChatTrigger } from "@/components/chat/chat-trigger";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
