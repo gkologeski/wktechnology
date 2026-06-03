@@ -37,6 +37,8 @@ import { filterByView, type ViewKey } from "@/components/tickets/tickets-sidebar
 import { TicketsBoard } from "@/components/tickets/tickets-board";
 import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
 import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
+import { useServerFn } from "@tanstack/react-start";
+import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
