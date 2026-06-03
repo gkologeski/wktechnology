@@ -488,7 +488,7 @@ function TicketsPage() {
 
         <TabsContent value="board" className="mt-4">
           {pipeline ? (
-            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} />
+            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} askResolutionNote={askResolutionNote} />
           ) : (
             <p className="text-sm text-muted-foreground">Configurando pipeline…</p>
           )}
