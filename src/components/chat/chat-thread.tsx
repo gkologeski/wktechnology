@@ -66,7 +66,7 @@ export function ChatThread({
   const { data: messages = [] } = useQuery({
     queryKey: ["chat", "messages", conversation.id],
     queryFn: () => listFn({ data: { conversation_id: conversation.id, limit: 50 } }) as Promise<Msg[]>,
-    refetchOnMount: "always",
+    staleTime: 30_000,
   });
 
   useEffect(() => {

@@ -7,7 +7,7 @@ export const getRouter = () => {
     defaultOptions: {
       queries: {
         staleTime: 60_000, // 1 min — evita refetch agressivo ao navegar
-        gcTime: 5 * 60_000,
+        gcTime: 2 * 60_000, // 2 min — libera memória de queries inativas mais cedo
         refetchOnWindowFocus: false,
         retry: 1,
       },

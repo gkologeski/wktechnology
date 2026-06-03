@@ -24,42 +24,65 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel("chat-stream")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages" },
-        (payload) => {
-          const row = payload.new as {
-            id: string;
-            conversation_id: string;
-            sender_user_id: string;
-            body: string | null;
-            created_at: string;
-          };
-          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-          qc.invalidateQueries({ queryKey: ["chat", "messages", row.conversation_id] });
-          if (row.sender_user_id === user.id) return;
-          if (activeRef.current === row.conversation_id) return;
-          playMessageSound();
-          const who = resolveRef.current ? resolveRef.current(row.sender_user_id) : "Nova mensagem";
-          toast(who, {
-            description: row.body?.slice(0, 140) ?? "(anexo)",
-          });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chat_conversations" },
-        () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chat_conversation_members" },
-        () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    return () => { supabase.removeChannel(channel); };
+    const subscribe = () => {
+      if (channel) return;
+      channel = supabase
+        .channel("chat-stream")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "chat_messages" },
+          (payload) => {
+            const row = payload.new as {
+              id: string;
+              conversation_id: string;
+              sender_user_id: string;
+              body: string | null;
+              created_at: string;
+            };
+            qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+            qc.invalidateQueries({ queryKey: ["chat", "messages", row.conversation_id] });
+            if (row.sender_user_id === user.id) return;
+            if (activeRef.current === row.conversation_id) return;
+            playMessageSound();
+            const who = resolveRef.current ? resolveRef.current(row.sender_user_id) : "Nova mensagem";
+            toast(who, {
+              description: row.body?.slice(0, 140) ?? "(anexo)",
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_conversations" },
+          () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_conversation_members" },
+          () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+        )
+        .subscribe();
+    };
+
+    const unsubscribe = () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) unsubscribe();
+      else subscribe();
+    };
+
+    if (typeof document === "undefined" || !document.hidden) subscribe();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      unsubscribe();
+    };
   }, [qc, user?.id]);
 }
