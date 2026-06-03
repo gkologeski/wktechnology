@@ -143,10 +143,18 @@ function TicketsPage() {
       toast.error("Informe um assunto.");
       return;
     }
+    const nextStatus = draft.status ?? "new";
+    const isTransitionToResolved =
+      !!editing && editing.status !== "resolved" && nextStatus === "resolved";
+    let resolutionNote: string | null = null;
+    if (isTransitionToResolved) {
+      resolutionNote = await askResolutionNote(1);
+      if (!resolutionNote) return; // cancelled
+    }
     const payload = {
       subject: draft.subject!,
       description: draft.description ?? null,
-      status: draft.status ?? "new",
+      status: nextStatus,
       priority: draft.priority ?? "medium",
       source: draft.source ?? null,
       contact_id: draft.contact_id || null,
@@ -156,7 +164,7 @@ function TicketsPage() {
       due_at: draft.due_at || null,
       pipeline_id: pipeline?.id ?? null,
       resolved_at:
-        draft.status === "resolved" || draft.status === "closed"
+        nextStatus === "resolved" || nextStatus === "closed"
           ? editing?.resolved_at ?? new Date().toISOString()
           : null,
     };
@@ -168,7 +176,13 @@ function TicketsPage() {
     }
     if (error) { toast.error(error.message); return; }
     if (editing && editing.status !== payload.status) {
-      notifyStatus({ data: { ticket_id: editing.id, new_status: payload.status } }).catch(() => {});
+      notifyStatus({
+        data: {
+          ticket_id: editing.id,
+          new_status: payload.status,
+          ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
+        },
+      }).catch(() => {});
     }
     toast.success(editing ? "Ticket atualizado." : "Ticket criado.");
     setOpen(false);
