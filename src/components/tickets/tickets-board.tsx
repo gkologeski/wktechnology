@@ -51,13 +51,11 @@ export function TicketsBoard({
   tickets,
   lookups,
   onOpen,
-  askResolutionNote,
 }: {
   pipeline: Pipeline;
   tickets: TicketRow[];
   lookups: { contacts: Map<string, string>; companies: Map<string, string>; owners: Map<string, string> };
   onOpen: (t: TicketRow) => void;
-  askResolutionNote?: (count?: number) => Promise<string | null>;
 }) {
   const qc = useQueryClient();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
@@ -68,7 +66,6 @@ export function TicketsBoard({
     const firstStage = pipeline.stages[0]?.value;
     const wonStage = pipeline.stages.find((s) => s.type === "won")?.value;
     for (const t of tickets) {
-      // Prefer exact stage value == ticket.status; fall back to won stage for resolved/closed; else first stage
       let key: string | undefined = pipeline.stages.find((s) => s.value === t.status)?.value;
       if (!key && (t.status === "resolved" || t.status === "closed")) key = wonStage;
       if (!key) key = firstStage;
@@ -93,12 +90,6 @@ export function TicketsBoard({
         : "open";
     if (t.status === nextStatus) return;
 
-    let resolutionNote: string | null = null;
-    if (nextStatus === "resolved" && askResolutionNote) {
-      resolutionNote = await askResolutionNote(1);
-      if (!resolutionNote) return;
-    }
-
     qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
       old.map((x) => (x.id === id ? { ...x, status: nextStatus } : x)),
     );
@@ -116,13 +107,7 @@ export function TicketsBoard({
       qc.invalidateQueries({ queryKey: ["tickets"] });
       return;
     }
-    notifyStatus({
-      data: {
-        ticket_id: id,
-        new_status: nextStatus,
-        ...(resolutionNote ? { resolution_note: resolutionNote } : {}),
-      },
-    }).catch(() => {});
+    notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
