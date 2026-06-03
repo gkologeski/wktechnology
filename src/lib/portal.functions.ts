@@ -5,14 +5,29 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // ============= ADMIN (autenticado) =============
+// portal_token é column-revoked do papel `authenticated`. Estas funções usam
+// supabaseAdmin e filtram por owner_id = userId para garantir que apenas o
+// dono do workspace gerencie tokens dos próprios contatos.
+
+async function assertContactOwned(contactId: string, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("contacts")
+    .select("id")
+    .eq("id", contactId)
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Contato não encontrado.");
+}
 
 export const listPortalContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
-    const { data, error } = await supabase
+    const { userId } = context;
+    const { data, error } = await supabaseAdmin
       .from("contacts")
       .select("id, first_name, last_name, email, portal_enabled, portal_token")
+      .eq("owner_id", userId)
       .order("first_name", { ascending: true })
       .limit(1000);
     if (error) throw error;
@@ -28,12 +43,13 @@ export const togglePortalAccess = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { userId } = context;
+    await assertContactOwned(data.contactId, userId);
     const patch: { portal_enabled: boolean; portal_token?: string } = {
       portal_enabled: data.enabled,
     };
     if (data.enabled) {
-      const { data: current } = await supabase
+      const { data: current } = await supabaseAdmin
         .from("contacts")
         .select("portal_token")
         .eq("id", data.contactId)
@@ -42,7 +58,11 @@ export const togglePortalAccess = createServerFn({ method: "POST" })
         patch.portal_token = randomBytes(24).toString("hex");
       }
     }
-    const { error } = await supabase.from("contacts").update(patch).eq("id", data.contactId);
+    const { error } = await supabaseAdmin
+      .from("contacts")
+      .update(patch)
+      .eq("id", data.contactId)
+      .eq("owner_id", userId);
     if (error) throw error;
     return { ok: true };
   });
@@ -51,12 +71,14 @@ export const regeneratePortalToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ contactId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { userId } = context;
+    await assertContactOwned(data.contactId, userId);
     const token = randomBytes(24).toString("hex");
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("contacts")
       .update({ portal_token: token, portal_enabled: true })
-      .eq("id", data.contactId);
+      .eq("id", data.contactId)
+      .eq("owner_id", userId);
     if (error) throw error;
     return { token };
   });
