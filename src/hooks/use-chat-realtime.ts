@@ -17,6 +17,8 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
   const { user } = useAuth();
   const activeRef = useRef(activeConversationId);
   activeRef.current = activeConversationId;
+  const resolveRef = useRef(resolveSender);
+  resolveRef.current = resolveSender;
 
   useEffect(() => {
     if (!user?.id) return;
