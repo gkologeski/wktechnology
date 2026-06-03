@@ -162,6 +162,9 @@ function TicketsPage() {
       ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id }));
     }
     if (error) { toast.error(error.message); return; }
+    if (editing && editing.status !== payload.status) {
+      notifyStatus({ data: { ticket_id: editing.id, new_status: payload.status } }).catch(() => {});
+    }
     toast.success(editing ? "Ticket atualizado." : "Ticket criado.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["tickets"] });
