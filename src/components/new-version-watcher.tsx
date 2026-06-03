@@ -4,7 +4,7 @@ import { toast } from "sonner";
 // Polls the current document URL for changes in the hashed asset references
 // emitted by Vite. Each new deploy ships new hashed filenames, so a diff means
 // a new version of the app is live and the user should reload to use it.
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 5 * 60_000;
 
 function extractAssetFingerprint(html: string): string {
   // Captura todos os caminhos para assets versionados (com hash) gerados pelo
