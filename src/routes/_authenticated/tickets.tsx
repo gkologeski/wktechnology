@@ -196,6 +196,11 @@ function TicketsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
     if (error) { toast.error(error.message); return; }
+    if (patch.status) {
+      for (const id of ids) {
+        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(() => {});
+      }
+    }
     toast.success(`${ids.length} ticket(s) atualizado(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
