@@ -318,7 +318,22 @@ export function CreateDealFromLeadDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>
+          <Button
+            onClick={submit}
+            disabled={
+              saving ||
+              !name.trim() ||
+              !pipelineId ||
+              !stageId ||
+              (!!company.name.trim() && !company.id) ||
+              (!!contactQuery.trim() && !selectedContact)
+            }
+            title={
+              (!!company.name.trim() && !company.id) || (!!contactQuery.trim() && !selectedContact)
+                ? "Selecione empresa e contato na lista para continuar"
+                : undefined
+            }
+          >
             {saving ? "Criando…" : "Criar negócio"}
           </Button>
         </DialogFooter>

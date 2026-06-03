@@ -142,7 +142,17 @@ export function CreateContactDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "Criando…" : "Criar contato"}</Button>
+          <Button
+            onClick={submit}
+            disabled={
+              saving ||
+              !form.first_name.trim() ||
+              (!!company.name.trim() && !company.id)
+            }
+            title={!!company.name.trim() && !company.id ? "Selecione a empresa na lista para continuar" : undefined}
+          >
+            {saving ? "Criando…" : "Criar contato"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
