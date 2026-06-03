@@ -13,10 +13,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
-type Conv = {
+export type Conv = {
   id: string;
   kind: "dm" | "group";
   title: string | null;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_sender: string | null;
+  unread_count: number;
   member_user_ids: string[];
 };
 
