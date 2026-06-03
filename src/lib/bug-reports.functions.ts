@@ -22,7 +22,7 @@ export const listBugReports = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        status: z.enum([...STATUSES, "all"]).optional(),
+        status: z.enum([...STATUSES, "all", "unresolved"]).optional(),
         kind: z.enum(["new_feature", "existing_broken", "all"]).optional(),
       })
       .parse(input ?? {}),
@@ -36,7 +36,11 @@ export const listBugReports = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(500);
 
-    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    if (data.status === "unresolved") {
+      q = q.in("status", ["open", "triaged", "in_progress"]);
+    } else if (data.status && data.status !== "all") {
+      q = q.eq("status", data.status);
+    }
     if (data.kind && data.kind !== "all") q = q.eq("kind", data.kind);
 
     const { data: rows, error } = await q;
