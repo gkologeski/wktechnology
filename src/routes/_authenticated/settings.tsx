@@ -64,6 +64,7 @@ const sections: Section[] = [
   {
     label: "Pessoas & Acesso",
     tabs: [
+      { to: "/settings/workspace-team", label: "Equipe do workspace" },
       { to: "/settings/teams", label: "Usuários" },
       { to: "/settings/roles", label: "Permissões" },
     ],

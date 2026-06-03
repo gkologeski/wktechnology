@@ -111,6 +111,7 @@ const groups: Group[] = [
       { section: "Automação", title: "Playbooks", url: "/settings/playbooks", icon: BookOpen },
       { section: "Automação", title: "Enriquecimento", url: "/settings/enrichment", icon: Sparkles },
       // Pessoas & Acesso
+      { section: "Pessoas & Acesso", title: "Equipe do workspace", url: "/settings/workspace-team", icon: UsersRound },
       { section: "Pessoas & Acesso", title: "Usuários", url: "/settings/teams", icon: UsersRound },
       { section: "Pessoas & Acesso", title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
       // Segurança
