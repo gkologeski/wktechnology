@@ -47,8 +47,9 @@ const LS_KEY = (entity: string) => `pipeline:selected:${entity}`;
 export function defaultTicketStages(): PipelineStage[] {
   return [
     { value: "new", label: "Novo", color: "var(--hs-stage-1)", type: "open" },
-    { value: "waiting_on_contact", label: "Aguardando contato", color: "var(--hs-stage-2)", type: "open" },
-    { value: "waiting_on_us", label: "Aguardando nós", color: "var(--hs-stage-3)", type: "open" },
+    { value: "open", label: "Em atendimento", color: "var(--hs-stage-2)", type: "open" },
+    { value: "waiting", label: "Aguardando cliente", color: "var(--hs-stage-3)", type: "open" },
+    { value: "resolved", label: "Resolvido", color: "var(--hs-stage-4)", type: "open" },
     { value: "closed", label: "Fechado", color: "var(--hs-stage-won)", type: "won" },
   ];
 }
