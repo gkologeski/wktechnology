@@ -7,6 +7,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
 
+type ActiveWorkspace = { id: string; created_by: string | null };
+
 /** URL canônica de produção do CRM — usada para links de convite por email. */
 const CANONICAL_APP_URL = "https://crm.wktechnology.com.br";
 
@@ -34,19 +36,115 @@ export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   member: "Membro",
 };
 
+async function isPlatformAdmin(userId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return !!data;
+}
+
+async function resolveActiveWorkspace(userId: string): Promise<ActiveWorkspace> {
+  const admin = await isPlatformAdmin(userId);
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const activeId = (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+  if (activeId) {
+    if (admin) {
+      const { data: ws, error } = await supabaseAdmin
+        .from("workspaces")
+        .select("id, created_by")
+        .eq("id", activeId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (ws) return { id: ws.id as string, created_by: (ws.created_by as string | null) ?? null };
+    }
+
+    const { data: membership, error: memErr } = await supabaseAdmin
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("workspace_id", activeId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (memErr) throw new Error(memErr.message);
+    if (membership) {
+      const { data: ws, error } = await supabaseAdmin
+        .from("workspaces")
+        .select("id, created_by")
+        .eq("id", activeId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (ws) return { id: ws.id as string, created_by: (ws.created_by as string | null) ?? null };
+    }
+  }
+
+  const { data: first, error } = await supabaseAdmin
+    .from("workspace_members")
+    .select("workspace_id, workspaces:workspace_id(id, created_by)")
+    .eq("user_id", userId)
+    .order("joined_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const workspace = (first as { workspaces?: { id: string; created_by: string | null } | null } | null)?.workspaces;
+  if (workspace) return { id: workspace.id, created_by: workspace.created_by };
+
+  throw new Error("Nenhum workspace ativo encontrado.");
+}
+
+async function assertCanManageWorkspace(workspaceId: string, userId: string) {
+  if (await isPlatformAdmin(userId)) return;
+  const { data, error } = await supabaseAdmin
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data || data.role !== "admin") throw new Error("Apenas admins do workspace podem gerenciar usuários.");
+}
+
+async function assertTargetMember(workspaceId: string, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Membro não encontrado neste workspace.");
+}
+
+async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRole) {
+  await supabaseAdmin.from("team_members").upsert({
+    workspace_owner_id: workspaceId,
+    member_user_id: userId,
+    role,
+  } as never, { onConflict: "workspace_owner_id,member_user_id" });
+}
+
 /** Lista membros + email (do auth.users via admin). */
 export const listTeamMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
 
-    const { data: members } = await supabase
-      .from("team_members")
-      .select("id, member_user_id, role, created_at, invited_at")
-      .eq("workspace_owner_id", userId)
-      .order("created_at", { ascending: true });
+    const { data: members, error: membersErr } = await supabaseAdmin
+      .from("workspace_members")
+      .select("workspace_id, user_id, role, joined_at")
+      .eq("workspace_id", workspace.id)
+      .order("joined_at", { ascending: true });
+    if (membersErr) throw new Error(membersErr.message);
 
-    const ids = Array.from(new Set([userId, ...(members ?? []).map((m) => m.member_user_id as string)]));
+    const ids = Array.from(new Set((members ?? []).map((m) => m.user_id as string)));
 
     // Use admin client: profiles RLS only allows reading own row, but the
     // workspace owner needs name/phone of every member to render the list.
@@ -70,31 +168,19 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       })
     );
 
-    const ownerRow = {
-      id: "owner",
-      user_id: userId,
-      full_name: nameById.get(userId) || "Você",
-      phone: phoneById.get(userId) ?? "",
-      email: emailById.get(userId) ?? "",
-      role: "admin" as TeamRole,
-      is_owner: true,
-      pending: false,
-      created_at: null as string | null,
-    };
-
     const memberRows = (members ?? []).map((m) => ({
-      id: m.id as string,
-      user_id: m.member_user_id as string,
-      full_name: nameById.get(m.member_user_id as string) || "",
-      phone: phoneById.get(m.member_user_id as string) ?? "",
-      email: emailById.get(m.member_user_id as string) ?? "",
+      id: `${m.workspace_id as string}:${m.user_id as string}`,
+      user_id: m.user_id as string,
+      full_name: nameById.get(m.user_id as string) || "",
+      phone: phoneById.get(m.user_id as string) ?? "",
+      email: emailById.get(m.user_id as string) ?? "",
       role: m.role as TeamRole,
-      is_owner: false,
-      pending: !confirmedById.get(m.member_user_id as string),
-      created_at: m.created_at as string,
+      is_owner: (m.user_id as string) === userId,
+      pending: !confirmedById.get(m.user_id as string),
+      created_at: m.joined_at as string,
     }));
 
-    return [ownerRow, ...memberRows];
+    return memberRows;
   });
 
 
@@ -111,7 +197,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     const target = data.email.trim().toLowerCase();
     const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
@@ -121,15 +209,15 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     {
       const [{ data: limitRow }, { count: currentMembers }] = await Promise.all([
         supabaseAdmin.rpc("get_entitlement_limit", {
-          _workspace: userId, _key: "users.max",
+          _workspace: workspace.id, _key: "users.max",
         } as never),
         supabaseAdmin
-          .from("team_members")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_owner_id", userId),
+          .from("workspace_members")
+          .select("workspace_id", { count: "exact", head: true })
+          .eq("workspace_id", workspace.id),
       ]);
       const limit = (limitRow as number | null) ?? null; // null = ilimitado
-      const used = 1 + (currentMembers ?? 0); // +1 = owner
+      const used = currentMembers ?? 0;
       if (limit !== null && used + 1 > limit) {
         throw new Error(
           `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`
@@ -167,7 +255,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       }
       foundId = invited.user.id;
     }
-    if (foundId === userId) throw new Error("Você já é o owner do workspace.");
+    if (foundId === userId) throw new Error("Você já é membro deste workspace.");
 
     // Garante profile com nome e telefone
     await supabaseAdmin.from("profiles").upsert({
@@ -176,20 +264,21 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       phone: data.phone,
     } as never, { onConflict: "id" });
 
-    const { error: insErr } = await supabase
-      .from("team_members")
-      .insert({ workspace_owner_id: userId, member_user_id: foundId, role: data.role } as never);
+    const { error: insErr } = await supabaseAdmin
+      .from("workspace_members")
+      .insert({ workspace_id: workspace.id, user_id: foundId, role: data.role, invited_by: userId } as never);
     if (insErr) {
       if (insErr.code === "23505") throw new Error("Esse usuário já é membro do workspace.");
       throw new Error(insErr.message);
     }
 
     // Espelha no user_roles
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", foundId);
-    await supabase.from("user_roles").insert({
-      workspace_owner_id: userId, user_id: foundId, role: data.role,
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", foundId);
+    await supabaseAdmin.from("user_roles").insert({
+      workspace_owner_id: workspace.id, user_id: foundId, role: data.role,
     } as never);
+    await syncLegacyRole(workspace.id, foundId, data.role);
 
     return { ok: true, user_id: foundId };
   });
@@ -205,12 +294,14 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     // garante que o usuário é membro do workspace
     const { data: tm, error: tmErr } = await supabaseAdmin
-      .from("team_members")
-      .select("id")
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id)
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id)
       .maybeSingle();
     if (tmErr) throw new Error(tmErr.message);
     if (!tm) throw new Error("Membro não encontrado neste workspace.");
@@ -257,19 +348,25 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
     z.object({ member_user_id: z.string().uuid(), role: TeamRole }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("team_members")
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    if (data.member_user_id === userId) throw new Error("Você não pode alterar seu próprio papel.");
+    await assertTargetMember(workspace.id, data.member_user_id);
+
+    const { error } = await supabaseAdmin
+      .from("workspace_members")
       .update({ role: data.role } as never)
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id);
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
-    await supabase.from("user_roles").insert({
-      workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("user_roles").insert({
+      workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
     } as never);
+    await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     return { ok: true };
   });
 
@@ -285,8 +382,11 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     }).parse(i)
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
     const isOwner = data.member_user_id === userId;
+    await assertTargetMember(workspace.id, data.member_user_id);
 
     const { error: pErr } = await supabaseAdmin.from("profiles").upsert({
       id: data.member_user_id,
@@ -302,18 +402,19 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     } catch { /* ignore */ }
 
     if (!isOwner) {
-      const { error } = await supabase
-        .from("team_members")
+      const { error } = await supabaseAdmin
+        .from("workspace_members")
         .update({ role: data.role } as never)
-        .eq("workspace_owner_id", userId)
-        .eq("member_user_id", data.member_user_id);
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", data.member_user_id);
       if (error) throw new Error(error.message);
 
-      await supabase.from("user_roles").delete()
-        .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
-      await supabase.from("user_roles").insert({
-        workspace_owner_id: userId, user_id: data.member_user_id, role: data.role,
+      await supabaseAdmin.from("user_roles").delete()
+        .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+      await supabaseAdmin.from("user_roles").insert({
+        workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
       } as never);
+      await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     }
     return { ok: true };
   });
@@ -322,15 +423,21 @@ export const removeTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ member_user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("team_members")
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    if (data.member_user_id === userId) throw new Error("Você não pode remover a si mesmo.");
+
+    const { error } = await supabaseAdmin
+      .from("workspace_members")
       .delete()
-      .eq("workspace_owner_id", userId)
-      .eq("member_user_id", data.member_user_id);
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("user_roles").delete()
-      .eq("workspace_owner_id", userId).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("user_roles").delete()
+      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+    await supabaseAdmin.from("team_members").delete()
+      .eq("workspace_owner_id", workspace.id).eq("member_user_id", data.member_user_id);
     return { ok: true };
   });

@@ -1,7 +1,8 @@
 // Página /settings/teams — gerenciar usuários do workspace (papéis, convites, remoção).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,8 +76,10 @@ function UsersPage() {
 
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rows = [], isLoading: loading, refetch } = useQuery<Row[]>({
+    queryKey: ["settings-teams"],
+    queryFn: () => listFn(),
+  });
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | TeamRole>("all");
 
@@ -125,11 +128,7 @@ function UsersPage() {
     } finally { setSavingEdit(false); }
   };
 
-  const refresh = async () => {
-    setLoading(true);
-    try { setRows(await listFn()); } finally { setLoading(false); }
-  };
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const refresh = async () => { await refetch(); };
 
   const stats = useMemo(() => {
     const s = { total: rows.length, admin: 0, manager: 0, member: 0 };
@@ -150,7 +149,7 @@ function UsersPage() {
   const ents = useEntitlements();
   const usersInfo = ents.info(ENT.USERS_MAX);
   const usersLimit: number | null = usersInfo.limit;
-  const usersUsed = 1 + rows.length; // owner + membros
+  const usersUsed = rows.length;
   const atLimit = usersLimit !== null && usersUsed >= usersLimit;
 
   const canInvite = !atLimit && email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
@@ -197,7 +196,7 @@ function UsersPage() {
   const handleRole = async (user_id: string, r: TeamRole) => {
     try {
       await updateFn({ data: { member_user_id: user_id, role: r } });
-      setRows((rs) => rs.map((x) => x.user_id === user_id ? { ...x, role: r } : x));
+      await refresh();
       toast.success("Papel atualizado");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
@@ -206,7 +205,7 @@ function UsersPage() {
     if (!toRemove) return;
     try {
       await removeFn({ data: { member_user_id: toRemove.user_id } });
-      setRows((rs) => rs.filter((x) => x.user_id !== toRemove.user_id));
+      await refresh();
       toast.success("Usuário removido");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
