@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Ticket as TicketIcon, Building2, User as UserIcon, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { StageTracker } from "@/components/stage-tracker";
-import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
+import { PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
+import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
