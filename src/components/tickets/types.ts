@@ -18,6 +18,7 @@ export type TicketRow = {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+  external_ids?: Record<string, unknown> | null;
 };
 
 export const STATUSES = [
