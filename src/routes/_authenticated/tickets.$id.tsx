@@ -69,18 +69,27 @@ function TicketDetail() {
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const setStatus = async (v: string) => {
-    const newStatus = v as TicketStatus;
-    const patch: Record<string, unknown> = { status: newStatus };
-    if (newStatus === "resolved" || newStatus === "closed") {
+  const setStage = async (v: string) => {
+    if (!pipeline) return;
+    const stage = pipeline.stages.find((s) => s.value === v);
+    if (!stage) return;
+    const nextStatus: TicketStatus =
+      stage.type === "won" ? "closed" : stage.type === "lost" ? "closed" : "open";
+    const patch: Record<string, unknown> = {
+      status: nextStatus,
+      pipeline_id: pipeline.id,
+      external_ids: { ...(ticket.external_ids ?? {}), hs_pipeline_stage: v },
+    };
+    if (nextStatus === "closed") {
       patch.resolved_at = ticket.resolved_at ?? new Date().toISOString();
     } else {
       patch.resolved_at = null;
     }
-    const { error } = await (supabase as unknown as { from: (t: string) => { update: (p: Record<string, unknown>) => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> } } }).from("tickets").update(patch).eq("id", ticket.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("tickets").update(patch).eq("id", ticket.id);
     if (error) { toast.error(error.message); return; }
-    if (ticket.status !== newStatus) {
-      notifyStatus({ data: { ticket_id: ticket.id, new_status: newStatus } }).catch(() => {});
+    if (ticket.status !== nextStatus) {
+      notifyStatus({ data: { ticket_id: ticket.id, new_status: nextStatus } }).catch(() => {});
     }
     void load();
   };
@@ -94,7 +103,7 @@ function TicketDetail() {
   };
 
   const priorityLabel = PRIORITIES.find((p) => p.value === ticket.priority)?.label ?? ticket.priority;
-  const statusLabel = STATUSES.find((s) => s.value === ticket.status)?.label ?? ticket.status;
+  const stageLabel = currentStage?.label ?? "—";
   const priorityColor = PRIORITY_COLOR_VAR[ticket.priority] ?? "var(--priority-low)";
 
   const header = (
