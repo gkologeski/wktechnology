@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +57,12 @@ const VIEW_TABS: { key: ViewKey; label: string }[] = [
 ];
 
 function TicketsPage() {
+  const location = useLocation();
+  if (location.pathname !== "/tickets") return <Outlet />;
+  return <TicketsIndex />;
+}
+
+function TicketsIndex() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
