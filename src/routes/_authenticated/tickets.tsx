@@ -130,9 +130,7 @@ function TicketsPage() {
     setOpen(true);
   }
   function openEdit(t: TicketRow) {
-    setEditing(t);
-    setDraft({ ...t });
-    setOpen(true);
+    navigate({ to: "/tickets/$id", params: { id: t.id } });
   }
 
   async function save() {
