@@ -89,7 +89,7 @@ const sb = supabase as any;
 
 function CompanyCard({
   entity, entityId, companyId,
-}: { entity: "contact" | "deal"; entityId: string; companyId: string | null }) {
+}: { entity: "contact" | "deal" | "ticket"; entityId: string; companyId: string | null }) {
   const [c, setC] = useState<{ id: string; name: string; industry: string | null; domain: string | null } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(companyId);
@@ -103,21 +103,23 @@ function CompanyCard({
   useEffect(() => { setCurrentId(companyId); }, [companyId]);
   useEffect(() => { void load(currentId); }, [currentId, load]);
 
+  const tableFor = (e: "contact" | "deal" | "ticket") =>
+    e === "contact" ? "contacts" : e === "deal" ? "deals" : "tickets";
+
   const associate = async (id: string) => {
-    const table = entity === "contact" ? "contacts" : "deals";
-    const { error } = await sb.from(table).update({ company_id: id }).eq("id", entityId);
+    const { error } = await sb.from(tableFor(entity)).update({ company_id: id }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Empresa vinculada");
     setCurrentId(id);
   };
 
   const unlink = async () => {
-    const table = entity === "contact" ? "contacts" : "deals";
-    const { error } = await sb.from(table).update({ company_id: null }).eq("id", entityId);
+    const { error } = await sb.from(tableFor(entity)).update({ company_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Empresa desvinculada");
     setCurrentId(null);
   };
+
 
   return (
     <>
