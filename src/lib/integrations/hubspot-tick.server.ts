@@ -98,7 +98,7 @@ export async function tickOnce(
   // 1) Selecionar o job
   let job: { id: string; scope: unknown; status: string; owner_id: string } | null = null;
   if (jobId) {
-    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id").eq("id", jobId);
+    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id, workspace_id").eq("id", jobId);
     if (ownerId) q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
     job = data ?? null;
