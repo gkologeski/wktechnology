@@ -96,7 +96,7 @@ export async function tickOnce(
   ownerId?: string,
 ): Promise<TickResult> {
   // 1) Selecionar o job
-  let job: { id: string; scope: unknown; status: string; owner_id: string } | null = null;
+  let job: { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null = null;
   if (jobId) {
     const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id, workspace_id").eq("id", jobId);
     if (ownerId) q.eq("owner_id", ownerId);
