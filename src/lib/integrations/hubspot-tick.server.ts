@@ -101,7 +101,7 @@ export async function tickOnce(
     const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id, workspace_id").eq("id", jobId);
     if (ownerId) q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = data ?? null;
+    job = (data as typeof job) ?? null;
   } else {
     let q = supabase
       .from("enrichment_jobs")
@@ -113,7 +113,7 @@ export async function tickOnce(
       .limit(1);
     if (ownerId) q = q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = data ?? null;
+    job = (data as typeof job) ?? null;
   }
   if (!job) return { kind: "no_job" };
   // Cancelled/finished jobs must not execute new steps
