@@ -179,7 +179,7 @@ function DealsPage() {
         </TabsList>
 
         <TabsContent value="table" className="mt-4">
-          <DealsHubspotTable deals={filtered} pipeline={selected} lookups={lookups} onOpen={openEdit} />
+          <DealsHubspotTable deals={filtered} pipeline={selected ?? undefined} lookups={lookups} onOpen={openEdit} />
         </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
