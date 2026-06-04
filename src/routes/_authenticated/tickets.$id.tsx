@@ -44,23 +44,11 @@ function TicketDetail() {
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("tickets").select("*").eq("id", id).single();
-    const t = data as TicketRow | null;
-    setTicket(t);
-    if (t?.contact_id) {
-      const { data: c } = await supabase.from("contacts").select("id,first_name,last_name,email").eq("id", t.contact_id).maybeSingle();
-      setContact((c as LinkedContact | null) ?? null);
-    } else setContact(null);
-    if (t?.company_id) {
-      const { data: c } = await supabase.from("companies").select("id,name,industry").eq("id", t.company_id).maybeSingle();
-      setCompany((c as LinkedCompany | null) ?? null);
-    } else setCompany(null);
-    if (t?.deal_id) {
-      const { data: d } = await supabase.from("deals").select("id,name").eq("id", t.deal_id).maybeSingle();
-      setDeal((d as LinkedDeal | null) ?? null);
-    } else setDeal(null);
+    setTicket(data as TicketRow | null);
   }, [id]);
 
   useEffect(() => { void load(); }, [load]);
+
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
