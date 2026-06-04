@@ -133,57 +133,6 @@ function TicketDetail() {
     </div>
   );
 
-  const right = (
-    <>
-      {company && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Empresa</h3>
-          </div>
-          <Link to="/companies/$id" params={{ id: company.id }} className="text-sm font-medium text-primary hover:underline">
-            {company.name}
-          </Link>
-          {company.industry && <p className="text-xs text-muted-foreground mt-1">{company.industry}</p>}
-        </div>
-      )}
-      {contact && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <UserIcon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Contato</h3>
-          </div>
-          <Link to="/contacts/$id" params={{ id: contact.id }} className="text-sm font-medium text-primary hover:underline">
-            {`${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || "Sem nome"}
-          </Link>
-          {contact.email && <p className="text-xs text-muted-foreground mt-1 truncate">{contact.email}</p>}
-        </div>
-      )}
-      {deal && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Negócio</h3>
-          </div>
-          <Link to="/deals/$id" params={{ id: deal.id }} className="text-sm font-medium text-primary hover:underline">
-            {deal.name}
-          </Link>
-        </div>
-      )}
-      {!company && !contact && !deal && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <p className="text-xs text-muted-foreground">Sem associações.</p>
-        </div>
-      )}
-    </>
-  );
-
-  const timelineKey = ticket.deal_id ? "related_deal_id"
-    : ticket.contact_id ? "related_contact_id"
-    : ticket.company_id ? "related_company_id"
-    : "related_contact_id";
-  const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? "";
-
   return (
     <RecordLayout
       header={header}
@@ -210,10 +159,28 @@ function TicketDetail() {
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
             </div>
           )}
-          {timelineId && <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />}
+          {(() => {
+            const timelineKey = ticket.deal_id ? "related_deal_id"
+              : ticket.contact_id ? "related_contact_id"
+              : ticket.company_id ? "related_company_id"
+              : null;
+            const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? null;
+            return timelineKey && timelineId
+              ? <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />
+              : null;
+          })()}
         </>
       }
-      right={right}
+      right={
+        <AssociationsPanel
+          entity="ticket"
+          entityId={ticket.id}
+          companyId={ticket.company_id}
+          contactId={ticket.contact_id}
+          dealId={ticket.deal_id}
+        />
+      }
     />
   );
 }
+
