@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +59,7 @@ const VIEW_TABS: { key: ViewKey; label: string }[] = [
 function TicketsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines, selected: pipeline, selectedId, setSelectedId } = usePipelines("ticket");
 
@@ -129,9 +130,7 @@ function TicketsPage() {
     setOpen(true);
   }
   function openEdit(t: TicketRow) {
-    setEditing(t);
-    setDraft({ ...t });
-    setOpen(true);
+    navigate({ to: "/tickets/$id", params: { id: t.id } });
   }
 
   async function save() {
