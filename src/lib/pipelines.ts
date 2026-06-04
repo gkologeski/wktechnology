@@ -71,7 +71,28 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
       if (error) throw error;
       return ((data ?? []) as unknown as Pipeline[]).map((p) => ({
         ...p,
-        stages: Array.isArray(p.stages) ? p.stages : [],
+        stages: Array.isArray(p.stages)
+          ? (p.stages as unknown as Array<Record<string, unknown>>).map((s, i) => {
+              const value = String(
+                (s.value as string | undefined) ??
+                  (s.id as string | undefined) ??
+                  (s.hubspot_id as string | undefined) ??
+                  i,
+              );
+              const isClosed =
+                (s.type as string | undefined) === "won" ||
+                (s.is_closed as boolean | undefined) === true;
+              return {
+                value,
+                label: (s.label as string | undefined) ?? value,
+                color: (s.color as string | undefined) ?? undefined,
+                probability: (s.probability as number | undefined) ?? undefined,
+                type:
+                  (s.type as PipelineStage["type"]) ??
+                  (isClosed ? "won" : "open"),
+              } as PipelineStage;
+            })
+          : [],
       }));
     },
   });
