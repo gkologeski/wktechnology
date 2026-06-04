@@ -262,6 +262,22 @@ async function persistInboundMessage(
     !!fromEmail && fromEmail.toLowerCase() === account.email.toLowerCase();
   const direction = isOutbound ? "outbound" : "inbound";
 
+  // Skip purely internal/work emails — when every participant uses an internal
+  // domain there is no client involved; these are not synced into the CRM inbox.
+  const INTERNAL_DOMAINS = ["wkconsultoria.com.br", "wktechnology.com.br"];
+  const isInternal = (addr: string | null | undefined) => {
+    if (!addr) return false;
+    const dom = addr.toLowerCase().split("@")[1];
+    return !!dom && INTERNAL_DOMAINS.includes(dom);
+  };
+  const participants = [fromEmail, ...toEmails, ...ccEmails].filter(
+    (e): e is string => !!e,
+  );
+  if (participants.length > 0 && participants.every(isInternal)) {
+    return false;
+  }
+
+
   // If we already have the outbound copy (sent via our compose flow) we should
   // not double-insert. Skip when outbound + Message-ID header matches.
   if (isOutbound && messageIdHeader) {
