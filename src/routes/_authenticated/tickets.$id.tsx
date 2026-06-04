@@ -61,7 +61,7 @@ function TicketDetail() {
     } else {
       patch.resolved_at = null;
     }
-    const { error } = await supabase.from("tickets").update(patch).eq("id", ticket.id);
+    const { error } = await (supabase as unknown as { from: (t: string) => { update: (p: Record<string, unknown>) => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> } } }).from("tickets").update(patch).eq("id", ticket.id);
     if (error) { toast.error(error.message); return; }
     if (ticket.status !== newStatus) {
       notifyStatus({ data: { ticket_id: ticket.id, new_status: newStatus } }).catch(() => {});
