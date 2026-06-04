@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Ticket as TicketIcon, Building2, User as UserIcon, Briefcase } from "lucide-react";
+import { ArrowLeft, Trash2, Ticket as TicketIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
+import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
 import { PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
 import { usePipelines } from "@/lib/pipelines";
@@ -19,19 +20,13 @@ export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
 });
 
-type LinkedContact = { id: string; first_name: string | null; last_name: string | null; email: string | null };
-type LinkedCompany = { id: string; name: string; industry: string | null };
-type LinkedDeal = { id: string; name: string };
-
 function TicketDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines } = usePipelines("ticket");
   const [ticket, setTicket] = useState<TicketRow | null>(null);
-  const [contact, setContact] = useState<LinkedContact | null>(null);
-  const [company, setCompany] = useState<LinkedCompany | null>(null);
-  const [deal, setDeal] = useState<LinkedDeal | null>(null);
+
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
@@ -49,23 +44,11 @@ function TicketDetail() {
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("tickets").select("*").eq("id", id).single();
-    const t = data as TicketRow | null;
-    setTicket(t);
-    if (t?.contact_id) {
-      const { data: c } = await supabase.from("contacts").select("id,first_name,last_name,email").eq("id", t.contact_id).maybeSingle();
-      setContact((c as LinkedContact | null) ?? null);
-    } else setContact(null);
-    if (t?.company_id) {
-      const { data: c } = await supabase.from("companies").select("id,name,industry").eq("id", t.company_id).maybeSingle();
-      setCompany((c as LinkedCompany | null) ?? null);
-    } else setCompany(null);
-    if (t?.deal_id) {
-      const { data: d } = await supabase.from("deals").select("id,name").eq("id", t.deal_id).maybeSingle();
-      setDeal((d as LinkedDeal | null) ?? null);
-    } else setDeal(null);
+    setTicket(data as TicketRow | null);
   }, [id]);
 
   useEffect(() => { void load(); }, [load]);
+
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -150,57 +133,6 @@ function TicketDetail() {
     </div>
   );
 
-  const right = (
-    <>
-      {company && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Empresa</h3>
-          </div>
-          <Link to="/companies/$id" params={{ id: company.id }} className="text-sm font-medium text-primary hover:underline">
-            {company.name}
-          </Link>
-          {company.industry && <p className="text-xs text-muted-foreground mt-1">{company.industry}</p>}
-        </div>
-      )}
-      {contact && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <UserIcon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Contato</h3>
-          </div>
-          <Link to="/contacts/$id" params={{ id: contact.id }} className="text-sm font-medium text-primary hover:underline">
-            {`${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || "Sem nome"}
-          </Link>
-          {contact.email && <p className="text-xs text-muted-foreground mt-1 truncate">{contact.email}</p>}
-        </div>
-      )}
-      {deal && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <div className="flex items-center gap-2 mb-3">
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-bold">Negócio</h3>
-          </div>
-          <Link to="/deals/$id" params={{ id: deal.id }} className="text-sm font-medium text-primary hover:underline">
-            {deal.name}
-          </Link>
-        </div>
-      )}
-      {!company && !contact && !deal && (
-        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60">
-          <p className="text-xs text-muted-foreground">Sem associações.</p>
-        </div>
-      )}
-    </>
-  );
-
-  const timelineKey = ticket.deal_id ? "related_deal_id"
-    : ticket.contact_id ? "related_contact_id"
-    : ticket.company_id ? "related_company_id"
-    : "related_contact_id";
-  const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? "";
-
   return (
     <RecordLayout
       header={header}
@@ -227,10 +159,28 @@ function TicketDetail() {
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
             </div>
           )}
-          {timelineId && <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />}
+          {(() => {
+            const timelineKey = ticket.deal_id ? "related_deal_id"
+              : ticket.contact_id ? "related_contact_id"
+              : ticket.company_id ? "related_company_id"
+              : null;
+            const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? null;
+            return timelineKey && timelineId
+              ? <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />
+              : null;
+          })()}
         </>
       }
-      right={right}
+      right={
+        <AssociationsPanel
+          entity="ticket"
+          entityId={ticket.id}
+          companyId={ticket.company_id}
+          contactId={ticket.contact_id}
+          dealId={ticket.deal_id}
+        />
+      }
     />
   );
 }
+
