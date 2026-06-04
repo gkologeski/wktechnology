@@ -30,7 +30,7 @@ export function filterByView(tickets: TicketRow[], view: ViewKey, userId: string
       return tickets.filter((t) => t.resolved_at && new Date(t.resolved_at).getTime() >= startOfDay.getTime());
     case "all":
     default:
-      return tickets.filter((t) => t.status !== "closed" && t.status !== "resolved");
+      return tickets;
   }
 }
 
