@@ -459,11 +459,20 @@ function TicketsPage() {
         </TabsContent>
 
         <TabsContent value="board" className="mt-4">
-          {pipeline ? (
-            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Configurando pipeline…</p>
-          )}
+          <TicketsBoard
+            pipeline={
+              pipeline ?? ({
+                id: "__fallback__",
+                name: "Pipeline de Tickets",
+                entity: "ticket",
+                is_default: true,
+                stages: defaultTicketStages(),
+              } as Pipeline)
+            }
+            tickets={filtered}
+            lookups={lookups}
+            onOpen={openEdit}
+          />
         </TabsContent>
 
         <TabsContent value="split" className="mt-4">
