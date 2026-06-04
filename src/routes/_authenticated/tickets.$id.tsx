@@ -140,11 +140,13 @@ function TicketDetail() {
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <StageTracker
-        stages={STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-        current={ticket.status}
-        onChange={setStatus}
-      />
+      {pipeline && pipeline.stages.length > 0 && (
+        <StageTracker
+          stages={pipeline.stages.map((s) => ({ value: s.value, label: s.label }))}
+          current={currentStageValue}
+          onChange={setStage}
+        />
+      )}
     </div>
   );
 
