@@ -4,6 +4,8 @@
 // qualquer server function que filtre por workspace_id ativo herda a garantia.
 import { test, expect, hasE2ECredentials } from "./helpers/auth";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 test.skip(
   !hasE2ECredentials,
   "Defina E2E_USER_EMAIL/E2E_USER_PASSWORD para rodar testes autenticados.",
@@ -18,7 +20,7 @@ const ISOLATED_TABLES = [
   "tickets",
 ] as const;
 
-type Supa = Parameters<Parameters<typeof test>[1]>[0]["supa"];
+type Supa = SupabaseClient;
 
 async function createWorkspace(supa: Supa, userId: string, name: string) {
   const { data: ws, error } = await supa
