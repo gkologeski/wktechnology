@@ -121,6 +121,7 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
 
   useEffect(() => {
     if (pipelines.length === 0) return;
+    if (selectedId === "__all__") return;
     if (selectedId && pipelines.some((p) => p.id === selectedId)) return;
     const def = pipelines.find((p) => p.is_default) ?? pipelines[0];
     setSelectedIdState(def.id);
@@ -140,7 +141,10 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     }
   };
 
-  const selected = pipelines.find((p) => p.id === selectedId) ?? pipelines[0] ?? null;
+  const selected =
+    selectedId === "__all__"
+      ? null
+      : pipelines.find((p) => p.id === selectedId) ?? pipelines[0] ?? null;
 
   return {
     pipelines,
