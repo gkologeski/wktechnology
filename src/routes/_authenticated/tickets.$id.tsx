@@ -27,10 +27,25 @@ function TicketDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
+  const { pipelines } = usePipelines("ticket");
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [contact, setContact] = useState<LinkedContact | null>(null);
   const [company, setCompany] = useState<LinkedCompany | null>(null);
   const [deal, setDeal] = useState<LinkedDeal | null>(null);
+
+  const pipeline = useMemo(
+    () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
+    [pipelines, ticket?.pipeline_id],
+  );
+  const currentStageValue = useMemo(() => {
+    if (!ticket || !pipeline) return "";
+    const hs = (ticket.external_ids as { hs_pipeline_stage?: string } | null | undefined)
+      ?.hs_pipeline_stage;
+    if (hs && pipeline.stages.some((s) => s.value === String(hs))) return String(hs);
+    if (pipeline.stages.some((s) => s.value === ticket.status)) return ticket.status;
+    return pipeline.stages[0]?.value ?? "";
+  }, [ticket, pipeline]);
+  const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue) ?? null;
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("tickets").select("*").eq("id", id).single();
