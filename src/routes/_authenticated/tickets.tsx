@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { usePipelines } from "@/lib/pipelines";
+import { usePipelines, defaultTicketStages, type Pipeline } from "@/lib/pipelines";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -459,11 +459,20 @@ function TicketsPage() {
         </TabsContent>
 
         <TabsContent value="board" className="mt-4">
-          {pipeline ? (
-            <TicketsBoard pipeline={pipeline} tickets={filtered} lookups={lookups} onOpen={openEdit} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Configurando pipeline…</p>
-          )}
+          <TicketsBoard
+            pipeline={
+              pipeline ?? ({
+                id: "__fallback__",
+                name: "Pipeline de Tickets",
+                entity: "ticket",
+                is_default: true,
+                stages: defaultTicketStages(),
+              } as Pipeline)
+            }
+            tickets={filtered}
+            lookups={lookups}
+            onOpen={openEdit}
+          />
         </TabsContent>
 
         <TabsContent value="split" className="mt-4">
