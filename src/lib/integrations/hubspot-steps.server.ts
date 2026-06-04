@@ -400,6 +400,71 @@ async function syncHubspotDealPipelines(
   return { pipelineMap, stageMap };
 }
 
+async function syncHubspotTicketPipelines(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Record<string, string>> {
+  const r = (await hsFetch("/crm/v3/pipelines/tickets")) as { results?: HsPipeline[] };
+  const pipelines = r.results ?? [];
+
+  const { data: existing } = await supabase
+    .from("pipelines")
+    .select("id, name, config")
+    .eq("owner_id", userId)
+    .eq("entity", "ticket");
+
+  const existingByHsId = new Map<string, { id: string; name: string }>();
+  const existingByName = new Map<string, { id: string; name: string }>();
+  for (const p of (existing ?? []) as { id: string; name: string; config: { hs_pipeline_id?: string; hubspot_id?: string } | null }[]) {
+    const hsId = p.config?.hs_pipeline_id ?? p.config?.hubspot_id;
+    if (hsId) existingByHsId.set(String(hsId), { id: p.id, name: p.name });
+    existingByName.set(p.name, { id: p.id, name: p.name });
+  }
+
+  const pipelineMap: Record<string, string> = {};
+  for (const hp of pipelines) {
+    const sortedStages = [...(hp.stages ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    const stagesPayload = sortedStages.map((s, i) => {
+      const isClosed = String(s.metadata?.ticketState ?? "").toUpperCase() === "CLOSED";
+      return {
+        value: String(s.id),
+        label: s.label,
+        color: isClosed ? "var(--hs-stage-won)" : STAGE_COLOR_POOL[i % 4],
+        probability: 0,
+        type: isClosed ? "won" : "open",
+      };
+    });
+
+    const found = existingByHsId.get(hp.id) ?? existingByName.get(hp.label);
+    if (found) {
+      await supabase
+        .from("pipelines")
+        .update({
+          name: hp.label,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id, hubspot_id: hp.id } as never,
+        })
+        .eq("id", found.id);
+      pipelineMap[hp.id] = found.id;
+    } else {
+      const { data: ins, error } = await supabase
+        .from("pipelines")
+        .insert({
+          owner_id: userId,
+          entity: "ticket",
+          name: hp.label,
+          is_default: false,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id, hubspot_id: hp.id } as never,
+        })
+        .select("id")
+        .single();
+      if (!error && ins) pipelineMap[hp.id] = (ins as { id: string }).id;
+    }
+  }
+  return pipelineMap;
+}
+
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
@@ -1771,6 +1836,23 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       }
 
     } else if (step === "tickets") {
+      // Espelha pipelines de tickets do HubSpot ANTES da importação,
+      // para vincular cada ticket ao seu pipeline local.
+      let ticketPipelineMap: Record<string, string> = {};
+      try {
+        ticketPipelineMap = await syncHubspotTicketPipelines(supabase, userId);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Pipelines de tickets sincronizados: ${Object.keys(ticketPipelineMap).length}`,
+          count: Object.keys(ticketPipelineMap).length,
+        });
+      } catch (e) {
+        await appendLog(supabase, jobId, {
+          level: "warn", step,
+          message: `Falha ao sincronizar pipelines de tickets: ${e instanceof Error ? e.message : String(e)}`,
+        });
+      }
+
       // Fetch ticket pipeline stages once to derive status (open/closed) per stage id.
       const stageState = new Map<string, "open" | "closed">();
       try {
@@ -1875,13 +1957,14 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               contact_id: contactHs ? contactMap.get(contactHs) ?? null : null,
               company_id: companyHs ? companyMap.get(companyHs) ?? null : null,
               deal_id: dealHs ? dealMap.get(dealHs) ?? null : null,
+              pipeline_id: p.hs_pipeline ? (ticketPipelineMap[String(p.hs_pipeline)] ?? null) : null,
               custom_fields: {
                 hs_pipeline: p.hs_pipeline ?? null,
                 hs_pipeline_stage: stageId,
                 hs_ticket_category: p.hs_ticket_category ?? null,
               } as never,
               ...mapped,
-              external_ids: { hubspot: t.id, hs_pipeline_stage: stageId } as never,
+              external_ids: { hubspot: t.id, hs_pipeline: p.hs_pipeline ?? null, hs_pipeline_stage: stageId } as never,
               hs_raw: rawOf(t),
               deleted_at: null,
             },
