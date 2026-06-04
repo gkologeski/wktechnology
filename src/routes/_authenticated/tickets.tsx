@@ -57,6 +57,12 @@ const VIEW_TABS: { key: ViewKey; label: string }[] = [
 ];
 
 function TicketsPage() {
+  const location = useLocation();
+  if (location.pathname !== "/tickets") return <Outlet />;
+  return <TicketsIndex />;
+}
+
+function TicketsIndex() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
