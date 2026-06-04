@@ -184,7 +184,7 @@ function TicketDetail() {
             { key: "status", label: "Status", primary: true },
             { key: "priority", label: "Prioridade", primary: true },
             { key: "source", label: "Origem", primary: true },
-            { key: "due_at", label: "Vencimento", type: "date", primary: true },
+            { key: "due_at", label: "Vencimento", primary: true },
             { key: "description", label: "Descrição" },
           ]}
           onSaved={load}
