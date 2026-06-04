@@ -20,19 +20,13 @@ export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
 });
 
-type LinkedContact = { id: string; first_name: string | null; last_name: string | null; email: string | null };
-type LinkedCompany = { id: string; name: string; industry: string | null };
-type LinkedDeal = { id: string; name: string };
-
 function TicketDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines } = usePipelines("ticket");
   const [ticket, setTicket] = useState<TicketRow | null>(null);
-  const [contact, setContact] = useState<LinkedContact | null>(null);
-  const [company, setCompany] = useState<LinkedCompany | null>(null);
-  const [deal, setDeal] = useState<LinkedDeal | null>(null);
+
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
