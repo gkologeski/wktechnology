@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computePlannedCapped, type CountDeps } from "./hubspot-count";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
@@ -252,6 +253,7 @@ function mapLeadStatusEnum(category: string | undefined, label?: string | undefi
 
 async function syncDealPipelines(
   supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  workspaceId: string,
   userId: string,
 ): Promise<PipelineMaps> {
   const res = (await hsFetch("/crm/v3/pipelines/deals")) as { results: HSPipeline[] };
@@ -273,7 +275,7 @@ async function syncDealPipelines(
     const { data: existing } = await supabase
       .from("pipelines")
       .select("id, config, stages")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", "deal")
       .eq("config->>hubspot_id", p.id)
       .maybeSingle();
@@ -294,6 +296,7 @@ async function syncDealPipelines(
         .from("pipelines")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           entity: "deal",
           name: p.label,
           stages: stages as never,
@@ -320,6 +323,7 @@ async function syncDealPipelines(
 
 async function syncLeadPipeline(
   supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  workspaceId: string,
   userId: string,
 ): Promise<{ localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> }> {
   // HubSpot não tem pipeline de leads — usa as opções da propriedade hs_lead_status
@@ -352,7 +356,7 @@ async function syncLeadPipeline(
   const { data: existing } = await supabase
     .from("pipelines")
     .select("id")
-    .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .eq("entity", "lead")
     .eq("config->>hubspot_source", "hs_lead_status")
     .maybeSingle();
@@ -369,6 +373,7 @@ async function syncLeadPipeline(
       .from("pipelines")
       .insert({
         owner_id: userId,
+          workspace_id: workspaceId,
         entity: "lead",
         name: "HubSpot Leads",
         stages: stages as never,
@@ -615,6 +620,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { planStepsFromScope, ensureJobItems } = await import("./hubspot-tick.server");
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const scope = data;
     // Em modo "full" usamos um teto alto pra companies; demais steps são best-effort.
     const effectiveScope = {
@@ -627,6 +633,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+          workspace_id: workspaceId,
         provider: "hubspot",
         kind: "import",
         entity: "lead",
@@ -668,6 +675,7 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const tables: ("companies" | "contacts" | "deals" | "leads" | "tickets" | "activities")[] = [];
     if (data.companies) tables.push("companies");
     if (data.contacts) tables.push("contacts");
@@ -681,7 +689,7 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
       const { count, error } = await supabase
         .from(t)
         .delete({ count: "exact" })
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(`Falha ao limpar ${t}: ${error.message}`);
       result[t] = count ?? 0;
     }
@@ -704,11 +712,12 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { data: job, error: jobErr } = await supabase
       .from("enrichment_jobs")
       .select("id, status")
       .eq("id", data.jobId)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
     if (!job) throw new Error("Importação não encontrada");
@@ -799,11 +808,12 @@ export const cancelHubspotImport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { data: job, error: jobErr } = await supabase
       .from("enrichment_jobs")
       .select("id, status, step_logs")
       .eq("id", data.jobId)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
     if (!job) throw new Error("Importação não encontrada");
@@ -845,6 +855,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ScopeSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const scope = data;
     const steps = planSteps(scope);
 
@@ -852,6 +863,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+          workspace_id: workspaceId,
         provider: "hubspot",
         kind: "import",
         entity: "lead",
@@ -938,7 +950,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       const { data: byExt } = await supabase
         .from(table)
         .select("id")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("external_ids->>hubspot", hsId)
         .limit(1)
         .maybeSingle();
@@ -950,7 +962,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
         const { data: byNat } = await supabase
           .from(table)
           .select("id, external_ids")
-          .eq("owner_id", userId)
+          .eq("workspace_id", workspaceId)
           .ilike(f.column, v)
           .limit(1)
           .maybeSingle();
@@ -1014,7 +1026,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       if (steps.includes("deals")) {
         await appendLog({ level: "info", step: "pipelines", message: "Sincronizando pipelines de deals do HubSpot" });
         try {
-          dealPipelines = await syncDealPipelines(supabase, userId);
+          dealPipelines = await syncDealPipelines(supabase, workspaceId, userId);
           await appendLog({
             level: "info",
             step: "pipelines",
@@ -1031,7 +1043,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       }
       if (steps.includes("leads")) {
         try {
-          leadPipeline = await syncLeadPipeline(supabase, userId);
+          leadPipeline = await syncLeadPipeline(supabase, workspaceId, userId);
           await appendLog({
             level: "info",
             step: "pipelines",
@@ -1117,6 +1129,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .from("companies")
                   .insert({
                     owner_id: userId,
+          workspace_id: workspaceId,
                     ...companyData,
                     external_ids: { hubspot: c.id } as never,
                   })
@@ -1180,7 +1193,8 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             } else {
               const { data: row, error } = await supabase
                 .from("contacts")
-                .insert({ owner_id: userId, ...contactData, external_ids: { hubspot: c.id } as never })
+                .insert({ owner_id: userId,
+          workspace_id: workspaceId, ...contactData, external_ids: { hubspot: c.id } as never })
                 .select("id")
                 .single();
               if (error || !row) stepFail++;
@@ -1265,6 +1279,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("contacts")
                 .insert({
                   owner_id: userId,
+          workspace_id: workspaceId,
                   ...contactData,
                   external_ids: { hubspot: c.id } as never,
                 })
@@ -1322,7 +1337,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               const { data: byNat } = await supabase
                 .from("deals")
                 .select("id")
-                .eq("owner_id", userId)
+                .eq("workspace_id", workspaceId)
                 .eq("company_id", localCompanyId)
                 .ilike("name", p.dealname)
                 .limit(1)
@@ -1351,6 +1366,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("deals")
                 .insert({
                   owner_id: userId,
+          workspace_id: workspaceId,
                   ...dealData,
                   external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
                 })
@@ -1436,7 +1452,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               const { data: byNat } = await supabase
                 .from("deals")
                 .select("id")
-                .eq("owner_id", userId)
+                .eq("workspace_id", workspaceId)
                 .eq("company_id", localCompanyId)
                 .ilike("name", p.dealname)
                 .limit(1)
@@ -1467,6 +1483,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("deals")
                 .insert({
                   owner_id: userId,
+          workspace_id: workspaceId,
                   ...dealData,
                   external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
                 })
@@ -1549,7 +1566,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               const { data: pc } = await supabase
                 .from("contacts")
                 .select("email, phone")
-                .eq("owner_id", userId)
+                .eq("workspace_id", workspaceId)
                 .eq("hs_object_id", String(primaryContactId))
                 .maybeSingle();
               if (pc) {
@@ -1587,6 +1604,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             } else {
               const { error } = await supabase.from("leads").insert({
                 owner_id: userId,
+          workspace_id: workspaceId,
                 ...leadData,
                 external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
               });
@@ -1690,6 +1708,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               } else {
                 const { error } = await supabase.from("activities").insert({
                   owner_id: userId,
+          workspace_id: workspaceId,
                   ...activityData,
                   external_ids: { hubspot: a.id, hs_kind: t.obj } as never,
                 });

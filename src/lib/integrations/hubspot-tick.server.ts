@@ -96,16 +96,16 @@ export async function tickOnce(
   ownerId?: string,
 ): Promise<TickResult> {
   // 1) Selecionar o job
-  let job: { id: string; scope: unknown; status: string; owner_id: string } | null = null;
+  let job: { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null = null;
   if (jobId) {
-    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id").eq("id", jobId);
+    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id, workspace_id").eq("id", jobId);
     if (ownerId) q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = data ?? null;
+    job = (data as { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null) ?? null;
   } else {
     let q = supabase
       .from("enrichment_jobs")
-      .select("id, scope, status, owner_id")
+      .select("id, scope, status, owner_id, workspace_id")
       .eq("provider", "hubspot")
       .eq("kind", "import")
       .in("status", ["queued", "running"])
@@ -113,7 +113,7 @@ export async function tickOnce(
       .limit(1);
     if (ownerId) q = q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = data ?? null;
+    job = (data as { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null) ?? null;
   }
   if (!job) return { kind: "no_job" };
   // Cancelled/finished jobs must not execute new steps
@@ -276,6 +276,7 @@ export async function tickOnce(
     const result = await runStep({
       supabase,
       userId: job.owner_id,
+      workspaceId: job.workspace_id ?? job.owner_id,
       jobId: job.id,
       step,
       itemId: pending.id,

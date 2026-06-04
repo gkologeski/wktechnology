@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getRequestHeader } from "@tanstack/react-start/server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ---------- Admin (authenticated) ----------
 
@@ -52,8 +53,10 @@ export const createEsignDocument = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { data: doc, error } = await supabase.from("esign_documents").insert({
       owner_id: userId,
+          workspace_id: workspaceId,
       title: data.title,
       description: data.description ?? null,
       body: data.body,
@@ -64,11 +67,12 @@ export const createEsignDocument = createServerFn({ method: "POST" })
     }).select("*").single();
     if (error) throw new Error(error.message);
     const signersInsert = data.signers.map((s) => ({
-      document_id: doc.id, owner_id: userId, name: s.name, email: s.email, sign_order: s.sign_order,
+      document_id: doc.id, owner_id: userId, workspace_id: workspaceId, name: s.name, email: s.email, sign_order: s.sign_order,
     }));
     const { error: e2 } = await supabase.from("esign_signers").insert(signersInsert);
     if (e2) throw new Error(e2.message);
-    await supabase.from("esign_audit").insert({ document_id: doc.id, owner_id: userId, event: "created" });
+    await supabase.from("esign_audit").insert({ document_id: doc.id, owner_id: userId,
+          workspace_id: workspaceId, event: "created" });
     return doc;
   });
 
@@ -95,11 +99,13 @@ export const sendEsignDocument = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase.from("esign_documents")
       .update({ status: "sent", sent_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await supabase.from("esign_audit").insert({ document_id: data.id, owner_id: userId, event: "sent" });
+    await supabase.from("esign_audit").insert({ document_id: data.id, owner_id: userId,
+          workspace_id: workspaceId, event: "sent" });
     return { ok: true };
   });
 
@@ -108,11 +114,13 @@ export const cancelEsignDocument = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase.from("esign_documents")
       .update({ status: "canceled", completed_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await supabase.from("esign_audit").insert({ document_id: data.id, owner_id: userId, event: "canceled" });
+    await supabase.from("esign_audit").insert({ document_id: data.id, owner_id: userId,
+          workspace_id: workspaceId, event: "canceled" });
     return { ok: true };
   });
 
@@ -134,8 +142,11 @@ export const addEsignSigner = createServerFn({ method: "POST" })
     sign_order: z.number().int().min(1).default(1),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("esign_signers").insert({
-      document_id: data.documentId, owner_id: context.userId,
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { error } = await supabase.from("esign_signers").insert({
+      document_id: data.documentId, owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name, email: data.email, sign_order: data.sign_order,
     });
     if (error) throw new Error(error.message);

@@ -483,6 +483,7 @@ type ItemRow = {
 export type StepCtx = {
   supabase: SupabaseClient;
   userId: string;
+  workspaceId: string;
   jobId: string;
   step: StepName;
   itemId: string;
@@ -970,7 +971,7 @@ async function searchTotal(obj: string): Promise<number> {
 const DEFAULT_BUDGET_MS = 22_000;
 
 export async function runStep(ctx: StepCtx): Promise<StepResult> {
-  const { supabase, userId, jobId, step, itemId, scope } = ctx;
+  const { supabase, userId, workspaceId, jobId, step, itemId, scope } = ctx;
   const deadlineAt = ctx.deadlineAt ?? Date.now() + DEFAULT_BUDGET_MS;
   const isExpired = () => Date.now() >= deadlineAt;
 
