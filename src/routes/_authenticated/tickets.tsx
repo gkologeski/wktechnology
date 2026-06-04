@@ -254,10 +254,11 @@ function TicketsPage() {
       {/* Toolbar */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Select value={selectedId ?? ""} onValueChange={setSelectedId}>
-          <SelectTrigger className="h-9 w-[220px] font-medium">
+          <SelectTrigger className="h-9 w-[260px] font-medium">
             <SelectValue placeholder="Selecione pipeline" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__all__">Todos os pipelines</SelectItem>
             {pipelines.map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.name}{p.is_default && " · padrão"}
