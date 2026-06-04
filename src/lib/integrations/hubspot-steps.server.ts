@@ -483,6 +483,7 @@ type ItemRow = {
 export type StepCtx = {
   supabase: SupabaseClient;
   userId: string;
+  workspaceId: string;
   jobId: string;
   step: StepName;
   itemId: string;
