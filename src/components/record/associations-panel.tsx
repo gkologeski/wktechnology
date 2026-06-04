@@ -12,32 +12,40 @@ import {
   QuickCreateTicketDialog,
 } from "@/components/record/quick-create-dialogs";
 
-export type AssociationEntity = "contact" | "lead" | "company" | "deal";
+export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
 type Props = {
   entity: AssociationEntity;
   entityId: string;
   companyId?: string | null;
+  contactId?: string | null;
+  dealId?: string | null;
 };
 
-export function AssociationsPanel({ entity, entityId, companyId }: Props) {
+export function AssociationsPanel({ entity, entityId, companyId, contactId, dealId }: Props) {
   return (
     <>
-      {(entity === "contact" || entity === "deal") && (
+      {(entity === "contact" || entity === "deal" || entity === "ticket") && (
         <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
       {(entity === "company" || entity === "deal") && (
         <ContactsCard entity={entity} entityId={entityId} />
       )}
+      {entity === "ticket" && (
+        <SingleContactCard entityId={entityId} contactId={contactId ?? null} />
+      )}
       {(entity === "contact" || entity === "company") && (
         <DealsCard entity={entity} entityId={entityId} companyId={companyId} />
       )}
-      {entity !== "lead" && (
+      {entity === "ticket" && (
+        <SingleDealCard entityId={entityId} dealId={dealId ?? null} />
+      )}
+      {entity !== "lead" && entity !== "ticket" && (
         <TicketsCard entity={entity} entityId={entityId} companyId={companyId} />
       )}
-      <TasksCard entity={entity} entityId={entityId} />
-      <EmailsCard entity={entity} entityId={entityId} />
-      <AttachmentsCard entity={entity} entityId={entityId} />
+      {entity !== "ticket" && <TasksCard entity={entity} entityId={entityId} />}
+      {entity !== "ticket" && <EmailsCard entity={entity} entityId={entityId} />}
+      {entity !== "ticket" && <AttachmentsCard entity={entity} entityId={entityId} />}
     </>
   );
 }
