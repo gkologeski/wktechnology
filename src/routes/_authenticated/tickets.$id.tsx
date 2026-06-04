@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Ticket as TicketIcon, Building2, User as UserIcon, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { StageTracker } from "@/components/stage-tracker";
-import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
+import { PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
+import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
@@ -26,10 +27,25 @@ function TicketDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
+  const { pipelines } = usePipelines("ticket");
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [contact, setContact] = useState<LinkedContact | null>(null);
   const [company, setCompany] = useState<LinkedCompany | null>(null);
   const [deal, setDeal] = useState<LinkedDeal | null>(null);
+
+  const pipeline = useMemo(
+    () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
+    [pipelines, ticket?.pipeline_id],
+  );
+  const currentStageValue = useMemo(() => {
+    if (!ticket || !pipeline) return "";
+    const hs = (ticket.external_ids as { hs_pipeline_stage?: string } | null | undefined)
+      ?.hs_pipeline_stage;
+    if (hs && pipeline.stages.some((s) => s.value === String(hs))) return String(hs);
+    if (pipeline.stages.some((s) => s.value === ticket.status)) return ticket.status;
+    return pipeline.stages[0]?.value ?? "";
+  }, [ticket, pipeline]);
+  const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue) ?? null;
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("tickets").select("*").eq("id", id).single();
@@ -53,18 +69,27 @@ function TicketDetail() {
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const setStatus = async (v: string) => {
-    const newStatus = v as TicketStatus;
-    const patch: Record<string, unknown> = { status: newStatus };
-    if (newStatus === "resolved" || newStatus === "closed") {
+  const setStage = async (v: string) => {
+    if (!pipeline) return;
+    const stage = pipeline.stages.find((s) => s.value === v);
+    if (!stage) return;
+    const nextStatus: TicketStatus =
+      stage.type === "won" ? "closed" : stage.type === "lost" ? "closed" : "open";
+    const patch: Record<string, unknown> = {
+      status: nextStatus,
+      pipeline_id: pipeline.id,
+      external_ids: { ...(ticket.external_ids ?? {}), hs_pipeline_stage: v },
+    };
+    if (nextStatus === "closed") {
       patch.resolved_at = ticket.resolved_at ?? new Date().toISOString();
     } else {
       patch.resolved_at = null;
     }
-    const { error } = await (supabase as unknown as { from: (t: string) => { update: (p: Record<string, unknown>) => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> } } }).from("tickets").update(patch).eq("id", ticket.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("tickets").update(patch).eq("id", ticket.id);
     if (error) { toast.error(error.message); return; }
-    if (ticket.status !== newStatus) {
-      notifyStatus({ data: { ticket_id: ticket.id, new_status: newStatus } }).catch(() => {});
+    if (ticket.status !== nextStatus) {
+      notifyStatus({ data: { ticket_id: ticket.id, new_status: nextStatus } }).catch(() => {});
     }
     void load();
   };
@@ -78,7 +103,7 @@ function TicketDetail() {
   };
 
   const priorityLabel = PRIORITIES.find((p) => p.value === ticket.priority)?.label ?? ticket.priority;
-  const statusLabel = STATUSES.find((s) => s.value === ticket.status)?.label ?? ticket.status;
+  const stageLabel = currentStage?.label ?? "—";
   const priorityColor = PRIORITY_COLOR_VAR[ticket.priority] ?? "var(--priority-low)";
 
   const header = (
@@ -94,7 +119,8 @@ function TicketDetail() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground truncate">{ticket.subject}</h1>
-              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{statusLabel}</Badge>
+              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{stageLabel}</Badge>
+              {pipeline && <Badge variant="outline" className="rounded-full px-3 text-muted-foreground">{pipeline.name}</Badge>}
               <Badge
                 variant="outline"
                 className="rounded-full px-3 capitalize"
@@ -114,11 +140,13 @@ function TicketDetail() {
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <StageTracker
-        stages={STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-        current={ticket.status}
-        onChange={setStatus}
-      />
+      {pipeline && pipeline.stages.length > 0 && (
+        <StageTracker
+          stages={pipeline.stages.map((s) => ({ value: s.value, label: s.label }))}
+          current={currentStageValue}
+          onChange={setStage}
+        />
+      )}
     </div>
   );
 
