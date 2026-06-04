@@ -105,7 +105,7 @@ export async function tickOnce(
   } else {
     let q = supabase
       .from("enrichment_jobs")
-      .select("id, scope, status, owner_id")
+      .select("id, scope, status, owner_id, workspace_id")
       .eq("provider", "hubspot")
       .eq("kind", "import")
       .in("status", ["queued", "running"])
