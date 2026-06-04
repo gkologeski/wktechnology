@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const PlanCodeZ = z.enum(["free", "bronze", "prata", "ouro"]);
 

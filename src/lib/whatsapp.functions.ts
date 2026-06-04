@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
@@ -30,11 +31,11 @@ export function applyTemplate(body: string, vars: string[]): string {
   return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
 }
 
-async function getIntegrationConfig(supabase: any, userId: string) {
+async function getIntegrationConfig(supabase: any, workspaceId: string) {
   const { data } = await supabase
     .from("integrations")
     .select("config")
-    .eq("owner_id", userId)
+    .eq("owner_id", workspaceId)
     .eq("provider", "twilio_whatsapp")
     .maybeSingle();
   return (data?.config ?? {}) as {
@@ -50,13 +51,13 @@ async function getIntegrationConfig(supabase: any, userId: string) {
 }
 
 const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
-async function resolvePublicBase(supabase: any, userId: string): Promise<string> {
-  const cfg = await getIntegrationConfig(supabase, userId);
+async function resolvePublicBase(supabase: any, workspaceId: string): Promise<string> {
+  const cfg = await getIntegrationConfig(supabase, workspaceId);
   return (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");
 }
 
-async function resolveFromNumber(supabase: any, userId: string): Promise<string> {
-  const cfg = await getIntegrationConfig(supabase, userId);
+async function resolveFromNumber(supabase: any, workspaceId: string): Promise<string> {
+  const cfg = await getIntegrationConfig(supabase, workspaceId);
   return cfg.from_number ? toWa(cfg.from_number) : SANDBOX_FROM;
 }
 
@@ -95,12 +96,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const from = await resolveFromNumber(supabase, userId);
+      const workspaceId = await resolveActiveWorkspace(userId);
+    const from = await resolveFromNumber(supabase, workspaceId);
     const toWaNum = toWa(data.to);
     const toBare = normalizePhone(data.to);
     const fromBare = from.replace(/^whatsapp:/, "");
 
-    const publicBase = await resolvePublicBase(supabase, userId);
+    const publicBase = await resolvePublicBase(supabase, workspaceId);
     const params = new URLSearchParams({
       From: from,
       To: toWaNum,
@@ -137,7 +139,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       .from("whatsapp_conversations")
       .upsert(
         {
-          owner_id: userId,
+          owner_id: workspaceId,
           contact_id: contactId,
           contact_phone: toBare,
           twilio_number: fromBare,
@@ -153,7 +155,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
     const { error: mErr } = await supabase.from("whatsapp_messages").insert({
       conversation_id: conv.id,
-      owner_id: userId,
+      owner_id: workspaceId,
       direction: "outbound",
       body: data.body,
       media_url: data.mediaUrl ?? null,
@@ -173,7 +175,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     // Cria atividade na timeline do contato (se vinculado)
     if (contactId) {
       await supabase.from("activities").insert({
-        owner_id: userId,
+        owner_id: workspaceId,
         type: "whatsapp",
         related_contact_id: contactId,
         subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
@@ -242,7 +244,8 @@ export const getWhatsAppConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const cfg = await getIntegrationConfig(supabase, userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const cfg = await getIntegrationConfig(supabase, workspaceId);
     return {
       from_number: cfg.from_number ?? "",
       public_base_url: cfg.public_base_url ?? "",
@@ -267,9 +270,10 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const from = data.from_number.trim();
     const base = (data.public_base_url ?? "").trim().replace(/\/$/, "");
-    const cfg = await getIntegrationConfig(supabase, userId);
+    const cfg = await getIntegrationConfig(supabase, workspaceId);
     const newCfg = {
       ...cfg,
       from_number: from ? normalizePhone(from) : undefined,
@@ -277,7 +281,7 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
     };
     const { error } = await supabase.from("integrations").upsert(
       {
-        owner_id: userId,
+        owner_id: workspaceId,
         provider: "twilio_whatsapp",
         status: from ? "connected" : "pending",
         config: newCfg,
@@ -293,10 +297,11 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { data: members } = await supabase
       .from("team_members")
       .select("member_user_id")
-      .eq("workspace_owner_id", userId);
+      .eq("workspace_owner_id", workspaceId);
     const ids = new Set<string>([userId, ...(members ?? []).map((m: any) => m.member_user_id)]);
     const { data: profs } = await supabase
       .from("profiles")
@@ -360,7 +365,7 @@ const TemplateSchema = z.object({
 export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const cfg = await getIntegrationConfig(context.supabase, context.userId);
+    const cfg = await getIntegrationConfig(context.supabase, await resolveActiveWorkspace(context.userId));
     return cfg.templates ?? [];
   });
 
@@ -371,11 +376,12 @@ export const saveWhatsAppTemplates = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const cfg = await getIntegrationConfig(supabase, userId);
+      const workspaceId = await resolveActiveWorkspace(userId);
+    const cfg = await getIntegrationConfig(supabase, workspaceId);
     const newCfg = { ...cfg, templates: data.templates };
     const { error } = await supabase.from("integrations").upsert(
       {
-        owner_id: userId,
+        owner_id: workspaceId,
         provider: "twilio_whatsapp",
         status: cfg.from_number ? "connected" : "pending",
         config: newCfg,

@@ -3,18 +3,19 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ============= ADMIN (autenticado) =============
 // portal_token é column-revoked do papel `authenticated`. Estas funções usam
 // supabaseAdmin e filtram por owner_id = userId para garantir que apenas o
 // dono do workspace gerencie tokens dos próprios contatos.
 
-async function assertContactOwned(contactId: string, userId: string) {
+async function assertContactOwned(contactId: string, workspaceId: string) {
   const { data, error } = await supabaseAdmin
     .from("contacts")
     .select("id")
     .eq("id", contactId)
-    .eq("owner_id", userId)
+    .eq("owner_id", workspaceId)
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Contato não encontrado.");
@@ -24,10 +25,11 @@ export const listPortalContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabaseAdmin
       .from("contacts")
       .select("id, first_name, last_name, email, portal_enabled, portal_token")
-      .eq("owner_id", userId)
+      .eq("owner_id", workspaceId)
       .order("first_name", { ascending: true })
       .limit(1000);
     if (error) throw error;
@@ -44,6 +46,7 @@ export const togglePortalAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
     const patch: { portal_enabled: boolean; portal_token?: string } = {
       portal_enabled: data.enabled,
@@ -62,7 +65,7 @@ export const togglePortalAccess = createServerFn({ method: "POST" })
       .from("contacts")
       .update(patch)
       .eq("id", data.contactId)
-      .eq("owner_id", userId);
+      .eq("owner_id", workspaceId);
     if (error) throw error;
     return { ok: true };
   });
@@ -72,13 +75,14 @@ export const regeneratePortalToken = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ contactId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
     const token = randomBytes(24).toString("hex");
     const { error } = await supabaseAdmin
       .from("contacts")
       .update({ portal_token: token, portal_enabled: true })
       .eq("id", data.contactId)
-      .eq("owner_id", userId);
+      .eq("owner_id", workspaceId);
     if (error) throw error;
     return { token };
   });

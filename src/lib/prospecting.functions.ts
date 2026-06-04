@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -36,9 +37,10 @@ export const listProspectSearches = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProspectSearch[]> => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any).from("prospecting_searches")
-      .select("*").eq("owner_id", userId).order("created_at", { ascending: false });
+      .select("*").eq("owner_id", workspaceId).order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as ProspectSearch[];
   });
@@ -48,8 +50,9 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
   .inputValidator((i) => SearchInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     const payload = {
-      owner_id: userId,
+      owner_id: workspaceId,
       name: data.name,
       industry: data.industry || null,
       role_title: data.role_title || null,
@@ -61,7 +64,7 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
     };
     if (data.id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("prospecting_searches").update(payload).eq("id", data.id).eq("owner_id", userId);
+      const { error } = await (supabase as any).from("prospecting_searches").update(payload).eq("id", data.id).eq("owner_id", workspaceId);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -76,8 +79,9 @@ export const deleteProspectSearch = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+      const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("prospecting_searches").delete().eq("id", data.id).eq("owner_id", userId);
+    const { error } = await (supabase as any).from("prospecting_searches").delete().eq("id", data.id).eq("owner_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -87,9 +91,10 @@ export const listProspectResults = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ search_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<ProspectResult[]> => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (supabase as any).from("prospecting_results")
-      .select("*").eq("owner_id", userId).eq("search_id", data.search_id).order("created_at", { ascending: false });
+      .select("*").eq("owner_id", workspaceId).eq("search_id", data.search_id).order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (rows ?? []) as ProspectResult[];
   });
@@ -99,9 +104,10 @@ export const runProspectSearch = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = context.supabase as any;
-    const { data: s, error: sErr } = await sb.from("prospecting_searches").select("*").eq("id", data.id).eq("owner_id", userId).single();
+    const { data: s, error: sErr } = await sb.from("prospecting_searches").select("*").eq("id", data.id).eq("owner_id", workspaceId).single();
     if (sErr || !s) throw new Error("Busca não encontrada");
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
@@ -142,7 +148,7 @@ Os emails devem ser HEURÍSTICOS (formato provável), nunca afirme que existem. 
       const prospects = Array.isArray(parsed.prospects) ? parsed.prospects.slice(0, s.max_results) : [];
       if (prospects.length) {
         await sb.from("prospecting_results").insert(prospects.map((p) => ({
-          owner_id: userId,
+          owner_id: workspaceId,
           search_id: data.id,
           company_name: String(p.company_name ?? "").slice(0, 200) || null,
           contact_name: String(p.contact_name ?? "").slice(0, 200) || null,
@@ -169,9 +175,10 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ result_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = context.supabase as any;
-    const { data: r, error: rErr } = await sb.from("prospecting_results").select("*").eq("id", data.result_id).eq("owner_id", userId).single();
+    const { data: r, error: rErr } = await sb.from("prospecting_results").select("*").eq("id", data.result_id).eq("owner_id", workspaceId).single();
     if (rErr || !r) throw new Error("Prospect não encontrado");
     if (r.imported_lead_id) return { id: r.imported_lead_id, already: true };
     const fullName: string = r.contact_name || r.company_name || "Prospect";
@@ -179,7 +186,7 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
     const first = parts[0] || fullName;
     const last = parts.slice(1).join(" ") || null;
     const { data: lead, error: lErr } = await sb.from("leads").insert({
-      owner_id: userId,
+      owner_id: workspaceId,
       first_name: first,
       last_name: last,
       company: r.company_name,
