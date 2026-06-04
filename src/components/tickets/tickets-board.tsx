@@ -63,11 +63,19 @@ export function TicketsBoard({
   const grouped = useMemo(() => {
     const map: Record<string, TicketRow[]> = {};
     for (const s of pipeline.stages) map[s.value] = [];
+    const stageValues = new Set(pipeline.stages.map((s) => s.value));
     const firstStage = pipeline.stages[0]?.value;
     const wonStage = pipeline.stages.find((s) => s.type === "won")?.value;
     for (const t of tickets) {
-      let key: string | undefined = pipeline.stages.find((s) => s.value === t.status)?.value;
+      let key: string | undefined;
+      // 1) Try HubSpot stage id from external_ids
+      const hsStage = (t.external_ids as { hs_pipeline_stage?: string } | null | undefined)?.hs_pipeline_stage;
+      if (hsStage && stageValues.has(hsStage)) key = hsStage;
+      // 2) Try matching by status (default ticket stages)
+      if (!key && stageValues.has(t.status)) key = t.status;
+      // 3) Map resolved/closed to a "won" type stage
       if (!key && (t.status === "resolved" || t.status === "closed")) key = wonStage;
+      // 4) Fallback to first stage
       if (!key) key = firstStage;
       if (key && map[key]) map[key].push(t);
     }
