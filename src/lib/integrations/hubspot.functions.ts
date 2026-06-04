@@ -1026,7 +1026,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       if (steps.includes("deals")) {
         await appendLog({ level: "info", step: "pipelines", message: "Sincronizando pipelines de deals do HubSpot" });
         try {
-          dealPipelines = await syncDealPipelines(supabase, workspaceId);
+          dealPipelines = await syncDealPipelines(supabase, workspaceId, userId);
           await appendLog({
             level: "info",
             step: "pipelines",
@@ -1043,7 +1043,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       }
       if (steps.includes("leads")) {
         try {
-          leadPipeline = await syncLeadPipeline(supabase, workspaceId);
+          leadPipeline = await syncLeadPipeline(supabase, workspaceId, userId);
           await appendLog({
             level: "info",
             step: "pipelines",
