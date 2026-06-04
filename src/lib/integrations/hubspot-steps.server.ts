@@ -1836,6 +1836,23 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       }
 
     } else if (step === "tickets") {
+      // Espelha pipelines de tickets do HubSpot ANTES da importação,
+      // para vincular cada ticket ao seu pipeline local.
+      let ticketPipelineMap: Record<string, string> = {};
+      try {
+        ticketPipelineMap = await syncHubspotTicketPipelines(supabase, userId);
+        await appendLog(supabase, jobId, {
+          level: "info", step,
+          message: `Pipelines de tickets sincronizados: ${Object.keys(ticketPipelineMap).length}`,
+          count: Object.keys(ticketPipelineMap).length,
+        });
+      } catch (e) {
+        await appendLog(supabase, jobId, {
+          level: "warn", step,
+          message: `Falha ao sincronizar pipelines de tickets: ${e instanceof Error ? e.message : String(e)}`,
+        });
+      }
+
       // Fetch ticket pipeline stages once to derive status (open/closed) per stage id.
       const stageState = new Map<string, "open" | "closed">();
       try {
