@@ -91,18 +91,35 @@ export function TicketsBoard({
     const newStage = pipeline.stages.find((s) => s.value === overId);
     if (!newStage) return;
 
-    const nextStatus: TicketStatus = (VALID_STATUSES as string[]).includes(overId)
-      ? (overId as TicketStatus)
-      : newStage.type === "won"
+    const isHubspotStage = !(VALID_STATUSES as string[]).includes(overId);
+    const nextStatus: TicketStatus = isHubspotStage
+      ? newStage.type === "won"
         ? "closed"
-        : "open";
-    if (t.status === nextStatus) return;
+        : "open"
+      : (overId as TicketStatus);
+
+    const currentHsStage = (t.external_ids as { hs_pipeline_stage?: string } | null | undefined)
+      ?.hs_pipeline_stage;
+    if (t.status === nextStatus && (!isHubspotStage || currentHsStage === overId)) return;
 
     qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
-      old.map((x) => (x.id === id ? { ...x, status: nextStatus } : x)),
+      old.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              status: nextStatus,
+              external_ids: isHubspotStage
+                ? { ...(x.external_ids ?? {}), hs_pipeline_stage: overId }
+                : x.external_ids,
+            }
+          : x,
+      ),
     );
 
     const patch: Record<string, unknown> = { status: nextStatus, pipeline_id: pipeline.id };
+    if (isHubspotStage) {
+      patch.external_ids = { ...(t.external_ids ?? {}), hs_pipeline_stage: overId };
+    }
     if (nextStatus === "resolved" || nextStatus === "closed") {
       patch.resolved_at = t.resolved_at ?? new Date().toISOString();
     } else {
@@ -115,7 +132,9 @@ export function TicketsBoard({
       qc.invalidateQueries({ queryKey: ["tickets"] });
       return;
     }
-    notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
+    if (t.status !== nextStatus) {
+      notifyStatus({ data: { ticket_id: id, new_status: nextStatus } }).catch(() => {});
+    }
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
