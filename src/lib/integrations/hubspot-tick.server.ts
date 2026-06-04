@@ -276,6 +276,7 @@ export async function tickOnce(
     const result = await runStep({
       supabase,
       userId: job.owner_id,
+      workspaceId: job.workspace_id ?? job.owner_id,
       jobId: job.id,
       step,
       itemId: pending.id,
