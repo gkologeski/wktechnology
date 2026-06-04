@@ -400,6 +400,71 @@ async function syncHubspotDealPipelines(
   return { pipelineMap, stageMap };
 }
 
+async function syncHubspotTicketPipelines(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Record<string, string>> {
+  const r = (await hsFetch("/crm/v3/pipelines/tickets")) as { results?: HsPipeline[] };
+  const pipelines = r.results ?? [];
+
+  const { data: existing } = await supabase
+    .from("pipelines")
+    .select("id, name, config")
+    .eq("owner_id", userId)
+    .eq("entity", "ticket");
+
+  const existingByHsId = new Map<string, { id: string; name: string }>();
+  const existingByName = new Map<string, { id: string; name: string }>();
+  for (const p of (existing ?? []) as { id: string; name: string; config: { hs_pipeline_id?: string; hubspot_id?: string } | null }[]) {
+    const hsId = p.config?.hs_pipeline_id ?? p.config?.hubspot_id;
+    if (hsId) existingByHsId.set(String(hsId), { id: p.id, name: p.name });
+    existingByName.set(p.name, { id: p.id, name: p.name });
+  }
+
+  const pipelineMap: Record<string, string> = {};
+  for (const hp of pipelines) {
+    const sortedStages = [...(hp.stages ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    const stagesPayload = sortedStages.map((s, i) => {
+      const isClosed = String(s.metadata?.ticketState ?? "").toUpperCase() === "CLOSED";
+      return {
+        value: String(s.id),
+        label: s.label,
+        color: isClosed ? "var(--hs-stage-won)" : STAGE_COLOR_POOL[i % 4],
+        probability: 0,
+        type: isClosed ? "won" : "open",
+      };
+    });
+
+    const found = existingByHsId.get(hp.id) ?? existingByName.get(hp.label);
+    if (found) {
+      await supabase
+        .from("pipelines")
+        .update({
+          name: hp.label,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id, hubspot_id: hp.id } as never,
+        })
+        .eq("id", found.id);
+      pipelineMap[hp.id] = found.id;
+    } else {
+      const { data: ins, error } = await supabase
+        .from("pipelines")
+        .insert({
+          owner_id: userId,
+          entity: "ticket",
+          name: hp.label,
+          is_default: false,
+          stages: stagesPayload as never,
+          config: { hs_pipeline_id: hp.id, hubspot_id: hp.id } as never,
+        })
+        .select("id")
+        .single();
+      if (!error && ins) pipelineMap[hp.id] = (ins as { id: string }).id;
+    }
+  }
+  return pipelineMap;
+}
+
 // ─────────────────────────── Step framework ──────────────────────────────────
 
 export type StepName =
