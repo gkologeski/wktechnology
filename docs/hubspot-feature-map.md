@@ -271,19 +271,30 @@
 
 ---
 
-## O que entregar agora vs depois
+## O que falta para zerar os parciais (🟡 → ✅)
 
-Sugiro escolher **5 a 10 itens** por release. Os candidatos de maior impacto vs esforço (na minha opinião, sem ordem definitiva):
+Lista enxuta dos itens **realmente** parciais após a auditoria. Todos pequenos a médios:
 
-1. Workflows engine + builder visual (G) — desbloqueia automações em cascata.
-2. Tickets com pipeline próprio (M) — abre o módulo Service inteiro.
-3. Sequences executor (G) — outbound estruturado.
-4. Email envio 1:1 + tracking (G) — fecha o loop de comunicação.
-5. Custom properties UI (G) — clientes diferentes precisam de campos diferentes.
-6. Forms builder + embed (G) — entrada de leads.
-7. Quotes + payment link Stripe (G) — fecha venda dentro do CRM.
-8. Custom reports builder (G) — para parar de pedir "puxa um relatório de…".
-9. Roles & permissions (M) — necessário antes de escalar usuários.
-10. Two-way sync HubSpot (G) — migração suave para clientes vindo do HubSpot.
+| # | Item | Esforço | Onde mexer |
+|---|---|---|---|
+| 1 | Companies parent/child + UI de árvore | M | migration `companies.parent_company_id` self-FK + componente em `companies/$id.tsx` |
+| 2 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
+| 3 | Card layout por pipeline | P | adicionar `card_fields` em `pipelines.config` + editor em settings de pipeline |
+| 4 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
+| 5 | AI summary auto-trigger + badge | P | trigger pós-insert em `activities` → enqueue → badge no `activity-timeline` |
+| 6 | Apollo / Lusha UX polimento | P | preview de campos antes do commit + log em `enrichment_jobs` |
+| 7 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
+| 8 | Activities — `recording_url` + email thread | M | coluna em `activities` + player; agrupamento por `email_threads` no timeline |
+| 9 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
+| 10 | Teams UI | P | tela CRUD sobre `team_members` |
 
-Marque o que faz sentido e devolve.
+## Próximos grandes (❌ → ✅) por prioridade de negócio
+
+1. Tickets com pipeline próprio (M) — abre o módulo Service inteiro.
+2. Email envio 1:1 + tracking (G) — fecha o loop de comunicação.
+3. Forms builder + embed (G) — entrada de leads.
+4. Quotes + payment link Stripe (G) — fecha venda dentro do CRM.
+5. Custom reports builder (G) — relatórios ad-hoc.
+6. Roles & permissões granulares (M) — necessário antes de escalar usuários.
+7. Two-way sync HubSpot (G) — migração suave.
+
