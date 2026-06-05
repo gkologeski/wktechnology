@@ -633,9 +633,36 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
 
 
       {/* Timeline rail */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/60" />
         <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
+        {(() => {
+          const aiEntity =
+            relatedKey === "related_lead_id" ? "lead" :
+            relatedKey === "related_contact_id" ? "contact" :
+            relatedKey === "related_deal_id" ? "deal" : null;
+          if (!aiEntity) return null;
+          return (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                  <Sparkles className="h-3 w-3 text-primary" />
+                  Resumo IA
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" /> Resumo IA
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <AiSummaryPanel entity={aiEntity} entityId={relatedId} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          );
+        })()}
         <div className="h-px flex-1 bg-border/60" />
       </div>
 
