@@ -210,17 +210,28 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     })();
   }, [relatedKey, relatedId]);
 
-  // Load team members for @mentions
+  // Load workspace members for @mentions and task assignment
   useEffect(() => {
     if (!user) return;
     (async () => {
       const list: TeamMember[] = [{ id: user.id, name: user.email ?? "Você" }];
-      const { data: tm } = await supabase.from("team_members").select("member_user_id");
-      if (tm?.length) {
-        const ids = [...new Set(tm.map((t) => t.member_user_id))];
-        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
-        for (const p of profs ?? []) {
-          if (!list.find((x) => x.id === p.id)) list.push({ id: p.id, name: p.full_name ?? p.id });
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active_workspace_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id;
+      if (wsId) {
+        const { data: wm } = await supabase
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", wsId);
+        const ids = [...new Set((wm ?? []).map((t) => t.user_id))];
+        if (ids.length) {
+          const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+          for (const p of profs ?? []) {
+            if (!list.find((x) => x.id === p.id)) list.push({ id: p.id, name: p.full_name ?? p.id });
+          }
         }
       }
       setTeam(list);
