@@ -359,6 +359,63 @@ function TasksHubspotView() {
       },
     },
     {
+      key: "related",
+      label: "Associado",
+      render: (t) => {
+        const items: { label: string; to: string; params: Record<string, string> }[] = [];
+        if (t.related_contact_id) {
+          const c = relatedMap?.contacts?.[t.related_contact_id];
+          const name = c ? [c.first_name, c.last_name].filter(Boolean).join(" ").trim() : "";
+          items.push({
+            label: `Contato: ${name || "—"}`,
+            to: "/contacts/$id",
+            params: { id: t.related_contact_id },
+          });
+        }
+        if (t.related_company_id) {
+          const c = relatedMap?.companies?.[t.related_company_id];
+          items.push({
+            label: `Empresa: ${c?.name ?? "—"}`,
+            to: "/companies/$id",
+            params: { id: t.related_company_id },
+          });
+        }
+        if (t.related_deal_id) {
+          const d = relatedMap?.deals?.[t.related_deal_id];
+          items.push({
+            label: `Negócio: ${d?.name ?? "—"}`,
+            to: "/deals/$id",
+            params: { id: t.related_deal_id },
+          });
+        }
+        if (t.related_lead_id) {
+          const l = relatedMap?.leads?.[t.related_lead_id];
+          const name = l ? [l.first_name, l.last_name].filter(Boolean).join(" ").trim() : "";
+          items.push({
+            label: `Lead: ${name || l?.company_name || "—"}`,
+            to: "/leads/$id",
+            params: { id: t.related_lead_id },
+          });
+        }
+        if (items.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex flex-col gap-0.5">
+            {items.map((it, idx) => (
+              <Link
+                key={idx}
+                to={it.to}
+                params={it.params}
+                className="truncate text-xs text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {it.label}
+              </Link>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       key: "owner",
       label: "Responsável",
       render: (t) =>
