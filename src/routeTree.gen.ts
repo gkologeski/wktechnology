@@ -59,6 +59,7 @@ import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
+import { Route as AuthenticatedSettingsRecordLayoutsRouteImport } from './routes/_authenticated/settings.record-layouts'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
@@ -402,6 +403,12 @@ const AuthenticatedSettingsRecurringRoute =
   AuthenticatedSettingsRecurringRouteImport.update({
     id: '/recurring',
     path: '/recurring',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsRecordLayoutsRoute =
+  AuthenticatedSettingsRecordLayoutsRouteImport.update({
+    id: '/record-layouts',
+    path: '/record-layouts',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsQuotesRoute =
@@ -907,6 +914,7 @@ export interface FileRoutesByFullPath {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
@@ -1030,6 +1038,7 @@ export interface FileRoutesByTo {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
@@ -1156,6 +1165,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/_authenticated/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
@@ -1283,6 +1293,7 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/prospecting'
     | '/settings/quotes'
+    | '/settings/record-layouts'
     | '/settings/recurring'
     | '/settings/roles'
     | '/settings/rotation'
@@ -1406,6 +1417,7 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/prospecting'
     | '/settings/quotes'
+    | '/settings/record-layouts'
     | '/settings/recurring'
     | '/settings/rotation'
     | '/settings/scoring'
@@ -1531,6 +1543,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/products'
     | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/quotes'
+    | '/_authenticated/settings/record-layouts'
     | '/_authenticated/settings/recurring'
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
@@ -1984,6 +1997,13 @@ declare module '@tanstack/react-router' {
       path: '/recurring'
       fullPath: '/settings/recurring'
       preLoaderRoute: typeof AuthenticatedSettingsRecurringRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/record-layouts': {
+      id: '/_authenticated/settings/record-layouts'
+      path: '/record-layouts'
+      fullPath: '/settings/record-layouts'
+      preLoaderRoute: typeof AuthenticatedSettingsRecordLayoutsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/quotes': {
@@ -2619,6 +2639,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
+  AuthenticatedSettingsRecordLayoutsRoute: typeof AuthenticatedSettingsRecordLayoutsRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRouteWithChildren
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
@@ -2669,6 +2690,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
+  AuthenticatedSettingsRecordLayoutsRoute:
+    AuthenticatedSettingsRecordLayoutsRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRouteWithChildren,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
