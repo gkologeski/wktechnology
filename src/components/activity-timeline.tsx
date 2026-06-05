@@ -501,7 +501,21 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
             <div className="flex flex-wrap gap-2">
               <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
               {type === "task" && (
-                <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+                <>
+                  <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+                  <select
+                    value={assigneeId || user?.id || ""}
+                    onChange={(e) => setAssigneeId(e.target.value)}
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    title="Atribuir tarefa para"
+                  >
+                    {team.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}{m.id === user?.id ? " (você)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </>
               )}
             </div>
             <div className="relative">
