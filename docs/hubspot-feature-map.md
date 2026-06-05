@@ -50,7 +50,7 @@
 ## 1. Objetos CRM
 
 - [ ] **Contacts** — pessoa física ligada a empresa, com propriedades, atividades, deals. — ✅ — P (refinamento) — tabela `contacts` + página `/contacts`.
-- [ ] **Companies** — empresa com hierarquia (parent/child), domínio, indústria. — 🟡 — M — tabela `companies` existe; falta parent/child e enriquecimento automático por domínio.
+- [x] **Companies** — empresa com hierarquia (parent/child), domínio, indústria. — ✅ — — `companies.parent_company_id` + `company-hierarchy.tsx` na página da company.
 - [ ] **Deals** — negócios com pipelines, stages, value, close date. — ✅ — — pipelines + board + lista + forecast prontos.
 - [ ] **Tickets** — chamados de suporte com pipeline próprio, SLA, prioridade. — ❌ — G — tabela + UI + automações.
 - [ ] **Leads** (objeto HubSpot novo, distinto de Contact) — fila de prospecção antes de virar Contact qualificado. — ✅ — — tabela `leads` + página `/leads`.
