@@ -188,6 +188,42 @@ function TasksHubspotView() {
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
+
+  const { data: relatedMap } = useQuery({
+    queryKey: [
+      "tasks",
+      "related",
+      rows.map((r) => r.id).join(","),
+    ],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const contactIds = [...new Set(rows.map((r) => r.related_contact_id).filter(Boolean) as string[])];
+      const companyIds = [...new Set(rows.map((r) => r.related_company_id).filter(Boolean) as string[])];
+      const dealIds = [...new Set(rows.map((r) => r.related_deal_id).filter(Boolean) as string[])];
+      const leadIds = [...new Set(rows.map((r) => r.related_lead_id).filter(Boolean) as string[])];
+      const [c, co, d, l] = await Promise.all([
+        contactIds.length
+          ? supabase.from("contacts").select("id, first_name, last_name").in("id", contactIds)
+          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null }[] }),
+        companyIds.length
+          ? supabase.from("companies").select("id, name").in("id", companyIds)
+          : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
+        dealIds.length
+          ? supabase.from("deals").select("id, name").in("id", dealIds)
+          : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
+        leadIds.length
+          ? supabase.from("leads").select("id, first_name, last_name, company_name").in("id", leadIds)
+          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null; company_name: string | null }[] }),
+      ]);
+      return {
+        contacts: Object.fromEntries((c.data ?? []).map((x) => [x.id, x])),
+        companies: Object.fromEntries((co.data ?? []).map((x) => [x.id, x])),
+        deals: Object.fromEntries((d.data ?? []).map((x) => [x.id, x])),
+        leads: Object.fromEntries((l.data ?? []).map((x) => [x.id, x])),
+      };
+    },
+  });
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
