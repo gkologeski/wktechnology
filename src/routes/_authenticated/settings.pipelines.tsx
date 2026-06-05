@@ -165,6 +165,9 @@ function PipelineEditor({
       ? pipeline.stages
       : [{ value: "new", label: "Novo", type: "open", probability: 10 }],
   );
+  const [cardFields, setCardFields] = useState<string[]>(
+    pipeline?.config?.card_fields ?? DEFAULT_CARD_FIELDS,
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
