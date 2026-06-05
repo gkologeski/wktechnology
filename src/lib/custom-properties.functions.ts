@@ -52,7 +52,7 @@ export const listCustomProperties = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let q = supabase.from("custom_properties")
-      .select("id, entity, key, label, type, options, position, required, enabled, ai_prompt, created_at, updated_at")
+      .select("id, entity, key, label, type, options, position, required, enabled, ai_prompt, group_name, created_at, updated_at")
       .eq("owner_id", userId)
       .order("entity", { ascending: true })
       .order("position", { ascending: true });
