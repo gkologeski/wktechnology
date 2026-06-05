@@ -230,7 +230,7 @@
 ## 16. AI / Breeze (camada de IA)
 
 - [ ] **Assistente conversacional no record** — "resuma este contato". — ❌ — M (Lovable AI).
-- [ ] **Resumo automático de call/email** — TL;DR no timeline. — 🟡 — M — base no AI Gateway, falta UI.
+- [ ] **Resumo automático de call/email** — TL;DR no timeline. — 🟡 — P — `ai_summaries` + `ai-summaries.functions.ts` prontos; falta auto-trigger ao inserir activity + badge no timeline.
 - [ ] **AI properties (campos preenchidos por IA)** — "indústria provável", "intenção". — ❌ — M.
 - [ ] **Prospecting agent** — IA sugere próximos passos. — ❌ — G.
 - [ ] **Content agent (gera email)** — rascunho de outbound. — ❌ — M.
