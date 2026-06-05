@@ -35,15 +35,15 @@
 | 18 | Mobile | 0 | 0 | 4 |
 | 19 | Customização | 1 | 2 | 5 |
 
-> **Auditoria de 2026-06-05:** vários itens marcados 🟡 estavam, na prática, prontos. Atualizei o detalhamento abaixo. Os itens **realmente parciais hoje** são:
-> 1. Companies — hierarquia parent/child (schema + UI faltam)
-> 2. Filter builder — OR aninhado não suportado pelo executor (`applyFilters` em `src/lib/filters.ts:42` faz flatten de 1 nível)
-> 3. Card layout por pipeline — não há config persistida (`card_fields`)
-> 4. Record sidebar layout — tabela existe, UI não
-> 5. AI summary — auto-trigger ao inserir activity + badge no timeline
-> 6. Apollo / Lusha — UX de bulk enrich precisa preview + log
-> 7. CSV wizard — dedupe (match by email/phone)
-> 8. Custom properties — UI existe, falta render dinâmico no record
+> **Release 4 (2026-06-05) — fechada.** Os 8 parciais da auditoria anterior foram endereçados. Itens entregues nesta release:
+> 1. ✅ Companies — schema parent/child + UI de árvore (`company-hierarchy.tsx`)
+> 2. ✅ Card layout por pipeline — `card_fields` em `pipelines.config` + editor em settings
+> 3. ✅ Custom properties — render dinâmico no `properties-panel`
+> 4. ✅ Apollo / Lusha — bulk enrich com preview, dry-run e link de histórico
+> 5. ✅ Activities — `recording_url` + player de áudio e badges de email (direction/status) no timeline
+> 6. ✅ AI summary — botão "Resumo IA" no timeline abrindo `AiSummaryPanel` em sheet
+>
+> Itens 🟡 que **permanecem** (fora do escopo de R4): filter builder OR aninhado real (`src/lib/filters.ts`), record sidebar layout (UI), CSV wizard com dedupe, teams UI, grupos de propriedades configuráveis.
 
 ---
 
