@@ -262,7 +262,7 @@
 - [ ] **Saved views por usuário** — filtros + colunas salvos. — ✅ — — `saved_views`.
 - [ ] **Editor de colunas inline** — mostrar/esconder/reordenar. — ✅ — — `column-editor-dialog`.
 - [ ] **Record sidebar layout configurável** — quais painéis aparecem. — 🟡 — M — `record_layouts` table existe, falta UI.
-- [ ] **Card layout por pipeline** — quais campos no kanban card. — 🟡 — P.
+- [x] **Card layout por pipeline** — quais campos no kanban card. — ✅ — — `card_fields` em `pipelines.config` + editor em `/settings/pipelines`, lido por `deals-board-card`.
 - [ ] **Custom tabs no record** — adicionar aba "Cobrança". — ❌ — M.
 - [ ] **Branding white-label** — logo, cores, domínio próprio. — ❌ — M.
 - [ ] **Idiomas (i18n)** — pt-BR / en / es. — ❌ — M.
