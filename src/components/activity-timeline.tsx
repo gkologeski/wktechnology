@@ -115,6 +115,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
