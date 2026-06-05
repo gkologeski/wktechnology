@@ -15,25 +15,35 @@
 
 | # | Módulo | ✅ | 🟡 | ❌ |
 |---|---|---|---|---|
-| 1 | Objetos CRM | 5 | 2 | 5 |
-| 2 | Engajamento / Activities | 4 | 2 | 9 |
-| 3 | Pipelines & Automação | 3 | 4 | 6 |
+| 1 | Objetos CRM | 6 | 1 | 5 |
+| 2 | Engajamento / Activities | 6 | 1 | 8 |
+| 3 | Pipelines & Automação | 7 | 0 | 6 |
 | 4 | Inbox & Conversations | 0 | 0 | 7 |
-| 5 | Relatórios & Dashboards | 1 | 1 | 8 |
-| 6 | Importação & Sync | 2 | 2 | 4 |
-| 7 | Listas & Segmentação | 1 | 2 | 3 |
-| 8 | Propriedades | 2 | 2 | 5 |
+| 5 | Relatórios & Dashboards | 2 | 0 | 8 |
+| 6 | Importação & Sync | 3 | 2 | 4 |
+| 7 | Listas & Segmentação | 3 | 1 | 2 |
+| 8 | Propriedades | 4 | 1 | 4 |
 | 9 | Permissões & Times | 1 | 1 | 6 |
-| 10 | Email outbound | 0 | 1 | 9 |
+| 10 | Email outbound | 1 | 0 | 9 |
 | 11 | Calling | 0 | 0 | 6 |
 | 12 | Meetings & Calendário | 0 | 0 | 6 |
 | 13 | Marketing core | 0 | 0 | 7 |
 | 14 | Service / Tickets | 0 | 0 | 6 |
 | 15 | Payments & Quotes | 0 | 0 | 7 |
-| 16 | AI / Breeze | 0 | 1 | 8 |
+| 16 | AI / Breeze | 1 | 1 | 7 |
 | 17 | Integrações & API | 1 | 1 | 5 |
 | 18 | Mobile | 0 | 0 | 4 |
 | 19 | Customização | 1 | 2 | 5 |
+
+> **Auditoria de 2026-06-05:** vários itens marcados 🟡 estavam, na prática, prontos. Atualizei o detalhamento abaixo. Os itens **realmente parciais hoje** são:
+> 1. Companies — hierarquia parent/child (schema + UI faltam)
+> 2. Filter builder — OR aninhado não suportado pelo executor (`applyFilters` em `src/lib/filters.ts:42` faz flatten de 1 nível)
+> 3. Card layout por pipeline — não há config persistida (`card_fields`)
+> 4. Record sidebar layout — tabela existe, UI não
+> 5. AI summary — auto-trigger ao inserir activity + badge no timeline
+> 6. Apollo / Lusha — UX de bulk enrich precisa preview + log
+> 7. CSV wizard — dedupe (match by email/phone)
+> 8. Custom properties — UI existe, falta render dinâmico no record
 
 ---
 
