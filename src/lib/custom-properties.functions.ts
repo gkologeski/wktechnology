@@ -43,6 +43,7 @@ const upsertSchema = z.object({
   required: z.boolean().default(false),
   enabled: z.boolean().default(true),
   ai_prompt: z.string().max(4000).nullable().optional(),
+  group_name: z.string().max(80).nullable().optional(),
 });
 
 export const listCustomProperties = createServerFn({ method: "POST" })
