@@ -330,12 +330,68 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+
+    // 1) Garante nome/telefone no profile
     const { error } = await supabaseAdmin.from("profiles").upsert({
       id: userId,
       full_name: data.full_name,
       phone: data.phone,
     } as never, { onConflict: "id" });
     if (error) throw new Error(error.message);
+
+    // 2) Recupera email do auth para casar com convites pendentes
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = (u?.user?.email ?? "").toLowerCase();
+
+    // 3) Consome convites pendentes em workspace_invites pelo email
+    if (email) {
+      const { data: invites } = await supabaseAdmin
+        .from("workspace_invites")
+        .select("id, workspace_id, role, expires_at, accepted_at")
+        .ilike("email", email)
+        .is("accepted_at", null);
+      const now = Date.now();
+      for (const inv of invites ?? []) {
+        if (inv.expires_at && new Date(inv.expires_at as string).getTime() < now) continue;
+        const { error: mErr } = await supabaseAdmin.from("workspace_members").insert({
+          workspace_id: inv.workspace_id,
+          user_id: userId,
+          role: inv.role,
+          invited_by: null,
+        } as never);
+        if (mErr && mErr.code !== "23505") continue;
+        await supabaseAdmin.from("workspace_invites")
+          .update({ accepted_at: new Date().toISOString() } as never)
+          .eq("id", inv.id as string);
+        await supabaseAdmin.from("user_roles").delete()
+          .eq("workspace_owner_id", inv.workspace_id as string).eq("user_id", userId);
+        await supabaseAdmin.from("user_roles").insert({
+          workspace_owner_id: inv.workspace_id, user_id: userId, role: inv.role,
+        } as never);
+      }
+    }
+
+    // 4) Garante active_workspace_id apontando para um workspace do qual é membro
+    const { data: prof } = await supabaseAdmin
+      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+    const currentActive = (prof as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+
+    const { data: memberships } = await supabaseAdmin
+      .from("workspace_members")
+      .select("workspace_id, joined_at")
+      .eq("user_id", userId)
+      .order("joined_at", { ascending: true });
+    const memberIds = (memberships ?? []).map((m) => m.workspace_id as string);
+
+    if (memberIds.length > 0) {
+      const validActive = currentActive && memberIds.includes(currentActive) ? currentActive : memberIds[0];
+      if (validActive !== currentActive) {
+        await supabaseAdmin.from("profiles").upsert({
+          id: userId, active_workspace_id: validActive,
+        } as never, { onConflict: "id" });
+      }
+    }
+
     return { ok: true };
   });
 
