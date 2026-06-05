@@ -405,6 +405,39 @@ function PipelineEditor({
           </div>
         </div>
 
+        {entity === "deal" && (
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs">Campos exibidos no card do quadro</Label>
+              <p className="text-[11px] text-muted-foreground">
+                O nome do negócio é sempre mostrado. Marque/desmarque os demais campos.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 rounded-md border p-3">
+              {CARD_FIELD_OPTIONS.map((opt) => {
+                const checked = cardFields.includes(opt.key);
+                return (
+                  <label key={opt.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        setCardFields((prev) =>
+                          v
+                            ? [...prev.filter((k) => k !== opt.key), opt.key]
+                            : prev.filter((k) => k !== opt.key),
+                        );
+                      }}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+
+
         <div className="flex items-center justify-between gap-2 pt-2">
           <div>
             {!isNew && (
