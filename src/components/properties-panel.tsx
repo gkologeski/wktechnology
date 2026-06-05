@@ -165,10 +165,20 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       </div>
 
       {isCustomEntity && customDefs.length > 0 && (
-        <div className="space-y-2 pt-2 border-t">
-          <div className="text-xs font-medium text-muted-foreground">Personalizadas</div>
-          {customDefs.map((d) => (
-            <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} entityId={row.id} onComputed={onSaved} />
+        <div className="space-y-3 pt-2 border-t">
+          {Object.entries(
+            customDefs.reduce<Record<string, CustomProp[]>>((acc, d) => {
+              const g = (d as { group_name?: string | null }).group_name || "Personalizadas";
+              (acc[g] ||= []).push(d);
+              return acc;
+            }, {}),
+          ).map(([g, list]) => (
+            <div key={g} className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">{g}</div>
+              {list.map((d) => (
+                <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} entityId={row.id} onComputed={onSaved} />
+              ))}
+            </div>
           ))}
         </div>
       )}
