@@ -15,25 +15,35 @@
 
 | # | Módulo | ✅ | 🟡 | ❌ |
 |---|---|---|---|---|
-| 1 | Objetos CRM | 5 | 2 | 5 |
-| 2 | Engajamento / Activities | 4 | 2 | 9 |
-| 3 | Pipelines & Automação | 3 | 4 | 6 |
+| 1 | Objetos CRM | 6 | 1 | 5 |
+| 2 | Engajamento / Activities | 6 | 1 | 8 |
+| 3 | Pipelines & Automação | 7 | 0 | 6 |
 | 4 | Inbox & Conversations | 0 | 0 | 7 |
-| 5 | Relatórios & Dashboards | 1 | 1 | 8 |
-| 6 | Importação & Sync | 2 | 2 | 4 |
-| 7 | Listas & Segmentação | 1 | 2 | 3 |
-| 8 | Propriedades | 2 | 2 | 5 |
+| 5 | Relatórios & Dashboards | 2 | 0 | 8 |
+| 6 | Importação & Sync | 3 | 2 | 4 |
+| 7 | Listas & Segmentação | 3 | 1 | 2 |
+| 8 | Propriedades | 4 | 1 | 4 |
 | 9 | Permissões & Times | 1 | 1 | 6 |
-| 10 | Email outbound | 0 | 1 | 9 |
+| 10 | Email outbound | 1 | 0 | 9 |
 | 11 | Calling | 0 | 0 | 6 |
 | 12 | Meetings & Calendário | 0 | 0 | 6 |
 | 13 | Marketing core | 0 | 0 | 7 |
 | 14 | Service / Tickets | 0 | 0 | 6 |
 | 15 | Payments & Quotes | 0 | 0 | 7 |
-| 16 | AI / Breeze | 0 | 1 | 8 |
+| 16 | AI / Breeze | 1 | 1 | 7 |
 | 17 | Integrações & API | 1 | 1 | 5 |
 | 18 | Mobile | 0 | 0 | 4 |
 | 19 | Customização | 1 | 2 | 5 |
+
+> **Auditoria de 2026-06-05:** vários itens marcados 🟡 estavam, na prática, prontos. Atualizei o detalhamento abaixo. Os itens **realmente parciais hoje** são:
+> 1. Companies — hierarquia parent/child (schema + UI faltam)
+> 2. Filter builder — OR aninhado não suportado pelo executor (`applyFilters` em `src/lib/filters.ts:42` faz flatten de 1 nível)
+> 3. Card layout por pipeline — não há config persistida (`card_fields`)
+> 4. Record sidebar layout — tabela existe, UI não
+> 5. AI summary — auto-trigger ao inserir activity + badge no timeline
+> 6. Apollo / Lusha — UX de bulk enrich precisa preview + log
+> 7. CSV wizard — dedupe (match by email/phone)
+> 8. Custom properties — UI existe, falta render dinâmico no record
 
 ---
 
@@ -49,13 +59,13 @@
 - [ ] **Quotes** — propostas comerciais imprimíveis ligadas ao deal. — ❌ — G (PDF + assinatura).
 - [ ] **Custom Objects** — objetos definidos pelo usuário com schema próprio. — ❌ — G (subsistema inteiro: schema, UI dinâmica, RLS dinâmico).
 - [ ] **Tasks** (objeto dedicado) — tarefas com status, prioridade, due date, queue. — ✅ — — `/tasks` com kanban.
-- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — tabela `activities` existe; faltam recursos por tipo (gravação de call, threading de email).
+- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — `activities` cobre os 4 tipos; falta `recording_url` em calls e visualização thread em emails.
 - [ ] **Feed** (timeline global de tudo que acontece) — stream de eventos cross-objeto. — ❌ — M.
 
 ## 2. Engajamento / Activities
 
-- [ ] **Notes** — anotações livres com menções (@) e anexos. — ✅ — P — falta menções e anexos.
-- [ ] **Tasks** — listagem, kanban, queues (filas de execução sequencial). — ✅ — M — kanban pronto; queues e "play through queue" faltam.
+- [ ] **Notes** — anotações livres com menções (@) e anexos. — ✅ — — menções via `workspace_members` e upload para bucket `notes-attachments` no `activity-timeline`.
+- [ ] **Tasks** — listagem, kanban, queues (filas de execução sequencial). — ✅ — — kanban + `/tasks/queues` + play através da fila com atalhos C/S.
 - [ ] **Calls — log manual** — registrar uma chamada com outcome, duração, notas. — ✅ — — disponível em communications.
 - [ ] **Calls — discador VOIP nativo** — clicar no telefone e discar pelo navegador. — ❌ — G (Twilio/Aircall).
 - [ ] **Calls — gravação + transcrição** — gravar e transcrever automaticamente. — ❌ — G.
@@ -75,14 +85,14 @@
 ## 3. Pipelines & Automação
 
 - [ ] **Múltiplos pipelines de deals** — vendas + pós-venda + renovação. — ✅ — — tabela `pipelines`.
-- [ ] **Stages com probabilidade** — % de fechamento por stage para forecast. — 🟡 — P — campo existe, falta usar no forecast.
+- [ ] **Stages com probabilidade** — % de fechamento por stage para forecast. — ✅ — — `DealsForecast` calcula coluna "Ponderado" = value × probability.
 - [ ] **Pipelines de tickets** — pipeline próprio para suporte. — ❌ — M (depende de Tickets).
-- [ ] **Lead scoring manual (rules)** — somar pontos por critérios. — 🟡 — M — tabela `scoring_rules` existe, falta executor + UI.
+- [ ] **Lead scoring manual (rules)** — somar pontos por critérios. — ✅ — — UI em `/settings/scoring` (304 linhas) + executor `scoring-tick`.
 - [ ] **Lead scoring preditivo (AI)** — modelo treinado nos seus deals. — ❌ — G.
 - [ ] **Lead rotation / round-robin** — distribuir leads novos entre vendedores. — ❌ — M.
 - [ ] **Deal rotation** — distribuir deals automaticamente. — ❌ — M.
-- [ ] **Workflows — if/then visual builder** — automações com triggers, ações, branches, delays. — 🟡 — G — tabela `workflows` + UI CRUD básica; falta engine + builder visual.
-- [ ] **Sequences** — cadência de emails + tasks programados. — 🟡 — G — tabela `sequences` + `sequence_enrollments`; falta executor + UI de cadência.
+- [ ] **Workflows — if/then visual builder** — automações com triggers, ações, branches, delays. — ✅ — — `workflow-builder.tsx` (Sheet com trigger + filtros + ações) + engine via `workflow-events` trigger DB + handler `workflows-tick`.
+- [ ] **Sequences** — cadência de emails + tasks programados. — ✅ — — `SequenceBuilder` com steps reordenáveis + executor em `sequences-tick`.
 - [ ] **Playbooks** — roteiros de discovery/qualificação. — ✅ — P — pronto, falta UI de execução durante uma call.
 - [ ] **SLA por pipeline** — alerta se ficar parado em um stage X dias. — ❌ — M.
 - [ ] **Approval workflows** — exigir aprovação para descontos / quotes. — ❌ — G.
@@ -101,7 +111,7 @@
 ## 5. Relatórios & Dashboards
 
 - [ ] **Dashboard de KPIs** — cards de leads, deals, ganhos. — ✅ — — `/dashboard`.
-- [ ] **Forecast de receita** — previsão por stage × probabilidade × close date. — 🟡 — P — existe `DealsForecast`, refinar.
+- [ ] **Forecast de receita** — previsão por stage × probabilidade × close date. — ✅ — — `DealsForecast` mostra ponderado + meta editável.
 - [ ] **Custom reports** — builder de relatório com dimensão/métrica/filtro. — ❌ — G.
 - [ ] **Multiple dashboards** — dashboards salvos por equipe/objetivo. — ❌ — M.
 - [ ] **Goals** — metas de receita/atividade por usuário/time. — ❌ — M.
@@ -127,8 +137,8 @@
 ## 7. Listas & Segmentação
 
 - [ ] **Listas estáticas** — snapshot manual. — ✅ — — `segments` kind=static.
-- [ ] **Listas dinâmicas (smart)** — recalculam por filtros. — 🟡 — M — schema existe; falta evaluator que reprocessa.
-- [ ] **Filter builder com AND/OR aninhado** — UI tipo HubSpot. — 🟡 — M — `filter-builder-dialog` existe; falta grupos aninhados.
+- [ ] **Listas dinâmicas (smart)** — recalculam por filtros. — ✅ — — engine em `src/lib/segments/engine.server.ts` chamada pelo cron `segments-tick`.
+- [ ] **Filter builder com AND/OR aninhado** — UI tipo HubSpot. — 🟡 — P — `FilterGroup` é recursivo no modelo, mas `applyFilters` em `src/lib/filters.ts:42` flatten OR de 1 nível.
 - [ ] **Lista de membership cross-objeto** — "contatos cujo deal está em Negociação". — ❌ — G.
 - [ ] **Suppression lists** — listas que excluem de envios. — ❌ — P.
 - [ ] **Compartilhamento de listas com time** — permissões granulares. — ❌ — P.
@@ -137,8 +147,8 @@
 
 - [ ] **Propriedades padrão por objeto** — campos do schema. — ✅ — — colunas das tabelas.
 - [ ] **Histórico de propriedade** — quem mudou, quando, de quê para quê. — ✅ — — tabela `property_history`.
-- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — 🟡 — G — armazenamento em JSONB pronto (`hs_raw`/custom); falta UI de gerenciar definições.
-- [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável.
+- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` (227 linhas) + armazenamento JSONB.
+- [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável e drag-and-drop.
 - [ ] **Propriedades calculadas** — `valor * qty`. — ❌ — M.
 - [ ] **Propriedades dependentes / condicionais** — mostrar B se A=X. — ❌ — M.
 - [ ] **Validação de propriedade (regex, range)** — regras no save. — ❌ — P.
@@ -164,7 +174,7 @@
 - [ ] **A/B testing de assunto** — split test. — ❌ — M.
 - [ ] **Throttling / send window** — espalhar envio. — ❌ — M.
 - [ ] **Unsubscribe link automático** — compliance. — ❌ — P.
-- [ ] **Subscription types** — múltiplos opt-ins. — 🟡 — P — tabelas `subscription_types` + `contact_subscriptions` existem; falta UI.
+- [ ] **Subscription types** — múltiplos opt-ins. — ✅ — — CRUD em `/settings/subscriptions` + tabela `contact_subscriptions`.
 - [ ] **Bounce / spam handling** — atualizar status automático. — ❌ — M.
 - [ ] **DKIM / SPF setup wizard** — autenticação de domínio. — ❌ — M.
 - [ ] **Send time optimization** — IA escolhe melhor horário. — ❌ — G.
@@ -220,7 +230,7 @@
 ## 16. AI / Breeze (camada de IA)
 
 - [ ] **Assistente conversacional no record** — "resuma este contato". — ❌ — M (Lovable AI).
-- [ ] **Resumo automático de call/email** — TL;DR no timeline. — 🟡 — M — base no AI Gateway, falta UI.
+- [ ] **Resumo automático de call/email** — TL;DR no timeline. — 🟡 — P — `ai_summaries` + `ai-summaries.functions.ts` prontos; falta auto-trigger ao inserir activity + badge no timeline.
 - [ ] **AI properties (campos preenchidos por IA)** — "indústria provável", "intenção". — ❌ — M.
 - [ ] **Prospecting agent** — IA sugere próximos passos. — ❌ — G.
 - [ ] **Content agent (gera email)** — rascunho de outbound. — ❌ — M.
@@ -261,19 +271,30 @@
 
 ---
 
-## O que entregar agora vs depois
+## O que falta para zerar os parciais (🟡 → ✅)
 
-Sugiro escolher **5 a 10 itens** por release. Os candidatos de maior impacto vs esforço (na minha opinião, sem ordem definitiva):
+Lista enxuta dos itens **realmente** parciais após a auditoria. Todos pequenos a médios:
 
-1. Workflows engine + builder visual (G) — desbloqueia automações em cascata.
-2. Tickets com pipeline próprio (M) — abre o módulo Service inteiro.
-3. Sequences executor (G) — outbound estruturado.
-4. Email envio 1:1 + tracking (G) — fecha o loop de comunicação.
-5. Custom properties UI (G) — clientes diferentes precisam de campos diferentes.
-6. Forms builder + embed (G) — entrada de leads.
-7. Quotes + payment link Stripe (G) — fecha venda dentro do CRM.
-8. Custom reports builder (G) — para parar de pedir "puxa um relatório de…".
-9. Roles & permissions (M) — necessário antes de escalar usuários.
-10. Two-way sync HubSpot (G) — migração suave para clientes vindo do HubSpot.
+| # | Item | Esforço | Onde mexer |
+|---|---|---|---|
+| 1 | Companies parent/child + UI de árvore | M | migration `companies.parent_company_id` self-FK + componente em `companies/$id.tsx` |
+| 2 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
+| 3 | Card layout por pipeline | P | adicionar `card_fields` em `pipelines.config` + editor em settings de pipeline |
+| 4 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
+| 5 | AI summary auto-trigger + badge | P | trigger pós-insert em `activities` → enqueue → badge no `activity-timeline` |
+| 6 | Apollo / Lusha UX polimento | P | preview de campos antes do commit + log em `enrichment_jobs` |
+| 7 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
+| 8 | Activities — `recording_url` + email thread | M | coluna em `activities` + player; agrupamento por `email_threads` no timeline |
+| 9 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
+| 10 | Teams UI | P | tela CRUD sobre `team_members` |
 
-Marque o que faz sentido e devolve.
+## Próximos grandes (❌ → ✅) por prioridade de negócio
+
+1. Tickets com pipeline próprio (M) — abre o módulo Service inteiro.
+2. Email envio 1:1 + tracking (G) — fecha o loop de comunicação.
+3. Forms builder + embed (G) — entrada de leads.
+4. Quotes + payment link Stripe (G) — fecha venda dentro do CRM.
+5. Custom reports builder (G) — relatórios ad-hoc.
+6. Roles & permissões granulares (M) — necessário antes de escalar usuários.
+7. Two-way sync HubSpot (G) — migração suave.
+
