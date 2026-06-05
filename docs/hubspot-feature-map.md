@@ -137,8 +137,8 @@
 ## 7. Listas & Segmentação
 
 - [ ] **Listas estáticas** — snapshot manual. — ✅ — — `segments` kind=static.
-- [ ] **Listas dinâmicas (smart)** — recalculam por filtros. — 🟡 — M — schema existe; falta evaluator que reprocessa.
-- [ ] **Filter builder com AND/OR aninhado** — UI tipo HubSpot. — 🟡 — M — `filter-builder-dialog` existe; falta grupos aninhados.
+- [ ] **Listas dinâmicas (smart)** — recalculam por filtros. — ✅ — — engine em `src/lib/segments/engine.server.ts` chamada pelo cron `segments-tick`.
+- [ ] **Filter builder com AND/OR aninhado** — UI tipo HubSpot. — 🟡 — P — `FilterGroup` é recursivo no modelo, mas `applyFilters` em `src/lib/filters.ts:42` flatten OR de 1 nível.
 - [ ] **Lista de membership cross-objeto** — "contatos cujo deal está em Negociação". — ❌ — G.
 - [ ] **Suppression lists** — listas que excluem de envios. — ❌ — P.
 - [ ] **Compartilhamento de listas com time** — permissões granulares. — ❌ — P.
@@ -147,8 +147,8 @@
 
 - [ ] **Propriedades padrão por objeto** — campos do schema. — ✅ — — colunas das tabelas.
 - [ ] **Histórico de propriedade** — quem mudou, quando, de quê para quê. — ✅ — — tabela `property_history`.
-- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — 🟡 — G — armazenamento em JSONB pronto (`hs_raw`/custom); falta UI de gerenciar definições.
-- [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável.
+- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` (227 linhas) + armazenamento JSONB.
+- [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável e drag-and-drop.
 - [ ] **Propriedades calculadas** — `valor * qty`. — ❌ — M.
 - [ ] **Propriedades dependentes / condicionais** — mostrar B se A=X. — ❌ — M.
 - [ ] **Validação de propriedade (regex, range)** — regras no save. — ❌ — P.
@@ -174,7 +174,7 @@
 - [ ] **A/B testing de assunto** — split test. — ❌ — M.
 - [ ] **Throttling / send window** — espalhar envio. — ❌ — M.
 - [ ] **Unsubscribe link automático** — compliance. — ❌ — P.
-- [ ] **Subscription types** — múltiplos opt-ins. — 🟡 — P — tabelas `subscription_types` + `contact_subscriptions` existem; falta UI.
+- [ ] **Subscription types** — múltiplos opt-ins. — ✅ — — CRUD em `/settings/subscriptions` + tabela `contact_subscriptions`.
 - [ ] **Bounce / spam handling** — atualizar status automático. — ❌ — M.
 - [ ] **DKIM / SPF setup wizard** — autenticação de domínio. — ❌ — M.
 - [ ] **Send time optimization** — IA escolhe melhor horário. — ❌ — G.
