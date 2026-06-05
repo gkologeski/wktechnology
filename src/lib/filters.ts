@@ -29,19 +29,29 @@ export function applyFilters(query: any, node: FilterNode | null | undefined): a
   // group
   if (node.op === "and") {
     let q = query;
-    for (const c of node.conditions) q = applyFilters(q, c);
+    for (const c of node.conditions) {
+      if (c.type === "condition") {
+        q = applyCondition(q, c);
+      } else if (c.op === "and") {
+        // flatten nested AND
+        q = applyFilters(q, c);
+      } else {
+        // nested OR group inside AND: serialize and pass to .or()
+        const s = nodeToOrString(c);
+        if (s) {
+          const inner = s.startsWith("or(") && s.endsWith(")") ? s.slice(3, -1) : s;
+          q = q.or(inner);
+        }
+      }
+    }
     return q;
   }
-  // OR — Supabase requires .or() with comma-separated string
-  const parts: string[] = [];
-  for (const c of node.conditions) {
-    if (c.type === "condition") {
-      const p = conditionToOrString(c);
-      if (p) parts.push(p);
-    }
-    // nested OR groups inside OR not supported here; flatten one level
-  }
-  if (parts.length) return query.or(parts.join(","));
+  // top-level OR — supports nested AND/OR via PostgREST serialization
+  const inner = node.conditions
+    .map((c) => nodeToOrString(c))
+    .filter((s): s is string => !!s)
+    .join(",");
+  if (inner) return query.or(inner);
   return query;
 }
 
@@ -62,13 +72,31 @@ function applyCondition(q: any, c: FilterCondition): any {
   }
 }
 
+// Recursively serialize any FilterNode into PostgREST or()/and() expression syntax.
+function nodeToOrString(n: FilterNode): string | null {
+  if (n.type === "condition") return conditionToOrString(n);
+  const parts = n.conditions
+    .map((c) => nodeToOrString(c))
+    .filter((s): s is string => !!s);
+  if (!parts.length) return null;
+  return `${n.op}(${parts.join(",")})`;
+}
+
 function conditionToOrString(c: FilterCondition): string | null {
   switch (c.op) {
     case "eq": return `${c.field}.eq.${c.value}`;
     case "neq": return `${c.field}.neq.${c.value}`;
+    case "gt": return `${c.field}.gt.${c.value}`;
+    case "gte": return `${c.field}.gte.${c.value}`;
+    case "lt": return `${c.field}.lt.${c.value}`;
+    case "lte": return `${c.field}.lte.${c.value}`;
     case "ilike": return `${c.field}.ilike.%${c.value}%`;
     case "is_null": return `${c.field}.is.null`;
     case "is_not_null": return `${c.field}.not.is.null`;
+    case "in": {
+      const vals = Array.isArray(c.value) ? c.value : [c.value];
+      return `${c.field}.in.(${vals.join(",")})`;
+    }
     default: return null;
   }
 }
