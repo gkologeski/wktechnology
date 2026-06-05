@@ -128,11 +128,14 @@ function AcceptInvitePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass">Nova senha</Label>
-                <Input id="ai-pass" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <PasswordInput id="ai-pass" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <p className="text-xs text-muted-foreground">
+                  Use no mínimo 6 caracteres. Recomendamos combinar letras maiúsculas, minúsculas, números e símbolos.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass2">Confirme a senha</Label>
-                <Input id="ai-pass2" type="password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                <PasswordInput id="ai-pass2" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
                 {confirm && password !== confirm && (
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
                 )}
