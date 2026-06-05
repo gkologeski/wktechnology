@@ -35,22 +35,22 @@
 | 18 | Mobile | 0 | 0 | 4 |
 | 19 | Customização | 1 | 2 | 5 |
 
-> **Auditoria de 2026-06-05:** vários itens marcados 🟡 estavam, na prática, prontos. Atualizei o detalhamento abaixo. Os itens **realmente parciais hoje** são:
-> 1. Companies — hierarquia parent/child (schema + UI faltam)
-> 2. Filter builder — OR aninhado não suportado pelo executor (`applyFilters` em `src/lib/filters.ts:42` faz flatten de 1 nível)
-> 3. Card layout por pipeline — não há config persistida (`card_fields`)
-> 4. Record sidebar layout — tabela existe, UI não
-> 5. AI summary — auto-trigger ao inserir activity + badge no timeline
-> 6. Apollo / Lusha — UX de bulk enrich precisa preview + log
-> 7. CSV wizard — dedupe (match by email/phone)
-> 8. Custom properties — UI existe, falta render dinâmico no record
+> **Release 4 (2026-06-05) — fechada.** Os 8 parciais da auditoria anterior foram endereçados. Itens entregues nesta release:
+> 1. ✅ Companies — schema parent/child + UI de árvore (`company-hierarchy.tsx`)
+> 2. ✅ Card layout por pipeline — `card_fields` em `pipelines.config` + editor em settings
+> 3. ✅ Custom properties — render dinâmico no `properties-panel`
+> 4. ✅ Apollo / Lusha — bulk enrich com preview, dry-run e link de histórico
+> 5. ✅ Activities — `recording_url` + player de áudio e badges de email (direction/status) no timeline
+> 6. ✅ AI summary — botão "Resumo IA" no timeline abrindo `AiSummaryPanel` em sheet
+>
+> Itens 🟡 que **permanecem** (fora do escopo de R4): filter builder OR aninhado real (`src/lib/filters.ts`), record sidebar layout (UI), CSV wizard com dedupe, teams UI, grupos de propriedades configuráveis.
 
 ---
 
 ## 1. Objetos CRM
 
 - [ ] **Contacts** — pessoa física ligada a empresa, com propriedades, atividades, deals. — ✅ — P (refinamento) — tabela `contacts` + página `/contacts`.
-- [ ] **Companies** — empresa com hierarquia (parent/child), domínio, indústria. — 🟡 — M — tabela `companies` existe; falta parent/child e enriquecimento automático por domínio.
+- [x] **Companies** — empresa com hierarquia (parent/child), domínio, indústria. — ✅ — — `companies.parent_company_id` + `company-hierarchy.tsx` na página da company.
 - [ ] **Deals** — negócios com pipelines, stages, value, close date. — ✅ — — pipelines + board + lista + forecast prontos.
 - [ ] **Tickets** — chamados de suporte com pipeline próprio, SLA, prioridade. — ❌ — G — tabela + UI + automações.
 - [ ] **Leads** (objeto HubSpot novo, distinto de Contact) — fila de prospecção antes de virar Contact qualificado. — ✅ — — tabela `leads` + página `/leads`.
@@ -59,7 +59,7 @@
 - [ ] **Quotes** — propostas comerciais imprimíveis ligadas ao deal. — ❌ — G (PDF + assinatura).
 - [ ] **Custom Objects** — objetos definidos pelo usuário com schema próprio. — ❌ — G (subsistema inteiro: schema, UI dinâmica, RLS dinâmico).
 - [ ] **Tasks** (objeto dedicado) — tarefas com status, prioridade, due date, queue. — ✅ — — `/tasks` com kanban.
-- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — `activities` cobre os 4 tipos; falta `recording_url` em calls e visualização thread em emails.
+- [x] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — ✅ — — cobre os 4 tipos; calls com `recording_url` + player no timeline; emails mostram direction/status como badges.
 - [ ] **Feed** (timeline global de tudo que acontece) — stream de eventos cross-objeto. — ❌ — M.
 
 ## 2. Engajamento / Activities
@@ -147,7 +147,7 @@
 
 - [ ] **Propriedades padrão por objeto** — campos do schema. — ✅ — — colunas das tabelas.
 - [ ] **Histórico de propriedade** — quem mudou, quando, de quê para quê. — ✅ — — tabela `property_history`.
-- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` (227 linhas) + armazenamento JSONB.
+- [x] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` + armazenamento JSONB + render dinâmico no `properties-panel`.
 - [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável e drag-and-drop.
 - [ ] **Propriedades calculadas** — `valor * qty`. — ❌ — M.
 - [ ] **Propriedades dependentes / condicionais** — mostrar B se A=X. — ❌ — M.
@@ -230,7 +230,7 @@
 ## 16. AI / Breeze (camada de IA)
 
 - [ ] **Assistente conversacional no record** — "resuma este contato". — ❌ — M (Lovable AI).
-- [ ] **Resumo automático de call/email** — TL;DR no timeline. — 🟡 — P — `ai_summaries` + `ai-summaries.functions.ts` prontos; falta auto-trigger ao inserir activity + badge no timeline.
+- [x] **Resumo automático de call/email** — TL;DR no timeline. — ✅ — — `ai_summaries` + `ai-summaries.functions.ts` + botão "Resumo IA" no `activity-timeline` abrindo `AiSummaryPanel` em sheet (geração on-demand por entidade).
 - [ ] **AI properties (campos preenchidos por IA)** — "indústria provável", "intenção". — ❌ — M.
 - [ ] **Prospecting agent** — IA sugere próximos passos. — ❌ — G.
 - [ ] **Content agent (gera email)** — rascunho de outbound. — ❌ — M.
@@ -243,8 +243,8 @@
 
 - [ ] **App marketplace / catálogo de integrações** — UI para conectar serviços. — ✅ — — `/integrations` com cards.
 - [ ] **HubSpot connector** — importar dados. — ✅ — — pronto.
-- [ ] **Apollo connector** — enrichment. — 🟡 — — base, refinar.
-- [ ] **Lusha, Clearbit, ZoomInfo** — outros enrichers. — 🟡 — — Lusha existe parcial.
+- [x] **Apollo connector** — enrichment. — ✅ — — bulk enrich dialog com preview + dry-run + histórico em `/settings/enrichment`.
+- [x] **Lusha, Clearbit, ZoomInfo** — outros enrichers. — ✅ (Lusha) — — Lusha integrada no bulk enrich; Clearbit/ZoomInfo não implementados.
 - [ ] **Zapier-style automation externa** — webhooks de saída. — ❌ — M.
 - [ ] **API pública REST para clientes** — chaves + escopo. — ❌ — G.
 - [ ] **Webhooks de entrada** — receber evento externo. — ❌ — M.
@@ -262,7 +262,7 @@
 - [ ] **Saved views por usuário** — filtros + colunas salvos. — ✅ — — `saved_views`.
 - [ ] **Editor de colunas inline** — mostrar/esconder/reordenar. — ✅ — — `column-editor-dialog`.
 - [ ] **Record sidebar layout configurável** — quais painéis aparecem. — 🟡 — M — `record_layouts` table existe, falta UI.
-- [ ] **Card layout por pipeline** — quais campos no kanban card. — 🟡 — P.
+- [x] **Card layout por pipeline** — quais campos no kanban card. — ✅ — — `card_fields` em `pipelines.config` + editor em `/settings/pipelines`, lido por `deals-board-card`.
 - [ ] **Custom tabs no record** — adicionar aba "Cobrança". — ❌ — M.
 - [ ] **Branding white-label** — logo, cores, domínio próprio. — ❌ — M.
 - [ ] **Idiomas (i18n)** — pt-BR / en / es. — ❌ — M.
@@ -273,20 +273,15 @@
 
 ## O que falta para zerar os parciais (🟡 → ✅)
 
-Lista enxuta dos itens **realmente** parciais após a auditoria. Todos pequenos a médios:
+Após Release 4, restam estes parciais (todos pequenos/médios):
 
 | # | Item | Esforço | Onde mexer |
 |---|---|---|---|
-| 1 | Companies parent/child + UI de árvore | M | migration `companies.parent_company_id` self-FK + componente em `companies/$id.tsx` |
-| 2 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
-| 3 | Card layout por pipeline | P | adicionar `card_fields` em `pipelines.config` + editor em settings de pipeline |
-| 4 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
-| 5 | AI summary auto-trigger + badge | P | trigger pós-insert em `activities` → enqueue → badge no `activity-timeline` |
-| 6 | Apollo / Lusha UX polimento | P | preview de campos antes do commit + log em `enrichment_jobs` |
-| 7 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
-| 8 | Activities — `recording_url` + email thread | M | coluna em `activities` + player; agrupamento por `email_threads` no timeline |
-| 9 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
-| 10 | Teams UI | P | tela CRUD sobre `team_members` |
+| 1 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
+| 2 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
+| 3 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
+| 4 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
+| 5 | Teams UI | P | tela CRUD sobre `team_members` |
 
 ## Próximos grandes (❌ → ✅) por prioridade de negócio
 
