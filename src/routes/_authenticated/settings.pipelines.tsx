@@ -181,6 +181,7 @@ function PipelineEditor({
         ? pipeline.stages
         : [{ value: "new", label: "Novo", type: "open", probability: 10 }],
     );
+    setCardFields(pipeline?.config?.card_fields ?? DEFAULT_CARD_FIELDS);
   }, [pipeline]);
 
   const valuesSet = useMemo(() => new Set(stages.map((s) => s.value)), [stages]);
