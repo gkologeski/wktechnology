@@ -1069,6 +1069,7 @@ export type Database = {
           name: string
           notes: string | null
           owner_id: string
+          parent_company_id: string | null
           phone: string | null
           score: number
           size: string | null
@@ -1109,6 +1110,7 @@ export type Database = {
           name: string
           notes?: string | null
           owner_id: string
+          parent_company_id?: string | null
           phone?: string | null
           score?: number
           size?: string | null
@@ -1149,6 +1151,7 @@ export type Database = {
           name?: string
           notes?: string | null
           owner_id?: string
+          parent_company_id?: string | null
           phone?: string | null
           score?: number
           size?: string | null
@@ -1162,6 +1165,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_workspace_id_fkey"
             columns: ["workspace_id"]

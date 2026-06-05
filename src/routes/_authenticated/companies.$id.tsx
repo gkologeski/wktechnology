@@ -8,6 +8,7 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
 
@@ -92,7 +93,16 @@ function CompanyDetail() {
           <ActivityTimeline relatedKey="related_company_id" relatedId={company.id} />
         </>
       }
-      right={<AssociationsPanel entity="company" entityId={company.id} />}
+      right={
+        <div className="space-y-4">
+          <CompanyHierarchy
+            companyId={company.id}
+            parentId={(company as unknown as { parent_company_id: string | null }).parent_company_id ?? null}
+            ownerId={company.owner_id}
+          />
+          <AssociationsPanel entity="company" entityId={company.id} />
+        </div>
+      }
     />
   );
 }
