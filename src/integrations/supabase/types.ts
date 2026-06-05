@@ -120,6 +120,7 @@ export type Database = {
           body: string | null
           completed: boolean
           created_at: string
+          created_by: string | null
           deleted_at: string | null
           disposition: string | null
           due_date: string | null
@@ -157,6 +158,7 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           body?: string | null
           completed?: boolean
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
