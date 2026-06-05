@@ -224,6 +224,17 @@ function TasksHubspotView() {
     },
   });
 
+  const { data: ownersMap = {} } = useQuery({
+    queryKey: ["tasks", "owners", rows.map((r) => r.owner_id).filter(Boolean).join(",")],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const ids = [...new Set(rows.map((r) => r.owner_id).filter(Boolean) as string[])];
+      if (!ids.length) return {} as Record<string, string>;
+      const { data } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      return Object.fromEntries((data ?? []).map((p) => [p.id, p.full_name ?? ""])) as Record<string, string>;
+    },
+  });
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
@@ -418,12 +429,19 @@ function TasksHubspotView() {
     {
       key: "owner",
       label: "Responsável",
-      render: (t) =>
-        t.owner_id ? (
-          <InitialsAvatar text={t.owner_id.slice(0, 2).toUpperCase()} seed={t.owner_id} size={6} />
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
+      render: (t) => {
+        if (!t.owner_id) return <span className="text-muted-foreground">—</span>;
+        const name = ownersMap[t.owner_id] || "—";
+        const initials = name && name !== "—"
+          ? name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")
+          : t.owner_id.slice(0, 2).toUpperCase();
+        return (
+          <div className="flex items-center gap-2" title={name}>
+            <InitialsAvatar text={initials} seed={t.owner_id} size={6} />
+            <span className="truncate text-sm">{name}</span>
+          </div>
+        );
+      },
     },
     {
       key: "created_at",
