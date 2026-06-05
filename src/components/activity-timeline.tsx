@@ -11,14 +11,16 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import {
   StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download, Pencil, Check,
-  MessageSquare, MessageCircle, Linkedin, Send, Inbox, Workflow, MoreHorizontal, Lock,
+  MessageSquare, MessageCircle, Linkedin, Send, Inbox, Workflow, MoreHorizontal, Lock, Sparkles,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
+import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 
 
 const ICONS: Record<ActivityType, ReactNode> = {
