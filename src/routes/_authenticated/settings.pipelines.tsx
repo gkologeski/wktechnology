@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
+import { CARD_FIELD_OPTIONS, DEFAULT_CARD_FIELDS } from "@/components/deals/deals-board-card";
 
 export const Route = createFileRoute("/_authenticated/settings/pipelines")({
   component: PipelinesSettings,
@@ -26,6 +28,8 @@ type Stage = {
   sla_hours?: number | null;
 };
 
+type PipelineConfig = { card_fields?: string[] };
+
 type Pipeline = {
   id: string;
   name: string;
@@ -33,6 +37,7 @@ type Pipeline = {
   is_default: boolean;
   default_view: string | null;
   stages: Stage[];
+  config: PipelineConfig;
 };
 
 const ENTITIES = [
@@ -73,7 +78,7 @@ function PipelinesSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pipelines")
-        .select("id, name, entity, is_default, default_view, stages")
+        .select("id, name, entity, is_default, default_view, stages, config")
         .order("entity", { ascending: true })
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
@@ -81,6 +86,7 @@ function PipelinesSettings() {
       return (data ?? []).map((p) => ({
         ...p,
         stages: Array.isArray(p.stages) ? (p.stages as unknown as Stage[]) : [],
+        config: (p.config && typeof p.config === "object" ? p.config : {}) as PipelineConfig,
       })) as Pipeline[];
     },
   });
