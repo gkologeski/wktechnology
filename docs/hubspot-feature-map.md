@@ -243,8 +243,8 @@
 
 - [ ] **App marketplace / catálogo de integrações** — UI para conectar serviços. — ✅ — — `/integrations` com cards.
 - [ ] **HubSpot connector** — importar dados. — ✅ — — pronto.
-- [ ] **Apollo connector** — enrichment. — 🟡 — — base, refinar.
-- [ ] **Lusha, Clearbit, ZoomInfo** — outros enrichers. — 🟡 — — Lusha existe parcial.
+- [x] **Apollo connector** — enrichment. — ✅ — — bulk enrich dialog com preview + dry-run + histórico em `/settings/enrichment`.
+- [x] **Lusha, Clearbit, ZoomInfo** — outros enrichers. — ✅ (Lusha) — — Lusha integrada no bulk enrich; Clearbit/ZoomInfo não implementados.
 - [ ] **Zapier-style automation externa** — webhooks de saída. — ❌ — M.
 - [ ] **API pública REST para clientes** — chaves + escopo. — ❌ — G.
 - [ ] **Webhooks de entrada** — receber evento externo. — ❌ — M.
