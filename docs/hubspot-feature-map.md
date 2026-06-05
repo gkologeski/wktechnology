@@ -59,7 +59,7 @@
 - [ ] **Quotes** — propostas comerciais imprimíveis ligadas ao deal. — ❌ — G (PDF + assinatura).
 - [ ] **Custom Objects** — objetos definidos pelo usuário com schema próprio. — ❌ — G (subsistema inteiro: schema, UI dinâmica, RLS dinâmico).
 - [ ] **Tasks** (objeto dedicado) — tarefas com status, prioridade, due date, queue. — ✅ — — `/tasks` com kanban.
-- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — `activities` cobre os 4 tipos; falta `recording_url` em calls e visualização thread em emails.
+- [x] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — ✅ — — cobre os 4 tipos; calls com `recording_url` + player no timeline; emails mostram direction/status como badges.
 - [ ] **Feed** (timeline global de tudo que acontece) — stream de eventos cross-objeto. — ❌ — M.
 
 ## 2. Engajamento / Activities
