@@ -139,16 +139,23 @@ function TasksHubspotView() {
       const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
       if (activeView === "mine_open" && user?.id) {
-        q = q.eq("owner_id", user.id).eq("completed", false);
+        q = q
+          .eq("owner_id", user.id)
+          .eq("completed", false)
+          .neq("task_status", "COMPLETED");
       } else if (activeView === "due_today") {
         q = q
           .eq("completed", false)
+          .neq("task_status", "COMPLETED")
           .gte("due_date", startOfDay.toISOString())
           .lt("due_date", endOfDay.toISOString());
       } else if (activeView === "overdue") {
-        q = q.eq("completed", false).lt("due_date", startOfDay.toISOString());
+        q = q
+          .eq("completed", false)
+          .neq("task_status", "COMPLETED")
+          .lt("due_date", startOfDay.toISOString());
       } else if (activeView === "completed") {
-        q = q.eq("completed", true);
+        q = q.or("completed.eq.true,task_status.eq.COMPLETED");
       }
 
       if (filters.statuses.length) q = q.in("task_status", filters.statuses);
