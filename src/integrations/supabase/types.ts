@@ -1577,6 +1577,7 @@ export type Database = {
           created_at: string
           enabled: boolean
           entity: string
+          group_name: string | null
           id: string
           key: string
           label: string
@@ -1593,6 +1594,7 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           entity: string
+          group_name?: string | null
           id?: string
           key: string
           label: string
@@ -1609,6 +1611,7 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           entity?: string
+          group_name?: string | null
           id?: string
           key?: string
           label?: string

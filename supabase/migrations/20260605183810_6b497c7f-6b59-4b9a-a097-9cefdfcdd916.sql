@@ -1,0 +1,1 @@
+ALTER TABLE public.custom_properties ADD COLUMN IF NOT EXISTS group_name text;
