@@ -607,13 +607,22 @@ function InlineCell<T extends { id: string }>({
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(initial ?? ""));
 
+  const displayValue = (() => {
+    if (initial == null || initial === "") return "—";
+    if (fieldDef?.type === "select") {
+      return fieldDef.options?.find((o) => o.value === String(initial))?.label ?? String(initial);
+    }
+    return String(initial);
+  })();
+
   if (!editing) {
     return (
       <button className="text-left w-full hover:bg-muted px-2 py-1 rounded -mx-2 -my-1" onClick={() => setEditing(true)}>
-        {String(initial ?? "—")}
+        {displayValue}
       </button>
     );
   }
+
   if (fieldDef?.type === "select") {
     return (
       <select autoFocus className="h-8 rounded-md border bg-background px-2 text-sm w-full" value={val}
