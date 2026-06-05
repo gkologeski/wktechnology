@@ -226,6 +226,11 @@ function PipelineEditor({
       sla_hours: s.sla_hours ?? null,
     }));
 
+    const payloadConfig = {
+      ...(pipeline?.config ?? {}),
+      card_fields: cardFields,
+    };
+
     setSaving(true);
     try {
       if (isNew) {
@@ -236,6 +241,7 @@ function PipelineEditor({
           is_default: isDefault,
           default_view: defaultView,
           stages: payloadStages as unknown as never,
+          config: payloadConfig as unknown as never,
         });
         if (error) throw error;
       } else {
@@ -247,6 +253,7 @@ function PipelineEditor({
             is_default: isDefault,
             default_view: defaultView,
             stages: payloadStages as unknown as never,
+            config: payloadConfig as unknown as never,
           })
           .eq("id", pipeline!.id);
         if (error) throw error;
