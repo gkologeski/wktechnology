@@ -12,6 +12,10 @@ export type PipelineStage = {
   type?: "open" | "won" | "lost";
 };
 
+export type PipelineConfig = {
+  card_fields?: string[];
+};
+
 export type Pipeline = {
   id: string;
   name: string;
@@ -19,6 +23,7 @@ export type Pipeline = {
   is_default: boolean;
   default_view?: string | null;
   stages: PipelineStage[];
+  config?: PipelineConfig;
 };
 
 const DEFAULT_STAGE_COLORS = [
@@ -69,8 +74,9 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return ((data ?? []) as unknown as Pipeline[]).map((p) => ({
+      return ((data ?? []) as unknown as (Pipeline & { config?: unknown })[]).map((p) => ({
         ...p,
+        config: (p.config && typeof p.config === "object" ? p.config : {}) as PipelineConfig,
         stages: Array.isArray(p.stages)
           ? (p.stages as unknown as Array<Record<string, unknown>>).map((s, i) => {
               const value = String(

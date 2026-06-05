@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
+import { CARD_FIELD_OPTIONS, DEFAULT_CARD_FIELDS } from "@/components/deals/deals-board-card";
 
 export const Route = createFileRoute("/_authenticated/settings/pipelines")({
   component: PipelinesSettings,
@@ -26,6 +28,8 @@ type Stage = {
   sla_hours?: number | null;
 };
 
+type PipelineConfig = { card_fields?: string[] };
+
 type Pipeline = {
   id: string;
   name: string;
@@ -33,6 +37,7 @@ type Pipeline = {
   is_default: boolean;
   default_view: string | null;
   stages: Stage[];
+  config: PipelineConfig;
 };
 
 const ENTITIES = [
@@ -73,7 +78,7 @@ function PipelinesSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pipelines")
-        .select("id, name, entity, is_default, default_view, stages")
+        .select("id, name, entity, is_default, default_view, stages, config")
         .order("entity", { ascending: true })
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true });
@@ -81,6 +86,7 @@ function PipelinesSettings() {
       return (data ?? []).map((p) => ({
         ...p,
         stages: Array.isArray(p.stages) ? (p.stages as unknown as Stage[]) : [],
+        config: (p.config && typeof p.config === "object" ? p.config : {}) as PipelineConfig,
       })) as Pipeline[];
     },
   });
@@ -159,6 +165,9 @@ function PipelineEditor({
       ? pipeline.stages
       : [{ value: "new", label: "Novo", type: "open", probability: 10 }],
   );
+  const [cardFields, setCardFields] = useState<string[]>(
+    pipeline?.config?.card_fields ?? DEFAULT_CARD_FIELDS,
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -172,6 +181,7 @@ function PipelineEditor({
         ? pipeline.stages
         : [{ value: "new", label: "Novo", type: "open", probability: 10 }],
     );
+    setCardFields(pipeline?.config?.card_fields ?? DEFAULT_CARD_FIELDS);
   }, [pipeline]);
 
   const valuesSet = useMemo(() => new Set(stages.map((s) => s.value)), [stages]);
@@ -216,6 +226,11 @@ function PipelineEditor({
       sla_hours: s.sla_hours ?? null,
     }));
 
+    const payloadConfig = {
+      ...(pipeline?.config ?? {}),
+      card_fields: cardFields,
+    };
+
     setSaving(true);
     try {
       if (isNew) {
@@ -226,6 +241,7 @@ function PipelineEditor({
           is_default: isDefault,
           default_view: defaultView,
           stages: payloadStages as unknown as never,
+          config: payloadConfig as unknown as never,
         });
         if (error) throw error;
       } else {
@@ -237,6 +253,7 @@ function PipelineEditor({
             is_default: isDefault,
             default_view: defaultView,
             stages: payloadStages as unknown as never,
+            config: payloadConfig as unknown as never,
           })
           .eq("id", pipeline!.id);
         if (error) throw error;
@@ -387,6 +404,39 @@ function PipelineEditor({
             )}
           </div>
         </div>
+
+        {entity === "deal" && (
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs">Campos exibidos no card do quadro</Label>
+              <p className="text-[11px] text-muted-foreground">
+                O nome do negócio é sempre mostrado. Marque/desmarque os demais campos.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 rounded-md border p-3">
+              {CARD_FIELD_OPTIONS.map((opt) => {
+                const checked = cardFields.includes(opt.key);
+                return (
+                  <label key={opt.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        setCardFields((prev) =>
+                          v
+                            ? [...prev.filter((k) => k !== opt.key), opt.key]
+                            : prev.filter((k) => k !== opt.key),
+                        );
+                      }}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+
 
         <div className="flex items-center justify-between gap-2 pt-2">
           <div>
