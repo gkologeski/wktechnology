@@ -1,0 +1,1 @@
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL; UPDATE public.activities SET created_by = owner_id WHERE created_by IS NULL; CREATE INDEX IF NOT EXISTS activities_created_by_idx ON public.activities(created_by);

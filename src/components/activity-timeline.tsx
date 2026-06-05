@@ -115,6 +115,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
@@ -209,17 +210,28 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     })();
   }, [relatedKey, relatedId]);
 
-  // Load team members for @mentions
+  // Load workspace members for @mentions and task assignment
   useEffect(() => {
     if (!user) return;
     (async () => {
       const list: TeamMember[] = [{ id: user.id, name: user.email ?? "Você" }];
-      const { data: tm } = await supabase.from("team_members").select("member_user_id");
-      if (tm?.length) {
-        const ids = [...new Set(tm.map((t) => t.member_user_id))];
-        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
-        for (const p of profs ?? []) {
-          if (!list.find((x) => x.id === p.id)) list.push({ id: p.id, name: p.full_name ?? p.id });
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active_workspace_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id;
+      if (wsId) {
+        const { data: wm } = await supabase
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", wsId);
+        const ids = [...new Set((wm ?? []).map((t) => t.user_id))];
+        if (ids.length) {
+          const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+          for (const p of profs ?? []) {
+            if (!list.find((x) => x.id === p.id)) list.push({ id: p.id, name: p.full_name ?? p.id });
+          }
         }
       }
       setTeam(list);
@@ -268,7 +280,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     const attachments = await uploadFiles();
     const autoLinks = await resolveAutoLinks();
     const payload: Record<string, unknown> = {
-      owner_id: user.id,
+      owner_id: type === "task" && assigneeId ? assigneeId : user.id,
+      created_by: user.id,
       type,
       subject: subject || null,
       body: body || null,
@@ -279,7 +292,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     };
     const { error } = await supabase.from("activities").insert(payload as never);
     if (error) return toast.error(error.message);
-    setSubject(""); setBody(""); setDueDate(""); setPendingFiles([]); setMentions([]);
+    setSubject(""); setBody(""); setDueDate(""); setAssigneeId(""); setPendingFiles([]); setMentions([]);
     void load();
   };
 
@@ -499,7 +512,21 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
             <div className="flex flex-wrap gap-2">
               <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
               {type === "task" && (
-                <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+                <>
+                  <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+                  <select
+                    value={assigneeId || user?.id || ""}
+                    onChange={(e) => setAssigneeId(e.target.value)}
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    title="Atribuir tarefa para"
+                  >
+                    {team.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}{m.id === user?.id ? " (você)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </>
               )}
             </div>
             <div className="relative">

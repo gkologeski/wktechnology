@@ -8,19 +8,23 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { TASK_STATUSES, TASK_PRIORITIES, formatDateTime } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 export const Route = createFileRoute("/_authenticated/tasks/$id")({
   component: TaskDetail,
 });
 
+type TaskRow = Activity & { created_by?: string | null };
+
 function TaskDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [task, setTask] = useState<Activity | null>(null);
+  const [task, setTask] = useState<TaskRow | null>(null);
+  const { data: members, nameFor } = useWorkspaceMembers();
 
   const load = async () => {
     const { data } = await supabase.from("activities").select("*").eq("id", id).single();
-    setTask(data as Activity | null);
+    setTask(data as TaskRow | null);
   };
   useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
 
@@ -37,6 +41,15 @@ function TaskDetail() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("activities").update({ completed: true, task_status: "COMPLETED" }).eq("id", task.id);
     toast.success("Concluída");
+    void load();
+  };
+
+  const reassign = async (newOwnerId: string) => {
+    if (!newOwnerId || newOwnerId === task.owner_id) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("activities").update({ owner_id: newOwnerId }).eq("id", task.id);
+    if (error) return toast.error(error.message);
+    toast.success("Responsável atualizado");
     void load();
   };
 
@@ -63,6 +76,9 @@ function TaskDetail() {
             <h1 className="text-xl font-semibold">{task.subject || "(sem assunto)"}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Venc.: {formatDateTime(task.due_date)} · Criada em {formatDateTime(task.created_at)}
+              {task.created_by && task.created_by !== task.owner_id && (
+                <> · Criada por <span className="font-medium text-foreground">{nameFor(task.created_by)}</span></>
+              )}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -73,6 +89,21 @@ function TaskDetail() {
         {task.body && (
           <p className="mt-4 text-sm whitespace-pre-wrap text-foreground/90">{task.body}</p>
         )}
+
+        <div className="mt-4 flex items-center gap-2 border-t pt-4">
+          <span className="text-sm font-medium">Responsável:</span>
+          <select
+            value={task.owner_id ?? ""}
+            onChange={(e) => reassign(e.target.value)}
+            className="h-9 rounded-md border bg-background px-3 text-sm"
+          >
+            {(members ?? []).map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.full_name || m.user_id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
