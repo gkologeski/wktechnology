@@ -63,6 +63,7 @@ function CustomPropsPage() {
         required: !!form.required,
         enabled: form.enabled ?? true,
         ai_prompt: (form as { ai_prompt?: string | null }).ai_prompt ?? null,
+        group_name: (form as { group_name?: string | null }).group_name ?? null,
       } });
       toast.success("Salvo");
       setOpen(false); setEditing(null);
@@ -103,27 +104,38 @@ function CustomPropsPage() {
             <p className="text-sm text-muted-foreground">Nenhuma propriedade ainda.</p>
           )}
           <div className="text-sm">
-            {(grouped.get(entity) ?? []).map((r) => (
-              <div key={r.id}
-                className="grid grid-cols-[1fr_160px_120px_100px_auto] gap-2 items-center py-2 border-b last:border-0">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{r.label}</div>
-                  <code className="text-xs text-muted-foreground">{r.key}</code>
-                </div>
-                <span className="text-xs">{CUSTOM_TYPE_LABELS[r.type as CustomType]}</span>
-                <div className="flex gap-1">
-                  {r.required && <Badge variant="secondary">obrigatório</Badge>}
-                  {!r.enabled && <Badge variant="outline">desativado</Badge>}
-                </div>
-                <span className="text-xs text-muted-foreground">pos {r.position}</span>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(r)} aria-label="Remover">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+            {Object.entries(
+              (grouped.get(entity) ?? []).reduce<Record<string, Row[]>>((acc, r) => {
+                const g = (r as { group_name?: string | null }).group_name || "Sem grupo";
+                (acc[g] ||= []).push(r);
+                return acc;
+              }, {}),
+            ).map(([g, list]) => (
+              <div key={g} className="mb-3">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground py-1">{g}</div>
+                {list.map((r) => (
+                  <div key={r.id}
+                    className="grid grid-cols-[1fr_160px_120px_100px_auto] gap-2 items-center py-2 border-b last:border-0">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{r.label}</div>
+                      <code className="text-xs text-muted-foreground">{r.key}</code>
+                    </div>
+                    <span className="text-xs">{CUSTOM_TYPE_LABELS[r.type as CustomType]}</span>
+                    <div className="flex gap-1">
+                      {r.required && <Badge variant="secondary">obrigatório</Badge>}
+                      {!r.enabled && <Badge variant="outline">desativado</Badge>}
+                    </div>
+                    <span className="text-xs text-muted-foreground">pos {r.position}</span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label="Editar">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(r)} aria-label="Remover">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -181,6 +193,16 @@ function PropertyDialog({
             <Input value={form.key ?? ""} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") }))}
               placeholder="ex: budget_estimate" disabled={!!editing.id} />
           </div>
+        </div>
+        <div className="space-y-1">
+          <Label>Grupo (opcional)</Label>
+          <Input
+            list="cp-groups"
+            value={(form as { group_name?: string | null }).group_name ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, group_name: e.target.value }))}
+            placeholder="Ex.: Comercial, Financeiro, Operacional"
+          />
+          <p className="text-[11px] text-muted-foreground">Propriedades do mesmo grupo aparecem juntas na ficha do registro.</p>
         </div>
         {needOptions && (
           <div className="space-y-1">

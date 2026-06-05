@@ -43,6 +43,7 @@ const upsertSchema = z.object({
   required: z.boolean().default(false),
   enabled: z.boolean().default(true),
   ai_prompt: z.string().max(4000).nullable().optional(),
+  group_name: z.string().max(80).nullable().optional(),
 });
 
 export const listCustomProperties = createServerFn({ method: "POST" })
@@ -51,7 +52,7 @@ export const listCustomProperties = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let q = supabase.from("custom_properties")
-      .select("id, entity, key, label, type, options, position, required, enabled, ai_prompt, created_at, updated_at")
+      .select("id, entity, key, label, type, options, position, required, enabled, ai_prompt, group_name, created_at, updated_at")
       .eq("owner_id", userId)
       .order("entity", { ascending: true })
       .order("position", { ascending: true });
@@ -77,6 +78,7 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
       required: data.required,
       enabled: data.enabled,
       ai_prompt: data.ai_prompt ?? null,
+      group_name: data.group_name ?? null,
     };
     if (data.id) {
       const { error } = await supabase.from("custom_properties").update(payload as never).eq("id", data.id).eq("owner_id", userId);
