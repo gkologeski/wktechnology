@@ -224,6 +224,17 @@ function TasksHubspotView() {
     },
   });
 
+  const { data: ownersMap = {} } = useQuery({
+    queryKey: ["tasks", "owners", rows.map((r) => r.owner_id).filter(Boolean).join(",")],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const ids = [...new Set(rows.map((r) => r.owner_id).filter(Boolean) as string[])];
+      if (!ids.length) return {} as Record<string, string>;
+      const { data } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      return Object.fromEntries((data ?? []).map((p) => [p.id, p.full_name ?? ""])) as Record<string, string>;
+    },
+  });
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
