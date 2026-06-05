@@ -5694,7 +5694,7 @@ export type Database = {
           id: string
           name: string
           updated_at: string
-          workspace_owner_id: string
+          workspace_id: string
         }
         Insert: {
           color?: string | null
@@ -5703,7 +5703,7 @@ export type Database = {
           id?: string
           name: string
           updated_at?: string
-          workspace_owner_id: string
+          workspace_id: string
         }
         Update: {
           color?: string | null
@@ -5712,7 +5712,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
-          workspace_owner_id?: string
+          workspace_id?: string
         }
         Relationships: []
       }
