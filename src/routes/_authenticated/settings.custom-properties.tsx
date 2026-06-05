@@ -63,6 +63,7 @@ function CustomPropsPage() {
         required: !!form.required,
         enabled: form.enabled ?? true,
         ai_prompt: (form as { ai_prompt?: string | null }).ai_prompt ?? null,
+        group_name: (form as { group_name?: string | null }).group_name ?? null,
       } });
       toast.success("Salvo");
       setOpen(false); setEditing(null);
