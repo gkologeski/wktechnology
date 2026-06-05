@@ -59,13 +59,13 @@
 - [ ] **Quotes** — propostas comerciais imprimíveis ligadas ao deal. — ❌ — G (PDF + assinatura).
 - [ ] **Custom Objects** — objetos definidos pelo usuário com schema próprio. — ❌ — G (subsistema inteiro: schema, UI dinâmica, RLS dinâmico).
 - [ ] **Tasks** (objeto dedicado) — tarefas com status, prioridade, due date, queue. — ✅ — — `/tasks` com kanban.
-- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — tabela `activities` existe; faltam recursos por tipo (gravação de call, threading de email).
+- [ ] **Activities / Engagements** (Notes, Calls, Emails, Meetings) — registros de interação. — 🟡 — M — `activities` cobre os 4 tipos; falta `recording_url` em calls e visualização thread em emails.
 - [ ] **Feed** (timeline global de tudo que acontece) — stream de eventos cross-objeto. — ❌ — M.
 
 ## 2. Engajamento / Activities
 
-- [ ] **Notes** — anotações livres com menções (@) e anexos. — ✅ — P — falta menções e anexos.
-- [ ] **Tasks** — listagem, kanban, queues (filas de execução sequencial). — ✅ — M — kanban pronto; queues e "play through queue" faltam.
+- [ ] **Notes** — anotações livres com menções (@) e anexos. — ✅ — — menções via `workspace_members` e upload para bucket `notes-attachments` no `activity-timeline`.
+- [ ] **Tasks** — listagem, kanban, queues (filas de execução sequencial). — ✅ — — kanban + `/tasks/queues` + play através da fila com atalhos C/S.
 - [ ] **Calls — log manual** — registrar uma chamada com outcome, duração, notas. — ✅ — — disponível em communications.
 - [ ] **Calls — discador VOIP nativo** — clicar no telefone e discar pelo navegador. — ❌ — G (Twilio/Aircall).
 - [ ] **Calls — gravação + transcrição** — gravar e transcrever automaticamente. — ❌ — G.
@@ -85,14 +85,14 @@
 ## 3. Pipelines & Automação
 
 - [ ] **Múltiplos pipelines de deals** — vendas + pós-venda + renovação. — ✅ — — tabela `pipelines`.
-- [ ] **Stages com probabilidade** — % de fechamento por stage para forecast. — 🟡 — P — campo existe, falta usar no forecast.
+- [ ] **Stages com probabilidade** — % de fechamento por stage para forecast. — ✅ — — `DealsForecast` calcula coluna "Ponderado" = value × probability.
 - [ ] **Pipelines de tickets** — pipeline próprio para suporte. — ❌ — M (depende de Tickets).
-- [ ] **Lead scoring manual (rules)** — somar pontos por critérios. — 🟡 — M — tabela `scoring_rules` existe, falta executor + UI.
+- [ ] **Lead scoring manual (rules)** — somar pontos por critérios. — ✅ — — UI em `/settings/scoring` (304 linhas) + executor `scoring-tick`.
 - [ ] **Lead scoring preditivo (AI)** — modelo treinado nos seus deals. — ❌ — G.
 - [ ] **Lead rotation / round-robin** — distribuir leads novos entre vendedores. — ❌ — M.
 - [ ] **Deal rotation** — distribuir deals automaticamente. — ❌ — M.
-- [ ] **Workflows — if/then visual builder** — automações com triggers, ações, branches, delays. — 🟡 — G — tabela `workflows` + UI CRUD básica; falta engine + builder visual.
-- [ ] **Sequences** — cadência de emails + tasks programados. — 🟡 — G — tabela `sequences` + `sequence_enrollments`; falta executor + UI de cadência.
+- [ ] **Workflows — if/then visual builder** — automações com triggers, ações, branches, delays. — ✅ — — `workflow-builder.tsx` (Sheet com trigger + filtros + ações) + engine via `workflow-events` trigger DB + handler `workflows-tick`.
+- [ ] **Sequences** — cadência de emails + tasks programados. — ✅ — — `SequenceBuilder` com steps reordenáveis + executor em `sequences-tick`.
 - [ ] **Playbooks** — roteiros de discovery/qualificação. — ✅ — P — pronto, falta UI de execução durante uma call.
 - [ ] **SLA por pipeline** — alerta se ficar parado em um stage X dias. — ❌ — M.
 - [ ] **Approval workflows** — exigir aprovação para descontos / quotes. — ❌ — G.
@@ -111,7 +111,7 @@
 ## 5. Relatórios & Dashboards
 
 - [ ] **Dashboard de KPIs** — cards de leads, deals, ganhos. — ✅ — — `/dashboard`.
-- [ ] **Forecast de receita** — previsão por stage × probabilidade × close date. — 🟡 — P — existe `DealsForecast`, refinar.
+- [ ] **Forecast de receita** — previsão por stage × probabilidade × close date. — ✅ — — `DealsForecast` mostra ponderado + meta editável.
 - [ ] **Custom reports** — builder de relatório com dimensão/métrica/filtro. — ❌ — G.
 - [ ] **Multiple dashboards** — dashboards salvos por equipe/objetivo. — ❌ — M.
 - [ ] **Goals** — metas de receita/atividade por usuário/time. — ❌ — M.
