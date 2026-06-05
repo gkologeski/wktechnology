@@ -14,6 +14,7 @@ import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
+import { getRecordLayout, type LayoutSection, type RecordEntity } from "@/lib/record-layouts.functions";
 import { toE164, isEmail } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 
@@ -47,8 +48,10 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [showHist, setShowHist] = useState(false);
   const [showHs, setShowHs] = useState(false);
   const [customDefs, setCustomDefs] = useState<CustomProp[]>([]);
+  const [layoutSections, setLayoutSections] = useState<LayoutSection[] | null>(null);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
+  const getLayoutFn = useServerFn(getRecordLayout);
   const customEntity = entity as CustomEntity;
   const isCustomEntity = ["leads", "contacts", "companies", "deals"].includes(entity);
   const customValues = ((row as Record<string, unknown>).custom_fields ?? {}) as Record<string, unknown>;
@@ -59,6 +62,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       .then((d) => setCustomDefs(d.filter((p) => p.enabled)))
       .catch(() => { /* ignore */ });
   }, [customEntity, isCustomEntity, listCustomFn]);
+
+  useEffect(() => {
+    if (!isCustomEntity) return;
+    getLayoutFn({ data: { entity: customEntity as RecordEntity } })
+      .then((r) => setLayoutSections(r.sections))
+      .catch(() => { /* ignore */ });
+  }, [customEntity, isCustomEntity, getLayoutFn]);
 
   const saveCustom = async (key: string, val: unknown) => {
     try {
