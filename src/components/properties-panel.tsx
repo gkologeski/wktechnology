@@ -123,6 +123,57 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
   };
 
+  const renderField = (p: PropDef) => (
+    <div key={p.key} className="group">
+      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
+      {editing === p.key ? (
+        p.type === "company" ? (
+          <div className="space-y-2">
+            <CompanyPicker
+              value={{ id: null, name: value }}
+              onChange={(v: CompanyPickerValue) => setValue(v.name)}
+            />
+            <div className="flex gap-1">
+              <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-1">
+            <Input
+              autoFocus
+              type={p.type ?? "text"}
+              inputMode={p.type === "tel" ? "tel" : undefined}
+              value={value}
+              onChange={(e) =>
+                setValue(
+                  p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                  : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                  : e.target.value
+                )
+              }
+              onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+              className="h-8"
+            />
+            <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+          </div>
+        )
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-foreground truncate">
+            {p.type === "tel" && row[p.key]
+              ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+              : String(row[p.key] ?? "—")}
+          </span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
+            onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
+            <Pencil className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60 space-y-5">
       <div className="flex items-center justify-between">
@@ -131,55 +182,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <History className="h-3 w-3 mr-1" /> Histórico
         </Button>
       </div>
-      <div className="space-y-4">
-        {display.map((p) => (
-          <div key={p.key} className="group">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
-            {editing === p.key ? (
-              p.type === "company" ? (
-                <div className="space-y-2">
-                  <CompanyPicker
-                    value={{ id: null, name: value }}
-                    onChange={(v: CompanyPickerValue) => setValue(v.name)}
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-1">
-                  <Input
-                    autoFocus
-                    type={p.type ?? "text"}
-                    inputMode={p.type === "tel" ? "tel" : undefined}
-                    value={value}
-                    onChange={(e) =>
-                      setValue(
-                        p.type === "tel" ? sanitizePhoneInput(e.target.value)
-                        : p.type === "email" ? sanitizeEmailInput(e.target.value)
-                        : e.target.value
-                      )
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                    className="h-8"
-                  />
-                  <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-foreground truncate">
-                  {p.type === "tel" && row[p.key]
-                    ? (toE164(String(row[p.key])) ?? String(row[p.key]))
-                    : String(row[p.key] ?? "—")}
-                </span>
-                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
+      {useSections ? (
+        <div className="space-y-5">
+          {renderableSections.map((s) => (
+            <div key={s.title} className="space-y-3">
+              <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{s.title}</div>
+              <div className="space-y-4">{s.items.map(renderField)}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">{display.map(renderField)}</div>
+      )}
 
           </div>
         ))}
