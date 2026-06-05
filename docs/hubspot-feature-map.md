@@ -147,7 +147,7 @@
 
 - [ ] **Propriedades padrão por objeto** — campos do schema. — ✅ — — colunas das tabelas.
 - [ ] **Histórico de propriedade** — quem mudou, quando, de quê para quê. — ✅ — — tabela `property_history`.
-- [ ] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` (227 linhas) + armazenamento JSONB.
+- [x] **Propriedades customizadas pelo usuário** — adicionar campo via UI sem migration. — ✅ — — CRUD em `/settings/custom-properties` + armazenamento JSONB + render dinâmico no `properties-panel`.
 - [ ] **Grupos de propriedades** — agrupar campos no record sidebar. — 🟡 — P — `properties-panel` existe, falta agrupamento configurável e drag-and-drop.
 - [ ] **Propriedades calculadas** — `valor * qty`. — ❌ — M.
 - [ ] **Propriedades dependentes / condicionais** — mostrar B se A=X. — ❌ — M.
