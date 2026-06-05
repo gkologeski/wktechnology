@@ -195,10 +195,6 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         <div className="space-y-4">{display.map(renderField)}</div>
       )}
 
-          </div>
-        ))}
-      </div>
-
       {isCustomEntity && customDefs.length > 0 && (
         <div className="space-y-3 pt-2 border-t">
           {Object.entries(
