@@ -681,6 +681,40 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
                     )
                   )}
+                  {a.type === "call" && (a.duration_ms || a.disposition) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                      {a.disposition && (
+                        <Badge variant="secondary" className="text-[10px]">{a.disposition}</Badge>
+                      )}
+                      {a.duration_ms != null && a.duration_ms > 0 && (
+                        <span className="text-muted-foreground">
+                          {Math.floor(a.duration_ms / 60000)}m {Math.floor((a.duration_ms % 60000) / 1000)}s
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {a.type === "call" && a.recording_url && (
+                    <div className="mt-3">
+                      <audio
+                        controls
+                        preload="none"
+                        src={a.recording_url}
+                        className="w-full h-10"
+                      />
+                    </div>
+                  )}
+                  {a.type === "email" && (a.email_direction || a.email_status) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                      {a.email_direction && (
+                        <Badge variant="outline" className="text-[10px] capitalize">
+                          {a.email_direction === "inbound" ? "recebido" : a.email_direction === "outbound" ? "enviado" : a.email_direction}
+                        </Badge>
+                      )}
+                      {a.email_status && (
+                        <Badge variant="secondary" className="text-[10px] capitalize">{a.email_status}</Badge>
+                      )}
+                    </div>
+                  )}
                   {mens.length > 0 && (
                     <div className="mt-2 flex gap-1 flex-wrap">
                       {mens.map((id) => {
