@@ -449,7 +449,7 @@ function TasksHubspotView() {
       render: (t) => t.type ?? "—",
     },
   ];
-  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "owner", "created_at"];
+  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "related", "owner", "created_at"];
   const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TaskRow>({
     gridKey: "tasks",
     columns: taskColumns,
