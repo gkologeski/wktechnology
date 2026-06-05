@@ -87,6 +87,17 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
 
   const primary = props.filter((p) => p.primary);
   const display = primary.length ? primary : props.slice(0, 8);
+  const propsByKey = new Map(props.map((p) => [p.key, p]));
+  const renderableSections: { title: string; items: PropDef[] }[] = (() => {
+    if (!layoutSections || layoutSections.length === 0) return [];
+    return layoutSections
+      .map((s) => ({
+        title: s.title,
+        items: s.keys.map((k) => propsByKey.get(k)).filter((p): p is PropDef => !!p),
+      }))
+      .filter((s) => s.items.length > 0);
+  })();
+  const useSections = renderableSections.length > 0;
 
   const save = async (key: string) => {
     const def = props.find((p) => p.key === key);
