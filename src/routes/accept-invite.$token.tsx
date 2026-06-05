@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,12 +146,15 @@ function AcceptInviteTokenPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-pass">{info.user_exists ? "Defina/atualize sua senha" : "Crie uma senha"}</Label>
-                <Input id="ait-pass" type="password" required minLength={8}
+                <PasswordInput id="ait-pass" required minLength={8}
                   value={password} onChange={(e) => setPassword(e.target.value)} />
+                <p className="text-xs text-muted-foreground">
+                  Use no mínimo 8 caracteres. Recomendamos combinar letras maiúsculas, minúsculas, números e símbolos.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-pass2">Confirme a senha</Label>
-                <Input id="ait-pass2" type="password" required minLength={8}
+                <PasswordInput id="ait-pass2" required minLength={8}
                   value={confirm} onChange={(e) => setConfirm(e.target.value)} />
                 {confirm && password !== confirm && (
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
