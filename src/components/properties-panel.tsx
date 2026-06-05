@@ -14,6 +14,7 @@ import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
   listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
 } from "@/lib/custom-properties.functions";
+import { getRecordLayout, type LayoutSection, type RecordEntity } from "@/lib/record-layouts.functions";
 import { toE164, isEmail } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 
@@ -47,8 +48,10 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [showHist, setShowHist] = useState(false);
   const [showHs, setShowHs] = useState(false);
   const [customDefs, setCustomDefs] = useState<CustomProp[]>([]);
+  const [layoutSections, setLayoutSections] = useState<LayoutSection[] | null>(null);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
+  const getLayoutFn = useServerFn(getRecordLayout);
   const customEntity = entity as CustomEntity;
   const isCustomEntity = ["leads", "contacts", "companies", "deals"].includes(entity);
   const customValues = ((row as Record<string, unknown>).custom_fields ?? {}) as Record<string, unknown>;
@@ -59,6 +62,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       .then((d) => setCustomDefs(d.filter((p) => p.enabled)))
       .catch(() => { /* ignore */ });
   }, [customEntity, isCustomEntity, listCustomFn]);
+
+  useEffect(() => {
+    if (!isCustomEntity) return;
+    getLayoutFn({ data: { entity: customEntity as RecordEntity } })
+      .then((r) => setLayoutSections(r.sections))
+      .catch(() => { /* ignore */ });
+  }, [customEntity, isCustomEntity, getLayoutFn]);
 
   const saveCustom = async (key: string, val: unknown) => {
     try {
@@ -77,6 +87,17 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
 
   const primary = props.filter((p) => p.primary);
   const display = primary.length ? primary : props.slice(0, 8);
+  const propsByKey = new Map(props.map((p) => [p.key, p]));
+  const renderableSections: { title: string; items: PropDef[] }[] = (() => {
+    if (!layoutSections || layoutSections.length === 0) return [];
+    return layoutSections
+      .map((s) => ({
+        title: s.title,
+        items: s.keys.map((k) => propsByKey.get(k)).filter((p): p is PropDef => !!p),
+      }))
+      .filter((s) => s.items.length > 0);
+  })();
+  const useSections = renderableSections.length > 0;
 
   const save = async (key: string) => {
     const def = props.find((p) => p.key === key);
@@ -102,6 +123,57 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
   };
 
+  const renderField = (p: PropDef) => (
+    <div key={p.key} className="group">
+      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
+      {editing === p.key ? (
+        p.type === "company" ? (
+          <div className="space-y-2">
+            <CompanyPicker
+              value={{ id: null, name: value }}
+              onChange={(v: CompanyPickerValue) => setValue(v.name)}
+            />
+            <div className="flex gap-1">
+              <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-1">
+            <Input
+              autoFocus
+              type={p.type ?? "text"}
+              inputMode={p.type === "tel" ? "tel" : undefined}
+              value={value}
+              onChange={(e) =>
+                setValue(
+                  p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                  : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                  : e.target.value
+                )
+              }
+              onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+              className="h-8"
+            />
+            <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+          </div>
+        )
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-foreground truncate">
+            {p.type === "tel" && row[p.key]
+              ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+              : String(row[p.key] ?? "—")}
+          </span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
+            onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
+            <Pencil className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60 space-y-5">
       <div className="flex items-center justify-between">
@@ -110,59 +182,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <History className="h-3 w-3 mr-1" /> Histórico
         </Button>
       </div>
-      <div className="space-y-4">
-        {display.map((p) => (
-          <div key={p.key} className="group">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
-            {editing === p.key ? (
-              p.type === "company" ? (
-                <div className="space-y-2">
-                  <CompanyPicker
-                    value={{ id: null, name: value }}
-                    onChange={(v: CompanyPickerValue) => setValue(v.name)}
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-1">
-                  <Input
-                    autoFocus
-                    type={p.type ?? "text"}
-                    inputMode={p.type === "tel" ? "tel" : undefined}
-                    value={value}
-                    onChange={(e) =>
-                      setValue(
-                        p.type === "tel" ? sanitizePhoneInput(e.target.value)
-                        : p.type === "email" ? sanitizeEmailInput(e.target.value)
-                        : e.target.value
-                      )
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                    className="h-8"
-                  />
-                  <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-foreground truncate">
-                  {p.type === "tel" && row[p.key]
-                    ? (toE164(String(row[p.key])) ?? String(row[p.key]))
-                    : String(row[p.key] ?? "—")}
-                </span>
-                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-
-          </div>
-        ))}
-      </div>
+      {useSections ? (
+        <div className="space-y-5">
+          {renderableSections.map((s) => (
+            <div key={s.title} className="space-y-3">
+              <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{s.title}</div>
+              <div className="space-y-4">{s.items.map(renderField)}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">{display.map(renderField)}</div>
+      )}
 
       {isCustomEntity && customDefs.length > 0 && (
         <div className="space-y-3 pt-2 border-t">
