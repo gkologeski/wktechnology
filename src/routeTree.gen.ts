@@ -47,6 +47,7 @@ import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
+import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
@@ -329,6 +330,12 @@ const AuthenticatedSettingsWebhooksRoute =
   AuthenticatedSettingsWebhooksRouteImport.update({
     id: '/webhooks',
     path: '/webhooks',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsUserGroupsRoute =
+  AuthenticatedSettingsUserGroupsRouteImport.update({
+    id: '/user-groups',
+    path: '/user-groups',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsTeamsRoute =
@@ -911,6 +918,7 @@ export interface FileRoutesByFullPath {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1032,6 +1040,7 @@ export interface FileRoutesByTo {
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1158,6 +1167,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
+  '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1284,6 +1294,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/user-groups'
     | '/settings/webhooks'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1405,6 +1416,7 @@ export interface FileRouteTypes {
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
+    | '/settings/user-groups'
     | '/settings/webhooks'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1530,6 +1542,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
+    | '/_authenticated/settings/user-groups'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
@@ -1887,6 +1900,13 @@ declare module '@tanstack/react-router' {
       path: '/webhooks'
       fullPath: '/settings/webhooks'
       preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/user-groups': {
+      id: '/_authenticated/settings/user-groups'
+      path: '/user-groups'
+      fullPath: '/settings/user-groups'
+      preLoaderRoute: typeof AuthenticatedSettingsUserGroupsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/teams': {
@@ -2610,6 +2630,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
+  AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -2660,6 +2681,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsSubscriptionsRoute,
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
+  AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
