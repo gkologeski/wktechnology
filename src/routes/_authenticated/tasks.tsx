@@ -429,12 +429,19 @@ function TasksHubspotView() {
     {
       key: "owner",
       label: "Responsável",
-      render: (t) =>
-        t.owner_id ? (
-          <InitialsAvatar text={t.owner_id.slice(0, 2).toUpperCase()} seed={t.owner_id} size={6} />
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
+      render: (t) => {
+        if (!t.owner_id) return <span className="text-muted-foreground">—</span>;
+        const name = ownersMap[t.owner_id] || "—";
+        const initials = name && name !== "—"
+          ? name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")
+          : t.owner_id.slice(0, 2).toUpperCase();
+        return (
+          <div className="flex items-center gap-2" title={name}>
+            <InitialsAvatar text={initials} seed={t.owner_id} size={6} />
+            <span className="truncate text-sm">{name}</span>
+          </div>
+        );
+      },
     },
     {
       key: "created_at",
