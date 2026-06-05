@@ -139,16 +139,23 @@ function TasksHubspotView() {
       const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
       if (activeView === "mine_open" && user?.id) {
-        q = q.eq("owner_id", user.id).eq("completed", false);
+        q = q
+          .eq("owner_id", user.id)
+          .eq("completed", false)
+          .neq("task_status", "COMPLETED");
       } else if (activeView === "due_today") {
         q = q
           .eq("completed", false)
+          .neq("task_status", "COMPLETED")
           .gte("due_date", startOfDay.toISOString())
           .lt("due_date", endOfDay.toISOString());
       } else if (activeView === "overdue") {
-        q = q.eq("completed", false).lt("due_date", startOfDay.toISOString());
+        q = q
+          .eq("completed", false)
+          .neq("task_status", "COMPLETED")
+          .lt("due_date", startOfDay.toISOString());
       } else if (activeView === "completed") {
-        q = q.eq("completed", true);
+        q = q.or("completed.eq.true,task_status.eq.COMPLETED");
       }
 
       if (filters.statuses.length) q = q.in("task_status", filters.statuses);
@@ -181,6 +188,42 @@ function TasksHubspotView() {
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
+
+  const { data: relatedMap } = useQuery({
+    queryKey: [
+      "tasks",
+      "related",
+      rows.map((r) => r.id).join(","),
+    ],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const contactIds = [...new Set(rows.map((r) => r.related_contact_id).filter(Boolean) as string[])];
+      const companyIds = [...new Set(rows.map((r) => r.related_company_id).filter(Boolean) as string[])];
+      const dealIds = [...new Set(rows.map((r) => r.related_deal_id).filter(Boolean) as string[])];
+      const leadIds = [...new Set(rows.map((r) => r.related_lead_id).filter(Boolean) as string[])];
+      const [c, co, d, l] = await Promise.all([
+        contactIds.length
+          ? supabase.from("contacts").select("id, first_name, last_name").in("id", contactIds)
+          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null }[] }),
+        companyIds.length
+          ? supabase.from("companies").select("id, name").in("id", companyIds)
+          : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
+        dealIds.length
+          ? supabase.from("deals").select("id, name").in("id", dealIds)
+          : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
+        leadIds.length
+          ? supabase.from("leads").select("id, first_name, last_name, company_name").in("id", leadIds)
+          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null; company_name: string | null }[] }),
+      ]);
+      return {
+        contacts: Object.fromEntries((c.data ?? []).map((x) => [x.id, x])),
+        companies: Object.fromEntries((co.data ?? []).map((x) => [x.id, x])),
+        deals: Object.fromEntries((d.data ?? []).map((x) => [x.id, x])),
+        leads: Object.fromEntries((l.data ?? []).map((x) => [x.id, x])),
+      };
+    },
+  });
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
@@ -316,6 +359,63 @@ function TasksHubspotView() {
       },
     },
     {
+      key: "related",
+      label: "Associado",
+      render: (t) => {
+        const items: { label: string; to: string; params: Record<string, string> }[] = [];
+        if (t.related_contact_id) {
+          const c = relatedMap?.contacts?.[t.related_contact_id];
+          const name = c ? [c.first_name, c.last_name].filter(Boolean).join(" ").trim() : "";
+          items.push({
+            label: `Contato: ${name || "—"}`,
+            to: "/contacts/$id",
+            params: { id: t.related_contact_id },
+          });
+        }
+        if (t.related_company_id) {
+          const c = relatedMap?.companies?.[t.related_company_id];
+          items.push({
+            label: `Empresa: ${c?.name ?? "—"}`,
+            to: "/companies/$id",
+            params: { id: t.related_company_id },
+          });
+        }
+        if (t.related_deal_id) {
+          const d = relatedMap?.deals?.[t.related_deal_id];
+          items.push({
+            label: `Negócio: ${d?.name ?? "—"}`,
+            to: "/deals/$id",
+            params: { id: t.related_deal_id },
+          });
+        }
+        if (t.related_lead_id) {
+          const l = relatedMap?.leads?.[t.related_lead_id];
+          const name = l ? [l.first_name, l.last_name].filter(Boolean).join(" ").trim() : "";
+          items.push({
+            label: `Lead: ${name || l?.company_name || "—"}`,
+            to: "/leads/$id",
+            params: { id: t.related_lead_id },
+          });
+        }
+        if (items.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex flex-col gap-0.5">
+            {items.map((it, idx) => (
+              <Link
+                key={idx}
+                to={it.to}
+                params={it.params}
+                className="truncate text-xs text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {it.label}
+              </Link>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       key: "owner",
       label: "Responsável",
       render: (t) =>
@@ -349,7 +449,7 @@ function TasksHubspotView() {
       render: (t) => t.type ?? "—",
     },
   ];
-  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "owner", "created_at"];
+  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "related", "owner", "created_at"];
   const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TaskRow>({
     gridKey: "tasks",
     columns: taskColumns,
