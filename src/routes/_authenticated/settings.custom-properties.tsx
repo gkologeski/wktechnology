@@ -194,6 +194,16 @@ function PropertyDialog({
               placeholder="ex: budget_estimate" disabled={!!editing.id} />
           </div>
         </div>
+        <div className="space-y-1">
+          <Label>Grupo (opcional)</Label>
+          <Input
+            list="cp-groups"
+            value={(form as { group_name?: string | null }).group_name ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, group_name: e.target.value }))}
+            placeholder="Ex.: Comercial, Financeiro, Operacional"
+          />
+          <p className="text-[11px] text-muted-foreground">Propriedades do mesmo grupo aparecem juntas na ficha do registro.</p>
+        </div>
         {needOptions && (
           <div className="space-y-1">
             <Label>Opções (uma por linha)</Label>
