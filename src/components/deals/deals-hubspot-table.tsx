@@ -230,16 +230,19 @@ export function DealsHubspotTable({
       {
         key: "owner",
         label: "Responsável",
-        render: (d) =>
-          d.owner_id ? (
-            <InitialsAvatar
-              text={(lookups.owners.get(d.owner_id)?.slice(0, 2) ?? d.owner_id.slice(0, 2)).toUpperCase()}
-              seed={d.owner_id}
-              size={6}
-            />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+        render: (d) => {
+          if (!d.owner_id) return <span className="text-muted-foreground">—</span>;
+          const name = lookups.owners.get(d.owner_id) ?? "—";
+          const initials = name && name !== "—"
+            ? name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")
+            : d.owner_id.slice(0, 2).toUpperCase();
+          return (
+            <div className="flex items-center gap-2" title={name}>
+              <InitialsAvatar text={initials} seed={d.owner_id} size={6} />
+              <span className="truncate text-sm">{name}</span>
+            </div>
+          );
+        },
       },
       {
         key: "company",
