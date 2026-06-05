@@ -72,6 +72,19 @@ function applyCondition(q: any, c: FilterCondition): any {
   }
 }
 
+// PostgREST .or()/and() values must be escaped when they contain reserved
+// chars: , ( ) . " : whitespace. We wrap in double quotes and escape internal
+// quotes/backslashes. null/booleans/numbers pass through unquoted.
+function escapeValue(v: unknown): string {
+  if (v === null || v === undefined) return "null";
+  if (typeof v === "boolean" || typeof v === "number") return String(v);
+  const s = String(v);
+  if (/[,()."\s:]/.test(s)) {
+    return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  }
+  return s;
+}
+
 // Recursively serialize any FilterNode into PostgREST or()/and() expression syntax.
 function nodeToOrString(n: FilterNode): string | null {
   if (n.type === "condition") return conditionToOrString(n);
@@ -84,18 +97,18 @@ function nodeToOrString(n: FilterNode): string | null {
 
 function conditionToOrString(c: FilterCondition): string | null {
   switch (c.op) {
-    case "eq": return `${c.field}.eq.${c.value}`;
-    case "neq": return `${c.field}.neq.${c.value}`;
-    case "gt": return `${c.field}.gt.${c.value}`;
-    case "gte": return `${c.field}.gte.${c.value}`;
-    case "lt": return `${c.field}.lt.${c.value}`;
-    case "lte": return `${c.field}.lte.${c.value}`;
-    case "ilike": return `${c.field}.ilike.%${c.value}%`;
+    case "eq": return `${c.field}.eq.${escapeValue(c.value)}`;
+    case "neq": return `${c.field}.neq.${escapeValue(c.value)}`;
+    case "gt": return `${c.field}.gt.${escapeValue(c.value)}`;
+    case "gte": return `${c.field}.gte.${escapeValue(c.value)}`;
+    case "lt": return `${c.field}.lt.${escapeValue(c.value)}`;
+    case "lte": return `${c.field}.lte.${escapeValue(c.value)}`;
+    case "ilike": return `${c.field}.ilike.${escapeValue(`%${c.value}%`)}`;
     case "is_null": return `${c.field}.is.null`;
     case "is_not_null": return `${c.field}.not.is.null`;
     case "in": {
       const vals = Array.isArray(c.value) ? c.value : [c.value];
-      return `${c.field}.in.(${vals.join(",")})`;
+      return `${c.field}.in.(${vals.map(escapeValue).join(",")})`;
     }
     default: return null;
   }
