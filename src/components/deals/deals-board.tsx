@@ -85,6 +85,7 @@ export function DealsBoard({
                   companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
                   contactName={d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined}
                   ownerName={lookups.owners.get(d.owner_id) ?? "—"}
+                  fields={pipeline.config?.card_fields}
                   onClick={() => onOpen(d)}
                 />
               ))}
