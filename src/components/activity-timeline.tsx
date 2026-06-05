@@ -269,7 +269,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     const attachments = await uploadFiles();
     const autoLinks = await resolveAutoLinks();
     const payload: Record<string, unknown> = {
-      owner_id: user.id,
+      owner_id: type === "task" && assigneeId ? assigneeId : user.id,
+      created_by: user.id,
       type,
       subject: subject || null,
       body: body || null,
@@ -280,7 +281,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     };
     const { error } = await supabase.from("activities").insert(payload as never);
     if (error) return toast.error(error.message);
-    setSubject(""); setBody(""); setDueDate(""); setPendingFiles([]); setMentions([]);
+    setSubject(""); setBody(""); setDueDate(""); setAssigneeId(""); setPendingFiles([]); setMentions([]);
     void load();
   };
 
