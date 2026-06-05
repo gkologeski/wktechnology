@@ -273,20 +273,15 @@
 
 ## O que falta para zerar os parciais (🟡 → ✅)
 
-Lista enxuta dos itens **realmente** parciais após a auditoria. Todos pequenos a médios:
+Após Release 4, restam estes parciais (todos pequenos/médios):
 
 | # | Item | Esforço | Onde mexer |
 |---|---|---|---|
-| 1 | Companies parent/child + UI de árvore | M | migration `companies.parent_company_id` self-FK + componente em `companies/$id.tsx` |
-| 2 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
-| 3 | Card layout por pipeline | P | adicionar `card_fields` em `pipelines.config` + editor em settings de pipeline |
-| 4 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
-| 5 | AI summary auto-trigger + badge | P | trigger pós-insert em `activities` → enqueue → badge no `activity-timeline` |
-| 6 | Apollo / Lusha UX polimento | P | preview de campos antes do commit + log em `enrichment_jobs` |
-| 7 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
-| 8 | Activities — `recording_url` + email thread | M | coluna em `activities` + player; agrupamento por `email_threads` no timeline |
-| 9 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
-| 10 | Teams UI | P | tela CRUD sobre `team_members` |
+| 1 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
+| 2 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
+| 3 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
+| 4 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
+| 5 | Teams UI | P | tela CRUD sobre `team_members` |
 
 ## Próximos grandes (❌ → ✅) por prioridade de negócio
 
