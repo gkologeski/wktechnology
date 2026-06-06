@@ -119,7 +119,7 @@ function isEntitySource(s: AudienceSource): s is EntitySource {
   return s !== "manual" && s !== "segment";
 }
 
-function debounce<T>(value: T, ms: number): T {
+function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setV(value), ms);
