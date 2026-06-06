@@ -145,7 +145,7 @@ function VoiceAgentPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione uma voz" /></SelectTrigger>
                 <SelectContent>
                   {allVoices.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>{v.name} {v.category !== "curated" ? `· ${v.category}` : ""}</SelectItem>
+                    <SelectItem key={v.id} value={v.id}>{v.name} {v.accent ? `· ${v.accent}` : `· ${v.category}`}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
