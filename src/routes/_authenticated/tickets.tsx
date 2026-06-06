@@ -64,6 +64,7 @@ function TicketsPage() {
 
 function TicketsIndex() {
   const { user } = useAuth();
+  const { can } = useMyTools();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);

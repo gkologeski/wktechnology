@@ -100,6 +100,7 @@ function CompaniesPage() {
 
 function CompaniesHubspotView() {
   const { user } = useAuth();
+  const { can } = useMyTools();
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();

@@ -109,6 +109,7 @@ function ContactsPage() {
 
 function ContactsHubspotView() {
   const { user } = useAuth();
+  const { can } = useMyTools();
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();
