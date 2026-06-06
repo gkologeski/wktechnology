@@ -186,9 +186,16 @@ function CampaignDetailPage() {
           </div>
 
           <div>
-            <Label>IDs de leads (um por linha)</Label>
-            <Textarea rows={4} value={leadIdsText} onChange={(e) => setLeadIdsText(e.target.value)} placeholder="uuid de lead" />
-            <p className="text-xs text-muted-foreground mt-1">Cole os UUIDs dos leads a serem chamados. Ao iniciar, cada lead vira uma chamada na fila.</p>
+            <Label>Público da campanha</Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
+              Combine filtros em diferentes entidades para gerar a lista de leads. Em modo dinâmico, a lista é recalculada toda vez que a campanha é iniciada.
+            </p>
+            <AudienceBuilder
+              mode={audienceMode}
+              rules={audienceRules}
+              onChange={setAudienceRules}
+              onModeChange={setAudienceMode}
+            />
           </div>
         </CardContent>
       </Card>
