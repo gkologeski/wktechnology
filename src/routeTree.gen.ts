@@ -62,6 +62,7 @@ import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsRecordLayoutsRouteImport } from './routes/_authenticated/settings.record-layouts'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
+import { Route as AuthenticatedSettingsPropertyGroupsRouteImport } from './routes/_authenticated/settings.property-groups'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
@@ -422,6 +423,12 @@ const AuthenticatedSettingsProspectingRoute =
   AuthenticatedSettingsProspectingRouteImport.update({
     id: '/prospecting',
     path: '/prospecting',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPropertyGroupsRoute =
+  AuthenticatedSettingsPropertyGroupsRouteImport.update({
+    id: '/property-groups',
+    path: '/property-groups',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsProductsRoute =
@@ -920,6 +927,7 @@ export interface FileRoutesByFullPath {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
@@ -1045,6 +1053,7 @@ export interface FileRoutesByTo {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
@@ -1173,6 +1182,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/_authenticated/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
@@ -1302,6 +1312,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/property-groups'
     | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/record-layouts'
@@ -1427,6 +1438,7 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/products'
+    | '/settings/property-groups'
     | '/settings/prospecting'
     | '/settings/quotes'
     | '/settings/record-layouts'
@@ -1554,6 +1566,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/products'
+    | '/_authenticated/settings/property-groups'
     | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/record-layouts'
@@ -2031,6 +2044,13 @@ declare module '@tanstack/react-router' {
       path: '/prospecting'
       fullPath: '/settings/prospecting'
       preLoaderRoute: typeof AuthenticatedSettingsProspectingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/property-groups': {
+      id: '/_authenticated/settings/property-groups'
+      path: '/property-groups'
+      fullPath: '/settings/property-groups'
+      preLoaderRoute: typeof AuthenticatedSettingsPropertyGroupsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/products': {
@@ -2658,6 +2678,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
+  AuthenticatedSettingsPropertyGroupsRoute: typeof AuthenticatedSettingsPropertyGroupsRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecordLayoutsRoute: typeof AuthenticatedSettingsRecordLayoutsRoute
@@ -2710,6 +2731,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
+  AuthenticatedSettingsPropertyGroupsRoute:
+    AuthenticatedSettingsPropertyGroupsRoute,
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecordLayoutsRoute:
@@ -2930,13 +2953,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
