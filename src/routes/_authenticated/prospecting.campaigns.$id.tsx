@@ -12,7 +12,8 @@ import { ArrowLeft, Plus, Trash2, Save, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCampaign, upsertCampaign, listCampaignAttempts, setCampaignStatus,
-  type Campaign, type Variant, type Attempt,
+  auditCampaignQueueability,
+  type Campaign, type Variant, type Attempt, type LeadAudit,
 } from "@/lib/prospecting-campaigns.functions";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
