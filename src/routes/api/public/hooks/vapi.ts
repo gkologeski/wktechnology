@@ -149,7 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, campaign_id, lead_id, summary")
+          .select("id, workspace_id, campaign_id, lead_id, summary, attempt_number")
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);
@@ -167,7 +167,15 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           });
         }
 
-        await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
+        // Re-enfileira se o motivo não indica conversa real (silence, no-answer, error...).
+        let requeued = false;
+        const isFinal = updates.status === "completed" || ["failed", "no_answer", "busy"].includes(String(updates.status ?? ""));
+        if (isFinal) {
+          requeued = await maybeRequeueAttempt(row, (updates.ended_reason as string | undefined) ?? null);
+        }
+        if (!requeued) {
+          await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
+        }
 
         return Response.json({ ok: true });
       },
