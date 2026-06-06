@@ -39,6 +39,7 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   contacts: "Contatos",
   companies: "Empresas",
   deals: "Negócios",
+  tickets: "Tickets",
 };
 
 export const EVENT_LABELS: Record<WorkflowEventType, string> = {
@@ -63,6 +64,7 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
   contacts: ["first_name", "last_name", "email", "phone", "job_title", "company_name", "label", "score", "owner_id"],
   companies: ["name", "domain", "industry", "size", "city", "state", "country", "is_target_account", "owner_id"],
   deals: ["name", "value", "currency", "stage", "stage_id", "pipeline_id", "expected_close_date", "owner_id"],
+  tickets: ["subject", "description", "status", "priority", "source", "assignee_id", "pipeline_id", "contact_id", "company_id", "deal_id", "due_at"],
 };
 
 export const FILTER_OPS: Array<{ value: FilterOp; label: string }> = [
