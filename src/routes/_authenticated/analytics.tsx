@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick } from "lucide-react";
+import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/analytics.functions";
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
 import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
+import { getSlaSummary, getSlaOffenders } from "@/lib/sla-reports.functions";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell, LineChart, Line, Legend,
 } from "recharts";
@@ -82,6 +83,7 @@ function AnalyticsPage() {
           <TabsTrigger value="cohort"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort</TabsTrigger>
           <TabsTrigger value="sentiment"><Smile className="h-3.5 w-3.5 mr-1" /> Sentimento</TabsTrigger>
           <TabsTrigger value="emails"><Mail className="h-3.5 w-3.5 mr-1" /> E-mails 1:1</TabsTrigger>
+          <TabsTrigger value="sla"><Timer className="h-3.5 w-3.5 mr-1" /> SLA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
