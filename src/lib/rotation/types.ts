@@ -1,7 +1,7 @@
 // Tipos da Distribuição (rotação) de Leads e Negócios.
 import type { WorkflowFilter } from "@/lib/workflows/types";
 
-export type RotationEntity = "leads" | "deals";
+export type RotationEntity = "leads" | "deals" | "tickets";
 export type RotationStrategy = "round_robin" | "weighted";
 
 export interface RotationAssignee {
