@@ -84,7 +84,6 @@ function CampaignDetailPage() {
   if (!campaign) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
 
   const save = async () => {
-    const leadIds = leadIdsText.split(/\s+/).map((s) => s.trim()).filter(Boolean);
     try {
       await saveFn({ data: {
         id: campaign.id,
@@ -94,9 +93,11 @@ function CampaignDetailPage() {
         retry_interval_minutes: campaign.retry_interval_minutes,
         source_type: "manual",
         source_ref: null,
-        lead_ids: leadIds,
+        lead_ids: [],
         dialing_window: campaign.dialing_window,
         variants: variants.filter((v) => v.script_id),
+        audience_mode: audienceMode,
+        audience_rules: audienceRules,
       }});
       toast.success("Salvo");
       refresh();
