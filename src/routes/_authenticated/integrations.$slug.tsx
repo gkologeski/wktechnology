@@ -25,6 +25,7 @@ import {
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 import { ImportTimeline } from "@/components/hubspot/import-timeline";
+import { HubspotTwoWaySync } from "@/components/hubspot/two-way-sync";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
