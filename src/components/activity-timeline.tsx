@@ -21,6 +21,7 @@ import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
+import { EmailEngagementCard } from "@/components/email/email-engagement-card";
 
 
 const ICONS: Record<ActivityType, ReactNode> = {
