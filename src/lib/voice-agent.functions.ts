@@ -133,7 +133,7 @@ export const listElevenLabsVoices = createServerFn({ method: "POST" })
     let shared: ElevenVoice[] = [];
     try {
       const sharedRes = await fetch(
-        `${ELEVEN_BASE}/v1/shared-voices?language=pt&page_size=100&featured=true`,
+        `${ELEVEN_BASE}/v1/shared-voices?language=pt&page_size=100`,
         { headers: { "xi-api-key": apiKey } },
       );
       if (sharedRes.ok) {
