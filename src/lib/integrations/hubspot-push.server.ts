@@ -155,7 +155,7 @@ export async function pushEntity(
     });
   }
 
-  for (const r of rows as Array<Record<string, unknown>>) {
+  for (const r of rows as unknown as Array<Record<string, unknown>>) {
     const localId = r.id as string;
     const localUpdated = (r.updated_at as string) ?? new Date().toISOString();
     const state = stateByLocal.get(localId);
