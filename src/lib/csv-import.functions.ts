@@ -165,6 +165,7 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     strategy: strategySchema,
   }).parse(i))
   .handler(async ({ data, context }) => {
+    await requireTool(context.userId, "import");
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey, strategy } = data;
 
