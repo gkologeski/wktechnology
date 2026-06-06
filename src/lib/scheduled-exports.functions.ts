@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computeNextRun, runExportNow } from "@/lib/scheduled-exports/engine.server";
+import { requireTool } from "@/lib/permissions.server";
 
 const FrequencySchema = z.enum(["daily", "weekly", "monthly"]);
 
