@@ -75,8 +75,9 @@ function UnifiedInboxPage() {
         .order("created_at", { ascending: false });
       const map = new Map<string, { from_email: string | null; subject: string | null }>();
       for (const m of data ?? []) {
+        if (!m.thread_id) continue;
         if (!map.has(m.thread_id) && m.direction === "inbound") {
-          map.set(m.thread_id, { from_email: m.from_email, subject: m.subject });
+          map.set(m.thread_id, { from_email: m.from_email ?? null, subject: m.subject ?? null });
         }
       }
       return map;
