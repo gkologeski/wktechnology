@@ -226,17 +226,52 @@ function CampaignDetailPage() {
           {attempts.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma chamada.</p>
           ) : (
-            <div className="space-y-2">
-              {attempts.slice(0, 50).map((a) => (
-                <div key={a.id} className="flex items-center justify-between border-b pb-2 text-sm">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium">{scriptName(a.script_id)} · <span className="text-xs text-muted-foreground">{a.status}</span></div>
-                    {a.summary && <div className="text-xs text-muted-foreground line-clamp-1">{a.summary}</div>}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{a.duration_seconds ?? 0}s</div>
-                  {a.recording_url && <a className="text-xs text-primary underline ml-2" href={a.recording_url} target="_blank" rel="noreferrer">▶</a>}
-                </div>
-              ))}
+            <div className="space-y-3">
+              {attempts.slice(0, 50).map((a) => {
+                const failed = a.status === "failed" || !!a.ended_reason;
+                return (
+                  <details key={a.id} className="border rounded-md p-2 text-sm">
+                    <summary className="cursor-pointer flex items-center gap-2">
+                      <Badge variant={failed ? "destructive" : a.status === "completed" ? "default" : "outline"}>
+                        {a.status}
+                      </Badge>
+                      <span className="font-medium">{scriptName(a.script_id)}</span>
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {a.ended_reason ?? a.summary ?? a.vapi_call_id ?? "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{a.duration_seconds ?? 0}s</span>
+                      {a.recording_url && (
+                        <a className="text-xs text-primary underline" href={a.recording_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>▶</a>
+                      )}
+                    </summary>
+                    <div className="mt-2 space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><span className="text-muted-foreground">Vapi call ID:</span> <code>{a.vapi_call_id ?? "—"}</code></div>
+                        <div><span className="text-muted-foreground">Criada em:</span> {new Date(a.created_at).toLocaleString()}</div>
+                        <div className="col-span-2"><span className="text-muted-foreground">Ended reason:</span> {a.ended_reason ?? "—"}</div>
+                      </div>
+                      {a.summary && (
+                        <div>
+                          <div className="text-muted-foreground mb-1">Resumo</div>
+                          <div className="whitespace-pre-wrap">{a.summary}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-muted-foreground mb-1">Request enviado para Vapi</div>
+                        <pre className="bg-muted rounded p-2 overflow-x-auto max-h-64 text-[11px]">
+                          {a.vapi_request ? JSON.stringify(a.vapi_request, null, 2) : "—"}
+                        </pre>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground mb-1">Response / erro da Vapi</div>
+                        <pre className="bg-muted rounded p-2 overflow-x-auto max-h-64 text-[11px]">
+                          {a.vapi_response ? JSON.stringify(a.vapi_response, null, 2) : "—"}
+                        </pre>
+                      </div>
+                    </div>
+                  </details>
+                );
+              })}
             </div>
           )}
         </CardContent>
