@@ -1,4 +1,4 @@
-export type WorkflowEntity = "leads" | "contacts" | "companies" | "deals";
+export type WorkflowEntity = "leads" | "contacts" | "companies" | "deals" | "tickets";
 export type WorkflowEventType = "created" | "updated" | "stage_changed";
 
 export type FilterOp =
