@@ -37,6 +37,17 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           return Response.json({ ok: true }, { headers: cors });
         }
 
+        // time-to-fill: bots submit forms in milliseconds; require at least 1.5s
+        const ts = Number(body._ts);
+        if (Number.isFinite(ts) && ts > 0) {
+          const elapsed = Date.now() - ts;
+          if (elapsed < 1500) {
+            return Response.json({ ok: true }, { headers: cors });
+          }
+        }
+
+        const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
+
         const { data: form, error: ferr } = await supabaseAdmin
           .from("forms")
           .select("id, owner_id, target, fields, active, redirect_url, success_message, submit_count")
@@ -44,6 +55,21 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
         if (!form || !form.active) return Response.json({ error: "Not found" }, { status: 404, headers: cors });
+
+        // rate limit: max 5 submissions per IP per form in 10 minutes
+        if (ip) {
+          const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+          const { count } = await supabaseAdmin
+            .from("form_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("form_id", form.id)
+            .eq("ip", ip)
+            .gte("created_at", since);
+          if ((count ?? 0) >= 5) {
+            return Response.json({ error: "Too many submissions, try again later." }, { status: 429, headers: cors });
+          }
+        }
+
 
         const fields = (form.fields as unknown as FormField[]) ?? [];
         const clean: Record<string, string> = {};
@@ -56,7 +82,6 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           if (v) clean[f.key] = v;
         }
 
-        const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
         const ua = request.headers.get("user-agent");
         const referer = request.headers.get("referer");
 
