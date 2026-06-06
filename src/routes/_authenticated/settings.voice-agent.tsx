@@ -11,7 +11,7 @@ import { Loader2, Play, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   getVoiceAgentSettings, saveVoiceAgentSettings,
-  listVapiPhoneNumbers, listElevenLabsVoices, previewVoice, CURATED_VOICES,
+  listVapiPhoneNumbers, listElevenLabsVoices, previewVoice,
 } from "@/lib/voice-agent.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/voice-agent")({
