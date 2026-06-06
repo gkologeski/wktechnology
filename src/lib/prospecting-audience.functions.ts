@@ -10,13 +10,15 @@ import { applyFilters, type FilterGroup } from "@/lib/filters";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabaseAdmin as any;
 
-export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual";
+export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual" | "segment";
 
 export type AudienceRule = {
   source: AudienceSource;
   filter?: FilterGroup;
   // só usado quando source = "manual"
   lead_ids?: string[];
+  // só usado quando source = "segment"
+  segment_id?: string;
 };
 
 const FilterConditionSchema: z.ZodType = z.object({
@@ -33,9 +35,10 @@ const FilterGroupSchema: z.ZodType = z.lazy(() =>
   }),
 );
 const AudienceRuleSchema = z.object({
-  source: z.enum(["leads", "contacts", "companies", "deals", "manual"]),
+  source: z.enum(["leads", "contacts", "companies", "deals", "manual", "segment"]),
   filter: FilterGroupSchema.optional(),
   lead_ids: z.array(z.string().uuid()).max(10000).optional(),
+  segment_id: z.string().uuid().optional(),
 });
 
 export const AudienceRulesSchema = z.array(AudienceRuleSchema).max(20);
@@ -190,6 +193,106 @@ export async function resolveAudienceServer(
         }
       }
       perRule.push({ source: "deals", matched: dealRows.length, resolved_leads: resolvedCount });
+      continue;
+    }
+
+    if (rule.source === "segment") {
+      const segmentId = rule.segment_id;
+      if (!segmentId) {
+        perRule.push({ source: "segment", matched: 0, resolved_leads: 0 });
+        continue;
+      }
+      const { data: seg } = await sb
+        .from("segments")
+        .select("id, entity")
+        .eq("id", segmentId)
+        .maybeSingle();
+      if (!seg) {
+        perRule.push({ source: "segment", matched: 0, resolved_leads: 0 });
+        continue;
+      }
+      const { data: members } = await sb
+        .from("segment_members")
+        .select("entity_id")
+        .eq("segment_id", segmentId)
+        .limit(20000);
+      const entityIds = ((members ?? []) as Array<{ entity_id: string }>).map((m) => m.entity_id);
+      if (entityIds.length === 0) {
+        perRule.push({ source: "segment", matched: 0, resolved_leads: 0 });
+        continue;
+      }
+      let resolvedCount = 0;
+      if (seg.entity === "leads") {
+        const { data: leads } = await sb
+          .from("leads")
+          .select("id, first_name, last_name, company_name, phone")
+          .eq("workspace_id", workspaceId)
+          .in("id", entityIds);
+        const arr = (leads ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>;
+        for (const l of arr) {
+          if (!collected.has(l.id)) {
+            collected.set(l.id, {
+              name: [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8),
+              phone: l.phone,
+              source: "segment",
+            });
+          }
+        }
+        resolvedCount = arr.length;
+      } else if (seg.entity === "contacts") {
+        const { data: contacts } = await sb
+          .from("contacts")
+          .select("id, first_name, last_name, email, phone")
+          .eq("workspace_id", workspaceId)
+          .in("id", entityIds)
+          .limit(20000);
+        const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+        const resolved = await resolveContactsToLeads(workspaceId, arr);
+        for (const r of resolved) {
+          if (!collected.has(r.lead_id)) {
+            collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
+          }
+        }
+        resolvedCount = resolved.length;
+      } else if (seg.entity === "companies") {
+        const { data: contacts } = await sb
+          .from("contacts")
+          .select("id, first_name, last_name, email, phone")
+          .eq("workspace_id", workspaceId)
+          .in("company_id", entityIds)
+          .limit(20000);
+        const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+        const resolved = await resolveContactsToLeads(workspaceId, arr);
+        for (const r of resolved) {
+          if (!collected.has(r.lead_id)) {
+            collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
+          }
+        }
+        resolvedCount = resolved.length;
+      } else if (seg.entity === "deals") {
+        const { data: dc } = await sb.from("deal_contacts").select("contact_id").in("deal_id", entityIds);
+        const { data: deals } = await sb.from("deals").select("primary_contact_id").in("id", entityIds);
+        const contactIds = new Set<string>();
+        for (const r of (dc ?? []) as Array<{ contact_id: string }>) contactIds.add(r.contact_id);
+        for (const d of (deals ?? []) as Array<{ primary_contact_id: string | null }>) if (d.primary_contact_id) contactIds.add(d.primary_contact_id);
+        if (contactIds.size > 0) {
+          const { data: contacts } = await sb
+            .from("contacts")
+            .select("id, first_name, last_name, email, phone")
+            .eq("workspace_id", workspaceId)
+            .in("id", Array.from(contactIds))
+            .limit(20000);
+          const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+          const resolved = await resolveContactsToLeads(workspaceId, arr);
+          for (const r of resolved) {
+            if (!collected.has(r.lead_id)) {
+              collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
+            }
+          }
+          resolvedCount = resolved.length;
+        }
+      }
+      perRule.push({ source: "segment", matched: entityIds.length, resolved_leads: resolvedCount });
       continue;
     }
   }
