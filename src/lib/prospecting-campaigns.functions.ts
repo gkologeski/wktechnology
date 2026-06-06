@@ -306,6 +306,89 @@ export const listCampaignAttempts = createServerFn({ method: "POST" })
     return (rows ?? []) as Attempt[];
   });
 
+export type LeadAudit = {
+  lead_id: string;
+  lead_name: string;
+  phone: string | null;
+  attempts: number;
+  last_status: string | null;
+  queueable: boolean;
+  reasons: string[];
+};
+
+export const auditCampaignQueueability = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<LeadAudit[]> => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: c } = await sb
+      .from("prospecting_campaigns")
+      .select("lead_ids, max_attempts")
+      .eq("id", data.campaign_id)
+      .eq("workspace_id", ws)
+      .single();
+    if (!c) return [];
+    const leadIds = (c.lead_ids ?? []) as string[];
+    const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
+    if (!leadIds.length) return [];
+
+    const { data: leads } = await sb
+      .from("leads")
+      .select("id, first_name, last_name, company_name, phone")
+      .in("id", leadIds);
+    const leadMap = new Map<string, { name: string; phone: string | null }>();
+    for (const l of (leads ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>) {
+      const name = [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8);
+      leadMap.set(l.id, { name, phone: l.phone });
+    }
+
+    const { data: existing } = await sb
+      .from("prospecting_call_attempts")
+      .select("lead_id, status, attempt_number, created_at")
+      .eq("campaign_id", data.campaign_id)
+      .eq("workspace_id", ws)
+      .order("created_at", { ascending: false });
+
+    type Agg = { count: number; lastStatus: string | null; hasBlocking: string | null; lastAttempt: number };
+    const agg = new Map<string, Agg>();
+    const blockingStatuses = ["queued", "ringing", "in_progress", "completed"];
+    for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; created_at: string }>) {
+      const a = agg.get(x.lead_id) ?? { count: 0, lastStatus: null, hasBlocking: null, lastAttempt: 0 };
+      a.count += 1;
+      if (!a.lastStatus) a.lastStatus = x.status;
+      if (!a.hasBlocking && blockingStatuses.includes(x.status)) a.hasBlocking = x.status;
+      a.lastAttempt = Math.max(a.lastAttempt, x.attempt_number ?? 0);
+      agg.set(x.lead_id, a);
+    }
+
+    return leadIds.map<LeadAudit>((lid) => {
+      const a = agg.get(lid);
+      const info = leadMap.get(lid);
+      const reasons: string[] = [];
+      if (!info) reasons.push("Lead não encontrado no workspace");
+      if (info && !info.phone) reasons.push("Lead sem telefone");
+      if (a?.hasBlocking) {
+        reasons.push(
+          a.hasBlocking === "completed"
+            ? "Já possui tentativa concluída (completed bloqueia novo enfileiramento)"
+            : `Já está em andamento (status: ${a.hasBlocking})`,
+        );
+      }
+      if (a && a.lastAttempt >= maxAttempts) {
+        reasons.push(`Atingiu max_attempts (${a.lastAttempt}/${maxAttempts})`);
+      }
+      return {
+        lead_id: lid,
+        lead_name: info?.name ?? lid.slice(0, 8),
+        phone: info?.phone ?? null,
+        attempts: a?.count ?? 0,
+        last_status: a?.lastStatus ?? null,
+        queueable: reasons.length === 0,
+        reasons,
+      };
+    });
+  });
+
 function renderTemplate(tpl: string, ctx: { lead: { name: string; company: string } }): string {
   return tpl.replaceAll("{{lead.name}}", ctx.lead.name).replaceAll("{{lead.company}}", ctx.lead.company);
 }

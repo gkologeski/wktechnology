@@ -12,7 +12,8 @@ import { ArrowLeft, Plus, Trash2, Save, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCampaign, upsertCampaign, listCampaignAttempts, setCampaignStatus,
-  type Campaign, type Variant, type Attempt,
+  auditCampaignQueueability,
+  type Campaign, type Variant, type Attempt, type LeadAudit,
 } from "@/lib/prospecting-campaigns.functions";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
@@ -29,19 +30,26 @@ function CampaignDetailPage() {
   const attemptsFn = useServerFn(listCampaignAttempts);
   const statusFn = useServerFn(setCampaignStatus);
   const scriptsFn = useServerFn(listScripts);
+  const auditFn = useServerFn(auditCampaignQueueability);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [scripts, setScripts] = useState<ProspectingScript[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [leadIdsText, setLeadIdsText] = useState("");
+  const [audit, setAudit] = useState<LeadAudit[]>([]);
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
     setVariants(out.variants.map((v: Variant) => ({ script_id: v.script_id, weight: v.weight, segment_id: v.segment_id })));
     setLeadIdsText((out.campaign.lead_ids ?? []).join("\n"));
-    setAttempts(await attemptsFn({ data: { campaign_id: id } }));
+    const [att, aud] = await Promise.all([
+      attemptsFn({ data: { campaign_id: id } }),
+      auditFn({ data: { campaign_id: id } }),
+    ]);
+    setAttempts(att);
+    setAudit(aud);
   };
   useEffect(() => {
     refresh();
@@ -244,6 +252,44 @@ function CampaignDetailPage() {
                 })}
               </tbody>
             </table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Auditoria de enfileiramento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {audit.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem leads na campanha.</p>
+          ) : (
+            <>
+              <div className="text-xs text-muted-foreground mb-2">
+                {audit.filter((a) => a.queueable).length} de {audit.length} leads enfileiráveis ao iniciar.
+              </div>
+              <div className="divide-y text-sm">
+                {audit.map((a) => (
+                  <div key={a.lead_id} className="py-2 flex items-start gap-3">
+                    <Badge variant={a.queueable ? "default" : "secondary"} className="mt-0.5">
+                      {a.queueable ? "OK" : "Bloqueado"}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{a.lead_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {a.phone ?? "sem telefone"} · {a.attempts} tentativa(s)
+                        {a.last_status ? ` · último: ${a.last_status}` : ""}
+                      </div>
+                      {a.reasons.length > 0 && (
+                        <ul className="mt-1 text-xs text-muted-foreground list-disc list-inside">
+                          {a.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
