@@ -41,6 +41,43 @@ function SurveysPage() {
     },
   });
 
+  const ticketIds = useMemo(() => Array.from(new Set(surveys.map((s) => s.ticket_id))), [surveys]);
+
+  const { data: ticketAgents = {} } = useQuery({
+    queryKey: ["survey-ticket-agents", ticketIds],
+    enabled: ticketIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, assignee_id")
+        .in("id", ticketIds);
+      if (error) throw error;
+      const m: Record<string, string | null> = {};
+      for (const t of data ?? []) m[t.id as string] = (t.assignee_id as string | null) ?? null;
+      return m;
+    },
+  });
+
+  const agentIds = useMemo(
+    () => Array.from(new Set(Object.values(ticketAgents).filter(Boolean) as string[])),
+    [ticketAgents],
+  );
+
+  const { data: agentNames = {} } = useQuery({
+    queryKey: ["survey-agent-names", agentIds],
+    enabled: agentIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", agentIds);
+      if (error) throw error;
+      const m: Record<string, string> = {};
+      for (const p of data ?? []) m[p.id as string] = (p.full_name as string | null) ?? "Sem nome";
+      return m;
+    },
+  });
+
   const filtered = useMemo(() => surveys.filter((s) => s.kind === tab), [surveys, tab]);
 
   const stats = useMemo(() => {
@@ -56,6 +93,29 @@ function SurveysPage() {
       : null;
     return { total: filtered.length, answered: answered.length, nps: null, avg };
   }, [filtered, tab]);
+
+  const perAgent = useMemo(() => {
+    const groups = new Map<string, { answered: number; sum: number; promoters: number; detractors: number }>();
+    for (const s of filtered) {
+      if (s.score === null) continue;
+      const agentId = ticketAgents[s.ticket_id] ?? "unassigned";
+      const g = groups.get(agentId) ?? { answered: 0, sum: 0, promoters: 0, detractors: 0 };
+      g.answered += 1;
+      g.sum += s.score;
+      if (s.score >= 9) g.promoters += 1;
+      if (s.score <= 6) g.detractors += 1;
+      groups.set(agentId, g);
+    }
+    return Array.from(groups.entries())
+      .map(([agentId, g]) => ({
+        agentId,
+        name: agentId === "unassigned" ? "Sem responsável" : (agentNames[agentId] ?? "—"),
+        answered: g.answered,
+        avg: g.answered ? g.sum / g.answered : 0,
+        nps: g.answered ? Math.round(((g.promoters - g.detractors) / g.answered) * 100) : 0,
+      }))
+      .sort((a, b) => b.answered - a.answered);
+  }, [filtered, ticketAgents, agentNames]);
 
   function copyLink(token: string) {
     const url = `${window.location.origin}/survey/${token}`;
