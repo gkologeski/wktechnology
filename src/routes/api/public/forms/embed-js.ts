@@ -45,6 +45,10 @@ const SCRIPT = (origin: string) => `(function(){
     });
     var hp=h('input',{type:'text',name:'_hp',tabindex:'-1',autocomplete:'off',style:'position:absolute;left:-9999px;'});
     box.appendChild(hp);
+    var renderedAt=Date.now();
+    var tsInput=h('input',{type:'hidden',name:'_ts',value:String(renderedAt)});
+    box.appendChild(tsInput);
+    box.appendChild(hp);
     var btn=h('button',{type:'submit',style:'padding:10px 16px;background:#111;color:#fff;border:0;border-radius:6px;cursor:pointer;font:inherit;'},['Enviar']);
     box.appendChild(btn);
     var msg=h('div',{style:'font-size:13px;'});
