@@ -32,4 +32,5 @@ export const STRATEGY_LABELS: Record<RotationStrategy, string> = {
 export const ROT_ENTITY_LABELS: Record<RotationEntity, string> = {
   leads: "Leads",
   deals: "Negócios",
+  tickets: "Tickets",
 };
