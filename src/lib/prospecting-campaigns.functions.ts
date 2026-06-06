@@ -45,8 +45,13 @@ export type Attempt = {
   summary: string | null;
   success_evaluation: string | null;
   ended_reason: string | null;
+  vapi_call_id: string | null;
+  vapi_request: JsonValue | null;
+  vapi_response: JsonValue | null;
   created_at: string;
 };
+
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -260,23 +265,38 @@ export async function startVapiCall(opts: {
   campaignId?: string | null;
   variantId?: string | null;
   attemptNumber?: number;
+  attemptId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
+  const persistDiag = async (patch: Record<string, unknown>) => {
+    if (!opts.attemptId) return;
+    await sb.from("prospecting_call_attempts").update(patch).eq("id", opts.attemptId);
+  };
+
   const apiKey = process.env.VAPI_API_KEY;
-  if (!apiKey) return { ok: false, error: "VAPI_API_KEY ausente" };
+  if (!apiKey) {
+    await persistDiag({ vapi_response: { error: "VAPI_API_KEY ausente" } });
+    return { ok: false, error: "VAPI_API_KEY ausente" };
+  }
 
   const { data: lead } = await sb
     .from("leads")
     .select("id, first_name, last_name, company_name, phone")
     .eq("id", opts.leadId)
     .single();
-  if (!lead?.phone) return { ok: false, error: "Lead sem telefone" };
+  if (!lead?.phone) {
+    await persistDiag({ vapi_response: { error: "Lead sem telefone", lead_id: opts.leadId } });
+    return { ok: false, error: "Lead sem telefone" };
+  }
 
   const { data: script } = await sb
     .from("prospecting_scripts")
     .select("*")
     .eq("id", opts.scriptId)
     .single();
-  if (!script) return { ok: false, error: "Script não encontrado" };
+  if (!script) {
+    await persistDiag({ vapi_response: { error: "Script não encontrado", script_id: opts.scriptId } });
+    return { ok: false, error: "Script não encontrado" };
+  }
 
   const { data: cfg } = await sb
     .from("voice_agent_settings")
@@ -284,7 +304,10 @@ export async function startVapiCall(opts: {
     .eq("workspace_id", opts.workspaceId)
     .maybeSingle();
   const phoneNumberId = cfg?.vapi_phone_number_id as string | undefined;
-  if (!phoneNumberId) return { ok: false, error: "Vapi phone number não configurado" };
+  if (!phoneNumberId) {
+    await persistDiag({ vapi_response: { error: "Vapi phone number não configurado" } });
+    return { ok: false, error: "Vapi phone number não configurado" };
+  }
 
   const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim();
   const ctx = { lead: { name: leadName, company: lead.company_name ?? "" } };
@@ -304,49 +327,80 @@ export async function startVapiCall(opts: {
   };
   if (voiceId) assistant.voice = { provider: "11labs", voiceId };
 
-  // Tell Vapi where to send events for this call (per-assistant server config).
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
   const baseUrl =
     process.env.LOVABLE_APP_URL ??
     "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
+
+  // Body actually sent to Vapi (includes the real secret).
+  const outgoingAssistant: Record<string, unknown> = { ...assistant };
   if (webhookSecret) {
-    assistant.server = {
-      url: `${baseUrl}/api/public/hooks/vapi`,
-      secret: webhookSecret,
-    };
+    outgoingAssistant.server = { url: `${baseUrl}/api/public/hooks/vapi`, secret: webhookSecret };
+  }
+  const outgoingBody = {
+    phoneNumberId,
+    assistant: outgoingAssistant,
+    customer: { number: lead.phone },
+    metadata: {
+      leadId: opts.leadId,
+      scriptId: opts.scriptId,
+      campaignId: opts.campaignId ?? null,
+      variantId: opts.variantId ?? null,
+      workspaceId: opts.workspaceId,
+    },
+  };
+
+  // Persisted snapshot (redacted secret) — safe to render in the UI.
+  const redactedAssistant: Record<string, unknown> = { ...assistant };
+  if (webhookSecret) {
+    redactedAssistant.server = { url: `${baseUrl}/api/public/hooks/vapi`, secret: "[REDACTED]" };
+  }
+  const requestSnapshot = { ...outgoingBody, assistant: redactedAssistant };
+
+  await persistDiag({ vapi_request: requestSnapshot });
+
+  let res: Response;
+  try {
+    res = await fetch(`${VAPI_BASE}/call`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(outgoingBody),
+    });
+  } catch (e) {
+    const err = e instanceof Error ? e.message : "network error";
+    await persistDiag({ vapi_response: { error: `fetch failed: ${err}` } });
+    return { ok: false, error: err };
   }
 
-  const res = await fetch(`${VAPI_BASE}/call`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phoneNumberId,
-      assistant,
-      customer: { number: lead.phone },
-      metadata: {
-        leadId: opts.leadId,
-        scriptId: opts.scriptId,
-        campaignId: opts.campaignId ?? null,
-        variantId: opts.variantId ?? null,
-        workspaceId: opts.workspaceId,
-      },
-    }),
-  });
-  if (!res.ok) return { ok: false, error: `Vapi ${res.status}: ${await res.text()}` };
-  const json = (await res.json()) as { id?: string };
+  const rawText = await res.text();
+  let parsed: unknown = rawText;
+  try { parsed = JSON.parse(rawText); } catch { /* keep raw text */ }
 
-  await sb.from("prospecting_call_attempts").insert({
-    workspace_id: opts.workspaceId,
-    owner_id: opts.workspaceId,
-    campaign_id: opts.campaignId ?? null,
-    variant_id: opts.variantId ?? null,
-    script_id: opts.scriptId,
-    lead_id: opts.leadId,
-    vapi_call_id: json.id ?? null,
-    status: "ringing",
-    attempt_number: opts.attemptNumber ?? 1,
-    started_at: new Date().toISOString(),
-  });
+  if (!res.ok) {
+    await persistDiag({ vapi_response: { status: res.status, body: parsed } });
+    return { ok: false, error: `Vapi ${res.status}: ${typeof parsed === "string" ? parsed : JSON.stringify(parsed)}` };
+  }
+  const json = (parsed && typeof parsed === "object" ? parsed : {}) as { id?: string };
+
+  await persistDiag({ vapi_response: { status: res.status, body: parsed } });
+
+  // Only insert a fresh attempt row on the dialLeadNow path (no pre-existing attempt).
+  if (!opts.attemptId) {
+    await sb.from("prospecting_call_attempts").insert({
+      workspace_id: opts.workspaceId,
+      owner_id: opts.workspaceId,
+      campaign_id: opts.campaignId ?? null,
+      variant_id: opts.variantId ?? null,
+      script_id: opts.scriptId,
+      lead_id: opts.leadId,
+      vapi_call_id: json.id ?? null,
+      status: "ringing",
+      attempt_number: opts.attemptNumber ?? 1,
+      started_at: new Date().toISOString(),
+      vapi_request: requestSnapshot,
+      vapi_response: { status: res.status, body: parsed },
+    });
+  }
 
   return { ok: true, call_id: json.id };
 }

@@ -124,6 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
             campaignId: it.campaign_id,
             variantId: chosen.id,
             attemptNumber: it.attempt_number,
+            attemptId: it.id,
           });
 
           if (!result.ok) {
