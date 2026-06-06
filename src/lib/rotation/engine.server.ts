@@ -60,9 +60,10 @@ export async function applyRotation(
   );
   if (!pick) throw new Error("Regra não tem responsáveis configurados");
 
+  const assignField = entity === "tickets" ? "assignee_id" : "owner_id";
   const { error: upErr } = await supabase
     .from(entity)
-    .update({ owner_id: pick.user_id })
+    .update({ [assignField]: pick.user_id })
     .eq("id", entityId);
   if (upErr) throw new Error(`Falha ao atribuir: ${upErr.message}`);
 

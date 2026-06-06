@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows } from "@/lib/workflows/engine.server";
 
-const EntityEnum = z.enum(["leads", "contacts", "companies", "deals"]);
+const EntityEnum = z.enum(["leads", "contacts", "companies", "deals", "tickets"]);
 
 const FilterSchema = z.object({
   field: z.string().min(1).max(100),

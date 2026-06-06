@@ -71,13 +71,14 @@ async function runAction(
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
       case "assign_to": {
-        const { error } = await supabase.from(ctx.entity).update({ owner_id: action.user_id }).eq("id", ctx.entityId);
+        const assignField = ctx.entity === "tickets" ? "assignee_id" : "owner_id";
+        const { error } = await supabase.from(ctx.entity).update({ [assignField]: action.user_id }).eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "assign_to", detail: { user_id: action.user_id } };
       }
       case "rotate_assign": {
-        if (ctx.entity !== "leads" && ctx.entity !== "deals") {
-          throw new Error("rotate_assign suporta apenas leads/deals");
+        if (ctx.entity !== "leads" && ctx.entity !== "deals" && ctx.entity !== "tickets") {
+          throw new Error("rotate_assign suporta apenas leads/deals/tickets");
         }
         const r = await applyRotation(supabase, action.rule_id, ctx.entity, ctx.entityId);
         return { at, ok: true, action: "rotate_assign", detail: { rule_id: action.rule_id, assigned_to: r.user_id } };
@@ -88,19 +89,19 @@ async function runAction(
         const due = action.due_in_days
           ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
           : null;
-        const relCol =
-          ctx.entity === "leads" ? "related_lead_id"
-          : ctx.entity === "contacts" ? "related_contact_id"
-          : ctx.entity === "companies" ? "related_company_id"
-          : "related_deal_id";
-        const { error } = await supabase.from("activities").insert({
+        const baseRow: Record<string, unknown> = {
           owner_id: ctx.ownerId,
           type: action.activity_type ?? "task",
           subject,
           body,
           due_date: due,
-          [relCol]: ctx.entityId,
-        });
+        };
+        if (ctx.entity === "leads") baseRow.related_lead_id = ctx.entityId;
+        else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
+        else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
+        // tickets: sem coluna de associação direta em activities; cria como atividade solta.
+        const { error } = await supabase.from("activities").insert(baseRow as never);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
       }
