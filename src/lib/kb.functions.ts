@@ -91,11 +91,16 @@ export const upsertKbArticle = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const slug = data.slug || slugify(data.title);
-    const payload: Record<string, unknown> = {
-      owner_id: ws, title: data.title, slug, excerpt: data.excerpt ?? null,
-      body: data.body, category_id: data.category_id ?? null, published: data.published,
+    const payload = {
+      owner_id: ws,
+      title: data.title,
+      slug,
+      excerpt: data.excerpt ?? null,
+      body: data.body,
+      category_id: data.category_id ?? null,
+      published: data.published,
+      published_at: data.published ? new Date().toISOString() : null,
     };
-    if (data.published) payload.published_at = new Date().toISOString();
     if (data.id) {
       const { error } = await supabaseAdmin.from("kb_articles").update(payload).eq("id", data.id).eq("owner_id", ws);
       if (error) throw new Error(error.message);
