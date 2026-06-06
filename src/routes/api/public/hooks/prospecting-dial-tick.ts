@@ -1,7 +1,7 @@
 // Cron tick — drains queued prospecting_call_attempts (up to N per run).
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireCronAuth } from "@/lib/cron-auth.server";
+import { cronBearerToken, requireCronAuth } from "@/lib/cron-auth.server";
 import { startVapiCall } from "@/lib/prospecting-campaigns.functions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +49,15 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
     handlers: {
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
-        if (unauth) return unauth;
+        if (unauth) {
+          const token = cronBearerToken(request);
+          const { data: cronSetting } = await sb
+            .from("app_settings")
+            .select("value")
+            .eq("key", "cron_secret")
+            .maybeSingle();
+          if (!cronSetting?.value || token !== cronSetting.value) return unauth;
+        }
 
         const now = new Date().toISOString();
         const { data: queued } = await sb
