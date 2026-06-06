@@ -4479,6 +4479,8 @@ export type Database = {
       prospecting_campaigns: {
         Row: {
           assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_mode: string
+          audience_rules: Json
           created_at: string
           dialing_window: Json
           id: string
@@ -4495,6 +4497,8 @@ export type Database = {
         }
         Insert: {
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_mode?: string
+          audience_rules?: Json
           created_at?: string
           dialing_window?: Json
           id?: string
@@ -4511,6 +4515,8 @@ export type Database = {
         }
         Update: {
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_mode?: string
+          audience_rules?: Json
           created_at?: string
           dialing_window?: Json
           id?: string
