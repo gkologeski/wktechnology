@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { TicketMacrosButton } from "@/components/tickets/ticket-macros-button";
+import { KbSuggestions } from "@/components/tickets/kb-suggestions";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -165,6 +166,7 @@ function TicketDetail() {
       center={
         <>
           <AiSummaryPanel entity="ticket" entityId={ticket.id} />
+          <KbSuggestions subject={ticket.subject} description={ticket.description} />
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
               <h3 className="text-sm font-bold mb-3">Descrição</h3>
