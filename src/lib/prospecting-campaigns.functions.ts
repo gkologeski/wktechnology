@@ -46,10 +46,12 @@ export type Attempt = {
   success_evaluation: string | null;
   ended_reason: string | null;
   vapi_call_id: string | null;
-  vapi_request: Record<string, unknown> | null;
-  vapi_response: Record<string, unknown> | null;
+  vapi_request: JsonValue | null;
+  vapi_response: JsonValue | null;
   created_at: string;
 };
+
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
