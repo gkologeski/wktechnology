@@ -4301,6 +4301,234 @@ export type Database = {
           },
         ]
       }
+      prospecting_call_attempts: {
+        Row: {
+          attempt_number: number
+          campaign_id: string | null
+          cost_usd: number | null
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          ended_reason: string | null
+          id: string
+          lead_id: string | null
+          owner_id: string
+          recording_url: string | null
+          scheduled_at: string | null
+          script_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["prospecting_call_status"]
+          success_evaluation: string | null
+          summary: string | null
+          transcript: string | null
+          updated_at: string
+          vapi_call_id: string | null
+          variant_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          campaign_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          lead_id?: string | null
+          owner_id: string
+          recording_url?: string | null
+          scheduled_at?: string | null
+          script_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["prospecting_call_status"]
+          success_evaluation?: string | null
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string
+          vapi_call_id?: string | null
+          variant_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          attempt_number?: number
+          campaign_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          lead_id?: string | null
+          owner_id?: string
+          recording_url?: string | null
+          scheduled_at?: string | null
+          script_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["prospecting_call_status"]
+          success_evaluation?: string | null
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string
+          vapi_call_id?: string | null
+          variant_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_call_attempts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_campaign_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_campaign_variants: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          position: number
+          script_id: string
+          segment_id: string | null
+          weight: number
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          position?: number
+          script_id: string
+          segment_id?: string | null
+          weight?: number
+          workspace_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          position?: number
+          script_id?: string
+          segment_id?: string | null
+          weight?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_campaign_variants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_campaign_variants_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_campaign_variants_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_campaigns: {
+        Row: {
+          assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          created_at: string
+          dialing_window: Json
+          id: string
+          lead_ids: string[]
+          max_attempts: number
+          name: string
+          owner_id: string
+          retry_interval_minutes: number
+          source_ref: string | null
+          source_type: Database["public"]["Enums"]["prospecting_source_type"]
+          status: Database["public"]["Enums"]["prospecting_campaign_status"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          created_at?: string
+          dialing_window?: Json
+          id?: string
+          lead_ids?: string[]
+          max_attempts?: number
+          name: string
+          owner_id: string
+          retry_interval_minutes?: number
+          source_ref?: string | null
+          source_type?: Database["public"]["Enums"]["prospecting_source_type"]
+          status?: Database["public"]["Enums"]["prospecting_campaign_status"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          created_at?: string
+          dialing_window?: Json
+          id?: string
+          lead_ids?: string[]
+          max_attempts?: number
+          name?: string
+          owner_id?: string
+          retry_interval_minutes?: number
+          source_ref?: string | null
+          source_type?: Database["public"]["Enums"]["prospecting_source_type"]
+          status?: Database["public"]["Enums"]["prospecting_campaign_status"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_campaigns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospecting_results: {
         Row: {
           company_name: string | null
@@ -4367,6 +4595,59 @@ export type Database = {
           },
           {
             foreignKeyName: "prospecting_results_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_scripts: {
+        Row: {
+          created_at: string
+          first_message: string
+          id: string
+          name: string
+          objective: string | null
+          owner_id: string
+          system_prompt: string
+          updated_at: string
+          variables: Json
+          voice_id: string | null
+          voice_provider: Database["public"]["Enums"]["voice_provider"]
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_message?: string
+          id?: string
+          name: string
+          objective?: string | null
+          owner_id: string
+          system_prompt?: string
+          updated_at?: string
+          variables?: Json
+          voice_id?: string | null
+          voice_provider?: Database["public"]["Enums"]["voice_provider"]
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          first_message?: string
+          id?: string
+          name?: string
+          objective?: string | null
+          owner_id?: string
+          system_prompt?: string
+          updated_at?: string
+          variables?: Json
+          voice_id?: string | null
+          voice_provider?: Database["public"]["Enums"]["voice_provider"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_scripts_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -6065,6 +6346,71 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_agent_settings: {
+        Row: {
+          allowed_hours: Json
+          created_at: string
+          custom_voices: Json
+          default_voice_id: string | null
+          default_voice_provider: Database["public"]["Enums"]["voice_provider"]
+          first_message: string | null
+          language: string
+          llm_model: string
+          max_duration_seconds: number
+          owner_id: string
+          similarity_boost: number
+          speed: number
+          stability: number
+          updated_at: string
+          vapi_phone_number_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          allowed_hours?: Json
+          created_at?: string
+          custom_voices?: Json
+          default_voice_id?: string | null
+          default_voice_provider?: Database["public"]["Enums"]["voice_provider"]
+          first_message?: string | null
+          language?: string
+          llm_model?: string
+          max_duration_seconds?: number
+          owner_id: string
+          similarity_boost?: number
+          speed?: number
+          stability?: number
+          updated_at?: string
+          vapi_phone_number_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          allowed_hours?: Json
+          created_at?: string
+          custom_voices?: Json
+          default_voice_id?: string | null
+          default_voice_provider?: Database["public"]["Enums"]["voice_provider"]
+          first_message?: string | null
+          language?: string
+          llm_model?: string
+          max_duration_seconds?: number
+          owner_id?: string
+          similarity_boost?: number
+          speed?: number
+          stability?: number
+          updated_at?: string
+          vapi_phone_number_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_agent_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_deliveries: {
         Row: {
           attempt: number
@@ -7026,6 +7372,18 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      prospecting_assignment_mode: "weighted" | "segment"
+      prospecting_call_status:
+        | "queued"
+        | "ringing"
+        | "in_progress"
+        | "completed"
+        | "failed"
+        | "no_answer"
+        | "busy"
+        | "canceled"
+      prospecting_campaign_status: "draft" | "running" | "paused" | "done"
+      prospecting_source_type: "segment" | "saved_view" | "manual"
       prospecting_status: "pending" | "running" | "completed" | "failed"
       quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
       sentiment_label: "positive" | "neutral" | "negative"
@@ -7040,6 +7398,7 @@ export type Database = {
       team_role: "owner" | "admin" | "member" | "manager"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "new" | "open" | "waiting" | "resolved" | "closed"
+      voice_provider: "elevenlabs" | "vapi_default"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7234,6 +7593,19 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      prospecting_assignment_mode: ["weighted", "segment"],
+      prospecting_call_status: [
+        "queued",
+        "ringing",
+        "in_progress",
+        "completed",
+        "failed",
+        "no_answer",
+        "busy",
+        "canceled",
+      ],
+      prospecting_campaign_status: ["draft", "running", "paused", "done"],
+      prospecting_source_type: ["segment", "saved_view", "manual"],
       prospecting_status: ["pending", "running", "completed", "failed"],
       quote_status: ["draft", "sent", "accepted", "declined", "expired"],
       sentiment_label: ["positive", "neutral", "negative"],
@@ -7249,6 +7621,7 @@ export const Constants = {
       team_role: ["owner", "admin", "member", "manager"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["new", "open", "waiting", "resolved", "closed"],
+      voice_provider: ["elevenlabs", "vapi_default"],
     },
   },
 } as const
