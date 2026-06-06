@@ -1,5 +1,5 @@
 // Builder visual de workflows: Quando / Se / Então.
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Zap, Filter, ArrowDown, PlayCircle } from "lucide-react";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ENTITY_FIELDS, ENTITY_LABELS, EVENT_LABELS, ACTION_LABELS, FILTER_OPS,
   type WorkflowEntity, type WorkflowTrigger, type WorkflowAction, type WorkflowActionType, type FilterOp,
