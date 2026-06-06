@@ -24,3 +24,8 @@ export function requireCronAuth(request: Request): Response | null {
   }
   return null;
 }
+
+export function cronBearerToken(request: Request): string {
+  const header = request.headers.get("authorization") ?? "";
+  return header.replace(/^Bearer\s+/i, "");
+}
