@@ -41,6 +41,7 @@ const sections: Section[] = [
     tabs: [
       { to: "/settings/pipelines", label: "Pipelines" },
       { to: "/settings/custom-properties", label: "Propriedades" },
+      { to: "/settings/property-groups", label: "Grupos de propriedades" },
       { to: "/settings/record-layouts", label: "Layout do registro" },
       { to: "/settings/custom-objects", label: "Objetos custom" },
       { to: "/settings/lead-sources", label: "Fontes de lead" },
