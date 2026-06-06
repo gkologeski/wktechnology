@@ -26,7 +26,8 @@ export type Campaign = {
   lead_ids: string[];
   dialing_window: { start: string; end: string; timezone: string; days: number[] };
   audience_mode: "static" | "dynamic";
-  audience_rules: AudienceRule[];
+  // Stored as JSON in Postgres; cast to AudienceRule[] in the UI before reading.
+  audience_rules: JsonValue;
   created_at: string;
   updated_at: string;
 };
