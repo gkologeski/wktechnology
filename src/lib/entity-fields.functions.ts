@@ -215,6 +215,35 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       ).map((u) => [u.id, u.full_name ?? u.id]),
     );
 
+    // Para deals/leads, as etapas dependem do pipeline — buscamos a definição
+    // canônica em pipelines.stages e usamos como opções do campo `stage` (e `stage_id`),
+    // ignorando os valores distintos crus da coluna (que podem incluir lixo legado).
+    let pipelineStageOptions: { value: string; label: string }[] | null = null;
+    if (data.entity === "deals" || data.entity === "leads") {
+      const pipelineEntity = data.entity === "deals" ? "deal" : "lead";
+      const { data: pls } = await supabase
+        .from("pipelines")
+        .select("name, stages, entity")
+        .eq("entity", pipelineEntity);
+      const seen = new Set<string>();
+      const opts: { value: string; label: string }[] = [];
+      for (const p of (pls ?? []) as { name: string; stages: unknown }[]) {
+        const stages = Array.isArray(p.stages)
+          ? (p.stages as Array<{ value?: string; label?: string }>)
+          : [];
+        for (const s of stages) {
+          if (!s?.value) continue;
+          if (seen.has(s.value)) continue;
+          seen.add(s.value);
+          opts.push({
+            value: s.value,
+            label: `${p.name} · ${s.label ?? s.value}`,
+          });
+        }
+      }
+      if (opts.length) pipelineStageOptions = opts;
+    }
+
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
       if (HIDDEN.has(r.column_name)) continue;
@@ -225,8 +254,14 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
       };
 
-      // Quando temos ≤20 valores distintos, materializamos como Select.
+      // Override: stage / stage_id usam catálogo do pipeline, não distinct values.
       if (
+        pipelineStageOptions &&
+        (r.column_name === "stage" || r.column_name === "stage_id")
+      ) {
+        def.type = "select";
+        def.options = pipelineStageOptions;
+      } else if (
         r.distinct_values &&
         r.distinct_count !== null &&
         r.distinct_count <= 20 &&
