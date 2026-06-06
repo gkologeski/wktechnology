@@ -30,19 +30,26 @@ function CampaignDetailPage() {
   const attemptsFn = useServerFn(listCampaignAttempts);
   const statusFn = useServerFn(setCampaignStatus);
   const scriptsFn = useServerFn(listScripts);
+  const auditFn = useServerFn(auditCampaignQueueability);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [scripts, setScripts] = useState<ProspectingScript[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [leadIdsText, setLeadIdsText] = useState("");
+  const [audit, setAudit] = useState<LeadAudit[]>([]);
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
     setVariants(out.variants.map((v: Variant) => ({ script_id: v.script_id, weight: v.weight, segment_id: v.segment_id })));
     setLeadIdsText((out.campaign.lead_ids ?? []).join("\n"));
-    setAttempts(await attemptsFn({ data: { campaign_id: id } }));
+    const [att, aud] = await Promise.all([
+      attemptsFn({ data: { campaign_id: id } }),
+      auditFn({ data: { campaign_id: id } }),
+    ]);
+    setAttempts(att);
+    setAudit(aud);
   };
   useEffect(() => {
     refresh();
