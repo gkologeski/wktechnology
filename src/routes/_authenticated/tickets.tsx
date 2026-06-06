@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { usePipelines, defaultTicketStages, type Pipeline } from "@/lib/pipelines";
+import { useMyTools } from "@/lib/use-my-tools";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,7 @@ function TicketsPage() {
 
 function TicketsIndex() {
   const { user } = useAuth();
+  const { can } = useMyTools();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
@@ -358,9 +360,11 @@ function TicketsIndex() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={bulkDelete}>
-                <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
-              </Button>
+              {can("bulk_delete") && (
+                <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={bulkDelete}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
+                </Button>
+              )}
               <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
                 <X className="h-3.5 w-3.5" />
               </Button>

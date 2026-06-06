@@ -9,6 +9,7 @@ import type { Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
+import { useMyTools } from "@/lib/use-my-tools";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -100,6 +101,7 @@ function CompaniesPage() {
 
 function CompaniesHubspotView() {
   const { user } = useAuth();
+  const { can } = useMyTools();
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();
@@ -392,9 +394,11 @@ function CompaniesHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            <Download className="mr-1.5 h-4 w-4" /> Exportar
-          </Button>
+          {can("export") && (
+            <Button variant="outline" size="sm" disabled>
+              <Download className="mr-1.5 h-4 w-4" /> Exportar
+            </Button>
+          )}
           <Button size="sm" disabled>
             <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
           </Button>
@@ -517,14 +521,16 @@ function CompaniesHubspotView() {
                 <Button variant="ghost" size="sm" className="h-7" onClick={runBulkCep}>
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-destructive hover:text-destructive"
-                  onClick={bulkDelete}
-                >
-                  Excluir
-                </Button>
+                {can("bulk_delete") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive"
+                    onClick={bulkDelete}
+                  >
+                    Excluir
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

@@ -15,6 +15,7 @@ import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
+import { TicketMacrosButton } from "@/components/tickets/ticket-macros-button";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -119,9 +120,20 @@ function TicketDetail() {
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <TicketMacrosButton
+            ticket={{
+              id: ticket.id,
+              contact_id: ticket.contact_id,
+              company_id: ticket.company_id,
+              deal_id: ticket.deal_id,
+            }}
+            onApplied={load}
+          />
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       {pipeline && pipeline.stages.length > 0 && (
         <StageTracker
