@@ -304,6 +304,18 @@ export async function startVapiCall(opts: {
   };
   if (voiceId) assistant.voice = { provider: "11labs", voiceId };
 
+  // Tell Vapi where to send events for this call (per-assistant server config).
+  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+  const baseUrl =
+    process.env.LOVABLE_APP_URL ??
+    "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
+  if (webhookSecret) {
+    assistant.server = {
+      url: `${baseUrl}/api/public/hooks/vapi`,
+      secret: webhookSecret,
+    };
+  }
+
   const res = await fetch(`${VAPI_BASE}/call`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
