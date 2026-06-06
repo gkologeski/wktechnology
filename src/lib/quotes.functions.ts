@@ -226,7 +226,12 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
       throw new Error(session?.error?.message || "Falha ao criar checkout");
     }
 
-    const patch: Record<string, unknown> = {
+    const patch: {
+      payment_link_url: string;
+      payment_session_id: string;
+      status?: "sent";
+      sent_at?: string;
+    } = {
       payment_link_url: session.url,
       payment_session_id: session.id,
     };
