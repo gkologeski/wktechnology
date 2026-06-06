@@ -42,7 +42,7 @@ function VoiceAgentPage() {
     speed: 1.0, stability: 0.5, similarity_boost: 0.75, max_duration_seconds: 600,
   });
   const [phones, setPhones] = useState<Array<{ id: string; number: string; name: string }>>([]);
-  const [voices, setVoices] = useState<Array<{ id: string; name: string; category: string }>>([]);
+  const [voices, setVoices] = useState<Array<{ id: string; name: string; category: string; accent?: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -53,14 +53,26 @@ function VoiceAgentPage() {
     })();
   }, [getFn]);
 
+  const loadVoices = async () => {
+    setBusy("voices");
+    try {
+      setVoices(await voicesFn({ data: { onlyPortuguese: true } }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Auto-load Portuguese voices on mount
+  useEffect(() => {
+    loadVoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadPhones = async () => {
     setBusy("phones");
     try { setPhones(await phonesFn()); } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
-    finally { setBusy(null); }
-  };
-  const loadVoices = async () => {
-    setBusy("voices");
-    try { setVoices(await voicesFn()); } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
     finally { setBusy(null); }
   };
 
@@ -87,10 +99,7 @@ function VoiceAgentPage() {
     finally { setBusy(null); }
   };
 
-  const allVoices = [
-    ...CURATED_VOICES.map((v) => ({ ...v, category: "curated" })),
-    ...voices.filter((v) => !CURATED_VOICES.some((c) => c.id === v.id)),
-  ];
+  const allVoices = voices;
 
   return (
     <div className="space-y-4">
