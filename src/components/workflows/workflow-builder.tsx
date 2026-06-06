@@ -299,3 +299,138 @@ function ActionCard({
     </div>
   );
 }
+
+function UserPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: members = [], nameFor } = useWorkspaceMembers();
+  if (members.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID do usuário" />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger><SelectValue placeholder="Escolha um membro" /></SelectTrigger>
+      <SelectContent>
+        {members.map((m) => (
+          <SelectItem key={m.user_id} value={m.user_id}>{nameFor(m.user_id)}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function RotationRulePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: rules = [] } = useQuery({
+    queryKey: ["rotation-rules-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rotation_rules")
+        .select("id, name, entity")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; entity: string }>;
+    },
+  });
+  if (rules.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID da regra" />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger><SelectValue placeholder="Escolha uma regra" /></SelectTrigger>
+      <SelectContent>
+        {rules.map((r) => (
+          <SelectItem key={r.id} value={r.id}>{r.name} <span className="text-muted-foreground text-xs ml-1">({r.entity})</span></SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function SequencePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: seqs = [] } = useQuery({
+    queryKey: ["sequences-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sequences")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string }>;
+    },
+  });
+  if (seqs.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID da sequência" />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger><SelectValue placeholder="Escolha uma sequência" /></SelectTrigger>
+      <SelectContent>
+        {seqs.map((s) => (
+          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FlowPreview({ state }: { state: WorkflowDraft }) {
+  const filters = state.trigger.filters ?? [];
+  const filterCount = filters.length;
+  const eventLabel = EVENT_LABELS[state.trigger.event];
+  const entityLabel = ENTITY_LABELS[state.entity];
+
+  const nodes = useMemo(() => {
+    const out: Array<{ icon: typeof Zap; tone: string; title: string; subtitle: string }> = [];
+    out.push({ icon: Zap, tone: "text-primary", title: `${entityLabel} · ${eventLabel}`, subtitle: "Gatilho" });
+    if (filterCount > 0) {
+      out.push({
+        icon: Filter,
+        tone: "text-amber-500",
+        title: `${filterCount} ${filterCount === 1 ? "condição" : "condições"}`,
+        subtitle: filters.map((f) => `${f.field} ${f.op}`).join(" · "),
+      });
+    }
+    for (const a of state.actions) {
+      out.push({
+        icon: PlayCircle,
+        tone: "text-emerald-500",
+        title: ACTION_LABELS[a.type],
+        subtitle: describeAction(a),
+      });
+    }
+    return out;
+  }, [state, entityLabel, eventLabel, filterCount, filters]);
+
+  return (
+    <section className="rounded-md border bg-muted/20 p-4">
+      <h3 className="text-sm font-semibold mb-3">Fluxo</h3>
+      <div className="flex flex-col items-stretch gap-2">
+        {nodes.map((n, i) => (
+          <div key={i} className="flex flex-col items-center">
+            <div className="w-full rounded-lg border bg-card px-3 py-2 shadow-sm">
+              <div className="flex items-center gap-2">
+                <n.icon className={`h-4 w-4 ${n.tone}`} />
+                <span className="text-sm font-medium">{n.title}</span>
+              </div>
+              {n.subtitle && (
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.subtitle}</p>
+              )}
+            </div>
+            {i < nodes.length - 1 && <ArrowDown className="h-3.5 w-3.5 text-muted-foreground my-1" />}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function describeAction(a: WorkflowAction): string {
+  switch (a.type) {
+    case "set_field": return `${a.field} = ${String(a.value ?? "")}`;
+    case "create_activity": return `${a.activity_type ?? "task"}: ${a.subject}`;
+    case "assign_to": return a.user_id ? `usuário ${a.user_id.slice(0, 8)}…` : "—";
+    case "rotate_assign": return a.rule_id ? `regra ${a.rule_id.slice(0, 8)}…` : "—";
+    case "add_to_sequence": return a.sequence_id ? `sequência ${a.sequence_id.slice(0, 8)}…` : "—";
+    case "send_notification": return a.title;
+    case "webhook": return a.url;
+  }
+}
+
