@@ -227,6 +227,17 @@ function IntegrationDetail() {
             </section>
           )}
 
+          {isConnected && provider.slug === "hubspot" && (
+            <section className="rounded-lg border bg-card p-5">
+              <h2 className="font-semibold mb-1">Sincronização bidirecional</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Envia alterações locais (contatos, empresas, negócios) de volta para o HubSpot.
+                Conflitos (alterado dos dois lados desde a última sync) ficam listados para revisão manual.
+              </p>
+              <HubspotTwoWaySync />
+            </section>
+          )}
+
           {isConnected && provider.authMode === "api_key" && (
             <section className="rounded-lg border bg-card p-5">
               <h2 className="font-semibold mb-3">Créditos e limites</h2>
