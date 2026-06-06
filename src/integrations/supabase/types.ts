@@ -3305,36 +3305,51 @@ export type Database = {
       }
       hubspot_sync_state: {
         Row: {
+          conflict_reason: string | null
+          conflict_status: string
           direction: string
           entity: string
           hubspot_id: string
           id: string
           last_payload: Json | null
+          last_pushed_at: string | null
           last_synced_at: string
           local_id: string
+          local_updated_at: string | null
           owner_id: string
+          remote_updated_at: string | null
           workspace_id: string
         }
         Insert: {
+          conflict_reason?: string | null
+          conflict_status?: string
           direction?: string
           entity: string
           hubspot_id: string
           id?: string
           last_payload?: Json | null
+          last_pushed_at?: string | null
           last_synced_at?: string
           local_id: string
+          local_updated_at?: string | null
           owner_id: string
+          remote_updated_at?: string | null
           workspace_id?: string
         }
         Update: {
+          conflict_reason?: string | null
+          conflict_status?: string
           direction?: string
           entity?: string
           hubspot_id?: string
           id?: string
           last_payload?: Json | null
+          last_pushed_at?: string | null
           last_synced_at?: string
           local_id?: string
+          local_updated_at?: string | null
           owner_id?: string
+          remote_updated_at?: string | null
           workspace_id?: string
         }
         Relationships: [

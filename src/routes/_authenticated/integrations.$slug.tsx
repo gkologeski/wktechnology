@@ -25,6 +25,7 @@ import {
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 import { ImportTimeline } from "@/components/hubspot/import-timeline";
+import { HubspotTwoWaySync } from "@/components/hubspot/two-way-sync";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
@@ -223,6 +224,17 @@ function IntegrationDetail() {
                 Importação respeitando árvore de dependências (empresas → contatos → negócios → atividades).
               </p>
               <HubspotImportWizard />
+            </section>
+          )}
+
+          {isConnected && provider.slug === "hubspot" && (
+            <section className="rounded-lg border bg-card p-5">
+              <h2 className="font-semibold mb-1">Sincronização bidirecional</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Envia alterações locais (contatos, empresas, negócios) de volta para o HubSpot.
+                Conflitos (alterado dos dois lados desde a última sync) ficam listados para revisão manual.
+              </p>
+              <HubspotTwoWaySync />
             </section>
           )}
 
