@@ -8,7 +8,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const ELEVEN_BASE = "https://api.elevenlabs.io";
 const VAPI_BASE = "https://api.vapi.ai";
 
-// Curated voices (ElevenLabs IDs)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabaseAdmin as any;
+
 export const CURATED_VOICES = [
   { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah" },
   { id: "JBFqnCBsd6RMkjVDRZzb", name: "George" },
@@ -22,16 +24,29 @@ export const CURATED_VOICES = [
   { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily" },
 ];
 
+export type VoiceAgentSettings = {
+  vapi_phone_number_id: string | null;
+  default_voice_id: string | null;
+  default_voice_provider: "elevenlabs" | "vapi_default";
+  llm_model: string;
+  language: string;
+  speed: number;
+  stability: number;
+  similarity_boost: number;
+  first_message: string | null;
+  max_duration_seconds: number;
+} | null;
+
 export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<VoiceAgentSettings> => {
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data } = await supabaseAdmin
-      .from("voice_agent_settings" as never)
+    const { data } = await sb
+      .from("voice_agent_settings")
       .select("*")
       .eq("workspace_id", ws)
       .maybeSingle();
-    return (data ?? null) as Record<string, unknown> | null;
+    return (data ?? null) as VoiceAgentSettings;
   });
 
 const SettingsSchema = z.object({
@@ -53,9 +68,7 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const payload = { workspace_id: ws, owner_id: ws, ...data };
-    const { error } = await supabaseAdmin
-      .from("voice_agent_settings" as never)
-      .upsert(payload, { onConflict: "workspace_id" });
+    const { error } = await sb.from("voice_agent_settings").upsert(payload, { onConflict: "workspace_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

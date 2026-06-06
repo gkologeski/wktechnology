@@ -4,6 +4,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabaseAdmin as any;
+
 export type ProspectingScript = {
   id: string;
   name: string;
@@ -30,15 +33,15 @@ const ScriptInput = z.object({
 
 export const listScripts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<ProspectingScript[]> => {
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data, error } = await supabaseAdmin
-      .from("prospecting_scripts" as never)
+    const { data, error } = await sb
+      .from("prospecting_scripts")
       .select("*")
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as ProspectingScript[];
+    return (data ?? []) as ProspectingScript[];
   });
 
 export const upsertScript = createServerFn({ method: "POST" })
@@ -58,21 +61,21 @@ export const upsertScript = createServerFn({ method: "POST" })
       variables: data.variables,
     };
     if (data.id) {
-      const { error } = await supabaseAdmin
-        .from("prospecting_scripts" as never)
+      const { error } = await sb
+        .from("prospecting_scripts")
         .update(payload)
         .eq("id", data.id)
         .eq("workspace_id", ws);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabaseAdmin
-      .from("prospecting_scripts" as never)
+    const { data: row, error } = await sb
+      .from("prospecting_scripts")
       .insert(payload)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id };
+    return { id: row.id as string };
   });
 
 export const deleteScript = createServerFn({ method: "POST" })
@@ -80,8 +83,8 @@ export const deleteScript = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
-      .from("prospecting_scripts" as never)
+    const { error } = await sb
+      .from("prospecting_scripts")
       .delete()
       .eq("id", data.id)
       .eq("workspace_id", ws);

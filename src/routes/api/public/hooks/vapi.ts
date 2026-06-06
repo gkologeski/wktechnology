@@ -3,6 +3,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabaseAdmin as any;
+
 export const Route = createFileRoute("/api/public/hooks/vapi")({
   server: {
     handlers: {
@@ -54,15 +57,14 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           }
           if (typeof msg.endedReason === "string") updates.ended_reason = msg.endedReason;
 
-          // Map vapi end reasons to specific statuses
           const reason = String(msg.endedReason ?? "").toLowerCase();
           if (reason.includes("no-answer")) updates.status = "no_answer";
           else if (reason.includes("busy")) updates.status = "busy";
           else if (reason.includes("failed") || reason.includes("error")) updates.status = "failed";
         }
 
-        const { data: row, error } = await supabaseAdmin
-          .from("prospecting_call_attempts" as never)
+        const { data: row, error } = await sb
+          .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
           .select("id, workspace_id, lead_id, summary")
@@ -72,19 +74,15 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
 
-        // On end-of-call, drop an activity on the lead
-        if (type === "end-of-call-report" && row) {
-          const r = row as { workspace_id: string; lead_id: string | null; summary: string | null };
-          if (r.lead_id) {
-            await supabaseAdmin.from("activities").insert({
-              workspace_id: r.workspace_id,
-              owner_id: r.workspace_id,
-              type: "call",
-              related_lead_id: r.lead_id,
-              subject: "Chamada do agente de voz (Vapi)",
-              description: r.summary ?? (updates.transcript as string | undefined) ?? null,
-            });
-          }
+        if (type === "end-of-call-report" && row?.lead_id) {
+          await sb.from("activities").insert({
+            workspace_id: row.workspace_id,
+            owner_id: row.workspace_id,
+            type: "call",
+            related_lead_id: row.lead_id,
+            subject: "Chamada do agente de voz (Vapi)",
+            description: row.summary ?? (updates.transcript as string | undefined) ?? null,
+          });
         }
 
         return Response.json({ ok: true });
