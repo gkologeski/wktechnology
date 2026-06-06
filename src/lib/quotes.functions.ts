@@ -187,7 +187,7 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error || !quote) throw new Error("Cotação não encontrada");
-    if (quote.status === "paid" || quote.paid_at) throw new Error("Esta cotação já foi paga.");
+    if (quote.paid_at) throw new Error("Esta cotação já foi paga.");
     const total = Number(quote.total);
     if (!total || total <= 0) throw new Error("Cotação sem valor para pagamento.");
 
