@@ -211,9 +211,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         (usersRes.data ?? []) as {
           id: string;
           full_name: string | null;
-          email: string | null;
         }[]
-      ).map((u) => [u.id, u.full_name ?? u.email ?? u.id]),
+      ).map((u) => [u.id, u.full_name ?? u.id]),
     );
 
     const fields: EntityFieldDef[] = [];
