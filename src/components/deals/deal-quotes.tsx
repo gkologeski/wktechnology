@@ -144,6 +144,15 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                     <Send className="h-3.5 w-3.5 mr-1" /> Marcar como enviada
                   </Button>
                 )}
+                {!q.paid_at && (
+                  <Button size="sm" variant="outline" onClick={() => genPayLink(q.id)}>
+                    <CreditCard className="h-3.5 w-3.5 mr-1" />
+                    {q.payment_link_url ? "Regerar link de pagamento" : "Gerar link de pagamento"}
+                  </Button>
+                )}
+                {q.paid_at && (
+                  <Badge variant="default" className="ml-1">Paga</Badge>
+                )}
                 <Button size="sm" variant="ghost" onClick={() => regenerate(q.id)}>
                   <RefreshCw className="h-3.5 w-3.5 mr-1" /> Novo link
                 </Button>
