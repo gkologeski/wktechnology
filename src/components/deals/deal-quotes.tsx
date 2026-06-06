@@ -36,6 +36,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const update = useServerFn(updateQuote);
   const del = useServerFn(deleteQuote);
   const regen = useServerFn(regenerateQuoteToken);
+  const payLink = useServerFn(createQuotePaymentLink);
 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string }>({
