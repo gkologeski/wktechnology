@@ -24,8 +24,11 @@ import {
   type ResolvedAudience,
 } from "@/lib/prospecting-audience.functions";
 import { listSegments } from "@/lib/segments.functions";
-
-type FieldDef = { name: string; label: string; type?: "text" | "number" | "date" | "select"; options?: { value: string; label: string }[] };
+import {
+  getEntityFieldCatalog,
+  type EntityFieldDef,
+} from "@/lib/entity-fields.functions";
+import { DateRangeFilter, resolveDateRange, type DateRangeValue } from "@/components/date-range-filter";
 
 type EntitySource = Exclude<AudienceSource, "manual" | "segment">;
 
@@ -34,51 +37,6 @@ const ENTITY_LABEL: Record<EntitySource, string> = {
   contacts: "Contatos",
   companies: "Empresas → contatos",
   deals: "Negócios → contatos",
-};
-
-const FIELDS_BY_ENTITY: Record<EntitySource, FieldDef[]> = {
-  leads: [
-    { name: "status", label: "Status", type: "select", options: [
-      { value: "new", label: "Novo" }, { value: "contacted", label: "Contatado" },
-      { value: "qualified", label: "Qualificado" }, { value: "disqualified", label: "Desqualificado" },
-    ]},
-    { name: "source", label: "Origem", type: "text" },
-    { name: "score", label: "Score", type: "number" },
-    { name: "company_name", label: "Empresa", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-    { name: "created_at", label: "Criado em", type: "date" },
-  ],
-  contacts: [
-    { name: "lifecyclestage", label: "Lifecycle stage", type: "text" },
-    { name: "job_title", label: "Cargo", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "company_id", label: "Empresa (UUID)", type: "text" },
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-    { name: "created_at", label: "Criado em", type: "date" },
-  ],
-  companies: [
-    { name: "industry", label: "Indústria", type: "text" },
-    { name: "size", label: "Porte", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "annualrevenue", label: "Receita anual", type: "number" },
-    { name: "is_target_account", label: "Target account", type: "select", options: [
-      { value: "true", label: "Sim" }, { value: "false", label: "Não" },
-    ]},
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-  ],
-  deals: [
-    { name: "stage", label: "Etapa", type: "text" },
-    { name: "stage_id", label: "Stage ID", type: "text" },
-    { name: "pipeline_id", label: "Pipeline (UUID)", type: "text" },
-    { name: "value", label: "Valor", type: "number" },
-    { name: "currency", label: "Moeda", type: "text" },
-    { name: "expected_close_date", label: "Fechamento esperado", type: "date" },
-    { name: "company_id", label: "Empresa (UUID)", type: "text" },
-  ],
 };
 
 const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
@@ -95,6 +53,11 @@ const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
     { value: "is_null", label: "é desconhecido" },
     { value: "is_not_null", label: "é conhecido" },
   ],
+  boolean: [
+    { value: "eq", label: "é" },
+    { value: "is_null", label: "é desconhecido" },
+    { value: "is_not_null", label: "é conhecido" },
+  ],
   number: [
     { value: "eq", label: "é igual a" },
     { value: "neq", label: "é diferente de" },
@@ -106,8 +69,7 @@ const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
     { value: "is_not_null", label: "é conhecido" },
   ],
   date: [
-    { value: "gte", label: "depois de" },
-    { value: "lte", label: "antes de" },
+    { value: "between", label: "no intervalo" },
     { value: "is_null", label: "é desconhecido" },
     { value: "is_not_null", label: "é conhecido" },
   ],
@@ -127,6 +89,7 @@ function useDebounced<T>(value: T, ms: number): T {
   }, [value, ms]);
   return v;
 }
+
 
 export function HubspotListBuilder({
   mode,
