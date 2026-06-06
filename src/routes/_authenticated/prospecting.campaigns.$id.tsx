@@ -38,14 +38,22 @@ function CampaignDetailPage() {
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [scripts, setScripts] = useState<ProspectingScript[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [leadIdsText, setLeadIdsText] = useState("");
+  const [audienceMode, setAudienceMode] = useState<"static" | "dynamic">("static");
+  const [audienceRules, setAudienceRules] = useState<AudienceRule[]>([]);
   const [audit, setAudit] = useState<LeadAudit[]>([]);
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
     setVariants(out.variants.map((v: Variant) => ({ script_id: v.script_id, weight: v.weight, segment_id: v.segment_id })));
-    setLeadIdsText((out.campaign.lead_ids ?? []).join("\n"));
+    const rawRules = (out.campaign.audience_rules ?? []) as AudienceRule[];
+    setAudienceMode(out.campaign.audience_mode ?? "static");
+    // Compat: se não há regras mas existem lead_ids legados, mostra como bloco manual.
+    if (rawRules.length === 0 && (out.campaign.lead_ids?.length ?? 0) > 0) {
+      setAudienceRules([{ source: "manual", lead_ids: out.campaign.lead_ids }]);
+    } else {
+      setAudienceRules(rawRules);
+    }
     const [att, aud] = await Promise.all([
       attemptsFn({ data: { campaign_id: id } }),
       auditFn({ data: { campaign_id: id } }),
