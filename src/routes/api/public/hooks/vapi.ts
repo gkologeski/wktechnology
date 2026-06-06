@@ -7,6 +7,23 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabaseAdmin as any;
 
+const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
+const STOPPING_ATTEMPT_STATUSES = ["failed", "no_answer", "busy", "canceled"];
+
+async function settleCampaignIfIdle(campaignId: string | null | undefined, attemptStatus: unknown) {
+  if (!campaignId || typeof attemptStatus !== "string") return;
+  const { count } = await sb
+    .from("prospecting_call_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaignId)
+    .in("status", ACTIVE_ATTEMPT_STATUSES);
+  if ((count ?? 0) > 0) return;
+
+  const nextStatus = attemptStatus === "completed" ? "done" : STOPPING_ATTEMPT_STATUSES.includes(attemptStatus) ? "paused" : null;
+  if (!nextStatus) return;
+  await sb.from("prospecting_campaigns").update({ status: nextStatus }).eq("id", campaignId).eq("status", "running");
+}
+
 export const Route = createFileRoute("/api/public/hooks/vapi")({
   server: {
     handlers: {
@@ -78,7 +95,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, lead_id, summary")
+          .select("id, workspace_id, campaign_id, lead_id, summary")
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);
@@ -95,6 +112,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             description: row.summary ?? (updates.transcript as string | undefined) ?? null,
           });
         }
+
+        await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
 
         return Response.json({ ok: true });
       },
