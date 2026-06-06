@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MessageCircle, Search, Send, ChevronRight, ExternalLink } from "lucide-react";
+import { Mail, MessageCircle, Search, Send, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
+import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
@@ -38,6 +39,7 @@ function UnifiedInboxPage() {
   const [draft, setDraft] = useState("");
   const sendEmail = useServerFn(sendGmailEmail);
   const sendWa = useServerFn(sendWhatsAppMessage);
+  const compose = useServerFn(smartCompose);
 
   const emailQ = useQuery({
     queryKey: ["inbox-unified", "email"],
@@ -181,6 +183,24 @@ function UnifiedInboxPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const aiSuggest = useMutation({
+    mutationFn: async () => {
+      if (!current) throw new Error("Selecione uma conversa.");
+      const baseText = `${current.title}\n\n${current.snippet}`.trim();
+      const res = await compose({
+        data: {
+          channel: current.channel,
+          mode: "reply",
+          input_text: baseText,
+          contact_name: current.contactLabel,
+          language: "pt-BR",
+        } as never,
+      }) as { text: string };
+      setDraft((prev) => (prev ? `${prev}\n\n${res.text}` : res.text));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -277,11 +297,23 @@ function UnifiedInboxPage() {
                   placeholder={current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"}
                 />
                 <div className="flex items-center gap-2 justify-between">
-                  <Button asChild size="sm" variant="ghost">
-                    <Link to={current.href}>
-                      Abrir conversa <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                    </Link>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button asChild size="sm" variant="ghost">
+                      <Link to={current.href}>
+                        Abrir <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => aiSuggest.mutate()}
+                      disabled={aiSuggest.isPending}
+                      title="Gerar rascunho com IA"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      {aiSuggest.isPending ? "Gerando…" : "IA"}
+                    </Button>
+                  </div>
                   <Button
                     size="sm"
                     onClick={() => reply.mutate()}

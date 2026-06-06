@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { listChatSessions, listChatMessages, sendChatMessage, closeChatSession } from "@/lib/live-chat.functions";
+import { listChatSessions, listChatMessages, sendChatMessage, closeChatSession, convertChatSessionToTicket } from "@/lib/live-chat.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Send, X } from "lucide-react";
+import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
@@ -19,10 +19,12 @@ export const Route = createFileRoute("/_authenticated/inbox/chat")({
 
 function LiveChatInbox() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const listFn = useServerFn(listChatSessions);
   const msgsFn = useServerFn(listChatMessages);
   const sendFn = useServerFn(sendChatMessage);
   const closeFn = useServerFn(closeChatSession);
+  const convertFn = useServerFn(convertChatSessionToTicket);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
@@ -54,6 +56,15 @@ function LiveChatInbox() {
   const close = useMutation({
     mutationFn: (id: string) => closeFn({ data: { session_id: id } }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["chat-sessions"] }); toast.success("Encerrada."); },
+  });
+  const convert = useMutation({
+    mutationFn: (id: string) => convertFn({ data: { session_id: id } }) as Promise<{ ticket_id: string }>,
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["chat-sessions"] });
+      toast.success("Ticket criado");
+      navigate({ to: "/tickets/$id", params: { id: res.ticket_id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const sessions = sessionsQ.data ?? [];
@@ -97,9 +108,14 @@ function LiveChatInbox() {
                   </div>
                 </div>
                 {current.status !== "closed" && (
-                  <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
-                    <X className="h-4 w-4 mr-1" /> Encerrar
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => convert.mutate(current.id)} disabled={convert.isPending}>
+                      <TicketIcon className="h-4 w-4 mr-1" /> {convert.isPending ? "Criando…" : "Virar ticket"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
+                      <X className="h-4 w-4 mr-1" /> Encerrar
+                    </Button>
+                  </div>
                 )}
               </div>
               <ScrollArea className="flex-1 p-3">
