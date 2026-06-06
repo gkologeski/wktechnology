@@ -139,6 +139,34 @@ function CampaignDetailPage() {
           </div>
 
           <div>
+            <Label>Dias da semana</Label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {[
+                { v: 0, l: "Dom" }, { v: 1, l: "Seg" }, { v: 2, l: "Ter" },
+                { v: 3, l: "Qua" }, { v: 4, l: "Qui" }, { v: 5, l: "Sex" }, { v: 6, l: "Sáb" },
+              ].map((d) => {
+                const active = campaign.dialing_window.days.includes(d.v);
+                return (
+                  <Button
+                    key={d.v}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    onClick={() => {
+                      const days = active
+                        ? campaign.dialing_window.days.filter((x) => x !== d.v)
+                        : [...campaign.dialing_window.days, d.v].sort();
+                      setCampaign({ ...campaign, dialing_window: { ...campaign.dialing_window, days } });
+                    }}
+                  >
+                    {d.l}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
             <Label>IDs de leads (um por linha)</Label>
             <Textarea rows={4} value={leadIdsText} onChange={(e) => setLeadIdsText(e.target.value)} placeholder="uuid de lead" />
             <p className="text-xs text-muted-foreground mt-1">Cole os UUIDs dos leads a serem chamados. Ao iniciar, cada lead vira uma chamada na fila.</p>
