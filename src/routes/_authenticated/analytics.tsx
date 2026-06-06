@@ -9,15 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play } from "lucide-react";
+import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   getFunnel, getSalesVelocity, getCohort, listPipelinesForFunnel,
 } from "@/lib/analytics.functions";
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
+import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell, LineChart, Line, Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
