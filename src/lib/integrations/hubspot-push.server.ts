@@ -305,11 +305,11 @@ export async function resolveConflictRow(
     if (!row) throw new Error("Registro local não existe mais");
     await hsRequest(`/crm/v3/objects/${hsObj}/${state.hubspot_id}`, {
       method: "PATCH",
-      body: JSON.stringify({ properties: toHubspotProps(entity, row as Record<string, unknown>) }),
+      body: JSON.stringify({ properties: toHubspotProps(entity, row as unknown as Record<string, unknown>) }),
     });
     await supabase.from("hubspot_sync_state").update({
       conflict_status: "ok", conflict_reason: null,
-      local_updated_at: (row as { updated_at?: string }).updated_at ?? new Date().toISOString(),
+      local_updated_at: (row as unknown as { updated_at?: string }).updated_at ?? new Date().toISOString(),
       remote_updated_at: new Date().toISOString(),
       last_pushed_at: new Date().toISOString(),
       last_synced_at: new Date().toISOString(),
