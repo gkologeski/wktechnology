@@ -169,7 +169,7 @@ export function HubspotListBuilder({
   // Preview ao vivo (debounced)
   const previewFn = useServerFn(previewAudience);
   const rulesKey = JSON.stringify(rules);
-  const debouncedKey = debounce(rulesKey, 500);
+  const debouncedKey = useDebounced(rulesKey, 500);
   const preview = useQuery({
     queryKey: ["audience-preview", debouncedKey],
     enabled: rules.length > 0,
