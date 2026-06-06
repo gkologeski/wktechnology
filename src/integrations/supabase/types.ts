@@ -3412,6 +3412,89 @@ export type Database = {
           },
         ]
       }
+      kb_articles: {
+        Row: {
+          body: string
+          category_id: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          owner_id: string
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          body?: string
+          category_id?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          owner_id: string
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          body?: string
+          category_id?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          owner_id?: string
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          position: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          position?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          position?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       lead_sources: {
         Row: {
           active: boolean
@@ -3546,6 +3629,100 @@ export type Database = {
           },
         ]
       }
+      live_chat_messages: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          created_at: string
+          direction: string
+          id: string
+          owner_id: string
+          session_id: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          direction: string
+          id?: string
+          owner_id: string
+          session_id: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          owner_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_chat_sessions: {
+        Row: {
+          assignee_id: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          owner_id: string
+          status: string
+          ticket_id: string | null
+          updated_at: string
+          visitor_email: string | null
+          visitor_id: string
+          visitor_name: string | null
+          visitor_url: string | null
+        }
+        Insert: {
+          assignee_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          owner_id: string
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_id: string
+          visitor_name?: string | null
+          visitor_url?: string | null
+        }
+        Update: {
+          assignee_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          owner_id?: string
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_id?: string
+          visitor_name?: string | null
+          visitor_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       macros: {
         Row: {
           body: string
@@ -3665,6 +3842,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity: string | null
+          entity_id: string | null
+          id: string
+          link: string | null
+          owner_id: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          link?: string | null
+          owner_id: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          link?: string | null
+          owner_id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       outbound_webhooks: {
         Row: {
