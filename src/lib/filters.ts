@@ -69,6 +69,13 @@ function applyCondition(q: any, c: FilterCondition): any {
     case "is_null": return q.is(c.field, null);
     case "is_not_null": return q.not(c.field, "is", null);
     case "contains": return q.contains(c.field, c.value);
+    case "between": {
+      const v = (c.value ?? {}) as { start?: string; end?: string };
+      let r = q;
+      if (v.start) r = r.gte(c.field, v.start);
+      if (v.end) r = r.lt(c.field, v.end);
+      return r;
+    }
   }
 }
 
