@@ -348,9 +348,21 @@ export async function startVapiCall(opts: {
       messages: [{ role: "system", content: renderedPrompt }],
     },
     firstMessage: renderedFirst,
+    firstMessageMode: "assistant-speaks-first",
     maxDurationSeconds: (cfg?.max_duration_seconds as number) ?? 600,
+    // Force Portuguese (Brazil) transcription so the model understands pt-BR audio.
+    transcriber: { provider: "deepgram", model: "nova-2", language: "pt-BR" },
   };
-  if (voiceId) assistant.voice = { provider: "11labs", voiceId };
+  if (voiceId) {
+    // Use ElevenLabs multilingual model with pt language so the voice speaks Portuguese
+    // properly instead of a Spanish accent trying to read pt-BR text.
+    assistant.voice = {
+      provider: "11labs",
+      voiceId,
+      model: "eleven_multilingual_v2",
+      language: "pt",
+    };
+  }
 
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
   const baseUrl =
