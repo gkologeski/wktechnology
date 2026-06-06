@@ -86,15 +86,84 @@ export const listVapiPhoneNumbers = createServerFn({ method: "POST" })
     return arr.map((p) => ({ id: p.id, number: p.number ?? "", name: p.name ?? "", provider: p.provider ?? "" }));
   });
 
+type ElevenVoice = {
+  voice_id: string;
+  name: string;
+  category?: string;
+  labels?: Record<string, string> | null;
+  verified_languages?: Array<{ language?: string; accent?: string }> | null;
+  fine_tuning?: { language?: string | null } | null;
+  language?: string | null;
+};
+
+function isPortugueseVoice(v: ElevenVoice): boolean {
+  const langLabel = (v.labels?.language ?? "").toLowerCase();
+  const accentLabel = (v.labels?.accent ?? "").toLowerCase();
+  const ftLang = (v.fine_tuning?.language ?? "").toLowerCase();
+  const topLang = (v.language ?? "").toLowerCase();
+  const verified = (v.verified_languages ?? []).some(
+    (x) => (x.language ?? "").toLowerCase().startsWith("pt"),
+  );
+  return (
+    verified ||
+    langLabel.startsWith("pt") ||
+    langLabel.includes("portuguese") ||
+    langLabel.includes("português") ||
+    accentLabel.includes("brazil") ||
+    accentLabel.includes("brasil") ||
+    ftLang.startsWith("pt") ||
+    topLang.startsWith("pt")
+  );
+}
+
 export const listElevenLabsVoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((i: { onlyPortuguese?: boolean } | undefined) => i ?? {})
+  .handler(async ({ data }) => {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) throw new Error("ELEVENLABS_API_KEY não configurado");
-    const res = await fetch(`${ELEVEN_BASE}/v1/voices`, { headers: { "xi-api-key": apiKey } });
-    if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
-    const json = (await res.json()) as { voices: Array<{ voice_id: string; name: string; category?: string }> };
-    return json.voices.map((v) => ({ id: v.voice_id, name: v.name, category: v.category ?? "premade" }));
+
+    // 1) Vozes da conta do usuário
+    const ownRes = await fetch(`${ELEVEN_BASE}/v1/voices`, { headers: { "xi-api-key": apiKey } });
+    if (!ownRes.ok) throw new Error(`ElevenLabs ${ownRes.status}`);
+    const ownJson = (await ownRes.json()) as { voices: ElevenVoice[] };
+    const own = ownJson.voices ?? [];
+
+    // 2) Voice Library pública (pt) — para usuários que ainda não adicionaram nenhuma
+    let shared: ElevenVoice[] = [];
+    try {
+      const sharedRes = await fetch(
+        `${ELEVEN_BASE}/v1/shared-voices?language=pt&page_size=100&featured=true`,
+        { headers: { "xi-api-key": apiKey } },
+      );
+      if (sharedRes.ok) {
+        const sj = (await sharedRes.json()) as { voices: Array<ElevenVoice & { accent?: string }> };
+        shared = (sj.voices ?? []).map((v) => ({
+          ...v,
+          category: "library",
+          labels: { ...(v.labels ?? {}), language: "pt", accent: v.accent ?? "" },
+        }));
+      }
+    } catch {
+      // best-effort; ignore shared library errors
+    }
+
+    // Mescla e dedup por voice_id
+    const seen = new Set<string>();
+    const all = [...own, ...shared].filter((v) => {
+      if (seen.has(v.voice_id)) return false;
+      seen.add(v.voice_id);
+      return true;
+    });
+
+    const filtered = data.onlyPortuguese ? all.filter(isPortugueseVoice) : all;
+
+    return filtered.map((v) => ({
+      id: v.voice_id,
+      name: v.name,
+      category: v.category ?? "premade",
+      accent: v.labels?.accent ?? "",
+    }));
   });
 
 const PreviewSchema = z.object({
