@@ -4323,6 +4323,8 @@ export type Database = {
           transcript: string | null
           updated_at: string
           vapi_call_id: string | null
+          vapi_request: Json | null
+          vapi_response: Json | null
           variant_id: string | null
           workspace_id: string
         }
@@ -4347,6 +4349,8 @@ export type Database = {
           transcript?: string | null
           updated_at?: string
           vapi_call_id?: string | null
+          vapi_request?: Json | null
+          vapi_response?: Json | null
           variant_id?: string | null
           workspace_id: string
         }
@@ -4371,6 +4375,8 @@ export type Database = {
           transcript?: string | null
           updated_at?: string
           vapi_call_id?: string | null
+          vapi_request?: Json | null
+          vapi_response?: Json | null
           variant_id?: string | null
           workspace_id?: string
         }
