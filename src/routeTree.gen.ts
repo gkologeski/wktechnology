@@ -41,6 +41,7 @@ import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
+import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -303,6 +304,11 @@ const AuthenticatedIntegrationsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedIntegrationsRoute,
   } as any)
+const AuthenticatedInboxIndexRoute = AuthenticatedInboxIndexRouteImport.update({
+  id: '/inbox/',
+  path: '/inbox/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedTicketsIdRoute = AuthenticatedTicketsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -962,6 +968,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1089,6 +1096,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1221,6 +1229,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1353,6 +1362,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/inbox/'
     | '/integrations/'
     | '/settings/'
     | '/admin/workspaces/$id'
@@ -1480,6 +1490,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/inbox'
     | '/integrations'
     | '/settings'
     | '/admin/workspaces/$id'
@@ -1611,6 +1622,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
+    | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
@@ -1925,6 +1937,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/integrations/'
       preLoaderRoute: typeof AuthenticatedIntegrationsIndexRouteImport
       parentRoute: typeof AuthenticatedIntegrationsRoute
+    }
+    '/_authenticated/inbox/': {
+      id: '/_authenticated/inbox/'
+      path: '/inbox'
+      fullPath: '/inbox/'
+      preLoaderRoute: typeof AuthenticatedInboxIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tickets/$id': {
       id: '/_authenticated/tickets/$id'
@@ -2878,6 +2897,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
+  AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -2903,6 +2923,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
+  AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

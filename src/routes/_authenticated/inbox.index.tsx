@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MessageCircle, Search, Inbox as InboxIcon } from "lucide-react";
+import { Mail, MessageCircle, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
   component: UnifiedInboxPage,
@@ -112,7 +112,6 @@ function UnifiedInboxPage() {
       <PageHeader
         title="Inbox unificada"
         description="Conversas de e-mail e WhatsApp em um só lugar."
-        icon={InboxIcon}
       />
 
       <div className="flex flex-wrap items-center gap-2">
