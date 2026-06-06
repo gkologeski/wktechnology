@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { listCampaigns, upsertCampaign, deleteCampaign, setCampaignStatus, type Campaign } from "@/lib/prospecting-campaigns.functions";
 
-export const Route = createFileRoute("/_authenticated/prospecting/campaigns")({
+export const Route = createFileRoute("/_authenticated/prospecting/campaigns/")({
   component: CampaignsListPage,
 });
 

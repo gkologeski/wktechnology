@@ -98,7 +98,6 @@ import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings.billing'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
-import { Route as AuthenticatedProspectingCampaignsRouteImport } from './routes/_authenticated/prospecting.campaigns'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -113,6 +112,7 @@ import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
+import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
@@ -655,12 +655,6 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedProspectingCampaignsRoute =
-  AuthenticatedProspectingCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
-    getParentRoute: () => AuthenticatedProspectingRoute,
-  } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
     id: '/import-hubspot',
@@ -739,6 +733,12 @@ const AuthenticatedSettingsRolesIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
+  } as any)
+const AuthenticatedProspectingCampaignsIndexRoute =
+  AuthenticatedProspectingCampaignsIndexRouteImport.update({
+    id: '/campaigns/',
+    path: '/campaigns/',
+    getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -934,9 +934,9 @@ const AuthenticatedSettingsRolesRoleIdRoute =
   } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
   AuthenticatedProspectingCampaignsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedProspectingCampaignsRoute,
+    id: '/campaigns/$id',
+    path: '/campaigns/$id',
+    getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
 const AuthenticatedAdminWorkspacesIdRoute =
   AuthenticatedAdminWorkspacesIdRouteImport.update({
@@ -1028,7 +1028,6 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
-  '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1120,6 +1119,7 @@ export interface FileRoutesByFullPath {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -1173,7 +1173,6 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
-  '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1264,6 +1263,7 @@ export interface FileRoutesByTo {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -1321,7 +1321,6 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
-  '/_authenticated/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1413,6 +1412,7 @@ export interface FileRoutesById {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -1470,7 +1470,6 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
-    | '/prospecting/campaigns'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
@@ -1562,6 +1561,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/lovable/email/queue/process'
+    | '/prospecting/campaigns/'
     | '/settings/roles/'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -1615,7 +1615,6 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
-    | '/prospecting/campaigns'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
@@ -1706,6 +1705,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/lovable/email/queue/process'
+    | '/prospecting/campaigns'
     | '/settings/roles'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -1762,7 +1762,6 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
-    | '/_authenticated/prospecting/campaigns'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/billing'
@@ -1854,6 +1853,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/lovable/email/queue/process'
+    | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -2544,13 +2544,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/prospecting/campaigns': {
-      id: '/_authenticated/prospecting/campaigns'
-      path: '/campaigns'
-      fullPath: '/prospecting/campaigns'
-      preLoaderRoute: typeof AuthenticatedProspectingCampaignsRouteImport
-      parentRoute: typeof AuthenticatedProspectingRoute
-    }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
       path: '/import-hubspot'
@@ -2648,6 +2641,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/roles/'
       preLoaderRoute: typeof AuthenticatedSettingsRolesIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
+    }
+    '/_authenticated/prospecting/campaigns/': {
+      id: '/_authenticated/prospecting/campaigns/'
+      path: '/campaigns'
+      fullPath: '/prospecting/campaigns/'
+      preLoaderRoute: typeof AuthenticatedProspectingCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedProspectingRoute
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -2889,10 +2889,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/prospecting/campaigns/$id': {
       id: '/_authenticated/prospecting/campaigns/$id'
-      path: '/$id'
+      path: '/campaigns/$id'
       fullPath: '/prospecting/campaigns/$id'
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
-      parentRoute: typeof AuthenticatedProspectingCampaignsRoute
+      parentRoute: typeof AuthenticatedProspectingRoute
     }
     '/_authenticated/admin/workspaces/$id': {
       id: '/_authenticated/admin/workspaces/$id'
@@ -3013,29 +3013,17 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
-interface AuthenticatedProspectingCampaignsRouteChildren {
-  AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
-}
-
-const AuthenticatedProspectingCampaignsRouteChildren: AuthenticatedProspectingCampaignsRouteChildren =
-  {
-    AuthenticatedProspectingCampaignsIdRoute:
-      AuthenticatedProspectingCampaignsIdRoute,
-  }
-
-const AuthenticatedProspectingCampaignsRouteWithChildren =
-  AuthenticatedProspectingCampaignsRoute._addFileChildren(
-    AuthenticatedProspectingCampaignsRouteChildren,
-  )
-
 interface AuthenticatedProspectingRouteChildren {
-  AuthenticatedProspectingCampaignsRoute: typeof AuthenticatedProspectingCampaignsRouteWithChildren
+  AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
+  AuthenticatedProspectingCampaignsIndexRoute: typeof AuthenticatedProspectingCampaignsIndexRoute
 }
 
 const AuthenticatedProspectingRouteChildren: AuthenticatedProspectingRouteChildren =
   {
-    AuthenticatedProspectingCampaignsRoute:
-      AuthenticatedProspectingCampaignsRouteWithChildren,
+    AuthenticatedProspectingCampaignsIdRoute:
+      AuthenticatedProspectingCampaignsIdRoute,
+    AuthenticatedProspectingCampaignsIndexRoute:
+      AuthenticatedProspectingCampaignsIndexRoute,
   }
 
 const AuthenticatedProspectingRouteWithChildren =
@@ -3388,3 +3376,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
