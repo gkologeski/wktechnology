@@ -45,6 +45,7 @@ export const upsertSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpsertSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await requireTool(userId, "export");
     const nextRun = computeNextRun({
       frequency: data.frequency,
       hour_of_day: data.hour_of_day,
