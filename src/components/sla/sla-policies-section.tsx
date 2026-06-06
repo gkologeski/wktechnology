@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Zap } from "lucide-react";
+// (Dialog imports above already provide Dialog/DialogContent/etc.)
 import {
   listSlaPolicies, upsertSlaPolicy, deleteSlaPolicy, listTicketPipelines, runSlaBreachCheck,
 } from "@/lib/sla-policies.functions";
@@ -134,17 +135,15 @@ function PolicyDialog({
   const [active, setActive] = useState<boolean>(initial?.active ?? true);
   const [saving, setSaving] = useState(false);
 
-  // Reset on open change
-  useState(() => {
-    if (open) {
-      setName(initial?.name ?? "");
-      setPipelineId(initial?.pipeline_id ?? "");
-      setPriority(initial?.priority ?? "");
-      setFirstMins(String(initial?.first_response_mins ?? 60));
-      setResMins(String(initial?.resolution_mins ?? 1440));
-      setActive(initial?.active ?? true);
-    }
-  });
+  useEffect(() => {
+    if (!open) return;
+    setName(initial?.name ?? "");
+    setPipelineId(initial?.pipeline_id ?? "");
+    setPriority(initial?.priority ?? "");
+    setFirstMins(String(initial?.first_response_mins ?? 60));
+    setResMins(String(initial?.resolution_mins ?? 1440));
+    setActive(initial?.active ?? true);
+  }, [open, initial]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
