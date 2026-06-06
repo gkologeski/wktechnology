@@ -104,6 +104,7 @@ export const runScheduleNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    await requireTool(context.userId, "export");
     // Verifica posse via RLS antes de chamar engine (que usa admin)
     const { data: row, error } = await context.supabase
       .from("report_schedules")
