@@ -88,6 +88,16 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     await del({ data: { id } });
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
   }
+  async function genPayLink(id: string) {
+    try {
+      const r = await payLink({ data: { id } });
+      await navigator.clipboard.writeText(r.url);
+      toast.success("Link de pagamento gerado e copiado.");
+      qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
 
   return (
     <div className="space-y-3">
