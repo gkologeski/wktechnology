@@ -285,14 +285,15 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       if (leadIds.length) {
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
-          .select("lead_id, status, attempt_number")
+          .select("lead_id, status, attempt_number, ended_reason")
           .eq("campaign_id", data.id);
         const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
-        for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number }>) {
+        for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; ended_reason: string | null }>) {
           const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
-          const blocking = ["queued", "ringing", "in_progress", "completed"].includes(x.status);
+          const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
+          const isTalked = x.status === "completed" && !isRetriableEndedReason(x.ended_reason);
           byLead.set(x.lead_id, {
-            blocking: prev.blocking || blocking,
+            blocking: prev.blocking || isActive || isTalked,
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
           });
         }
