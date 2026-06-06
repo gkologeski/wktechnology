@@ -124,6 +124,8 @@ const CampaignInput = z.object({
     )
     .max(20)
     .default([]),
+  audience_mode: z.enum(["static", "dynamic"]).default("static"),
+  audience_rules: AudienceRulesSchema.default([]),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
