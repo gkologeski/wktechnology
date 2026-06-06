@@ -3,12 +3,66 @@
 // compared against VAPI_WEBHOOK_SECRET.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabaseAdmin as any;
 
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
 const STOPPING_ATTEMPT_STATUSES = ["failed", "no_answer", "busy", "canceled"];
+
+async function maybeRequeueAttempt(row: {
+  id: string;
+  workspace_id: string;
+  campaign_id: string | null;
+  lead_id: string | null;
+  attempt_number: number | null;
+} | null, endedReason: string | null): Promise<boolean> {
+  if (!row?.campaign_id || !row.lead_id) return false;
+  if (!isRetriableEndedReason(endedReason)) return false;
+
+  const { data: c } = await sb
+    .from("prospecting_campaigns")
+    .select("status, max_attempts, retry_interval_minutes")
+    .eq("id", row.campaign_id)
+    .maybeSingle();
+  if (!c) return false;
+  const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
+  const retryMin = (c.retry_interval_minutes as number | undefined) ?? 240;
+  const current = row.attempt_number ?? 1;
+  if (current >= maxAttempts) return false;
+
+  // Conta tentativas existentes do lead para evitar duplicar enfileiramento.
+  const { data: existing } = await sb
+    .from("prospecting_call_attempts")
+    .select("status, attempt_number")
+    .eq("campaign_id", row.campaign_id)
+    .eq("lead_id", row.lead_id);
+  const rows = (existing ?? []) as Array<{ status: string; attempt_number: number | null }>;
+  const hasPending = rows.some((r) => ACTIVE_ATTEMPT_STATUSES.includes(r.status));
+  if (hasPending) return false;
+  const highest = rows.reduce((m, r) => Math.max(m, r.attempt_number ?? 0), 0);
+  if (highest >= maxAttempts) return false;
+
+  const scheduledAt = new Date(Date.now() + retryMin * 60_000).toISOString();
+  await sb.from("prospecting_call_attempts").insert({
+    workspace_id: row.workspace_id,
+    owner_id: row.workspace_id,
+    campaign_id: row.campaign_id,
+    lead_id: row.lead_id,
+    status: "queued",
+    attempt_number: highest + 1,
+    scheduled_at: scheduledAt,
+  });
+
+  // Garante que a campanha siga ativa para o cron pegar o próximo tick.
+  await sb
+    .from("prospecting_campaigns")
+    .update({ status: "running" })
+    .eq("id", row.campaign_id)
+    .in("status", ["paused", "done"]);
+  return true;
+}
 
 async function settleCampaignIfIdle(campaignId: string | null | undefined, attemptStatus: unknown) {
   if (!campaignId || typeof attemptStatus !== "string") return;
@@ -95,7 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, campaign_id, lead_id, summary")
+          .select("id, workspace_id, campaign_id, lead_id, summary, attempt_number")
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);
@@ -113,7 +167,15 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           });
         }
 
-        await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
+        // Re-enfileira se o motivo não indica conversa real (silence, no-answer, error...).
+        let requeued = false;
+        const isFinal = updates.status === "completed" || ["failed", "no_answer", "busy"].includes(String(updates.status ?? ""));
+        if (isFinal) {
+          requeued = await maybeRequeueAttempt(row, (updates.ended_reason as string | undefined) ?? null);
+        }
+        if (!requeued) {
+          await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
+        }
 
         return Response.json({ ok: true });
       },
