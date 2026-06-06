@@ -3,6 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  AudienceRulesSchema,
+  resolveAudienceServer,
+  type AudienceRule,
+} from "@/lib/prospecting-audience.functions";
 
 const VAPI_BASE = "https://api.vapi.ai";
 
@@ -20,6 +25,9 @@ export type Campaign = {
   source_ref: string | null;
   lead_ids: string[];
   dialing_window: { start: string; end: string; timezone: string; days: number[] };
+  audience_mode: "static" | "dynamic";
+  // Stored as JSON in Postgres; cast to AudienceRule[] in the UI before reading.
+  audience_rules: JsonValue;
   created_at: string;
   updated_at: string;
 };
@@ -116,6 +124,8 @@ const CampaignInput = z.object({
     )
     .max(20)
     .default([]),
+  audience_mode: z.enum(["static", "dynamic"]).default("static"),
+  audience_rules: AudienceRulesSchema.default([]),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
@@ -158,6 +168,19 @@ export const upsertCampaign = createServerFn({ method: "POST" })
   .inputValidator((i) => CampaignInput.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+
+    // Em modo estático, resolve as regras AGORA (snapshot) e usa esses ids.
+    // Em modo dinâmico, lead_ids é recalculado a cada "Iniciar".
+    let resolvedLeadIds: string[] = data.lead_ids;
+    if (data.audience_mode === "static" && data.audience_rules.length > 0) {
+      const resolved = await resolveAudienceServer(ws, data.audience_rules as AudienceRule[]);
+      // União com lead_ids manuais já passados (caso o usuário também tenha colado UUIDs).
+      const set = new Set<string>([...resolvedLeadIds, ...resolved.lead_ids]);
+      resolvedLeadIds = Array.from(set);
+    } else if (data.audience_mode === "dynamic") {
+      resolvedLeadIds = [];
+    }
+
     const payload = {
       workspace_id: ws,
       owner_id: ws,
@@ -167,8 +190,10 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       retry_interval_minutes: data.retry_interval_minutes,
       source_type: data.source_type,
       source_ref: data.source_ref ?? null,
-      lead_ids: data.lead_ids,
+      lead_ids: resolvedLeadIds,
       dialing_window: data.dialing_window,
+      audience_mode: data.audience_mode,
+      audience_rules: data.audience_rules,
     };
 
     let id: string;
@@ -244,12 +269,18 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
 
       const { data: c } = await sb
         .from("prospecting_campaigns")
-        .select("lead_ids, max_attempts")
+        .select("lead_ids, max_attempts, audience_mode, audience_rules")
         .eq("id", data.id)
         .eq("workspace_id", ws)
         .single();
-      const leadIds = (c?.lead_ids ?? []) as string[];
+      let leadIds = (c?.lead_ids ?? []) as string[];
       const maxAttempts = (c?.max_attempts as number | undefined) ?? 1;
+      const audienceMode = (c?.audience_mode as string | undefined) ?? "static";
+      if (audienceMode === "dynamic") {
+        const rules = (c?.audience_rules ?? []) as AudienceRule[];
+        const resolved = await resolveAudienceServer(ws, rules);
+        leadIds = resolved.lead_ids;
+      }
       if (leadIds.length) {
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
@@ -323,13 +354,19 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
-      .select("lead_ids, max_attempts")
+      .select("lead_ids, max_attempts, audience_mode, audience_rules")
       .eq("id", data.campaign_id)
       .eq("workspace_id", ws)
       .single();
     if (!c) return [];
-    const leadIds = (c.lead_ids ?? []) as string[];
+    let leadIds = (c.lead_ids ?? []) as string[];
     const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
+    const audienceMode = (c.audience_mode as string | undefined) ?? "static";
+    if (audienceMode === "dynamic") {
+      const rules = (c.audience_rules ?? []) as AudienceRule[];
+      const resolved = await resolveAudienceServer(ws, rules);
+      leadIds = resolved.lead_ids;
+    }
     if (!leadIds.length) return [];
 
     const { data: leads } = await sb

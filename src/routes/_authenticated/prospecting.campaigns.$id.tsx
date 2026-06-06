@@ -15,6 +15,8 @@ import {
   auditCampaignQueueability,
   type Campaign, type Variant, type Attempt, type LeadAudit,
 } from "@/lib/prospecting-campaigns.functions";
+import type { AudienceRule } from "@/lib/prospecting-audience.functions";
+import { AudienceBuilder } from "@/components/prospecting/audience-builder";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/prospecting/campaigns/$id")({
@@ -36,14 +38,22 @@ function CampaignDetailPage() {
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [scripts, setScripts] = useState<ProspectingScript[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [leadIdsText, setLeadIdsText] = useState("");
+  const [audienceMode, setAudienceMode] = useState<"static" | "dynamic">("static");
+  const [audienceRules, setAudienceRules] = useState<AudienceRule[]>([]);
   const [audit, setAudit] = useState<LeadAudit[]>([]);
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
     setVariants(out.variants.map((v: Variant) => ({ script_id: v.script_id, weight: v.weight, segment_id: v.segment_id })));
-    setLeadIdsText((out.campaign.lead_ids ?? []).join("\n"));
+    const rawRules = (out.campaign.audience_rules ?? []) as AudienceRule[];
+    setAudienceMode(out.campaign.audience_mode ?? "static");
+    // Compat: se não há regras mas existem lead_ids legados, mostra como bloco manual.
+    if (rawRules.length === 0 && (out.campaign.lead_ids?.length ?? 0) > 0) {
+      setAudienceRules([{ source: "manual", lead_ids: out.campaign.lead_ids }]);
+    } else {
+      setAudienceRules(rawRules);
+    }
     const [att, aud] = await Promise.all([
       attemptsFn({ data: { campaign_id: id } }),
       auditFn({ data: { campaign_id: id } }),
@@ -74,7 +84,6 @@ function CampaignDetailPage() {
   if (!campaign) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
 
   const save = async () => {
-    const leadIds = leadIdsText.split(/\s+/).map((s) => s.trim()).filter(Boolean);
     try {
       await saveFn({ data: {
         id: campaign.id,
@@ -84,9 +93,11 @@ function CampaignDetailPage() {
         retry_interval_minutes: campaign.retry_interval_minutes,
         source_type: "manual",
         source_ref: null,
-        lead_ids: leadIds,
+        lead_ids: [],
         dialing_window: campaign.dialing_window,
         variants: variants.filter((v) => v.script_id),
+        audience_mode: audienceMode,
+        audience_rules: audienceRules,
       }});
       toast.success("Salvo");
       refresh();
@@ -175,9 +186,16 @@ function CampaignDetailPage() {
           </div>
 
           <div>
-            <Label>IDs de leads (um por linha)</Label>
-            <Textarea rows={4} value={leadIdsText} onChange={(e) => setLeadIdsText(e.target.value)} placeholder="uuid de lead" />
-            <p className="text-xs text-muted-foreground mt-1">Cole os UUIDs dos leads a serem chamados. Ao iniciar, cada lead vira uma chamada na fila.</p>
+            <Label>Público da campanha</Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
+              Combine filtros em diferentes entidades para gerar a lista de leads. Em modo dinâmico, a lista é recalculada toda vez que a campanha é iniciada.
+            </p>
+            <AudienceBuilder
+              mode={audienceMode}
+              rules={audienceRules}
+              onChange={setAudienceRules}
+              onModeChange={setAudienceMode}
+            />
           </div>
         </CardContent>
       </Card>
