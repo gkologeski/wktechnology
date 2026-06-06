@@ -18,10 +18,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as KbIndexRouteImport } from './routes/kb.index'
+import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
@@ -72,6 +75,7 @@ import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
+import { Route as AuthenticatedSettingsKbRouteImport } from './routes/_authenticated/settings.kb'
 import { Route as AuthenticatedSettingsImportCsvRouteImport } from './routes/_authenticated/settings.import-csv'
 import { Route as AuthenticatedSettingsHubspotUsersRouteImport } from './routes/_authenticated/settings.hubspot-users'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
@@ -95,6 +99,7 @@ import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
+import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
@@ -104,6 +109,9 @@ import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
+import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
+import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
@@ -184,6 +192,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KbIndexRoute = KbIndexRouteImport.update({
+  id: '/kb/',
+  path: '/kb/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
+  id: '/widget/$workspaceId',
+  path: '/widget/$workspaceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
   id: '/survey/$token',
   path: '/survey/$token',
@@ -202,6 +220,11 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
   path: '/portal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KbSlugRoute = KbSlugRouteImport.update({
+  id: '/kb/$slug',
+  path: '/kb/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookSlugRoute = BookSlugRouteImport.update({
@@ -487,6 +510,11 @@ const AuthenticatedSettingsLanguageRoute =
     path: '/language',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsKbRoute = AuthenticatedSettingsKbRouteImport.update({
+  id: '/kb',
+  path: '/kb',
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any)
 const AuthenticatedSettingsImportCsvRoute =
   AuthenticatedSettingsImportCsvRouteImport.update({
     id: '/import-csv',
@@ -623,6 +651,11 @@ const AuthenticatedInboxEmailRoute = AuthenticatedInboxEmailRouteImport.update({
   path: '/inbox/email',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedInboxChatRoute = AuthenticatedInboxChatRouteImport.update({
+  id: '/inbox/chat',
+  path: '/inbox/chat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -675,6 +708,21 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWidgetSessionRoute = ApiPublicWidgetSessionRouteImport.update({
+  id: '/api/public/widget/session',
+  path: '/api/public/widget/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWidgetScriptRoute = ApiPublicWidgetScriptRouteImport.update({
+  id: '/api/public/widget/script',
+  path: '/api/public/widget/script',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWidgetMessagesRoute = ApiPublicWidgetMessagesRouteImport.update({
+  id: '/api/public/widget/messages',
+  path: '/api/public/widget/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
   id: '/api/public/v1/leads',
   path: '/api/public/v1/leads',
@@ -904,10 +952,13 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/kb/$slug': typeof KbSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/kb/': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -915,6 +966,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -938,6 +990,7 @@ export interface FileRoutesByFullPath {
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
   '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
+  '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1000,6 +1053,9 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
+  '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
+  '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1033,10 +1089,13 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/kb/$slug': typeof KbSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/kb': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1044,6 +1103,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -1067,6 +1127,7 @@ export interface FileRoutesByTo {
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
   '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
+  '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1128,6 +1189,9 @@ export interface FileRoutesByTo {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
+  '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
+  '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1165,10 +1229,13 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/kb/$slug': typeof KbSlugRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1176,6 +1243,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -1199,6 +1267,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/_authenticated/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
   '/_authenticated/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
+  '/_authenticated/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1261,6 +1330,9 @@ export interface FileRoutesById {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
+  '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
+  '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1298,10 +1370,13 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/kb/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/widget/$workspaceId'
+    | '/kb/'
     | '/admin/bug-reports'
     | '/admin/workspaces'
     | '/campaigns/email'
@@ -1309,6 +1384,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/deals/$id'
+    | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -1332,6 +1408,7 @@ export interface FileRouteTypes {
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
     | '/settings/import-csv'
+    | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
@@ -1394,6 +1471,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/widget/messages'
+    | '/api/public/widget/script'
+    | '/api/public/widget/session'
     | '/lovable/email/queue/process'
     | '/settings/roles/'
     | '/tasks/queues/$queueId/play'
@@ -1427,10 +1507,13 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/kb/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/widget/$workspaceId'
+    | '/kb'
     | '/admin/bug-reports'
     | '/admin/workspaces'
     | '/campaigns/email'
@@ -1438,6 +1521,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/deals/$id'
+    | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -1461,6 +1545,7 @@ export interface FileRouteTypes {
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
     | '/settings/import-csv'
+    | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
@@ -1522,6 +1607,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/widget/messages'
+    | '/api/public/widget/script'
+    | '/api/public/widget/session'
     | '/lovable/email/queue/process'
     | '/settings/roles'
     | '/tasks/queues/$queueId/play'
@@ -1558,10 +1646,13 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/kb/$slug'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/widget/$workspaceId'
+    | '/kb/'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/campaigns/email'
@@ -1569,6 +1660,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/deals/$id'
+    | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
@@ -1592,6 +1684,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/hubspot-sync'
     | '/_authenticated/settings/hubspot-users'
     | '/_authenticated/settings/import-csv'
+    | '/_authenticated/settings/kb'
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/macros'
@@ -1654,6 +1747,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/widget/messages'
+    | '/api/public/widget/script'
+    | '/api/public/widget/session'
     | '/lovable/email/queue/process'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/tasks/queues/$queueId/play'
@@ -1675,10 +1771,13 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   BookSlugRoute: typeof BookSlugRoute
+  KbSlugRoute: typeof KbSlugRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
+  KbIndexRoute: typeof KbIndexRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
@@ -1706,6 +1805,9 @@ export interface RootRouteChildren {
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
+  ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
+  ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
+  ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
@@ -1777,6 +1879,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kb/': {
+      id: '/kb/'
+      path: '/kb'
+      fullPath: '/kb/'
+      preLoaderRoute: typeof KbIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widget/$workspaceId': {
+      id: '/widget/$workspaceId'
+      path: '/widget/$workspaceId'
+      fullPath: '/widget/$workspaceId'
+      preLoaderRoute: typeof WidgetWorkspaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/survey/$token': {
       id: '/survey/$token'
       path: '/survey/$token'
@@ -1803,6 +1919,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kb/$slug': {
+      id: '/kb/$slug'
+      path: '/kb/$slug'
+      fullPath: '/kb/$slug'
+      preLoaderRoute: typeof KbSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/$slug': {
@@ -2155,6 +2278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsLanguageRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/kb': {
+      id: '/_authenticated/settings/kb'
+      path: '/kb'
+      fullPath: '/settings/kb'
+      preLoaderRoute: typeof AuthenticatedSettingsKbRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/import-csv': {
       id: '/_authenticated/settings/import-csv'
       path: '/import-csv'
@@ -2316,6 +2446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/inbox/chat': {
+      id: '/_authenticated/inbox/chat'
+      path: '/inbox/chat'
+      fullPath: '/inbox/chat'
+      preLoaderRoute: typeof AuthenticatedInboxChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
       path: '/$id'
@@ -2377,6 +2514,27 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/queue/process'
       fullPath: '/lovable/email/queue/process'
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/widget/session': {
+      id: '/api/public/widget/session'
+      path: '/api/public/widget/session'
+      fullPath: '/api/public/widget/session'
+      preLoaderRoute: typeof ApiPublicWidgetSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/widget/script': {
+      id: '/api/public/widget/script'
+      path: '/api/public/widget/script'
+      fullPath: '/api/public/widget/script'
+      preLoaderRoute: typeof ApiPublicWidgetScriptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/widget/messages': {
+      id: '/api/public/widget/messages'
+      path: '/api/public/widget/messages'
+      fullPath: '/api/public/widget/messages'
+      preLoaderRoute: typeof ApiPublicWidgetMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/leads': {
@@ -2730,6 +2888,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
   AuthenticatedSettingsHubspotUsersRoute: typeof AuthenticatedSettingsHubspotUsersRoute
   AuthenticatedSettingsImportCsvRoute: typeof AuthenticatedSettingsImportCsvRoute
+  AuthenticatedSettingsKbRoute: typeof AuthenticatedSettingsKbRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
@@ -2783,6 +2942,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsHubspotUsersRoute:
     AuthenticatedSettingsHubspotUsersRoute,
   AuthenticatedSettingsImportCsvRoute: AuthenticatedSettingsImportCsvRoute,
+  AuthenticatedSettingsKbRoute: AuthenticatedSettingsKbRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
@@ -2895,6 +3055,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
@@ -2921,6 +3082,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAdminWorkspacesRouteWithChildren,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
@@ -2975,10 +3137,13 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   BookSlugRoute: BookSlugRoute,
+  KbSlugRoute: KbSlugRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
+  KbIndexRoute: KbIndexRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
@@ -3009,6 +3174,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
+  ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
+  ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
+  ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,

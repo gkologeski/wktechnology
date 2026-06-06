@@ -7,6 +7,7 @@ import { useMyRole } from "@/lib/use-my-role";
 import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -61,6 +62,8 @@ function AuthenticatedLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-12 flex items-center gap-2 border-b bg-background px-3">
             <SidebarTrigger />
+            <div className="flex-1" />
+            <NotificationsBell />
           </header>
           <main className="flex-1 p-6 overflow-auto">
             {blocked ? (
