@@ -138,7 +138,7 @@ export async function pushEntity(
   out.scanned = rows.length;
 
   // 2) pega state existente
-  const localIds = rows.map((r) => (r as { id: string }).id);
+  const localIds = (rows as unknown as Array<{ id: string }>).map((r) => r.id);
   const { data: stateRows } = await supabase
     .from("hubspot_sync_state")
     .select("id, local_id, hubspot_id, local_updated_at, remote_updated_at")
