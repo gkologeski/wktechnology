@@ -71,13 +71,14 @@ async function runAction(
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
       case "assign_to": {
-        const { error } = await supabase.from(ctx.entity).update({ owner_id: action.user_id }).eq("id", ctx.entityId);
+        const assignField = ctx.entity === "tickets" ? "assignee_id" : "owner_id";
+        const { error } = await supabase.from(ctx.entity).update({ [assignField]: action.user_id }).eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "assign_to", detail: { user_id: action.user_id } };
       }
       case "rotate_assign": {
-        if (ctx.entity !== "leads" && ctx.entity !== "deals") {
-          throw new Error("rotate_assign suporta apenas leads/deals");
+        if (ctx.entity !== "leads" && ctx.entity !== "deals" && ctx.entity !== "tickets") {
+          throw new Error("rotate_assign suporta apenas leads/deals/tickets");
         }
         const r = await applyRotation(supabase, action.rule_id, ctx.entity, ctx.entityId);
         return { at, ok: true, action: "rotate_assign", detail: { rule_id: action.rule_id, assigned_to: r.user_id } };
