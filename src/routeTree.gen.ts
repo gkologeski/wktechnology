@@ -122,6 +122,7 @@ import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
+import { Route as ApiPublicHooksVapiRouteImport } from './routes/api/public/hooks/vapi'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
@@ -130,6 +131,7 @@ import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
+import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
@@ -780,6 +782,11 @@ const ApiPublicHooksWebhookTickRoute =
     path: '/api/public/hooks/webhook-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksVapiRoute = ApiPublicHooksVapiRouteImport.update({
+  id: '/api/public/hooks/vapi',
+  path: '/api/public/hooks/vapi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksTwilioWhatsappStatusRoute =
   ApiPublicHooksTwilioWhatsappStatusRouteImport.update({
     id: '/api/public/hooks/twilio-whatsapp-status',
@@ -825,6 +832,12 @@ const ApiPublicHooksScheduledExportsTickRoute =
   ApiPublicHooksScheduledExportsTickRouteImport.update({
     id: '/api/public/hooks/scheduled-exports-tick',
     path: '/api/public/hooks/scheduled-exports-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksProspectingDialTickRoute =
+  ApiPublicHooksProspectingDialTickRouteImport.update({
+    id: '/api/public/hooks/prospecting-dial-tick',
+    path: '/api/public/hooks/prospecting-dial-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksHubspotTickRoute =
@@ -1044,6 +1057,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
@@ -1052,6 +1066,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
@@ -1181,6 +1196,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
@@ -1189,6 +1205,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
@@ -1323,6 +1340,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
@@ -1331,6 +1349,7 @@ export interface FileRoutesById {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
@@ -1465,6 +1484,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
@@ -1473,6 +1493,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
@@ -1602,6 +1623,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
@@ -1610,6 +1632,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
@@ -1743,6 +1766,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/segments-tick'
@@ -1751,6 +1775,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
+    | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
@@ -1801,6 +1826,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
+  ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
@@ -1809,6 +1835,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
+  ApiPublicHooksVapiRoute: typeof ApiPublicHooksVapiRoute
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
@@ -2620,6 +2647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWebhookTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/vapi': {
+      id: '/api/public/hooks/vapi'
+      path: '/api/public/hooks/vapi'
+      fullPath: '/api/public/hooks/vapi'
+      preLoaderRoute: typeof ApiPublicHooksVapiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/twilio-whatsapp-status': {
       id: '/api/public/hooks/twilio-whatsapp-status'
       path: '/api/public/hooks/twilio-whatsapp-status'
@@ -2674,6 +2708,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/scheduled-exports-tick'
       fullPath: '/api/public/hooks/scheduled-exports-tick'
       preLoaderRoute: typeof ApiPublicHooksScheduledExportsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/prospecting-dial-tick': {
+      id: '/api/public/hooks/prospecting-dial-tick'
+      path: '/api/public/hooks/prospecting-dial-tick'
+      fullPath: '/api/public/hooks/prospecting-dial-tick'
+      preLoaderRoute: typeof ApiPublicHooksProspectingDialTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/hubspot-tick': {
@@ -3176,6 +3217,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
+  ApiPublicHooksProspectingDialTickRoute:
+    ApiPublicHooksProspectingDialTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
@@ -3186,6 +3229,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
+  ApiPublicHooksVapiRoute: ApiPublicHooksVapiRoute,
   ApiPublicHooksWebhookTickRoute: ApiPublicHooksWebhookTickRoute,
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
@@ -3207,13 +3251,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
