@@ -354,13 +354,19 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
-      .select("lead_ids, max_attempts")
+      .select("lead_ids, max_attempts, audience_mode, audience_rules")
       .eq("id", data.campaign_id)
       .eq("workspace_id", ws)
       .single();
     if (!c) return [];
-    const leadIds = (c.lead_ids ?? []) as string[];
+    let leadIds = (c.lead_ids ?? []) as string[];
     const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
+    const audienceMode = (c.audience_mode as string | undefined) ?? "static";
+    if (audienceMode === "dynamic") {
+      const rules = (c.audience_rules ?? []) as AudienceRule[];
+      const resolved = await resolveAudienceServer(ws, rules);
+      leadIds = resolved.lead_ids;
+    }
     if (!leadIds.length) return [];
 
     const { data: leads } = await sb
