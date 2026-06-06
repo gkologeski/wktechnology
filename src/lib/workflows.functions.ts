@@ -100,6 +100,7 @@ export const deleteWorkflow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await requireTool(context.userId, "manage_workflows");
     const { error } = await context.supabase.from("workflows").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
