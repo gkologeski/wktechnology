@@ -135,5 +135,9 @@ export function conditionToLabel(c: FilterCondition, fieldLabel?: string): strin
     case "is_null": return `${f} vazio`;
     case "is_not_null": return `${f} preenchido`;
     case "contains": return `${f} ⊃ ${JSON.stringify(c.value)}`;
+    case "between": {
+      const v = (c.value ?? {}) as { start?: string; end?: string };
+      return `${f} entre ${v.start ?? "—"} e ${v.end ?? "—"}`;
+    }
   }
 }
