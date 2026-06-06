@@ -287,7 +287,7 @@ function TicketsIndex() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar tickets…"
-            className="pl-8 h-9 w-[240px]"
+            className="pl-8 h-9 w-full sm:w-[240px]"
           />
         </div>
 
