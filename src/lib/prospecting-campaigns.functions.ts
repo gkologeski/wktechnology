@@ -383,19 +383,22 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
 
     const { data: existing } = await sb
       .from("prospecting_call_attempts")
-      .select("lead_id, status, attempt_number, created_at")
+      .select("lead_id, status, attempt_number, created_at, ended_reason")
       .eq("campaign_id", data.campaign_id)
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
 
     type Agg = { count: number; lastStatus: string | null; hasBlocking: string | null; lastAttempt: number };
     const agg = new Map<string, Agg>();
-    const blockingStatuses = ["queued", "ringing", "in_progress", "completed"];
-    for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; created_at: string }>) {
+    for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; created_at: string; ended_reason: string | null }>) {
       const a = agg.get(x.lead_id) ?? { count: 0, lastStatus: null, hasBlocking: null, lastAttempt: 0 };
       a.count += 1;
       if (!a.lastStatus) a.lastStatus = x.status;
-      if (!a.hasBlocking && blockingStatuses.includes(x.status)) a.hasBlocking = x.status;
+      const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
+      const isTalked = x.status === "completed" && !isRetriableEndedReason(x.ended_reason);
+      if (!a.hasBlocking && (isActive || isTalked)) {
+        a.hasBlocking = isTalked ? "conversed" : x.status;
+      }
       a.lastAttempt = Math.max(a.lastAttempt, x.attempt_number ?? 0);
       agg.set(x.lead_id, a);
     }
@@ -408,8 +411,8 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       if (info && !info.phone) reasons.push("Lead sem telefone");
       if (a?.hasBlocking) {
         reasons.push(
-          a.hasBlocking === "completed"
-            ? "Já possui tentativa concluída (completed bloqueia novo enfileiramento)"
+          a.hasBlocking === "conversed"
+            ? "Já houve conversa real concluída (não re-enfileira)"
             : `Já está em andamento (status: ${a.hasBlocking})`,
         );
       }
