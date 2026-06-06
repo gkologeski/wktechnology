@@ -1,0 +1,270 @@
+// Catálogo dinâmico de campos por entidade para o construtor de filtros.
+// Retorna lista de colunas com tipo inferido e, quando aplicável,
+// valores distintos (até 21) já escolhidos como opções.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type EntityFieldType = "text" | "number" | "date" | "select" | "boolean";
+
+export type EntityFieldDef = {
+  name: string;
+  label: string;
+  type: EntityFieldType;
+  // Quando preenchido (≤20), o construtor renderiza Select.
+  options?: { value: string; label: string }[];
+};
+
+type RawRow = {
+  column_name: string;
+  data_type: string;
+  distinct_values: string[] | null;
+  distinct_count: number | null;
+};
+
+// Colunas internas/sistema escondidas do builder.
+const HIDDEN = new Set<string>([
+  "id",
+  "owner_id",
+  "workspace_id",
+  "deleted_at",
+  "portal_token",
+  "hs_raw",
+  "external_ids",
+  "custom_fields",
+  "hs_object_id",
+  "hubspot_owner_id",
+  "hs_lastmodifieddate",
+  "hs_createdate",
+  "converted_at",
+  "converted_contact_id",
+  "converted_deal_id",
+]);
+
+// Rótulos amigáveis (pt-BR) — fallback é snake_case → Title Case.
+const LABELS: Record<string, string> = {
+  first_name: "Nome",
+  last_name: "Sobrenome",
+  email: "Email",
+  phone: "Telefone",
+  mobile_phone: "Celular",
+  company: "Empresa",
+  company_name: "Empresa",
+  company_id: "Empresa",
+  source: "Origem",
+  status: "Status",
+  score: "Score",
+  label: "Etiqueta",
+  notes: "Notas",
+  job_title: "Cargo",
+  title: "Cargo",
+  city: "Cidade",
+  state: "UF",
+  country: "País",
+  cep: "CEP",
+  address: "Endereço",
+  website: "Site",
+  domain: "Domínio",
+  industry: "Setor",
+  size: "Porte",
+  annualrevenue: "Receita anual",
+  is_target_account: "Target account",
+  target_account_tier: "Tier de target",
+  type: "Tipo",
+  marketing_status: "Status de marketing",
+  legal_basis: "Base legal",
+  consent_date: "Data de consentimento",
+  lifecyclestage: "Lifecycle stage",
+  hs_lead_status: "Status (HubSpot)",
+  linkedin_url: "LinkedIn",
+  linkedin_company_page: "LinkedIn da empresa",
+  twitter_handle: "Twitter",
+  twitterhandle: "Twitter",
+  facebook_company_page: "Facebook da empresa",
+  portal_enabled: "Portal habilitado",
+  assigned_user_id: "Responsável",
+  pipeline_id: "Pipeline",
+  stage: "Etapa",
+  stage_id: "Etapa (ID)",
+  name: "Nome",
+  value: "Valor",
+  currency: "Moeda",
+  expected_close_date: "Fechamento esperado",
+  dealtype: "Tipo de negócio",
+  hs_priority: "Prioridade",
+  hs_deal_stage_probability: "Probabilidade",
+  closed_lost_reason: "Motivo de perda",
+  closed_won_reason: "Motivo de ganho",
+  num_associated_contacts: "Nº contatos associados",
+  primary_contact_id: "Contato principal",
+  parent_company_id: "Empresa-mãe",
+  hubspot_owner_id_text: "Responsável (HubSpot)",
+  hs_lead_source_detail: "Detalhe da origem",
+  description: "Descrição",
+  timezone: "Fuso horário",
+  created_at: "Criado em",
+  updated_at: "Atualizado em",
+};
+
+function toLabel(col: string): string {
+  if (LABELS[col]) return LABELS[col];
+  return col
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function inferType(dataType: string): EntityFieldType {
+  if (dataType === "boolean") return "boolean";
+  if (
+    dataType === "integer" ||
+    dataType === "numeric" ||
+    dataType === "bigint" ||
+    dataType === "double precision" ||
+    dataType === "real" ||
+    dataType === "smallint"
+  )
+    return "number";
+  if (
+    dataType.startsWith("timestamp") ||
+    dataType === "date"
+  )
+    return "date";
+  return "text";
+}
+
+export const getEntityFieldCatalog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ entity: z.enum(["leads", "contacts", "companies", "deals"]) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase.rpc(
+      "get_entity_field_catalog",
+      { p_table: data.entity, p_owner_id: userId },
+    );
+    if (error) throw error;
+
+    // Resolução de labels para FKs com valores legíveis.
+    const allRows = (rows ?? []) as RawRow[];
+
+    // Coleta UUIDs distintos para FKs conhecidas — buscaremos rótulos.
+    const pipelineIds = new Set<string>();
+    const companyIds = new Set<string>();
+    const userIds = new Set<string>();
+    for (const r of allRows) {
+      if (!r.distinct_values) continue;
+      if (r.column_name === "pipeline_id") r.distinct_values.forEach((v) => pipelineIds.add(v));
+      else if (
+        r.column_name === "company_id" ||
+        r.column_name === "parent_company_id"
+      )
+        r.distinct_values.forEach((v) => companyIds.add(v));
+      else if (
+        r.column_name === "assigned_user_id" ||
+        r.column_name === "owner_id"
+      )
+        r.distinct_values.forEach((v) => userIds.add(v));
+    }
+
+    const [pipelinesRes, companiesRes, usersRes] = await Promise.all([
+      pipelineIds.size
+        ? supabase
+            .from("pipelines")
+            .select("id, name")
+            .in("id", [...pipelineIds])
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      companyIds.size
+        ? supabase
+            .from("companies")
+            .select("id, name")
+            .in("id", [...companyIds])
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      userIds.size
+        ? supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", [...userIds])
+        : Promise.resolve({
+            data: [] as { id: string; full_name: string | null; email: string | null }[],
+          }),
+    ]);
+
+    const pipelineMap = new Map(
+      ((pipelinesRes.data ?? []) as { id: string; name: string }[]).map((p) => [
+        p.id,
+        p.name,
+      ]),
+    );
+    const companyMap = new Map(
+      ((companiesRes.data ?? []) as { id: string; name: string }[]).map((c) => [
+        c.id,
+        c.name,
+      ]),
+    );
+    const userMap = new Map(
+      (
+        (usersRes.data ?? []) as {
+          id: string;
+          full_name: string | null;
+          email: string | null;
+        }[]
+      ).map((u) => [u.id, u.full_name ?? u.email ?? u.id]),
+    );
+
+    const fields: EntityFieldDef[] = [];
+    for (const r of allRows) {
+      if (HIDDEN.has(r.column_name)) continue;
+      const type = inferType(r.data_type);
+      const def: EntityFieldDef = {
+        name: r.column_name,
+        label: toLabel(r.column_name),
+        type,
+      };
+
+      // Quando temos ≤20 valores distintos, materializamos como Select.
+      if (
+        r.distinct_values &&
+        r.distinct_count !== null &&
+        r.distinct_count <= 20 &&
+        r.distinct_count > 0 &&
+        type !== "date" &&
+        type !== "number"
+      ) {
+        const valuesOnly = r.distinct_values.slice(0, 20);
+        def.type = "select";
+        def.options = valuesOnly.map((v) => {
+          let label = v;
+          if (r.column_name === "pipeline_id") label = pipelineMap.get(v) ?? v;
+          else if (
+            r.column_name === "company_id" ||
+            r.column_name === "parent_company_id"
+          )
+            label = companyMap.get(v) ?? v;
+          else if (
+            r.column_name === "assigned_user_id" ||
+            r.column_name === "owner_id"
+          )
+            label = userMap.get(v) ?? v;
+          else if (type === "boolean")
+            label = v === "true" ? "Sim" : v === "false" ? "Não" : v;
+          return { value: v, label };
+        });
+      }
+
+      fields.push(def);
+    }
+
+    // Ordenação amigável: campos com valores listáveis primeiro,
+    // depois datas, depois o resto alfabeticamente por label.
+    fields.sort((a, b) => {
+      const wa = a.type === "select" ? 0 : a.type === "date" ? 2 : 1;
+      const wb = b.type === "select" ? 0 : b.type === "date" ? 2 : 1;
+      if (wa !== wb) return wa - wb;
+      return a.label.localeCompare(b.label, "pt-BR");
+    });
+
+    return { fields };
+  });
