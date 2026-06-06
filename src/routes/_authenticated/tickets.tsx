@@ -40,6 +40,7 @@ import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
 import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
+import { SlaBadge } from "@/components/sla/sla-badge";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -428,9 +429,20 @@ function TicketsIndex() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="font-normal">
-                          {STATUSES.find((s) => s.value === t.status)?.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="secondary" className="font-normal">
+                            {STATUSES.find((s) => s.value === t.status)?.label}
+                          </Badge>
+                          <SlaBadge
+                            compact
+                            resolutionDueAt={(t as TicketRow & { sla_resolution_due_at?: string | null }).sla_resolution_due_at}
+                            resolutionBreached={(t as TicketRow & { sla_resolution_breached?: boolean }).sla_resolution_breached}
+                            resolvedAt={(t as TicketRow & { resolved_at?: string | null }).resolved_at}
+                            firstResponseDueAt={(t as TicketRow & { sla_first_response_due_at?: string | null }).sla_first_response_due_at}
+                            firstResponseAt={(t as TicketRow & { sla_first_response_at?: string | null }).sla_first_response_at}
+                            firstResponseBreached={(t as TicketRow & { sla_first_response_breached?: boolean }).sla_first_response_breached}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {t.contact_id ? lookups.contacts.get(t.contact_id) ?? "—" : "—"}
