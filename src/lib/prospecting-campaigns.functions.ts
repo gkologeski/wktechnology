@@ -53,6 +53,42 @@ export type Attempt = {
 
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
+const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
+
+async function reconcileCampaignIfIdle(campaign: Campaign, workspaceId: string): Promise<Campaign> {
+  if (campaign.status !== "running") return campaign;
+
+  const { count } = await sb
+    .from("prospecting_call_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaign.id)
+    .eq("workspace_id", workspaceId)
+    .in("status", ACTIVE_ATTEMPT_STATUSES);
+  if ((count ?? 0) > 0) return campaign;
+
+  const { data: latest } = await sb
+    .from("prospecting_call_attempts")
+    .select("status")
+    .eq("campaign_id", campaign.id)
+    .eq("workspace_id", workspaceId)
+    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextStatus = latest?.status === "completed" ? "done" : "paused";
+  const { data: updated } = await sb
+    .from("prospecting_campaigns")
+    .update({ status: nextStatus })
+    .eq("id", campaign.id)
+    .eq("workspace_id", workspaceId)
+    .eq("status", "running")
+    .select("*")
+    .maybeSingle();
+
+  return (updated as Campaign | null) ?? { ...campaign, status: nextStatus };
+}
+
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(120),
