@@ -9,15 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play } from "lucide-react";
+import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   getFunnel, getSalesVelocity, getCohort, listPipelinesForFunnel,
 } from "@/lib/analytics.functions";
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
+import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell, LineChart, Line, Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
@@ -80,6 +81,7 @@ function AnalyticsPage() {
           <TabsTrigger value="velocity"><Gauge className="h-3.5 w-3.5 mr-1" /> Sales Velocity</TabsTrigger>
           <TabsTrigger value="cohort"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort</TabsTrigger>
           <TabsTrigger value="sentiment"><Smile className="h-3.5 w-3.5 mr-1" /> Sentimento</TabsTrigger>
+          <TabsTrigger value="emails"><Mail className="h-3.5 w-3.5 mr-1" /> E-mails 1:1</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
@@ -205,7 +207,100 @@ function AnalyticsPage() {
         <TabsContent value="sentiment" className="space-y-4">
           <SentimentTab />
         </TabsContent>
+
+        <TabsContent value="emails" className="space-y-4">
+          <EmailEngagementTab dateFrom={dateFrom} dateTo={dateTo} />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
+  const fn = useServerFn(getEmailEngagementReport);
+  const filters = useMemo(() => ({
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  }), [dateFrom, dateTo]);
+  const { data } = useQuery({
+    queryKey: ["email-engagement-report", filters],
+    queryFn: () => fn({ data: filters }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="E-mails enviados" value={String(data?.total_sent ?? 0)} />
+        <Kpi label="Destinatários únicos" value={String(data?.unique_recipients ?? 0)} />
+        <Kpi label="Taxa de abertura" value={fmtPct(data?.open_rate_pct ?? 0)} />
+        <Kpi label="Taxa de clique" value={fmtPct(data?.click_rate_pct ?? 0)} />
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Engajamento ao longo do tempo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!data || data.by_day.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Sem envios no período.</p>
+          ) : (
+            <div style={{ width: "100%", height: 240 }}>
+              <ResponsiveContainer>
+                <LineChart data={data.by_day}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <RTooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="sent" name="Enviados" stroke="hsl(var(--muted-foreground))" />
+                  <Line type="monotone" dataKey="opened" name="Abertos" stroke="hsl(var(--primary))" />
+                  <Line type="monotone" dataKey="clicked" name="Clicados" stroke="hsl(var(--destructive))" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Top mensagens por engajamento</CardTitle></CardHeader>
+        <CardContent>
+          {!data?.top.length ? (
+            <p className="text-xs text-muted-foreground">Sem mensagens no período.</p>
+          ) : (
+            <div className="overflow-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="text-left py-1">Assunto</th>
+                    <th className="text-left py-1">Para</th>
+                    <th className="text-left py-1">Enviado em</th>
+                    <th className="text-right py-1"><Eye className="h-3 w-3 inline" /> Aberturas</th>
+                    <th className="text-right py-1"><MousePointerClick className="h-3 w-3 inline" /> Cliques</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.top.map((r) => (
+                    <tr key={r.id} className="border-b">
+                      <td className="py-1 max-w-[280px] truncate">{r.subject || "(sem assunto)"}</td>
+                      <td className="py-1">{r.to ?? "—"}</td>
+                      <td className="py-1">{r.sent_at ? new Date(r.sent_at).toLocaleString("pt-BR") : "—"}</td>
+                      <td className="py-1 text-right">{r.open_count}</td>
+                      <td className="py-1 text-right">{r.click_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        CTOR (cliques sobre aberturas): {fmtPct(data?.ctor_pct ?? 0)}
+      </p>
     </div>
   );
 }
