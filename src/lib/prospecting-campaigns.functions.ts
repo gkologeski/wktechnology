@@ -168,6 +168,19 @@ export const upsertCampaign = createServerFn({ method: "POST" })
   .inputValidator((i) => CampaignInput.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+
+    // Em modo estático, resolve as regras AGORA (snapshot) e usa esses ids.
+    // Em modo dinâmico, lead_ids é recalculado a cada "Iniciar".
+    let resolvedLeadIds: string[] = data.lead_ids;
+    if (data.audience_mode === "static" && data.audience_rules.length > 0) {
+      const resolved = await resolveAudienceServer(ws, data.audience_rules as AudienceRule[]);
+      // União com lead_ids manuais já passados (caso o usuário também tenha colado UUIDs).
+      const set = new Set<string>([...resolvedLeadIds, ...resolved.lead_ids]);
+      resolvedLeadIds = Array.from(set);
+    } else if (data.audience_mode === "dynamic") {
+      resolvedLeadIds = [];
+    }
+
     const payload = {
       workspace_id: ws,
       owner_id: ws,
@@ -177,8 +190,10 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       retry_interval_minutes: data.retry_interval_minutes,
       source_type: data.source_type,
       source_ref: data.source_ref ?? null,
-      lead_ids: data.lead_ids,
+      lead_ids: resolvedLeadIds,
       dialing_window: data.dialing_window,
+      audience_mode: data.audience_mode,
+      audience_rules: data.audience_rules,
     };
 
     let id: string;
