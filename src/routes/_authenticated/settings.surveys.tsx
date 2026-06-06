@@ -156,6 +156,37 @@ function SurveysPage() {
         </CardContent>
       </Card>
 
+      {perAgent.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Por responsável</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Respostas</TableHead>
+                  <TableHead className="text-right">{tab === "nps" ? "NPS" : "Média"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {perAgent.map((row) => (
+                  <TableRow key={row.agentId}>
+                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="text-right">{row.answered}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {tab === "nps" ? row.nps : row.avg.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+
       <Card>
         <CardContent className="p-0">
           <Table>
