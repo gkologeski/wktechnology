@@ -166,6 +166,84 @@ export const regenerateQuoteToken = createServerFn({ method: "POST" })
     return { token: t };
   });
 
+// ============= STRIPE PAYMENT LINK =============
+
+function siteOrigin() {
+  return (
+    process.env.SITE_URL ||
+    process.env.LOVABLE_PROJECT_URL ||
+    "https://wktechnology.lovable.app"
+  );
+}
+
+export const createQuotePaymentLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: quote, error } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error || !quote) throw new Error("Cotação não encontrada");
+    if (quote.paid_at) throw new Error("Esta cotação já foi paga.");
+    const total = Number(quote.total);
+    if (!total || total <= 0) throw new Error("Cotação sem valor para pagamento.");
+
+    const apiKey = process.env.STRIPE_LIVE_API_KEY || process.env.STRIPE_SANDBOX_API_KEY;
+    if (!apiKey) throw new Error("Stripe ainda não está configurado.");
+
+    const origin = siteOrigin();
+    const cents = Math.round(total * 100);
+    const currency = (quote.currency || "BRL").toLowerCase();
+
+    const params = new URLSearchParams();
+    params.set("mode", "payment");
+    params.set("success_url", `${origin}/quote/${quote.public_token}?paid=1`);
+    params.set("cancel_url", `${origin}/quote/${quote.public_token}`);
+    params.set("client_reference_id", quote.id);
+    params.set("metadata[quote_id]", quote.id);
+    params.set("metadata[quote_token]", quote.public_token);
+    params.set("line_items[0][quantity]", "1");
+    params.set("line_items[0][price_data][currency]", currency);
+    params.set("line_items[0][price_data][unit_amount]", String(cents));
+    params.set(
+      "line_items[0][price_data][product_data][name]",
+      quote.title ? `${quote.title} (${quote.number})` : `Cotação ${quote.number}`,
+    );
+
+    const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+    const session = await res.json();
+    if (!res.ok) {
+      throw new Error(session?.error?.message || "Falha ao criar checkout");
+    }
+
+    const patch: {
+      payment_link_url: string;
+      payment_session_id: string;
+      status?: "sent";
+      sent_at?: string;
+    } = {
+      payment_link_url: session.url,
+      payment_session_id: session.id,
+    };
+    if (quote.status === "draft") {
+      patch.status = "sent";
+      patch.sent_at = new Date().toISOString();
+    }
+    await supabase.from("quotes").update(patch).eq("id", quote.id);
+
+    return { url: session.url as string, session_id: session.id as string };
+  });
+
 // ============= PUBLIC (via token) =============
 
 export const getQuoteByToken = createServerFn({ method: "POST" })

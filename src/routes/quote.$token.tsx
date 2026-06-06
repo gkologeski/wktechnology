@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, Check, X } from "lucide-react";
+import { Printer, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 
@@ -169,15 +169,31 @@ function PublicQuotePage() {
           </CardContent>
         </Card>
 
-        {!responded && !expired && (
-          <div className="flex gap-2 justify-end print:hidden">
-            <Button variant="outline" onClick={() => respondMut.mutate({ action: "decline" })} disabled={respondMut.isPending}>
-              <X className="h-4 w-4 mr-1" /> Recusar
-            </Button>
-            <Button onClick={() => setAcceptOpen(true)}>
-              <Check className="h-4 w-4 mr-1" /> Aceitar
-            </Button>
+        {quote.paid_at ? (
+          <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 text-sm print:hidden">
+            <div className="font-medium">Pagamento confirmado em {new Date(quote.paid_at).toLocaleString("pt-BR")}</div>
           </div>
+        ) : (
+          <>
+            {quote.payment_link_url && !responded && (
+              <div className="print:hidden">
+                <Button className="w-full" size="lg" onClick={() => window.location.assign(quote.payment_link_url!)}>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pagar {formatCurrency(Number(quote.total), quote.currency)}
+                </Button>
+              </div>
+            )}
+            {!responded && !expired && (
+              <div className="flex gap-2 justify-end print:hidden">
+                <Button variant="outline" onClick={() => respondMut.mutate({ action: "decline" })} disabled={respondMut.isPending}>
+                  <X className="h-4 w-4 mr-1" /> Recusar
+                </Button>
+                <Button onClick={() => setAcceptOpen(true)}>
+                  <Check className="h-4 w-4 mr-1" /> Aceitar
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

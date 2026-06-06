@@ -107,6 +107,7 @@ import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/lea
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
@@ -687,6 +688,12 @@ const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   path: '/api/public/twilio/voice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicOauthGoogleCallbackRoute =
   ApiPublicOauthGoogleCallbackRouteImport.update({
     id: '/api/public/oauth/google-callback',
@@ -974,6 +981,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1099,6 +1107,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1229,6 +1238,7 @@ export interface FileRoutesById {
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1359,6 +1369,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/payments/webhook'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1484,6 +1495,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/payments/webhook'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1613,6 +1625,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
+    | '/api/public/payments/webhook'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1663,6 +1676,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
@@ -2361,6 +2375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTwilioVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth/google-callback': {
       id: '/api/public/oauth/google-callback'
       path: '/api/public/oauth/google-callback'
@@ -2941,6 +2962,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,

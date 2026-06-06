@@ -4326,6 +4326,9 @@ export type Database = {
           notes: string | null
           number: string
           owner_id: string
+          paid_at: string | null
+          payment_link_url: string | null
+          payment_session_id: string | null
           public_token: string
           sent_at: string | null
           signature_name: string | null
@@ -4353,6 +4356,9 @@ export type Database = {
           notes?: string | null
           number: string
           owner_id: string
+          paid_at?: string | null
+          payment_link_url?: string | null
+          payment_session_id?: string | null
           public_token: string
           sent_at?: string | null
           signature_name?: string | null
@@ -4380,6 +4386,9 @@ export type Database = {
           notes?: string | null
           number?: string
           owner_id?: string
+          paid_at?: string | null
+          payment_link_url?: string | null
+          payment_session_id?: string | null
           public_token?: string
           sent_at?: string | null
           signature_name?: string | null

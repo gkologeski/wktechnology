@@ -7,6 +7,7 @@ import {
   updateQuote,
   deleteQuote,
   regenerateQuoteToken,
+  createQuotePaymentLink,
 } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send } from "lucide-react";
+import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 
@@ -35,6 +36,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const update = useServerFn(updateQuote);
   const del = useServerFn(deleteQuote);
   const regen = useServerFn(regenerateQuoteToken);
+  const payLink = useServerFn(createQuotePaymentLink);
 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string }>({
@@ -86,6 +88,16 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     await del({ data: { id } });
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
   }
+  async function genPayLink(id: string) {
+    try {
+      const r = await payLink({ data: { id } });
+      await navigator.clipboard.writeText(r.url);
+      toast.success("Link de pagamento gerado e copiado.");
+      qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -131,6 +143,15 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   <Button size="sm" variant="outline" onClick={() => markSent(q.id)}>
                     <Send className="h-3.5 w-3.5 mr-1" /> Marcar como enviada
                   </Button>
+                )}
+                {!q.paid_at && (
+                  <Button size="sm" variant="outline" onClick={() => genPayLink(q.id)}>
+                    <CreditCard className="h-3.5 w-3.5 mr-1" />
+                    {q.payment_link_url ? "Regerar link de pagamento" : "Gerar link de pagamento"}
+                  </Button>
+                )}
+                {q.paid_at && (
+                  <Badge variant="default" className="ml-1">Paga</Badge>
                 )}
                 <Button size="sm" variant="ghost" onClick={() => regenerate(q.id)}>
                   <RefreshCw className="h-3.5 w-3.5 mr-1" /> Novo link
