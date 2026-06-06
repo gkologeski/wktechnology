@@ -257,6 +257,44 @@ function CampaignDetailPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Auditoria de enfileiramento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {audit.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem leads na campanha.</p>
+          ) : (
+            <>
+              <div className="text-xs text-muted-foreground mb-2">
+                {audit.filter((a) => a.queueable).length} de {audit.length} leads enfileiráveis ao iniciar.
+              </div>
+              <div className="divide-y text-sm">
+                {audit.map((a) => (
+                  <div key={a.lead_id} className="py-2 flex items-start gap-3">
+                    <Badge variant={a.queueable ? "default" : "secondary"} className="mt-0.5">
+                      {a.queueable ? "OK" : "Bloqueado"}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{a.lead_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {a.phone ?? "sem telefone"} · {a.attempts} tentativa(s)
+                        {a.last_status ? ` · último: ${a.last_status}` : ""}
+                      </div>
+                      {a.reasons.length > 0 && (
+                        <ul className="mt-1 text-xs text-muted-foreground list-disc list-inside">
+                          {a.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Chamadas recentes</CardTitle></CardHeader>
         <CardContent>
           {attempts.length === 0 ? (
