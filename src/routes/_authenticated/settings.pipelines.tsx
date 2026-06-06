@@ -43,6 +43,7 @@ type Pipeline = {
 const ENTITIES = [
   { value: "deal", label: "Negócios" },
   { value: "lead", label: "Leads" },
+  { value: "ticket", label: "Tickets" },
 ];
 
 const VIEWS_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
@@ -55,6 +56,11 @@ const VIEWS_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
   lead: [
     { value: "table", label: "Tabela" },
     { value: "board", label: "Quadro" },
+  ],
+  ticket: [
+    { value: "table", label: "Tabela" },
+    { value: "board", label: "Quadro" },
+    { value: "split", label: "Split" },
   ],
 };
 
