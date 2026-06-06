@@ -97,8 +97,12 @@ function CampaignDetailPage() {
         <h2 className="text-lg font-semibold flex-1">{campaign.name}</h2>
         <Badge variant={campaign.status === "running" ? "default" : "outline"}>{campaign.status}</Badge>
         {campaign.status !== "running" ? (
-          <Button size="sm" onClick={async () => { await statusFn({ data: { id: campaign.id, status: "running" } }); refresh(); }}>
-            <Play className="h-3.5 w-3.5 mr-1" />Iniciar
+          <Button size="sm" onClick={async () => {
+            await save();
+            await statusFn({ data: { id: campaign.id, status: "running" } });
+            refresh();
+          }}>
+            <Play className="h-3.5 w-3.5 mr-1" />Salvar e iniciar
           </Button>
         ) : (
           <Button size="sm" variant="outline" onClick={async () => { await statusFn({ data: { id: campaign.id, status: "paused" } }); refresh(); }}>
