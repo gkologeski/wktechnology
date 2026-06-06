@@ -57,9 +57,9 @@ export function WorkflowBuilder({
   const [saving, setSaving] = useState(false);
 
   // sync when opens with new draft
-  if (draft && draft !== (state as unknown) && (state.id ?? null) !== (draft.id ?? null)) {
-    setState(draft);
-  }
+  useEffect(() => {
+    if (draft) setState(draft);
+  }, [draft?.id]);
 
   if (!open) return null;
   const fields = ENTITY_FIELDS[state.entity];
@@ -194,6 +194,9 @@ export function WorkflowBuilder({
           <p className="text-xs text-muted-foreground">
             Dica: use tokens como <code>{`{{first_name}}`}</code>, <code>{`{{email}}`}</code>, <code>{`{{name}}`}</code> em assuntos e corpos de ação — são substituídos pelos campos do registro.
           </p>
+
+          {/* Preview do fluxo */}
+          <FlowPreview state={state} />
         </div>
 
         <SheetFooter>
@@ -261,18 +264,18 @@ function ActionCard({
       )}
 
       {action.type === "assign_to" && (
-        <Input value={action.user_id} onChange={(e) => onChange({ ...action, user_id: e.target.value })} placeholder="UUID do usuário" />
+        <UserPicker value={action.user_id} onChange={(v) => onChange({ ...action, user_id: v })} />
       )}
 
       {action.type === "rotate_assign" && (
         <div className="space-y-1">
-          <Input value={action.rule_id} onChange={(e) => onChange({ ...action, rule_id: e.target.value })} placeholder="UUID da regra de rotação" />
+          <RotationRulePicker value={action.rule_id} onChange={(v) => onChange({ ...action, rule_id: v })} />
           <p className="text-xs text-muted-foreground">Configure regras em Configurações → Distribuição.</p>
         </div>
       )}
 
       {action.type === "add_to_sequence" && (
-        <Input value={action.sequence_id} onChange={(e) => onChange({ ...action, sequence_id: e.target.value })} placeholder="UUID da sequência" />
+        <SequencePicker value={action.sequence_id} onChange={(v) => onChange({ ...action, sequence_id: v })} />
       )}
 
       {action.type === "send_notification" && (
