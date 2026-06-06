@@ -385,9 +385,11 @@ function ContactsHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            <Download className="mr-1.5 h-4 w-4" /> Exportar
-          </Button>
+          {can("export") && (
+            <Button variant="outline" size="sm" disabled>
+              <Download className="mr-1.5 h-4 w-4" /> Exportar
+            </Button>
+          )}
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar contato
           </Button>
@@ -489,14 +491,16 @@ function ContactsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-destructive hover:text-destructive"
-                  onClick={bulkDelete}
-                >
-                  Excluir
-                </Button>
+                {can("bulk_delete") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive"
+                    onClick={bulkDelete}
+                  >
+                    Excluir
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

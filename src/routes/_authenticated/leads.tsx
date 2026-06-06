@@ -617,14 +617,18 @@ function LeadsHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/leads/import-hubspot">
-              <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            <Download className="mr-1.5 h-4 w-4" /> Exportar
-          </Button>
+          {can("import") && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/leads/import-hubspot">
+                <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
+              </Link>
+            </Button>
+          )}
+          {can("export") && (
+            <Button variant="outline" size="sm" disabled>
+              <Download className="mr-1.5 h-4 w-4" /> Exportar
+            </Button>
+          )}
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead
           </Button>
@@ -843,14 +847,16 @@ function LeadsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-destructive hover:text-destructive"
-                  onClick={bulkDelete}
-                >
-                  Excluir
-                </Button>
+                {can("bulk_delete") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive"
+                    onClick={bulkDelete}
+                  >
+                    Excluir
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
