@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows } from "@/lib/workflows/engine.server";
+import { requireTool } from "@/lib/permissions.server";
 
 const EntityEnum = z.enum(["leads", "contacts", "companies", "deals", "tickets"]);
 
@@ -76,6 +77,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
   .inputValidator((input) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await requireTool(userId, "manage_workflows");
     const payload = {
       owner_id: userId,
       name: data.name,
@@ -98,6 +100,7 @@ export const deleteWorkflow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await requireTool(context.userId, "manage_workflows");
     const { error } = await context.supabase.from("workflows").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
