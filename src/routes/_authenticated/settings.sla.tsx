@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AlertTriangle, Clock } from "lucide-react";
 import { listPipelinesForSla, listSlaBreaches, setPipelineSla } from "@/lib/sla.functions";
+import { SlaPoliciesSection } from "@/components/sla/sla-policies-section";
 
 export const Route = createFileRoute("/_authenticated/settings/sla")({
   component: SlaPage,
@@ -87,6 +88,8 @@ function SlaPage() {
           />
         ))}
       </div>
+
+      <SlaPoliciesSection />
     </div>
   );
 }
