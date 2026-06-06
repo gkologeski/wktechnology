@@ -192,6 +192,19 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     if (data.status === "running") {
+      const staleStartedBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      await sb
+        .from("prospecting_call_attempts")
+        .update({
+          status: "failed",
+          ended_at: new Date().toISOString(),
+          ended_reason: "stale active call: no final status received",
+        })
+        .eq("campaign_id", data.id)
+        .eq("workspace_id", ws)
+        .in("status", ["ringing", "in_progress"])
+        .lt("started_at", staleStartedBefore);
+
       const { data: c } = await sb
         .from("prospecting_campaigns")
         .select("lead_ids, max_attempts")
@@ -208,7 +221,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
         const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
         for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number }>) {
           const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
-          const blocking = ["queued", "ringing", "completed"].includes(x.status);
+          const blocking = ["queued", "ringing", "in_progress", "completed"].includes(x.status);
           byLead.set(x.lead_id, {
             blocking: prev.blocking || blocking,
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),

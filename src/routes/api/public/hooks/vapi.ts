@@ -34,6 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
 
         if (type === "status-update") {
           const status = String(msg.status ?? "").toLowerCase();
+          if (typeof msg.endedReason === "string") updates.ended_reason = msg.endedReason;
           const map: Record<string, string> = {
             queued: "queued",
             ringing: "ringing",
@@ -42,6 +43,13 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             ended: "completed",
           };
           if (map[status]) updates.status = map[status];
+          if (status === "ended") {
+            updates.ended_at = new Date().toISOString();
+            const reason = String(msg.endedReason ?? "").toLowerCase();
+            if (reason.includes("no-answer")) updates.status = "no_answer";
+            else if (reason.includes("busy")) updates.status = "busy";
+            else if (reason.includes("failed") || reason.includes("error")) updates.status = "failed";
+          }
         } else if (type === "end-of-call-report") {
           updates.status = "completed";
           updates.ended_at = new Date().toISOString();
