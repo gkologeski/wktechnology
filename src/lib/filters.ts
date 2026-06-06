@@ -3,7 +3,7 @@ import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 export type FilterOp =
   | "eq" | "neq" | "gt" | "gte" | "lt" | "lte"
-  | "ilike" | "in" | "is_null" | "is_not_null" | "contains";
+  | "ilike" | "in" | "is_null" | "is_not_null" | "contains" | "between";
 
 export type FilterCondition = {
   type: "condition";
