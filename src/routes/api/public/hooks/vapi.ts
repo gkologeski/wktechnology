@@ -1,5 +1,6 @@
 // Vapi webhook — receives status-update, end-of-call-report, transcript events.
-// Auth: header `x-vapi-secret` compared against VAPI_WEBHOOK_SECRET.
+// Auth: header `x-vapi-secret`/signature or Vapi assistant.server.secret payload
+// compared against VAPI_WEBHOOK_SECRET.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -13,7 +14,6 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
         const expected = process.env.VAPI_WEBHOOK_SECRET;
         if (!expected) return new Response("Server misconfigured", { status: 500 });
         const got = request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
-        if (got !== expected) return new Response("Unauthorized", { status: 401 });
 
         let body: { message?: Record<string, unknown> } & Record<string, unknown>;
         try {
@@ -22,6 +22,9 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           return new Response("Bad JSON", { status: 400 });
         }
         const msg = (body.message ?? body) as Record<string, unknown>;
+        const payloadSecret = String(msg.secret ?? body.secret ?? "");
+        if (got !== expected && payloadSecret !== expected) return new Response("Unauthorized", { status: 401 });
+
         const type = String(msg.type ?? "");
         const call = (msg.call as Record<string, unknown> | undefined) ?? undefined;
         const callId = (call?.id as string | undefined) ?? (msg.callId as string | undefined);
