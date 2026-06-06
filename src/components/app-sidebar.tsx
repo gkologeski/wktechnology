@@ -41,6 +41,7 @@ const MANAGER_PLUS = new Set<string>([
   "/settings/email-templates", "/settings/segments", "/settings/calendars",
   "/settings/booking", "/settings/lead-sources", "/reports", "/dashboards", "/analytics",
   "/campaigns/whatsapp", "/campaigns/email",
+  "/prospecting/campaigns", "/settings/prospecting-scripts", "/settings/voice-agent",
 ]);
 
 // Proposta B — Jornada do usuário:
@@ -82,6 +83,9 @@ const groups: Group[] = [
       { title: "Templates de email", url: "/settings/email-templates", icon: Send },
       { title: "Formulários", url: "/settings/forms", icon: FileText },
       { title: "Prospecting", url: "/settings/prospecting", icon: Sparkles },
+      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle },
+      { title: "Scripts de voz", url: "/settings/prospecting-scripts", icon: FileText },
+      { title: "Agente de voz", url: "/settings/voice-agent", icon: Sliders },
       { title: "Macros", url: "/settings/macros", icon: Wand2 },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
       { title: "Portal do cliente", url: "/settings/portal", icon: ExternalLink },

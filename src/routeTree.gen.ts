@@ -31,6 +31,7 @@ import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -52,6 +53,7 @@ import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
+import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
@@ -66,6 +68,7 @@ import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
 import { Route as AuthenticatedSettingsRecordLayoutsRouteImport } from './routes/_authenticated/settings.record-layouts'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
+import { Route as AuthenticatedSettingsProspectingScriptsRouteImport } from './routes/_authenticated/settings.prospecting-scripts'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsPropertyGroupsRouteImport } from './routes/_authenticated/settings.property-groups'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
@@ -95,6 +98,7 @@ import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings.billing'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
+import { Route as AuthenticatedProspectingCampaignsRouteImport } from './routes/_authenticated/prospecting.campaigns'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -143,6 +147,7 @@ import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/form
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
+import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -260,6 +265,12 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProspectingRoute =
+  AuthenticatedProspectingRouteImport.update({
+    id: '/prospecting',
+    path: '/prospecting',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   id: '/notes',
   path: '/notes',
@@ -375,6 +386,12 @@ const AuthenticatedSettingsWebhooksRoute =
     path: '/webhooks',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsVoiceAgentRoute =
+  AuthenticatedSettingsVoiceAgentRouteImport.update({
+    id: '/voice-agent',
+    path: '/voice-agent',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsUserGroupsRoute =
   AuthenticatedSettingsUserGroupsRouteImport.update({
     id: '/user-groups',
@@ -457,6 +474,12 @@ const AuthenticatedSettingsQuotesRoute =
   AuthenticatedSettingsQuotesRouteImport.update({
     id: '/quotes',
     path: '/quotes',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsProspectingScriptsRoute =
+  AuthenticatedSettingsProspectingScriptsRouteImport.update({
+    id: '/prospecting-scripts',
+    path: '/prospecting-scripts',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsProspectingRoute =
@@ -631,6 +654,12 @@ const AuthenticatedSettingsApiKeysRoute =
     id: '/api-keys',
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedProspectingCampaignsRoute =
+  AuthenticatedProspectingCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
@@ -903,6 +932,12 @@ const AuthenticatedSettingsRolesRoleIdRoute =
     path: '/$roleId',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
   } as any)
+const AuthenticatedProspectingCampaignsIdRoute =
+  AuthenticatedProspectingCampaignsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedProspectingCampaignsRoute,
+  } as any)
 const AuthenticatedAdminWorkspacesIdRoute =
   AuthenticatedAdminWorkspacesIdRouteImport.update({
     id: '/$id',
@@ -966,6 +1001,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -992,6 +1028,7 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1021,6 +1058,7 @@ export interface FileRoutesByFullPath {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
+  '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
@@ -1035,6 +1073,7 @@ export interface FileRoutesByFullPath {
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -1046,6 +1085,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1107,6 +1147,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
@@ -1132,6 +1173,7 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1161,6 +1203,7 @@ export interface FileRoutesByTo {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
+  '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
@@ -1174,6 +1217,7 @@ export interface FileRoutesByTo {
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -1185,6 +1229,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1249,6 +1294,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -1275,6 +1321,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/_authenticated/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -1304,6 +1351,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/_authenticated/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
+  '/_authenticated/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
   '/_authenticated/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
@@ -1318,6 +1366,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -1329,6 +1378,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1393,6 +1443,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/my-bug-reports'
     | '/notes'
+    | '/prospecting'
     | '/reports'
     | '/settings'
     | '/tasks'
@@ -1419,6 +1470,7 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/prospecting/campaigns'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
@@ -1448,6 +1500,7 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
+    | '/settings/prospecting-scripts'
     | '/settings/quotes'
     | '/settings/record-layouts'
     | '/settings/recurring'
@@ -1462,6 +1515,7 @@ export interface FileRouteTypes {
     | '/settings/surveys'
     | '/settings/teams'
     | '/settings/user-groups'
+    | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/widget'
     | '/settings/workflows'
@@ -1473,6 +1527,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/settings/'
     | '/admin/workspaces/$id'
+    | '/prospecting/campaigns/$id'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1534,6 +1589,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/my-bug-reports'
     | '/notes'
+    | '/prospecting'
     | '/reports'
     | '/tasks'
     | '/tickets'
@@ -1559,6 +1615,7 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/prospecting/campaigns'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
@@ -1588,6 +1645,7 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
+    | '/settings/prospecting-scripts'
     | '/settings/quotes'
     | '/settings/record-layouts'
     | '/settings/recurring'
@@ -1601,6 +1659,7 @@ export interface FileRouteTypes {
     | '/settings/surveys'
     | '/settings/teams'
     | '/settings/user-groups'
+    | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/widget'
     | '/settings/workflows'
@@ -1612,6 +1671,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/settings'
     | '/admin/workspaces/$id'
+    | '/prospecting/campaigns/$id'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1675,6 +1735,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
+    | '/_authenticated/prospecting'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
@@ -1701,6 +1762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
+    | '/_authenticated/prospecting/campaigns'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/billing'
@@ -1730,6 +1792,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/products'
     | '/_authenticated/settings/property-groups'
     | '/_authenticated/settings/prospecting'
+    | '/_authenticated/settings/prospecting-scripts'
     | '/_authenticated/settings/quotes'
     | '/_authenticated/settings/record-layouts'
     | '/_authenticated/settings/recurring'
@@ -1744,6 +1807,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/user-groups'
+    | '/_authenticated/settings/voice-agent'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflows'
@@ -1755,6 +1819,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
+    | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -2010,6 +2075,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/prospecting': {
+      id: '/_authenticated/prospecting'
+      path: '/prospecting'
+      fullPath: '/prospecting'
+      preLoaderRoute: typeof AuthenticatedProspectingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/notes': {
       id: '/_authenticated/notes'
       path: '/notes'
@@ -2157,6 +2229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/voice-agent': {
+      id: '/_authenticated/settings/voice-agent'
+      path: '/voice-agent'
+      fullPath: '/settings/voice-agent'
+      preLoaderRoute: typeof AuthenticatedSettingsVoiceAgentRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/user-groups': {
       id: '/_authenticated/settings/user-groups'
       path: '/user-groups'
@@ -2253,6 +2332,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/settings/quotes'
       preLoaderRoute: typeof AuthenticatedSettingsQuotesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/prospecting-scripts': {
+      id: '/_authenticated/settings/prospecting-scripts'
+      path: '/prospecting-scripts'
+      fullPath: '/settings/prospecting-scripts'
+      preLoaderRoute: typeof AuthenticatedSettingsProspectingScriptsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/prospecting': {
@@ -2457,6 +2543,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/prospecting/campaigns': {
+      id: '/_authenticated/prospecting/campaigns'
+      path: '/campaigns'
+      fullPath: '/prospecting/campaigns'
+      preLoaderRoute: typeof AuthenticatedProspectingCampaignsRouteImport
+      parentRoute: typeof AuthenticatedProspectingRoute
     }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
@@ -2794,6 +2887,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
     }
+    '/_authenticated/prospecting/campaigns/$id': {
+      id: '/_authenticated/prospecting/campaigns/$id'
+      path: '/$id'
+      fullPath: '/prospecting/campaigns/$id'
+      preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
+      parentRoute: typeof AuthenticatedProspectingCampaignsRoute
+    }
     '/_authenticated/admin/workspaces/$id': {
       id: '/_authenticated/admin/workspaces/$id'
       path: '/$id'
@@ -2913,6 +3013,36 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedProspectingCampaignsRouteChildren {
+  AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
+}
+
+const AuthenticatedProspectingCampaignsRouteChildren: AuthenticatedProspectingCampaignsRouteChildren =
+  {
+    AuthenticatedProspectingCampaignsIdRoute:
+      AuthenticatedProspectingCampaignsIdRoute,
+  }
+
+const AuthenticatedProspectingCampaignsRouteWithChildren =
+  AuthenticatedProspectingCampaignsRoute._addFileChildren(
+    AuthenticatedProspectingCampaignsRouteChildren,
+  )
+
+interface AuthenticatedProspectingRouteChildren {
+  AuthenticatedProspectingCampaignsRoute: typeof AuthenticatedProspectingCampaignsRouteWithChildren
+}
+
+const AuthenticatedProspectingRouteChildren: AuthenticatedProspectingRouteChildren =
+  {
+    AuthenticatedProspectingCampaignsRoute:
+      AuthenticatedProspectingCampaignsRouteWithChildren,
+  }
+
+const AuthenticatedProspectingRouteWithChildren =
+  AuthenticatedProspectingRoute._addFileChildren(
+    AuthenticatedProspectingRouteChildren,
+  )
+
 interface AuthenticatedSettingsRolesRouteChildren {
   AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
   AuthenticatedSettingsRolesIndexRoute: typeof AuthenticatedSettingsRolesIndexRoute
@@ -2960,6 +3090,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
   AuthenticatedSettingsPropertyGroupsRoute: typeof AuthenticatedSettingsPropertyGroupsRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
+  AuthenticatedSettingsProspectingScriptsRoute: typeof AuthenticatedSettingsProspectingScriptsRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
   AuthenticatedSettingsRecordLayoutsRoute: typeof AuthenticatedSettingsRecordLayoutsRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
@@ -2974,6 +3105,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
+  AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
@@ -3016,6 +3148,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPropertyGroupsRoute:
     AuthenticatedSettingsPropertyGroupsRoute,
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
+  AuthenticatedSettingsProspectingScriptsRoute:
+    AuthenticatedSettingsProspectingScriptsRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
   AuthenticatedSettingsRecordLayoutsRoute:
     AuthenticatedSettingsRecordLayoutsRoute,
@@ -3032,6 +3166,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
+  AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
@@ -3110,6 +3245,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRouteWithChildren
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
@@ -3136,6 +3272,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedProspectingRoute: AuthenticatedProspectingRouteWithChildren,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
