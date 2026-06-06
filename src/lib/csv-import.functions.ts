@@ -182,7 +182,7 @@ export const executeCsvImport = createServerFn({ method: "POST" })
         .eq("workspace_id", workspaceId)
         .in(dedupeKey, keyValues);
       if (error) throw new Error(error.message);
-      for (const row of (found ?? []) as Array<Record<string, string>>) {
+      for (const row of ((found ?? []) as unknown as Array<Record<string, string>>)) {
         existing.set(normalize(row[dedupeKey]), row.id);
       }
     }
