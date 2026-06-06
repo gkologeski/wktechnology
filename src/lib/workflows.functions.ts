@@ -77,6 +77,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
   .inputValidator((input) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await requireTool(userId, "manage_workflows");
     const payload = {
       owner_id: userId,
       name: data.name,
