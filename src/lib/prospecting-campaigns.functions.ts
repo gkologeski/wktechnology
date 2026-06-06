@@ -149,7 +149,8 @@ export const getCampaign = createServerFn({ method: "POST" })
       .select("*")
       .eq("campaign_id", data.id)
       .order("position", { ascending: true });
-    return { campaign: c as Campaign, variants: (variants ?? []) as Variant[] };
+    const campaign = await reconcileCampaignIfIdle(c as Campaign, ws);
+    return { campaign, variants: (variants ?? []) as Variant[] };
   });
 
 export const upsertCampaign = createServerFn({ method: "POST" })
