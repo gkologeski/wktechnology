@@ -24,8 +24,11 @@ import {
   type ResolvedAudience,
 } from "@/lib/prospecting-audience.functions";
 import { listSegments } from "@/lib/segments.functions";
-
-type FieldDef = { name: string; label: string; type?: "text" | "number" | "date" | "select"; options?: { value: string; label: string }[] };
+import {
+  getEntityFieldCatalog,
+  type EntityFieldDef,
+} from "@/lib/entity-fields.functions";
+import { DateRangeFilter, resolveDateRange, type DateRangeValue } from "@/components/date-range-filter";
 
 type EntitySource = Exclude<AudienceSource, "manual" | "segment">;
 
@@ -34,51 +37,6 @@ const ENTITY_LABEL: Record<EntitySource, string> = {
   contacts: "Contatos",
   companies: "Empresas → contatos",
   deals: "Negócios → contatos",
-};
-
-const FIELDS_BY_ENTITY: Record<EntitySource, FieldDef[]> = {
-  leads: [
-    { name: "status", label: "Status", type: "select", options: [
-      { value: "new", label: "Novo" }, { value: "contacted", label: "Contatado" },
-      { value: "qualified", label: "Qualificado" }, { value: "disqualified", label: "Desqualificado" },
-    ]},
-    { name: "source", label: "Origem", type: "text" },
-    { name: "score", label: "Score", type: "number" },
-    { name: "company_name", label: "Empresa", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-    { name: "created_at", label: "Criado em", type: "date" },
-  ],
-  contacts: [
-    { name: "lifecyclestage", label: "Lifecycle stage", type: "text" },
-    { name: "job_title", label: "Cargo", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "company_id", label: "Empresa (UUID)", type: "text" },
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-    { name: "created_at", label: "Criado em", type: "date" },
-  ],
-  companies: [
-    { name: "industry", label: "Indústria", type: "text" },
-    { name: "size", label: "Porte", type: "text" },
-    { name: "state", label: "Estado", type: "text" },
-    { name: "city", label: "Cidade", type: "text" },
-    { name: "annualrevenue", label: "Receita anual", type: "number" },
-    { name: "is_target_account", label: "Target account", type: "select", options: [
-      { value: "true", label: "Sim" }, { value: "false", label: "Não" },
-    ]},
-    { name: "assigned_user_id", label: "Responsável (UUID)", type: "text" },
-  ],
-  deals: [
-    { name: "stage", label: "Etapa", type: "text" },
-    { name: "stage_id", label: "Stage ID", type: "text" },
-    { name: "pipeline_id", label: "Pipeline (UUID)", type: "text" },
-    { name: "value", label: "Valor", type: "number" },
-    { name: "currency", label: "Moeda", type: "text" },
-    { name: "expected_close_date", label: "Fechamento esperado", type: "date" },
-    { name: "company_id", label: "Empresa (UUID)", type: "text" },
-  ],
 };
 
 const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
@@ -95,6 +53,11 @@ const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
     { value: "is_null", label: "é desconhecido" },
     { value: "is_not_null", label: "é conhecido" },
   ],
+  boolean: [
+    { value: "eq", label: "é" },
+    { value: "is_null", label: "é desconhecido" },
+    { value: "is_not_null", label: "é conhecido" },
+  ],
   number: [
     { value: "eq", label: "é igual a" },
     { value: "neq", label: "é diferente de" },
@@ -106,8 +69,7 @@ const OPS_BY_TYPE: Record<string, { value: FilterOp; label: string }[]> = {
     { value: "is_not_null", label: "é conhecido" },
   ],
   date: [
-    { value: "gte", label: "depois de" },
-    { value: "lte", label: "antes de" },
+    { value: "between", label: "no intervalo" },
     { value: "is_null", label: "é desconhecido" },
     { value: "is_not_null", label: "é conhecido" },
   ],
@@ -127,6 +89,7 @@ function useDebounced<T>(value: T, ms: number): T {
   }, [value, ms]);
   return v;
 }
+
 
 export function HubspotListBuilder({
   mode,
@@ -325,16 +288,28 @@ function FilterGroupCard({
   onChange: (r: AudienceRule) => void;
   onRemove: () => void;
 }) {
-  const fields = FIELDS_BY_ENTITY[rule.source];
+  const catalogFn = useServerFn(getEntityFieldCatalog);
+  const catalog = useQuery({
+    queryKey: ["entity-field-catalog", rule.source],
+    queryFn: async () => (await catalogFn({ data: { entity: rule.source } })).fields,
+    staleTime: 5 * 60_000,
+  });
+  const fields: EntityFieldDef[] = catalog.data ?? [];
+
   const filter = (rule.filter ?? EMPTY_FILTER) as FilterGroup;
   const conds = filter.conditions.filter((c): c is FilterCondition => c.type === "condition");
 
   const setFilter = (next: FilterGroup) => onChange({ ...rule, filter: next });
 
   const addCondition = () => {
+    if (!fields.length) return;
     const f = fields[0];
     const op = opsFor(f.type)[0].value;
-    const nextConds: FilterCondition[] = [...conds, { type: "condition", field: f.name, op, value: "" }];
+    const initialValue: unknown = f.type === "date" ? { preset: "last_30d" } : "";
+    const nextConds: FilterCondition[] = [
+      ...conds,
+      { type: "condition", field: f.name, op, value: initialValue },
+    ];
     setFilter({ ...filter, op: "and", conditions: nextConds });
   };
 
@@ -348,6 +323,17 @@ function FilterGroupCard({
     setFilter({ ...filter, conditions: nextConds });
   };
 
+  // Para o filtro "between" salvamos no engine como {start, end} ISO.
+  // Mantemos a UI controlada por { preset, custom } e resolvemos só na serialização.
+  const buildBetweenValue = (dr: DateRangeValue) => {
+    const { start, end } = resolveDateRange(dr);
+    return { start, end, _ui: dr };
+  };
+  const readBetweenUi = (value: unknown): DateRangeValue => {
+    const v = value as { _ui?: DateRangeValue } | null | undefined;
+    return v?._ui ?? { preset: "last_30d" };
+  };
+
   return (
     <Card className="p-3 space-y-2 border-l-4 border-l-primary/40">
       <div className="flex items-center gap-2">
@@ -356,7 +342,6 @@ function FilterGroupCard({
           value={rule.source}
           onValueChange={(v) => {
             const source = v as EntitySource;
-            // Ao mudar a fonte, reseta as condições (campos mudam).
             onChange({ source, filter: { ...EMPTY_FILTER } });
           }}
         >
@@ -374,13 +359,21 @@ function FilterGroupCard({
         </Button>
       </div>
 
-      {conds.length === 0 && (
-        <p className="text-xs text-muted-foreground italic">Sem condições — este grupo inclui todos os registros da fonte.</p>
+      {catalog.isLoading && (
+        <p className="text-xs text-muted-foreground">Carregando campos da entidade…</p>
+      )}
+
+      {!catalog.isLoading && conds.length === 0 && (
+        <p className="text-xs text-muted-foreground italic">
+          Sem condições — este grupo inclui todos os registros da fonte.
+        </p>
       )}
 
       <div className="space-y-1.5">
         {conds.map((c, idx) => {
-          const field = fields.find((f) => f.name === c.field) ?? fields[0];
+          const field =
+            fields.find((f) => f.name === c.field) ??
+            ({ name: c.field, label: c.field, type: "text" } as EntityFieldDef);
           const ops = opsFor(field.type);
           const needsValue = !["is_null", "is_not_null"].includes(c.op);
           return (
@@ -395,36 +388,85 @@ function FilterGroupCard({
                 <Select
                   value={c.field}
                   onValueChange={(v) => {
-                    const newField = fields.find((f) => f.name === v) ?? fields[0];
+                    const newField =
+                      fields.find((f) => f.name === v) ?? fields[0];
                     const newOp = opsFor(newField.type)[0].value;
-                    updateCond(idx, { ...c, field: v, op: newOp, value: "" });
+                    const initial =
+                      newField.type === "date"
+                        ? buildBetweenValue({ preset: "last_30d" })
+                        : "";
+                    updateCond(idx, { ...c, field: v, op: newOp, value: initial });
                   }}
                 >
-                  <SelectTrigger className="h-8 w-48"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-80">
                     {fields.map((f) => (
-                      <SelectItem key={f.name} value={f.name}>{f.label}</SelectItem>
+                      <SelectItem key={f.name} value={f.name}>
+                        {f.label}
+                        {f.type === "select" ? " ·" : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={c.op} onValueChange={(v) => updateCond(idx, { ...c, op: v as FilterOp })}>
+                <Select
+                  value={c.op}
+                  onValueChange={(v) =>
+                    updateCond(idx, {
+                      ...c,
+                      op: v as FilterOp,
+                      value:
+                        v === "between"
+                          ? buildBetweenValue({ preset: "last_30d" })
+                          : c.value,
+                    })
+                  }
+                >
                   <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ops.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    {ops.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {needsValue && (
-                  field.type === "select" && field.options ? (
-                    <Select value={String(c.value ?? "")} onValueChange={(v) => updateCond(idx, { ...c, value: v })}>
-                      <SelectTrigger className="h-8 flex-1"><SelectValue placeholder="Valor" /></SelectTrigger>
+                  field.type === "date" ? (
+                    <DateRangeFilter
+                      value={readBetweenUi(c.value)}
+                      onChange={(dr) =>
+                        updateCond(idx, { ...c, op: "between", value: buildBetweenValue(dr) })
+                      }
+                    />
+                  ) : field.type === "boolean" ? (
+                    <Select
+                      value={String(c.value ?? "")}
+                      onValueChange={(v) => updateCond(idx, { ...c, value: v })}
+                    >
+                      <SelectTrigger className="h-8 flex-1">
+                        <SelectValue placeholder="Valor" />
+                      </SelectTrigger>
                       <SelectContent>
-                        {field.options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        <SelectItem value="true">Sim</SelectItem>
+                        <SelectItem value="false">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === "select" && field.options ? (
+                    <Select
+                      value={String(c.value ?? "")}
+                      onValueChange={(v) => updateCond(idx, { ...c, value: v })}
+                    >
+                      <SelectTrigger className="h-8 flex-1">
+                        <SelectValue placeholder="Valor" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {field.options.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   ) : (
                     <Input
                       className="h-8 flex-1"
-                      type={field.type === "date" ? "date" : field.type === "number" ? "number" : "text"}
+                      type={field.type === "number" ? "number" : "text"}
                       value={String(c.value ?? "")}
                       onChange={(e) => updateCond(idx, { ...c, value: e.target.value })}
                       placeholder="Valor"
@@ -440,7 +482,14 @@ function FilterGroupCard({
         })}
       </div>
 
-      <Button type="button" size="sm" variant="ghost" onClick={addCondition} className="text-primary">
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={addCondition}
+        className="text-primary"
+        disabled={!fields.length}
+      >
         <Plus className="h-3.5 w-3.5 mr-1" />E condição
       </Button>
     </Card>

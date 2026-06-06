@@ -3,7 +3,7 @@ import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 export type FilterOp =
   | "eq" | "neq" | "gt" | "gte" | "lt" | "lte"
-  | "ilike" | "in" | "is_null" | "is_not_null" | "contains";
+  | "ilike" | "in" | "is_null" | "is_not_null" | "contains" | "between";
 
 export type FilterCondition = {
   type: "condition";
@@ -69,6 +69,13 @@ function applyCondition(q: any, c: FilterCondition): any {
     case "is_null": return q.is(c.field, null);
     case "is_not_null": return q.not(c.field, "is", null);
     case "contains": return q.contains(c.field, c.value);
+    case "between": {
+      const v = (c.value ?? {}) as { start?: string; end?: string };
+      let r = q;
+      if (v.start) r = r.gte(c.field, v.start);
+      if (v.end) r = r.lt(c.field, v.end);
+      return r;
+    }
   }
 }
 
@@ -128,5 +135,9 @@ export function conditionToLabel(c: FilterCondition, fieldLabel?: string): strin
     case "is_null": return `${f} vazio`;
     case "is_not_null": return `${f} preenchido`;
     case "contains": return `${f} ⊃ ${JSON.stringify(c.value)}`;
+    case "between": {
+      const v = (c.value ?? {}) as { start?: string; end?: string };
+      return `${f} entre ${v.start ?? "—"} e ${v.end ?? "—"}`;
+    }
   }
 }
