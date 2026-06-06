@@ -24,7 +24,7 @@ export type AudienceRule = {
 const FilterConditionSchema: z.ZodType = z.object({
   type: z.literal("condition"),
   field: z.string(),
-  op: z.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "in", "is_null", "is_not_null", "contains"]),
+  op: z.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "in", "is_null", "is_not_null", "contains", "between"]),
   value: z.unknown().optional(),
 });
 const FilterGroupSchema: z.ZodType = z.lazy(() =>
