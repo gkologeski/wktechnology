@@ -89,19 +89,19 @@ async function runAction(
         const due = action.due_in_days
           ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
           : null;
-        const relCol =
-          ctx.entity === "leads" ? "related_lead_id"
-          : ctx.entity === "contacts" ? "related_contact_id"
-          : ctx.entity === "companies" ? "related_company_id"
-          : "related_deal_id";
-        const { error } = await supabase.from("activities").insert({
+        const baseRow: Record<string, unknown> = {
           owner_id: ctx.ownerId,
           type: action.activity_type ?? "task",
           subject,
           body,
           due_date: due,
-          [relCol]: ctx.entityId,
-        });
+        };
+        if (ctx.entity === "leads") baseRow.related_lead_id = ctx.entityId;
+        else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
+        else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
+        // tickets: sem coluna de associação direta em activities; cria como atividade solta.
+        const { error } = await supabase.from("activities").insert(baseRow as never);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
       }
