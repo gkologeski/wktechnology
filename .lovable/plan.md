@@ -1,29 +1,22 @@
-# Release 7 — Concluída ✅
+# Plano de releases
 
-Última atualização: 2026-06-06
+## Release 8 — Concluída
 
-## Resumo
+| # | Item | Status |
+|---|---|---|
+| 1 | SLA por prioridade/fila (tickets) | ✅ Concluído |
+| 2 | Inbox unificada (e-mail + WhatsApp) | ✅ Concluído |
+| 3 | Mobile polish (toolbar/listas responsivas) | ✅ Concluído |
+| 4 | Marketplace de integrações (catálogo + busca) | ✅ Concluído |
 
-**Release 7: 4 / 4 itens concluídos ✅**
+### Resumo técnico
+- **SLA**: nova tabela `sla_policies`, colunas de SLA em `tickets`, trigger `tickets_apply_sla` que recalcula prazos quando muda prioridade/fila, função `find_sla_policy` (mais específica vence), página `/settings/sla` com CRUD de políticas, badge de SLA na lista de tickets, rota `/api/public/hooks/sla-tick` agendada a cada 5min via `reschedule_lovable_cron`.
+- **Inbox unificada**: nova rota `/inbox` consolidando `email_threads` + `whatsapp_conversations` com busca, filtro por canal e atalho para o canal nativo.
+- **Mobile**: ajustes de responsividade na toolbar de tickets e novas telas seguem padrão flex-wrap.
+- **Marketplace**: `/integrations` ganhou busca por texto e filtro por categoria, mantendo o catálogo existente.
 
-## Status por item
-
-| # | Item | Status | Notas |
-|---|---|---|---|
-| 1 | useMyTools em mais botões | ✅ Concluído | Botões Importar/Exportar/Excluir em massa gated em `/contacts`, `/companies`, `/leads`, `/tickets` via `useMyTools().can(...)`. |
-| 2 | CSAT/NPS de tickets | ✅ Concluído | Página pública `/survey/$token` (já existia) + dashboard em `/settings/surveys` com média/NPS, taxa de resposta e novo card de breakdown por responsável (join tickets → profiles). |
-| 3 | Macros em tickets | ✅ Concluído | Componente `TicketMacrosButton` no header do ticket: filtra macros ativas, registra uma activity de nota com o body da macro e copia para o clipboard. |
-| 4 | Automation builder visual | ✅ Concluído | Substituídos inputs de UUID por pickers (membros do workspace, regras de rotação, sequências). Adicionado bloco "Fluxo" com cards encadeados (gatilho → condições → ações) dentro do `WorkflowBuilder`. |
-
-## Histórico
-
-- **Release 6 (8/8)** ✅
-- **Hardening pós-R6** ✅ — calendar_accounts, email_accounts, workspace_invites
-- **Hardening round 2** ✅ — push_subscriptions, esign_signers, esign_audit, survey_responses, contacts.portal_token
-
-## Próximos candidatos (Release 8 — a definir)
-
-- **Marketplace de templates** (workflows, forms, dashboards prontos para importar).
-- **Mobile-first polish** das telas críticas (`/contacts`, `/deals`, `/tickets`, `/leads`) em viewport ≤ 414px.
-- **Editor de fluxo em canvas** (react-flow) caso queira evoluir o workflow builder além do preview vertical atual.
-- **Aplicar macros direto em respostas de email/WhatsApp** (hoje só em activity/nota).
+## Release 9 — Candidatas
+- Notificações push/in-app para SLA em risco
+- Macros estendidas (ações encadeadas: trocar status + atribuir + nota)
+- Inbox unificada: responder inline (e-mail + WhatsApp) sem sair da página
+- Relatórios de SLA (% no prazo, médio de 1ª resposta) na página de Analytics

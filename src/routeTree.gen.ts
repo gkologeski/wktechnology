@@ -41,6 +41,7 @@ import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
+import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -114,6 +115,7 @@ import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
+import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
@@ -302,6 +304,11 @@ const AuthenticatedIntegrationsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedIntegrationsRoute,
   } as any)
+const AuthenticatedInboxIndexRoute = AuthenticatedInboxIndexRouteImport.update({
+  id: '/inbox/',
+  path: '/inbox/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedTicketsIdRoute = AuthenticatedTicketsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -730,6 +737,11 @@ const ApiPublicHooksTwilioWhatsappRoute =
     path: '/api/public/hooks/twilio-whatsapp',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSlaTickRoute = ApiPublicHooksSlaTickRouteImport.update({
+  id: '/api/public/hooks/sla-tick',
+  path: '/api/public/hooks/sla-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSequencesTickRoute =
   ApiPublicHooksSequencesTickRouteImport.update({
     id: '/api/public/hooks/sequences-tick',
@@ -956,6 +968,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -975,6 +988,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -1082,6 +1096,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1101,6 +1116,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -1213,6 +1229,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1232,6 +1249,7 @@ export interface FileRoutesById {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -1344,6 +1362,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/inbox/'
     | '/integrations/'
     | '/settings/'
     | '/admin/workspaces/$id'
@@ -1363,6 +1382,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/webhook-tick'
@@ -1470,6 +1490,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/inbox'
     | '/integrations'
     | '/settings'
     | '/admin/workspaces/$id'
@@ -1489,6 +1510,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/webhook-tick'
@@ -1600,6 +1622,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
+    | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
@@ -1619,6 +1642,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/webhook-tick'
@@ -1670,6 +1694,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
+  ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
@@ -1912,6 +1937,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/integrations/'
       preLoaderRoute: typeof AuthenticatedIntegrationsIndexRouteImport
       parentRoute: typeof AuthenticatedIntegrationsRoute
+    }
+    '/_authenticated/inbox/': {
+      id: '/_authenticated/inbox/'
+      path: '/inbox'
+      fullPath: '/inbox/'
+      preLoaderRoute: typeof AuthenticatedInboxIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tickets/$id': {
       id: '/_authenticated/tickets/$id'
@@ -2424,6 +2456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTwilioWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sla-tick': {
+      id: '/api/public/hooks/sla-tick'
+      path: '/api/public/hooks/sla-tick'
+      fullPath: '/api/public/hooks/sla-tick'
+      preLoaderRoute: typeof ApiPublicHooksSlaTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sequences-tick': {
       id: '/api/public/hooks/sequences-tick'
       path: '/api/public/hooks/sequences-tick'
@@ -2858,6 +2897,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
+  AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -2883,6 +2923,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
+  AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -2954,6 +2995,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
+  ApiPublicHooksSlaTickRoute: ApiPublicHooksSlaTickRoute,
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,

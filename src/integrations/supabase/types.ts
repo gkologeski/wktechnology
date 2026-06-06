@@ -5049,6 +5049,63 @@ export type Database = {
           },
         ]
       }
+      sla_policies: {
+        Row: {
+          active: boolean
+          created_at: string
+          first_response_mins: number
+          id: string
+          name: string
+          owner_id: string
+          pipeline_id: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"] | null
+          resolution_mins: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          first_response_mins?: number
+          id?: string
+          name: string
+          owner_id: string
+          pipeline_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"] | null
+          resolution_mins?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          first_response_mins?: number
+          id?: string
+          name?: string
+          owner_id?: string
+          pipeline_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"] | null
+          resolution_mins?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_policies_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stage_entries: {
         Row: {
           created_at: string
@@ -5542,6 +5599,12 @@ export type Database = {
           pipeline_id: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           resolved_at: string | null
+          sla_first_response_at: string | null
+          sla_first_response_breached: boolean
+          sla_first_response_due_at: string | null
+          sla_policy_id: string | null
+          sla_resolution_breached: boolean
+          sla_resolution_due_at: string | null
           source: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
@@ -5569,6 +5632,12 @@ export type Database = {
           pipeline_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
+          sla_first_response_at?: string | null
+          sla_first_response_breached?: boolean
+          sla_first_response_due_at?: string | null
+          sla_policy_id?: string | null
+          sla_resolution_breached?: boolean
+          sla_resolution_due_at?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
@@ -5596,6 +5665,12 @@ export type Database = {
           pipeline_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
+          sla_first_response_at?: string | null
+          sla_first_response_breached?: boolean
+          sla_first_response_due_at?: string | null
+          sla_policy_id?: string | null
+          sla_resolution_breached?: boolean
+          sla_resolution_due_at?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
@@ -5622,6 +5697,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_sla_policy_id_fkey"
+            columns: ["sla_policy_id"]
+            isOneToOne: false
+            referencedRelation: "sla_policies"
             referencedColumns: ["id"]
           },
           {
@@ -6561,6 +6643,14 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      find_sla_policy: {
+        Args: {
+          _owner: string
+          _pipeline: string
+          _priority: Database["public"]["Enums"]["ticket_priority"]
+        }
+        Returns: string
       }
       get_entitlement_limit: {
         Args: { _key: string; _workspace: string }
