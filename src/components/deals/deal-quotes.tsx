@@ -7,6 +7,7 @@ import {
   updateQuote,
   deleteQuote,
   regenerateQuoteToken,
+  createQuotePaymentLink,
 } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send } from "lucide-react";
+import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 
