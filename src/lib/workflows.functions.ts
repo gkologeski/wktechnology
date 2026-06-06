@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows } from "@/lib/workflows/engine.server";
+import { requireTool } from "@/lib/permissions.server";
 
 const EntityEnum = z.enum(["leads", "contacts", "companies", "deals", "tickets"]);
 
