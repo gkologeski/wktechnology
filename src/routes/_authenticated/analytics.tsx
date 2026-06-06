@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick } from "lucide-react";
+import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/analytics.functions";
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
 import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
+import { getSlaSummary, getSlaOffenders } from "@/lib/sla-reports.functions";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell, LineChart, Line, Legend,
 } from "recharts";
@@ -82,6 +83,7 @@ function AnalyticsPage() {
           <TabsTrigger value="cohort"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort</TabsTrigger>
           <TabsTrigger value="sentiment"><Smile className="h-3.5 w-3.5 mr-1" /> Sentimento</TabsTrigger>
           <TabsTrigger value="emails"><Mail className="h-3.5 w-3.5 mr-1" /> E-mails 1:1</TabsTrigger>
+          <TabsTrigger value="sla"><Timer className="h-3.5 w-3.5 mr-1" /> SLA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
@@ -211,7 +213,81 @@ function AnalyticsPage() {
         <TabsContent value="emails" className="space-y-4">
           <EmailEngagementTab dateFrom={dateFrom} dateTo={dateTo} />
         </TabsContent>
+
+        <TabsContent value="sla" className="space-y-4">
+          <SlaReportsTab dateFrom={dateFrom} dateTo={dateTo} />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SlaReportsTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
+  const sumFn = useServerFn(getSlaSummary);
+  const offFn = useServerFn(getSlaOffenders);
+  const filters = useMemo(() => ({
+    from: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    to: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
+  }), [dateFrom, dateTo]);
+  const sumQ = useQuery({ queryKey: ["sla-summary", filters], queryFn: () => sumFn({ data: filters }) });
+  const offQ = useQuery({ queryKey: ["sla-offenders", filters], queryFn: () => offFn({ data: filters }) });
+  const s = sumQ.data;
+  const fmtMin = (m: number) => m < 60 ? `${m} min` : `${(m / 60).toFixed(1)} h`;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="Tickets com SLA" value={String(s?.total ?? 0)} />
+        <Kpi label="Cumprimento 1ª resposta" value={fmtPct(s?.fr_compliance_pct ?? 0)} />
+        <Kpi label="Cumprimento resolução" value={fmtPct(s?.res_compliance_pct ?? 0)} />
+        <Kpi label="Tempo médio 1ª resposta" value={s ? fmtMin(s.avg_fr_minutes) : "—"} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Top agentes com violações</CardTitle></CardHeader>
+          <CardContent>
+            {!offQ.data?.agents.length ? (
+              <p className="text-xs text-muted-foreground">Sem dados.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1">Agente</th><th className="text-right py-1">Tickets</th><th className="text-right py-1">Violações</th><th className="text-right py-1">%</th></tr></thead>
+                <tbody>
+                  {offQ.data.agents.map((a) => (
+                    <tr key={a.key} className="border-b last:border-0">
+                      <td className="py-1">{a.label}</td>
+                      <td className="py-1 text-right">{a.total}</td>
+                      <td className="py-1 text-right">{a.breached}</td>
+                      <td className="py-1 text-right">{fmtPct(a.pct)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Top filas com violações</CardTitle></CardHeader>
+          <CardContent>
+            {!offQ.data?.pipelines.length ? (
+              <p className="text-xs text-muted-foreground">Sem dados.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1">Fila</th><th className="text-right py-1">Tickets</th><th className="text-right py-1">Violações</th><th className="text-right py-1">%</th></tr></thead>
+                <tbody>
+                  {offQ.data.pipelines.map((p) => (
+                    <tr key={p.key} className="border-b last:border-0">
+                      <td className="py-1">{p.label}</td>
+                      <td className="py-1 text-right">{p.total}</td>
+                      <td className="py-1 text-right">{p.breached}</td>
+                      <td className="py-1 text-right">{fmtPct(p.pct)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

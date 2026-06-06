@@ -1,13 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MessageCircle, Search } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Mail, MessageCircle, Search, Send, ChevronRight, ExternalLink } from "lucide-react";
+import { sendGmailEmail } from "@/lib/email-send.functions";
+import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
   component: UnifiedInboxPage,
@@ -21,11 +26,18 @@ type Item = {
   contactLabel: string;
   lastAt: string | null;
   href: string;
+  replyTo: string | null; // email address or phone
+  contactId: string | null;
+  subject: string;
 };
 
 function UnifiedInboxPage() {
   const [channel, setChannel] = useState<"all" | "email" | "whatsapp">("all");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const sendEmail = useServerFn(sendGmailEmail);
+  const sendWa = useServerFn(sendWhatsAppMessage);
 
   const emailQ = useQuery({
     queryKey: ["inbox-unified", "email"],
@@ -47,6 +59,28 @@ function UnifiedInboxPage() {
         .order("last_message_at", { ascending: false, nullsFirst: false })
         .limit(150);
       return data ?? [];
+    },
+  });
+
+  // For email: load last inbound email per thread to know from_email
+  const emailThreadIds = (emailQ.data ?? []).map((t) => t.id);
+  const lastEmailQ = useQuery({
+    queryKey: ["inbox-unified", "email-last", emailThreadIds.join(",")],
+    enabled: emailThreadIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("email_messages")
+        .select("thread_id, from_email, subject, direction")
+        .in("thread_id", emailThreadIds)
+        .order("created_at", { ascending: false });
+      const map = new Map<string, { from_email: string | null; subject: string | null }>();
+      for (const m of data ?? []) {
+        if (!m.thread_id) continue;
+        if (!map.has(m.thread_id) && m.direction === "inbound") {
+          map.set(m.thread_id, { from_email: m.from_email ?? null, subject: m.subject ?? null });
+        }
+      }
+      return map;
     },
   });
 
@@ -75,15 +109,22 @@ function UnifiedInboxPage() {
 
   const items: Item[] = useMemo(() => {
     const m = contactsQ.data ?? new Map<string, string>();
-    const a: Item[] = (emailQ.data ?? []).map((t) => ({
-      id: `email:${t.id}`,
-      channel: "email" as const,
-      title: t.subject || "(sem assunto)",
-      snippet: t.snippet ?? "",
-      contactLabel: t.contact_id ? (m.get(t.contact_id) ?? "—") : "—",
-      lastAt: t.last_message_at,
-      href: `/inbox/email`,
-    }));
+    const lastMap = lastEmailQ.data ?? new Map();
+    const a: Item[] = (emailQ.data ?? []).map((t) => {
+      const last = lastMap.get(t.id);
+      return {
+        id: `email:${t.id}`,
+        channel: "email" as const,
+        title: t.subject || "(sem assunto)",
+        snippet: t.snippet ?? "",
+        contactLabel: t.contact_id ? (m.get(t.contact_id) ?? "—") : "—",
+        lastAt: t.last_message_at,
+        href: `/inbox/email`,
+        replyTo: last?.from_email ?? null,
+        contactId: t.contact_id ?? null,
+        subject: t.subject ?? "",
+      };
+    });
     const b: Item[] = (waQ.data ?? []).map((c) => ({
       id: `wa:${c.id}`,
       channel: "whatsapp" as const,
@@ -92,6 +133,9 @@ function UnifiedInboxPage() {
       contactLabel: c.contact_id ? (m.get(c.contact_id) ?? c.contact_phone) : c.contact_phone,
       lastAt: c.last_message_at,
       href: `/inbox/whatsapp`,
+      replyTo: c.contact_phone,
+      contactId: c.contact_id ?? null,
+      subject: "",
     }));
     let merged = [...a, ...b];
     if (channel !== "all") merged = merged.filter((i) => i.channel === channel);
@@ -105,13 +149,43 @@ function UnifiedInboxPage() {
     }
     merged.sort((x, y) => (new Date(y.lastAt ?? 0).getTime()) - (new Date(x.lastAt ?? 0).getTime()));
     return merged;
-  }, [emailQ.data, waQ.data, contactsQ.data, channel, search]);
+  }, [emailQ.data, waQ.data, contactsQ.data, lastEmailQ.data, channel, search]);
+
+  const current = items.find((i) => i.id === selected) ?? null;
+
+  const reply = useMutation({
+    mutationFn: async () => {
+      if (!current) throw new Error("Selecione um item.");
+      if (current.channel === "email") {
+        if (!current.replyTo) throw new Error("Não foi possível identificar o destinatário do e-mail.");
+        const subject = current.subject?.toLowerCase().startsWith("re:") ? current.subject : `Re: ${current.subject || "(sem assunto)"}`;
+        await sendEmail({
+          data: {
+            to: current.replyTo,
+            subject,
+            body_text: draft,
+            contact_id: current.contactId ?? undefined,
+          } as never,
+        });
+      } else {
+        await sendWa({
+          data: {
+            to: current.replyTo!,
+            body: draft,
+            contactId: current.contactId ?? undefined,
+          } as never,
+        });
+      }
+    },
+    onSuccess: () => { toast.success("Enviado!"); setDraft(""); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="Inbox unificada"
-        description="Conversas de e-mail e WhatsApp em um só lugar."
+        description="Conversas de e-mail e WhatsApp em um só lugar. Responda inline."
       />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -136,45 +210,92 @@ function UnifiedInboxPage() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {emailQ.isLoading || waQ.isLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Carregando…</p>
-          ) : items.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Nenhuma conversa encontrada.</p>
-          ) : (
-            <ul className="divide-y">
-              {items.map((it) => (
-                <li key={it.id}>
-                  <Link
-                    to={it.href}
-                    className="flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors"
-                  >
-                    <div className="shrink-0 mt-0.5">
-                      {it.channel === "email"
-                        ? <Mail className="h-4 w-4 text-primary" />
-                        : <MessageCircle className="h-4 w-4 text-emerald-500" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{it.contactLabel}</span>
-                        <Badge variant="outline" className="text-[10px] capitalize">{it.channel}</Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
+        <Card>
+          <CardContent className="p-0">
+            {emailQ.isLoading || waQ.isLoading ? (
+              <p className="p-6 text-sm text-muted-foreground">Carregando…</p>
+            ) : items.length === 0 ? (
+              <p className="p-6 text-sm text-muted-foreground">Nenhuma conversa encontrada.</p>
+            ) : (
+              <ul className="divide-y">
+                {items.map((it) => (
+                  <li key={it.id}>
+                    <button
+                      onClick={() => { setSelected(it.id); setDraft(""); }}
+                      className={`flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors w-full text-left ${selected === it.id ? "bg-muted/60" : ""}`}
+                    >
+                      <div className="shrink-0 mt-0.5">
+                        {it.channel === "email"
+                          ? <Mail className="h-4 w-4 text-primary" />
+                          : <MessageCircle className="h-4 w-4 text-emerald-500" />}
                       </div>
-                      <div className="text-sm truncate text-foreground/80">{it.title}</div>
-                      {it.snippet && (
-                        <div className="text-xs text-muted-foreground truncate">{it.snippet}</div>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                      {it.lastAt ? new Date(it.lastAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : ""}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">{it.contactLabel}</span>
+                          <Badge variant="outline" className="text-[10px] capitalize">{it.channel}</Badge>
+                        </div>
+                        <div className="text-sm truncate text-foreground/80">{it.title}</div>
+                        {it.snippet && (
+                          <div className="text-xs text-muted-foreground truncate">{it.snippet}</div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
+                        {it.lastAt ? new Date(it.lastAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : ""}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground self-center" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="h-fit sticky top-4">
+          <CardContent className="p-4 space-y-3">
+            {!current ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">Selecione uma conversa para responder inline.</p>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {current.channel === "email"
+                      ? <Mail className="h-4 w-4 text-primary" />
+                      : <MessageCircle className="h-4 w-4 text-emerald-500" />}
+                    <span className="font-medium truncate">{current.contactLabel}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground truncate">{current.title}</div>
+                  {current.replyTo && (
+                    <div className="text-xs text-muted-foreground">Para: {current.replyTo}</div>
+                  )}
+                </div>
+                <Textarea
+                  rows={6}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"}
+                />
+                <div className="flex items-center gap-2 justify-between">
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to={current.href}>
+                      Abrir conversa <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                    </Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => reply.mutate()}
+                    disabled={!draft.trim() || reply.isPending || (current.channel === "email" && !current.replyTo)}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    {reply.isPending ? "Enviando…" : "Enviar"}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
