@@ -49,6 +49,20 @@ function CampaignDetailPage() {
     /* eslint-disable-next-line */
   }, [id]);
 
+  // Stats per variant — MUST be declared before any early return to keep hook order stable
+  const stats = useMemo(() => {
+    const byVariant: Record<string, { total: number; answered: number; success: number; durations: number[] }> = {};
+    for (const a of attempts) {
+      const key = a.variant_id ?? "none";
+      const s = byVariant[key] ??= { total: 0, answered: 0, success: 0, durations: [] };
+      s.total += 1;
+      if (a.status === "completed") s.answered += 1;
+      if (a.success_evaluation && a.success_evaluation.toLowerCase().includes("success")) s.success += 1;
+      if (a.duration_seconds) s.durations.push(a.duration_seconds);
+    }
+    return byVariant;
+  }, [attempts]);
+
   if (!campaign) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
 
   const save = async () => {
@@ -71,19 +85,6 @@ function CampaignDetailPage() {
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  // Stats per variant
-  const stats = useMemo(() => {
-    const byVariant: Record<string, { total: number; answered: number; success: number; durations: number[] }> = {};
-    for (const a of attempts) {
-      const key = a.variant_id ?? "none";
-      const s = byVariant[key] ??= { total: 0, answered: 0, success: 0, durations: [] };
-      s.total += 1;
-      if (a.status === "completed") s.answered += 1;
-      if (a.success_evaluation && a.success_evaluation.toLowerCase().includes("success")) s.success += 1;
-      if (a.duration_seconds) s.durations.push(a.duration_seconds);
-    }
-    return byVariant;
-  }, [attempts]);
 
   const scriptName = (sid: string | null) => scripts.find((s) => s.id === sid)?.name ?? "—";
 
