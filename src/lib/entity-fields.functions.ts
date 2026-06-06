@@ -141,10 +141,12 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: rows, error } = await supabase.rpc(
-      "get_entity_field_catalog",
-      { p_table: data.entity, p_owner_id: userId },
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = (supabase as any).rpc.bind(supabase);
+    const { data: rows, error } = await rpc("get_entity_field_catalog", {
+      p_table: data.entity,
+      p_owner_id: userId,
+    });
     if (error) throw error;
 
     // Resolução de labels para FKs com valores legíveis.
