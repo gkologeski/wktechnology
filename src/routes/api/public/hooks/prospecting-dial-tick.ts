@@ -8,6 +8,18 @@ import { startVapiCall } from "@/lib/prospecting-campaigns.functions";
 const sb = supabaseAdmin as any;
 
 const BATCH = 10;
+const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
+
+async function pauseCampaignIfIdle(campaignId: string) {
+  const { count } = await sb
+    .from("prospecting_call_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaignId)
+    .in("status", ACTIVE_ATTEMPT_STATUSES);
+  if ((count ?? 0) === 0) {
+    await sb.from("prospecting_campaigns").update({ status: "paused" }).eq("id", campaignId).eq("status", "running");
+  }
+}
 
 function isInsideWindow(win: { start: string; end: string; timezone: string; days: number[] } | null): boolean {
   if (!win) return true;
@@ -140,6 +152,7 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
               .from("prospecting_call_attempts")
               .update({ status: "failed", ended_reason: result.error ?? "unknown" })
               .eq("id", it.id);
+            await pauseCampaignIfIdle(it.campaign_id);
           } else if (result.call_id) {
             await sb
               .from("prospecting_call_attempts")
