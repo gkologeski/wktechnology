@@ -15,6 +15,8 @@ import {
   auditCampaignQueueability,
   type Campaign, type Variant, type Attempt, type LeadAudit,
 } from "@/lib/prospecting-campaigns.functions";
+import type { AudienceRule } from "@/lib/prospecting-audience.functions";
+import { AudienceBuilder } from "@/components/prospecting/audience-builder";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/prospecting/campaigns/$id")({
