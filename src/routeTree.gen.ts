@@ -70,6 +70,7 @@ import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
+import { Route as AuthenticatedSettingsImportCsvRouteImport } from './routes/_authenticated/settings.import-csv'
 import { Route as AuthenticatedSettingsHubspotUsersRouteImport } from './routes/_authenticated/settings.hubspot-users'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
@@ -469,6 +470,12 @@ const AuthenticatedSettingsLanguageRoute =
   AuthenticatedSettingsLanguageRouteImport.update({
     id: '/language',
     path: '/language',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsImportCsvRoute =
+  AuthenticatedSettingsImportCsvRouteImport.update({
+    id: '/import-csv',
+    path: '/import-csv',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsHubspotUsersRoute =
@@ -904,6 +911,7 @@ export interface FileRoutesByFullPath {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1028,6 +1036,7 @@ export interface FileRoutesByTo {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1155,6 +1164,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/_authenticated/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/_authenticated/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
@@ -1283,6 +1293,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
+    | '/settings/import-csv'
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
@@ -1407,6 +1418,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
+    | '/settings/import-csv'
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
@@ -1533,6 +1545,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/hubspot-sync'
     | '/_authenticated/settings/hubspot-users'
+    | '/_authenticated/settings/import-csv'
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/macros'
@@ -2074,6 +2087,13 @@ declare module '@tanstack/react-router' {
       path: '/language'
       fullPath: '/settings/language'
       preLoaderRoute: typeof AuthenticatedSettingsLanguageRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/import-csv': {
+      id: '/_authenticated/settings/import-csv'
+      path: '/import-csv'
+      fullPath: '/settings/import-csv'
+      preLoaderRoute: typeof AuthenticatedSettingsImportCsvRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/hubspot-users': {
@@ -2629,6 +2649,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
   AuthenticatedSettingsHubspotUsersRoute: typeof AuthenticatedSettingsHubspotUsersRoute
+  AuthenticatedSettingsImportCsvRoute: typeof AuthenticatedSettingsImportCsvRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
@@ -2680,6 +2701,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
   AuthenticatedSettingsHubspotUsersRoute:
     AuthenticatedSettingsHubspotUsersRoute,
+  AuthenticatedSettingsImportCsvRoute: AuthenticatedSettingsImportCsvRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
