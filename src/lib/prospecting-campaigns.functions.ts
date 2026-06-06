@@ -3,6 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  AudienceRulesSchema,
+  resolveAudienceServer,
+  type AudienceRule,
+} from "@/lib/prospecting-audience.functions";
 
 const VAPI_BASE = "https://api.vapi.ai";
 
@@ -20,6 +25,8 @@ export type Campaign = {
   source_ref: string | null;
   lead_ids: string[];
   dialing_window: { start: string; end: string; timezone: string; days: number[] };
+  audience_mode: "static" | "dynamic";
+  audience_rules: AudienceRule[];
   created_at: string;
   updated_at: string;
 };
