@@ -48,6 +48,7 @@ const sections: Section[] = [
       { to: "/settings/quotes", label: "Cotações" },
       { to: "/settings/recurring", label: "Recorrência" },
       { to: "/settings/esign", label: "Assinaturas eletrônicas" },
+      { to: "/settings/import-csv", label: "Importar CSV" },
     ],
   },
   {
