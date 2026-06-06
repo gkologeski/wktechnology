@@ -45,6 +45,9 @@ export type Attempt = {
   summary: string | null;
   success_evaluation: string | null;
   ended_reason: string | null;
+  vapi_call_id: string | null;
+  vapi_request: unknown | null;
+  vapi_response: unknown | null;
   created_at: string;
 };
 
