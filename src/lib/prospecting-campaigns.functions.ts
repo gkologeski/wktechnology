@@ -194,26 +194,38 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
     if (data.status === "running") {
       const { data: c } = await sb
         .from("prospecting_campaigns")
-        .select("lead_ids")
+        .select("lead_ids, max_attempts")
         .eq("id", data.id)
         .eq("workspace_id", ws)
         .single();
       const leadIds = (c?.lead_ids ?? []) as string[];
+      const maxAttempts = (c?.max_attempts as number | undefined) ?? 1;
       if (leadIds.length) {
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
-          .select("lead_id")
+          .select("lead_id, status, attempt_number")
           .eq("campaign_id", data.id);
-        const done = new Set(((existing ?? []) as Array<{ lead_id: string }>).map((x) => x.lead_id));
+        const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
+        for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number }>) {
+          const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
+          const blocking = ["queued", "ringing", "completed"].includes(x.status);
+          byLead.set(x.lead_id, {
+            blocking: prev.blocking || blocking,
+            lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
+          });
+        }
         const rows = leadIds
-          .filter((lid) => !done.has(lid))
+          .filter((lid) => {
+            const prev = byLead.get(lid);
+            return !prev || (!prev.blocking && prev.lastAttempt < maxAttempts);
+          })
           .map((lid) => ({
             workspace_id: ws,
             owner_id: ws,
             campaign_id: data.id,
             lead_id: lid,
             status: "queued",
-            attempt_number: 1,
+            attempt_number: (byLead.get(lid)?.lastAttempt ?? 0) + 1,
             scheduled_at: new Date().toISOString(),
           }));
         if (rows.length) await sb.from("prospecting_call_attempts").insert(rows);
