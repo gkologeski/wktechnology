@@ -1,56 +1,71 @@
-## Construtor de público multi-entidade
+# Construtor de público estilo HubSpot Lists
 
-Substitui o textarea de UUIDs por um builder inline com 4 fontes, preview, e toggle snapshot vs. dinâmica.
+Substituir o card atual de "Público da campanha" em `/prospecting/campaigns/:id` por uma experiência próxima das **Listas / Segmentos do HubSpot**: cartões de filtro empilhados, lógica AND dentro do grupo e OR entre grupos, escolha clara de entidade-fonte, contagem ao vivo e possibilidade de reaproveitar uma Lista já salva em **Configurações → Listas**.
 
-### Schema (migration)
+## Resultado para o usuário
 
-Adiciona à `prospecting_campaigns`:
-- `audience_mode` text: `"static"` (snapshot) ou `"dynamic"` (re-resolve no Iniciar). Default `"static"`.
-- `audience_rules` jsonb: array de blocos `{ source, filter }` onde `source ∈ { leads, contacts, companies, deals }` e `filter` usa o `FilterNode` de `src/lib/filters.ts`.
+- Topo do card: 3 abas — **Listas salvas** · **Construtor inline** · **IDs manuais**.
+- Em "Construtor inline":
+  - Toggle **Snapshot (estática)** vs **Dinâmica (recalcula ao iniciar)**.
+  - Botão **Adicionar grupo de filtros**. Cada grupo é um cartão com:
+    - Seletor de fonte: Leads · Contatos · Empresas → contatos · Deals → contatos.
+    - Linhas de condição estilo HubSpot: `Propriedade` · `Operador` · `Valor`. Operadores: é / não é / contém / não contém / começa com / maior que / menor que / entre / é conhecido / é desconhecido / nos últimos N dias.
+    - Botão **E** entre linhas (intra-grupo = AND).
+    - Botão **+ Adicionar grupo** abaixo (inter-grupo = OR), com divisor "OU" visível.
+  - Rodapé fixo do card: contagem em tempo real (debounced) "X leads correspondem" + botão **Ver amostra** que abre uma gaveta com 50 primeiros (nome / telefone / origem).
+- Em "Listas salvas":
+  - Combo que lista os Segmentos existentes (entidade leads/contacts/companies/deals).
+  - Mostra contagem atual da lista e link "Editar em Configurações".
+  - Ao salvar, a campanha referencia o `segment_id` (modo dinâmico segue a lista).
+- Em "IDs manuais": textarea para colar UUIDs (compatibilidade com o que já existe).
 
-`lead_ids` continua existindo:
-- `static`: preenchido na hora de salvar (resolve agora).
-- `dynamic`: ignorado ao iniciar; resolve em tempo real.
+## Mudanças técnicas
 
-### Resolução de público (server)
+### 1. Modelo de regras (`src/lib/prospecting-audience.functions.ts`)
+- Adicionar nova fonte `"segment"` ao tipo `AudienceSource`. `AudienceRule` ganha shape `{ source: "segment", segment_id: string }`.
+- `resolveAudienceServer`: para `source === "segment"`, ler `segment_members` (entidade da lista) e mapear para `leads` via mesma lógica já existente (email/telefone para contacts/companies/deals; id direto para leads).
+- Sem mudança de schema do banco. `audience_rules` continua jsonb.
 
-Nova função `resolveAudience({ rules })` em `src/lib/prospecting-audience.functions.ts`:
-- **leads**: aplica filtro em `leads`, retorna `id`.
-- **contacts**: filtra `contacts` com telefone; cria/upserta um lead "shadow" por contato (ou um lead leve com `phone`/`first_name`/`last_name`/`company_name`) para reusar `prospecting_call_attempts` que aponta para `lead_id`. Alternativa mais simples: retorna apenas contatos que **já têm lead vinculado por email/phone**; sem vínculo, é descartado e listado na auditoria como "sem lead correspondente". Vou usar a alternativa simples para não criar leads automaticamente.
-- **companies → contatos → leads**: filtra companies; pega contatos com `company_id` ∈ matches; mapeia para leads existentes.
-- **deals → contatos → leads**: filtra deals; pega contatos via `deal_contacts`; mapeia para leads existentes.
+### 2. Componente novo `src/components/prospecting/hubspot-list-builder.tsx`
+- Substitui o uso de `FilterBuilderDialog` por um editor inline (sem modal) com linhas de condição.
+- Reaproveita `FilterGroup`/`FilterCondition` de `@/lib/filters` (não muda o modelo).
+- Catálogo de propriedades por entidade — reaproveitar o mesmo de `settings.segments.tsx` (`ENTITY_FIELDS`) extraindo para `src/lib/segment-fields.ts` para uso compartilhado.
+- Operadores e renderização de input por tipo (text/number/date/select) já suportados em `FilterCondition`.
 
-Resultado: lista única e deduplicada de `lead_id`.
+### 3. Página da campanha (`src/routes/_authenticated/prospecting.campaigns.$id.tsx`)
+- Trocar `<AudienceBuilder>` por `<HubspotListBuilder>` com as 3 abas.
+- Aba **Listas salvas**: usa `listSegments` (já existente) para popular o combo.
+- Contagem ao vivo: chama `previewAudience` com debounce de 400ms quando regras mudam.
+- Backward compat: se `lead_ids` legado existir e não houver `audience_rules`, abrir aba "IDs manuais".
 
-Pode ser chamada em modo `preview` (retorna contagem e amostra) ou `commit` (retorna todos para salvar).
+### 4. Limpeza
+- Remover `audience-builder.tsx` antigo após migração (mantém apenas o novo componente).
 
-### Wiring de execução
+## Diagrama de estrutura
 
-- `upsertCampaign`: aceita `audience_mode` e `audience_rules`. Se `static`, resolve e salva em `lead_ids`. Se `dynamic`, salva `lead_ids = []`.
-- `setCampaignStatus("running")`: se `audience_mode = "dynamic"`, resolve audience antes do bloco de enfileiramento e usa o resultado em vez de `c.lead_ids`.
-- `auditCampaignQueueability`: usa a mesma resolução para o modo dinâmico, e inclui motivos novos: "sem telefone", "contato sem lead vinculado".
+```text
+┌─ Público da campanha ─────────────────────────┐
+│  [Listas salvas] [Construtor inline] [IDs]    │
+│                                               │
+│  Modo: ( Snapshot | Dinâmica )                │
+│                                               │
+│  ┌─ Grupo 1: Leads ──────────────────[x]┐     │
+│  │ status     é          qualified  [x] │     │
+│  │   E                                   │     │
+│  │ score      maior que  70         [x] │     │
+│  │ [ + E ]                               │     │
+│  └───────────────────────────────────────┘     │
+│             ─── OU ───                         │
+│  ┌─ Grupo 2: Empresas → contatos ─────[x]┐     │
+│  │ industry   contém     SaaS       [x] │     │
+│  └───────────────────────────────────────┘     │
+│  [+ Adicionar grupo]                          │
+│                                               │
+│  142 leads correspondem · [Ver amostra]       │
+└───────────────────────────────────────────────┘
+```
 
-### UI no detalhe da campanha
-
-Substitui o card de `Textarea` de UUIDs por **"Público da campanha"**:
-- Toggle: `Snapshot` ↔ `Dinâmica`.
-- Lista de blocos de regra. Cada bloco:
-  - Select da fonte (Leads / Contatos / Empresas → contatos / Deals → contatos).
-  - Builder de filtros reusando `FilterBuilderDialog` (`src/components/filter-builder-dialog.tsx`) com o schema de campos da entidade.
-- Botão **"Pré-visualizar"** → chama `previewAudience` e mostra "X leads resultantes" + amostra dos 20 primeiros nomes.
-- Painel de Auditoria já existente mostra automaticamente as razões de bloqueio.
-
-Mantém um modo legado "Lista manual de UUIDs" como um tipo de bloco extra (`source: "manual"`), para não perder o fluxo atual.
-
-### Arquivos afetados
-
-- `supabase/migrations/<novo>.sql` — adiciona 2 colunas.
-- `src/lib/prospecting-audience.functions.ts` — novo: resolveAudience / previewAudience.
-- `src/lib/prospecting-campaigns.functions.ts` — estende upsert, setCampaignStatus, audit.
-- `src/routes/_authenticated/prospecting.campaigns.$id.tsx` — novo card "Público".
-- `src/components/prospecting/audience-builder.tsx` — novo componente do builder.
-
-### Pontos a confirmar
-
-1. Para fontes Contatos/Empresas/Deals: **descartar contatos sem lead correspondente** (mais simples e seguro) ou **criar lead automaticamente** a partir do contato? Sugiro descartar e mostrar contagem na auditoria.
-2. Campos disponíveis em cada filtro: começo com um conjunto curado (status/source/owner/score/criado em para leads; industry/size/state para companies; stage/value/owner para deals; lifecycle/owner/created_at para contacts) — posso ampliar depois.
+## Fora de escopo
+- Não mexer no painel de auditoria já existente.
+- Não criar novas tabelas; reuso de `segments` / `segment_members`.
+- Não alterar o fluxo de disparo da campanha.
