@@ -190,7 +190,7 @@ function CampaignDetailPage() {
             <p className="text-xs text-muted-foreground mt-1 mb-2">
               Combine filtros em diferentes entidades para gerar a lista de leads. Em modo dinâmico, a lista é recalculada toda vez que a campanha é iniciada.
             </p>
-            <AudienceBuilder
+            <HubspotListBuilder
               mode={audienceMode}
               rules={audienceRules}
               onChange={setAudienceRules}
