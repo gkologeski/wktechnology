@@ -187,10 +187,10 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       userIds.size
         ? supabase
             .from("profiles")
-            .select("id, full_name, email")
+            .select("id, full_name")
             .in("id", [...userIds])
         : Promise.resolve({
-            data: [] as { id: string; full_name: string | null; email: string | null }[],
+            data: [] as { id: string; full_name: string | null }[],
           }),
     ]);
 
