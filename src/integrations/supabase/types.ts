@@ -7233,6 +7233,15 @@ export type Database = {
         Args: { _key: string; _workspace: string }
         Returns: number
       }
+      get_entity_field_catalog: {
+        Args: { p_owner_id: string; p_table: string }
+        Returns: {
+          column_name: string
+          data_type: string
+          distinct_count: number
+          distinct_values: string[]
+        }[]
+      }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
