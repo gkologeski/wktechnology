@@ -8,6 +8,7 @@ import {
   resolveAudienceServer,
   type AudienceRule,
 } from "@/lib/prospecting-audience.functions";
+import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
 const VAPI_BASE = "https://api.vapi.ai";
 
