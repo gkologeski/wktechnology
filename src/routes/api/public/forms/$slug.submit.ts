@@ -82,7 +82,6 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           if (v) clean[f.key] = v;
         }
 
-        const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
         const ua = request.headers.get("user-agent");
         const referer = request.headers.get("referer");
 
