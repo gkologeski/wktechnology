@@ -10,13 +10,15 @@ import { applyFilters, type FilterGroup } from "@/lib/filters";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabaseAdmin as any;
 
-export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual";
+export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual" | "segment";
 
 export type AudienceRule = {
   source: AudienceSource;
   filter?: FilterGroup;
   // só usado quando source = "manual"
   lead_ids?: string[];
+  // só usado quando source = "segment"
+  segment_id?: string;
 };
 
 const FilterConditionSchema: z.ZodType = z.object({
@@ -33,9 +35,10 @@ const FilterGroupSchema: z.ZodType = z.lazy(() =>
   }),
 );
 const AudienceRuleSchema = z.object({
-  source: z.enum(["leads", "contacts", "companies", "deals", "manual"]),
+  source: z.enum(["leads", "contacts", "companies", "deals", "manual", "segment"]),
   filter: FilterGroupSchema.optional(),
   lead_ids: z.array(z.string().uuid()).max(10000).optional(),
+  segment_id: z.string().uuid().optional(),
 });
 
 export const AudienceRulesSchema = z.array(AudienceRuleSchema).max(20);
