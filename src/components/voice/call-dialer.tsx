@@ -44,6 +44,7 @@ export function CallDialer({
   contactId,
   leadId,
   dealId,
+  ticketId,
   contactName,
   trigger,
   open: openProp,
