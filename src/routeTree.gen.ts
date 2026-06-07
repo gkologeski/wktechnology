@@ -24,6 +24,7 @@ import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
+import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -54,6 +56,7 @@ import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
+import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
 import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
@@ -231,6 +234,11 @@ const PortalTokenRoute = PortalTokenRouteImport.update({
   path: '/portal/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeetTokenRoute = MeetTokenRouteImport.update({
+  id: '/meet/$token',
+  path: '/meet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KbSlugRoute = KbSlugRouteImport.update({
   id: '/kb/$slug',
   path: '/kb/$slug',
@@ -283,6 +291,11 @@ const AuthenticatedMyBugReportsRoute =
     path: '/my-bug-reports',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -391,6 +404,12 @@ const AuthenticatedSettingsVoiceAgentRoute =
   AuthenticatedSettingsVoiceAgentRouteImport.update({
     id: '/voice-agent',
     path: '/voice-agent',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsVideoRoute =
+  AuthenticatedSettingsVideoRouteImport.update({
+    id: '/video',
+    path: '/video',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsUserGroupsRoute =
@@ -1006,6 +1025,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
@@ -1016,6 +1036,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -1079,6 +1100,7 @@ export interface FileRoutesByFullPath {
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
@@ -1153,6 +1175,7 @@ export interface FileRoutesByTo {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
@@ -1162,6 +1185,7 @@ export interface FileRoutesByTo {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -1224,6 +1248,7 @@ export interface FileRoutesByTo {
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
@@ -1301,6 +1326,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/prospecting': typeof AuthenticatedProspectingRouteWithChildren
@@ -1311,6 +1337,7 @@ export interface FileRoutesById {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
@@ -1374,6 +1401,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
   '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
+  '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
@@ -1451,6 +1479,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/integrations'
     | '/leads'
+    | '/meetings'
     | '/my-bug-reports'
     | '/notes'
     | '/prospecting'
@@ -1461,6 +1490,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -1524,6 +1554,7 @@ export interface FileRouteTypes {
     | '/settings/surveys'
     | '/settings/teams'
     | '/settings/user-groups'
+    | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/widget'
@@ -1598,6 +1629,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/leads'
+    | '/meetings'
     | '/my-bug-reports'
     | '/notes'
     | '/prospecting'
@@ -1607,6 +1639,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -1669,6 +1702,7 @@ export interface FileRouteTypes {
     | '/settings/surveys'
     | '/settings/teams'
     | '/settings/user-groups'
+    | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/widget'
@@ -1745,6 +1779,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
     | '/_authenticated/leads'
+    | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
     | '/_authenticated/prospecting'
@@ -1755,6 +1790,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
     | '/sign/$token'
@@ -1818,6 +1854,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
     | '/_authenticated/settings/user-groups'
+    | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/widget'
@@ -1888,6 +1925,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   BookSlugRoute: typeof BookSlugRoute
   KbSlugRoute: typeof KbSlugRoute
+  MeetTokenRoute: typeof MeetTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
@@ -2040,6 +2078,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/meet/$token': {
+      id: '/meet/$token'
+      path: '/meet/$token'
+      fullPath: '/meet/$token'
+      preLoaderRoute: typeof MeetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kb/$slug': {
       id: '/kb/$slug'
       path: '/kb/$slug'
@@ -2108,6 +2153,13 @@ declare module '@tanstack/react-router' {
       path: '/my-bug-reports'
       fullPath: '/my-bug-reports'
       preLoaderRoute: typeof AuthenticatedMyBugReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/meetings': {
+      id: '/_authenticated/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof AuthenticatedMeetingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/leads': {
@@ -2248,6 +2300,13 @@ declare module '@tanstack/react-router' {
       path: '/voice-agent'
       fullPath: '/settings/voice-agent'
       preLoaderRoute: typeof AuthenticatedSettingsVoiceAgentRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/video': {
+      id: '/_authenticated/settings/video'
+      path: '/video'
+      fullPath: '/settings/video'
+      preLoaderRoute: typeof AuthenticatedSettingsVideoRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/user-groups': {
@@ -3114,6 +3173,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
   AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
+  AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
@@ -3175,6 +3235,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
   AuthenticatedSettingsTeamsRoute: AuthenticatedSettingsTeamsRoute,
   AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
+  AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
@@ -3252,6 +3313,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
+  AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRouteWithChildren
@@ -3279,6 +3341,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
+  AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedProspectingRoute: AuthenticatedProspectingRouteWithChildren,
@@ -3347,6 +3410,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   BookSlugRoute: BookSlugRoute,
   KbSlugRoute: KbSlugRoute,
+  MeetTokenRoute: MeetTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
