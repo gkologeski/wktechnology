@@ -54,6 +54,7 @@ import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
+import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
@@ -393,6 +394,12 @@ const AuthenticatedSettingsWidgetRoute =
   AuthenticatedSettingsWidgetRouteImport.update({
     id: '/widget',
     path: '/widget',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWhatsappRoute =
+  AuthenticatedSettingsWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsWebhooksRoute =
@@ -1110,6 +1117,7 @@ export interface FileRoutesByFullPath {
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1259,6 +1267,7 @@ export interface FileRoutesByTo {
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1413,6 +1422,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1567,6 +1577,7 @@ export interface FileRouteTypes {
     | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
+    | '/settings/whatsapp'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1716,6 +1727,7 @@ export interface FileRouteTypes {
     | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
+    | '/settings/whatsapp'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1869,6 +1881,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
     | '/_authenticated/settings/webhooks'
+    | '/_authenticated/settings/whatsapp'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
@@ -2300,6 +2313,13 @@ declare module '@tanstack/react-router' {
       path: '/widget'
       fullPath: '/settings/widget'
       preLoaderRoute: typeof AuthenticatedSettingsWidgetRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/whatsapp': {
+      id: '/_authenticated/settings/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/settings/whatsapp'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/webhooks': {
@@ -3197,6 +3217,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
+  AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -3259,6 +3280,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
+  AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
