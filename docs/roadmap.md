@@ -101,4 +101,71 @@
 47. **i18n pt/en/es (M)** ✅ — `src/lib/i18n.tsx` com dicionário inline (common + nav + settings), provider em localStorage, hook `useT()`. `I18nProvider` montado no `__root.tsx`. Página `/settings/language` para troca de idioma.
 48. **White-label (M)** ✅ — tabela `workspace_branding` (brand_name, logo_url, favicon_url, primary_color, accent_color, custom_domain, support_email, footer_text). `BrandingProvider` aplica cores via CSS vars, favicon e title dinâmicos. Server fns `getBranding`/`saveBranding`. Página `/settings/branding`.
 
+---
+
+## 🚀 Próximos Releases (Roadmap 12+)
+
+> Backlog priorizado de evoluções pós-Onda 10. Itens **pendentes** — sugerir antes de implementar.
+
+### Release 12 — Vídeo & Reuniões
+- **Video calls embutidas** (Daily.co / Whereby / Jitsi) com criação de sala 1-clique no contato/lead/deal/ticket, gravação opcional na nuvem e link público para convidados sem login.
+- **Pós-call AI** — transcrição da reunião (Lovable AI), resumo executivo, lista de decisões + action items convertidos automaticamente em `tasks` vinculadas ao registro.
+- **Galeria de reuniões** por entidade com player, busca full-text na transcrição e timestamps clicáveis.
+
+### Release 13 — WhatsApp Business avançado
+- **Catálogo de produtos** sincronizado com `products` e enviado como Interactive Message (`list` / `product_list`).
+- **Botões de resposta rápida** (`quick_reply` / `cta_url`) no editor de templates e no broadcast.
+- **Click-to-WhatsApp Ads** — landing `/wa/$slug` com pixel + atribuição da campanha de origem no lead criado.
+- **Multi-número** por workspace (vários `twilio_numbers`) com roteamento por equipe/segmento.
+
+### Release 14 — Documentos & Contratos
+- **Editor de propostas** (rich text + variáveis `{{deal.amount}}`, `{{contact.name}}`) com versionamento e templates por pipeline.
+- **Biblioteca de cláusulas** reutilizáveis e aprovação interna (workflow: rascunho → revisão → enviado).
+- **Anexos no e-sign** (PDFs adicionais, anexo I/II) no mesmo envelope da `esign_documents`.
+- **Selo de validade** com hash SHA-256 do documento + trilha imutável (estende `esign_audit`).
+
+### Release 15 — Cobrança & Financeiro
+- **Boleto + Pix (Brasil)** via gateway (Asaas / Pagar.me / Mercado Pago) — emissão a partir de `subscription_invoices` e `quotes`.
+- **Conciliação automática** — webhook de pagamento marca fatura como `paid` e dispara workflow.
+- **Régua de cobrança** (dunning) — sequência automática por email/WhatsApp para faturas vencidas, com pause em caso de pagamento.
+- **Notas fiscais** (NFS-e municipal via integradores como NFE.io) atreladas à fatura paga.
+
+### Release 16 — Marketplace & Integrações
+- **App marketplace interno** — catálogo de connectors (Slack, Teams, Zapier, Make, Mailchimp, RD Station, Pipefy) com instalação 1-clique.
+- **OAuth multi-tenant** padronizado (estende `standard_connectors`).
+- **Slack/Teams bidirecional** — notificações de deals/tickets + comandos slash (`/lovable deal "Acme"`).
+- **Zapier / Make** publisher com triggers (novo lead, deal won) e actions (criar contato, enviar WhatsApp).
+
+### Release 17 — Mobile nativo
+- **App React Native (iOS/Android)** consumindo a API pública v1 (token via deep-link de login).
+- **Push notifications** nativas (substitui Web Push do PWA em mobile) com badge counts.
+- **Click-to-call nativo** (intent do sistema) + log automático.
+- **Modo offline** para visualização e criação de notas/tasks com sync diferido.
+
+### Release 18 — Segurança Enterprise
+- **SSO SAML / OIDC** (Okta, Azure AD, Google Workspace) para login do workspace.
+- **SCIM** para provisionamento automático de usuários e papéis.
+- **Audit log exportável** (S3 / Splunk / Datadog) com retenção configurável.
+- **IP allow-list** por workspace e **session timeout** configurável.
+- **Data residency** (US/EU/BR) configurável por workspace.
+
+### Release 19 — IA Avançada
+- **Copilot lateral persistente** (Cmd+K) — pergunta em linguagem natural sobre qualquer dado do CRM, com RAG sobre activities/notes/messages.
+- **Agente autônomo de SDR** — qualifica leads frios em background (chamadas + WhatsApp) sob limites configuráveis.
+- **Forecast com ML** — previsão de fechamento por deal usando histórico (substitui a heurística do `analytics`).
+- **Lead scoring com ML** — modelo treinado por workspace; convive com `scoring_rules` (peso híbrido).
+- **Voice agent** em chamadas inbound (atendimento 24/7 com handoff humano).
+
+### Release 20 — Marketing Automation completo
+- **Landing pages builder** (drag-and-drop) hospedadas em `crm.wktechnology.com.br/lp/$slug`.
+- **A/B testing** em emails (`email_broadcasts`) e landing pages com vencedor automático.
+- **Attribution multi-touch** (first / last / linear / U-shaped) por deal won — relatório de ROI por canal.
+- **Ads sync** (Meta / Google) — sincroniza segmentos como Custom Audiences e importa leads de Lead Ads.
+
+### Release 21 — Observabilidade & Admin
+- **Status page interna** (`/admin/status`) com health de cron jobs, Twilio, Gmail OAuth, AI Gateway.
+- **Alertas operacionais** (email / Slack) quando cron job atrasa, broadcast falha em massa ou taxa de erro Twilio sobe.
+- **Quotas & billing interno** — limites por workspace (chamadas/mês, emails/mês, MB de storage) com cobrança no Stripe.
+- **Sandbox por workspace** — ambiente espelho para testar workflows antes de promover para produção.
+
 <!-- item 24 done -->
