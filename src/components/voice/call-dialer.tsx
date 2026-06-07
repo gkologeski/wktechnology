@@ -24,6 +24,7 @@ interface CallDialerProps {
   contactId?: string;
   leadId?: string;
   dealId?: string;
+  ticketId?: string;
   contactName?: string;
   trigger?: React.ReactNode;
   open?: boolean;
