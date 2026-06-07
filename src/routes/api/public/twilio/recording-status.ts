@@ -71,14 +71,16 @@ export const Route = createFileRoute("/api/public/twilio/recording-status")({
           return new Response("no activity", { status: 200 });
         }
 
-        const updates: Record<string, unknown> = {
-          recording_url: mp3Url,
-          recording_sid: recordingSid,
-          recording_duration_seconds: recordingDuration,
-          recording_channels: recordingChannels,
-          transcription_status: "pending",
-        };
-        await supabaseAdmin.from("activities").update(updates).eq("id", activity.id);
+        await supabaseAdmin
+          .from("activities")
+          .update({
+            recording_url: mp3Url,
+            recording_sid: recordingSid,
+            recording_duration_seconds: recordingDuration,
+            recording_channels: recordingChannels,
+            transcription_status: "pending",
+          })
+          .eq("id", activity.id);
 
         // Best-effort transcription. Errors are swallowed and surfaced as
         // transcription_status='failed'.
