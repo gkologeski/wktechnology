@@ -45,7 +45,7 @@ export const listWabas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
       .from("wa_business_accounts")
       .select("id, waba_id, business_id, business_name, status, webhook_verified_at, created_at")
@@ -67,7 +67,7 @@ export const connectWaba = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
 
     // Validate token by hitting Meta
     const info = await metaFetch(data.access_token, `/${data.waba_id}?fields=id,name,currency,timezone_id`);
@@ -126,7 +126,7 @@ export const syncPhoneNumbers = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ waba_row_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const waba = await loadWabaToken(supabase, ws, data.waba_row_id);
     const n = await syncPhoneNumbersInternal(supabase, ws, waba.id, waba.waba_id, waba.access_token);
     return { synced: n };
@@ -136,7 +136,7 @@ export const listPhoneNumbers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
       .from("wa_phone_numbers")
       .select("id, waba_id, phone_number_id, display_phone_number, verified_name, quality_rating, messaging_limit_tier, is_default, routing_rules, created_at")
@@ -155,7 +155,7 @@ export const updatePhoneNumberRouting = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     if (data.is_default) {
       await supabase.from("wa_phone_numbers").update({ is_default: false }).eq("workspace_id", ws);
     }
@@ -179,7 +179,7 @@ export const sendMessage = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
       .select("phone_number_id, waba_id, display_phone_number, waba:wa_business_accounts(access_token, waba_id)")
@@ -244,7 +244,7 @@ export const sendTemplate = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
       .select("phone_number_id, display_phone_number, waba:wa_business_accounts(access_token)")
@@ -284,7 +284,7 @@ export const sendProductList = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
       .select("phone_number_id, waba:wa_business_accounts(access_token)")
@@ -316,7 +316,7 @@ export const listTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
       .from("wa_templates")
       .select("id, waba_id, meta_template_id, name, language, category, status, components, rejection_reason, updated_at")
@@ -331,7 +331,7 @@ export const syncTemplates = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ waba_row_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const waba = await loadWabaToken(supabase, ws, data.waba_row_id);
     const res = await metaFetch(waba.access_token, `/${waba.waba_id}/message_templates?fields=id,name,language,category,status,components,rejected_reason&limit=200`);
     const items = (res?.data ?? []) as any[];
@@ -359,7 +359,7 @@ export const submitTemplate = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const waba = await loadWabaToken(supabase, ws, data.waba_row_id);
     const res = await metaFetch(waba.access_token, `/${waba.waba_id}/message_templates`, {
       method: "POST",
@@ -381,7 +381,7 @@ export const listCatalogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("wa_catalogs").select("id, catalog_id, name, vertical")
       .eq("workspace_id", ws).order("name");
@@ -396,7 +396,7 @@ export const syncCatalogProducts = createServerFn({ method: "POST" })
   }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const ws = await resolveActiveWorkspace(supabase);
+    const ws = await resolveActiveWorkspace(userId);
     const waba = await loadWabaToken(supabase, ws, data.waba_row_id);
     const { data: cat } = await supabase.from("wa_catalogs").select("id, catalog_id").eq("id", data.catalog_row_id).eq("workspace_id", ws).maybeSingle();
     if (!cat) throw new Error("Catálogo não encontrado");

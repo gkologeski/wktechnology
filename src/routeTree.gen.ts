@@ -127,6 +127,7 @@ import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/tw
 import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
+import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -819,6 +820,12 @@ const ApiPublicOauthGoogleCallbackRoute =
     path: '/api/public/oauth/google-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMetaWhatsappWebhookRoute =
+  ApiPublicMetaWhatsappWebhookRouteImport.update({
+    id: '/api/public/meta/whatsapp-webhook',
+    path: '/api/public/meta/whatsapp-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -1138,6 +1145,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1286,6 +1294,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1439,6 +1448,7 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1592,6 +1602,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1740,6 +1751,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1892,6 +1904,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1955,6 +1968,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
@@ -2799,6 +2813,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta/whatsapp-webhook': {
+      id: '/api/public/meta/whatsapp-webhook'
+      path: '/api/public/meta/whatsapp-webhook'
+      fullPath: '/api/public/meta/whatsapp-webhook'
+      preLoaderRoute: typeof ApiPublicMetaWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/workflows-tick': {
       id: '/api/public/hooks/workflows-tick'
       path: '/api/public/hooks/workflows-tick'
@@ -3444,6 +3465,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,
