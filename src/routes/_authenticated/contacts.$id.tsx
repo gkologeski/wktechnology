@@ -113,6 +113,7 @@ function ContactDetail() {
       center={
         <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
+          <CallHistoryPanel entity="contact" entityId={contact.id} />
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
         </>
       }
