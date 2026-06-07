@@ -167,6 +167,7 @@ function TicketDetail() {
       center={
         <>
           <AiSummaryPanel entity="ticket" entityId={ticket.id} />
+          <CallHistoryPanel entity="ticket" entityId={ticket.id} />
           <KbSuggestions subject={ticket.subject} description={ticket.description} />
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
