@@ -24,6 +24,7 @@ interface CallDialerProps {
   contactId?: string;
   leadId?: string;
   dealId?: string;
+  ticketId?: string;
   contactName?: string;
   trigger?: React.ReactNode;
   open?: boolean;
@@ -43,6 +44,7 @@ export function CallDialer({
   contactId,
   leadId,
   dealId,
+  ticketId,
   contactName,
   trigger,
   open: openProp,
@@ -199,6 +201,7 @@ export function CallDialer({
           contactId,
           leadId,
           dealId,
+          ticketId,
           toNumber: normalizeE164(to),
           durationMs: dur,
           outcome: outcome || undefined,
@@ -211,7 +214,7 @@ export function CallDialer({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar ligação");
     }
-  }, [contactId, dealId, leadId, logCall, notes, outcome, to]);
+  }, [contactId, dealId, leadId, ticketId, logCall, notes, outcome, to, setOpen]);
 
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;

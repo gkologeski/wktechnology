@@ -132,6 +132,7 @@ export const logCallActivity = createServerFn({ method: "POST" })
         contactId: z.string().uuid().optional(),
         leadId: z.string().uuid().optional(),
         dealId: z.string().uuid().optional(),
+        ticketId: z.string().uuid().optional(),
         toNumber: z.string().min(3).max(32),
         durationMs: z
           .number()
@@ -161,6 +162,7 @@ export const logCallActivity = createServerFn({ method: "POST" })
         related_contact_id: data.contactId ?? null,
         related_lead_id: data.leadId ?? null,
         related_deal_id: data.dealId ?? null,
+        related_ticket_id: data.ticketId ?? null,
         external_ids: data.callSid ? { twilio_call_sid: data.callSid } : {},
         completed: true,
       })

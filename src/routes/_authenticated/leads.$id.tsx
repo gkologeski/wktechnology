@@ -18,6 +18,7 @@ import {
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
+import { CallHistoryPanel } from "@/components/voice/call-history-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
@@ -137,6 +138,7 @@ function LeadDetail() {
         center={
           <>
             <AiSummaryPanel entity="lead" entityId={lead.id} />
+            <CallHistoryPanel entity="lead" entityId={lead.id} />
             <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
           </>
         }

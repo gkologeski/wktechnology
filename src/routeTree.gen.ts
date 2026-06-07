@@ -121,6 +121,7 @@ import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/lea
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
+import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
@@ -781,6 +782,12 @@ const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   path: '/api/public/twilio/voice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTwilioRecordingStatusRoute =
+  ApiPublicTwilioRecordingStatusRouteImport.update({
+    id: '/api/public/twilio/recording-status',
+    path: '/api/public/twilio/recording-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -1111,6 +1118,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1255,6 +1263,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1404,6 +1413,7 @@ export interface FileRoutesById {
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
@@ -1553,6 +1563,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1697,6 +1708,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1845,6 +1857,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/workflows-tick'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
@@ -1906,6 +1919,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
@@ -2705,6 +2719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTwilioVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/twilio/recording-status': {
+      id: '/api/public/twilio/recording-status'
+      path: '/api/public/twilio/recording-status'
+      fullPath: '/api/public/twilio/recording-status'
+      preLoaderRoute: typeof ApiPublicTwilioRecordingStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -3361,6 +3382,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,

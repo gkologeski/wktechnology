@@ -5,6 +5,7 @@ import { ArrowLeft, Trash2, Mail, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
+import { CallHistoryPanel } from "@/components/voice/call-history-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
@@ -112,6 +113,7 @@ function ContactDetail() {
       center={
         <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
+          <CallHistoryPanel entity="contact" entityId={contact.id} />
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
         </>
       }

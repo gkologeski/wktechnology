@@ -17,6 +17,7 @@ import type { Deal, Company, Contact } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
+import { CallHistoryPanel } from "@/components/voice/call-history-panel";
 import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
@@ -281,6 +282,7 @@ export function DealDetailDrawer({
             {!isNew && (
               <TabsContent value="activity" className="mt-0 space-y-4">
                 <AiSummaryPanel entity="deal" entityId={deal!.id} />
+                <CallHistoryPanel entity="deal" entityId={deal!.id} />
                 <ActivityTimeline relatedKey="related_deal_id" relatedId={deal!.id} />
               </TabsContent>
             )}
