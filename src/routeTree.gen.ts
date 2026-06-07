@@ -20,6 +20,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
+import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
@@ -217,6 +218,11 @@ const KbIndexRoute = KbIndexRouteImport.update({
 const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
   id: '/widget/$workspaceId',
   path: '/widget/$workspaceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaSlugRoute = WaSlugRouteImport.update({
+  id: '/wa/$slug',
+  path: '/wa/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
@@ -1076,6 +1082,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1230,6 +1237,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1387,6 +1395,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1545,6 +1554,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
     | '/admin/bug-reports'
@@ -1699,6 +1709,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb'
     | '/admin/bug-reports'
@@ -1855,6 +1866,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
     | '/_authenticated/admin/bug-reports'
@@ -1995,6 +2007,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   KbIndexRoute: typeof KbIndexRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
@@ -2114,6 +2127,13 @@ declare module '@tanstack/react-router' {
       path: '/widget/$workspaceId'
       fullPath: '/widget/$workspaceId'
       preLoaderRoute: typeof WidgetWorkspaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wa/$slug': {
+      id: '/wa/$slug'
+      path: '/wa/$slug'
+      fullPath: '/wa/$slug'
+      preLoaderRoute: typeof WaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/survey/$token': {
@@ -3526,6 +3546,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   KbIndexRoute: KbIndexRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
