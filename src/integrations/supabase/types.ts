@@ -140,15 +140,22 @@ export type Database = {
           outcome: string | null
           outcome_set_at: string | null
           owner_id: string
+          recording_channels: number | null
+          recording_duration_seconds: number | null
+          recording_sid: string | null
           recording_url: string | null
           related_company_id: string | null
           related_contact_id: string | null
           related_deal_id: string | null
           related_lead_id: string | null
+          related_ticket_id: string | null
           relink_checked_at: string | null
           subject: string | null
           task_priority: string | null
           task_status: string | null
+          transcription: string | null
+          transcription_model: string | null
+          transcription_status: string | null
           type: Database["public"]["Enums"]["activity_type"]
           updated_at: string
           workspace_id: string
@@ -178,15 +185,22 @@ export type Database = {
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id: string
+          recording_channels?: number | null
+          recording_duration_seconds?: number | null
+          recording_sid?: string | null
           recording_url?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
+          related_ticket_id?: string | null
           relink_checked_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
+          transcription?: string | null
+          transcription_model?: string | null
+          transcription_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
           workspace_id?: string
@@ -216,15 +230,22 @@ export type Database = {
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id?: string
+          recording_channels?: number | null
+          recording_duration_seconds?: number | null
+          recording_sid?: string | null
           recording_url?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
           related_lead_id?: string | null
+          related_ticket_id?: string | null
           relink_checked_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
+          transcription?: string | null
+          transcription_model?: string | null
+          transcription_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
           workspace_id?: string
@@ -256,6 +277,13 @@ export type Database = {
             columns: ["related_lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_related_ticket_id_fkey"
+            columns: ["related_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
           {
