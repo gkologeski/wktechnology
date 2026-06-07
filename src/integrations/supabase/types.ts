@@ -6527,6 +6527,65 @@ export type Database = {
           },
         ]
       }
+      wa_ad_slugs: {
+        Row: {
+          click_count: number
+          created_at: string
+          display_phone_number: string
+          id: string
+          is_active: boolean
+          owner_id: string
+          phone_number_id: string | null
+          prefill_message: string | null
+          slug: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          workspace_id: string
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          display_phone_number: string
+          id?: string
+          is_active?: boolean
+          owner_id: string
+          phone_number_id?: string | null
+          prefill_message?: string | null
+          slug: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          workspace_id: string
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          display_phone_number?: string
+          id?: string
+          is_active?: boolean
+          owner_id?: string
+          phone_number_id?: string | null
+          prefill_message?: string | null
+          slug?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_ad_slugs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wa_business_accounts: {
         Row: {
           access_token: string
@@ -7772,6 +7831,13 @@ export type Database = {
           _workspace: string
         }
         Returns: string
+      }
+      wa_ad_slug_increment: {
+        Args: { p_slug: string }
+        Returns: {
+          display_phone_number: string
+          prefill_message: string
+        }[]
       }
     }
     Enums: {

@@ -88,6 +88,10 @@ const sections: Section[] = [
       { to: "/settings/hubspot-sync", label: "Sync HubSpot" },
       { to: "/settings/hubspot-users", label: "Usuários HubSpot" },
       { to: "/settings/email-templates", label: "Templates de email" },
+      { to: "/settings/whatsapp", label: "WhatsApp (Meta)" },
+      { to: "/settings/whatsapp-templates", label: "WhatsApp · Templates" },
+      { to: "/settings/whatsapp-catalogs", label: "WhatsApp · Catálogos" },
+      { to: "/settings/wa-ads", label: "WhatsApp · Anúncios CTWA" },
     ],
   },
 ];

@@ -412,3 +412,122 @@ export const syncCatalogProducts = createServerFn({ method: "POST" })
     }
     return { synced: items.length };
   });
+
+export const addCatalog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({
+    waba_row_id: z.string().uuid(),
+    catalog_id: z.string().min(3).max(64),
+    name: z.string().max(255).optional(),
+  }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const { error } = await supabase.from("wa_catalogs").upsert({
+      owner_id: ws, workspace_id: ws, waba_id: data.waba_row_id,
+      catalog_id: data.catalog_id, name: data.name ?? null,
+    }, { onConflict: "workspace_id,catalog_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listCatalogProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ catalog_row_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const { data: rows } = await supabase
+      .from("wa_catalog_products")
+      .select("id, retailer_id, name, price, currency, availability, image_url")
+      .eq("workspace_id", ws).eq("catalog_id", data.catalog_row_id)
+      .order("name").limit(200);
+    return rows ?? [];
+  });
+
+// ---------- CTWA ad slugs ----------
+
+export const listAdSlugs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const { data, error } = await supabase
+      .from("wa_ad_slugs")
+      .select("id, slug, phone_number_id, display_phone_number, prefill_message, utm_source, utm_medium, utm_campaign, click_count, is_active, created_at")
+      .eq("workspace_id", ws).order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const upsertAdSlug = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({
+    id: z.string().uuid().optional(),
+    slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/),
+    phone_number_id: z.string().min(3).max(64).optional(),
+    display_phone_number: z.string().min(5).max(32),
+    prefill_message: z.string().max(1000).optional(),
+    utm_source: z.string().max(120).optional(),
+    utm_medium: z.string().max(120).optional(),
+    utm_campaign: z.string().max(120).optional(),
+    is_active: z.boolean().optional(),
+  }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const payload: any = {
+      owner_id: ws, workspace_id: ws,
+      slug: data.slug,
+      phone_number_id: data.phone_number_id ?? null,
+      display_phone_number: data.display_phone_number,
+      prefill_message: data.prefill_message ?? null,
+      utm_source: data.utm_source ?? null,
+      utm_medium: data.utm_medium ?? null,
+      utm_campaign: data.utm_campaign ?? null,
+      is_active: data.is_active ?? true,
+    };
+    if (data.id) {
+      const { error } = await supabase.from("wa_ad_slugs").update(payload).eq("id", data.id).eq("workspace_id", ws);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: row, error } = await supabase.from("wa_ad_slugs").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return { id: row.id };
+  });
+
+export const deleteAdSlug = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const { error } = await supabase.from("wa_ad_slugs").delete().eq("id", data.id).eq("workspace_id", ws);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- 24h window check ----------
+
+export const getConversationWindow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ contact_phone: z.string().min(5).max(32) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const phone = data.contact_phone.replace(/[^\d]/g, "");
+    const { data: last } = await supabase
+      .from("whatsapp_messages")
+      .select("created_at")
+      .eq("workspace_id", ws)
+      .eq("from_number", phone)
+      .eq("direction", "inbound")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!last) return { open: false, hours_left: 0 };
+    const ageMs = Date.now() - new Date(last.created_at as string).getTime();
+    const hoursLeft = Math.max(0, 24 - ageMs / 3_600_000);
+    return { open: hoursLeft > 0, hours_left: Math.round(hoursLeft * 10) / 10 };
+  });

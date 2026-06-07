@@ -20,6 +20,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
+import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
@@ -54,8 +55,11 @@ import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
+import { Route as AuthenticatedSettingsWhatsappTemplatesRouteImport } from './routes/_authenticated/settings.whatsapp-templates'
+import { Route as AuthenticatedSettingsWhatsappCatalogsRouteImport } from './routes/_authenticated/settings.whatsapp-catalogs'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
+import { Route as AuthenticatedSettingsWaAdsRouteImport } from './routes/_authenticated/settings.wa-ads'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
 import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
@@ -214,6 +218,11 @@ const KbIndexRoute = KbIndexRouteImport.update({
 const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
   id: '/widget/$workspaceId',
   path: '/widget/$workspaceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaSlugRoute = WaSlugRouteImport.update({
+  id: '/wa/$slug',
+  path: '/wa/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
@@ -396,6 +405,18 @@ const AuthenticatedSettingsWidgetRoute =
     path: '/widget',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWhatsappTemplatesRoute =
+  AuthenticatedSettingsWhatsappTemplatesRouteImport.update({
+    id: '/whatsapp-templates',
+    path: '/whatsapp-templates',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWhatsappCatalogsRoute =
+  AuthenticatedSettingsWhatsappCatalogsRouteImport.update({
+    id: '/whatsapp-catalogs',
+    path: '/whatsapp-catalogs',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWhatsappRoute =
   AuthenticatedSettingsWhatsappRouteImport.update({
     id: '/whatsapp',
@@ -406,6 +427,12 @@ const AuthenticatedSettingsWebhooksRoute =
   AuthenticatedSettingsWebhooksRouteImport.update({
     id: '/webhooks',
     path: '/webhooks',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWaAdsRoute =
+  AuthenticatedSettingsWaAdsRouteImport.update({
+    id: '/wa-ads',
+    path: '/wa-ads',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsVoiceAgentRoute =
@@ -1055,6 +1082,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1116,8 +1144,11 @@ export interface FileRoutesByFullPath {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
+  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1206,6 +1237,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1266,8 +1298,11 @@ export interface FileRoutesByTo {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
+  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1360,6 +1395,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
@@ -1421,8 +1457,11 @@ export interface FileRoutesById {
   '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/_authenticated/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/_authenticated/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
+  '/_authenticated/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1515,6 +1554,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
     | '/admin/bug-reports'
@@ -1576,8 +1616,11 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
+    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
+    | '/settings/whatsapp-catalogs'
+    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1666,6 +1709,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb'
     | '/admin/bug-reports'
@@ -1726,8 +1770,11 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
+    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
+    | '/settings/whatsapp-catalogs'
+    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1819,6 +1866,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
     | '/_authenticated/admin/bug-reports'
@@ -1880,8 +1928,11 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/user-groups'
     | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
+    | '/_authenticated/settings/wa-ads'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/whatsapp'
+    | '/_authenticated/settings/whatsapp-catalogs'
+    | '/_authenticated/settings/whatsapp-templates'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
@@ -1956,6 +2007,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   KbIndexRoute: typeof KbIndexRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
@@ -2075,6 +2127,13 @@ declare module '@tanstack/react-router' {
       path: '/widget/$workspaceId'
       fullPath: '/widget/$workspaceId'
       preLoaderRoute: typeof WidgetWorkspaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wa/$slug': {
+      id: '/wa/$slug'
+      path: '/wa/$slug'
+      fullPath: '/wa/$slug'
+      preLoaderRoute: typeof WaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/survey/$token': {
@@ -2315,6 +2374,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWidgetRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/whatsapp-templates': {
+      id: '/_authenticated/settings/whatsapp-templates'
+      path: '/whatsapp-templates'
+      fullPath: '/settings/whatsapp-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappTemplatesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/whatsapp-catalogs': {
+      id: '/_authenticated/settings/whatsapp-catalogs'
+      path: '/whatsapp-catalogs'
+      fullPath: '/settings/whatsapp-catalogs'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappCatalogsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/whatsapp': {
       id: '/_authenticated/settings/whatsapp'
       path: '/whatsapp'
@@ -2327,6 +2400,13 @@ declare module '@tanstack/react-router' {
       path: '/webhooks'
       fullPath: '/settings/webhooks'
       preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/wa-ads': {
+      id: '/_authenticated/settings/wa-ads'
+      path: '/wa-ads'
+      fullPath: '/settings/wa-ads'
+      preLoaderRoute: typeof AuthenticatedSettingsWaAdsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/voice-agent': {
@@ -3216,8 +3296,11 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
   AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
+  AuthenticatedSettingsWaAdsRoute: typeof AuthenticatedSettingsWaAdsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
+  AuthenticatedSettingsWhatsappCatalogsRoute: typeof AuthenticatedSettingsWhatsappCatalogsRoute
+  AuthenticatedSettingsWhatsappTemplatesRoute: typeof AuthenticatedSettingsWhatsappTemplatesRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -3279,8 +3362,13 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
   AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
+  AuthenticatedSettingsWaAdsRoute: AuthenticatedSettingsWaAdsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
+  AuthenticatedSettingsWhatsappCatalogsRoute:
+    AuthenticatedSettingsWhatsappCatalogsRoute,
+  AuthenticatedSettingsWhatsappTemplatesRoute:
+    AuthenticatedSettingsWhatsappTemplatesRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
@@ -3458,6 +3546,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   KbIndexRoute: KbIndexRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
@@ -3506,13 +3595,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
