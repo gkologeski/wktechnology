@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { CallHistoryPanel } from "@/components/voice/call-history-panel";
+import { MeetingsPanel } from "@/components/meetings/meetings-panel";
+import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
@@ -84,6 +86,7 @@ function ContactDetail() {
           <SendWhatsAppDialog defaultTo={phone} contactId={contact.id} contactName={fullName}
             trigger={<Button className="rounded-xl gap-2 shadow-md shadow-primary/20"><MessageCircle className="h-4 w-4" /> WhatsApp</Button>} />
         )}
+        <StartVideoButton entity="contact" entityId={contact.id} defaultTitle={`Reunião com ${fullName}`} variant="outline" size="default" className="rounded-xl" />
         <div className="h-8 w-px bg-border mx-1" />
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
           <Trash2 className="h-4 w-4" />
@@ -114,6 +117,7 @@ function ContactDetail() {
         <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
           <CallHistoryPanel entity="contact" entityId={contact.id} />
+          <MeetingsPanel entity="contact" entityId={contact.id} />
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
         </>
       }
