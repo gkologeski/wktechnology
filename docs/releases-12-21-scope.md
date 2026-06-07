@@ -79,11 +79,12 @@
 - Token por WABA é armazenado na tabela (não em secret global).
 
 ### Telas
-- 🖥️ `/settings/whatsapp` — WABAs conectadas, formulário de conexão, lista de números, padrão + roteamento.
-- 🖥️ `/settings/whatsapp-templates` — CRUD de templates (builder header/body/footer/buttons) com submissão e status Meta.
-- 🖥️ `/settings/wa-ads` — slugs `/wa/$slug` + métricas (clicks, conversões, CTWA atribuído).
-- 🖥️ `WhatsAppComposer` (drawer em contact/lead/deal/ticket) — chips de template, botão "Catálogo", indicador da janela 24 h, seletor de número.
-- 🖥️ `/inbox/whatsapp` — inbox multi-número, filtro por número/agente, badge do provider.
+- 🖥️ `/settings/whatsapp` — WABAs conectadas, formulário de conexão, lista de números, padrão + roteamento. ✅
+- 🖥️ `/settings/whatsapp-templates` — listagem, sync com Meta, criação/submissão de templates (header/body/footer). ✅
+- 🖥️ `/settings/whatsapp-catalogs` — cache de catálogos do Commerce e sincronização de produtos. ✅
+- 🖥️ `/settings/wa-ads` — slugs `/wa/$slug` com UTM, contagem de cliques e ativação. ✅
+- 🖥️ `/wa/$slug` (público) — incrementa cliques e redireciona para `https://wa.me/...`. ✅
+- 🖥️ `WhatsAppComposer` + `/inbox/whatsapp` — herdam o provedor `meta` automaticamente quando o número estiver conectado.
 
 ### Fora de escopo
 - WhatsApp Pay e Flows (forms interativos) ficam para release futura.
