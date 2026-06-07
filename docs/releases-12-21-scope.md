@@ -33,27 +33,64 @@
 
 ---
 
-## Release 13 — WhatsApp Business avançado
+## Release 13 — WhatsApp Business via Meta Cloud API
+
+> Provider: **Meta WhatsApp Business Platform — Cloud API (Graph v21+)**. Twilio fica restrito a Voz (Release 11).
 
 ### User Stories
-- **US-13.1** Como **U**, quero enviar **catálogo de produtos** em uma conversa para o cliente escolher pelo próprio WhatsApp.
-- **US-13.2** Como **U**, quero adicionar **botões de resposta rápida** e CTAs em templates HSM.
-- **US-13.3** Como **A**, quero rodar **anúncios click-to-WhatsApp** e ver de qual campanha o lead veio.
-- **US-13.4** Como **A**, quero usar **múltiplos números** Twilio e rotear mensagens por equipe/segmento.
+- **US-13.1** Como **A**, quero conectar uma ou mais contas **WABA** da Meta (System User token ou Embedded Signup) sem sair do CRM.
+- **US-13.2** Como **U**, quero enviar e receber mensagens (texto, mídia, documento, localização, reação) pelo número oficial da empresa.
+- **US-13.3** Como **U**, quero enviar **catálogo de produtos** (`interactive.product_list`) sincronizado com o Commerce Manager.
+- **US-13.4** Como **U**, quero criar/editar **templates HSM** com botões `quick_reply`, `url`, `phone_number` e `copy_code`, submetidos para aprovação da Meta.
+- **US-13.5** Como **A**, quero rodar **anúncios click-to-WhatsApp (CTWA)** e capturar `referral` + `ctwa_clid` na primeira mensagem inbound para atribuição.
+- **US-13.6** Como **A**, quero usar **múltiplos números** (phone_number_id) e rotear conversas por equipe/segmento, com número padrão como fallback.
+- **US-13.7** Como **A**, quero respeitar a **janela de 24 h** automaticamente e ver `quality_rating` + `messaging_limit_tier` do número.
 
 ### Critérios de Aceite
-- CA-13.1 Mensagem `interactive` tipo `product_list` enviada via Twilio Content API; cliente seleciona produto e resposta inbound vincula a `products.id`.
-- CA-13.2 Editor de template aceita até 3 `quick_reply` + 2 `cta_url`; preview renderiza igual ao WhatsApp; validação contra regras Meta antes de salvar.
-- CA-13.3 Landing `/wa/$slug` abre `https://wa.me/...` com mensagem pré-preenchida; pixel registra clique; primeira mensagem inbound cria lead com `source=wa_ads` + `utm_*`.
-- CA-13.4 Roteador escolhe número conforme regra (segmento/equipe/round-robin); número padrão é fallback; UI mostra qual número enviou cada mensagem.
+- CA-13.1 `/settings/whatsapp` permite colar `waba_id` + System User token; servidor valida via `GET /{waba_id}`, registra o webhook (`POST /{waba_id}/subscribed_apps`) e sincroniza phone numbers.
+- CA-13.2 Envio via `POST graph.facebook.com/v21.0/{phone_number_id}/messages`; webhook `/api/public/meta/whatsapp-webhook` valida `X-Hub-Signature-256` HMAC-SHA256 com `META_APP_SECRET` antes de processar.
+- CA-13.3 `sendProductList` envia `interactive.product_list` com `catalog_id` + seções de `product_retailer_id`; resposta inbound `order` é persistida com `interactive_type=order`.
+- CA-13.4 `wa_templates` espelha o estado da Meta; submissão usa `POST /{waba_id}/message_templates`; webhook `message_template_status_update` atualiza `status` e `rejection_reason` automaticamente.
+- CA-13.5 Mensagens inbound com `referral` criam linha em `wa_ad_referrals` (source_type, source_id, ctwa_clid, headline, body, media_url) vinculada à mensagem; landing `/wa/$slug` continua redirecionando para `https://wa.me/...`.
+- CA-13.6 `wa_phone_numbers.routing_rules` (jsonb) define segmento/equipe/round-robin; UI mostra qual número enviou cada mensagem.
+- CA-13.7 UI bloqueia envio livre após 24 h do último inbound e exige template; `quality_rating` e `messaging_limit_tier` são atualizados pelo webhook `phone_number_quality_update`.
+- CA-13.8 Mídia outbound: `POST /{phone_number_id}/media` (resumable) → `media_id` → envio. Mídia inbound é baixada com token e armazenada no bucket `whatsapp-media`.
+
+### Esquema (novo)
+- `wa_business_accounts` (waba_id, business_id, access_token, status, webhook_verified_at).
+- `wa_phone_numbers` (waba_id FK, phone_number_id, display_phone_number, verified_name, quality_rating, messaging_limit_tier, is_default, routing_rules).
+- `wa_templates` (waba_id FK, meta_template_id, name, language, category, status, components, rejection_reason).
+- `wa_catalogs` + `wa_catalog_products` (cache do Commerce).
+- `wa_ad_referrals` (message_id, conversation_id, source_type, source_id, ctwa_clid, headline, body, media_url).
+- `whatsapp_conversations` / `whatsapp_messages` ganham `provider` (`meta` | `twilio`), `wa_phone_number_id`, `wa_message_id`, `context_message_id`, `pricing_category`, `interactive_type`, `referral_id`.
+
+### Server functions (`src/lib/whatsapp-meta.functions.ts`)
+- `connectWaba`, `listWabas`, `syncPhoneNumbers`, `listPhoneNumbers`, `updatePhoneNumberRouting`.
+- `sendMessage` (texto), `sendTemplate` (HSM), `sendProductList` (catálogo).
+- `listTemplates`, `syncTemplates`, `submitTemplate`.
+- `listCatalogs`, `syncCatalogProducts`.
+
+### Webhook
+- Rota pública: `src/routes/api/public/meta/whatsapp-webhook.ts` (GET handshake `hub.challenge` + POST com verificação HMAC-SHA256).
+- Eventos processados: `messages` (inbound + status), `message_template_status_update`, `phone_number_quality_update`.
+
+### Secrets necessárias
+- `META_APP_ID`, `META_APP_SECRET`, `META_WHATSAPP_VERIFY_TOKEN` (string aleatória definida pelo admin), `META_GRAPH_API_VERSION` (default `v21.0`).
+- Token por WABA é armazenado na tabela (não em secret global).
 
 ### Telas
-- 🖥️ `WhatsAppComposer` — botão "Catálogo" abre seletor de produtos.
-- 🖥️ `/settings/whatsapp-templates` — editor com builder de botões + preview.
-- 🖥️ `/settings/wa-ads` — gerenciador de slugs `/wa/$slug` + métricas (clicks, conversões).
-- 🖥️ `/settings/whatsapp-numbers` — lista de números, regras de roteamento, atribuição por equipe.
+- 🖥️ `/settings/whatsapp` — WABAs conectadas, formulário de conexão, lista de números, padrão + roteamento.
+- 🖥️ `/settings/whatsapp-templates` — CRUD de templates (builder header/body/footer/buttons) com submissão e status Meta.
+- 🖥️ `/settings/wa-ads` — slugs `/wa/$slug` + métricas (clicks, conversões, CTWA atribuído).
+- 🖥️ `WhatsAppComposer` (drawer em contact/lead/deal/ticket) — chips de template, botão "Catálogo", indicador da janela 24 h, seletor de número.
+- 🖥️ `/inbox/whatsapp` — inbox multi-número, filtro por número/agente, badge do provider.
+
+### Fora de escopo
+- WhatsApp Pay e Flows (forms interativos) ficam para release futura.
+- Histórico antigo de mensagens Twilio é preservado com `provider='twilio'`; novas conversas usam Meta.
 
 ---
+
 
 ## Release 14 — Documentos & Contratos
 

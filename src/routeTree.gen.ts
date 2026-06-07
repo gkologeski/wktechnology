@@ -54,6 +54,7 @@ import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
+import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
@@ -127,6 +128,7 @@ import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/tw
 import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
+import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -392,6 +394,12 @@ const AuthenticatedSettingsWidgetRoute =
   AuthenticatedSettingsWidgetRouteImport.update({
     id: '/widget',
     path: '/widget',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWhatsappRoute =
+  AuthenticatedSettingsWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsWebhooksRoute =
@@ -819,6 +827,12 @@ const ApiPublicOauthGoogleCallbackRoute =
     path: '/api/public/oauth/google-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMetaWhatsappWebhookRoute =
+  ApiPublicMetaWhatsappWebhookRouteImport.update({
+    id: '/api/public/meta/whatsapp-webhook',
+    path: '/api/public/meta/whatsapp-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -1103,6 +1117,7 @@ export interface FileRoutesByFullPath {
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1138,6 +1153,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1251,6 +1267,7 @@ export interface FileRoutesByTo {
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1286,6 +1303,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1404,6 +1422,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
+  '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -1439,6 +1458,7 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
@@ -1557,6 +1577,7 @@ export interface FileRouteTypes {
     | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
+    | '/settings/whatsapp'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1592,6 +1613,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1705,6 +1727,7 @@ export interface FileRouteTypes {
     | '/settings/video'
     | '/settings/voice-agent'
     | '/settings/webhooks'
+    | '/settings/whatsapp'
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
@@ -1740,6 +1763,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1857,6 +1881,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
     | '/_authenticated/settings/webhooks'
+    | '/_authenticated/settings/whatsapp'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
@@ -1892,6 +1917,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/twilio/recording-status'
@@ -1955,6 +1981,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
@@ -2286,6 +2313,13 @@ declare module '@tanstack/react-router' {
       path: '/widget'
       fullPath: '/settings/widget'
       preLoaderRoute: typeof AuthenticatedSettingsWidgetRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/whatsapp': {
+      id: '/_authenticated/settings/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/settings/whatsapp'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/webhooks': {
@@ -2799,6 +2833,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta/whatsapp-webhook': {
+      id: '/api/public/meta/whatsapp-webhook'
+      path: '/api/public/meta/whatsapp-webhook'
+      fullPath: '/api/public/meta/whatsapp-webhook'
+      preLoaderRoute: typeof ApiPublicMetaWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/workflows-tick': {
       id: '/api/public/hooks/workflows-tick'
       path: '/api/public/hooks/workflows-tick'
@@ -3176,6 +3217,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
+  AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
@@ -3238,6 +3280,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
+  AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
@@ -3444,6 +3487,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,

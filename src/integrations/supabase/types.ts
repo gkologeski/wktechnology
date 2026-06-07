@@ -6451,6 +6451,384 @@ export type Database = {
           },
         ]
       }
+      wa_ad_referrals: {
+        Row: {
+          body: string | null
+          conversation_id: string | null
+          created_at: string
+          ctwa_clid: string | null
+          headline: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          message_id: string | null
+          owner_id: string
+          raw: Json | null
+          source_id: string | null
+          source_type: string | null
+          source_url: string | null
+          workspace_id: string
+        }
+        Insert: {
+          body?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          ctwa_clid?: string | null
+          headline?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message_id?: string | null
+          owner_id: string
+          raw?: Json | null
+          source_id?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          workspace_id: string
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          ctwa_clid?: string | null
+          headline?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message_id?: string | null
+          owner_id?: string
+          raw?: Json | null
+          source_id?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_ad_referrals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_ad_referrals_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_ad_referrals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_business_accounts: {
+        Row: {
+          access_token: string
+          business_id: string | null
+          business_name: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          raw: Json | null
+          status: string
+          updated_at: string
+          waba_id: string
+          webhook_verified_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          access_token: string
+          business_id?: string | null
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          waba_id: string
+          webhook_verified_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          access_token?: string
+          business_id?: string | null
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          waba_id?: string
+          webhook_verified_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_business_accounts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_catalog_products: {
+        Row: {
+          availability: string | null
+          catalog_id: string
+          created_at: string
+          currency: string | null
+          id: string
+          image_url: string | null
+          name: string | null
+          owner_id: string
+          price: string | null
+          raw: Json | null
+          retailer_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          availability?: string | null
+          catalog_id: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          owner_id: string
+          price?: string | null
+          raw?: Json | null
+          retailer_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          availability?: string | null
+          catalog_id?: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          owner_id?: string
+          price?: string | null
+          raw?: Json | null
+          retailer_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_catalog_products_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "wa_catalogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_catalog_products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_catalogs: {
+        Row: {
+          catalog_id: string
+          created_at: string
+          id: string
+          name: string | null
+          owner_id: string
+          raw: Json | null
+          updated_at: string
+          vertical: string | null
+          waba_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          catalog_id: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_id: string
+          raw?: Json | null
+          updated_at?: string
+          vertical?: string | null
+          waba_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          catalog_id?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_id?: string
+          raw?: Json | null
+          updated_at?: string
+          vertical?: string | null
+          waba_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_catalogs_waba_id_fkey"
+            columns: ["waba_id"]
+            isOneToOne: false
+            referencedRelation: "wa_business_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_catalogs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_phone_numbers: {
+        Row: {
+          created_at: string
+          display_phone_number: string
+          id: string
+          is_default: boolean
+          messaging_limit_tier: string | null
+          owner_id: string
+          phone_number_id: string
+          quality_rating: string | null
+          raw: Json | null
+          routing_rules: Json
+          updated_at: string
+          verified_name: string | null
+          waba_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_phone_number: string
+          id?: string
+          is_default?: boolean
+          messaging_limit_tier?: string | null
+          owner_id: string
+          phone_number_id: string
+          quality_rating?: string | null
+          raw?: Json | null
+          routing_rules?: Json
+          updated_at?: string
+          verified_name?: string | null
+          waba_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          display_phone_number?: string
+          id?: string
+          is_default?: boolean
+          messaging_limit_tier?: string | null
+          owner_id?: string
+          phone_number_id?: string
+          quality_rating?: string | null
+          raw?: Json | null
+          routing_rules?: Json
+          updated_at?: string
+          verified_name?: string | null
+          waba_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_phone_numbers_waba_id_fkey"
+            columns: ["waba_id"]
+            isOneToOne: false
+            referencedRelation: "wa_business_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_phone_numbers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_templates: {
+        Row: {
+          category: string
+          components: Json
+          created_at: string
+          id: string
+          language: string
+          meta_template_id: string | null
+          name: string
+          owner_id: string
+          raw: Json | null
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+          waba_id: string
+          workspace_id: string
+        }
+        Insert: {
+          category: string
+          components?: Json
+          created_at?: string
+          id?: string
+          language: string
+          meta_template_id?: string | null
+          name: string
+          owner_id: string
+          raw?: Json | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          waba_id: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          components?: Json
+          created_at?: string
+          id?: string
+          language?: string
+          meta_template_id?: string | null
+          name?: string
+          owner_id?: string
+          raw?: Json | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          waba_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_templates_waba_id_fkey"
+            columns: ["waba_id"]
+            isOneToOne: false
+            referencedRelation: "wa_business_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_deliveries: {
         Row: {
           attempt: number
@@ -6659,45 +7037,57 @@ export type Database = {
           assigned_to: string | null
           contact_id: string | null
           contact_phone: string
+          conversation_origin: string | null
           created_at: string
           id: string
+          last_inbound_at: string | null
           last_message_at: string | null
           last_message_preview: string | null
           owner_id: string
+          provider: string
           status: string
           twilio_number: string
           unread_count: number
           updated_at: string
+          wa_phone_number_id: string | null
           workspace_id: string
         }
         Insert: {
           assigned_to?: string | null
           contact_id?: string | null
           contact_phone: string
+          conversation_origin?: string | null
           created_at?: string
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           owner_id: string
+          provider?: string
           status?: string
           twilio_number: string
           unread_count?: number
           updated_at?: string
+          wa_phone_number_id?: string | null
           workspace_id?: string
         }
         Update: {
           assigned_to?: string | null
           contact_id?: string | null
           contact_phone?: string
+          conversation_origin?: string | null
           created_at?: string
           id?: string
+          last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           owner_id?: string
+          provider?: string
           status?: string
           twilio_number?: string
           unread_count?: number
           updated_at?: string
+          wa_phone_number_id?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -6720,6 +7110,7 @@ export type Database = {
       whatsapp_messages: {
         Row: {
           body: string | null
+          context_message_id: string | null
           conversation_id: string
           created_at: string
           delivered_at: string | null
@@ -6728,22 +7119,28 @@ export type Database = {
           error_message: string | null
           from_number: string
           id: string
+          interactive_type: string | null
           is_template: boolean
           media_content_type: string | null
           media_url: string | null
           owner_id: string
+          pricing_category: string | null
+          provider: string
           raw: Json | null
           read_at: string | null
+          referral_id: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
           template_name: string | null
           to_number: string
           twilio_sid: string | null
+          wa_message_id: string | null
           workspace_id: string
         }
         Insert: {
           body?: string | null
+          context_message_id?: string | null
           conversation_id: string
           created_at?: string
           delivered_at?: string | null
@@ -6752,22 +7149,28 @@ export type Database = {
           error_message?: string | null
           from_number: string
           id?: string
+          interactive_type?: string | null
           is_template?: boolean
           media_content_type?: string | null
           media_url?: string | null
           owner_id: string
+          pricing_category?: string | null
+          provider?: string
           raw?: Json | null
           read_at?: string | null
+          referral_id?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
           template_name?: string | null
           to_number: string
           twilio_sid?: string | null
+          wa_message_id?: string | null
           workspace_id?: string
         }
         Update: {
           body?: string | null
+          context_message_id?: string | null
           conversation_id?: string
           created_at?: string
           delivered_at?: string | null
@@ -6776,18 +7179,23 @@ export type Database = {
           error_message?: string | null
           from_number?: string
           id?: string
+          interactive_type?: string | null
           is_template?: boolean
           media_content_type?: string | null
           media_url?: string | null
           owner_id?: string
+          pricing_category?: string | null
+          provider?: string
           raw?: Json | null
           read_at?: string | null
+          referral_id?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
           template_name?: string | null
           to_number?: string
           twilio_sid?: string | null
+          wa_message_id?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -6796,6 +7204,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "wa_ad_referrals"
             referencedColumns: ["id"]
           },
           {
