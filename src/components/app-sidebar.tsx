@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, Bug, Briefcase as BriefcaseIcon, User as UserIcon,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, Bug, Briefcase as BriefcaseIcon, User as UserIcon, Video,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -57,6 +57,7 @@ const groups: Group[] = [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
+      { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Listas", url: "/settings/segments", icon: Filter },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
@@ -102,6 +103,7 @@ const groups: Group[] = [
       { section: "Workspace", title: "Mobile / PWA", url: "/settings/mobile", icon: Settings },
       { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
       { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
+      { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
       // Estrutura CRM
       { section: "Estrutura CRM", title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { section: "Estrutura CRM", title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },

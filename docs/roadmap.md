@@ -107,10 +107,14 @@
 
 > Backlog priorizado de evoluções pós-Onda 10. Itens **pendentes** — sugerir antes de implementar.
 
-### Release 12 — Vídeo & Reuniões
-- **Video calls embutidas** (Daily.co / Whereby / Jitsi) com criação de sala 1-clique no contato/lead/deal/ticket, gravação opcional na nuvem e link público para convidados sem login.
-- **Pós-call AI** — transcrição da reunião (Lovable AI), resumo executivo, lista de decisões + action items convertidos automaticamente em `tasks` vinculadas ao registro.
-- **Galeria de reuniões** por entidade com player, busca full-text na transcrição e timestamps clicáveis.
+### Release 12 — Vídeo & Reuniões ✅
+- **Vídeo embutido (Jitsi Meet)** com criação de sala 1-clique a partir de contato/lead/deal/ticket (`StartVideoButton`), link público `/meet/$token` para convidados (sem login, com consentimento de gravação), iframe do Jitsi (`meet.jit.si`) e registro automático em `activities` (type=`meeting`).
+- **Gravação + transcrição IA** — upload da gravação para bucket privado `meeting-recordings` (signed URLs), `generateMeetingSummary` envia o áudio em base64 para o Lovable AI Gateway (`google/gemini-2.5-flash`) e persiste `transcript`, `summary`, `decisions[]`, `action_items[]`, `sentiment` em `meeting_summaries` (com `tsvector` gerado para busca full-text).
+- **Action items → tasks** — `createTasksFromActionItems` cria `activities` (type=`task`, prazo D+3) vinculadas ao mesmo contato/lead/deal/ticket da reunião.
+- **Biblioteca `/meetings`** com busca por título e por trecho da transcrição (`websearch` no `tsvector`), filtros por status, drawer de detalhe com player de áudio, resumo, decisões, action items, transcrição completa e lista de participantes.
+- **Painel "Reuniões"** (`MeetingsPanel`) embutido em Contato, Lead, Ticket e na aba Atividades do drawer de Deal, ao lado de `CallHistoryPanel`.
+- **`/settings/video`** — provider (Jitsi), política de consentimento, retenção das gravações (dias) e modelo de transcrição configuráveis por workspace (coluna `meeting_settings jsonb` em `workspaces`).
+
 
 ### Release 13 — WhatsApp Business avançado
 - **Catálogo de produtos** sincronizado com `products` e enviado como Interactive Message (`list` / `product_list`).
