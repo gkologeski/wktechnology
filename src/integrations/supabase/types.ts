@@ -2890,6 +2890,60 @@ export type Database = {
           },
         ]
       }
+      esign_attachments: {
+        Row: {
+          created_at: string
+          document_id: string
+          file_name: string
+          file_url: string
+          id: string
+          mime_type: string | null
+          owner_id: string
+          sha256: string | null
+          size_bytes: number | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          file_name: string
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          owner_id: string
+          sha256?: string | null
+          size_bytes?: number | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          owner_id?: string
+          sha256?: string | null
+          size_bytes?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esign_attachments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esign_attachments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       esign_audit: {
         Row: {
           created_at: string
@@ -2956,6 +3010,7 @@ export type Database = {
           body: string
           completed_at: string | null
           contact_id: string | null
+          content_hash: string | null
           created_at: string
           deal_id: string | null
           description: string | null
@@ -2963,6 +3018,7 @@ export type Database = {
           id: string
           ordered: boolean
           owner_id: string
+          sealed_at: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["esign_doc_status"]
           title: string
@@ -2973,6 +3029,7 @@ export type Database = {
           body?: string
           completed_at?: string | null
           contact_id?: string | null
+          content_hash?: string | null
           created_at?: string
           deal_id?: string | null
           description?: string | null
@@ -2980,6 +3037,7 @@ export type Database = {
           id?: string
           ordered?: boolean
           owner_id: string
+          sealed_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["esign_doc_status"]
           title: string
@@ -2990,6 +3048,7 @@ export type Database = {
           body?: string
           completed_at?: string | null
           contact_id?: string | null
+          content_hash?: string | null
           created_at?: string
           deal_id?: string | null
           description?: string | null
@@ -2997,6 +3056,7 @@ export type Database = {
           id?: string
           ordered?: boolean
           owner_id?: string
+          sealed_at?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["esign_doc_status"]
           title?: string
@@ -4322,6 +4382,209 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_history_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_approvals: {
+        Row: {
+          comment: string | null
+          created_at: string
+          decided_at: string | null
+          id: string
+          proposal_id: string
+          requested_by: string
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["proposal_approval_status"]
+          workspace_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          proposal_id: string
+          requested_by: string
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["proposal_approval_status"]
+          workspace_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          proposal_id?: string
+          requested_by?: string
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["proposal_approval_status"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_approvals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_approvals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_clauses: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          owner_id: string
+          slug: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          owner_id: string
+          slug: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          owner_id?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_clauses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          body: string
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string | null
+          decided_at: string | null
+          esign_document_id: string | null
+          expires_at: string | null
+          id: string
+          locked: boolean
+          owner_id: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["proposal_status"]
+          title: string
+          total_amount: number | null
+          updated_at: string
+          variables: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          decided_at?: string | null
+          esign_document_id?: string | null
+          expires_at?: string | null
+          id?: string
+          locked?: boolean
+          owner_id: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["proposal_status"]
+          title: string
+          total_amount?: number | null
+          updated_at?: string
+          variables?: Json
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          decided_at?: string | null
+          esign_document_id?: string | null
+          expires_at?: string | null
+          id?: string
+          locked?: boolean
+          owner_id?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["proposal_status"]
+          title?: string
+          total_amount?: number | null
+          updated_at?: string
+          variables?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_esign_document_id_fkey"
+            columns: ["esign_document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -7723,6 +7986,17 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      esign_verify_hash: {
+        Args: { _hash: string }
+        Returns: {
+          document_id: string
+          sealed_at: string
+          signed_count: number
+          signers_count: number
+          status: Database["public"]["Enums"]["esign_doc_status"]
+          title: string
+        }[]
+      }
       find_sla_policy: {
         Args: {
           _owner: string
@@ -7902,6 +8176,16 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      proposal_approval_status: "pending" | "approved" | "rejected"
+      proposal_status:
+        | "draft"
+        | "in_review"
+        | "approved"
+        | "sent"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "canceled"
       prospecting_assignment_mode: "weighted" | "segment"
       prospecting_call_status:
         | "queued"
@@ -8123,6 +8407,17 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      proposal_approval_status: ["pending", "approved", "rejected"],
+      proposal_status: [
+        "draft",
+        "in_review",
+        "approved",
+        "sent",
+        "accepted",
+        "rejected",
+        "expired",
+        "canceled",
+      ],
       prospecting_assignment_mode: ["weighted", "segment"],
       prospecting_call_status: [
         "queued",
