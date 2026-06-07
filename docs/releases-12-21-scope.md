@@ -33,7 +33,7 @@
 
 ---
 
-## Release 13 — WhatsApp Business via Meta Cloud API
+## Release 13 — WhatsApp Business via Meta Cloud API ✅
 
 > Provider: **Meta WhatsApp Business Platform — Cloud API (Graph v21+)**. Twilio fica restrito a Voz (Release 11).
 
