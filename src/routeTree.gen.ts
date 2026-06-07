@@ -58,6 +58,7 @@ import { Route as AuthenticatedSettingsWhatsappTemplatesRouteImport } from './ro
 import { Route as AuthenticatedSettingsWhatsappCatalogsRouteImport } from './routes/_authenticated/settings.whatsapp-catalogs'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
+import { Route as AuthenticatedSettingsWaAdsRouteImport } from './routes/_authenticated/settings.wa-ads'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
 import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
@@ -420,6 +421,12 @@ const AuthenticatedSettingsWebhooksRoute =
   AuthenticatedSettingsWebhooksRouteImport.update({
     id: '/webhooks',
     path: '/webhooks',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWaAdsRoute =
+  AuthenticatedSettingsWaAdsRouteImport.update({
+    id: '/wa-ads',
+    path: '/wa-ads',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsVoiceAgentRoute =
@@ -1130,6 +1137,7 @@ export interface FileRoutesByFullPath {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
@@ -1282,6 +1290,7 @@ export interface FileRoutesByTo {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
@@ -1439,6 +1448,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
+  '/_authenticated/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_authenticated/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
@@ -1596,6 +1606,7 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
+    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
     | '/settings/whatsapp-catalogs'
@@ -1748,6 +1759,7 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
+    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
     | '/settings/whatsapp-catalogs'
@@ -1904,6 +1916,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/user-groups'
     | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
+    | '/_authenticated/settings/wa-ads'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/whatsapp'
     | '/_authenticated/settings/whatsapp-catalogs'
@@ -2367,6 +2380,13 @@ declare module '@tanstack/react-router' {
       path: '/webhooks'
       fullPath: '/settings/webhooks'
       preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/wa-ads': {
+      id: '/_authenticated/settings/wa-ads'
+      path: '/wa-ads'
+      fullPath: '/settings/wa-ads'
+      preLoaderRoute: typeof AuthenticatedSettingsWaAdsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/voice-agent': {
@@ -3256,6 +3276,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
   AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
+  AuthenticatedSettingsWaAdsRoute: typeof AuthenticatedSettingsWaAdsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsWhatsappCatalogsRoute: typeof AuthenticatedSettingsWhatsappCatalogsRoute
@@ -3321,6 +3342,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
   AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
+  AuthenticatedSettingsWaAdsRoute: AuthenticatedSettingsWaAdsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsWhatsappCatalogsRoute:
