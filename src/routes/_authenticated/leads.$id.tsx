@@ -138,6 +138,7 @@ function LeadDetail() {
         center={
           <>
             <AiSummaryPanel entity="lead" entityId={lead.id} />
+            <CallHistoryPanel entity="lead" entityId={lead.id} />
             <ActivityTimeline relatedKey="related_lead_id" relatedId={lead.id} />
           </>
         }
