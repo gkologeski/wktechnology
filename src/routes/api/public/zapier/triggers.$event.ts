@@ -31,27 +31,13 @@ export const Route = createFileRoute("/api/public/zapier/triggers/$event")({
         const cfg = EVENT_TO_TABLE[event];
         if (!cfg) return Response.json({ data: [] });
 
-        let q = (supabaseAdmin.from(cfg.table as never) as never as {
-          select: (c: string) => {
-            eq: (k: string, v: string) => {
-              order: (k: string, opts: { ascending: boolean }) => {
-                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-              };
-              eq: (k: string, v: string) => {
-                order: (k: string, opts: { ascending: boolean }) => {
-                  limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-                };
-              };
-            };
-          };
-        })
-          .select(cfg.cols)
-          .eq("owner_id", auth.ownerId);
-
-        const filtered = event === "deal.won" ? q.eq("stage", "won")
-          : event === "deal.lost" ? q.eq("stage", "lost")
-          : q;
-        const { data, error } = await filtered.order("created_at", { ascending: false }).limit(3);
+        // The trigger table varies per event; we bypass the typed builder.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = supabaseAdmin as any;
+        let q = db.from(cfg.table).select(cfg.cols).eq("owner_id", auth.ownerId);
+        if (event === "deal.won") q = q.eq("stage", "won");
+        if (event === "deal.lost") q = q.eq("stage", "lost");
+        const { data, error } = await q.order("created_at", { ascending: false }).limit(3);
         if (error) return Response.json({ error: error.message }, { status: 400 });
         return Response.json({ data: data ?? [] });
       },
