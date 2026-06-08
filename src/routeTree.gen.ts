@@ -39,6 +39,7 @@ import { Route as AuthenticatedProposalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
+import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
@@ -55,6 +56,7 @@ import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
+import { Route as AuthenticatedSettingsZapierRouteImport } from './routes/_authenticated/settings.zapier'
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
@@ -114,6 +116,7 @@ import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
+import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -130,6 +133,7 @@ import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/public/zapier/subscribe'
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
@@ -165,8 +169,11 @@ import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/form
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
+import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
+import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
+import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -326,6 +333,12 @@ const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
   path: '/meetings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMarketplaceRoute =
+  AuthenticatedMarketplaceRouteImport.update({
+    id: '/marketplace',
+    path: '/marketplace',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -411,6 +424,12 @@ const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedTasksRoute,
 } as any)
+const AuthenticatedSettingsZapierRoute =
+  AuthenticatedSettingsZapierRouteImport.update({
+    id: '/zapier',
+    path: '/zapier',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWorkspaceTeamRoute =
   AuthenticatedSettingsWorkspaceTeamRouteImport.update({
     id: '/workspace-team',
@@ -764,6 +783,12 @@ const AuthenticatedProposalsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedProposalsRoute,
   } as any)
+const AuthenticatedMarketplaceSlugRoute =
+  AuthenticatedMarketplaceSlugRouteImport.update({
+    id: '/$slug',
+    path: '/$slug',
+    getParentRoute: () => AuthenticatedMarketplaceRoute,
+  } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
     id: '/import-hubspot',
@@ -853,6 +878,12 @@ const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
     path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicZapierSubscribeRoute =
+  ApiPublicZapierSubscribeRouteImport.update({
+    id: '/api/public/zapier/subscribe',
+    path: '/api/public/zapier/subscribe',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWidgetSessionRoute = ApiPublicWidgetSessionRouteImport.update({
@@ -1053,6 +1084,12 @@ const AuthenticatedSettingsRolesRoleIdRoute =
     path: '/$roleId',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
   } as any)
+const AuthenticatedSettingsNotificationsSlackRoute =
+  AuthenticatedSettingsNotificationsSlackRouteImport.update({
+    id: '/notifications/slack',
+    path: '/notifications/slack',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
   AuthenticatedProspectingCampaignsIdRouteImport.update({
     id: '/campaigns/$id',
@@ -1064,6 +1101,18 @@ const AuthenticatedAdminWorkspacesIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
+  } as any)
+const ApiPublicZapierUnsubscribeIdRoute =
+  ApiPublicZapierUnsubscribeIdRouteImport.update({
+    id: '/api/public/zapier/unsubscribe/$id',
+    path: '/api/public/zapier/unsubscribe/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicZapierTriggersEventRoute =
+  ApiPublicZapierTriggersEventRouteImport.update({
+    id: '/api/public/zapier/triggers/$event',
+    path: '/api/public/zapier/triggers/$event',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
@@ -1127,6 +1176,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -1161,6 +1211,7 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1220,6 +1271,7 @@ export interface FileRoutesByFullPath {
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
+  '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
@@ -1228,6 +1280,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1263,6 +1316,7 @@ export interface FileRoutesByFullPath {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1273,6 +1327,8 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1292,6 +1348,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -1325,6 +1382,7 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1383,6 +1441,7 @@ export interface FileRoutesByTo {
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
+  '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
@@ -1391,6 +1450,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1426,6 +1486,7 @@ export interface FileRoutesByTo {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1436,6 +1497,8 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1458,6 +1521,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
@@ -1492,6 +1556,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1551,6 +1616,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
+  '/_authenticated/settings/zapier': typeof AuthenticatedSettingsZapierRoute
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
@@ -1559,6 +1625,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
@@ -1594,6 +1661,7 @@ export interface FileRoutesById {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1604,6 +1672,8 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1626,6 +1696,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/invoices'
     | '/leads'
+    | '/marketplace'
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
@@ -1660,6 +1731,7 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/marketplace/$slug'
     | '/proposals/$id'
     | '/settings/api-keys'
     | '/settings/audit-log'
@@ -1719,6 +1791,7 @@ export interface FileRouteTypes {
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
+    | '/settings/zapier'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
@@ -1727,6 +1800,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/admin/workspaces/$id'
     | '/prospecting/campaigns/$id'
+    | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1762,6 +1836,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
@@ -1772,6 +1847,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1791,6 +1868,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/invoices'
     | '/leads'
+    | '/marketplace'
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
@@ -1824,6 +1902,7 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/marketplace/$slug'
     | '/proposals/$id'
     | '/settings/api-keys'
     | '/settings/audit-log'
@@ -1882,6 +1961,7 @@ export interface FileRouteTypes {
     | '/settings/widget'
     | '/settings/workflows'
     | '/settings/workspace-team'
+    | '/settings/zapier'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
@@ -1890,6 +1970,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/workspaces/$id'
     | '/prospecting/campaigns/$id'
+    | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -1925,6 +2006,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/prospecting/campaigns'
     | '/settings/roles'
@@ -1935,6 +2017,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   id:
     | '__root__'
     | '/'
@@ -1956,6 +2040,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
+    | '/_authenticated/marketplace'
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
@@ -1990,6 +2075,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
+    | '/_authenticated/marketplace/$slug'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
@@ -2049,6 +2135,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
+    | '/_authenticated/settings/zapier'
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
@@ -2057,6 +2144,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/prospecting/campaigns/$id'
+    | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
@@ -2092,6 +2180,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
@@ -2102,6 +2191,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2159,11 +2250,14 @@ export interface RootRouteChildren {
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
+  ApiPublicZapierSubscribeRoute: typeof ApiPublicZapierSubscribeRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
+  ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2378,6 +2472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeetingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/marketplace': {
+      id: '/_authenticated/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof AuthenticatedMarketplaceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
       path: '/leads'
@@ -2489,6 +2590,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof AuthenticatedTasksIdRouteImport
       parentRoute: typeof AuthenticatedTasksRoute
+    }
+    '/_authenticated/settings/zapier': {
+      id: '/_authenticated/settings/zapier'
+      path: '/zapier'
+      fullPath: '/settings/zapier'
+      preLoaderRoute: typeof AuthenticatedSettingsZapierRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/workspace-team': {
       id: '/_authenticated/settings/workspace-team'
@@ -2903,6 +3011,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
     }
+    '/_authenticated/marketplace/$slug': {
+      id: '/_authenticated/marketplace/$slug'
+      path: '/$slug'
+      fullPath: '/marketplace/$slug'
+      preLoaderRoute: typeof AuthenticatedMarketplaceSlugRouteImport
+      parentRoute: typeof AuthenticatedMarketplaceRoute
+    }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
       path: '/import-hubspot'
@@ -3013,6 +3128,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/queue/process'
       fullPath: '/lovable/email/queue/process'
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/zapier/subscribe': {
+      id: '/api/public/zapier/subscribe'
+      path: '/api/public/zapier/subscribe'
+      fullPath: '/api/public/zapier/subscribe'
+      preLoaderRoute: typeof ApiPublicZapierSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/widget/session': {
@@ -3260,6 +3382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
     }
+    '/_authenticated/settings/notifications/slack': {
+      id: '/_authenticated/settings/notifications/slack'
+      path: '/notifications/slack'
+      fullPath: '/settings/notifications/slack'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsSlackRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/prospecting/campaigns/$id': {
       id: '/_authenticated/prospecting/campaigns/$id'
       path: '/campaigns/$id'
@@ -3273,6 +3402,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/workspaces/$id'
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
       parentRoute: typeof AuthenticatedAdminWorkspacesRoute
+    }
+    '/api/public/zapier/unsubscribe/$id': {
+      id: '/api/public/zapier/unsubscribe/$id'
+      path: '/api/public/zapier/unsubscribe/$id'
+      fullPath: '/api/public/zapier/unsubscribe/$id'
+      preLoaderRoute: typeof ApiPublicZapierUnsubscribeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/zapier/triggers/$event': {
+      id: '/api/public/zapier/triggers/$event'
+      path: '/api/public/zapier/triggers/$event'
+      fullPath: '/api/public/zapier/triggers/$event'
+      preLoaderRoute: typeof ApiPublicZapierTriggersEventRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
@@ -3393,6 +3536,20 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedMarketplaceRouteChildren {
+  AuthenticatedMarketplaceSlugRoute: typeof AuthenticatedMarketplaceSlugRoute
+}
+
+const AuthenticatedMarketplaceRouteChildren: AuthenticatedMarketplaceRouteChildren =
+  {
+    AuthenticatedMarketplaceSlugRoute: AuthenticatedMarketplaceSlugRoute,
+  }
+
+const AuthenticatedMarketplaceRouteWithChildren =
+  AuthenticatedMarketplaceRoute._addFileChildren(
+    AuthenticatedMarketplaceRouteChildren,
+  )
+
 interface AuthenticatedProposalsRouteChildren {
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
 }
@@ -3501,7 +3658,9 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
+  AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsNotificationsSlackRoute: typeof AuthenticatedSettingsNotificationsSlackRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -3574,7 +3733,10 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
     AuthenticatedSettingsWorkspaceTeamRoute,
+  AuthenticatedSettingsZapierRoute: AuthenticatedSettingsZapierRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsNotificationsSlackRoute:
+    AuthenticatedSettingsNotificationsSlackRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
@@ -3646,6 +3808,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
+  AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRouteWithChildren
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
@@ -3676,6 +3839,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
+  AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRouteWithChildren,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
@@ -3793,12 +3957,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
+  ApiPublicZapierSubscribeRoute: ApiPublicZapierSubscribeRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
+  ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -141,7 +141,7 @@
 
 ---
 
-## Release 16 — Marketplace & Integrações
+## Release 16 — Marketplace & Integrações ✅
 
 ### User Stories
 - **US-16.1** Como **A**, quero ver um **catálogo de integrações** e instalar com 1 clique.
