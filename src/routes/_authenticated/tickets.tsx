@@ -105,6 +105,19 @@ function TicketsIndex() {
     queryKey: ["companies", "select"],
     queryFn: async () => (await supabase.from("companies").select("id,name").order("name")).data ?? [],
   });
+  const { data: sourceOptions = [] } = useQuery({
+    queryKey: ["tickets", "distinct-sources"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tickets")
+        .select("source")
+        .not("source", "is", null)
+        .limit(1000);
+      const set = new Set<string>();
+      (data ?? []).forEach((r) => r.source && set.add(String(r.source)));
+      return Array.from(set).sort((a, b) => a.localeCompare(b));
+    },
+  });
   const { data: members = [] } = useWorkspaceMembers();
 
   const lookups = useMemo(() => {
