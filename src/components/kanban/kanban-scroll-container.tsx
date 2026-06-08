@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Wraps a horizontally scrollable Kanban board with:
@@ -21,6 +21,7 @@ export function KanbanScrollContainer({
   const contentRef = useRef<HTMLDivElement>(null);
   const topInnerRef = useRef<HTMLDivElement>(null);
   const syncingRef = useRef<"top" | "content" | null>(null);
+  const [overflows, setOverflows] = useState(false);
 
   // Keep the top mirror width in sync with the actual scrollWidth.
   useEffect(() => {
@@ -29,6 +30,7 @@ export function KanbanScrollContainer({
     if (!content || !inner) return;
     const sync = () => {
       inner.style.width = `${content.scrollWidth}px`;
+      setOverflows(content.scrollWidth > content.clientWidth + 1);
     };
     sync();
     const ro = new ResizeObserver(sync);
@@ -126,7 +128,9 @@ export function KanbanScrollContainer({
       <div
         ref={topRef}
         onScroll={onTopScroll}
-        className="kanban-top-scroll sticky top-0 z-20 overflow-x-auto overflow-y-hidden bg-background"
+        className={`kanban-top-scroll sticky top-0 z-20 overflow-x-auto overflow-y-hidden bg-background ${
+          overflows ? "" : "hidden"
+        }`}
         aria-hidden="true"
       >
         <div ref={topInnerRef} style={{ height: 1 }} />
