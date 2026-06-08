@@ -34,6 +34,10 @@ export default defineConfig({
       },
     ],
     optimizeDeps: {
+      // Disable dev dependency pre-bundling in the preview sandbox. The remote
+      // proxy was intermittently serving `/node_modules/.vite/deps/*` chunks as
+      // 502/504 after route lazy-loads, leaving every screen stuck on loading.
+      disabled: "dev",
       // The preview dev server can briefly serve stale optimized dependency
       // URLs while Vite is re-crawling lazy route chunks. Treat those as
       // recoverable so dynamic route imports do not fail with 502/504.
