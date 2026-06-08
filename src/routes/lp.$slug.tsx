@@ -49,7 +49,7 @@ function PublicLandingPage() {
             <section key={i} className="py-24 px-6 text-center bg-gradient-to-b from-primary/5 to-transparent">
               <h1 className="text-5xl font-bold mb-4">{String(b.headline ?? "")}</h1>
               <p className="text-xl text-muted-foreground mb-8">{String(b.subheadline ?? "")}</p>
-              {b.cta && <Button size="lg">{String(b.cta)}</Button>}
+              {b.cta ? <Button size="lg">{String(b.cta)}</Button> : null}
             </section>
           );
         }
