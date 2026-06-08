@@ -170,18 +170,26 @@ export function CompanyPicker({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Empresas parecidas
           </p>
-          {matches.map((m) => (
-            <Button
-              key={m.id}
-              type="button"
-              variant="ghost"
-              className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
-              onClick={() => select(m)}
-            >
-              <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate">{m.name}</span>
-            </Button>
-          ))}
+          {matches.map((m) => {
+            const meta = [m.domain, m.phone].filter(Boolean).join(" · ");
+            return (
+              <Button
+                key={m.id}
+                type="button"
+                variant="ghost"
+                className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
+                onClick={() => select(m)}
+              >
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex min-w-0 flex-col items-start">
+                  <span className="truncate">{m.name}</span>
+                  {meta && (
+                    <span className="truncate text-[11px] text-muted-foreground">{meta}</span>
+                  )}
+                </span>
+              </Button>
+            );
+          })}
         </div>
       )}
 
