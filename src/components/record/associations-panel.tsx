@@ -417,6 +417,7 @@ function TicketsCard({
               entity="tickets"
               select="id, subject, status, priority"
               searchColumn="subject"
+              searchColumns={["subject", "description"]}
               labelFrom={(r) => String((r as { subject?: string }).subject ?? "—")}
               hintFrom={(r) => {
                 const x = r as { status?: string; priority?: string };
