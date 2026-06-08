@@ -112,7 +112,9 @@ export const updateInvoiceStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid(), status: StatusZ }).parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: { status: typeof data.status; paid_at?: string; cancelled_at?: string } = {
+      status: data.status,
+    };
     if (data.status === "paid") patch.paid_at = new Date().toISOString();
     if (data.status === "cancelled") patch.cancelled_at = new Date().toISOString();
     const { error } = await context.supabase.from("customer_invoices").update(patch).eq("id", data.id);
