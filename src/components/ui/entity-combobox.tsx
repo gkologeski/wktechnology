@@ -76,15 +76,22 @@ export function EntityCombobox({
   disabled,
   icon: Icon,
   clearable = true,
+  priorityIds,
+  priorityLabel = "Relacionados",
 }: EntityComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EntityComboboxItem[]>([]);
+  const [priorityResults, setPriorityResults] = useState<EntityComboboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EntityComboboxItem | null>(null);
   const reqIdRef = useRef(0);
 
   const filtersKey = useMemo(() => JSON.stringify(filters ?? {}), [filters]);
+  const priorityKey = useMemo(
+    () => (priorityIds && priorityIds.length ? [...priorityIds].sort().join(",") : ""),
+    [priorityIds],
+  );
 
   // Hidrata label do item selecionado quando recebemos só um id.
   useEffect(() => {
