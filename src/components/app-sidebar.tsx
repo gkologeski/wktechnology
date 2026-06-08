@@ -59,6 +59,7 @@ const groups: Group[] = [
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Propostas", url: "/proposals", icon: FileText },
+      { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Listas", url: "/settings/segments", icon: Filter },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
