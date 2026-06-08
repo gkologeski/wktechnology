@@ -28,6 +28,8 @@ export interface EntityComboboxProps {
   select: string;
   /** Coluna usada no filtro ilike. Default: "name". */
   searchColumn?: string;
+  /** Colunas adicionais para busca por tokens (OR entre colunas, AND entre tokens). */
+  searchColumns?: string[];
   /** Filtros eq adicionais (ex.: { active: true }). */
   filters?: Record<string, string | number | boolean | null>;
   /** Coluna para order. Default: searchColumn. */
