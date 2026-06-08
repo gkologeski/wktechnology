@@ -30,6 +30,7 @@ export function KanbanScrollContainer({
     if (!content || !inner) return;
     const sync = () => {
       inner.style.width = `${content.scrollWidth}px`;
+      setOverflows(content.scrollWidth > content.clientWidth + 1);
     };
     sync();
     const ro = new ResizeObserver(sync);
