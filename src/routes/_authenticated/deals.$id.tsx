@@ -90,7 +90,7 @@ function DealDetail() {
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <StageTracker stages={DEAL_STAGES.map(s => ({ value: s.value, label: s.label }))} current={deal.stage} onChange={setStage} />
+      <StageTracker stages={stages} current={currentStage} onChange={setStage} />
     </div>
   );
 
