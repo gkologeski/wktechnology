@@ -50,6 +50,13 @@ export interface EntityComboboxProps {
   icon?: LucideIcon;
   /** Permite limpar a seleção. Default: true. */
   clearable?: boolean;
+  /**
+   * IDs já associados a outros campos do formulário — aparecem primeiro
+   * em um grupo "Relacionados".
+   */
+  priorityIds?: string[];
+  /** Rótulo do grupo prioritário. Default: "Relacionados". */
+  priorityLabel?: string;
 }
 
 export function EntityCombobox({
