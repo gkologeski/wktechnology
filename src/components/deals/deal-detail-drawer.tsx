@@ -318,3 +318,48 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function DealRelatedFields({
+  v,
+  set,
+}: {
+  v: Record<string, unknown>;
+  set: (k: string, val: unknown) => void;
+}) {
+  const companyId = (v.company_id as string) || null;
+  const contactId = (v.primary_contact_id as string) || null;
+  const related = useRelatedIds({ companyId, contactId });
+  return (
+    <>
+      <Field label="Empresa">
+        <EntityCombobox
+          entity="companies"
+          select="id,name"
+          searchColumn="name"
+          labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+          value={companyId}
+          onChange={(id) => set("company_id", id)}
+          placeholder="Selecionar empresa…"
+          priorityIds={related.companies.filter((id) => id !== companyId)}
+        />
+      </Field>
+      <Field label="Contato principal">
+        <EntityCombobox
+          entity="contacts"
+          select="id,first_name,last_name,email"
+          searchColumn="first_name"
+          labelFrom={(r) => {
+            const row = r as { first_name?: string; last_name?: string; email?: string };
+            return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";
+          }}
+          hintFrom={(r) => (r as { email?: string | null }).email ?? null}
+          value={contactId}
+          onChange={(id) => set("primary_contact_id", id)}
+          placeholder="Selecionar contato…"
+          priorityIds={related.contacts.filter((id) => id !== contactId)}
+        />
+      </Field>
+    </>
+  );
+}
+
