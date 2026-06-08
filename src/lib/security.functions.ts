@@ -108,5 +108,12 @@ export const listIpAccessLog = createServerFn({ method: "GET" })
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false })
       .limit(100);
-    return { items: data ?? [] };
+    const items = (data ?? []).map((r: any) => ({
+      id: r.id as string,
+      ip_address: String(r.ip_address ?? ""),
+      user_agent: (r.user_agent as string | null) ?? null,
+      blocked: r.blocked as boolean,
+      created_at: r.created_at as string,
+    }));
+    return { items };
   });
