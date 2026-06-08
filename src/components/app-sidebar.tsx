@@ -34,7 +34,7 @@ const ADMIN_ONLY = new Set<string>([
 const MANAGER_PLUS = new Set<string>([
   "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
   "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
-  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign",
+  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign", "/settings/clauses",
   "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
   "/settings/kb", "/settings/widget",
   "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
@@ -58,6 +58,7 @@ const groups: Group[] = [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
       { title: "Reuniões", url: "/meetings", icon: Video },
+      { title: "Propostas", url: "/proposals", icon: FileText },
       { title: "Listas", url: "/settings/segments", icon: Filter },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
@@ -113,6 +114,7 @@ const groups: Group[] = [
       { section: "Estrutura CRM", title: "Cotações", url: "/settings/quotes", icon: FileText },
       { section: "Estrutura CRM", title: "Recorrência", url: "/settings/recurring", icon: Repeat },
       { section: "Estrutura CRM", title: "Assinaturas eletrônicas", url: "/settings/esign", icon: PenLine },
+      { section: "Estrutura CRM", title: "Biblioteca de cláusulas", url: "/settings/clauses", icon: FileText },
       // Automação
       { section: "Automação", title: "Workflows", url: "/settings/workflows", icon: Workflow },
       { section: "Automação", title: "Distribuição", url: "/settings/rotation", icon: Shuffle },
