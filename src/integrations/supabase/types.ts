@@ -1708,6 +1708,195 @@ export type Database = {
           },
         ]
       }
+      customer_invoices: {
+        Row: {
+          amount: number
+          barcode: string | null
+          cancelled_at: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string | null
+          description: string | null
+          due_date: string
+          external_id: string | null
+          gateway: string | null
+          gateway_mode: string | null
+          id: string
+          invoice_number: string
+          issued_at: string
+          metadata: Json
+          owner_id: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_url: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          quote_id: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount?: number
+          barcode?: string | null
+          cancelled_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date: string
+          external_id?: string | null
+          gateway?: string | null
+          gateway_mode?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          metadata?: Json
+          owner_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_url?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          quote_id?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          barcode?: string | null
+          cancelled_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string
+          external_id?: string | null
+          gateway?: string | null
+          gateway_mode?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          metadata?: Json
+          owner_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_url?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          quote_id?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_invoices_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_invoices_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_invoices_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          external_payment_id: string | null
+          gateway: string
+          id: string
+          invoice_id: string | null
+          method: string | null
+          raw: Json
+          received_at: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          external_payment_id?: string | null
+          gateway: string
+          id?: string
+          invoice_id?: string | null
+          method?: string | null
+          raw?: Json
+          received_at?: string | null
+          status: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          external_payment_id?: string | null
+          gateway?: string
+          id?: string
+          invoice_id?: string | null
+          method?: string | null
+          raw?: Json
+          received_at?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboard_widgets: {
         Row: {
           config: Json
@@ -2045,6 +2234,121 @@ export type Database = {
           },
           {
             foreignKeyName: "deals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_policies: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          segment_id: string | null
+          steps: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id: string
+          segment_id?: string | null
+          steps?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          segment_id?: string | null
+          steps?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_policies_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_runs: {
+        Row: {
+          created_at: string
+          current_step: number
+          history: Json
+          id: string
+          invoice_id: string
+          next_run_at: string | null
+          policy_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          history?: Json
+          id?: string
+          invoice_id: string
+          next_run_at?: string | null
+          policy_id: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          history?: Json
+          id?: string
+          invoice_id?: string
+          next_run_at?: string | null
+          policy_id?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_runs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_runs_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "dunning_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dunning_runs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -4192,6 +4496,78 @@ export type Database = {
           },
         ]
       }
+      nfse_invoices: {
+        Row: {
+          amount: number | null
+          created_at: string
+          error_message: string | null
+          external_id: string | null
+          id: string
+          invoice_id: string | null
+          issued_at: string | null
+          nf_number: string | null
+          pdf_url: string | null
+          raw: Json
+          rps_number: string | null
+          service_code: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+          xml_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          issued_at?: string | null
+          nf_number?: string | null
+          pdf_url?: string | null
+          raw?: Json
+          rps_number?: string | null
+          service_code?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+          xml_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          issued_at?: string | null
+          nf_number?: string | null
+          pdf_url?: string | null
+          raw?: Json
+          rps_number?: string | null
+          service_code?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfse_invoices_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_invoices_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -4274,6 +4650,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "outbound_webhooks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_webhook_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string | null
+          external_id: string | null
+          gateway: string
+          id: string
+          payload: Json
+          processed: boolean
+          signature_valid: boolean
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type?: string | null
+          external_id?: string | null
+          gateway: string
+          id?: string
+          payload?: Json
+          processed?: boolean
+          signature_valid?: boolean
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string | null
+          external_id?: string | null
+          gateway?: string
+          id?: string
+          payload?: Json
+          processed?: boolean
+          signature_valid?: boolean
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_webhook_events_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -8154,6 +8577,8 @@ export type Database = {
           logo_url: string | null
           meeting_settings: Json
           name: string
+          nfse_settings: Json
+          payments_settings: Json
           primary_color: string | null
           slug: string
           status: string
@@ -8167,6 +8592,8 @@ export type Database = {
           logo_url?: string | null
           meeting_settings?: Json
           name: string
+          nfse_settings?: Json
+          payments_settings?: Json
           primary_color?: string | null
           slug: string
           status?: string
@@ -8180,6 +8607,8 @@ export type Database = {
           logo_url?: string | null
           meeting_settings?: Json
           name?: string
+          nfse_settings?: Json
+          payments_settings?: Json
           primary_color?: string | null
           slug?: string
           status?: string
