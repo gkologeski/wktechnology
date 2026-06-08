@@ -140,7 +140,7 @@ export const Route = createFileRoute("/api/public/payments/br-webhook/$provider"
           external_id: parsed.externalId,
           signature_valid: signatureValid,
           processed: false,
-          payload: payload as Record<string, unknown>,
+          payload: payload as never,
         });
 
         if (!secret || !signatureValid) {
@@ -173,7 +173,7 @@ export const Route = createFileRoute("/api/public/payments/br-webhook/$provider"
               amount: parsed.amount ?? 0,
               status: parsed.status,
               received_at: parsed.status === "received" ? new Date().toISOString() : null,
-              raw: payload as Record<string, unknown>,
+              raw: payload as never,
             },
             { onConflict: "gateway,external_payment_id" },
           );
