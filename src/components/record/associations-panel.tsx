@@ -182,10 +182,16 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").eq("company_id", entityId).limit(50);
         setRows((data ?? []) as never);
       } else {
-        const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(50);
-        const ids = (dc ?? []).map((r) => r.contact_id);
-        if (ids.length) {
-          const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").in("id", ids);
+        const [dcRes, dealRes] = await Promise.all([
+          supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(50),
+          supabase.from("deals").select("primary_contact_id").eq("id", entityId).maybeSingle(),
+        ]);
+        const ids = new Set<string>();
+        for (const r of (dcRes.data ?? [])) if (r.contact_id) ids.add(r.contact_id as string);
+        const primary = (dealRes.data as { primary_contact_id?: string | null } | null)?.primary_contact_id;
+        if (primary) ids.add(primary);
+        if (ids.size) {
+          const { data } = await supabase.from("contacts").select("id, first_name, last_name, job_title").in("id", Array.from(ids));
           setRows((data ?? []) as never);
         } else { setRows([]); }
       }
