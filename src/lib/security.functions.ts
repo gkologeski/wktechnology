@@ -17,6 +17,14 @@ async function activeWorkspace(supabase: any, userId: string): Promise<string> {
   return data.active_workspace_id as string;
 }
 
+export type SecuritySettings = {
+  ip_allowlist?: string[];
+  ip_allowlist_enabled?: boolean;
+  session_timeout_minutes?: number;
+  require_mfa?: boolean;
+  force_sso?: boolean;
+};
+
 export const getWorkspaceSecurity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -27,9 +35,10 @@ export const getWorkspaceSecurity = createServerFn({ method: "GET" })
       .select("id, security_settings, data_region")
       .eq("id", ws)
       .maybeSingle();
+    const sec = (data?.security_settings ?? {}) as SecuritySettings;
     return {
       workspaceId: ws,
-      security: (data?.security_settings ?? {}) as Record<string, unknown>,
+      security: sec,
       dataRegion: (data?.data_region ?? "BR") as "BR" | "US" | "EU",
     };
   });

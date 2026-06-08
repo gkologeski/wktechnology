@@ -163,6 +163,7 @@ import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
+import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
@@ -174,6 +175,8 @@ import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './route
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
+import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
+import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -181,6 +184,7 @@ import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
+import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -1051,6 +1055,12 @@ const ApiPublicHooksBugReportAnalyzeRoute =
     path: '/api/public/hooks/bug-report-analyze',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAuditExportTickRoute =
+  ApiPublicHooksAuditExportTickRouteImport.update({
+    id: '/api/public/hooks/audit-export-tick',
+    path: '/api/public/hooks/audit-export-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAiSummaryTickRoute =
   ApiPublicHooksAiSummaryTickRouteImport.update({
     id: '/api/public/hooks/ai-summary-tick',
@@ -1114,6 +1124,16 @@ const ApiPublicZapierTriggersEventRoute =
     path: '/api/public/zapier/triggers/$event',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicScimV2UsersRoute = ApiPublicScimV2UsersRouteImport.update({
+  id: '/api/public/scim/v2/Users',
+  path: '/api/public/scim/v2/Users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicScimV2GroupsRoute = ApiPublicScimV2GroupsRouteImport.update({
+  id: '/api/public/scim/v2/Groups',
+  path: '/api/public/scim/v2/Groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
     id: '/api/public/payments/br-webhook/$provider',
@@ -1156,6 +1176,11 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
     path: '/$queueId/play',
     getParentRoute: () => AuthenticatedTasksQueuesRoute,
   } as any)
+const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPublicScimV2UsersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1287,6 +1312,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1327,8 +1353,11 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1457,6 +1486,7 @@ export interface FileRoutesByTo {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1497,8 +1527,11 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1632,6 +1665,7 @@ export interface FileRoutesById {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1672,8 +1706,11 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1807,6 +1844,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -1847,8 +1885,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1977,6 +2018,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -2017,8 +2059,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   id:
     | '__root__'
     | '/'
@@ -2151,6 +2196,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -2191,8 +2237,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2221,6 +2270,7 @@ export interface RootRouteChildren {
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
+  ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -2256,6 +2306,8 @@ export interface RootRouteChildren {
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicScimV2GroupsRoute: typeof ApiPublicScimV2GroupsRoute
+  ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
   ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
   ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
@@ -3340,6 +3392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBugReportAnalyzeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/audit-export-tick': {
+      id: '/api/public/hooks/audit-export-tick'
+      path: '/api/public/hooks/audit-export-tick'
+      fullPath: '/api/public/hooks/audit-export-tick'
+      preLoaderRoute: typeof ApiPublicHooksAuditExportTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ai-summary-tick': {
       id: '/api/public/hooks/ai-summary-tick'
       path: '/api/public/hooks/ai-summary-tick'
@@ -3417,6 +3476,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZapierTriggersEventRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/scim/v2/Users': {
+      id: '/api/public/scim/v2/Users'
+      path: '/api/public/scim/v2/Users'
+      fullPath: '/api/public/scim/v2/Users'
+      preLoaderRoute: typeof ApiPublicScimV2UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/scim/v2/Groups': {
+      id: '/api/public/scim/v2/Groups'
+      path: '/api/public/scim/v2/Groups'
+      fullPath: '/api/public/scim/v2/Groups'
+      preLoaderRoute: typeof ApiPublicScimV2GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
       path: '/api/public/payments/br-webhook/$provider'
@@ -3465,6 +3538,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/queues/$queueId/play'
       preLoaderRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRouteImport
       parentRoute: typeof AuthenticatedTasksQueuesRoute
+    }
+    '/api/public/scim/v2/Users/$id': {
+      id: '/api/public/scim/v2/Users/$id'
+      path: '/$id'
+      fullPath: '/api/public/scim/v2/Users/$id'
+      preLoaderRoute: typeof ApiPublicScimV2UsersIdRouteImport
+      parentRoute: typeof ApiPublicScimV2UsersRoute
     }
   }
 }
@@ -3898,6 +3978,17 @@ const ApiPublicFormsSlugRouteChildren: ApiPublicFormsSlugRouteChildren = {
 const ApiPublicFormsSlugRouteWithChildren =
   ApiPublicFormsSlugRoute._addFileChildren(ApiPublicFormsSlugRouteChildren)
 
+interface ApiPublicScimV2UsersRouteChildren {
+  ApiPublicScimV2UsersIdRoute: typeof ApiPublicScimV2UsersIdRoute
+}
+
+const ApiPublicScimV2UsersRouteChildren: ApiPublicScimV2UsersRouteChildren = {
+  ApiPublicScimV2UsersIdRoute: ApiPublicScimV2UsersIdRoute,
+}
+
+const ApiPublicScimV2UsersRouteWithChildren =
+  ApiPublicScimV2UsersRoute._addFileChildren(ApiPublicScimV2UsersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -3924,6 +4015,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
+  ApiPublicHooksAuditExportTickRoute: ApiPublicHooksAuditExportTickRoute,
   ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
@@ -3964,6 +4056,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicScimV2GroupsRoute: ApiPublicScimV2GroupsRoute,
+  ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,
   ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
   ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }
