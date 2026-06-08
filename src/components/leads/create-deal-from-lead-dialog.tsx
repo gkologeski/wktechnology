@@ -244,30 +244,38 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5 col-span-2">
             <Label>Empresa</Label>
-            <CompanyPicker value={company} onChange={setCompany} />
-          </div>
-
-
-          <div className="space-y-1.5 col-span-2 relative">
-            <Label>Contato</Label>
-            <Input
-              value={contactQuery}
-              onChange={(e) => { setContactQuery(e.target.value); setSelectedContact(null); }}
-              placeholder="Buscar contato existente (vazio cria a partir do lead)"
+            <EntityCombobox
+              entity="companies"
+              select="id,name"
+              labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+              value={companyId}
+              onChange={(id, item) => {
+                setCompanyId(id);
+                setCompanyName(item?.label ?? "");
+              }}
+              placeholder={companyName || "Selecionar empresa…"}
+              priorityIds={related.companies.filter((id) => id !== companyId)}
             />
-            {contactMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
-                {contactMatches.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="block w-full text-left px-3 py-2 text-sm hover:bg-accent"
-                    onClick={() => { setSelectedContact(m); setContactQuery(m.name); setContactMatches([]); }}
-                  >{m.name}</button>
-                ))}
-              </div>
-            )}
           </div>
+
+          <div className="space-y-1.5 col-span-2">
+            <Label>Contato</Label>
+            <EntityCombobox
+              entity="contacts"
+              select="id,first_name,last_name,email"
+              searchColumn="first_name"
+              labelFrom={(r) => {
+                const row = r as { first_name?: string; last_name?: string; email?: string };
+                return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";
+              }}
+              hintFrom={(r) => (r as { email?: string | null }).email ?? null}
+              value={contactId}
+              onChange={(id) => setContactId(id)}
+              placeholder="Selecionar contato (vazio cria a partir do lead)"
+              priorityIds={related.contacts.filter((id) => id !== contactId)}
+            />
+          </div>
+
 
           <div className="space-y-1.5">
             <Label>Valor</Label>
