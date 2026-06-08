@@ -431,6 +431,115 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_export_runs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          export_id: string
+          finished_at: string | null
+          id: string
+          output_url: string | null
+          owner_id: string
+          records_count: number | null
+          started_at: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          export_id: string
+          finished_at?: string | null
+          id?: string
+          output_url?: string | null
+          owner_id: string
+          records_count?: number | null
+          started_at?: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          export_id?: string
+          finished_at?: string | null
+          id?: string
+          output_url?: string | null
+          owner_id?: string
+          records_count?: number | null
+          started_at?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_export_runs_export_id_fkey"
+            columns: ["export_id"]
+            isOneToOne: false
+            referencedRelation: "audit_exports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_exports: {
+        Row: {
+          config: Json
+          created_at: string
+          destination: string
+          enabled: boolean
+          format: string
+          hmac_secret: string | null
+          id: string
+          last_run_at: string | null
+          last_status: string | null
+          name: string
+          owner_id: string
+          schedule_cron: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          destination: string
+          enabled?: boolean
+          format?: string
+          hmac_secret?: string | null
+          id?: string
+          last_run_at?: string | null
+          last_status?: string | null
+          name: string
+          owner_id: string
+          schedule_cron?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          destination?: string
+          enabled?: boolean
+          format?: string
+          hmac_secret?: string | null
+          id?: string
+          last_run_at?: string | null
+          last_status?: string | null
+          name?: string
+          owner_id?: string
+          schedule_cron?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_exports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -3804,6 +3913,36 @@ export type Database = {
           },
         ]
       }
+      ip_access_log: {
+        Row: {
+          blocked: boolean
+          created_at: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          blocked?: boolean
+          created_at?: string
+          id?: string
+          ip_address: unknown
+          user_agent?: string | null
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          blocked?: boolean
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       kb_articles: {
         Row: {
           body: string
@@ -6351,6 +6490,56 @@ export type Database = {
           },
         ]
       }
+      scim_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          owner_id: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          owner_id: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          owner_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scim_tokens_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       score_events: {
         Row: {
           created_at: string
@@ -8782,6 +8971,7 @@ export type Database = {
           created_at: string
           created_by: string
           custom_domain: string | null
+          data_region: string
           id: string
           logo_url: string | null
           meeting_settings: Json
@@ -8789,6 +8979,7 @@ export type Database = {
           nfse_settings: Json
           payments_settings: Json
           primary_color: string | null
+          security_settings: Json
           slug: string
           status: string
           updated_at: string
@@ -8797,6 +8988,7 @@ export type Database = {
           created_at?: string
           created_by: string
           custom_domain?: string | null
+          data_region?: string
           id?: string
           logo_url?: string | null
           meeting_settings?: Json
@@ -8804,6 +8996,7 @@ export type Database = {
           nfse_settings?: Json
           payments_settings?: Json
           primary_color?: string | null
+          security_settings?: Json
           slug: string
           status?: string
           updated_at?: string
@@ -8812,6 +9005,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           custom_domain?: string | null
+          data_region?: string
           id?: string
           logo_url?: string | null
           meeting_settings?: Json
@@ -8819,6 +9013,7 @@ export type Database = {
           nfse_settings?: Json
           payments_settings?: Json
           primary_color?: string | null
+          security_settings?: Json
           slug?: string
           status?: string
           updated_at?: string

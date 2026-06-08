@@ -29,6 +29,8 @@ const ADMIN_ONLY = new Set<string>([
   "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
   "/settings/pipelines", "/integrations", "/marketplace",
   "/settings/mobile", "/settings/language", "/leads/import-hubspot",
+  "/settings/sso", "/settings/scim", "/settings/audit-export",
+  "/settings/access-policy", "/settings/data-residency",
 ]);
 // URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
 const MANAGER_PLUS = new Set<string>([
@@ -134,9 +136,13 @@ const groups: Group[] = [
       { section: "Pessoas & Acesso", title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
       // Segurança
       { section: "Segurança", title: "Auditoria", url: "/settings/audit-log", icon: ScrollText },
+      { section: "Segurança", title: "Exportar Auditoria", url: "/settings/audit-export", icon: ScrollText },
       { section: "Segurança", title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
       { section: "Segurança", title: "Webhooks", url: "/settings/webhooks", icon: Plug },
-      // Integrações
+      { section: "Segurança", title: "SSO (SAML/OIDC)", url: "/settings/sso", icon: ShieldCheck },
+      { section: "Segurança", title: "SCIM provisioning", url: "/settings/scim", icon: UsersRound },
+      { section: "Segurança", title: "Política de acesso", url: "/settings/access-policy", icon: ShieldCheck },
+      { section: "Segurança", title: "Data residency", url: "/settings/data-residency", icon: Sliders },
       { section: "Integrações", title: "Marketplace", url: "/marketplace", icon: Package },
       { section: "Integrações", title: "Integrações", url: "/integrations", icon: Plug },
       { section: "Integrações", title: "Notificações Slack", url: "/settings/notifications/slack", icon: MessageSquare },

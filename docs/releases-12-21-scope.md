@@ -187,7 +187,7 @@
 
 ---
 
-## Release 18 — Segurança Enterprise
+## Release 18 — Segurança Enterprise ✅
 
 ### User Stories
 - **US-18.1** Como **A**, quero ativar **SSO SAML/OIDC** para o workspace.

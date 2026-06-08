@@ -71,11 +71,13 @@ import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authenticated/settings.teams'
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
+import { Route as AuthenticatedSettingsSsoRouteImport } from './routes/_authenticated/settings.sso'
 import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
 import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings.security'
 import { Route as AuthenticatedSettingsScoringRouteImport } from './routes/_authenticated/settings.scoring'
+import { Route as AuthenticatedSettingsScimRouteImport } from './routes/_authenticated/settings.scim'
 import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_authenticated/settings.rotation'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
@@ -106,6 +108,7 @@ import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsDunningRouteImport } from './routes/_authenticated/settings.dunning'
+import { Route as AuthenticatedSettingsDataResidencyRouteImport } from './routes/_authenticated/settings.data-residency'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
@@ -114,7 +117,9 @@ import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings.billing'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
+import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_authenticated/settings.audit-export'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
+import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -163,6 +168,7 @@ import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
+import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
@@ -174,6 +180,8 @@ import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './route
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
+import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
+import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -181,6 +189,7 @@ import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
+import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -514,6 +523,12 @@ const AuthenticatedSettingsSubscriptionsRoute =
     path: '/subscriptions',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsSsoRoute =
+  AuthenticatedSettingsSsoRouteImport.update({
+    id: '/sso',
+    path: '/sso',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsSlaRoute =
   AuthenticatedSettingsSlaRouteImport.update({
     id: '/sla',
@@ -542,6 +557,12 @@ const AuthenticatedSettingsScoringRoute =
   AuthenticatedSettingsScoringRouteImport.update({
     id: '/scoring',
     path: '/scoring',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsScimRoute =
+  AuthenticatedSettingsScimRouteImport.update({
+    id: '/scim',
+    path: '/scim',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsRotationRoute =
@@ -723,6 +744,12 @@ const AuthenticatedSettingsDunningRoute =
     path: '/dunning',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsDataResidencyRoute =
+  AuthenticatedSettingsDataResidencyRouteImport.update({
+    id: '/data-residency',
+    path: '/data-residency',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCustomPropertiesRoute =
   AuthenticatedSettingsCustomPropertiesRouteImport.update({
     id: '/custom-properties',
@@ -771,10 +798,22 @@ const AuthenticatedSettingsAuditLogRoute =
     path: '/audit-log',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsAuditExportRoute =
+  AuthenticatedSettingsAuditExportRouteImport.update({
+    id: '/audit-export',
+    path: '/audit-export',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsApiKeysRoute =
   AuthenticatedSettingsApiKeysRouteImport.update({
     id: '/api-keys',
     path: '/api-keys',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsAccessPolicyRoute =
+  AuthenticatedSettingsAccessPolicyRouteImport.update({
+    id: '/access-policy',
+    path: '/access-policy',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedProposalsIdRoute =
@@ -1051,6 +1090,12 @@ const ApiPublicHooksBugReportAnalyzeRoute =
     path: '/api/public/hooks/bug-report-analyze',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAuditExportTickRoute =
+  ApiPublicHooksAuditExportTickRouteImport.update({
+    id: '/api/public/hooks/audit-export-tick',
+    path: '/api/public/hooks/audit-export-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAiSummaryTickRoute =
   ApiPublicHooksAiSummaryTickRouteImport.update({
     id: '/api/public/hooks/ai-summary-tick',
@@ -1114,6 +1159,16 @@ const ApiPublicZapierTriggersEventRoute =
     path: '/api/public/zapier/triggers/$event',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicScimV2UsersRoute = ApiPublicScimV2UsersRouteImport.update({
+  id: '/api/public/scim/v2/Users',
+  path: '/api/public/scim/v2/Users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicScimV2GroupsRoute = ApiPublicScimV2GroupsRouteImport.update({
+  id: '/api/public/scim/v2/Groups',
+  path: '/api/public/scim/v2/Groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
     id: '/api/public/payments/br-webhook/$provider',
@@ -1156,6 +1211,11 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
     path: '/$queueId/play',
     getParentRoute: () => AuthenticatedTasksQueuesRoute,
   } as any)
+const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPublicScimV2UsersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1213,7 +1273,9 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
@@ -1222,6 +1284,7 @@ export interface FileRoutesByFullPath {
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
   '/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -1252,11 +1315,13 @@ export interface FileRoutesByFullPath {
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
+  '/settings/scim': typeof AuthenticatedSettingsScimRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -1287,6 +1352,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1327,8 +1393,11 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1384,7 +1453,9 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
@@ -1393,6 +1464,7 @@ export interface FileRoutesByTo {
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
   '/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -1422,11 +1494,13 @@ export interface FileRoutesByTo {
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
+  '/settings/scim': typeof AuthenticatedSettingsScimRoute
   '/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -1457,6 +1531,7 @@ export interface FileRoutesByTo {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1497,8 +1572,11 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1558,7 +1636,9 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/_authenticated/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
@@ -1567,6 +1647,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/_authenticated/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
   '/_authenticated/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -1597,11 +1678,13 @@ export interface FileRoutesById {
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
   '/_authenticated/settings/rotation': typeof AuthenticatedSettingsRotationRoute
+  '/_authenticated/settings/scim': typeof AuthenticatedSettingsScimRoute
   '/_authenticated/settings/scoring': typeof AuthenticatedSettingsScoringRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/_authenticated/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
   '/_authenticated/settings/teams': typeof AuthenticatedSettingsTeamsRoute
@@ -1632,6 +1715,7 @@ export interface FileRoutesById {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -1672,8 +1756,11 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
+  '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1733,7 +1820,9 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
+    | '/settings/access-policy'
     | '/settings/api-keys'
+    | '/settings/audit-export'
     | '/settings/audit-log'
     | '/settings/billing'
     | '/settings/booking'
@@ -1742,6 +1831,7 @@ export interface FileRouteTypes {
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
+    | '/settings/data-residency'
     | '/settings/dunning'
     | '/settings/email'
     | '/settings/email-templates'
@@ -1772,11 +1862,13 @@ export interface FileRouteTypes {
     | '/settings/recurring'
     | '/settings/roles'
     | '/settings/rotation'
+    | '/settings/scim'
     | '/settings/scoring'
     | '/settings/security'
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
+    | '/settings/sso'
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
@@ -1807,6 +1899,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -1847,8 +1940,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1904,7 +2000,9 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
+    | '/settings/access-policy'
     | '/settings/api-keys'
+    | '/settings/audit-export'
     | '/settings/audit-log'
     | '/settings/billing'
     | '/settings/booking'
@@ -1913,6 +2011,7 @@ export interface FileRouteTypes {
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
+    | '/settings/data-residency'
     | '/settings/dunning'
     | '/settings/email'
     | '/settings/email-templates'
@@ -1942,11 +2041,13 @@ export interface FileRouteTypes {
     | '/settings/record-layouts'
     | '/settings/recurring'
     | '/settings/rotation'
+    | '/settings/scim'
     | '/settings/scoring'
     | '/settings/security'
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
+    | '/settings/sso'
     | '/settings/subscriptions'
     | '/settings/surveys'
     | '/settings/teams'
@@ -1977,6 +2078,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -2017,8 +2119,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   id:
     | '__root__'
     | '/'
@@ -2077,7 +2182,9 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/proposals/$id'
+    | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/api-keys'
+    | '/_authenticated/settings/audit-export'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/booking'
@@ -2086,6 +2193,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
+    | '/_authenticated/settings/data-residency'
     | '/_authenticated/settings/dunning'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
@@ -2116,11 +2224,13 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/recurring'
     | '/_authenticated/settings/roles'
     | '/_authenticated/settings/rotation'
+    | '/_authenticated/settings/scim'
     | '/_authenticated/settings/scoring'
     | '/_authenticated/settings/security'
     | '/_authenticated/settings/segments'
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/sla'
+    | '/_authenticated/settings/sso'
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/surveys'
     | '/_authenticated/settings/teams'
@@ -2151,6 +2261,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -2191,8 +2302,11 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/scim/v2/Groups'
+    | '/api/public/scim/v2/Users'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/api/public/scim/v2/Users/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2221,6 +2335,7 @@ export interface RootRouteChildren {
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
+  ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -2256,6 +2371,8 @@ export interface RootRouteChildren {
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicScimV2GroupsRoute: typeof ApiPublicScimV2GroupsRoute
+  ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
   ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
   ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
@@ -2696,6 +2813,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsSubscriptionsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/sso': {
+      id: '/_authenticated/settings/sso'
+      path: '/sso'
+      fullPath: '/settings/sso'
+      preLoaderRoute: typeof AuthenticatedSettingsSsoRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/sla': {
       id: '/_authenticated/settings/sla'
       path: '/sla'
@@ -2729,6 +2853,13 @@ declare module '@tanstack/react-router' {
       path: '/scoring'
       fullPath: '/settings/scoring'
       preLoaderRoute: typeof AuthenticatedSettingsScoringRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/scim': {
+      id: '/_authenticated/settings/scim'
+      path: '/scim'
+      fullPath: '/settings/scim'
+      preLoaderRoute: typeof AuthenticatedSettingsScimRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/rotation': {
@@ -2941,6 +3072,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsDunningRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/data-residency': {
+      id: '/_authenticated/settings/data-residency'
+      path: '/data-residency'
+      fullPath: '/settings/data-residency'
+      preLoaderRoute: typeof AuthenticatedSettingsDataResidencyRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/custom-properties': {
       id: '/_authenticated/settings/custom-properties'
       path: '/custom-properties'
@@ -2997,11 +3135,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAuditLogRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/audit-export': {
+      id: '/_authenticated/settings/audit-export'
+      path: '/audit-export'
+      fullPath: '/settings/audit-export'
+      preLoaderRoute: typeof AuthenticatedSettingsAuditExportRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/api-keys': {
       id: '/_authenticated/settings/api-keys'
       path: '/api-keys'
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/access-policy': {
+      id: '/_authenticated/settings/access-policy'
+      path: '/access-policy'
+      fullPath: '/settings/access-policy'
+      preLoaderRoute: typeof AuthenticatedSettingsAccessPolicyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/proposals/$id': {
@@ -3340,6 +3492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBugReportAnalyzeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/audit-export-tick': {
+      id: '/api/public/hooks/audit-export-tick'
+      path: '/api/public/hooks/audit-export-tick'
+      fullPath: '/api/public/hooks/audit-export-tick'
+      preLoaderRoute: typeof ApiPublicHooksAuditExportTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ai-summary-tick': {
       id: '/api/public/hooks/ai-summary-tick'
       path: '/api/public/hooks/ai-summary-tick'
@@ -3417,6 +3576,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZapierTriggersEventRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/scim/v2/Users': {
+      id: '/api/public/scim/v2/Users'
+      path: '/api/public/scim/v2/Users'
+      fullPath: '/api/public/scim/v2/Users'
+      preLoaderRoute: typeof ApiPublicScimV2UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/scim/v2/Groups': {
+      id: '/api/public/scim/v2/Groups'
+      path: '/api/public/scim/v2/Groups'
+      fullPath: '/api/public/scim/v2/Groups'
+      preLoaderRoute: typeof ApiPublicScimV2GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
       path: '/api/public/payments/br-webhook/$provider'
@@ -3465,6 +3638,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/queues/$queueId/play'
       preLoaderRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRouteImport
       parentRoute: typeof AuthenticatedTasksQueuesRoute
+    }
+    '/api/public/scim/v2/Users/$id': {
+      id: '/api/public/scim/v2/Users/$id'
+      path: '/$id'
+      fullPath: '/api/public/scim/v2/Users/$id'
+      preLoaderRoute: typeof ApiPublicScimV2UsersIdRouteImport
+      parentRoute: typeof ApiPublicScimV2UsersRoute
     }
   }
 }
@@ -3600,7 +3780,9 @@ const AuthenticatedSettingsRolesRouteWithChildren =
   )
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsAccessPolicyRoute: typeof AuthenticatedSettingsAccessPolicyRoute
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
+  AuthenticatedSettingsAuditExportRoute: typeof AuthenticatedSettingsAuditExportRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
   AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
@@ -3609,6 +3791,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
+  AuthenticatedSettingsDataResidencyRoute: typeof AuthenticatedSettingsDataResidencyRoute
   AuthenticatedSettingsDunningRoute: typeof AuthenticatedSettingsDunningRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
@@ -3639,11 +3822,13 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRouteWithChildren
   AuthenticatedSettingsRotationRoute: typeof AuthenticatedSettingsRotationRoute
+  AuthenticatedSettingsScimRoute: typeof AuthenticatedSettingsScimRoute
   AuthenticatedSettingsScoringRoute: typeof AuthenticatedSettingsScoringRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
   AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
   AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
+  AuthenticatedSettingsSsoRoute: typeof AuthenticatedSettingsSsoRoute
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
   AuthenticatedSettingsTeamsRoute: typeof AuthenticatedSettingsTeamsRoute
@@ -3664,7 +3849,10 @@ interface AuthenticatedSettingsRouteChildren {
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsAccessPolicyRoute:
+    AuthenticatedSettingsAccessPolicyRoute,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
+  AuthenticatedSettingsAuditExportRoute: AuthenticatedSettingsAuditExportRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
   AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
@@ -3675,6 +3863,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
+  AuthenticatedSettingsDataResidencyRoute:
+    AuthenticatedSettingsDataResidencyRoute,
   AuthenticatedSettingsDunningRoute: AuthenticatedSettingsDunningRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
   AuthenticatedSettingsEmailTemplatesRoute:
@@ -3710,11 +3900,13 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRouteWithChildren,
   AuthenticatedSettingsRotationRoute: AuthenticatedSettingsRotationRoute,
+  AuthenticatedSettingsScimRoute: AuthenticatedSettingsScimRoute,
   AuthenticatedSettingsScoringRoute: AuthenticatedSettingsScoringRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
   AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
   AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,
   AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,
+  AuthenticatedSettingsSsoRoute: AuthenticatedSettingsSsoRoute,
   AuthenticatedSettingsSubscriptionsRoute:
     AuthenticatedSettingsSubscriptionsRoute,
   AuthenticatedSettingsSurveysRoute: AuthenticatedSettingsSurveysRoute,
@@ -3898,6 +4090,17 @@ const ApiPublicFormsSlugRouteChildren: ApiPublicFormsSlugRouteChildren = {
 const ApiPublicFormsSlugRouteWithChildren =
   ApiPublicFormsSlugRoute._addFileChildren(ApiPublicFormsSlugRouteChildren)
 
+interface ApiPublicScimV2UsersRouteChildren {
+  ApiPublicScimV2UsersIdRoute: typeof ApiPublicScimV2UsersIdRoute
+}
+
+const ApiPublicScimV2UsersRouteChildren: ApiPublicScimV2UsersRouteChildren = {
+  ApiPublicScimV2UsersIdRoute: ApiPublicScimV2UsersIdRoute,
+}
+
+const ApiPublicScimV2UsersRouteWithChildren =
+  ApiPublicScimV2UsersRoute._addFileChildren(ApiPublicScimV2UsersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -3924,6 +4127,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
+  ApiPublicHooksAuditExportTickRoute: ApiPublicHooksAuditExportTickRoute,
   ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
@@ -3964,19 +4168,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicScimV2GroupsRoute: ApiPublicScimV2GroupsRoute,
+  ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,
   ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
   ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
