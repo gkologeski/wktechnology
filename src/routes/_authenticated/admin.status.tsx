@@ -1,0 +1,94 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPlatformStatus } from "@/lib/platform-observability.functions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+export const Route = createFileRoute("/_authenticated/admin/status")({
+  component: AdminStatusPage,
+});
+
+function AdminStatusPage() {
+  const { isPlatformAdmin, loading } = useIsPlatformAdmin();
+  const fn = useServerFn(getPlatformStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["platform-status"],
+    queryFn: () => fn(),
+    enabled: isPlatformAdmin,
+    refetchInterval: 30_000,
+  });
+
+  if (loading) return <div className="p-6">Carregando…</div>;
+  if (!isPlatformAdmin) return <div className="p-6">Acesso restrito a super-admins.</div>;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Status da Plataforma</h1>
+        <p className="text-sm text-muted-foreground">Saúde de crons, integrações e alertas recentes. Atualização automática a cada 30s.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Workspaces</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.workspaces ?? "—"}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Contas Gmail</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.gmail_accounts ?? "—"}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">WhatsApp WABA</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.whatsapp_accounts ?? "—"}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Twilio</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.twilio_integrations ?? "—"}</CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Cron Jobs</CardTitle></CardHeader>
+        <CardContent>
+          {isLoading ? "Carregando…" : (
+            <Table>
+              <TableHeader>
+                <TableRow><TableHead>Job</TableHead><TableHead>Schedule</TableHead><TableHead>Status</TableHead><TableHead>Última execução</TableHead><TableHead>Duração</TableHead></TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.cronJobs ?? []).map((c) => {
+                  const late = (c.late_minutes ?? 0) > 60;
+                  const failed = c.status && c.status !== "succeeded";
+                  return (
+                    <TableRow key={c.jobname}>
+                      <TableCell className="font-mono text-xs">{c.jobname}</TableCell>
+                      <TableCell className="font-mono text-xs">{c.schedule}</TableCell>
+                      <TableCell>
+                        <Badge variant={failed ? "destructive" : late ? "secondary" : "default"}>
+                          {c.status ?? "—"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{c.last_start ? formatDistanceToNow(new Date(c.last_start), { addSuffix: true, locale: ptBR }) : "—"}</TableCell>
+                      <TableCell>{c.duration_ms != null ? `${c.duration_ms} ms` : "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Alertas recentes</CardTitle></CardHeader>
+        <CardContent>
+          {(data?.recentEvents ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem alertas recentes.</p>
+          ) : (
+            <ul className="space-y-2">
+              {(data?.recentEvents ?? []).map((e) => (
+                <li key={e.id} className="flex items-center justify-between text-sm border-b pb-2">
+                  <span><Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>{e.severity}</Badge> {e.message}</span>
+                  <span className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
