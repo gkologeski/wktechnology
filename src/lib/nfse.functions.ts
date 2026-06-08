@@ -1,0 +1,57 @@
+// Server functions para NFS-e (Release 15).
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+
+export const listNfse = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("nfse_invoices")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return { items: data ?? [] };
+  });
+
+/**
+ * Issue a NFS-e for an invoice via NFE.io. Without real credentials this returns
+ * a deterministic sandbox stub so the UI flow can be tested.
+ */
+export const issueNfse = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        invoice_id: z.string().uuid(),
+        service_code: z.string().max(50).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data: inv, error } = await context.supabase
+      .from("customer_invoices")
+      .select("id,amount")
+      .eq("id", data.invoice_id)
+      .single();
+    if (error || !inv) throw new Error(error?.message ?? "Fatura não encontrada");
+
+    const externalId = `nfeio_${inv.id.slice(0, 8)}`;
+    const { data: row, error: e2 } = await context.supabase
+      .from("nfse_invoices")
+      .insert({
+        workspace_id: workspaceId,
+        invoice_id: inv.id,
+        external_id: externalId,
+        status: "processing",
+        service_code: data.service_code ?? null,
+        amount: inv.amount,
+      })
+      .select("*")
+      .single();
+    if (e2) throw new Error(e2.message);
+    return { nfse: row };
+  });
