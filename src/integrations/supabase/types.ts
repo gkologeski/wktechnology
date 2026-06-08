@@ -3858,6 +3858,267 @@ export type Database = {
           },
         ]
       }
+      meeting_participants: {
+        Row: {
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          joined_at: string
+          left_at: string | null
+          meeting_id: string
+          owner_id: string
+          updated_at: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          meeting_id: string
+          owner_id: string
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          meeting_id?: string
+          owner_id?: string
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_summaries: {
+        Row: {
+          action_items: Json
+          created_at: string
+          decisions: Json
+          error_message: string | null
+          id: string
+          meeting_id: string
+          model: string | null
+          owner_id: string
+          sentiment: string | null
+          status: string
+          summary: string | null
+          transcript: string | null
+          transcript_search: unknown
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action_items?: Json
+          created_at?: string
+          decisions?: Json
+          error_message?: string | null
+          id?: string
+          meeting_id: string
+          model?: string | null
+          owner_id: string
+          sentiment?: string | null
+          status?: string
+          summary?: string | null
+          transcript?: string | null
+          transcript_search?: unknown
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          decisions?: Json
+          error_message?: string | null
+          id?: string
+          meeting_id?: string
+          model?: string | null
+          owner_id?: string
+          sentiment?: string | null
+          status?: string
+          summary?: string | null
+          transcript?: string | null
+          transcript_search?: unknown
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_summaries_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_summaries_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_summaries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          host_user_id: string | null
+          id: string
+          owner_id: string
+          provider: string
+          public_token: string
+          recording_consent: boolean
+          recording_duration_seconds: number | null
+          recording_mime_type: string | null
+          recording_storage_path: string | null
+          related_contact_id: string | null
+          related_deal_id: string | null
+          related_lead_id: string | null
+          related_ticket_id: string | null
+          room_name: string
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          host_user_id?: string | null
+          id?: string
+          owner_id: string
+          provider?: string
+          public_token: string
+          recording_consent?: boolean
+          recording_duration_seconds?: number | null
+          recording_mime_type?: string | null
+          recording_storage_path?: string | null
+          related_contact_id?: string | null
+          related_deal_id?: string | null
+          related_lead_id?: string | null
+          related_ticket_id?: string | null
+          room_name: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          host_user_id?: string | null
+          id?: string
+          owner_id?: string
+          provider?: string
+          public_token?: string
+          recording_consent?: boolean
+          recording_duration_seconds?: number | null
+          recording_mime_type?: string | null
+          recording_storage_path?: string | null
+          related_contact_id?: string | null
+          related_deal_id?: string | null
+          related_lead_id?: string | null
+          related_ticket_id?: string | null
+          room_name?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_related_contact_id_fkey"
+            columns: ["related_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_related_deal_id_fkey"
+            columns: ["related_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_related_lead_id_fkey"
+            columns: ["related_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_related_ticket_id_fkey"
+            columns: ["related_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_sentiments: {
         Row: {
           analyzed_at: string
@@ -7891,6 +8152,7 @@ export type Database = {
           custom_domain: string | null
           id: string
           logo_url: string | null
+          meeting_settings: Json
           name: string
           primary_color: string | null
           slug: string
@@ -7903,6 +8165,7 @@ export type Database = {
           custom_domain?: string | null
           id?: string
           logo_url?: string | null
+          meeting_settings?: Json
           name: string
           primary_color?: string | null
           slug: string
@@ -7915,6 +8178,7 @@ export type Database = {
           custom_domain?: string | null
           id?: string
           logo_url?: string | null
+          meeting_settings?: Json
           name?: string
           primary_color?: string | null
           slug?: string
