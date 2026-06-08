@@ -7,6 +7,7 @@ import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 
 export type DealLookups = {
   companies: Map<string, string>;
@@ -68,31 +69,34 @@ export function DealsBoard({
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      <div className="flex gap-2 overflow-x-auto pb-4">
-        {pipeline.stages.map((s) => {
-          const rows = grouped[s.value] ?? [];
-          const total = rows.reduce((sum, d) => sum + Number(d.value || 0), 0);
-          const weighted = rows.reduce(
-            (sum, d) => sum + Number(d.value || 0) * ((s.probability ?? 0) / 100),
-            0,
-          );
-          return (
-            <DealsBoardColumn key={s.value} stage={s} total={total} weighted={weighted} count={rows.length}>
-              {rows.map((d) => (
-                <DealsBoardCard
-                  key={d.id}
-                  deal={d}
-                  companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
-                  contactName={d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined}
-                  ownerName={lookups.owners.get(d.owner_id) ?? "—"}
-                  fields={pipeline.config?.card_fields}
-                  onClick={() => onOpen(d)}
-                />
-              ))}
-            </DealsBoardColumn>
-          );
-        })}
-      </div>
+      <KanbanScrollContainer ariaLabel="Quadro de negócios">
+        <div className="flex gap-2 pb-4">
+          {pipeline.stages.map((s) => {
+            const rows = grouped[s.value] ?? [];
+            const total = rows.reduce((sum, d) => sum + Number(d.value || 0), 0);
+            const weighted = rows.reduce(
+              (sum, d) => sum + Number(d.value || 0) * ((s.probability ?? 0) / 100),
+              0,
+            );
+            return (
+              <DealsBoardColumn key={s.value} stage={s} total={total} weighted={weighted} count={rows.length}>
+                {rows.map((d) => (
+                  <DealsBoardCard
+                    key={d.id}
+                    deal={d}
+                    columnId={s.value}
+                    companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
+                    contactName={d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined}
+                    ownerName={lookups.owners.get(d.owner_id) ?? "—"}
+                    fields={pipeline.config?.card_fields}
+                    onClick={() => onOpen(d)}
+                  />
+                ))}
+              </DealsBoardColumn>
+            );
+          })}
+        </div>
+      </KanbanScrollContainer>
     </DndContext>
   );
 }

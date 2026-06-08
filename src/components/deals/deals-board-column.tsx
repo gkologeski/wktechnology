@@ -23,6 +23,7 @@ export function DealsBoardColumn({
   return (
     <div
       ref={setNodeRef}
+      data-kanban-column-root={stage.value}
       className={`flex flex-col w-[280px] shrink-0 rounded-md bg-[var(--hs-surface)] border border-[var(--hs-divider)] ${
         isOver ? "ring-2 ring-[var(--hs-orange)]" : ""
       }`}

@@ -32,6 +32,7 @@ export function TicketCard({
   ownerName,
   draggable = true,
   active = false,
+  columnId,
   onClick,
 }: {
   ticket: TicketRow;
@@ -40,6 +41,7 @@ export function TicketCard({
   ownerName?: string;
   draggable?: boolean;
   active?: boolean;
+  columnId?: string;
   onClick?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -59,7 +61,16 @@ export function TicketCard({
       {...(draggable ? listeners : {})}
       style={style}
       onClick={onClick}
-      className={`group relative rounded-md border bg-card p-2.5 text-sm transition-all hover:border-[var(--hs-orange)] hover:shadow-sm ${
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      tabIndex={onClick ? 0 : -1}
+      data-kanban-card
+      data-kanban-column={columnId}
+      className={`group relative rounded-md border bg-card p-2.5 text-sm transition-all hover:border-[var(--hs-orange)] hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
       } ${active ? "border-[var(--hs-orange)] ring-1 ring-[var(--hs-orange)]" : ""}`}
     >
