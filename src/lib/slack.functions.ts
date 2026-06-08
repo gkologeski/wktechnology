@@ -27,7 +27,7 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const [{ data: integ }, { data: routes }] = await Promise.all([
-      context.supabase.from("slack_integrations").select("*").eq("workspace_id", workspaceId).maybeSingle(),
+      context.supabase.from("slack_integrations").select("id, workspace_id, owner_id, team_name, team_id, default_channel_id, default_channel_name, installed_by, created_at, updated_at").eq("workspace_id", workspaceId).maybeSingle(),
       context.supabase
         .from("slack_event_routes")
         .select("*")
