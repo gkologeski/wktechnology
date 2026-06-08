@@ -24,8 +24,13 @@ export function CopilotCmdK() {
         setOpen((v) => !v);
       }
     }
+    function onOpen() { setOpen(true); }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("copilot:open", onOpen as EventListener);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("copilot:open", onOpen as EventListener);
+    };
   }, []);
 
   async function submit() {

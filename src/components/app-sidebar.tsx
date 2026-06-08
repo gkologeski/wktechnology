@@ -1,18 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
-  ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, Bug, Briefcase as BriefcaseIcon, User as UserIcon, Video, Smartphone,
+  LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
+  ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
+  ChevronRight, Inbox, ShieldCheck, LifeBuoy, Star, Package, FileText,
+  BarChart3, TrendingUp, Sparkles, Bug, Briefcase as BriefcaseIcon, Video,
+  GitBranch, Sliders,
 } from "lucide-react";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useAuth } from "@/lib/auth";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -24,33 +22,17 @@ type Group = { label: string; icon: React.ComponentType<{ className?: string }>;
 
 // URLs visíveis apenas para admin (configuração estrutural e dados sensíveis).
 const ADMIN_ONLY = new Set<string>([
-  "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
-  "/settings/audit-log", "/settings/hubspot-sync",
-  "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
-  "/settings/pipelines", "/integrations", "/marketplace",
-  "/settings/mobile", "/settings/language", "/leads/import-hubspot",
-  "/settings/sso", "/settings/scim", "/settings/audit-export",
-  "/settings/access-policy", "/settings/data-residency", "/settings/ads-sync",
+  "/leads/import-hubspot",
 ]);
 // URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
 const MANAGER_PLUS = new Set<string>([
-  "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
-  "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
-  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign", "/settings/clauses",
-  "/settings/payments", "/settings/dunning", "/settings/nfse",
-  "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
-  "/settings/kb", "/settings/widget",
-  "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
-  "/settings/email-templates", "/settings/segments", "/settings/calendars",
-  "/settings/booking", "/settings/lead-sources", "/reports", "/dashboards", "/analytics",
+  "/reports", "/dashboards", "/analytics",
   "/campaigns/whatsapp", "/campaigns/email",
-  "/prospecting/campaigns", "/settings/prospecting-scripts", "/settings/voice-agent",
-  "/settings/notifications/slack", "/settings/zapier",
+  "/prospecting/campaigns",
 ]);
 
-// Proposta B — Jornada do usuário:
-// Trabalhar (operação) · Analisar · Engajar (saída ativa) · Configurar (admin)
-// Conta pessoal vai para o menu do avatar (rodapé).
+// Jornada do usuário (Configurar saiu para o header → engrenagem):
+// Trabalhar (operação) · Analisar · Engajar (saída ativa)
 const groups: Group[] = [
   {
     label: "Trabalhar", icon: BriefcaseIcon, items: [
@@ -64,12 +46,11 @@ const groups: Group[] = [
       { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Propostas", url: "/proposals", icon: FileText },
       { title: "Faturas", url: "/invoices", icon: FileText },
-      { title: "Listas", url: "/settings/segments", icon: Filter },
-      { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
       { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
       { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
       { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+      { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
     ],
   },
@@ -78,8 +59,6 @@ const groups: Group[] = [
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Analytics", url: "/analytics", icon: TrendingUp },
-      { title: "Metas", url: "/settings/goals", icon: Target },
-      { title: "Exports agendados", url: "/settings/exports", icon: Send },
     ],
   },
   {
@@ -87,78 +66,15 @@ const groups: Group[] = [
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone },
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText },
-      { title: "Sequências", url: "/settings/sequences", icon: Repeat },
-      { title: "Templates de email", url: "/settings/email-templates", icon: Send },
-      { title: "Formulários", url: "/settings/forms", icon: FileText },
-      { title: "Prospecting", url: "/settings/prospecting", icon: Sparkles },
       { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle },
-      { title: "Scripts de voz", url: "/settings/prospecting-scripts", icon: FileText },
-      { title: "Agente de voz", url: "/settings/voice-agent", icon: Sliders },
       { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles },
-      { title: "Macros", url: "/settings/macros", icon: Wand2 },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
-      { title: "Portal do cliente", url: "/settings/portal", icon: ExternalLink },
-      { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen },
-      { title: "Widget de chat", url: "/settings/widget", icon: MessageSquare },
-      { title: "Tipos de assinatura", url: "/settings/subscriptions", icon: Mail },
-    ],
-  },
-  {
-    label: "Configurar", icon: Settings, items: [
-      // Workspace
-      { section: "Workspace", title: "White-label", url: "/settings/branding", icon: Sparkles },
-      { section: "Workspace", title: "Idioma", url: "/settings/language", icon: Settings },
-      { section: "Workspace", title: "Mobile / PWA / Push", url: "/settings/mobile", icon: Smartphone },
-      { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
-      { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
-      { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
-      { section: "Workspace", title: "Cobrança & Pagamentos", url: "/settings/payments", icon: FileText },
-      { section: "Workspace", title: "Régua de cobrança", url: "/settings/dunning", icon: Repeat },
-      { section: "Workspace", title: "NFS-e", url: "/settings/nfse", icon: FileText },
-      // Estrutura CRM
-      { section: "Estrutura CRM", title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
-      { section: "Estrutura CRM", title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },
-      { section: "Estrutura CRM", title: "Objetos custom", url: "/settings/custom-objects", icon: Sliders },
-      { section: "Estrutura CRM", title: "Fontes de lead", url: "/settings/lead-sources", icon: Filter },
-      { section: "Estrutura CRM", title: "Produtos", url: "/settings/products", icon: Package },
-      { section: "Estrutura CRM", title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { section: "Estrutura CRM", title: "Recorrência", url: "/settings/recurring", icon: Repeat },
-      { section: "Estrutura CRM", title: "Assinaturas eletrônicas", url: "/settings/esign", icon: PenLine },
-      { section: "Estrutura CRM", title: "Biblioteca de cláusulas", url: "/settings/clauses", icon: FileText },
-      // Automação
-      { section: "Automação", title: "Workflows", url: "/settings/workflows", icon: Workflow },
-      { section: "Automação", title: "Distribuição", url: "/settings/rotation", icon: Shuffle },
-      { section: "Automação", title: "SLA por etapa", url: "/settings/sla", icon: Timer },
-      { section: "Automação", title: "Pontuação", url: "/settings/scoring", icon: Target },
-      { section: "Automação", title: "Playbooks", url: "/settings/playbooks", icon: BookOpen },
-      { section: "Automação", title: "Enriquecimento", url: "/settings/enrichment", icon: Sparkles },
-      // Pessoas & Acesso
-      { section: "Pessoas & Acesso", title: "Equipe do workspace", url: "/settings/workspace-team", icon: UsersRound },
-      { section: "Pessoas & Acesso", title: "Usuários", url: "/settings/teams", icon: UsersRound },
-      { section: "Pessoas & Acesso", title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
-      // Segurança
-      { section: "Segurança", title: "Auditoria", url: "/settings/audit-log", icon: ScrollText },
-      { section: "Segurança", title: "Exportar Auditoria", url: "/settings/audit-export", icon: ScrollText },
-      { section: "Segurança", title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
-      { section: "Segurança", title: "Webhooks", url: "/settings/webhooks", icon: Plug },
-      { section: "Segurança", title: "SSO (SAML/OIDC)", url: "/settings/sso", icon: ShieldCheck },
-      { section: "Segurança", title: "SCIM provisioning", url: "/settings/scim", icon: UsersRound },
-      { section: "Segurança", title: "Política de acesso", url: "/settings/access-policy", icon: ShieldCheck },
-      { section: "Segurança", title: "Data residency", url: "/settings/data-residency", icon: Sliders },
-      { section: "Integrações", title: "Marketplace", url: "/marketplace", icon: Package },
-      { section: "Integrações", title: "Integrações", url: "/integrations", icon: Plug },
-      { section: "Integrações", title: "Notificações Slack", url: "/settings/notifications/slack", icon: MessageSquare },
-      { section: "Integrações", title: "Zapier / Make", url: "/settings/zapier", icon: Workflow },
-      { section: "Integrações", title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
-      { section: "Integrações", title: "Usuários HubSpot", url: "/settings/hubspot-users", icon: Plug },
-      { section: "Integrações", title: "Meta/Google Ads", url: "/settings/ads-sync", icon: Megaphone },
     ],
   },
 ];
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { user, signOut } = useAuth();
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
@@ -282,53 +198,6 @@ export function AppSidebar() {
               </SidebarMenuItem>
             </>
           )}
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton tooltip={user?.email ?? "Minha conta"}>
-                  <UserIcon className="h-4 w-4" />
-                  <span className="truncate">{user?.email ?? "Minha conta"}</span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/settings">
-                    <UserIcon className="h-4 w-4 mr-2" />
-                    Perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/email">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Conexão de email
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/security">
-                    <KeyRound className="h-4 w-4 mr-2" />
-                    Segurança (2FA)
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/my-bug-reports">
-                    <Bug className="h-4 w-4 mr-2" />
-                    Meus chamados
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/billing">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Planos e cobrança
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
