@@ -45,8 +45,8 @@ async function metaFetch(token: string, path: string, init: RequestInit = {}) {
   return json;
 }
 
-async function loadWabaToken(supabase: any, workspaceId: string, wabaRowId: string) {
-  const { data, error } = await supabase
+async function loadWabaToken(_supabase: any, workspaceId: string, wabaRowId: string) {
+  const { data, error } = await supabaseAdmin
     .from("wa_business_accounts")
     .select("id, waba_id, access_token, workspace_id")
     .eq("id", wabaRowId)
