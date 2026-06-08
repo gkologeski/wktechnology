@@ -18,8 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
-import { ContactPickerById } from "@/components/ui/contact-picker";
+import { useRelatedIds } from "@/hooks/use-related-ids";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
