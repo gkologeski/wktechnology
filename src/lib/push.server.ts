@@ -40,8 +40,6 @@ async function sendOne(sub: Subscription, payload: PushPayload, vapid: { publicK
   const res = await fetch(sub.endpoint, { method: req.method, headers: req.headers, body });
   return { ok: res.ok, status: res.status, endpoint: sub.endpoint };
 }
-  return { ok: res.ok, status: res.status, endpoint: sub.endpoint };
-}
 
 /**
  * Envia push para todos os dispositivos do user que aceitam esse tipo de evento.
