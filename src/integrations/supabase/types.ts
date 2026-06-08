@@ -1510,6 +1510,65 @@ export type Database = {
           },
         ]
       }
+      copilot_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          session_id: string
+          sources: Json
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          session_id: string
+          sources?: Json
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          session_id?: string
+          sources?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           created_at: string
@@ -4748,6 +4807,89 @@ export type Database = {
           },
         ]
       }
+      ml_forecast_scores: {
+        Row: {
+          computed_at: string
+          confidence_hi: number | null
+          confidence_lo: number | null
+          deal_id: string
+          expected_value: number
+          id: string
+          model_version: string
+          owner_id: string
+          probability: number
+          top_features: Json
+        }
+        Insert: {
+          computed_at?: string
+          confidence_hi?: number | null
+          confidence_lo?: number | null
+          deal_id: string
+          expected_value?: number
+          id?: string
+          model_version?: string
+          owner_id: string
+          probability: number
+          top_features?: Json
+        }
+        Update: {
+          computed_at?: string
+          confidence_hi?: number | null
+          confidence_lo?: number | null
+          deal_id?: string
+          expected_value?: number
+          id?: string
+          model_version?: string
+          owner_id?: string
+          probability?: number
+          top_features?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_forecast_scores_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ml_scoring_models: {
+        Row: {
+          accuracy: number | null
+          features: Json
+          last_trained_at: string | null
+          notes: string | null
+          owner_id: string
+          sample_size: number
+          status: string
+          updated_at: string
+          weight_ml: number
+        }
+        Insert: {
+          accuracy?: number | null
+          features?: Json
+          last_trained_at?: string | null
+          notes?: string | null
+          owner_id: string
+          sample_size?: number
+          status?: string
+          updated_at?: string
+          weight_ml?: number
+        }
+        Update: {
+          accuracy?: number | null
+          features?: Json
+          last_trained_at?: string | null
+          notes?: string | null
+          owner_id?: string
+          sample_size?: number
+          status?: string
+          updated_at?: string
+          weight_ml?: number
+        }
+        Relationships: []
+      }
       nfse_invoices: {
         Row: {
           amount: number | null
@@ -6666,6 +6808,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sdr_enrollments: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          handoff_at: string | null
+          handoff_reason: string | null
+          id: string
+          last_action_at: string | null
+          lead_id: string | null
+          messages_sent: number
+          notes: string | null
+          owner_id: string
+          playbook_id: string
+          qualification_score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          handoff_at?: string | null
+          handoff_reason?: string | null
+          id?: string
+          last_action_at?: string | null
+          lead_id?: string | null
+          messages_sent?: number
+          notes?: string | null
+          owner_id: string
+          playbook_id: string
+          qualification_score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          handoff_at?: string | null
+          handoff_reason?: string | null
+          id?: string
+          last_action_at?: string | null
+          lead_id?: string | null
+          messages_sent?: number
+          notes?: string | null
+          owner_id?: string
+          playbook_id?: string
+          qualification_score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_enrollments_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_playbooks: {
+        Row: {
+          business_hours: Json
+          channel: string
+          created_at: string
+          enabled: boolean
+          handoff_score: number
+          id: string
+          max_messages: number
+          name: string
+          opt_out_phrases: string[]
+          owner_id: string
+          qualification_prompt: string | null
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          business_hours?: Json
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          handoff_score?: number
+          id?: string
+          max_messages?: number
+          name: string
+          opt_out_phrases?: string[]
+          owner_id: string
+          qualification_prompt?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          business_hours?: Json
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          handoff_score?: number
+          id?: string
+          max_messages?: number
+          name?: string
+          opt_out_phrases?: string[]
+          owner_id?: string
+          qualification_prompt?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       segment_members: {
         Row: {
