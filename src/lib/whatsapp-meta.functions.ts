@@ -110,7 +110,7 @@ export const connectWaba = createServerFn({ method: "POST" })
         webhook_verified_at: new Date().toISOString(),
         raw: info,
       }, { onConflict: "workspace_id,waba_id" })
-      .select()
+      .select("id")
       .single();
     if (error) throw new Error(error.message);
 
