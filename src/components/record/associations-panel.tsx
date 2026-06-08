@@ -488,15 +488,7 @@ function SingleContactCard({ entityId, contactId }: { entityId: string; contactI
         title="Contato"
         count={c ? 1 : 0}
         action={
-          <AddAssociation
-            entity="contacts"
-            select="id, first_name, last_name, email"
-            searchColumn="first_name"
-            labelFrom={(r) => {
-              const x = r as { first_name?: string; last_name?: string; email?: string };
-              return `${x.first_name ?? ""} ${x.last_name ?? ""}`.trim() || x.email || "Contato";
-            }}
-            hintFrom={(r) => (r as { email?: string }).email ?? null}
+          <ContactPickerPopover
             placeholder="Buscar contato…"
             onPick={associate}
             onCreateNew={() => setCreateOpen(true)}
