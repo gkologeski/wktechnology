@@ -34,6 +34,10 @@ export default defineConfig({
       },
     ],
     optimizeDeps: {
+      // The preview dev server can briefly serve stale optimized dependency
+      // URLs while Vite is re-crawling lazy route chunks. Treat those as
+      // recoverable so dynamic route imports do not fail with 502/504.
+      ignoreOutdatedRequests: true,
       // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
       // resolves its `node:events` imports through our `polyfill-node-events`
       // plugin (esbuild's prebundler does not run that plugin).
