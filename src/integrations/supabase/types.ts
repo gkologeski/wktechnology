@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          owner_id: string
+          subject_id: string | null
+          test_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          owner_id: string
+          subject_id?: string | null
+          test_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          owner_id?: string
+          subject_id?: string | null
+          test_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_events_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_tests: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          name: string
+          owner_id: string
+          started_at: string | null
+          status: string
+          success_metric: string
+          updated_at: string
+          variants: Json
+          winner_variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          name: string
+          owner_id: string
+          started_at?: string | null
+          status?: string
+          success_metric?: string
+          updated_at?: string
+          variants?: Json
+          winner_variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          started_at?: string | null
+          status?: string
+          success_metric?: string
+          updated_at?: string
+          variants?: Json
+          winner_variant_id?: string | null
+        }
+        Relationships: []
+      }
       access_profile_permissions: {
         Row: {
           create_enabled: boolean
@@ -295,6 +381,148 @@ export type Database = {
           },
         ]
       }
+      ads_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          display_name: string | null
+          external_account_id: string
+          id: string
+          metadata: Json
+          owner_id: string
+          provider: string
+          refresh_token: string | null
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          display_name?: string | null
+          external_account_id: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+          provider: string
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          display_name?: string | null
+          external_account_id?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          provider?: string
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ads_audiences: {
+        Row: {
+          account_id: string
+          created_at: string
+          external_audience_id: string | null
+          id: string
+          last_synced_at: string | null
+          name: string
+          owner_id: string
+          segment_id: string | null
+          size_estimate: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          external_audience_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          owner_id: string
+          segment_id?: string | null
+          size_estimate?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          external_audience_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          owner_id?: string
+          segment_id?: string | null
+          size_estimate?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_audiences_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ads_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ads_lead_forms: {
+        Row: {
+          account_id: string
+          campaign_name: string | null
+          created_at: string
+          external_form_id: string
+          field_mapping: Json
+          id: string
+          is_active: boolean
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          campaign_name?: string | null
+          created_at?: string
+          external_form_id: string
+          field_mapping?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          campaign_name?: string | null
+          created_at?: string
+          external_form_id?: string
+          field_mapping?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_lead_forms_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ads_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_summaries: {
         Row: {
           created_at: string
@@ -428,6 +656,60 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      attribution_touchpoints: {
+        Row: {
+          campaign: string | null
+          channel: string
+          contact_id: string | null
+          content: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          lead_id: string | null
+          medium: string | null
+          metadata: Json
+          occurred_at: string
+          owner_id: string
+          source: string | null
+          term: string | null
+          url: string | null
+        }
+        Insert: {
+          campaign?: string | null
+          channel: string
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          lead_id?: string | null
+          medium?: string | null
+          metadata?: Json
+          occurred_at?: string
+          owner_id: string
+          source?: string | null
+          term?: string | null
+          url?: string | null
+        }
+        Update: {
+          campaign?: string | null
+          channel?: string
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          lead_id?: string | null
+          medium?: string | null
+          metadata?: Json
+          occurred_at?: string
+          owner_id?: string
+          source?: string | null
+          term?: string | null
+          url?: string | null
         }
         Relationships: []
       }
@@ -4082,6 +4364,101 @@ export type Database = {
           owner_id?: string
           position?: number
           slug?: string
+        }
+        Relationships: []
+      }
+      landing_page_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          landing_page_id: string
+          metadata: Json
+          owner_id: string
+          utm: Json | null
+          variant_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          landing_page_id: string
+          metadata?: Json
+          owner_id: string
+          utm?: Json | null
+          variant_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          landing_page_id?: string
+          metadata?: Json
+          owner_id?: string
+          utm?: Json | null
+          variant_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_events_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_pages: {
+        Row: {
+          blocks: Json
+          conversions_count: number
+          created_at: string
+          description: string | null
+          id: string
+          owner_id: string
+          published_at: string | null
+          seo: Json
+          slug: string
+          status: string
+          theme: Json
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          blocks?: Json
+          conversions_count?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id: string
+          published_at?: string | null
+          seo?: Json
+          slug: string
+          status?: string
+          theme?: Json
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          blocks?: Json
+          conversions_count?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id?: string
+          published_at?: string | null
+          seo?: Json
+          slug?: string
+          status?: string
+          theme?: Json
+          title?: string
+          updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }

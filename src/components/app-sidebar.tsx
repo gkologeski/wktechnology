@@ -30,7 +30,7 @@ const ADMIN_ONLY = new Set<string>([
   "/settings/pipelines", "/integrations", "/marketplace",
   "/settings/mobile", "/settings/language", "/leads/import-hubspot",
   "/settings/sso", "/settings/scim", "/settings/audit-export",
-  "/settings/access-policy", "/settings/data-residency",
+  "/settings/access-policy", "/settings/data-residency", "/settings/ads-sync",
 ]);
 // URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
 const MANAGER_PLUS = new Set<string>([
@@ -86,6 +86,7 @@ const groups: Group[] = [
     label: "Engajar", icon: Megaphone, items: [
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone },
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail },
+      { title: "Landing Pages", url: "/landing-pages", icon: FileText },
       { title: "Sequências", url: "/settings/sequences", icon: Repeat },
       { title: "Templates de email", url: "/settings/email-templates", icon: Send },
       { title: "Formulários", url: "/settings/forms", icon: FileText },
@@ -150,6 +151,7 @@ const groups: Group[] = [
       { section: "Integrações", title: "Zapier / Make", url: "/settings/zapier", icon: Workflow },
       { section: "Integrações", title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
       { section: "Integrações", title: "Usuários HubSpot", url: "/settings/hubspot-users", icon: Plug },
+      { section: "Integrações", title: "Meta/Google Ads", url: "/settings/ads-sync", icon: Megaphone },
     ],
   },
 ];
