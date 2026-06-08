@@ -100,7 +100,7 @@ function DunningPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-4xl">
-      <PageHeader title="Régua de cobrança" description="Sequência automática para faturas em aberto/vencidas." icon={Bell} />
+      <PageHeader title="Régua de cobrança" description="Sequência automática para faturas em aberto/vencidas." />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

@@ -40,6 +40,7 @@ import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
@@ -85,6 +86,8 @@ import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
+import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
+import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
@@ -100,6 +103,7 @@ import { Route as AuthenticatedSettingsEsignRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsEnrichmentRouteImport } from './routes/_authenticated/settings.enrichment'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings.email-templates'
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
+import { Route as AuthenticatedSettingsDunningRouteImport } from './routes/_authenticated/settings.dunning'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
@@ -163,6 +167,7 @@ import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/p
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
+import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/public/email/pixel.$messageId'
@@ -324,6 +329,11 @@ const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedIntegrationsRoute =
@@ -587,6 +597,18 @@ const AuthenticatedSettingsPipelinesRoute =
     path: '/pipelines',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsPaymentsRoute =
+  AuthenticatedSettingsPaymentsRouteImport.update({
+    id: '/payments',
+    path: '/payments',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsNfseRoute =
+  AuthenticatedSettingsNfseRouteImport.update({
+    id: '/nfse',
+    path: '/nfse',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsMobileRoute =
   AuthenticatedSettingsMobileRouteImport.update({
     id: '/mobile',
@@ -674,6 +696,12 @@ const AuthenticatedSettingsEmailRoute =
   AuthenticatedSettingsEmailRouteImport.update({
     id: '/email',
     path: '/email',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsDunningRoute =
+  AuthenticatedSettingsDunningRouteImport.update({
+    id: '/dunning',
+    path: '/dunning',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsCustomPropertiesRoute =
@@ -1037,6 +1065,12 @@ const AuthenticatedAdminWorkspacesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
   } as any)
+const ApiPublicPaymentsBrWebhookProviderRoute =
+  ApiPublicPaymentsBrWebhookProviderRouteImport.update({
+    id: '/api/public/payments/br-webhook/$provider',
+    path: '/api/public/payments/br-webhook/$provider',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFormsSlugSubmitRoute =
   ApiPublicFormsSlugSubmitRouteImport.update({
     id: '/submit',
@@ -1091,6 +1125,7 @@ export interface FileRoutesByFullPath {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -1136,6 +1171,7 @@ export interface FileRoutesByFullPath {
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
@@ -1151,6 +1187,8 @@ export interface FileRoutesByFullPath {
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -1234,6 +1272,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1251,6 +1290,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -1295,6 +1335,7 @@ export interface FileRoutesByTo {
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
@@ -1310,6 +1351,8 @@ export interface FileRoutesByTo {
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -1392,6 +1435,7 @@ export interface FileRoutesByTo {
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1412,6 +1456,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -1457,6 +1502,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
+  '/_authenticated/settings/dunning': typeof AuthenticatedSettingsDunningRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/enrichment': typeof AuthenticatedSettingsEnrichmentRoute
@@ -1472,6 +1518,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -1555,6 +1603,7 @@ export interface FileRoutesById {
   '/api/public/email/pixel/$messageId': typeof ApiPublicEmailPixelMessageIdRoute
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
+  '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1575,6 +1624,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/integrations'
+    | '/invoices'
     | '/leads'
     | '/meetings'
     | '/my-bug-reports'
@@ -1620,6 +1670,7 @@ export interface FileRouteTypes {
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
+    | '/settings/dunning'
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/enrichment'
@@ -1635,6 +1686,8 @@ export interface FileRouteTypes {
     | '/settings/lead-sources'
     | '/settings/macros'
     | '/settings/mobile'
+    | '/settings/nfse'
+    | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -1718,6 +1771,7 @@ export interface FileRouteTypes {
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/payments/br-webhook/$provider'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1735,6 +1789,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboards'
     | '/deals'
+    | '/invoices'
     | '/leads'
     | '/meetings'
     | '/my-bug-reports'
@@ -1779,6 +1834,7 @@ export interface FileRouteTypes {
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
+    | '/settings/dunning'
     | '/settings/email'
     | '/settings/email-templates'
     | '/settings/enrichment'
@@ -1794,6 +1850,8 @@ export interface FileRouteTypes {
     | '/settings/lead-sources'
     | '/settings/macros'
     | '/settings/mobile'
+    | '/settings/nfse'
+    | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -1876,6 +1934,7 @@ export interface FileRouteTypes {
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/payments/br-webhook/$provider'
   id:
     | '__root__'
     | '/'
@@ -1895,6 +1954,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboards'
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
+    | '/_authenticated/invoices'
     | '/_authenticated/leads'
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
@@ -1940,6 +2000,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
+    | '/_authenticated/settings/dunning'
     | '/_authenticated/settings/email'
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/enrichment'
@@ -1955,6 +2016,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/mobile'
+    | '/_authenticated/settings/nfse'
+    | '/_authenticated/settings/payments'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
@@ -2038,6 +2101,7 @@ export interface FileRouteTypes {
     | '/api/public/email/pixel/$messageId'
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
+    | '/api/public/payments/br-webhook/$provider'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2099,6 +2163,7 @@ export interface RootRouteChildren {
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
+  ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2318,6 +2383,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/integrations': {
@@ -2635,6 +2707,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/payments': {
+      id: '/_authenticated/settings/payments'
+      path: '/payments'
+      fullPath: '/settings/payments'
+      preLoaderRoute: typeof AuthenticatedSettingsPaymentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/nfse': {
+      id: '/_authenticated/settings/nfse'
+      path: '/nfse'
+      fullPath: '/settings/nfse'
+      preLoaderRoute: typeof AuthenticatedSettingsNfseRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/mobile': {
       id: '/_authenticated/settings/mobile'
       path: '/mobile'
@@ -2738,6 +2824,13 @@ declare module '@tanstack/react-router' {
       path: '/email'
       fullPath: '/settings/email'
       preLoaderRoute: typeof AuthenticatedSettingsEmailRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/dunning': {
+      id: '/_authenticated/settings/dunning'
+      path: '/dunning'
+      fullPath: '/settings/dunning'
+      preLoaderRoute: typeof AuthenticatedSettingsDunningRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/custom-properties': {
@@ -3181,6 +3274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
       parentRoute: typeof AuthenticatedAdminWorkspacesRoute
     }
+    '/api/public/payments/br-webhook/$provider': {
+      id: '/api/public/payments/br-webhook/$provider'
+      path: '/api/public/payments/br-webhook/$provider'
+      fullPath: '/api/public/payments/br-webhook/$provider'
+      preLoaderRoute: typeof ApiPublicPaymentsBrWebhookProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/$slug/submit': {
       id: '/api/public/forms/$slug/submit'
       path: '/submit'
@@ -3352,6 +3452,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
+  AuthenticatedSettingsDunningRoute: typeof AuthenticatedSettingsDunningRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsEnrichmentRoute: typeof AuthenticatedSettingsEnrichmentRoute
@@ -3367,6 +3468,8 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
+  AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
+  AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
@@ -3413,6 +3516,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
     AuthenticatedSettingsCustomPropertiesRoute,
+  AuthenticatedSettingsDunningRoute: AuthenticatedSettingsDunningRoute,
   AuthenticatedSettingsEmailRoute: AuthenticatedSettingsEmailRoute,
   AuthenticatedSettingsEmailTemplatesRoute:
     AuthenticatedSettingsEmailTemplatesRoute,
@@ -3430,6 +3534,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
+  AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
+  AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
@@ -3538,6 +3644,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
@@ -3567,6 +3674,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
@@ -3689,6 +3797,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
+  ApiPublicPaymentsBrWebhookProviderRoute:
+    ApiPublicPaymentsBrWebhookProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

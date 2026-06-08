@@ -61,7 +61,7 @@ function PaymentsSettingsPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-2xl">
-      <PageHeader title="Cobrança & Pagamentos" description="Configure o gateway para gerar boletos, Pix e cobranças no cartão." icon={CreditCard} />
+      <PageHeader title="Cobrança & Pagamentos" description="Configure o gateway para gerar boletos, Pix e cobranças no cartão." />
 
       <Card>
         <CardHeader><CardTitle>Gateway</CardTitle></CardHeader>

@@ -92,7 +92,7 @@ function InvoicesPage() {
       <PageHeader
         title="Faturas"
         description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."
-        icon={FileText}
+       
         actions={
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>

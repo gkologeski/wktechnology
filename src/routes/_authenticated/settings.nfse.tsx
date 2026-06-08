@@ -70,7 +70,7 @@ function NfseSettingsPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-2xl">
-      <PageHeader title="NFS-e" description="Emissão de notas fiscais de serviço via NFE.io após pagamento." icon={Receipt} />
+      <PageHeader title="NFS-e" description="Emissão de notas fiscais de serviço via NFE.io após pagamento." />
 
       <Card>
         <CardHeader><CardTitle>NFE.io</CardTitle></CardHeader>
