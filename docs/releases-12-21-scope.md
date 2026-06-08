@@ -93,7 +93,7 @@
 ---
 
 
-## Release 14 — Documentos & Contratos
+## Release 14 — Documentos & Contratos ✅ IMPLEMENTADO
 
 ### User Stories
 - **US-14.1** Como **U**, quero **gerar uma proposta** a partir do deal com variáveis preenchidas automaticamente.
