@@ -156,6 +156,11 @@ export function EntityCombobox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, priorityKey, entity, select]);
 
+  const columnsKey = useMemo(
+    () => (searchColumns && searchColumns.length ? searchColumns.join(",") : ""),
+    [searchColumns],
+  );
+
   // Busca on-demand quando o popover está aberto.
   useEffect(() => {
     if (!open) return;
@@ -165,7 +170,17 @@ export function EntityCombobox({
     const t = setTimeout(async () => {
       let query = supabase.from(entity as never).select(select).limit(25);
       if (q.length > 0) {
-        query = query.ilike(searchColumn as never, `%${q}%`);
+        const cols = searchColumns && searchColumns.length ? searchColumns : [searchColumn];
+        const tokens = q.split(/\s+/).filter(Boolean);
+        for (const tok of tokens) {
+          const safe = tok.replace(/[%,()]/g, " ");
+          if (cols.length === 1) {
+            query = query.ilike(cols[0] as never, `%${safe}%`);
+          } else {
+            const orExpr = cols.map((c) => `${c}.ilike.%${safe}%`).join(",");
+            query = query.or(orExpr);
+          }
+        }
       }
       if (filters) {
         for (const [k, val] of Object.entries(filters)) {
@@ -191,7 +206,7 @@ export function EntityCombobox({
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, search, entity, select, searchColumn, orderBy, filtersKey]);
+  }, [open, search, entity, select, searchColumn, columnsKey, orderBy, filtersKey]);
 
   const display = selectedItem?.label ?? "";
 
