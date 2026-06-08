@@ -336,6 +336,7 @@ function DealRelatedFields({
           entity="companies"
           select="id,name"
           searchColumn="name"
+          searchColumns={["name", "domain"]}
           labelFrom={(r) => String((r as { name?: string }).name ?? "")}
           value={companyId}
           onChange={(id) => set("company_id", id)}
