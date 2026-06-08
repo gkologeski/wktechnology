@@ -65,7 +65,7 @@ export async function sendPushToUser(userId: string, eventType: PushEventType, p
     if (prefs[eventType] === false) return;
     try {
       const r = await sendOne(
-        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        { endpoint: s.endpoint, expirationTime: null, keys: { p256dh: s.p256dh, auth: s.auth } },
         payload,
         vapid
       );
