@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
 import { Route as WaSlugRouteImport } from './routes/wa.$slug'
+import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
+import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
@@ -100,12 +102,14 @@ import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './route
 import { Route as AuthenticatedSettingsEmailRouteImport } from './routes/_authenticated/settings.email'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
+import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
 import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings.billing'
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
+import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
@@ -225,6 +229,11 @@ const WaSlugRoute = WaSlugRouteImport.update({
   path: '/wa/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyHashRoute = VerifyHashRouteImport.update({
+  id: '/verify/$hash',
+  path: '/verify/$hash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
   id: '/survey/$token',
   path: '/survey/$token',
@@ -291,6 +300,11 @@ const AuthenticatedProspectingRoute =
     path: '/prospecting',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   id: '/notes',
   path: '/notes',
@@ -674,6 +688,12 @@ const AuthenticatedSettingsCustomObjectsRoute =
     path: '/custom-objects',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsClausesRoute =
+  AuthenticatedSettingsClausesRouteImport.update({
+    id: '/clauses',
+    path: '/clauses',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
@@ -709,6 +729,12 @@ const AuthenticatedSettingsApiKeysRoute =
     id: '/api-keys',
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedProposalsIdRoute =
+  AuthenticatedProposalsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedProposalsRoute,
   } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
@@ -1069,6 +1095,7 @@ export interface FileRoutesByFullPath {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1082,6 +1109,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
@@ -1098,12 +1126,14 @@ export interface FileRoutesByFullPath {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -1225,6 +1255,7 @@ export interface FileRoutesByTo {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -1237,6 +1268,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
@@ -1253,12 +1285,14 @@ export interface FileRoutesByTo {
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -1382,6 +1416,7 @@ export interface FileRoutesById {
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/_authenticated/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1395,6 +1430,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
+  '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
@@ -1411,12 +1447,14 @@ export interface FileRoutesById {
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
+  '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/email': typeof AuthenticatedSettingsEmailRoute
@@ -1541,6 +1579,7 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
+    | '/proposals'
     | '/prospecting'
     | '/reports'
     | '/settings'
@@ -1554,6 +1593,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
@@ -1570,12 +1610,14 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/proposals/$id'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
@@ -1697,6 +1739,7 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
+    | '/proposals'
     | '/prospecting'
     | '/reports'
     | '/tasks'
@@ -1709,6 +1752,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb'
@@ -1725,12 +1769,14 @@ export interface FileRouteTypes {
     | '/integrations/$slug'
     | '/leads/$id'
     | '/leads/import-hubspot'
+    | '/proposals/$id'
     | '/settings/api-keys'
     | '/settings/audit-log'
     | '/settings/billing'
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/email'
@@ -1853,6 +1899,7 @@ export interface FileRouteTypes {
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
+    | '/_authenticated/proposals'
     | '/_authenticated/prospecting'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
@@ -1866,6 +1913,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/sign/$token'
     | '/survey/$token'
+    | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
@@ -1882,12 +1930,14 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/$slug'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
+    | '/_authenticated/proposals/$id'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-log'
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/booking'
     | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
+    | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/email'
@@ -2007,6 +2057,7 @@ export interface RootRouteChildren {
   QuoteTokenRoute: typeof QuoteTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
+  VerifyHashRoute: typeof VerifyHashRoute
   WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   KbIndexRoute: typeof KbIndexRoute
@@ -2136,6 +2187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify/$hash': {
+      id: '/verify/$hash'
+      path: '/verify/$hash'
+      fullPath: '/verify/$hash'
+      preLoaderRoute: typeof VerifyHashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/survey/$token': {
       id: '/survey/$token'
       path: '/survey/$token'
@@ -2225,6 +2283,13 @@ declare module '@tanstack/react-router' {
       path: '/prospecting'
       fullPath: '/prospecting'
       preLoaderRoute: typeof AuthenticatedProspectingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/proposals': {
+      id: '/_authenticated/proposals'
+      path: '/proposals'
+      fullPath: '/proposals'
+      preLoaderRoute: typeof AuthenticatedProposalsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/notes': {
@@ -2689,6 +2754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsCustomObjectsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/clauses': {
+      id: '/_authenticated/settings/clauses'
+      path: '/clauses'
+      fullPath: '/settings/clauses'
+      preLoaderRoute: typeof AuthenticatedSettingsClausesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/calendars': {
       id: '/_authenticated/settings/calendars'
       path: '/calendars'
@@ -2730,6 +2802,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/proposals/$id': {
+      id: '/_authenticated/proposals/$id'
+      path: '/$id'
+      fullPath: '/proposals/$id'
+      preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
+      parentRoute: typeof AuthenticatedProposalsRoute
     }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
@@ -3214,6 +3293,20 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedProposalsRouteChildren {
+  AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
+}
+
+const AuthenticatedProposalsRouteChildren: AuthenticatedProposalsRouteChildren =
+  {
+    AuthenticatedProposalsIdRoute: AuthenticatedProposalsIdRoute,
+  }
+
+const AuthenticatedProposalsRouteWithChildren =
+  AuthenticatedProposalsRoute._addFileChildren(
+    AuthenticatedProposalsRouteChildren,
+  )
+
 interface AuthenticatedProspectingRouteChildren {
   AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
   AuthenticatedProspectingCampaignsIndexRoute: typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -3256,6 +3349,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
+  AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsEmailRoute: typeof AuthenticatedSettingsEmailRoute
@@ -3314,6 +3408,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
+  AuthenticatedSettingsClausesRoute: AuthenticatedSettingsClausesRoute,
   AuthenticatedSettingsCustomObjectsRoute:
     AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
@@ -3447,6 +3542,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRouteWithChildren
   AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRouteWithChildren
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -3475,6 +3571,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedProposalsRoute: AuthenticatedProposalsRouteWithChildren,
   AuthenticatedProspectingRoute: AuthenticatedProspectingRouteWithChildren,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
@@ -3546,6 +3643,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenRoute: QuoteTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
+  VerifyHashRoute: VerifyHashRoute,
   WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   KbIndexRoute: KbIndexRoute,

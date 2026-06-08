@@ -52,7 +52,7 @@ function ProposalEditor() {
     if (prop) {
       setTitle(prop.title);
       setBody(prop.body);
-      setAmount(prop.total_amount ?? "");
+      setAmount(prop.total_amount != null ? String(prop.total_amount) : "");
     }
   }, [prop]);
 
@@ -145,7 +145,7 @@ function ProposalEditor() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={!!locked} /></div>
-              <div className="space-y-1"><Label>Valor (BRL)</Label><Input type="number" step="0.01" value={amount as string} onChange={(e) => setAmount(e.target.value)} disabled={!!locked} /></div>
+              <div className="space-y-1"><Label>Valor (BRL)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={!!locked} /></div>
             </div>
             {locked ? (
               <div className="rounded-md border bg-muted/30 p-3 text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
