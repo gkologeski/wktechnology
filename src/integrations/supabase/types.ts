@@ -5827,10 +5827,13 @@ export type Database = {
         Row: {
           auth: string
           created_at: string
+          enabled: boolean
           endpoint: string
           id: string
+          last_used_at: string | null
           owner_id: string
           p256dh: string
+          preferences: Json
           user_agent: string | null
           user_id: string
           workspace_id: string
@@ -5838,10 +5841,13 @@ export type Database = {
         Insert: {
           auth: string
           created_at?: string
+          enabled?: boolean
           endpoint: string
           id?: string
+          last_used_at?: string | null
           owner_id: string
           p256dh: string
+          preferences?: Json
           user_agent?: string | null
           user_id: string
           workspace_id?: string
@@ -5849,10 +5855,13 @@ export type Database = {
         Update: {
           auth?: string
           created_at?: string
+          enabled?: boolean
           endpoint?: string
           id?: string
+          last_used_at?: string | null
           owner_id?: string
           p256dh?: string
+          preferences?: Json
           user_agent?: string | null
           user_id?: string
           workspace_id?: string
