@@ -265,10 +265,10 @@ export const sendTemplate = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
-      .select("phone_number_id, display_phone_number, waba:wa_business_accounts(access_token)")
+      .select("phone_number_id, display_phone_number")
       .eq("workspace_id", ws).eq("phone_number_id", data.phone_number_id).maybeSingle();
     if (!pn) throw new Error("Número não conectado");
-    const token = (pn as any).waba?.access_token as string;
+    const token = (await loadWabaTokenByPhoneNumberId(ws, data.phone_number_id)) as string;
 
     const res = await metaFetch(token, `/${data.phone_number_id}/messages`, {
       method: "POST",
