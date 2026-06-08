@@ -21,6 +21,7 @@ export function KanbanScrollContainer({
   const contentRef = useRef<HTMLDivElement>(null);
   const topInnerRef = useRef<HTMLDivElement>(null);
   const syncingRef = useRef<"top" | "content" | null>(null);
+  const [overflows, setOverflows] = useState(false);
 
   // Keep the top mirror width in sync with the actual scrollWidth.
   useEffect(() => {
