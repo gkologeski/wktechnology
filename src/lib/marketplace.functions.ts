@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const listMarketplaceApps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -113,7 +114,7 @@ export const testMarketplaceConnection = createServerFn({ method: "POST" })
     let error_text: string | null = null;
     try {
       if (data.slug === "slack") {
-        const { data: si } = await context.supabase
+        const { data: si } = await supabaseAdmin
           .from("slack_integrations")
           .select("access_token")
           .eq("workspace_id", workspaceId)

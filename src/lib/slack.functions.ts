@@ -6,6 +6,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 
 export const SLACK_EVENT_TYPES = [
   "lead.created",
@@ -25,7 +27,7 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const [{ data: integ }, { data: routes }] = await Promise.all([
-      context.supabase.from("slack_integrations").select("*").eq("workspace_id", workspaceId).maybeSingle(),
+      context.supabase.from("slack_integrations").select("id, workspace_id, owner_id, team_name, team_id, default_channel_id, default_channel_name, installed_by, created_at, updated_at").eq("workspace_id", workspaceId).maybeSingle(),
       context.supabase
         .from("slack_event_routes")
         .select("*")
@@ -132,7 +134,7 @@ export const sendSlackTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: si } = await context.supabase
+    const { data: si } = await supabaseAdmin
       .from("slack_integrations")
       .select("access_token")
       .eq("workspace_id", workspaceId)

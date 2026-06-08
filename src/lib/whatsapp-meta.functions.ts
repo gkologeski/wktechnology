@@ -4,6 +4,24 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function loadWabaTokenByPhoneNumberId(workspaceId: string, phoneNumberId: string) {
+  const { data: pn } = await supabaseAdmin
+    .from("wa_phone_numbers")
+    .select("waba_id")
+    .eq("workspace_id", workspaceId)
+    .eq("phone_number_id", phoneNumberId)
+    .maybeSingle();
+  if (!pn) return null;
+  const { data: waba } = await supabaseAdmin
+    .from("wa_business_accounts")
+    .select("access_token, waba_id")
+    .eq("workspace_id", workspaceId)
+    .eq("waba_id", pn.waba_id)
+    .maybeSingle();
+  return waba?.access_token ?? null;
+}
 
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -27,8 +45,8 @@ async function metaFetch(token: string, path: string, init: RequestInit = {}) {
   return json;
 }
 
-async function loadWabaToken(supabase: any, workspaceId: string, wabaRowId: string) {
-  const { data, error } = await supabase
+async function loadWabaToken(_supabase: any, workspaceId: string, wabaRowId: string) {
+  const { data, error } = await supabaseAdmin
     .from("wa_business_accounts")
     .select("id, waba_id, access_token, workspace_id")
     .eq("id", wabaRowId)
@@ -92,7 +110,7 @@ export const connectWaba = createServerFn({ method: "POST" })
         webhook_verified_at: new Date().toISOString(),
         raw: info,
       }, { onConflict: "workspace_id,waba_id" })
-      .select()
+      .select("id")
       .single();
     if (error) throw new Error(error.message);
 
@@ -182,10 +200,10 @@ export const sendMessage = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
-      .select("phone_number_id, waba_id, display_phone_number, waba:wa_business_accounts(access_token, waba_id)")
+      .select("phone_number_id, waba_id, display_phone_number")
       .eq("workspace_id", ws).eq("phone_number_id", data.phone_number_id).maybeSingle();
     if (!pn) throw new Error("Número WhatsApp não conectado a este workspace");
-    const token = (pn as any).waba?.access_token as string;
+    const token = await loadWabaTokenByPhoneNumberId(ws, data.phone_number_id);
     if (!token) throw new Error("Token Meta indisponível");
 
     const body: any = {
@@ -247,10 +265,10 @@ export const sendTemplate = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
-      .select("phone_number_id, display_phone_number, waba:wa_business_accounts(access_token)")
+      .select("phone_number_id, display_phone_number")
       .eq("workspace_id", ws).eq("phone_number_id", data.phone_number_id).maybeSingle();
     if (!pn) throw new Error("Número não conectado");
-    const token = (pn as any).waba?.access_token as string;
+    const token = (await loadWabaTokenByPhoneNumberId(ws, data.phone_number_id)) as string;
 
     const res = await metaFetch(token, `/${data.phone_number_id}/messages`, {
       method: "POST",
@@ -287,10 +305,10 @@ export const sendProductList = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
-      .select("phone_number_id, waba:wa_business_accounts(access_token)")
+      .select("phone_number_id")
       .eq("workspace_id", ws).eq("phone_number_id", data.phone_number_id).maybeSingle();
     if (!pn) throw new Error("Número não conectado");
-    const token = (pn as any).waba?.access_token as string;
+    const token = (await loadWabaTokenByPhoneNumberId(ws, data.phone_number_id)) as string;
 
     const res = await metaFetch(token, `/${data.phone_number_id}/messages`, {
       method: "POST",
