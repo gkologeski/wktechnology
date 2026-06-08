@@ -23,7 +23,7 @@ import { MeetingsPanel } from "@/components/meetings/meetings-panel";
 import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
-import { Database, Trash2, Package, FileText, User } from "lucide-react";
+import { Database, Trash2, Package, FileText } from "lucide-react";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 

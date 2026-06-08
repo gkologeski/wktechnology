@@ -21,7 +21,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { ContactPickerById } from "@/components/ui/contact-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Trash2, Pencil, Pause, Play, XCircle, CheckCircle2, ExternalLink, User } from "lucide-react";
+import { Plus, Trash2, Pencil, Pause, Play, XCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/crm";
 
