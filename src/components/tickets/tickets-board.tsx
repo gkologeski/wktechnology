@@ -143,25 +143,28 @@ export function TicketsBoard({
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      <div className="flex gap-2 overflow-x-auto pb-4">
-        {pipeline.stages.map((s) => {
-          const rows = grouped[s.value] ?? [];
-          return (
-            <Column key={s.value} stage={s} count={rows.length}>
-              {rows.map((t) => (
-                <TicketCard
-                  key={t.id}
-                  ticket={t}
-                  contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
-                  companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
-                  ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
-                  onClick={() => onOpen(t)}
-                />
-              ))}
-            </Column>
-          );
-        })}
-      </div>
+      <KanbanScrollContainer ariaLabel="Quadro de chamados">
+        <div className="flex gap-2 pb-4">
+          {pipeline.stages.map((s) => {
+            const rows = grouped[s.value] ?? [];
+            return (
+              <Column key={s.value} stage={s} count={rows.length}>
+                {rows.map((t) => (
+                  <TicketCard
+                    key={t.id}
+                    ticket={t}
+                    columnId={s.value}
+                    contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
+                    companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
+                    ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
+                    onClick={() => onOpen(t)}
+                  />
+                ))}
+              </Column>
+            );
+          })}
+        </div>
+      </KanbanScrollContainer>
     </DndContext>
   );
 }
