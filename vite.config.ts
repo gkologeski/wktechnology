@@ -38,11 +38,23 @@ export default defineConfig({
       // URLs while Vite is re-crawling lazy route chunks. Treat those as
       // recoverable so dynamic route imports do not fail with 502/504.
       ignoreOutdatedRequests: true,
+      // TanStack Start discovers these SSR/router helpers during the first
+      // client hydration request. Pre-bundling them up front prevents Vite
+      // from rewriting optimized chunk hashes while lazy route modules such as
+      // /deals are still loading in the browser.
+      include: [
+        "events",
+        "@tanstack/history",
+        "@tanstack/router-core",
+        "@tanstack/router-core/ssr/client",
+        "@tanstack/router-core/ssr/server",
+        "h3-v2",
+        "seroval",
+      ],
       // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
       // resolves its `node:events` imports through our `polyfill-node-events`
       // plugin (esbuild's prebundler does not run that plugin).
       exclude: ["@twilio/voice-sdk"],
-      include: ["events"],
     },
   },
 });
