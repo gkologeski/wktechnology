@@ -29,6 +29,8 @@ const ADMIN_ONLY = new Set<string>([
   "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
   "/settings/pipelines", "/integrations", "/marketplace",
   "/settings/mobile", "/settings/language", "/leads/import-hubspot",
+  "/settings/sso", "/settings/scim", "/settings/audit-export",
+  "/settings/access-policy", "/settings/data-residency",
 ]);
 // URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
 const MANAGER_PLUS = new Set<string>([
