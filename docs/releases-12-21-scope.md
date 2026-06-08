@@ -163,7 +163,7 @@
 
 ---
 
-## Release 17 — Mobile Nativo
+## Release 17 — Mobile Nativo / PWA ✅
 
 ### User Stories
 - **US-17.1** Como **U**, quero usar o CRM em um **app nativo** com login por deep-link.
