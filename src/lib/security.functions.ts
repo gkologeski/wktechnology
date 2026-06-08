@@ -54,7 +54,8 @@ export const updateWorkspaceSecurity = createServerFn({ method: "POST" })
       .select("security_settings")
       .eq("id", ws)
       .maybeSingle();
-    const next = { ...(current?.security_settings ?? {}), ...data };
+    const prev = (current?.security_settings ?? {}) as SecuritySettings;
+    const next: SecuritySettings = { ...prev, ...data };
     const { error } = await (supabase.from("workspaces") as any)
       .update({ security_settings: next })
       .eq("id", ws);
