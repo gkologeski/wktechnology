@@ -134,7 +134,7 @@ export const sendSlackTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: si } = await context.supabase
+    const { data: si } = await supabaseAdmin
       .from("slack_integrations")
       .select("access_token")
       .eq("workspace_id", workspaceId)
