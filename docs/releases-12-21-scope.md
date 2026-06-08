@@ -260,7 +260,7 @@
 
 ---
 
-## Release 21 — Observabilidade & Admin
+## Release 21 — Observabilidade & Admin ✅
 
 ### User Stories
 - **US-21.1** Como **A**, quero uma **status page interna** com saúde das integrações.

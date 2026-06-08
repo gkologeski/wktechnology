@@ -139,7 +139,11 @@ import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_au
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
+import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
+import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authenticated/admin.sandbox'
+import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
+import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -928,10 +932,34 @@ const AuthenticatedAdminWorkspacesRoute =
     path: '/admin/workspaces',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminStatusRoute =
+  AuthenticatedAdminStatusRouteImport.update({
+    id: '/admin/status',
+    path: '/admin/status',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminSandboxRoute =
+  AuthenticatedAdminSandboxRouteImport.update({
+    id: '/admin/sandbox',
+    path: '/admin/sandbox',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminQuotasRoute =
+  AuthenticatedAdminQuotasRouteImport.update({
+    id: '/admin/quotas',
+    path: '/admin/quotas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminBugReportsRoute =
   AuthenticatedAdminBugReportsRouteImport.update({
     id: '/admin/bug-reports',
     path: '/admin/bug-reports',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminAlertsRoute =
+  AuthenticatedAdminAlertsRouteImport.update({
+    id: '/admin/alerts',
+    path: '/admin/alerts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsRolesIndexRoute =
@@ -1293,7 +1321,11 @@ export interface FileRoutesByFullPath {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1478,7 +1510,11 @@ export interface FileRoutesByTo {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1666,7 +1702,11 @@ export interface FileRoutesById {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
+  '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/_authenticated/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1855,7 +1895,11 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
+    | '/admin/alerts'
     | '/admin/bug-reports'
+    | '/admin/quotas'
+    | '/admin/sandbox'
+    | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
     | '/campaigns/email'
@@ -2040,7 +2084,11 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb'
+    | '/admin/alerts'
     | '/admin/bug-reports'
+    | '/admin/quotas'
+    | '/admin/sandbox'
+    | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
     | '/campaigns/email'
@@ -2227,7 +2275,11 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
+    | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
+    | '/_authenticated/admin/quotas'
+    | '/_authenticated/admin/sandbox'
+    | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
     | '/_authenticated/campaigns/email'
@@ -3353,11 +3405,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/status': {
+      id: '/_authenticated/admin/status'
+      path: '/admin/status'
+      fullPath: '/admin/status'
+      preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/sandbox': {
+      id: '/_authenticated/admin/sandbox'
+      path: '/admin/sandbox'
+      fullPath: '/admin/sandbox'
+      preLoaderRoute: typeof AuthenticatedAdminSandboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/quotas': {
+      id: '/_authenticated/admin/quotas'
+      path: '/admin/quotas'
+      fullPath: '/admin/quotas'
+      preLoaderRoute: typeof AuthenticatedAdminQuotasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/bug-reports': {
       id: '/_authenticated/admin/bug-reports'
       path: '/admin/bug-reports'
       fullPath: '/admin/bug-reports'
       preLoaderRoute: typeof AuthenticatedAdminBugReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/alerts': {
+      id: '/_authenticated/admin/alerts'
+      path: '/admin/alerts'
+      fullPath: '/admin/alerts'
+      preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/roles/': {
@@ -4126,7 +4206,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
+  AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
+  AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
+  AuthenticatedAdminSandboxRoute: typeof AuthenticatedAdminSandboxRoute
+  AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
@@ -4159,7 +4243,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
+  AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
+  AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
+  AuthenticatedAdminSandboxRoute: AuthenticatedAdminSandboxRoute,
+  AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
