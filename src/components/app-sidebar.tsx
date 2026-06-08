@@ -35,6 +35,7 @@ const MANAGER_PLUS = new Set<string>([
   "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
   "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
   "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign", "/settings/clauses",
+  "/settings/payments", "/settings/dunning", "/settings/nfse",
   "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
   "/settings/kb", "/settings/widget",
   "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
