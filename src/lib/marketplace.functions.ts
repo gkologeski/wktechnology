@@ -114,7 +114,7 @@ export const testMarketplaceConnection = createServerFn({ method: "POST" })
     let error_text: string | null = null;
     try {
       if (data.slug === "slack") {
-        const { data: si } = await context.supabase
+        const { data: si } = await supabaseAdmin
           .from("slack_integrations")
           .select("access_token")
           .eq("workspace_id", workspaceId)
