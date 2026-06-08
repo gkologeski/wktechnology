@@ -21,9 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
+
 
 
 type Match = { id: string; name: string };
