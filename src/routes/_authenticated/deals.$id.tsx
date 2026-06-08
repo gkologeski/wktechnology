@@ -120,6 +120,22 @@ function DealDetail() {
       center={
         <>
           <AiSummaryPanel entity="deal" entityId={deal.id} />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Itens de linha</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DealLineItems dealId={deal.id} ownerId={deal.owner_id} currency={deal.currency ?? "BRL"} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Cotações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DealQuotes dealId={deal.id} />
+            </CardContent>
+          </Card>
           <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
         </>
       }
