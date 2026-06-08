@@ -48,7 +48,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4 py-12">
       <h1 className="mb-8 text-5xl md:text-6xl font-bold tracking-tight text-foreground text-center">
-        TechSales <span className="text-primary">CRM</span>
+        Acesse sua conta no <span className="text-primary">WK Technology CRM</span>
       </h1>
       <Card className="w-full max-w-md">
 
