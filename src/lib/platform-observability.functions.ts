@@ -142,17 +142,17 @@ export const listWorkspaceQuotas = createServerFn({ method: "GET" })
 
     const [subs, counters] = await Promise.all([
       supabaseAdmin.from("workspace_subscriptions").select("workspace_owner_id, plan_code").in("workspace_owner_id", ids),
-      supabaseAdmin.from("usage_counters").select("workspace_owner_id, key, value").in("workspace_owner_id", ids),
+      supabaseAdmin.from("usage_counters").select("workspace_owner_id, key, used").in("workspace_owner_id", ids),
     ]);
 
     const planMap = new Map<string, string>();
     for (const s of subs.data ?? []) planMap.set(s.workspace_owner_id as string, s.plan_code as string);
 
     const counterMap = new Map<string, Record<string, number>>();
-    for (const c of counters.data ?? []) {
-      const k = c.workspace_owner_id as string;
+    for (const c of (counters.data ?? []) as Array<{ workspace_owner_id: string; key: string; used: number }>) {
+      const k = c.workspace_owner_id;
       const m = counterMap.get(k) ?? {};
-      m[c.key as string] = (m[c.key as string] ?? 0) + Number(c.value ?? 0);
+      m[c.key] = (m[c.key] ?? 0) + Number(c.used ?? 0);
       counterMap.set(k, m);
     }
 
