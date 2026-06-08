@@ -35,14 +35,25 @@ export function KanbanScrollContainer({
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(content);
-    Array.from(content.children).forEach((c) => ro.observe(c));
-    const mo = new MutationObserver(sync);
+    const observeDescendants = () => {
+      content.querySelectorAll("*").forEach((el) => {
+        try { ro.observe(el); } catch { /* ignore */ }
+      });
+    };
+    observeDescendants();
+    const mo = new MutationObserver(() => {
+      observeDescendants();
+      sync();
+    });
     mo.observe(content, { childList: true, subtree: true });
     window.addEventListener("resize", sync);
+    // Re-check after async layout/data settles
+    const timeouts = [50, 200, 600, 1500].map((ms) => window.setTimeout(sync, ms));
     return () => {
       ro.disconnect();
       mo.disconnect();
       window.removeEventListener("resize", sync);
+      timeouts.forEach((t) => window.clearTimeout(t));
     };
   }, []);
 
