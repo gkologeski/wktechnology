@@ -192,26 +192,8 @@ export function DealDetailDrawer({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Empresa">
-                <CompanyPicker
-                  mode="pick"
-                  value={{ id: (v.company_id as string) || null, name: (v.company_name as string) || "" }}
-                  onChange={(cv: CompanyPickerValue) => {
-                    set("company_id", cv.id);
-                    set("company_name", cv.name);
-                  }}
-                  placeholder="Selecionar empresa…"
-                />
-              </Field>
+              <DealRelatedFields v={v} set={set} />
 
-              <Field label="Contato principal">
-                <ContactPickerById
-                  mode="pick"
-                  id={v.primary_contact_id ? String(v.primary_contact_id) : null}
-                  onChange={(id) => set("primary_contact_id", id)}
-                  placeholder="Selecionar contato…"
-                />
-              </Field>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Data prevista">
                   <Input
