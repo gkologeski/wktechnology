@@ -130,6 +130,7 @@ import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/public/zapier/subscribe'
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
@@ -167,6 +168,8 @@ import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/p
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
+import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
+import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -855,6 +858,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicZapierSubscribeRoute =
+  ApiPublicZapierSubscribeRouteImport.update({
+    id: '/api/public/zapier/subscribe',
+    path: '/api/public/zapier/subscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWidgetSessionRoute = ApiPublicWidgetSessionRouteImport.update({
   id: '/api/public/widget/session',
   path: '/api/public/widget/session',
@@ -1065,6 +1074,18 @@ const AuthenticatedAdminWorkspacesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
   } as any)
+const ApiPublicZapierUnsubscribeIdRoute =
+  ApiPublicZapierUnsubscribeIdRouteImport.update({
+    id: '/api/public/zapier/unsubscribe/$id',
+    path: '/api/public/zapier/unsubscribe/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicZapierTriggersEventRoute =
+  ApiPublicZapierTriggersEventRouteImport.update({
+    id: '/api/public/zapier/triggers/$event',
+    path: '/api/public/zapier/triggers/$event',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
     id: '/api/public/payments/br-webhook/$provider',
@@ -1263,6 +1284,7 @@ export interface FileRoutesByFullPath {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1273,6 +1295,8 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1426,6 +1450,7 @@ export interface FileRoutesByTo {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1436,6 +1461,8 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1594,6 +1621,7 @@ export interface FileRoutesById {
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
+  '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -1604,6 +1632,8 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
+  '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1762,6 +1792,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
@@ -1772,6 +1803,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1925,6 +1958,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/prospecting/campaigns'
     | '/settings/roles'
@@ -1935,6 +1969,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   id:
     | '__root__'
     | '/'
@@ -2092,6 +2128,7 @@ export interface FileRouteTypes {
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
+    | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
@@ -2102,6 +2139,8 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/zapier/triggers/$event'
+    | '/api/public/zapier/unsubscribe/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2159,11 +2198,14 @@ export interface RootRouteChildren {
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
+  ApiPublicZapierSubscribeRoute: typeof ApiPublicZapierSubscribeRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
+  ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -3015,6 +3057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/zapier/subscribe': {
+      id: '/api/public/zapier/subscribe'
+      path: '/api/public/zapier/subscribe'
+      fullPath: '/api/public/zapier/subscribe'
+      preLoaderRoute: typeof ApiPublicZapierSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/widget/session': {
       id: '/api/public/widget/session'
       path: '/api/public/widget/session'
@@ -3273,6 +3322,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/workspaces/$id'
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
       parentRoute: typeof AuthenticatedAdminWorkspacesRoute
+    }
+    '/api/public/zapier/unsubscribe/$id': {
+      id: '/api/public/zapier/unsubscribe/$id'
+      path: '/api/public/zapier/unsubscribe/$id'
+      fullPath: '/api/public/zapier/unsubscribe/$id'
+      preLoaderRoute: typeof ApiPublicZapierUnsubscribeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/zapier/triggers/$event': {
+      id: '/api/public/zapier/triggers/$event'
+      path: '/api/public/zapier/triggers/$event'
+      fullPath: '/api/public/zapier/triggers/$event'
+      preLoaderRoute: typeof ApiPublicZapierTriggersEventRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
@@ -3793,12 +3856,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
+  ApiPublicZapierSubscribeRoute: ApiPublicZapierSubscribeRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
+  ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

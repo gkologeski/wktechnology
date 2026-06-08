@@ -31,17 +31,27 @@ export const Route = createFileRoute("/api/public/zapier/triggers/$event")({
         const cfg = EVENT_TO_TABLE[event];
         if (!cfg) return Response.json({ data: [] });
 
-        let q = supabaseAdmin
-          .from(cfg.table)
+        let q = (supabaseAdmin.from(cfg.table as never) as never as {
+          select: (c: string) => {
+            eq: (k: string, v: string) => {
+              order: (k: string, opts: { ascending: boolean }) => {
+                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+              };
+              eq: (k: string, v: string) => {
+                order: (k: string, opts: { ascending: boolean }) => {
+                  limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+                };
+              };
+            };
+          };
+        })
           .select(cfg.cols)
-          .eq("owner_id", auth.ownerId)
-          .order("created_at", { ascending: false })
-          .limit(3);
+          .eq("owner_id", auth.ownerId);
 
-        if (event === "deal.won") q = q.eq("stage", "won");
-        if (event === "deal.lost") q = q.eq("stage", "lost");
-
-        const { data, error } = await q;
+        const filtered = event === "deal.won" ? q.eq("stage", "won")
+          : event === "deal.lost" ? q.eq("stage", "lost")
+          : q;
+        const { data, error } = await filtered.order("created_at", { ascending: false }).limit(3);
         if (error) return Response.json({ error: error.message }, { status: 400 });
         return Response.json({ data: data ?? [] });
       },
