@@ -182,7 +182,7 @@ function InvoicesPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {inv.payment_url && (
-                          <Button variant="ghost" size="icon" onClick={() => navigator.clipboard.writeText(inv.payment_url!) && toast.success("Link copiado")}>
+                          <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(inv.payment_url!); toast.success("Link copiado"); }}>
                             <Copy className="h-4 w-4" />
                           </Button>
                         )}
