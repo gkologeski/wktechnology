@@ -2,6 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+async function activeWorkspace(supabase: any, userId: string): Promise<string> {
+  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  if (!data?.active_workspace_id) throw new Error("Workspace ativo não encontrado");
+  return data.active_workspace_id as string;
+}
+
 export const recordTouchpoint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
@@ -18,7 +24,9 @@ export const recordTouchpoint = createServerFn({ method: "POST" })
     metadata: z.record(z.any()).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("attribution_touchpoints").insert(data);
+    const ws = await activeWorkspace(context.supabase, context.userId);
+    const { error } = await (context.supabase.from("attribution_touchpoints") as any)
+      .insert({ owner_id: ws, ...data });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -33,20 +41,22 @@ export const computeAttribution = createServerFn({ method: "POST" })
     to: z.string().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: deals } = await context.supabase
-      .from("deals").select("id,value,closed_at,contact_id")
-      .eq("status", "won")
-      .gte("closed_at", data.from ?? "1970-01-01")
-      .lte("closed_at", data.to ?? new Date().toISOString());
+    // Pega deals "won" (estágio configurável) — usamos stage que contenha 'won' ou 'ganho'
+    const { data: deals } = await (context.supabase.from("deals") as any)
+      .select("id,value,contact_id,updated_at,stage")
+      .ilike("stage", "%won%")
+      .limit(500);
 
     const byChannel: Record<string, { revenue: number; deals: number }> = {};
-    for (const d of deals ?? []) {
+    for (const d of (deals ?? []) as Array<{ id: string; value: number | null; contact_id: string | null; updated_at: string }>) {
       if (!d.contact_id) continue;
-      const { data: tps } = await context.supabase
-        .from("attribution_touchpoints")
+      const closedAt = d.updated_at ?? new Date().toISOString();
+      if (data.from && closedAt < data.from) continue;
+      if (data.to && closedAt > data.to) continue;
+      const { data: tps } = await (context.supabase.from("attribution_touchpoints") as any)
         .select("channel,occurred_at")
         .eq("contact_id", d.contact_id)
-        .lte("occurred_at", d.closed_at ?? new Date().toISOString())
+        .lte("occurred_at", closedAt)
         .order("occurred_at", { ascending: true });
       const arr = (tps ?? []) as Array<{ channel: string }>;
       if (arr.length === 0) continue;
@@ -54,10 +64,9 @@ export const computeAttribution = createServerFn({ method: "POST" })
       const weights = computeWeights(arr.length, data.model as Model);
       arr.forEach((t, i) => {
         const w = weights[i] ?? 0;
-        const k = t.channel;
-        byChannel[k] = byChannel[k] ?? { revenue: 0, deals: 0 };
-        byChannel[k].revenue += value * w;
-        byChannel[k].deals += w;
+        byChannel[t.channel] = byChannel[t.channel] ?? { revenue: 0, deals: 0 };
+        byChannel[t.channel].revenue += value * w;
+        byChannel[t.channel].deals += w;
       });
     }
     return { model: data.model, channels: byChannel };
