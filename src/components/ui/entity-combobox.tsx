@@ -240,38 +240,60 @@ export function EntityCombobox({
               onValueChange={setSearch}
             />
             <CommandList>
-              {loading ? (
-                <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Buscando…
-                </div>
-              ) : results.length === 0 ? (
-                <CommandEmpty>{emptyLabel}</CommandEmpty>
-              ) : (
-                <CommandGroup>
-                  {results.map((item) => (
-                    <CommandItem
-                      key={item.id}
-                      value={item.id}
-                      onSelect={() => {
-                        setSelectedItem(item);
-                        onChange(item.id, item);
-                        setOpen(false);
-                        setSearch("");
-                      }}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="flex min-w-0 flex-col">
-                        <span className="truncate">{item.label}</span>
-                        {item.hint ? (
-                          <span className="truncate text-[11px] text-muted-foreground">{item.hint}</span>
-                        ) : null}
-                      </span>
-                      {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+              {(() => {
+                const q = search.trim().toLowerCase();
+                const priorityFiltered = priorityResults.filter(
+                  (it) => !q || it.label.toLowerCase().includes(q) || (it.hint ?? "").toLowerCase().includes(q),
+                );
+                const priorityIdSet = new Set(priorityFiltered.map((it) => it.id));
+                const restFiltered = results.filter((it) => !priorityIdSet.has(it.id));
+                const renderItem = (item: EntityComboboxItem) => (
+                  <CommandItem
+                    key={item.id}
+                    value={item.id}
+                    onSelect={() => {
+                      setSelectedItem(item);
+                      onChange(item.id, item);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate">{item.label}</span>
+                      {item.hint ? (
+                        <span className="truncate text-[11px] text-muted-foreground">{item.hint}</span>
+                      ) : null}
+                    </span>
+                    {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}
+                  </CommandItem>
+                );
+                if (loading) {
+                  return (
+                    <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Buscando…
+                    </div>
+                  );
+                }
+                if (priorityFiltered.length === 0 && restFiltered.length === 0) {
+                  return <CommandEmpty>{emptyLabel}</CommandEmpty>;
+                }
+                return (
+                  <>
+                    {priorityFiltered.length > 0 && (
+                      <CommandGroup heading={priorityLabel}>
+                        {priorityFiltered.map(renderItem)}
+                      </CommandGroup>
+                    )}
+                    {restFiltered.length > 0 && (
+                      <CommandGroup heading={priorityFiltered.length > 0 ? "Outros" : undefined}>
+                        {restFiltered.map(renderItem)}
+                      </CommandGroup>
+                    )}
+                  </>
+                );
+              })()}
             </CommandList>
           </Command>
         </PopoverContent>
