@@ -32,6 +32,7 @@ export function DealsBoardCard({
   contactName,
   ownerName,
   fields,
+  columnId,
   onClick,
 }: {
   deal: Deal;
@@ -39,6 +40,7 @@ export function DealsBoardCard({
   contactName?: string;
   ownerName?: string;
   fields?: string[];
+  columnId?: string;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: deal.id });
@@ -59,7 +61,16 @@ export function DealsBoardCard({
       {...listeners}
       style={style}
       onClick={onClick}
-      className="group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      tabIndex={0}
+      data-kanban-card
+      data-kanban-column={columnId}
+      className="group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="font-medium leading-tight truncate flex-1">{deal.name}</div>
