@@ -121,6 +121,38 @@ export function EntityCombobox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, entity, select]);
 
+  // Busca registros prioritários (associados a outros campos do form).
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (!priorityIds || priorityIds.length === 0) {
+      setPriorityResults([]);
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from(entity as never)
+        .select(select)
+        .in("id" as never, priorityIds as never);
+      if (cancel || error || !data) return;
+      const items: EntityComboboxItem[] = (data as RowLike[]).map((row) => ({
+        id: String((row as { id?: unknown }).id ?? ""),
+        label: labelFrom(row),
+        hint: hintFrom?.(row) ?? null,
+      }));
+      // mantém ordem solicitada em priorityIds
+      const order = new Map(priorityIds.map((id, i) => [id, i]));
+      items.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      setPriorityResults(items);
+    })();
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, priorityKey, entity, select]);
+
   // Busca on-demand quando o popover está aberto.
   useEffect(() => {
     if (!open) return;
