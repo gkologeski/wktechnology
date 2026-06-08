@@ -7,6 +7,7 @@ import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 
 export type DealLookups = {
   companies: Map<string, string>;
