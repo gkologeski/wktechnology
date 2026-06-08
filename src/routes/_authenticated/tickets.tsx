@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, X,
-  UserCheck, ArrowRightLeft, Settings2,
+  UserCheck, ArrowRightLeft, Settings2, User, Building2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
