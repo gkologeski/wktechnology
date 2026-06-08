@@ -139,6 +139,7 @@ import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_au
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
+import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
@@ -928,6 +929,12 @@ const AuthenticatedAdminWorkspacesRoute =
     path: '/admin/workspaces',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminStatusRoute =
+  AuthenticatedAdminStatusRouteImport.update({
+    id: '/admin/status',
+    path: '/admin/status',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminBugReportsRoute =
   AuthenticatedAdminBugReportsRouteImport.update({
     id: '/admin/bug-reports',
@@ -1294,6 +1301,7 @@ export interface FileRoutesByFullPath {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1479,6 +1487,7 @@ export interface FileRoutesByTo {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1667,6 +1676,7 @@ export interface FileRoutesById {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
@@ -1856,6 +1866,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/kb/'
     | '/admin/bug-reports'
+    | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
     | '/campaigns/email'
@@ -2041,6 +2052,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/kb'
     | '/admin/bug-reports'
+    | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
     | '/campaigns/email'
@@ -2228,6 +2240,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/kb/'
     | '/_authenticated/admin/bug-reports'
+    | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
     | '/_authenticated/campaigns/email'
@@ -3353,6 +3366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/status': {
+      id: '/_authenticated/admin/status'
+      path: '/admin/status'
+      fullPath: '/admin/status'
+      preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/bug-reports': {
       id: '/_authenticated/admin/bug-reports'
       path: '/admin/bug-reports'
@@ -4127,6 +4147,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
+  AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
@@ -4160,6 +4181,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
+  AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
