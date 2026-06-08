@@ -128,14 +128,15 @@ export function KanbanScrollContainer({
       <div
         ref={topRef}
         onScroll={onTopScroll}
-        className={`kanban-top-scroll sticky top-0 z-20 overflow-x-auto overflow-y-hidden bg-background ${
+        className={`kanban-top-scroll sticky top-0 z-20 overflow-x-scroll overflow-y-hidden bg-background ${
           overflows ? "" : "hidden"
         }`}
+        style={{ height: 14 }}
         aria-hidden="true"
       >
         <div ref={topInnerRef} style={{ height: 1 }} />
       </div>
-      <div ref={contentRef} onScroll={onContentScroll} className="overflow-x-auto">
+      <div ref={contentRef} onScroll={onContentScroll} className="kanban-content-scroll overflow-x-auto">
         {children}
       </div>
     </div>
