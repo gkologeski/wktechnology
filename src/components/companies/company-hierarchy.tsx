@@ -154,7 +154,7 @@ function PickParentDialog({
         .order("name")
         .limit(20);
       const term = debounced.trim();
-      if (term) query = query.or(`name.ilike.%${term}%,domain.ilike.%${term}%`);
+      if (term) query = query.or(`name.ilike.%${term}%,domain.ilike.%${term}%,phone.ilike.%${term}%`);
       const { data } = await query;
       return (data ?? []) as MiniCompany[];
     },
