@@ -27,6 +27,7 @@ import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
+import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
@@ -41,6 +42,7 @@ import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedLandingPagesRouteImport } from './routes/_authenticated/landing-pages'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -119,11 +121,13 @@ import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_authenticated/settings.audit-export'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
+import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
+import { Route as AuthenticatedLandingPagesIdRouteImport } from './routes/_authenticated/landing-pages.$id'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
@@ -281,6 +285,11 @@ const MeetTokenRoute = MeetTokenRouteImport.update({
   path: '/meet/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LpSlugRoute = LpSlugRouteImport.update({
+  id: '/lp/$slug',
+  path: '/lp/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KbSlugRoute = KbSlugRouteImport.update({
   id: '/kb/$slug',
   path: '/kb/$slug',
@@ -354,6 +363,12 @@ const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedLandingPagesRoute =
+  AuthenticatedLandingPagesRouteImport.update({
+    id: '/landing-pages',
+    path: '/landing-pages',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -811,6 +826,12 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsAdsSyncRoute =
+  AuthenticatedSettingsAdsSyncRouteImport.update({
+    id: '/ads-sync',
+    path: '/ads-sync',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsAccessPolicyRoute =
   AuthenticatedSettingsAccessPolicyRouteImport.update({
     id: '/access-policy',
@@ -840,6 +861,12 @@ const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedLeadsRoute,
 } as any)
+const AuthenticatedLandingPagesIdRoute =
+  AuthenticatedLandingPagesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedLandingPagesRoute,
+  } as any)
 const AuthenticatedIntegrationsSlugRoute =
   AuthenticatedIntegrationsSlugRouteImport.update({
     id: '/$slug',
@@ -1241,6 +1268,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
+  '/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
@@ -1255,6 +1283,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -1276,11 +1305,13 @@ export interface FileRoutesByFullPath {
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
+  '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1423,6 +1454,7 @@ export interface FileRoutesByTo {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
+  '/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
@@ -1436,6 +1468,7 @@ export interface FileRoutesByTo {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -1457,11 +1490,13 @@ export interface FileRoutesByTo {
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
+  '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1606,6 +1641,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
+  '/_authenticated/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
@@ -1620,6 +1656,7 @@ export interface FileRoutesById {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/kb/$slug': typeof KbSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -1641,11 +1678,13 @@ export interface FileRoutesById {
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/_authenticated/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
+  '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -1791,6 +1830,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/integrations'
     | '/invoices'
+    | '/landing-pages'
     | '/leads'
     | '/marketplace'
     | '/meetings'
@@ -1805,6 +1845,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/lp/$slug'
     | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
@@ -1826,11 +1867,13 @@ export interface FileRouteTypes {
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
+    | '/landing-pages/$id'
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
     | '/settings/access-policy'
+    | '/settings/ads-sync'
     | '/settings/api-keys'
     | '/settings/audit-export'
     | '/settings/audit-log'
@@ -1973,6 +2016,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/invoices'
+    | '/landing-pages'
     | '/leads'
     | '/marketplace'
     | '/meetings'
@@ -1986,6 +2030,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/lp/$slug'
     | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
@@ -2007,11 +2052,13 @@ export interface FileRouteTypes {
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
+    | '/landing-pages/$id'
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
     | '/settings/access-policy'
+    | '/settings/ads-sync'
     | '/settings/api-keys'
     | '/settings/audit-export'
     | '/settings/audit-log'
@@ -2155,6 +2202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
+    | '/_authenticated/landing-pages'
     | '/_authenticated/leads'
     | '/_authenticated/marketplace'
     | '/_authenticated/meetings'
@@ -2169,6 +2217,7 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/kb/$slug'
+    | '/lp/$slug'
     | '/meet/$token'
     | '/portal/$token'
     | '/quote/$token'
@@ -2190,11 +2239,13 @@ export interface FileRouteTypes {
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
+    | '/_authenticated/landing-pages/$id'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/settings/access-policy'
+    | '/_authenticated/settings/ads-sync'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-export'
     | '/_authenticated/settings/audit-log'
@@ -2333,6 +2384,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   BookSlugRoute: typeof BookSlugRoute
   KbSlugRoute: typeof KbSlugRoute
+  LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
@@ -2517,6 +2569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeetTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lp/$slug': {
+      id: '/lp/$slug'
+      path: '/lp/$slug'
+      fullPath: '/lp/$slug'
+      preLoaderRoute: typeof LpSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kb/$slug': {
       id: '/kb/$slug'
       path: '/kb/$slug'
@@ -2613,6 +2672,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/landing-pages': {
+      id: '/_authenticated/landing-pages'
+      path: '/landing-pages'
+      fullPath: '/landing-pages'
+      preLoaderRoute: typeof AuthenticatedLandingPagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/invoices': {
@@ -3161,6 +3227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/ads-sync': {
+      id: '/_authenticated/settings/ads-sync'
+      path: '/ads-sync'
+      fullPath: '/settings/ads-sync'
+      preLoaderRoute: typeof AuthenticatedSettingsAdsSyncRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/access-policy': {
       id: '/_authenticated/settings/access-policy'
       path: '/access-policy'
@@ -3195,6 +3268,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/leads/$id'
       preLoaderRoute: typeof AuthenticatedLeadsIdRouteImport
       parentRoute: typeof AuthenticatedLeadsRoute
+    }
+    '/_authenticated/landing-pages/$id': {
+      id: '/_authenticated/landing-pages/$id'
+      path: '/$id'
+      fullPath: '/landing-pages/$id'
+      preLoaderRoute: typeof AuthenticatedLandingPagesIdRouteImport
+      parentRoute: typeof AuthenticatedLandingPagesRoute
     }
     '/_authenticated/integrations/$slug': {
       id: '/_authenticated/integrations/$slug'
@@ -3722,6 +3802,20 @@ const AuthenticatedIntegrationsRouteWithChildren =
     AuthenticatedIntegrationsRouteChildren,
   )
 
+interface AuthenticatedLandingPagesRouteChildren {
+  AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
+}
+
+const AuthenticatedLandingPagesRouteChildren: AuthenticatedLandingPagesRouteChildren =
+  {
+    AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
+  }
+
+const AuthenticatedLandingPagesRouteWithChildren =
+  AuthenticatedLandingPagesRoute._addFileChildren(
+    AuthenticatedLandingPagesRouteChildren,
+  )
+
 interface AuthenticatedLeadsRouteChildren {
   AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
   AuthenticatedLeadsImportHubspotRoute: typeof AuthenticatedLeadsImportHubspotRoute
@@ -3800,6 +3894,7 @@ const AuthenticatedSettingsRolesRouteWithChildren =
 
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAccessPolicyRoute: typeof AuthenticatedSettingsAccessPolicyRoute
+  AuthenticatedSettingsAdsSyncRoute: typeof AuthenticatedSettingsAdsSyncRoute
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditExportRoute: typeof AuthenticatedSettingsAuditExportRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
@@ -3870,6 +3965,7 @@ interface AuthenticatedSettingsRouteChildren {
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAccessPolicyRoute:
     AuthenticatedSettingsAccessPolicyRoute,
+  AuthenticatedSettingsAdsSyncRoute: AuthenticatedSettingsAdsSyncRoute,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsAuditExportRoute: AuthenticatedSettingsAuditExportRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,
@@ -4018,6 +4114,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
+  AuthenticatedLandingPagesRoute: typeof AuthenticatedLandingPagesRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRouteWithChildren
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
@@ -4050,6 +4147,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
+  AuthenticatedLandingPagesRoute: AuthenticatedLandingPagesRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRouteWithChildren,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
@@ -4134,6 +4232,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   BookSlugRoute: BookSlugRoute,
   KbSlugRoute: KbSlugRoute,
+  LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
