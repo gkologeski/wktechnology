@@ -60,7 +60,7 @@ function SdrAgentPage() {
   async function reload() {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([listFn({ data: {} }), enrFn({ data: {} })]);
+      const [a, b] = await Promise.all([listFn(), enrFn({ data: {} })]);
       setItems(a.items as unknown as Playbook[]);
       setEnrollments(b.items as Array<Record<string, unknown>>);
       if ((a.items?.length ?? 0) > 0) setActive(a.items[0] as unknown as Playbook);
