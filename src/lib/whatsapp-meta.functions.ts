@@ -4,6 +4,24 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function loadWabaTokenByPhoneNumberId(workspaceId: string, phoneNumberId: string) {
+  const { data: pn } = await supabaseAdmin
+    .from("wa_phone_numbers")
+    .select("waba_id")
+    .eq("workspace_id", workspaceId)
+    .eq("phone_number_id", phoneNumberId)
+    .maybeSingle();
+  if (!pn) return null;
+  const { data: waba } = await supabaseAdmin
+    .from("wa_business_accounts")
+    .select("access_token, waba_id")
+    .eq("workspace_id", workspaceId)
+    .eq("waba_id", pn.waba_id)
+    .maybeSingle();
+  return waba?.access_token ?? null;
+}
 
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
