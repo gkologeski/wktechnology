@@ -21,12 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
 
 
-type Match = { id: string; name: string };
+
+
 
 export function CreateDealFromLeadDialog({
   open,
@@ -55,11 +57,12 @@ export function CreateDealFromLeadDialog({
   const [description, setDescription] = useState("");
 
   // company / contact
-  const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
 
-  const [contactQuery, setContactQuery] = useState("");
-  const [contactMatches, setContactMatches] = useState<Match[]>([]);
-  const [selectedContact, setSelectedContact] = useState<Match | null>(null);
+  const [contactId, setContactId] = useState<string | null>(null);
+
+
 
 
   const [saving, setSaving] = useState(false);
@@ -83,10 +86,9 @@ export function CreateDealFromLeadDialog({
     setCurrency("BRL");
     setExpectedClose("");
     setDescription("");
-    setCompany({ id: null, name: lead.company_name ?? "" });
-
-    setContactQuery(fullName);
-    setSelectedContact(null);
+    setCompanyId(null);
+    setCompanyName(lead.company_name ?? "");
+    setContactId(null);
   }, [open, lead, defaultPipeline, pipelines]);
 
   // ensure stage matches selected pipeline
@@ -98,31 +100,8 @@ export function CreateDealFromLeadDialog({
     }
   }, [pipeline, stageId]);
 
-  // company search is handled by <CompanyPicker /> internally.
-
-
-  // contact search
-  useEffect(() => {
-    const q = contactQuery.trim();
-    if (q.length < 3 || (selectedContact && selectedContact.name === q)) {
-      setContactMatches([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email")
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(500);
-      const matches = (data ?? []).map((c) => ({
-        id: c.id as string,
-        name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() ||
-          (c.email as string | null) || "Sem nome",
-      }));
-      setContactMatches(matches);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [contactQuery, selectedContact]);
+  // Prioriza registros já associados ao contato/empresa selecionado.
+  const related = useRelatedIds({ companyId, contactId });
 
   const submit = async () => {
     if (!user) return;
@@ -131,11 +110,10 @@ export function CreateDealFromLeadDialog({
 
     setSaving(true);
     try {
-      // resolve company
-      let companyId: string | null = company.id ?? null;
-      const cName = company.name.trim();
-
-      if (!companyId && cName) {
+      // resolve company: usa id selecionado, ou cria a partir do nome do lead
+      let resolvedCompanyId: string | null = companyId;
+      const cName = companyName.trim();
+      if (!resolvedCompanyId && cName) {
         const { data: existing } = await supabase
           .from("companies")
           .select("id")
@@ -144,7 +122,7 @@ export function CreateDealFromLeadDialog({
           .ilike("name", cName)
           .maybeSingle();
         if (existing?.id) {
-          companyId = existing.id;
+          resolvedCompanyId = existing.id;
         } else {
           const { data: c, error } = await supabase
             .from("companies")
@@ -152,13 +130,13 @@ export function CreateDealFromLeadDialog({
             .select("id")
             .single();
           if (error) throw new Error(error.message);
-          companyId = c?.id ?? null;
+          resolvedCompanyId = c?.id ?? null;
         }
       }
 
-      // resolve contact
-      let contactId: string | null = selectedContact?.id ?? null;
-      if (!contactId) {
+      // resolve contact: usa id selecionado, ou cria a partir do lead
+      let resolvedContactId: string | null = contactId;
+      if (!resolvedContactId) {
         const { data: ct, error } = await supabase
           .from("contacts")
           .insert({
@@ -168,13 +146,14 @@ export function CreateDealFromLeadDialog({
             last_name: lead.last_name,
             email: lead.email,
             phone: lead.phone,
-            company_id: companyId,
+            company_id: resolvedCompanyId,
           })
           .select("id")
           .single();
         if (error) throw new Error(error.message);
-        contactId = ct?.id ?? null;
+        resolvedContactId = ct?.id ?? null;
       }
+
 
       const numericValue = value ? Number(value) : 0;
       const stageEntry = pipeline.stages.find((s) => s.value === stageId);
@@ -191,8 +170,8 @@ export function CreateDealFromLeadDialog({
           stage: legacyStage as never,
           stage_id: stageId,
           pipeline_id: pipeline.id,
-          company_id: companyId,
-          primary_contact_id: contactId,
+          company_id: resolvedCompanyId,
+          primary_contact_id: resolvedContactId,
           value: Number.isFinite(numericValue) ? numericValue : 0,
           currency,
           expected_close_date: expectedClose || null,
@@ -208,10 +187,11 @@ export function CreateDealFromLeadDialog({
         .update({
           status: "qualified",
           converted_at: new Date().toISOString(),
-          converted_contact_id: contactId,
+          converted_contact_id: resolvedContactId,
           converted_deal_id: deal!.id,
         })
         .eq("id", lead.id);
+
 
       toast.success("Negócio criado e lead qualificado");
       onCreated?.(deal!.id);
@@ -264,30 +244,38 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5 col-span-2">
             <Label>Empresa</Label>
-            <CompanyPicker value={company} onChange={setCompany} />
-          </div>
-
-
-          <div className="space-y-1.5 col-span-2 relative">
-            <Label>Contato</Label>
-            <Input
-              value={contactQuery}
-              onChange={(e) => { setContactQuery(e.target.value); setSelectedContact(null); }}
-              placeholder="Buscar contato existente (vazio cria a partir do lead)"
+            <EntityCombobox
+              entity="companies"
+              select="id,name"
+              labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+              value={companyId}
+              onChange={(id, item) => {
+                setCompanyId(id);
+                setCompanyName(item?.label ?? "");
+              }}
+              placeholder={companyName || "Selecionar empresa…"}
+              priorityIds={related.companies.filter((id) => id !== companyId)}
             />
-            {contactMatches.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto rounded-md border bg-popover shadow-md">
-                {contactMatches.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="block w-full text-left px-3 py-2 text-sm hover:bg-accent"
-                    onClick={() => { setSelectedContact(m); setContactQuery(m.name); setContactMatches([]); }}
-                  >{m.name}</button>
-                ))}
-              </div>
-            )}
           </div>
+
+          <div className="space-y-1.5 col-span-2">
+            <Label>Contato</Label>
+            <EntityCombobox
+              entity="contacts"
+              select="id,first_name,last_name,email"
+              searchColumn="first_name"
+              labelFrom={(r) => {
+                const row = r as { first_name?: string; last_name?: string; email?: string };
+                return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";
+              }}
+              hintFrom={(r) => (r as { email?: string | null }).email ?? null}
+              value={contactId}
+              onChange={(id) => setContactId(id)}
+              placeholder="Selecionar contato (vazio cria a partir do lead)"
+              priorityIds={related.contacts.filter((id) => id !== contactId)}
+            />
+          </div>
+
 
           <div className="space-y-1.5">
             <Label>Valor</Label>
@@ -320,22 +308,11 @@ export function CreateDealFromLeadDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
           <Button
             onClick={submit}
-            disabled={
-              saving ||
-              !name.trim() ||
-              !pipelineId ||
-              !stageId ||
-              (!!company.name.trim() && !company.id) ||
-              (!!contactQuery.trim() && !selectedContact)
-            }
-            title={
-              (!!company.name.trim() && !company.id) || (!!contactQuery.trim() && !selectedContact)
-                ? "Selecione empresa e contato na lista para continuar"
-                : undefined
-            }
+            disabled={saving || !name.trim() || !pipelineId || !stageId}
           >
             {saving ? "Criando…" : "Criar negócio"}
           </Button>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>

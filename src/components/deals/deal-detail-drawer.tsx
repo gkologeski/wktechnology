@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
-import { ContactPickerById } from "@/components/ui/contact-picker";
+import { useRelatedIds } from "@/hooks/use-related-ids";
 
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
@@ -193,26 +192,8 @@ export function DealDetailDrawer({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Empresa">
-                <CompanyPicker
-                  mode="pick"
-                  value={{ id: (v.company_id as string) || null, name: (v.company_name as string) || "" }}
-                  onChange={(cv: CompanyPickerValue) => {
-                    set("company_id", cv.id);
-                    set("company_name", cv.name);
-                  }}
-                  placeholder="Selecionar empresa…"
-                />
-              </Field>
+              <DealRelatedFields v={v} set={set} />
 
-              <Field label="Contato principal">
-                <ContactPickerById
-                  mode="pick"
-                  id={v.primary_contact_id ? String(v.primary_contact_id) : null}
-                  onChange={(id) => set("primary_contact_id", id)}
-                  placeholder="Selecionar contato…"
-                />
-              </Field>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Data prevista">
                   <Input
@@ -337,3 +318,48 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function DealRelatedFields({
+  v,
+  set,
+}: {
+  v: Record<string, unknown>;
+  set: (k: string, val: unknown) => void;
+}) {
+  const companyId = (v.company_id as string) || null;
+  const contactId = (v.primary_contact_id as string) || null;
+  const related = useRelatedIds({ companyId, contactId });
+  return (
+    <>
+      <Field label="Empresa">
+        <EntityCombobox
+          entity="companies"
+          select="id,name"
+          searchColumn="name"
+          labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+          value={companyId}
+          onChange={(id) => set("company_id", id)}
+          placeholder="Selecionar empresa…"
+          priorityIds={related.companies.filter((id) => id !== companyId)}
+        />
+      </Field>
+      <Field label="Contato principal">
+        <EntityCombobox
+          entity="contacts"
+          select="id,first_name,last_name,email"
+          searchColumn="first_name"
+          labelFrom={(r) => {
+            const row = r as { first_name?: string; last_name?: string; email?: string };
+            return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";
+          }}
+          hintFrom={(r) => (r as { email?: string | null }).email ?? null}
+          value={contactId}
+          onChange={(id) => set("primary_contact_id", id)}
+          placeholder="Selecionar contato…"
+          priorityIds={related.contacts.filter((id) => id !== contactId)}
+        />
+      </Field>
+    </>
+  );
+}
+
