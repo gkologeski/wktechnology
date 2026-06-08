@@ -133,6 +133,7 @@ function CompanyCard({
             entity="companies"
             select="id, name, domain"
             searchColumn="name"
+            searchColumns={["name", "domain"]}
             labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
             hintFrom={(r) => (r as { domain?: string }).domain ?? null}
             placeholder="Buscar empresa…"
