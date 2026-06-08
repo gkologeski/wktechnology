@@ -247,6 +247,7 @@ export function CreateDealFromLeadDialog({
             <EntityCombobox
               entity="companies"
               select="id,name"
+              searchColumns={["name", "domain"]}
               labelFrom={(r) => String((r as { name?: string }).name ?? "")}
               value={companyId}
               onChange={(id, item) => {
