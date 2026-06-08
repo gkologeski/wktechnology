@@ -9,6 +9,10 @@ import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { CopilotCmdK } from "@/components/copilot-cmdk";
+import { GlobalSearchTrigger } from "@/components/global-search-trigger";
+import { QuickCreateMenu } from "@/components/quick-create-menu";
+import { SettingsMenu } from "@/components/settings-menu";
+import { AccountMenu } from "@/components/account-menu";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -61,10 +65,14 @@ function AuthenticatedLayout() {
       <div className="min-h-screen flex w-full bg-muted/20">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center gap-2 border-b bg-background px-3">
+          <header className="h-14 flex items-center gap-2 border-b bg-background px-3">
             <SidebarTrigger />
+            <GlobalSearchTrigger />
             <div className="flex-1" />
+            <QuickCreateMenu />
+            <SettingsMenu />
             <NotificationsBell />
+            <AccountMenu />
           </header>
           <main className="flex-1 p-6 overflow-auto">
             {blocked ? (
