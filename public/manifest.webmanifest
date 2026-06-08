@@ -1,13 +1,24 @@
 {
-  "name": "CRM",
+  "name": "CRM WK Technology",
   "short_name": "CRM",
-  "description": "CRM Lovable",
-  "start_url": "/",
+  "description": "CRM mobile-first com tarefas, leads, deals, tickets e WhatsApp.",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "categories": ["business", "productivity"],
+  "lang": "pt-BR",
   "icons": [
-    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" },
+    { "src": "/favicon.ico", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/favicon.ico", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Painel", "url": "/dashboard" },
+    { "name": "Leads", "url": "/leads" },
+    { "name": "Tickets", "url": "/tickets" },
+    { "name": "Tarefas", "url": "/tasks" }
   ]
 }
