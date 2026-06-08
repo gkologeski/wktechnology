@@ -231,53 +231,6 @@ export function AppSidebar() {
               </SidebarMenuItem>
             </>
           )}
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton tooltip={user?.email ?? "Minha conta"}>
-                  <UserIcon className="h-4 w-4" />
-                  <span className="truncate">{user?.email ?? "Minha conta"}</span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/settings">
-                    <UserIcon className="h-4 w-4 mr-2" />
-                    Perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/email">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Conexão de email
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/security">
-                    <KeyRound className="h-4 w-4 mr-2" />
-                    Segurança (2FA)
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/my-bug-reports">
-                    <Bug className="h-4 w-4 mr-2" />
-                    Meus chamados
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/billing">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Planos e cobrança
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
