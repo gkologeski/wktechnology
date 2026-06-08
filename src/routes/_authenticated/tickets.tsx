@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { ContactPickerById } from "@/components/ui/contact-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -26,7 +27,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, User, X,
+  Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, X,
   UserCheck, ArrowRightLeft, Settings2,
 } from "lucide-react";
 import {
@@ -555,21 +556,11 @@ function TicketsIndex() {
             </div>
             <div className="space-y-1.5">
               <Label>Contato</Label>
-              <EntityCombobox
-                entity="contacts"
-                select="id, first_name, last_name, email"
-                searchColumn="first_name"
-                orderBy="first_name"
-                labelFrom={(r) => {
-                  const row = r as { first_name?: string; last_name?: string; email?: string };
-                  const n = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
-                  return n || row.email || "Contato";
-                }}
-                hintFrom={(r) => (r as { email?: string }).email ?? null}
-                value={draft.contact_id ?? null}
+              <ContactPickerById
+                mode="pick"
+                id={draft.contact_id ?? null}
                 onChange={(id) => setDraft({ ...draft, contact_id: id })}
                 placeholder="Selecionar contato…"
-                icon={User}
               />
             </div>
             <div className="space-y-1.5">
