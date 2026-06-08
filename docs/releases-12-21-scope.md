@@ -237,7 +237,7 @@
 
 ---
 
-## Release 20 — Marketing Automation completo
+## Release 20 — Marketing Automation completo ✅ MVP entregue
 
 ### User Stories
 - **US-20.1** Como **U**, quero criar **landing pages** drag-and-drop sem código.
