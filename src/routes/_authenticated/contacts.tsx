@@ -193,15 +193,21 @@ function ContactsHubspotView() {
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
       if (term) {
-        q = q.or(
-          [
-            `first_name.ilike.%${term}%`,
-            `last_name.ilike.%${term}%`,
-            `email.ilike.%${term}%`,
-            `phone.ilike.%${term}%`,
-          ].join(","),
-        );
+        // Suporta múltiplas palavras: cada token precisa casar com algum dos
+        // campos (AND entre tokens, OR entre campos).
+        const tokens = term.split(/\s+/).filter(Boolean);
+        for (const tk of tokens) {
+          q = q.or(
+            [
+              `first_name.ilike.%${tk}%`,
+              `last_name.ilike.%${tk}%`,
+              `email.ilike.%${tk}%`,
+              `phone.ilike.%${tk}%`,
+            ].join(","),
+          );
+        }
       }
+
 
       q = q.order(sortKey, { ascending: sortDir === "asc" });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
