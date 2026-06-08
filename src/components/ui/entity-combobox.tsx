@@ -65,6 +65,7 @@ export function EntityCombobox({
   entity,
   select,
   searchColumn = "name",
+  searchColumns,
   filters,
   orderBy,
   labelFrom,
