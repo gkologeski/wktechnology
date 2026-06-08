@@ -77,7 +77,7 @@ export const updatePushPreferences = createServerFn({ method: "POST" })
     const patch: Record<string, unknown> = {};
     if (data.preferences) patch.preferences = data.preferences;
     if (typeof data.enabled === "boolean") patch.enabled = data.enabled;
-    const { error } = await supabase.from("push_subscriptions")
+    const { error } = await (supabase.from("push_subscriptions") as any)
       .update(patch).eq("id", data.id).eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
