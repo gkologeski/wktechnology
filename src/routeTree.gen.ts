@@ -172,6 +172,7 @@ import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
+import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
@@ -1121,6 +1122,12 @@ const ApiPublicHooksProspectingDialTickRoute =
     path: '/api/public/hooks/prospecting-dial-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPlatformAlertsTickRoute =
+  ApiPublicHooksPlatformAlertsTickRouteImport.update({
+    id: '/api/public/hooks/platform-alerts-tick',
+    path: '/api/public/hooks/platform-alerts-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksHubspotTickRoute =
   ApiPublicHooksHubspotTickRouteImport.update({
     id: '/api/public/hooks/hubspot-tick',
@@ -1428,6 +1435,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
@@ -1616,6 +1624,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
@@ -1809,6 +1818,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
@@ -2002,6 +2012,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
@@ -2190,6 +2201,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
@@ -2382,6 +2394,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
@@ -2457,6 +2470,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
+  ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
@@ -3636,6 +3650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksProspectingDialTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/platform-alerts-tick': {
+      id: '/api/public/hooks/platform-alerts-tick'
+      path: '/api/public/hooks/platform-alerts-tick'
+      fullPath: '/api/public/hooks/platform-alerts-tick'
+      preLoaderRoute: typeof ApiPublicHooksPlatformAlertsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/hubspot-tick': {
       id: '/api/public/hooks/hubspot-tick'
       path: '/api/public/hooks/hubspot-tick'
@@ -4341,6 +4362,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
+  ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:
     ApiPublicHooksProspectingDialTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:

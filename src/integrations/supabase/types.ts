@@ -9989,6 +9989,7 @@ export type Database = {
         }[]
       }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
+      schedule_platform_alerts_cron: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
       user_can_act: {
