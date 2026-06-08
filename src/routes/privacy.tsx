@@ -4,8 +4,13 @@ export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
       { title: "Política de Privacidade — WK Technology CRM" },
-      { name: "description", content: "Política de Privacidade do WK Technology CRM." },
+      { name: "description", content: "Saiba como o WK Technology CRM coleta, usa, compartilha e protege seus dados pessoais e os dados de clientes, leads e integrações." },
+      { property: "og:title", content: "Política de Privacidade — WK Technology CRM" },
+      { property: "og:description", content: "Saiba como o WK Technology CRM coleta, usa, compartilha e protege seus dados pessoais e os dados de clientes, leads e integrações." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/privacy" },
+      { property: "og:type", content: "website" },
     ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/privacy" }],
   }),
   component: PrivacyPage,
 });

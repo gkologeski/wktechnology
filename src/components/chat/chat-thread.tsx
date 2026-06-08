@@ -217,9 +217,9 @@ export function ChatThread({
           </div>
         )}
         <div className="flex items-end gap-2">
-          <label className="cursor-pointer">
-            <input type="file" multiple className="hidden" onChange={onPickFiles} />
-            <span className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted">
+          <label className="cursor-pointer" aria-label="Anexar arquivo">
+            <input type="file" multiple className="hidden" onChange={onPickFiles} aria-label="Anexar arquivo" />
+            <span className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted" aria-hidden="true">
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
@@ -263,7 +263,7 @@ function AttachmentItem({ att }: { att: Attachment }) {
   if (isImage && url) {
     return (
       <a href={url} target="_blank" rel="noreferrer" className="block">
-        <img src={url} alt={att.file_name} className="max-h-48 rounded border" />
+        <img src={url} alt="" className="max-h-48 rounded border" />
       </a>
     );
   }

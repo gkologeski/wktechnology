@@ -6,14 +6,35 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/lp/$slug")({
   loader: async ({ params }) => getPublishedBySlug({ data: { slug: params.slug } }),
   component: PublicLandingPage,
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
     const p = loaderData?.page as { title?: string; description?: string | null } | null;
+    const url = `https://crm.wktechnology.com.br/lp/${params.slug}`;
+    const title = p?.title || "Landing page — WK Technology CRM";
+    const rawDesc = p?.description || "";
+    const description = rawDesc && rawDesc.length >= 50
+      ? rawDesc
+      : `${title}. Conheça a solução do WK Technology CRM e descubra como organizar seus leads, contatos e negócios em um só lugar.`;
     return {
       meta: [
-        { title: p?.title ?? "Landing page" },
-        { name: "description", content: p?.description ?? "" },
-        { property: "og:title", content: p?.title ?? "" },
-        { property: "og:description", content: p?.description ?? "" },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: title,
+            description,
+            url,
+          }),
+        },
       ],
     };
   },

@@ -9,7 +9,17 @@ import { Search, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/kb/")({
   component: KbHome,
-  head: () => ({ meta: [{ title: "Central de Ajuda" }, { name: "description", content: "Artigos da base de conhecimento." }] }),
+  head: () => ({
+    meta: [
+      { title: "Central de Ajuda — WK Technology CRM" },
+      { name: "description", content: "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma." },
+      { property: "og:title", content: "Central de Ajuda — WK Technology CRM" },
+      { property: "og:description", content: "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/kb" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/kb" }],
+  }),
 });
 
 function KbHome() {

@@ -1,24 +1,63 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
 import { getKbArticlePublic } from "@/lib/kb.functions";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/kb/$slug")({
+  loader: async ({ params }) => {
+    try {
+      const data = await getKbArticlePublic({ data: { slug: params.slug } });
+      return { article: data };
+    } catch {
+      return { article: null };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const a = loaderData?.article as { title?: string; excerpt?: string | null; body?: string } | null;
+    const url = `https://crm.wktechnology.com.br/kb/${params.slug}`;
+    const title = a?.title ? `${a.title} — Central de Ajuda WK Technology CRM` : "Artigo — Central de Ajuda WK Technology CRM";
+    const rawDesc = a?.excerpt || (a?.body ? a.body.slice(0, 160) : "");
+    const description = rawDesc && rawDesc.length >= 50
+      ? rawDesc
+      : "Artigo da Central de Ajuda do WK Technology CRM com instruções e boas práticas para usar a plataforma de CRM.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "article" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: a?.title
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Article",
+                headline: a.title,
+                description,
+                articleBody: a.body ?? "",
+                url,
+                publisher: {
+                  "@type": "Organization",
+                  name: "WK Technology CRM",
+                },
+              }),
+            },
+          ]
+        : undefined,
+    };
+  },
   component: KbArticle,
 });
 
 function KbArticle() {
-  const { slug } = Route.useParams();
-  const fn = useServerFn(getKbArticlePublic);
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["kb-article", slug],
-    queryFn: () => fn({ data: { slug } }),
-  });
+  const { article: data } = Route.useLoaderData();
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Carregando…</div>;
-  if (error || !data) return <div className="min-h-screen grid place-items-center text-destructive">Artigo não encontrado.</div>;
+  if (!data) return <div className="min-h-screen grid place-items-center text-destructive">Artigo não encontrado.</div>;
 
   return (
     <div className="min-h-screen bg-muted/30">
