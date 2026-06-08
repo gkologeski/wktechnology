@@ -36,7 +36,10 @@ async function sendOne(sub: Subscription, payload: PushPayload, vapid: { publicK
     sub,
     vapid
   );
-  const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+  const body = new Uint8Array(req.body).buffer;
+  const res = await fetch(sub.endpoint, { method: req.method, headers: req.headers, body });
+  return { ok: res.ok, status: res.status, endpoint: sub.endpoint };
+}
   return { ok: res.ok, status: res.status, endpoint: sub.endpoint };
 }
 
