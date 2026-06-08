@@ -8,6 +8,7 @@ type Props = {
   entity: string;
   select: string;
   searchColumn?: string;
+  searchColumns?: string[];
   orderBy?: string;
   labelFrom: (row: Record<string, unknown>) => string;
   hintFrom?: (row: Record<string, unknown>) => string | null;
