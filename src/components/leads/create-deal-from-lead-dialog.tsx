@@ -28,7 +28,7 @@ import type { Lead } from "@/lib/db-types";
 
 
 
-type Match = { id: string; name: string };
+
 
 export function CreateDealFromLeadDialog({
   open,
