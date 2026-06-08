@@ -216,3 +216,91 @@ export function ContactPicker({
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * ContactPickerById — wrapper para callers que só guardam o id.
+ * Mantém o nome localmente; hidrata via id quando necessário.
+ * ───────────────────────────────────────────────────────────── */
+export interface ContactPickerByIdProps
+  extends Omit<ContactPickerProps, "value" | "onChange"> {
+  id: string | null;
+  onChange: (id: string | null) => void;
+}
+
+export function ContactPickerById({ id, onChange, ...rest }: ContactPickerByIdProps) {
+  const [name, setName] = useState("");
+  useEffect(() => {
+    if (!id) setName("");
+  }, [id]);
+  return (
+    <ContactPicker
+      {...rest}
+      value={{ id, name }}
+      onChange={(v) => {
+        setName(v.name);
+        onChange(v.id);
+      }}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * ContactPickerPopover — gatilho "+ Adicionar" estilo AddAssociation,
+ * abrindo um popover com ContactPicker e opção "Criar novo".
+ * ───────────────────────────────────────────────────────────── */
+export interface ContactPickerPopoverProps {
+  onPick: (id: string) => unknown | Promise<unknown>;
+  onCreateNew?: () => void;
+  placeholder?: string;
+  label?: string;
+}
+
+export function ContactPickerPopover({
+  onPick,
+  onCreateNew,
+  placeholder = "Buscar contato…",
+  label,
+}: ContactPickerPopoverProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          {label ?? "Adicionar"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3 space-y-2" align="end">
+        <ContactPickerById
+          mode="pick"
+          id={null}
+          onChange={async (id) => {
+            if (id) {
+              await onPick(id);
+              setOpen(false);
+            }
+          }}
+          placeholder={placeholder}
+          autoFocus
+        />
+        {onCreateNew && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            onClick={() => {
+              setOpen(false);
+              onCreateNew();
+            }}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Criar novo
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
