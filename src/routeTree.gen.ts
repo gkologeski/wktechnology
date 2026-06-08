@@ -140,6 +140,7 @@ import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
+import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
@@ -936,6 +937,12 @@ const AuthenticatedAdminStatusRoute =
     path: '/admin/status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminQuotasRoute =
+  AuthenticatedAdminQuotasRouteImport.update({
+    id: '/admin/quotas',
+    path: '/admin/quotas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminBugReportsRoute =
   AuthenticatedAdminBugReportsRouteImport.update({
     id: '/admin/bug-reports',
@@ -1309,6 +1316,7 @@ export interface FileRoutesByFullPath {
   '/kb/': typeof KbIndexRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1496,6 +1504,7 @@ export interface FileRoutesByTo {
   '/kb': typeof KbIndexRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1686,6 +1695,7 @@ export interface FileRoutesById {
   '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
+  '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1877,6 +1887,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/admin/alerts'
     | '/admin/bug-reports'
+    | '/admin/quotas'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2064,6 +2075,7 @@ export interface FileRouteTypes {
     | '/kb'
     | '/admin/alerts'
     | '/admin/bug-reports'
+    | '/admin/quotas'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2253,6 +2265,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
+    | '/_authenticated/admin/quotas'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
@@ -3386,6 +3399,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/quotas': {
+      id: '/_authenticated/admin/quotas'
+      path: '/admin/quotas'
+      fullPath: '/admin/quotas'
+      preLoaderRoute: typeof AuthenticatedAdminQuotasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/bug-reports': {
       id: '/_authenticated/admin/bug-reports'
       path: '/admin/bug-reports'
@@ -4168,6 +4188,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
+  AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
@@ -4203,6 +4224,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
+  AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
