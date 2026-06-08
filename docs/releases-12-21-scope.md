@@ -212,7 +212,7 @@
 
 ---
 
-## Release 19 — IA Avançada
+## Release 19 — IA Avançada ✅ MVP entregue
 
 ### User Stories
 - **US-19.1** Como **U**, quero um **copilot Cmd+K** para perguntar em linguagem natural sobre meus dados.
