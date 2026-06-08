@@ -8,6 +8,7 @@ import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { TicketCard } from "./ticket-card";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import type { TicketRow, TicketStatus } from "./types";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 
 function Column({
   stage,
