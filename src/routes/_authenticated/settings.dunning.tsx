@@ -122,7 +122,7 @@ function DunningPage() {
                     key={p.id}
                     className={`flex items-center justify-between rounded border p-2 ${editingId === p.id ? "bg-muted/50" : ""}`}
                   >
-                    <button className="flex-1 text-left text-sm" onClick={() => loadPolicy(p as { id: string; name: string; active: boolean; is_default: boolean; steps: Step[] })}>
+                    <button className="flex-1 text-left text-sm" onClick={() => loadPolicy(p as unknown as { id: string; name: string; active: boolean; is_default: boolean; steps: Step[] })}>
                       <span className="font-medium">{p.name}</span>
                       {p.is_default && <span className="ml-2 text-xs text-muted-foreground">(padrão)</span>}
                       {!p.active && <span className="ml-2 text-xs text-muted-foreground">(inativa)</span>}
