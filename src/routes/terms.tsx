@@ -4,8 +4,13 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Termos de Serviço — WK Technology CRM" },
-      { name: "description", content: "Termos de Serviço do WK Technology CRM." },
+      { name: "description", content: "Leia os Termos de Serviço do WK Technology CRM: regras de uso da plataforma, responsabilidades, limites e condições da sua assinatura." },
+      { property: "og:title", content: "Termos de Serviço — WK Technology CRM" },
+      { property: "og:description", content: "Leia os Termos de Serviço do WK Technology CRM: regras de uso da plataforma, responsabilidades, limites e condições da sua assinatura." },
+      { property: "og:url", content: "https://crm.wktechnology.com.br/terms" },
+      { property: "og:type", content: "website" },
     ],
+    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/terms" }],
   }),
   component: TermsPage,
 });
