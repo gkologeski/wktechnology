@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
 import { DEAL_STAGES, formatCurrency } from "@/lib/crm";
+import { usePipelines } from "@/lib/pipelines";
 import type { Deal } from "@/lib/db-types";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ function DealDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [deal, setDeal] = useState<Deal | null>(null);
+  const { pipelines } = usePipelines("deal");
 
   const load = async () => {
     const { data } = await supabase.from("deals").select("*").eq("id", id).single();
@@ -29,11 +31,30 @@ function DealDetail() {
   };
   useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
 
+  const dealPipeline = useMemo(() => {
+    if (!deal) return null;
+    const pid = (deal as unknown as { pipeline_id?: string | null }).pipeline_id;
+    return pipelines.find((p) => p.id === pid) ?? pipelines.find((p) => p.is_default) ?? pipelines[0] ?? null;
+  }, [deal, pipelines]);
+
+  const stages = useMemo(
+    () =>
+      dealPipeline
+        ? dealPipeline.stages.map((s) => ({ value: s.value, label: s.label }))
+        : DEAL_STAGES.map((s) => ({ value: s.value, label: s.label })),
+    [dealPipeline],
+  );
+
   if (!deal) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
+  const currentStage = deal.stage_id || (deal.stage as string);
+
   const setStage = async (v: string) => {
+    const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
+    const payload: Record<string, unknown> = { stage_id: v };
+    if (legacyEnum.includes(v)) payload.stage = v;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.from("deals").update({ stage: v as any }).eq("id", deal.id);
+    await (supabase as any).from("deals").update(payload).eq("id", deal.id);
     void load();
   };
 
