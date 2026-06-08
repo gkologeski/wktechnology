@@ -1,0 +1,217 @@
+import { useEffect, useRef, useState } from "react";
+import { User, X } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+export type ContactPickerValue = { id: string | null; name: string };
+
+type Match = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  mobile_phone: string | null;
+};
+
+// Remove caracteres que quebram o filtro .or() do PostgREST
+function sanitizeOrTerm(q: string) {
+  return q.replace(/[,()%]/g, " ").trim();
+}
+
+function fullName(m: Pick<Match, "first_name" | "last_name">) {
+  return [m.first_name, m.last_name].filter(Boolean).join(" ").trim();
+}
+
+export interface ContactPickerProps {
+  /**
+   * "pick_or_create": permite texto livre.
+   * "pick": só permite selecionar contato existente.
+   */
+  mode?: "pick" | "pick_or_create";
+  value: ContactPickerValue;
+  onChange: (v: ContactPickerValue) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  autoFocus?: boolean;
+  /** Emitir toast quando matches aparecem. */
+  toastOnMatches?: boolean;
+  /** Buscar o nome quando recebemos só o id. Default: true. */
+  hydrateById?: boolean;
+  id?: string;
+  className?: string;
+}
+
+export function ContactPicker({
+  mode = "pick_or_create",
+  value,
+  onChange,
+  placeholder = "Buscar ou criar",
+  disabled,
+  autoFocus,
+  toastOnMatches = false,
+  hydrateById = true,
+  id,
+  className,
+}: ContactPickerProps) {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const lastSearchedRef = useRef<string>("");
+
+  // Hidrata nome quando recebemos só o id.
+  useEffect(() => {
+    if (!hydrateById) return;
+    if (!value.id || value.name) return;
+    let cancel = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name")
+        .eq("id", value.id!)
+        .maybeSingle();
+      if (cancel || error || !data) return;
+      onChange({ id: data.id as string, name: fullName(data as Match) });
+    })();
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.id, hydrateById]);
+
+  // Busca a partir de 3 caracteres por nome, email, telefone ou celular.
+  useEffect(() => {
+    const q = value.name.trim();
+    if (q.length < 3) {
+      setMatches([]);
+      return;
+    }
+    if (value.id) {
+      setMatches([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      const term = sanitizeOrTerm(q);
+      if (term.length < 3) {
+        setMatches([]);
+        return;
+      }
+      const like = `%${term}%`;
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email, phone, mobile_phone")
+        .or(
+          `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},mobile_phone.ilike.${like}`,
+        )
+        .order("first_name", { ascending: true })
+        .limit(500);
+      if (error) return;
+      const rows = (data ?? []) as Match[];
+      setMatches(rows);
+      if (toastOnMatches && rows.length > 0 && lastSearchedRef.current !== q) {
+        lastSearchedRef.current = q;
+        toast.info(
+          rows.length === 1
+            ? `1 contato parecido encontrado: ${fullName(rows[0]) || rows[0].email || ""}`
+            : `${rows.length} contatos parecidos encontrados`,
+          { description: "Clique em um para reutilizar." },
+        );
+      } else if (rows.length === 0) {
+        lastSearchedRef.current = q;
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [value.name, value.id, toastOnMatches]);
+
+  const handleType = (text: string) => {
+    if (value.id) {
+      onChange({ id: null, name: text });
+    } else {
+      onChange({ id: value.id, name: text });
+    }
+  };
+
+  const select = (m: Match) => {
+    const name = fullName(m) || m.email || "";
+    onChange({ id: m.id, name });
+    setMatches([]);
+    lastSearchedRef.current = name;
+  };
+
+  const clear = () => {
+    onChange({ id: null, name: "" });
+    setMatches([]);
+    lastSearchedRef.current = "";
+  };
+
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <div className="relative">
+        <Input
+          id={id}
+          value={value.name}
+          onChange={(e) => handleType(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoFocus={autoFocus}
+        />
+        {(value.id || value.name) && !disabled && (
+          <button
+            type="button"
+            aria-label="Limpar"
+            onClick={clear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+
+      {value.id && (
+        <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs">
+          <User className="h-3.5 w-3.5 text-primary" />
+          <span className="truncate">
+            Vinculado a <strong>{value.name}</strong>
+          </span>
+        </div>
+      )}
+
+      {matches.length > 0 && (
+        <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Contatos parecidos
+          </p>
+          {matches.map((m) => {
+            const name = fullName(m) || "(sem nome)";
+            const phone = m.phone || m.mobile_phone;
+            const meta = [m.email, phone].filter(Boolean).join(" · ");
+            return (
+              <Button
+                key={m.id}
+                type="button"
+                variant="ghost"
+                className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
+                onClick={() => select(m)}
+              >
+                <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex min-w-0 flex-col items-start">
+                  <span className="truncate">{name}</span>
+                  {meta && (
+                    <span className="truncate text-[11px] text-muted-foreground">{meta}</span>
+                  )}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
+      {mode === "pick" && !value.id && value.name.trim().length >= 3 && matches.length === 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          Nenhum contato encontrado. Selecione um existente.
+        </p>
+      )}
+    </div>
+  );
+}
