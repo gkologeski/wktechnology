@@ -141,6 +141,7 @@ import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
+import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -941,6 +942,12 @@ const AuthenticatedAdminBugReportsRoute =
     path: '/admin/bug-reports',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminAlertsRoute =
+  AuthenticatedAdminAlertsRouteImport.update({
+    id: '/admin/alerts',
+    path: '/admin/alerts',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRolesIndexRoute =
   AuthenticatedSettingsRolesIndexRouteImport.update({
     id: '/',
@@ -1300,6 +1307,7 @@ export interface FileRoutesByFullPath {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
@@ -1486,6 +1494,7 @@ export interface FileRoutesByTo {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb': typeof KbIndexRoute
+  '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
@@ -1675,6 +1684,7 @@ export interface FileRoutesById {
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/kb/': typeof KbIndexRoute
+  '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
@@ -1865,6 +1875,7 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
+    | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/status'
     | '/admin/workspaces'
@@ -2051,6 +2062,7 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb'
+    | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/status'
     | '/admin/workspaces'
@@ -2239,6 +2251,7 @@ export interface FileRouteTypes {
     | '/wa/$slug'
     | '/widget/$workspaceId'
     | '/kb/'
+    | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
@@ -3380,6 +3393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBugReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/alerts': {
+      id: '/_authenticated/admin/alerts'
+      path: '/admin/alerts'
+      fullPath: '/admin/alerts'
+      preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/roles/': {
       id: '/_authenticated/settings/roles/'
       path: '/'
@@ -4146,6 +4166,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
+  AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
@@ -4180,6 +4201,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
+  AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
