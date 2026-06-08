@@ -119,7 +119,9 @@ function RootComponent() {
         <NewVersionWatcher />
         <I18nProvider>
           <BrandingProvider>
-            <Outlet />
+            <main id="main-content">
+              <Outlet />
+            </main>
             <Toaster richColors position="top-right" />
           </BrandingProvider>
         </I18nProvider>
