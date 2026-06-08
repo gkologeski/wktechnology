@@ -35,14 +35,25 @@ export function KanbanScrollContainer({
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(content);
-    Array.from(content.children).forEach((c) => ro.observe(c));
-    const mo = new MutationObserver(sync);
+    const observeDescendants = () => {
+      content.querySelectorAll("*").forEach((el) => {
+        try { ro.observe(el); } catch { /* ignore */ }
+      });
+    };
+    observeDescendants();
+    const mo = new MutationObserver(() => {
+      observeDescendants();
+      sync();
+    });
     mo.observe(content, { childList: true, subtree: true });
     window.addEventListener("resize", sync);
+    // Re-check after async layout/data settles
+    const timeouts = [50, 200, 600, 1500].map((ms) => window.setTimeout(sync, ms));
     return () => {
       ro.disconnect();
       mo.disconnect();
       window.removeEventListener("resize", sync);
+      timeouts.forEach((t) => window.clearTimeout(t));
     };
   }, []);
 
@@ -128,14 +139,15 @@ export function KanbanScrollContainer({
       <div
         ref={topRef}
         onScroll={onTopScroll}
-        className={`kanban-top-scroll sticky top-0 z-20 overflow-x-auto overflow-y-hidden bg-background ${
+        className={`kanban-top-scroll sticky top-0 z-20 overflow-x-scroll overflow-y-hidden bg-background ${
           overflows ? "" : "hidden"
         }`}
+        style={{ height: 14 }}
         aria-hidden="true"
       >
         <div ref={topInnerRef} style={{ height: 1 }} />
       </div>
-      <div ref={contentRef} onScroll={onContentScroll} className="overflow-x-auto">
+      <div ref={contentRef} onScroll={onContentScroll} className="kanban-content-scroll overflow-x-auto">
         {children}
       </div>
     </div>
