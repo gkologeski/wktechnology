@@ -118,7 +118,7 @@
 
 ---
 
-## Release 15 — Cobrança & Financeiro (BR)
+## Release 15 — Cobrança & Financeiro (BR) ✅
 
 ### User Stories
 - **US-15.1** Como **U**, quero gerar **boleto ou Pix** a partir de uma fatura ou cotação.
