@@ -140,6 +140,7 @@ import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
+import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authenticated/admin.sandbox'
 import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
@@ -937,6 +938,12 @@ const AuthenticatedAdminStatusRoute =
     path: '/admin/status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminSandboxRoute =
+  AuthenticatedAdminSandboxRouteImport.update({
+    id: '/admin/sandbox',
+    path: '/admin/sandbox',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminQuotasRoute =
   AuthenticatedAdminQuotasRouteImport.update({
     id: '/admin/quotas',
@@ -1317,6 +1324,7 @@ export interface FileRoutesByFullPath {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1505,6 +1513,7 @@ export interface FileRoutesByTo {
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1696,6 +1705,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
+  '/_authenticated/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1888,6 +1898,7 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
+    | '/admin/sandbox'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2076,6 +2087,7 @@ export interface FileRouteTypes {
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
+    | '/admin/sandbox'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2266,6 +2278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/quotas'
+    | '/_authenticated/admin/sandbox'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
@@ -3399,6 +3412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/sandbox': {
+      id: '/_authenticated/admin/sandbox'
+      path: '/admin/sandbox'
+      fullPath: '/admin/sandbox'
+      preLoaderRoute: typeof AuthenticatedAdminSandboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/quotas': {
       id: '/_authenticated/admin/quotas'
       path: '/admin/quotas'
@@ -4189,6 +4209,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
+  AuthenticatedAdminSandboxRoute: typeof AuthenticatedAdminSandboxRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
@@ -4225,6 +4246,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
+  AuthenticatedAdminSandboxRoute: AuthenticatedAdminSandboxRoute,
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
