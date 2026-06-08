@@ -200,10 +200,10 @@ export const sendMessage = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(userId);
     const { data: pn } = await supabase
       .from("wa_phone_numbers")
-      .select("phone_number_id, waba_id, display_phone_number, waba:wa_business_accounts(access_token, waba_id)")
+      .select("phone_number_id, waba_id, display_phone_number")
       .eq("workspace_id", ws).eq("phone_number_id", data.phone_number_id).maybeSingle();
     if (!pn) throw new Error("Número WhatsApp não conectado a este workspace");
-    const token = (pn as any).waba?.access_token as string;
+    const token = await loadWabaTokenByPhoneNumberId(ws, data.phone_number_id);
     if (!token) throw new Error("Token Meta indisponível");
 
     const body: any = {
