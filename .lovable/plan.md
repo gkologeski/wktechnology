@@ -1,94 +1,33 @@
 ## Objetivo
 
-Separar **operação** de **administração**: a sidebar de trabalho fica enxuta e colapsável, e Configurações passa a viver atrás da engrenagem no header (estilo HubSpot), com dropdown de atalhos rápidos.
+Hoje o `CompanyPicker` (`src/components/ui/company-picker.tsx`) busca empresas só por **nome** (a partir de 3 caracteres). Vamos dar a ele a "skill" de também pesquisar por **telefone** e **domínio**, mantendo o mesmo gatilho de 3+ caracteres e o mesmo debounce.
 
-## 1. Nova sidebar de trabalho (`src/components/app-sidebar.tsx`)
+Esse componente é o campo "Empresa" usado em criação de lead, criação de contato, painel de propriedades, associações etc. — então o ganho aparece em todo o app automaticamente.
 
-- Remover completamente o grupo **Configurar** da sidebar.
-- Manter os 3 grupos colapsáveis: **Trabalhar**, **Analisar**, **Engajar** (mesma taxonomia atual).
-- Limpar itens que só fazem sentido em configurações (ex.: "Listas" que aponta para `/settings/segments`, "Tipos de assinatura", "Macros", "Templates de email", "Base de conhecimento", "Widget de chat", "Formulários", "Scripts de voz", "Agente de voz", "Sequências", "Portal do cliente", "Metas", "Exports agendados") → movidos para o dropdown da engrenagem.
-- Rodapé: manter dropdown de conta (avatar) + bloco super-admin condicional. Remover atalhos de Perfil/Email/Segurança do dropdown da conta (vão para Configurações).
-- Modo colapsável: `collapsible="icon"` (igual hoje) — sidebar mais estreita com tooltips.
+## O que muda
 
-Estrutura final da sidebar:
+1. **`src/components/ui/company-picker.tsx`**
+   - Tipo `Match` passa a incluir `domain` e `phone` (nullable).
+   - Query do Supabase: trocar `.ilike("name", …)` por `.or("name.ilike.%q%,domain.ilike.%q%,phone.ilike.%q%")` com `q` devidamente escapado (sem vírgula/parêntese — sanitizar para evitar quebrar o filtro `or`).
+   - Continuar com `.limit(500)`, debounce 350ms, gatilho ≥ 3 chars, ordenação por `name`.
+   - Lista de resultados: além do nome, mostrar uma 2ª linha discreta com `domain` e/ou `phone` quando existirem (texto `text-[11px] text-muted-foreground`). Ícone permanece `Building2`.
+   - Toast "X empresas parecidas" continua igual.
 
-```text
-[Logo] [WorkspaceSwitcher]
-─ Trabalhar
-  Painel, Leads, Contatos, Empresas, Negócios, Tickets,
-  Tarefas, Reuniões, Propostas, Faturas,
-  Inbox unificada, Inbox Email, Inbox WhatsApp, Chat ao vivo,
-  Comunicações, Notas
-─ Analisar
-  Dashboards, Relatórios, Analytics
-─ Engajar
-  Campanhas WhatsApp, Campanhas Email, Landing Pages,
-  Prospecting, Prospecção por voz, Agente SDR, Pesquisas
-─ [rodapé] Super-admin (se aplicável) · Avatar
-```
+2. **Sanitização do termo**
+   - Função local `sanitizeOrTerm(q)` que remove `,`, `(`, `)` e `%` extras antes de injetar no `.or()` (PostgREST usa esses caracteres como separadores).
 
-## 2. Header global (`src/routes/_authenticated.tsx`)
+3. **Fallback de paridade (opcional, mesmo PR)**
+   - `src/components/companies/company-hierarchy.tsx` já faz `name.ilike,domain.ilike` no diálogo "Vincular matriz". Acrescentar `phone.ilike` na mesma `.or(...)` para manter o comportamento consistente.
 
-Substituir o header atual (`SidebarTrigger` + sino) por uma barra completa estilo HubSpot:
+## Fora de escopo
 
-```text
-[☰] [🔍 Buscar ou perguntar  ⌘K]  ····  [+] [⚙] [🔔] [Avatar▾]
-```
+- Não mexer em outros pickers (contatos, deals).
+- Sem mudanças de schema, RLS ou server functions — é só UI/consulta client-side já permitida pelas policies atuais de `companies`.
+- Sem alteração visual no input em si; só a lista de sugestões ganha a sublinha com domínio/telefone.
 
-Componentes:
+## Critérios de aceite
 
-- **SidebarTrigger** (mantém colapso da sidebar).
-- **GlobalSearch**: input que abre o `CopilotCmdK` já existente (atalho ⌘K). Reaproveita o trigger pelo evento de teclado; o input no header só chama `cmdk.open()`.
-- **QuickCreateMenu** (novo `src/components/quick-create-menu.tsx`): botão `+` com dropdown → Novo lead / contato / empresa / negócio / tarefa / reunião / nota. Reaproveita os diálogos existentes (`create-lead-dialog`, `create-contact-dialog`, `create-deal-dialog`, etc.).
-- **SettingsMenu** (novo `src/components/settings-menu.tsx`): botão engrenagem com dropdown agrupado de atalhos + "Todas as configurações" → `/settings`. Conteúdo do dropdown:
-
-  ```text
-  Minha conta
-    Perfil · Conexão de email · Segurança (2FA) · Meus chamados
-  Workspace
-    White-label · Idioma · Calendários · Cobrança
-  Estrutura CRM
-    Pipelines · Propriedades · Produtos · Objetos custom
-  Pessoas & Acesso
-    Usuários · Equipes · Permissões
-  Automação & Engajamento
-    Workflows · Sequências · Templates de email · Macros · Base de conhecimento
-  Integrações
-    Marketplace · Integrações · WhatsApp · Sync HubSpot
-  ─────────
-  Todas as configurações  →
-  ```
-
-  Itens respeitam `useMyRole` / `useMyTools` (admin/manager).
-
-- **NotificationsBell** (mantém o existente).
-- **AccountMenu** (novo `src/components/account-menu.tsx`): avatar com dropdown → email do usuário, link "Planos e cobrança", Sair. (Move o conteúdo de conta que estava no rodapé da sidebar.)
-
-## 3. Página de configurações (`src/routes/_authenticated/settings.tsx`)
-
-- Já existe com sidebar interna de seções — manter. Vira a "home" do menu de configurações quando o usuário clica em "Todas as configurações" ou em qualquer atalho.
-- Adicionar breadcrumb no topo: `Configurações / <seção>`.
-
-## 4. Cuidados técnicos
-
-- `CopilotCmdK` continua montado no layout autenticado; o input do header só dispara o atalho (mantém uma fonte de verdade).
-- Manter `ChatTrigger` e `BugReportButton` flutuantes como hoje.
-- Manter validação de permissão (`ADMIN_ONLY` / `MANAGER_PLUS`) — apenas mover URLs de settings da sidebar para o dropdown da engrenagem. O guard em `_authenticated.tsx` continua bloqueando o acesso direto.
-- Acessibilidade: cada botão do header com `aria-label`; dropdown com `DropdownMenuLabel` para os grupos; engrenagem ganha `title="Configurações"`.
-- Responsivo: em telas <768px o header esconde o input de busca (vira só ícone 🔍) e o `+` continua visível.
-
-## Arquivos tocados
-
-- editar `src/components/app-sidebar.tsx` (remover grupo Configurar e itens que viram settings)
-- editar `src/routes/_authenticated.tsx` (novo header)
-- criar `src/components/quick-create-menu.tsx`
-- criar `src/components/settings-menu.tsx`
-- criar `src/components/account-menu.tsx`
-- criar `src/components/global-search-trigger.tsx` (input do header que abre o CopilotCmdK)
-- editar `src/routes/_authenticated/settings.tsx` (breadcrumb opcional)
-
-## Fora do escopo
-
-- Não muda paleta, tipografia, tokens de cor ou rotas existentes.
-- Não mexe em RLS, server functions ou dados.
-- Os diálogos de criação já existem — só são acoplados ao novo `+`.
+- Digitar 3+ caracteres que batem com **nome**, **domínio** ou **telefone** (parcial) traz a empresa na lista.
+- Cada item mostra `nome` + (quando houver) `domínio · telefone` em cinza pequeno.
+- Selecionar continua funcionando igual (`{ id, name }`), sem regressão nos formulários que usam o picker.
+- Termos com caracteres especiais (`,`, `(`, `)`) não quebram a busca.

@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils";
 
 export type CompanyPickerValue = { id: string | null; name: string };
 
-type Match = { id: string; name: string };
+type Match = { id: string; name: string; domain: string | null; phone: string | null };
+
+// Remove caracteres que quebram o filtro .or() do PostgREST
+function sanitizeOrTerm(q: string) {
+  return q.replace(/[,()%]/g, " ").trim();
+}
 
 export interface CompanyPickerProps {
   /**
