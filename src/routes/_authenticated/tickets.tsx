@@ -606,6 +606,7 @@ function TicketsIndex() {
               <EntityCombobox
                 entity="companies"
                 select="id, name, domain"
+                searchColumns={["name", "domain"]}
                 labelFrom={(r) => String((r as { name?: string }).name ?? "")}
                 hintFrom={(r) => (r as { domain?: string }).domain ?? null}
                 value={draft.company_id ?? null}
