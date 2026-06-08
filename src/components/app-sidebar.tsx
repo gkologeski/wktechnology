@@ -27,7 +27,7 @@ const ADMIN_ONLY = new Set<string>([
   "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
   "/settings/audit-log", "/settings/hubspot-sync",
   "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
-  "/settings/pipelines", "/integrations",
+  "/settings/pipelines", "/integrations", "/marketplace",
   "/settings/mobile", "/settings/language", "/leads/import-hubspot",
 ]);
 // URLs adicionais visíveis a admin+manager (automação, marketing, configuração comercial).
@@ -43,6 +43,7 @@ const MANAGER_PLUS = new Set<string>([
   "/settings/booking", "/settings/lead-sources", "/reports", "/dashboards", "/analytics",
   "/campaigns/whatsapp", "/campaigns/email",
   "/prospecting/campaigns", "/settings/prospecting-scripts", "/settings/voice-agent",
+  "/settings/notifications/slack", "/settings/zapier",
 ]);
 
 // Proposta B — Jornada do usuário:
