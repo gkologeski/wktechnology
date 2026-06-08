@@ -170,8 +170,8 @@ export function CreateDealFromLeadDialog({
           stage: legacyStage as never,
           stage_id: stageId,
           pipeline_id: pipeline.id,
-          company_id: companyId,
-          primary_contact_id: contactId,
+          company_id: resolvedCompanyId,
+          primary_contact_id: resolvedContactId,
           value: Number.isFinite(numericValue) ? numericValue : 0,
           currency,
           expected_close_date: expectedClose || null,
@@ -187,10 +187,11 @@ export function CreateDealFromLeadDialog({
         .update({
           status: "qualified",
           converted_at: new Date().toISOString(),
-          converted_contact_id: contactId,
+          converted_contact_id: resolvedContactId,
           converted_deal_id: deal!.id,
         })
         .eq("id", lead.id);
+
 
       toast.success("Negócio criado e lead qualificado");
       onCreated?.(deal!.id);
