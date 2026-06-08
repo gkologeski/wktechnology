@@ -5,6 +5,7 @@ import { Building2, User, Briefcase, Ticket as TicketIcon, ListTodo, Mail, Paper
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
+import { ContactPickerPopover } from "@/components/ui/contact-picker";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import {
   QuickCreateCompanyDialog,
@@ -221,15 +222,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         title="Contatos"
         count={rows.length}
         action={
-          <AddAssociation
-            entity="contacts"
-            select="id, first_name, last_name, email"
-            searchColumn="first_name"
-            labelFrom={(r) => {
-              const x = r as { first_name?: string; last_name?: string; email?: string };
-              return `${x.first_name ?? ""} ${x.last_name ?? ""}`.trim() || x.email || "Contato";
-            }}
-            hintFrom={(r) => (r as { email?: string }).email ?? null}
+          <ContactPickerPopover
             placeholder="Buscar contato…"
             onPick={associate}
             onCreateNew={() => setCreateOpen(true)}
