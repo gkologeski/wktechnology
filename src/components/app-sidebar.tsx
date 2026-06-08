@@ -104,7 +104,7 @@ const groups: Group[] = [
       // Workspace
       { section: "Workspace", title: "White-label", url: "/settings/branding", icon: Sparkles },
       { section: "Workspace", title: "Idioma", url: "/settings/language", icon: Settings },
-      { section: "Workspace", title: "Mobile / PWA", url: "/settings/mobile", icon: Settings },
+      { section: "Workspace", title: "Mobile / PWA / Push", url: "/settings/mobile", icon: Smartphone },
       { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
       { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
       { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
