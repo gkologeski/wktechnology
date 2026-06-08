@@ -106,6 +106,9 @@ const groups: Group[] = [
       { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
       { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
       { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
+      { section: "Workspace", title: "Cobrança & Pagamentos", url: "/settings/payments", icon: FileText },
+      { section: "Workspace", title: "Régua de cobrança", url: "/settings/dunning", icon: Repeat },
+      { section: "Workspace", title: "NFS-e", url: "/settings/nfse", icon: FileText },
       // Estrutura CRM
       { section: "Estrutura CRM", title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { section: "Estrutura CRM", title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },
