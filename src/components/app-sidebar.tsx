@@ -103,57 +103,6 @@ const groups: Group[] = [
       { title: "Tipos de assinatura", url: "/settings/subscriptions", icon: Mail },
     ],
   },
-  {
-    label: "Configurar", icon: Settings, items: [
-      // Workspace
-      { section: "Workspace", title: "White-label", url: "/settings/branding", icon: Sparkles },
-      { section: "Workspace", title: "Idioma", url: "/settings/language", icon: Settings },
-      { section: "Workspace", title: "Mobile / PWA / Push", url: "/settings/mobile", icon: Smartphone },
-      { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
-      { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
-      { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
-      { section: "Workspace", title: "Cobrança & Pagamentos", url: "/settings/payments", icon: FileText },
-      { section: "Workspace", title: "Régua de cobrança", url: "/settings/dunning", icon: Repeat },
-      { section: "Workspace", title: "NFS-e", url: "/settings/nfse", icon: FileText },
-      // Estrutura CRM
-      { section: "Estrutura CRM", title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
-      { section: "Estrutura CRM", title: "Propriedades", url: "/settings/custom-properties", icon: Sliders },
-      { section: "Estrutura CRM", title: "Objetos custom", url: "/settings/custom-objects", icon: Sliders },
-      { section: "Estrutura CRM", title: "Fontes de lead", url: "/settings/lead-sources", icon: Filter },
-      { section: "Estrutura CRM", title: "Produtos", url: "/settings/products", icon: Package },
-      { section: "Estrutura CRM", title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { section: "Estrutura CRM", title: "Recorrência", url: "/settings/recurring", icon: Repeat },
-      { section: "Estrutura CRM", title: "Assinaturas eletrônicas", url: "/settings/esign", icon: PenLine },
-      { section: "Estrutura CRM", title: "Biblioteca de cláusulas", url: "/settings/clauses", icon: FileText },
-      // Automação
-      { section: "Automação", title: "Workflows", url: "/settings/workflows", icon: Workflow },
-      { section: "Automação", title: "Distribuição", url: "/settings/rotation", icon: Shuffle },
-      { section: "Automação", title: "SLA por etapa", url: "/settings/sla", icon: Timer },
-      { section: "Automação", title: "Pontuação", url: "/settings/scoring", icon: Target },
-      { section: "Automação", title: "Playbooks", url: "/settings/playbooks", icon: BookOpen },
-      { section: "Automação", title: "Enriquecimento", url: "/settings/enrichment", icon: Sparkles },
-      // Pessoas & Acesso
-      { section: "Pessoas & Acesso", title: "Equipe do workspace", url: "/settings/workspace-team", icon: UsersRound },
-      { section: "Pessoas & Acesso", title: "Usuários", url: "/settings/teams", icon: UsersRound },
-      { section: "Pessoas & Acesso", title: "Permissões", url: "/settings/roles", icon: ShieldCheck },
-      // Segurança
-      { section: "Segurança", title: "Auditoria", url: "/settings/audit-log", icon: ScrollText },
-      { section: "Segurança", title: "Exportar Auditoria", url: "/settings/audit-export", icon: ScrollText },
-      { section: "Segurança", title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
-      { section: "Segurança", title: "Webhooks", url: "/settings/webhooks", icon: Plug },
-      { section: "Segurança", title: "SSO (SAML/OIDC)", url: "/settings/sso", icon: ShieldCheck },
-      { section: "Segurança", title: "SCIM provisioning", url: "/settings/scim", icon: UsersRound },
-      { section: "Segurança", title: "Política de acesso", url: "/settings/access-policy", icon: ShieldCheck },
-      { section: "Segurança", title: "Data residency", url: "/settings/data-residency", icon: Sliders },
-      { section: "Integrações", title: "Marketplace", url: "/marketplace", icon: Package },
-      { section: "Integrações", title: "Integrações", url: "/integrations", icon: Plug },
-      { section: "Integrações", title: "Notificações Slack", url: "/settings/notifications/slack", icon: MessageSquare },
-      { section: "Integrações", title: "Zapier / Make", url: "/settings/zapier", icon: Workflow },
-      { section: "Integrações", title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
-      { section: "Integrações", title: "Usuários HubSpot", url: "/settings/hubspot-users", icon: Plug },
-      { section: "Integrações", title: "Meta/Google Ads", url: "/settings/ads-sync", icon: Megaphone },
-    ],
-  },
 ];
 
 export function AppSidebar() {
