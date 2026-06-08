@@ -93,6 +93,7 @@ const groups: Group[] = [
       { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle },
       { title: "Scripts de voz", url: "/settings/prospecting-scripts", icon: FileText },
       { title: "Agente de voz", url: "/settings/voice-agent", icon: Sliders },
+      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles },
       { title: "Macros", url: "/settings/macros", icon: Wand2 },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
       { title: "Portal do cliente", url: "/settings/portal", icon: ExternalLink },

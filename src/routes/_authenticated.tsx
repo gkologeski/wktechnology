@@ -8,6 +8,7 @@ import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { CopilotCmdK } from "@/components/copilot-cmdk";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -82,6 +83,7 @@ function AuthenticatedLayout() {
       </div>
       <BugReportButton />
       <ChatTrigger />
+      <CopilotCmdK />
     </SidebarProvider>
   );
 }

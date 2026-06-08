@@ -133,6 +133,7 @@ import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
@@ -889,6 +890,11 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAgentsSdrRoute = AuthenticatedAgentsSdrRouteImport.update({
+  id: '/agents/sdr',
+  path: '/agents/sdr',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminWorkspacesRoute =
   AuthenticatedAdminWorkspacesRouteImport.update({
     id: '/admin/workspaces',
@@ -1260,6 +1266,7 @@ export interface FileRoutesByFullPath {
   '/kb/': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1440,6 +1447,7 @@ export interface FileRoutesByTo {
   '/kb': typeof KbIndexRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1623,6 +1631,7 @@ export interface FileRoutesById {
   '/kb/': typeof KbIndexRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1807,6 +1816,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/admin/bug-reports'
     | '/admin/workspaces'
+    | '/agents/sdr'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -1987,6 +1997,7 @@ export interface FileRouteTypes {
     | '/kb'
     | '/admin/bug-reports'
     | '/admin/workspaces'
+    | '/agents/sdr'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -2169,6 +2180,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/workspaces'
+    | '/_authenticated/agents/sdr'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/companies/$id'
@@ -3247,6 +3259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agents/sdr': {
+      id: '/_authenticated/agents/sdr'
+      path: '/agents/sdr'
+      fullPath: '/agents/sdr'
+      preLoaderRoute: typeof AuthenticatedAgentsSdrRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/workspaces': {
       id: '/_authenticated/admin/workspaces'
       path: '/admin/workspaces'
@@ -4012,6 +4031,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
@@ -4044,6 +4064,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
+  AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
