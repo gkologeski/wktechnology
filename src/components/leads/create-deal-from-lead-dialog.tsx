@@ -86,10 +86,9 @@ export function CreateDealFromLeadDialog({
     setCurrency("BRL");
     setExpectedClose("");
     setDescription("");
-    setCompany({ id: null, name: lead.company_name ?? "" });
-
-    setContactQuery(fullName);
-    setSelectedContact(null);
+    setCompanyId(null);
+    setCompanyName(lead.company_name ?? "");
+    setContactId(null);
   }, [open, lead, defaultPipeline, pipelines]);
 
   // ensure stage matches selected pipeline
@@ -101,31 +100,8 @@ export function CreateDealFromLeadDialog({
     }
   }, [pipeline, stageId]);
 
-  // company search is handled by <CompanyPicker /> internally.
-
-
-  // contact search
-  useEffect(() => {
-    const q = contactQuery.trim();
-    if (q.length < 3 || (selectedContact && selectedContact.name === q)) {
-      setContactMatches([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email")
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(500);
-      const matches = (data ?? []).map((c) => ({
-        id: c.id as string,
-        name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() ||
-          (c.email as string | null) || "Sem nome",
-      }));
-      setContactMatches(matches);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [contactQuery, selectedContact]);
+  // Prioriza registros já associados ao contato/empresa selecionado.
+  const related = useRelatedIds({ companyId, contactId });
 
   const submit = async () => {
     if (!user) return;
@@ -134,11 +110,10 @@ export function CreateDealFromLeadDialog({
 
     setSaving(true);
     try {
-      // resolve company
-      let companyId: string | null = company.id ?? null;
-      const cName = company.name.trim();
-
-      if (!companyId && cName) {
+      // resolve company: usa id selecionado, ou cria a partir do nome do lead
+      let resolvedCompanyId: string | null = companyId;
+      const cName = companyName.trim();
+      if (!resolvedCompanyId && cName) {
         const { data: existing } = await supabase
           .from("companies")
           .select("id")
@@ -147,7 +122,7 @@ export function CreateDealFromLeadDialog({
           .ilike("name", cName)
           .maybeSingle();
         if (existing?.id) {
-          companyId = existing.id;
+          resolvedCompanyId = existing.id;
         } else {
           const { data: c, error } = await supabase
             .from("companies")
@@ -155,13 +130,13 @@ export function CreateDealFromLeadDialog({
             .select("id")
             .single();
           if (error) throw new Error(error.message);
-          companyId = c?.id ?? null;
+          resolvedCompanyId = c?.id ?? null;
         }
       }
 
-      // resolve contact
-      let contactId: string | null = selectedContact?.id ?? null;
-      if (!contactId) {
+      // resolve contact: usa id selecionado, ou cria a partir do lead
+      let resolvedContactId: string | null = contactId;
+      if (!resolvedContactId) {
         const { data: ct, error } = await supabase
           .from("contacts")
           .insert({
@@ -171,13 +146,14 @@ export function CreateDealFromLeadDialog({
             last_name: lead.last_name,
             email: lead.email,
             phone: lead.phone,
-            company_id: companyId,
+            company_id: resolvedCompanyId,
           })
           .select("id")
           .single();
         if (error) throw new Error(error.message);
-        contactId = ct?.id ?? null;
+        resolvedContactId = ct?.id ?? null;
       }
+
 
       const numericValue = value ? Number(value) : 0;
       const stageEntry = pipeline.stages.find((s) => s.value === stageId);
