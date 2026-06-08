@@ -4162,6 +4162,119 @@ export type Database = {
           },
         ]
       }
+      marketplace_apps: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          docs_url: string | null
+          icon_url: string | null
+          id: string
+          install_kind: string
+          name: string
+          popular: boolean
+          scopes: string[]
+          short_description: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          description?: string | null
+          docs_url?: string | null
+          icon_url?: string | null
+          id?: string
+          install_kind?: string
+          name: string
+          popular?: boolean
+          scopes?: string[]
+          short_description?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          docs_url?: string | null
+          icon_url?: string | null
+          id?: string
+          install_kind?: string
+          name?: string
+          popular?: boolean
+          scopes?: string[]
+          short_description?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      marketplace_installations: {
+        Row: {
+          app_slug: string
+          config: Json
+          created_at: string
+          id: string
+          installed_at: string
+          installed_by: string | null
+          last_test_at: string | null
+          last_test_error: string | null
+          last_test_ok: boolean | null
+          owner_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          app_slug: string
+          config?: Json
+          created_at?: string
+          id?: string
+          installed_at?: string
+          installed_by?: string | null
+          last_test_at?: string | null
+          last_test_error?: string | null
+          last_test_ok?: boolean | null
+          owner_id: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          app_slug?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          installed_at?: string
+          installed_by?: string | null
+          last_test_at?: string | null
+          last_test_error?: string | null
+          last_test_ok?: boolean | null
+          owner_id?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_installations_app_slug_fkey"
+            columns: ["app_slug"]
+            isOneToOne: false
+            referencedRelation: "marketplace_apps"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       meeting_participants: {
         Row: {
           created_at: string
@@ -6593,6 +6706,93 @@ export type Database = {
           },
         ]
       }
+      slack_event_routes: {
+        Row: {
+          channel_id: string
+          channel_name: string | null
+          created_at: string
+          enabled: boolean
+          event_type: string
+          id: string
+          owner_id: string
+          per_user_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          channel_id: string
+          channel_name?: string | null
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          id?: string
+          owner_id: string
+          per_user_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          channel_id?: string
+          channel_name?: string | null
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          id?: string
+          owner_id?: string
+          per_user_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      slack_integrations: {
+        Row: {
+          access_token: string
+          bot_user_id: string | null
+          created_at: string
+          default_channel_id: string | null
+          default_channel_name: string | null
+          id: string
+          installed_by: string | null
+          owner_id: string
+          scope: string | null
+          team_id: string | null
+          team_name: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          access_token: string
+          bot_user_id?: string | null
+          created_at?: string
+          default_channel_id?: string | null
+          default_channel_name?: string | null
+          id?: string
+          installed_by?: string | null
+          owner_id: string
+          scope?: string | null
+          team_id?: string | null
+          team_name?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          access_token?: string
+          bot_user_id?: string | null
+          created_at?: string
+          default_channel_id?: string | null
+          default_channel_name?: string | null
+          id?: string
+          installed_by?: string | null
+          owner_id?: string
+          scope?: string | null
+          team_id?: string | null
+          team_name?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       stage_entries: {
         Row: {
           created_at: string
@@ -8615,6 +8815,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      zapier_subscriptions: {
+        Row: {
+          active: boolean
+          api_key_id: string | null
+          created_at: string
+          event: string
+          id: string
+          last_delivery_at: string | null
+          last_delivery_status: number | null
+          owner_id: string
+          target_url: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          api_key_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          last_delivery_at?: string | null
+          last_delivery_status?: number | null
+          owner_id: string
+          target_url: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          api_key_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          last_delivery_at?: string | null
+          last_delivery_status?: number | null
+          owner_id?: string
+          target_url?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zapier_subscriptions_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
