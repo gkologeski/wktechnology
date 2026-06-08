@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { ContactPickerById } from "@/components/ui/contact-picker";
 
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
@@ -205,21 +206,11 @@ export function DealDetailDrawer({
               </Field>
 
               <Field label="Contato principal">
-                <EntityCombobox
-                  entity="contacts"
-                  select="id, first_name, last_name, email"
-                  searchColumn="first_name"
-                  orderBy="first_name"
-                  labelFrom={(r) => {
-                    const row = r as { first_name?: string; last_name?: string; email?: string };
-                    const name = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
-                    return name || row.email || "Contato";
-                  }}
-                  hintFrom={(r) => (r as { email?: string }).email ?? null}
-                  value={v.primary_contact_id ? String(v.primary_contact_id) : null}
+                <ContactPickerById
+                  mode="pick"
+                  id={v.primary_contact_id ? String(v.primary_contact_id) : null}
                   onChange={(id) => set("primary_contact_id", id)}
                   placeholder="Selecionar contato…"
-                  icon={User}
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
