@@ -5608,6 +5608,125 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_alert_events: {
+        Row: {
+          context: Json
+          fired_at: string
+          id: string
+          message: string
+          resolved_at: string | null
+          rule_id: string | null
+          severity: string
+        }
+        Insert: {
+          context?: Json
+          fired_at?: string
+          id?: string
+          message: string
+          resolved_at?: string | null
+          rule_id?: string | null
+          severity?: string
+        }
+        Update: {
+          context?: Json
+          fired_at?: string
+          id?: string
+          message?: string
+          resolved_at?: string | null
+          rule_id?: string | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_alert_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "platform_alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_alert_rules: {
+        Row: {
+          channels: Json
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          rule_type: string
+          target_key: string | null
+          threshold_mins: number | null
+          threshold_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          channels?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          rule_type: string
+          target_key?: string | null
+          threshold_mins?: number | null
+          threshold_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          channels?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          rule_type?: string
+          target_key?: string | null
+          threshold_mins?: number | null
+          threshold_pct?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_sandboxes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          last_synced_at: string | null
+          name: string
+          promoted_at: string | null
+          sandbox_workspace_id: string
+          source_workspace_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          last_synced_at?: string | null
+          name: string
+          promoted_at?: string | null
+          sandbox_workspace_id: string
+          source_workspace_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_synced_at?: string | null
+          name?: string
+          promoted_at?: string | null
+          sandbox_workspace_id?: string
+          source_workspace_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       playbook_responses: {
         Row: {
           completed_at: string | null
@@ -9849,6 +9968,17 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      platform_cron_status: {
+        Args: never
+        Returns: {
+          duration_ms: number
+          jobname: string
+          last_end: string
+          last_start: string
+          schedule: string
+          status: string
+        }[]
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
