@@ -49,6 +49,7 @@ export function AddAssociation({
           entity={entity}
           select={select}
           searchColumn={searchColumn}
+          searchColumns={searchColumns}
           orderBy={orderBy}
           labelFrom={labelFrom}
           hintFrom={hintFrom}
