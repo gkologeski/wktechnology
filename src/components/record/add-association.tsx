@@ -26,7 +26,7 @@ type Props = {
  *  - optional "Criar novo" button that delegates to the parent
  */
 export function AddAssociation({
-  entity, select, searchColumn = "name", orderBy, labelFrom, hintFrom, filters,
+  entity, select, searchColumn = "name", searchColumns, orderBy, labelFrom, hintFrom, filters,
   placeholder, onPick, onCreateNew, label,
 }: Props) {
   const [open, setOpen] = useState(false);
