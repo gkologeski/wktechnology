@@ -29,11 +29,17 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
     queryKey: ["contacts_picker", search, open],
     enabled: open && search.trim().length >= 3,
     queryFn: async () => {
-      const s = `%${search.trim()}%`;
-      const { data, error } = await supabase
+      const term = search.trim();
+      const tokens = term.split(/\s+/).filter(Boolean);
+      const cols = ["first_name", "last_name", "email"];
+      let q = supabase
         .from("contacts")
-        .select("id, first_name, last_name, email")
-        .or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`)
+        .select("id, first_name, last_name, email");
+      for (const tok of tokens) {
+        const safe = tok.replace(/[%,()]/g, " ");
+        q = q.or(cols.map((c) => `${c}.ilike.%${safe}%`).join(","));
+      }
+      const { data, error } = await q
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw new Error(error.message);

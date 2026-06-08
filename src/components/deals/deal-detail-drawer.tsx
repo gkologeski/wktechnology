@@ -336,6 +336,7 @@ function DealRelatedFields({
           entity="companies"
           select="id,name"
           searchColumn="name"
+          searchColumns={["name", "domain"]}
           labelFrom={(r) => String((r as { name?: string }).name ?? "")}
           value={companyId}
           onChange={(id) => set("company_id", id)}
@@ -348,6 +349,7 @@ function DealRelatedFields({
           entity="contacts"
           select="id,first_name,last_name,email"
           searchColumn="first_name"
+          searchColumns={["first_name", "last_name", "email", "phone"]}
           labelFrom={(r) => {
             const row = r as { first_name?: string; last_name?: string; email?: string };
             return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";

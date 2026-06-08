@@ -8,6 +8,7 @@ type Props = {
   entity: string;
   select: string;
   searchColumn?: string;
+  searchColumns?: string[];
   orderBy?: string;
   labelFrom: (row: Record<string, unknown>) => string;
   hintFrom?: (row: Record<string, unknown>) => string | null;
@@ -25,7 +26,7 @@ type Props = {
  *  - optional "Criar novo" button that delegates to the parent
  */
 export function AddAssociation({
-  entity, select, searchColumn = "name", orderBy, labelFrom, hintFrom, filters,
+  entity, select, searchColumn = "name", searchColumns, orderBy, labelFrom, hintFrom, filters,
   placeholder, onPick, onCreateNew, label,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -48,6 +49,7 @@ export function AddAssociation({
           entity={entity}
           select={select}
           searchColumn={searchColumn}
+          searchColumns={searchColumns}
           orderBy={orderBy}
           labelFrom={labelFrom}
           hintFrom={hintFrom}

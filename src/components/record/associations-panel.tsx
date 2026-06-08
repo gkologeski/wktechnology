@@ -133,6 +133,7 @@ function CompanyCard({
             entity="companies"
             select="id, name, domain"
             searchColumn="name"
+            searchColumns={["name", "domain"]}
             labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
             hintFrom={(r) => (r as { domain?: string }).domain ?? null}
             placeholder="Buscar empresa…"
@@ -416,6 +417,7 @@ function TicketsCard({
               entity="tickets"
               select="id, subject, status, priority"
               searchColumn="subject"
+              searchColumns={["subject", "description"]}
               labelFrom={(r) => String((r as { subject?: string }).subject ?? "—")}
               hintFrom={(r) => {
                 const x = r as { status?: string; priority?: string };

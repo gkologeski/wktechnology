@@ -588,6 +588,7 @@ function TicketsIndex() {
                 entity="contacts"
                 select="id, first_name, last_name, email"
                 searchColumn="first_name"
+                searchColumns={["first_name", "last_name", "email", "phone"]}
                 labelFrom={(r) => {
                   const row = r as { first_name?: string; last_name?: string; email?: string };
                   return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || row.email || "Contato";
@@ -605,6 +606,7 @@ function TicketsIndex() {
               <EntityCombobox
                 entity="companies"
                 select="id, name, domain"
+                searchColumns={["name", "domain"]}
                 labelFrom={(r) => String((r as { name?: string }).name ?? "")}
                 hintFrom={(r) => (r as { domain?: string }).domain ?? null}
                 value={draft.company_id ?? null}

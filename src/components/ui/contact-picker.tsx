@@ -98,13 +98,16 @@ export function ContactPicker({
         setMatches([]);
         return;
       }
-      const like = `%${term}%`;
-      const { data, error } = await supabase
+      const tokens = term.split(/\s+/).filter((t) => t.length >= 2);
+      const cols = ["first_name", "last_name", "email", "phone", "mobile_phone"];
+      let query = supabase
         .from("contacts")
-        .select("id, first_name, last_name, email, phone, mobile_phone")
-        .or(
-          `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},mobile_phone.ilike.${like}`,
-        )
+        .select("id, first_name, last_name, email, phone, mobile_phone");
+      for (const tok of tokens) {
+        const like = `%${tok}%`;
+        query = query.or(cols.map((c) => `${c}.ilike.${like}`).join(","));
+      }
+      const { data, error } = await query
         .order("first_name", { ascending: true })
         .limit(500);
       if (error) return;
