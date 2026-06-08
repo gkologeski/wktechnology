@@ -23,20 +23,21 @@ export const askCopilot = createServerFn({ method: "POST" })
     const ilike = `%${q.slice(0, 60).replace(/[%_]/g, " ")}%`;
 
     // Buscas paralelas — RLS scopa por owner/workspace.
-    const [contacts, deals, leads, notes, activities] = await Promise.all([
-      supabase.from("contacts").select("id, full_name, email, phone").or(`full_name.ilike.${ilike},email.ilike.${ilike}`).limit(5),
+    const [contacts, deals, leads, activities] = await Promise.all([
+      supabase.from("contacts").select("id, first_name, last_name, email, phone").or(`first_name.ilike.${ilike},last_name.ilike.${ilike},email.ilike.${ilike}`).limit(5),
       supabase.from("deals").select("id, name, value, stage, expected_close_date").ilike("name", ilike).limit(5),
-      supabase.from("leads").select("id, email, phone, source, status").or(`email.ilike.${ilike}`).limit(5),
-      supabase.from("notes").select("id, title, content").or(`title.ilike.${ilike},content.ilike.${ilike}`).limit(5),
+      supabase.from("leads").select("id, email, phone, source, status").ilike("email", ilike).limit(5),
       supabase.from("activities").select("id, subject, body, type").or(`subject.ilike.${ilike},body.ilike.${ilike}`).limit(5),
     ]);
 
     const sources: Source[] = [];
-    (contacts.data ?? []).forEach((r) => sources.push({ kind: "contact", id: r.id as string, title: (r.full_name as string) ?? (r.email as string) ?? "Contato", snippet: [r.email, r.phone].filter(Boolean).join(" · "), url: `/contacts/${r.id}` }));
-    (deals.data ?? []).forEach((r) => sources.push({ kind: "deal", id: r.id as string, title: r.name as string, snippet: `R$ ${r.value} · ${r.stage}`, url: `/deals/${r.id}` }));
-    (leads.data ?? []).forEach((r) => sources.push({ kind: "lead", id: r.id as string, title: (r.email as string) ?? "Lead", snippet: [r.source, r.status].filter(Boolean).join(" · "), url: `/leads/${r.id}` }));
-    (notes.data ?? []).forEach((r) => sources.push({ kind: "note", id: r.id as string, title: (r.title as string) ?? "Nota", snippet: String(r.content ?? "").slice(0, 160), url: `/notes` }));
-    (activities.data ?? []).forEach((r) => sources.push({ kind: "activity", id: r.id as string, title: (r.subject as string) ?? (r.type as string) ?? "Atividade", snippet: String(r.body ?? "").slice(0, 160) }));
+    (contacts.data ?? []).forEach((r) => {
+      const name = [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "Contato");
+      sources.push({ kind: "contact", id: r.id, title: String(name), snippet: [r.email, r.phone].filter(Boolean).join(" · "), url: `/contacts/${r.id}` });
+    });
+    (deals.data ?? []).forEach((r) => sources.push({ kind: "deal", id: r.id, title: r.name, snippet: `R$ ${r.value} · ${r.stage}`, url: `/deals/${r.id}` }));
+    (leads.data ?? []).forEach((r) => sources.push({ kind: "lead", id: r.id, title: r.email ?? "Lead", snippet: [r.source, r.status].filter(Boolean).join(" · "), url: `/leads/${r.id}` }));
+    (activities.data ?? []).forEach((r) => sources.push({ kind: "activity", id: r.id, title: r.subject ?? r.type ?? "Atividade", snippet: String(r.body ?? "").slice(0, 160) }));
 
     const ctx = sources.slice(0, 12).map((s, i) => `[${i + 1}] (${s.kind}) ${s.title} — ${s.snippet}`).join("\n");
 
