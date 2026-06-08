@@ -78,7 +78,7 @@ function DealDetail() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground truncate">{deal.name}</h1>
-              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{deal.stage}</Badge>
+              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{stages.find(s => s.value === currentStage)?.label ?? deal.stage}</Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {formatCurrency(deal.value, deal.currency)}
