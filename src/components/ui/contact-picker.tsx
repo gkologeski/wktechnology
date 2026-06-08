@@ -222,7 +222,7 @@ export function ContactPicker({
  * Mantém o nome localmente; hidrata via id quando necessário.
  * ───────────────────────────────────────────────────────────── */
 export interface ContactPickerByIdProps
-  extends Omit<ContactPickerProps, "value" | "onChange"> {
+  extends Omit<ContactPickerProps, "value" | "onChange" | "id"> {
   id: string | null;
   onChange: (id: string | null) => void;
 }
