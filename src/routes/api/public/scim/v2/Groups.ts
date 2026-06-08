@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/scim/v2/Groups")({
         const { data } = await supabaseAdmin
           .from("user_groups")
           .select("id, name, created_at")
-          .eq("workspace_owner_id", auth.workspaceId)
+          .eq("workspace_id", auth.workspaceId)
           .limit(200);
         const Resources = (data ?? []).map((g: any) => ({
           schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
