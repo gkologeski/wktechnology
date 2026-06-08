@@ -263,7 +263,7 @@ function AttachmentItem({ att }: { att: Attachment }) {
   if (isImage && url) {
     return (
       <a href={url} target="_blank" rel="noreferrer" className="block">
-        <img src={url} alt={att.file_name} className="max-h-48 rounded border" />
+        <img src={url} alt="" className="max-h-48 rounded border" />
       </a>
     );
   }
