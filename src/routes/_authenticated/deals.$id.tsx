@@ -120,6 +120,12 @@ function DealDetail() {
       center={
         <>
           <AiSummaryPanel entity="deal" entityId={deal.id} />
+          <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
+        </>
+      }
+      right={
+        <>
+          <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Itens de linha</CardTitle>
@@ -136,10 +142,8 @@ function DealDetail() {
               <DealQuotes dealId={deal.id} />
             </CardContent>
           </Card>
-          <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
         </>
       }
-      right={<AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />}
     />
   );
 }
