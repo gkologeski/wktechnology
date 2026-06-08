@@ -50,6 +50,13 @@ export interface EntityComboboxProps {
   icon?: LucideIcon;
   /** Permite limpar a seleção. Default: true. */
   clearable?: boolean;
+  /**
+   * IDs já associados a outros campos do formulário — aparecem primeiro
+   * em um grupo "Relacionados".
+   */
+  priorityIds?: string[];
+  /** Rótulo do grupo prioritário. Default: "Relacionados". */
+  priorityLabel?: string;
 }
 
 export function EntityCombobox({
@@ -69,15 +76,22 @@ export function EntityCombobox({
   disabled,
   icon: Icon,
   clearable = true,
+  priorityIds,
+  priorityLabel = "Relacionados",
 }: EntityComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EntityComboboxItem[]>([]);
+  const [priorityResults, setPriorityResults] = useState<EntityComboboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EntityComboboxItem | null>(null);
   const reqIdRef = useRef(0);
 
   const filtersKey = useMemo(() => JSON.stringify(filters ?? {}), [filters]);
+  const priorityKey = useMemo(
+    () => (priorityIds && priorityIds.length ? [...priorityIds].sort().join(",") : ""),
+    [priorityIds],
+  );
 
   // Hidrata label do item selecionado quando recebemos só um id.
   useEffect(() => {
@@ -106,6 +120,38 @@ export function EntityCombobox({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, entity, select]);
+
+  // Busca registros prioritários (associados a outros campos do form).
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (!priorityIds || priorityIds.length === 0) {
+      setPriorityResults([]);
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from(entity as never)
+        .select(select)
+        .in("id" as never, priorityIds as never);
+      if (cancel || error || !data) return;
+      const items: EntityComboboxItem[] = (data as RowLike[]).map((row) => ({
+        id: String((row as { id?: unknown }).id ?? ""),
+        label: labelFrom(row),
+        hint: hintFrom?.(row) ?? null,
+      }));
+      // mantém ordem solicitada em priorityIds
+      const order = new Map(priorityIds.map((id, i) => [id, i]));
+      items.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      setPriorityResults(items);
+    })();
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, priorityKey, entity, select]);
 
   // Busca on-demand quando o popover está aberto.
   useEffect(() => {
@@ -194,38 +240,60 @@ export function EntityCombobox({
               onValueChange={setSearch}
             />
             <CommandList>
-              {loading ? (
-                <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Buscando…
-                </div>
-              ) : results.length === 0 ? (
-                <CommandEmpty>{emptyLabel}</CommandEmpty>
-              ) : (
-                <CommandGroup>
-                  {results.map((item) => (
-                    <CommandItem
-                      key={item.id}
-                      value={item.id}
-                      onSelect={() => {
-                        setSelectedItem(item);
-                        onChange(item.id, item);
-                        setOpen(false);
-                        setSearch("");
-                      }}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="flex min-w-0 flex-col">
-                        <span className="truncate">{item.label}</span>
-                        {item.hint ? (
-                          <span className="truncate text-[11px] text-muted-foreground">{item.hint}</span>
-                        ) : null}
-                      </span>
-                      {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+              {(() => {
+                const q = search.trim().toLowerCase();
+                const priorityFiltered = priorityResults.filter(
+                  (it) => !q || it.label.toLowerCase().includes(q) || (it.hint ?? "").toLowerCase().includes(q),
+                );
+                const priorityIdSet = new Set(priorityFiltered.map((it) => it.id));
+                const restFiltered = results.filter((it) => !priorityIdSet.has(it.id));
+                const renderItem = (item: EntityComboboxItem) => (
+                  <CommandItem
+                    key={item.id}
+                    value={item.id}
+                    onSelect={() => {
+                      setSelectedItem(item);
+                      onChange(item.id, item);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate">{item.label}</span>
+                      {item.hint ? (
+                        <span className="truncate text-[11px] text-muted-foreground">{item.hint}</span>
+                      ) : null}
+                    </span>
+                    {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}
+                  </CommandItem>
+                );
+                if (loading) {
+                  return (
+                    <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Buscando…
+                    </div>
+                  );
+                }
+                if (priorityFiltered.length === 0 && restFiltered.length === 0) {
+                  return <CommandEmpty>{emptyLabel}</CommandEmpty>;
+                }
+                return (
+                  <>
+                    {priorityFiltered.length > 0 && (
+                      <CommandGroup heading={priorityLabel}>
+                        {priorityFiltered.map(renderItem)}
+                      </CommandGroup>
+                    )}
+                    {restFiltered.length > 0 && (
+                      <CommandGroup heading={priorityFiltered.length > 0 ? "Outros" : undefined}>
+                        {restFiltered.map(renderItem)}
+                      </CommandGroup>
+                    )}
+                  </>
+                );
+              })()}
             </CommandList>
           </Command>
         </PopoverContent>

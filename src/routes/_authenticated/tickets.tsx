@@ -18,8 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
-import { ContactPickerById } from "@/components/ui/contact-picker";
+import { useRelatedIds } from "@/hooks/use-related-ids";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -28,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, X,
-  UserCheck, ArrowRightLeft, Settings2,
+  UserCheck, ArrowRightLeft, Settings2, User, Building2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -82,6 +81,11 @@ function TicketsIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const related = useRelatedIds({
+    contactId: draft.contact_id ?? null,
+    companyId: draft.company_id ?? null,
+    dealId: draft.deal_id ?? null,
+  });
 
 
 
@@ -105,6 +109,19 @@ function TicketsIndex() {
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () => (await supabase.from("companies").select("id,name").order("name")).data ?? [],
+  });
+  const { data: sourceOptions = [] } = useQuery({
+    queryKey: ["tickets", "distinct-sources"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tickets")
+        .select("source")
+        .not("source", "is", null)
+        .limit(1000);
+      const set = new Set<string>();
+      (data ?? []).forEach((r) => r.source && set.add(String(r.source)));
+      return Array.from(set).sort((a, b) => a.localeCompare(b));
+    },
   });
   const { data: members = [] } = useWorkspaceMembers();
 
@@ -548,7 +565,18 @@ function TicketsIndex() {
             </div>
             <div className="space-y-1.5">
               <Label>Fonte</Label>
-              <Input placeholder="email, whatsapp, telefone…" value={draft.source ?? ""} onChange={(e) => setDraft({ ...draft, source: e.target.value })} />
+              <Select
+                value={draft.source ?? "__none__"}
+                onValueChange={(v) => setDraft({ ...draft, source: v === "__none__" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Nenhuma —</SelectItem>
+                  {sourceOptions.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Vencimento</Label>
@@ -556,23 +584,34 @@ function TicketsIndex() {
             </div>
             <div className="space-y-1.5">
               <Label>Contato</Label>
-              <ContactPickerById
-                mode="pick"
-                id={draft.contact_id ?? null}
+              <EntityCombobox
+                entity="contacts"
+                select="id, first_name, last_name, email"
+                searchColumn="first_name"
+                labelFrom={(r) => {
+                  const row = r as { first_name?: string; last_name?: string; email?: string };
+                  return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || row.email || "Contato";
+                }}
+                hintFrom={(r) => (r as { email?: string }).email ?? null}
+                value={draft.contact_id ?? null}
                 onChange={(id) => setDraft({ ...draft, contact_id: id })}
                 placeholder="Selecionar contato…"
+                icon={User}
+                priorityIds={related.contacts.filter((id) => id !== draft.contact_id)}
               />
             </div>
             <div className="space-y-1.5">
               <Label>Empresa</Label>
-              <CompanyPicker
-                mode="pick"
-                value={{
-                  id: draft.company_id ?? null,
-                  name: companies.find((c) => c.id === draft.company_id)?.name ?? "",
-                }}
-                onChange={(cv: CompanyPickerValue) => setDraft({ ...draft, company_id: cv.id })}
+              <EntityCombobox
+                entity="companies"
+                select="id, name, domain"
+                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+                hintFrom={(r) => (r as { domain?: string }).domain ?? null}
+                value={draft.company_id ?? null}
+                onChange={(id) => setDraft({ ...draft, company_id: id })}
                 placeholder="Selecionar empresa…"
+                icon={Building2}
+                priorityIds={related.companies.filter((id) => id !== draft.company_id)}
               />
             </div>
             <div className="md:col-span-2 space-y-1.5">
@@ -585,6 +624,7 @@ function TicketsIndex() {
                 onChange={(id) => setDraft({ ...draft, deal_id: id })}
                 placeholder="Selecionar negócio…"
                 icon={Briefcase}
+                priorityIds={related.deals.filter((id) => id !== draft.deal_id)}
               />
             </div>
           </div>
