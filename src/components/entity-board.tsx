@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 
 export type BoardStage = { value: string; label: string; color?: string };
 
