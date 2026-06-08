@@ -81,6 +81,11 @@ function TicketsIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const related = useRelatedIds({
+    contactId: draft.contact_id ?? null,
+    companyId: draft.company_id ?? null,
+    dealId: draft.deal_id ?? null,
+  });
 
 
 
