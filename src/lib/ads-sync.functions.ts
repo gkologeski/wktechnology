@@ -12,7 +12,8 @@ export const listAdsAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await (context.supabase.from("ads_accounts") as any)
-      .select("*").order("created_at", { ascending: false });
+      .select("id, owner_id, provider, external_account_id, display_name, status, last_synced_at, created_at, updated_at")
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { accounts: (data ?? []) as any[] };
   });
