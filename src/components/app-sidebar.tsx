@@ -137,7 +137,10 @@ const groups: Group[] = [
       { section: "Segurança", title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
       { section: "Segurança", title: "Webhooks", url: "/settings/webhooks", icon: Plug },
       // Integrações
+      { section: "Integrações", title: "Marketplace", url: "/marketplace", icon: Package },
       { section: "Integrações", title: "Integrações", url: "/integrations", icon: Plug },
+      { section: "Integrações", title: "Notificações Slack", url: "/settings/notifications/slack", icon: MessageSquare },
+      { section: "Integrações", title: "Zapier / Make", url: "/settings/zapier", icon: Workflow },
       { section: "Integrações", title: "Sync HubSpot", url: "/settings/hubspot-sync", icon: Plug },
       { section: "Integrações", title: "Usuários HubSpot", url: "/settings/hubspot-users", icon: Plug },
     ],
