@@ -1,5 +1,6 @@
-// Service worker básico: cache de shell + push notifications.
-const CACHE = "crm-v1";
+// Service worker v2: NetworkFirst para HTML, CacheFirst para assets, push notifications.
+const CACHE = "crm-v2";
+const RUNTIME = "crm-runtime-v2";
 const SHELL = ["/", "/favicon.ico", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -9,7 +10,9 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE && k !== RUNTIME).map((k) => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
@@ -18,9 +21,29 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  // Nunca cachear chamadas a APIs e server functions.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_server")) return;
+
+  const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
+  if (isHTML) {
+    // NetworkFirst: tenta rede, fallback para cache (offline shell).
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req).then((c) => c || caches.match("/")))
+    );
+    return;
+  }
+  // Hashed assets: cache first.
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).catch(() => cached))
+    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+      const copy = res.clone();
+      caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
+      return res;
+    }).catch(() => cached))
   );
 });
 
@@ -30,7 +53,9 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/favicon.ico",
+      icon: data.icon || "/favicon.ico",
+      badge: "/favicon.ico",
+      tag: data.tag,
       data: { url: data.url },
     })
   );
@@ -39,5 +64,15 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(self.clients.openWindow(url));
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of all) {
+      if (c.url.includes(url) && "focus" in c) return c.focus();
+    }
+    return self.clients.openWindow(url);
+  })());
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "skipWaiting") self.skipWaiting();
 });

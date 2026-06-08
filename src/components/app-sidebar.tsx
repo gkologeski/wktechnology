@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, Settings, LogOut, Plug,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail, PlayCircle,
-  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, Bug, Briefcase as BriefcaseIcon, User as UserIcon, Video,
+  Workflow, Repeat, Target, BookOpen, GitBranch, Filter, Send, ChevronRight, Inbox, Shuffle, Timer, ShieldCheck, UsersRound, ScrollText, KeyRound, Sliders, LifeBuoy, Wand2, Star, ExternalLink, Package, FileText, PenLine, BarChart3, TrendingUp, Sparkles, Calendar, CalendarDays, Bug, Briefcase as BriefcaseIcon, User as UserIcon, Video, Smartphone,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -104,7 +104,7 @@ const groups: Group[] = [
       // Workspace
       { section: "Workspace", title: "White-label", url: "/settings/branding", icon: Sparkles },
       { section: "Workspace", title: "Idioma", url: "/settings/language", icon: Settings },
-      { section: "Workspace", title: "Mobile / PWA", url: "/settings/mobile", icon: Settings },
+      { section: "Workspace", title: "Mobile / PWA / Push", url: "/settings/mobile", icon: Smartphone },
       { section: "Workspace", title: "Calendários", url: "/settings/calendars", icon: Calendar },
       { section: "Workspace", title: "Agendamentos", url: "/settings/booking", icon: CalendarDays },
       { section: "Workspace", title: "Vídeo & Reuniões", url: "/settings/video", icon: Video },
