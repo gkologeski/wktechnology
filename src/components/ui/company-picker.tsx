@@ -82,10 +82,16 @@ export function CompanyPicker({
       return;
     }
     const t = setTimeout(async () => {
+      const term = sanitizeOrTerm(q);
+      if (term.length < 3) {
+        setMatches([]);
+        return;
+      }
+      const like = `%${term}%`;
       const { data, error } = await supabase
         .from("companies")
-        .select("id, name")
-        .ilike("name", `%${q}%`)
+        .select("id, name, domain, phone")
+        .or(`name.ilike.${like},domain.ilike.${like},phone.ilike.${like}`)
         .order("name", { ascending: true })
         .limit(500);
       if (error) return;
