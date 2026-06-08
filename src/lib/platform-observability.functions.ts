@@ -1,0 +1,236 @@
+// Release 21 — Observabilidade & Admin (super-admin only)
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function assertPlatformAdmin(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
+  if (!data) throw new Error("Acesso negado: apenas super-admins.");
+}
+
+// ============== STATUS DASHBOARD ==============
+export const getPlatformStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+
+    // Cron status via RPC
+    const cronRes = await supabaseAdmin.rpc("platform_cron_status" as never);
+    const crons = (cronRes.data ?? []) as Array<{
+      jobname: string; schedule: string; last_start: string | null;
+      last_end: string | null; status: string | null; duration_ms: number | null;
+    }>;
+    const now = Date.now();
+    const cronJobs = crons.map((c) => {
+      const lastStartMs = c.last_start ? new Date(c.last_start).getTime() : 0;
+      const lateMin = lastStartMs ? Math.round((now - lastStartMs) / 60000) : null;
+      return { ...c, late_minutes: lateMin };
+    });
+
+    // Integrações: contagens simples
+    const [emailAcc, waba, twilio, twoFa] = await Promise.all([
+      supabaseAdmin.from("email_accounts").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("wa_business_accounts").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("integrations").select("id", { count: "exact", head: true }).eq("provider", "twilio"),
+      supabaseAdmin.from("workspaces").select("id", { count: "exact", head: true }),
+    ]);
+
+    // Eventos recentes de alerta
+    const { data: recentEvents } = await supabaseAdmin
+      .from("platform_alert_events")
+      .select("id, fired_at, severity, message")
+      .order("fired_at", { ascending: false })
+      .limit(10);
+
+    return {
+      cronJobs,
+      integrations: {
+        gmail_accounts: emailAcc.count ?? 0,
+        whatsapp_accounts: waba.count ?? 0,
+        twilio_integrations: twilio.count ?? 0,
+        workspaces: twoFa.count ?? 0,
+      },
+      recentEvents: recentEvents ?? [],
+      checkedAt: new Date().toISOString(),
+    };
+  });
+
+// ============== ALERT RULES ==============
+const AlertRuleSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1).max(120),
+  description: z.string().max(500).optional().nullable(),
+  rule_type: z.enum(["cron_late", "broadcast_failure", "twilio_errors", "custom"]),
+  threshold_pct: z.number().min(0).max(100).optional().nullable(),
+  threshold_mins: z.number().int().min(0).max(1440).optional().nullable(),
+  target_key: z.string().max(120).optional().nullable(),
+  channels: z.array(z.object({
+    type: z.enum(["email", "slack"]),
+    value: z.string().min(1).max(255),
+  })).default([]),
+  enabled: z.boolean().default(true),
+});
+
+export const listAlertRules = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("platform_alert_rules").select("*").order("created_at", { ascending: false });
+    return { items: data ?? [] };
+  });
+
+export const upsertAlertRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AlertRuleSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const payload = {
+      name: data.name,
+      description: data.description ?? null,
+      rule_type: data.rule_type,
+      threshold_pct: data.threshold_pct ?? null,
+      threshold_mins: data.threshold_mins ?? null,
+      target_key: data.target_key ?? null,
+      channels: data.channels,
+      enabled: data.enabled,
+    };
+    if (data.id) {
+      const { error } = await (supabaseAdmin.from("platform_alert_rules") as any)
+        .update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id: data.id };
+    }
+    const { data: ins, error } = await (supabaseAdmin.from("platform_alert_rules") as any)
+      .insert(payload).select("id").maybeSingle();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: ins?.id };
+  });
+
+export const deleteAlertRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    await supabaseAdmin.from("platform_alert_rules").delete().eq("id", data.id);
+    return { ok: true };
+  });
+
+export const listAlertEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("platform_alert_events")
+      .select("id, rule_id, fired_at, severity, message, context, resolved_at")
+      .order("fired_at", { ascending: false })
+      .limit(100);
+    return { items: data ?? [] };
+  });
+
+// ============== QUOTAS ==============
+export const listWorkspaceQuotas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { data: workspaces } = await supabaseAdmin
+      .from("workspaces").select("id, name, slug").order("name");
+    const ids = (workspaces ?? []).map((w) => w.id as string);
+    if (!ids.length) return { items: [] };
+
+    const [subs, counters] = await Promise.all([
+      supabaseAdmin.from("workspace_subscriptions").select("workspace_owner_id, plan_code").in("workspace_owner_id", ids),
+      supabaseAdmin.from("usage_counters").select("workspace_owner_id, key, value").in("workspace_owner_id", ids),
+    ]);
+
+    const planMap = new Map<string, string>();
+    for (const s of subs.data ?? []) planMap.set(s.workspace_owner_id as string, s.plan_code as string);
+
+    const counterMap = new Map<string, Record<string, number>>();
+    for (const c of counters.data ?? []) {
+      const k = c.workspace_owner_id as string;
+      const m = counterMap.get(k) ?? {};
+      m[c.key as string] = (m[c.key as string] ?? 0) + Number(c.value ?? 0);
+      counterMap.set(k, m);
+    }
+
+    return {
+      items: (workspaces ?? []).map((w) => ({
+        id: w.id, name: w.name, slug: w.slug,
+        plan: planMap.get(w.id as string) ?? "free",
+        usage: counterMap.get(w.id as string) ?? {},
+      })),
+    };
+  });
+
+// ============== SANDBOX ==============
+const SandboxCreateSchema = z.object({
+  source_workspace_id: z.string().uuid(),
+  name: z.string().min(2).max(120),
+});
+
+export const listSandboxes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("platform_sandboxes")
+      .select("id, source_workspace_id, sandbox_workspace_id, name, status, last_synced_at, promoted_at, created_at")
+      .order("created_at", { ascending: false });
+    return { items: data ?? [] };
+  });
+
+export const createSandbox = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SandboxCreateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+
+    // Cria um workspace sandbox espelho (somente metadados; clonar dados é tarefa futura).
+    const slug = `sandbox-${data.source_workspace_id.slice(0, 6)}-${Date.now().toString(36)}`;
+    const { data: ws, error } = await (supabaseAdmin.from("workspaces") as any)
+      .insert({
+        name: `${data.name} (Sandbox)`,
+        slug,
+        status: "active",
+        created_by: context.userId,
+      })
+      .select("id").maybeSingle();
+    if (error) throw new Error(error.message);
+
+    const { error: sbErr } = await (supabaseAdmin.from("platform_sandboxes") as any).insert({
+      source_workspace_id: data.source_workspace_id,
+      sandbox_workspace_id: ws!.id,
+      name: data.name,
+      status: "active",
+      created_by: context.userId,
+      last_synced_at: new Date().toISOString(),
+    });
+    if (sbErr) throw new Error(sbErr.message);
+
+    return { ok: true, sandbox_workspace_id: ws!.id };
+  });
+
+export const promoteSandbox = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { error } = await (supabaseAdmin.from("platform_sandboxes") as any)
+      .update({ status: "promoted", promoted_at: new Date().toISOString() })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const archiveSandbox = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    await (supabaseAdmin.from("platform_sandboxes") as any)
+      .update({ status: "archived" }).eq("id", data.id);
+    return { ok: true };
+  });
