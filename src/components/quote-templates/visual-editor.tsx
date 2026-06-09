@@ -161,7 +161,7 @@ export function QuoteVisualEditor({ doc, onChange }: Props) {
   return (
     <TooltipProvider delayDuration={250}>
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="quote-editor relative flex h-[78vh] min-h-[640px] overflow-hidden rounded-2xl border border-border bg-slate-950/95 shadow-xl">
+        <div className="quote-editor relative flex h-[calc(100vh-220px)] min-h-[720px] overflow-hidden rounded-2xl border border-border bg-slate-950/95 shadow-xl">
           {/* LEFT RAIL — icon-only palette, Canva style */}
           <LeftRail onAdd={addBlock} />
 
