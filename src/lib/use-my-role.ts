@@ -18,13 +18,13 @@ export function useMyRole() {
     if (!user) { setRole("member"); setLoading(false); return; }
     let cancelled = false;
     (async () => {
-      // Owner do próprio workspace = admin nato.
-      // Buscamos também user_roles em outros workspaces e pegamos o mais alto.
-      const { data: rows } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-      let best: AppRole = "admin"; // próprio workspace
+      // Owner de algum workspace = admin nato desse workspace.
+      // Caso contrário, pegamos o role mais alto em user_roles, com fallback "member".
+      const [{ data: owned }, { data: rows }] = await Promise.all([
+        supabase.from("workspaces").select("id").eq("owner_id", user.id).limit(1),
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+      ]);
+      let best: AppRole = (owned && owned.length > 0) ? "admin" : "member";
       for (const r of rows ?? []) {
         const role = r.role as AppRole;
         if (RANK[role] > RANK[best]) best = role;
