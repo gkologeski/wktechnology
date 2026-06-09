@@ -296,7 +296,16 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       const r = await supabaseAdmin.from("profiles").select("id, full_name").eq("id", quote.owner_id).maybeSingle();
       if (r.data) agent = { id: r.data.id, full_name: r.data.full_name, email: null };
     }
-    return { quote, items: items ?? [], company, contact, agent };
+    let template: { id: string; name: string; html: string } | null = null;
+    if (quote.template_id) {
+      const r = await supabaseAdmin
+        .from("quote_templates")
+        .select("id, name, html")
+        .eq("id", quote.template_id)
+        .maybeSingle();
+      template = (r.data ?? null) as typeof template;
+    }
+    return { quote, items: items ?? [], company, contact, agent, template };
   });
 
 export const respondToQuote = createServerFn({ method: "POST" })
