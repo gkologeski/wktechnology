@@ -58,6 +58,7 @@ import {
   type SortDir,
 } from "@/components/crm/hubspot-shell";
 import { formatDateTime } from "@/lib/crm";
+import { exportRowsToCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
