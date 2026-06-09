@@ -56,7 +56,7 @@ const groups: Group[] = [
     label: "Pessoas & Acesso",
     items: [
       { to: "/settings/teams", label: "Usuários", icon: UsersRound, need: "admin" },
-      { to: "/settings/user-groups", label: "Equipes", icon: UsersRound },
+      { to: "/settings/user-groups", label: "Equipes", icon: UsersRound, need: "manager" },
       { to: "/settings/roles", label: "Permissões", icon: KeyRound, need: "admin" },
     ],
   },
