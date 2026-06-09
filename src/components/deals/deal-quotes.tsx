@@ -116,9 +116,22 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Nova cotação
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={hasLineItems ? -1 : 0}>
+                <Button size="sm" onClick={() => setOpen(true)} disabled={!hasLineItems}>
+                  <Plus className="h-4 w-4 mr-1" /> Nova cotação
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasLineItems && (
+              <TooltipContent>
+                Adicione itens de linha ao negócio para gerar uma cotação.
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {isLoading ? (
