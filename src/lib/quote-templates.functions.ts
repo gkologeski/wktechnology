@@ -74,6 +74,7 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspace_id = await activeWorkspace(supabase, userId);
+    const compiled = compile({ html: data.html, blocks: data.blocks ?? undefined });
     const { data: row, error } = await supabase
       .from("quote_templates")
       .insert({
@@ -81,7 +82,8 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
         workspace_id,
         name: data.name,
         description: data.description ?? null,
-        html: data.html,
+        html: compiled.html,
+        blocks: compiled.blocks,
         is_default: false,
         is_system: false,
       })
@@ -100,6 +102,7 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(120).optional(),
         description: z.string().trim().max(500).nullable().optional(),
         html: z.string().max(200_000).optional(),
+        blocks: BlocksSchema.nullable().optional(),
       }),
     }).parse(input),
   )
@@ -107,14 +110,21 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: current, error: gErr } = await supabase
       .from("quote_templates")
-      .select("is_system")
+      .select("is_system, html, blocks")
       .eq("id", data.id)
       .maybeSingle();
     if (gErr) throw gErr;
     if (!current) throw new Error("Modelo não encontrado");
 
-    const patch: { html?: string; description?: string | null; name?: string } = {};
-    if (data.patch.html !== undefined) patch.html = data.patch.html;
+    const patch: { html?: string; blocks?: unknown; description?: string | null; name?: string } = {};
+    if (data.patch.blocks !== undefined) {
+      const compiled = compile({ html: data.patch.html, blocks: data.patch.blocks ?? undefined });
+      patch.blocks = compiled.blocks;
+      patch.html = compiled.html;
+    } else if (data.patch.html !== undefined) {
+      patch.html = data.patch.html;
+      patch.blocks = null; // editar HTML cru desativa o modo visual
+    }
     if (data.patch.description !== undefined) patch.description = data.patch.description;
     if (data.patch.name !== undefined) {
       if (current.is_system) {
