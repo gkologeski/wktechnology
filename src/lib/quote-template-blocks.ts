@@ -204,7 +204,7 @@ const num = (b: TemplateBlock, k: string, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
+export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
   switch (b.type) {
     case "header": {
       const align = prop(b, "align", "left");
