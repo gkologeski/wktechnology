@@ -21,12 +21,15 @@ import {
   ClipboardList, Globe, MousePointerClick, PhoneCall, Video as VideoIcon,
   Lock, Database, Download, Bell, Zap, ListChecks, Briefcase,
 } from "lucide-react";
+import { useMyRole } from "@/lib/use-my-role";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
 });
 
-type Tab = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
+type Need = "admin" | "manager" | "platform" | undefined;
+type Tab = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; need?: Need };
 type Section = { label: string; tabs: Tab[] };
 
 const sections: Section[] = [
@@ -41,102 +44,102 @@ const sections: Section[] = [
   {
     label: "Workspace",
     tabs: [
-      { to: "/settings/branding", label: "White-label", icon: Sparkles },
-      { to: "/settings/language", label: "Idioma", icon: Languages },
-      { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone },
-      { to: "/settings/calendars", label: "Calendários", icon: Calendar },
-      { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck },
-      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard },
-      { to: "/settings/data-residency", label: "Residência de dados", icon: Database },
-      { to: "/settings/exports", label: "Exportações", icon: Download },
+      { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
+      { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
+      { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone, need: "admin" },
+      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
+      { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck, need: "manager" },
+      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
+      { to: "/settings/data-residency", label: "Residência de dados", icon: Database, need: "admin" },
+      { to: "/settings/exports", label: "Exportações", icon: Download, need: "admin" },
     ],
   },
   {
     label: "Estrutura CRM",
     tabs: [
-      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch },
-      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag },
-      { to: "/settings/property-groups", label: "Grupos de propriedades", icon: Layers },
-      { to: "/settings/record-layouts", label: "Layout do registro", icon: LayoutTemplate },
-      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes },
-      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter },
-      { to: "/settings/segments", label: "Segmentos", icon: Filter },
-      { to: "/settings/products", label: "Produtos", icon: Package },
+      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin" },
+      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin" },
+      { to: "/settings/property-groups", label: "Grupos de propriedades", icon: Layers, need: "admin" },
+      { to: "/settings/record-layouts", label: "Layout do registro", icon: LayoutTemplate, need: "admin" },
+      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
+      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager" },
+      { to: "/settings/segments", label: "Segmentos", icon: Filter, need: "manager" },
+      { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
     ],
   },
   {
     label: "Vendas & Financeiro",
     tabs: [
-      { to: "/settings/quotes", label: "Cotações", icon: FileText },
-      { to: "/settings/quote-templates", label: "Modelos de cotação", icon: LayoutTemplate },
-      { to: "/settings/clauses", label: "Biblioteca de cláusulas", icon: BookOpen },
-      { to: "/settings/esign", label: "Assinaturas eletrônicas", icon: FileSignature },
-      { to: "/settings/payments", label: "Pagamentos", icon: CreditCard },
-      { to: "/settings/subscriptions", label: "Assinaturas", icon: Repeat2 },
-      { to: "/settings/recurring", label: "Recorrência", icon: Repeat },
-      { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt },
-      { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2 },
-      { to: "/settings/goals", label: "Metas", icon: Star },
+      { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager" },
+      { to: "/settings/quote-templates", label: "Modelos de cotação", icon: LayoutTemplate, need: "manager" },
+      { to: "/settings/clauses", label: "Biblioteca de cláusulas", icon: BookOpen, need: "manager" },
+      { to: "/settings/esign", label: "Assinaturas eletrônicas", icon: FileSignature, need: "admin" },
+      { to: "/settings/payments", label: "Pagamentos", icon: CreditCard, need: "admin" },
+      { to: "/settings/subscriptions", label: "Assinaturas", icon: Repeat2, need: "admin" },
+      { to: "/settings/recurring", label: "Recorrência", icon: Repeat, need: "admin" },
+      { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt, need: "admin" },
+      { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2, need: "admin" },
+      { to: "/settings/goals", label: "Metas", icon: Star, need: "manager" },
     ],
   },
   {
     label: "Automação",
     tabs: [
-      { to: "/settings/workflows", label: "Workflows", icon: Workflow },
-      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon },
-      { to: "/settings/rotation", label: "Distribuição", icon: ArrowRightLeft },
-      { to: "/settings/sla", label: "SLA por etapa", icon: Timer },
-      { to: "/settings/scoring", label: "Pontuação", icon: Star },
-      { to: "/settings/playbooks", label: "Playbooks", icon: BookOpen },
-      { to: "/settings/enrichment", label: "Enriquecimento", icon: Sparkles },
-      { to: "/settings/macros", label: "Macros", icon: ListChecks },
-      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen },
-      { to: "/settings/import-csv", label: "Importar CSV", icon: Upload },
+      { to: "/settings/workflows", label: "Workflows", icon: Workflow, need: "manager" },
+      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager" },
+      { to: "/settings/rotation", label: "Distribuição", icon: ArrowRightLeft, need: "manager" },
+      { to: "/settings/sla", label: "SLA por etapa", icon: Timer, need: "manager" },
+      { to: "/settings/scoring", label: "Pontuação", icon: Star, need: "manager" },
+      { to: "/settings/playbooks", label: "Playbooks", icon: BookOpen, need: "manager" },
+      { to: "/settings/enrichment", label: "Enriquecimento", icon: Sparkles, need: "admin" },
+      { to: "/settings/macros", label: "Macros", icon: ListChecks, need: "manager" },
+      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager" },
+      { to: "/settings/import-csv", label: "Importar CSV", icon: Upload, need: "admin" },
     ],
   },
   {
     label: "Pessoas & Acesso",
     tabs: [
-      { to: "/settings/workspace-team", label: "Equipe do workspace", icon: Users },
-      { to: "/settings/teams", label: "Usuários", icon: UsersRound },
-      { to: "/settings/user-groups", label: "Equipes (grupos)", icon: UsersRound },
-      { to: "/settings/roles", label: "Permissões", icon: KeyRound },
-      { to: "/settings/access-policy", label: "Política de acesso", icon: Lock },
-      { to: "/settings/sso", label: "SSO", icon: KeyRound },
-      { to: "/settings/scim", label: "SCIM", icon: Users },
-      { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText },
-      { to: "/settings/audit-export", label: "Exportar auditoria", icon: Download },
-      { to: "/settings/api-keys", label: "API Keys", icon: KeyRound },
+      { to: "/settings/workspace-team", label: "Equipe do workspace", icon: Users, need: "admin" },
+      { to: "/settings/teams", label: "Usuários", icon: UsersRound, need: "admin" },
+      { to: "/settings/user-groups", label: "Equipes (grupos)", icon: UsersRound, need: "manager" },
+      { to: "/settings/roles", label: "Permissões", icon: KeyRound, need: "admin" },
+      { to: "/settings/access-policy", label: "Política de acesso", icon: Lock, need: "admin" },
+      { to: "/settings/sso", label: "SSO", icon: KeyRound, need: "admin" },
+      { to: "/settings/scim", label: "SCIM", icon: Users, need: "admin" },
+      { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText, need: "admin" },
+      { to: "/settings/audit-export", label: "Exportar auditoria", icon: Download, need: "admin" },
+      { to: "/settings/api-keys", label: "API Keys", icon: KeyRound, need: "admin" },
     ],
   },
   {
     label: "Engajamento",
     tabs: [
-      { to: "/settings/forms", label: "Formulários", icon: ClipboardList },
-      { to: "/settings/widget", label: "Widget do site", icon: MousePointerClick },
-      { to: "/settings/portal", label: "Portal do cliente", icon: Globe },
-      { to: "/settings/surveys", label: "Pesquisas", icon: Star },
-      { to: "/settings/email-templates", label: "Templates de email", icon: Mail },
-      { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase },
-      { to: "/settings/prospecting-scripts", label: "Scripts de prospecção", icon: FileText },
-      { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall },
-      { to: "/settings/video", label: "Vídeo / reuniões", icon: VideoIcon },
+      { to: "/settings/forms", label: "Formulários", icon: ClipboardList, need: "manager" },
+      { to: "/settings/widget", label: "Widget do site", icon: MousePointerClick, need: "admin" },
+      { to: "/settings/portal", label: "Portal do cliente", icon: Globe, need: "admin" },
+      { to: "/settings/surveys", label: "Pesquisas", icon: Star, need: "manager" },
+      { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
+      { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase, need: "manager" },
+      { to: "/settings/prospecting-scripts", label: "Scripts de prospecção", icon: FileText, need: "manager" },
+      { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall, need: "admin" },
+      { to: "/settings/video", label: "Vídeo / reuniões", icon: VideoIcon, need: "manager" },
     ],
   },
   {
     label: "Integrações",
     tabs: [
-      { to: "/integrations", label: "Conectores", icon: Plug },
-      { to: "/settings/webhooks", label: "Webhooks", icon: Webhook },
-      { to: "/settings/zapier", label: "Zapier", icon: Zap },
-      { to: "/settings/notifications/slack", label: "Slack", icon: Bell },
-      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw },
-      { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users },
-      { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone },
-      { to: "/settings/whatsapp", label: "WhatsApp (Meta)", icon: MessageSquare },
-      { to: "/settings/whatsapp-templates", label: "WhatsApp · Templates", icon: MessagesSquare },
-      { to: "/settings/whatsapp-catalogs", label: "WhatsApp · Catálogos", icon: ShoppingBag },
-      { to: "/settings/wa-ads", label: "WhatsApp · Anúncios CTWA", icon: Megaphone },
+      { to: "/integrations", label: "Conectores", icon: Plug, need: "admin" },
+      { to: "/settings/webhooks", label: "Webhooks", icon: Webhook, need: "admin" },
+      { to: "/settings/zapier", label: "Zapier", icon: Zap, need: "admin" },
+      { to: "/settings/notifications/slack", label: "Slack", icon: Bell, need: "admin" },
+      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
+      { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users, need: "admin" },
+      { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone, need: "admin" },
+      { to: "/settings/whatsapp", label: "WhatsApp (Meta)", icon: MessageSquare, need: "admin" },
+      { to: "/settings/whatsapp-templates", label: "WhatsApp · Templates", icon: MessagesSquare, need: "manager" },
+      { to: "/settings/whatsapp-catalogs", label: "WhatsApp · Catálogos", icon: ShoppingBag, need: "manager" },
+      { to: "/settings/wa-ads", label: "WhatsApp · Anúncios CTWA", icon: Megaphone, need: "manager" },
     ],
   },
 ];
@@ -145,23 +148,39 @@ function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const { isAdmin, isManager } = useMyRole();
+  const { isPlatformAdmin } = useIsPlatformAdmin();
+
+  const canSee = (t: Tab) => {
+    if (t.need === "platform") return isPlatformAdmin;
+    if (t.need === "admin") return isAdmin;
+    if (t.need === "manager") return isManager;
+    return true;
+  };
+
+  const allowedSections = useMemo(
+    () => sections
+      .map((s) => ({ ...s, tabs: s.tabs.filter(canSee) }))
+      .filter((s) => s.tabs.length > 0),
+    [isAdmin, isManager, isPlatformAdmin],
+  );
 
   const isActive = (to: string) =>
     to === "/settings" ? path === "/settings" : path.startsWith(to);
 
   const currentValue =
-    sections
+    allowedSections
       .flatMap((s) => s.tabs)
       .filter((t) => isActive(t.to))
       .sort((a, b) => b.to.length - a.to.length)[0]?.to ?? "/settings";
 
   const filteredSections = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return sections;
-    return sections
+    if (!q) return allowedSections;
+    return allowedSections
       .map((s) => ({ ...s, tabs: s.tabs.filter((t) => t.label.toLowerCase().includes(q)) }))
       .filter((s) => s.tabs.length > 0);
-  }, [query]);
+  }, [query, allowedSections]);
 
   return (
     <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
