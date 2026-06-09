@@ -187,6 +187,28 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   <span className="text-xs text-muted-foreground">Validade {formatDateTime(q.valid_until)}</span>
                 )}
               </div>
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <FileText className="h-3 w-3" />
+                  <span>Modelo:</span>
+                  <Select
+                    value={q.template_id ?? NO_TEMPLATE}
+                    onValueChange={(v) => changeTemplate(q.id, v === NO_TEMPLATE ? null : v)}
+                  >
+                    <SelectTrigger className="h-6 w-[200px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_TEMPLATE}>Layout padrão</SelectItem>
+                      {templates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}{t.is_default ? " (padrão)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="outline" onClick={() => window.open(publicUrl(q.public_token), "_blank")}>
                   <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
