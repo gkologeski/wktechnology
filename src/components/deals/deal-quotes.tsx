@@ -46,15 +46,30 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const regen = useServerFn(regenerateQuoteToken);
   const payLink = useServerFn(createQuotePaymentLink);
 
+  const listTemplates = useServerFn(listQuoteTemplates);
+
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string }>({
-    title: "", validUntil: "", notes: "", terms: "",
+  const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string; templateId: string }>({
+    title: "", validUntil: "", notes: "", terms: "", templateId: "",
   });
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["deal-quotes", dealId],
     queryFn: () => list({ data: { dealId } }),
   });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["quote-templates"],
+    queryFn: () => listTemplates(),
+  });
+
+  const defaultTemplateId = templates.find((t) => t.is_default)?.id ?? "";
+
+  // Inicializa o seletor com o template padrão quando o diálogo abre.
+  function openDialog() {
+    setDraft((d) => ({ ...d, templateId: defaultTemplateId }));
+    setOpen(true);
+  }
 
   const { data: lineItemsCount = 0 } = useQuery({
     queryKey: ["deal-line-items-count", dealId],
@@ -76,16 +91,23 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         validUntil: draft.validUntil || undefined,
         notes: draft.notes || undefined,
         terms: draft.terms || undefined,
+        templateId: draft.templateId ? draft.templateId : null,
       },
     }),
     onSuccess: () => {
       toast.success("Cotação criada.");
       setOpen(false);
-      setDraft({ title: "", validUntil: "", notes: "", terms: "" });
+      setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
       qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  async function changeTemplate(id: string, templateId: string | null) {
+    await update({ data: { id, patch: { template_id: templateId } } });
+    toast.success("Modelo atualizado.");
+    qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+  }
 
   function publicUrl(token: string) {
     return `${window.location.origin}/quote/${token}`;
