@@ -66,7 +66,8 @@ function EmailBroadcastsPage() {
     refetchInterval: 5000,
   });
   const { data: segments = [] } = useQuery({ queryKey: ["segments-bcast"], queryFn: () => segsFn() });
-  const { data: templates = [] } = useQuery({ queryKey: ["templates-bcast"], queryFn: () => tplFn() });
+  const { data: templatesData } = useQuery({ queryKey: ["templates-bcast"], queryFn: () => tplFn() });
+  const templates = templatesData?.items ?? [];
 
   const [open, setOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
