@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { blocksToHtml, isTemplateDocument } from "@/lib/quote-template-blocks";
 
 async function activeWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
   const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
@@ -15,11 +16,29 @@ async function activeWorkspace(supabase: SupabaseClient, userId: string): Promis
   return ws;
 }
 
+const BlocksSchema = z
+  .object({
+    version: z.literal(1),
+    theme: z.record(z.string(), z.unknown()),
+    blocks: z.array(
+      z.object({ id: z.string(), type: z.string(), props: z.record(z.string(), z.unknown()) }),
+    ),
+  })
+  .passthrough();
+
 const TemplateInput = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).nullable().optional(),
-  html: z.string().max(200_000),
+  html: z.string().max(200_000).optional(),
+  blocks: BlocksSchema.nullable().optional(),
 });
+
+function compile(input: { html?: string; blocks?: unknown }): { html: string; blocks: unknown } {
+  if (input.blocks && isTemplateDocument(input.blocks)) {
+    return { html: blocksToHtml(input.blocks), blocks: input.blocks };
+  }
+  return { html: input.html ?? "", blocks: null };
+}
 
 export const listQuoteTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
