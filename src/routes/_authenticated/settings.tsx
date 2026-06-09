@@ -162,7 +162,7 @@ function SettingsLayout() {
         </nav>
       </aside>
 
-      <div className="min-w-0 max-w-5xl">
+      <div className="min-w-0">
         <Outlet />
       </div>
     </div>
