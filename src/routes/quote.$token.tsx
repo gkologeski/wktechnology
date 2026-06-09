@@ -52,9 +52,8 @@ function PublicQuotePage() {
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data) return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
 
-  const { quote, items, company, contact, agent, template } = data as typeof data & {
-    template: { id: string; name: string; html: string } | null;
-  };
+  const { quote, items, company, contact, agent } = data;
+  const template = (data as unknown as { template: { id: string; name: string; html: string } | null }).template;
   const expired = quote.valid_until && new Date(quote.valid_until) < new Date();
   const responded = quote.status === "accepted" || quote.status === "declined";
 
