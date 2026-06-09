@@ -669,6 +669,14 @@ function CompaniesHubspotView() {
         entity="empresa(s)"
         onConfirm={confirmBulkDelete}
       />
+      <QuickCreateCompanyDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          qc.invalidateQueries({ queryKey: ["companies"] });
+          navigate({ to: "/companies/$id", params: { id } });
+        }}
+      />
     </div>
   );
 }
