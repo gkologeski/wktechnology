@@ -413,7 +413,7 @@ function CompaniesHubspotView() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("export") && (
-            <Button variant="outline" size="sm" disabled>
+            <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
