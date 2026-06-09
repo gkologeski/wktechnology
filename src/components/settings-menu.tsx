@@ -11,8 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMyRole } from "@/lib/use-my-role";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 
-type Item = { to: string; label: string; need?: "admin" | "manager" };
+type Item = { to: string; label: string; need?: "admin" | "manager" | "platform" };
 type Group = { label: string; items: Item[] };
 
 const groups: Group[] = [
