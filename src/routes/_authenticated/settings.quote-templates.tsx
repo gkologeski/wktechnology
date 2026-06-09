@@ -15,16 +15,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  QuoteTemplateEditor,
-  type TemplateEditorValue,
-} from "@/components/quote-templates/template-editor";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { QuoteVisualEditor, defaultDocument } from "@/components/quote-templates/visual-editor";
+import { QuoteTemplateEditor } from "@/components/quote-templates/template-editor";
+import { isTemplateDocument, type TemplateDocument } from "@/lib/quote-template-blocks";
 import { Plus, Copy, Trash2, Star, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/quote-templates")({
   component: QuoteTemplatesPage,
 });
+
+type DraftMeta = { name: string; description: string };
 
 function QuoteTemplatesPage() {
   const qc = useQueryClient();
@@ -37,7 +41,10 @@ function QuoteTemplatesPage() {
   const dup = useServerFn(duplicateQuoteTemplate);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<TemplateEditorValue>({ name: "", description: "", html: "" });
+  const [meta, setMeta] = useState<DraftMeta>({ name: "", description: "" });
+  const [doc, setDoc] = useState<TemplateDocument | null>(null);
+  const [html, setHtml] = useState<string>("");
+  const [mode, setMode] = useState<"visual" | "code">("visual");
   const [dirty, setDirty] = useState(false);
 
   const { data: templates = [], isLoading } = useQuery({
@@ -45,7 +52,6 @@ function QuoteTemplatesPage() {
     queryFn: () => list(),
   });
 
-  // Select the default (or first) template by default once loaded.
   useEffect(() => {
     if (!selectedId && templates.length) {
       const def = templates.find((t) => t.is_default) ?? templates[0];
@@ -61,11 +67,17 @@ function QuoteTemplatesPage() {
 
   useEffect(() => {
     if (current) {
-      setDraft({
-        name: current.name ?? "",
-        description: current.description ?? "",
-        html: current.html ?? "",
-      });
+      setMeta({ name: current.name ?? "", description: current.description ?? "" });
+      setHtml(current.html ?? "");
+      const existing = (current as { blocks?: unknown }).blocks;
+      if (isTemplateDocument(existing)) {
+        setDoc(existing);
+        setMode("visual");
+      } else {
+        setDoc(null);
+        // Modelos legados (system templates) abrem em modo "Avançado" por padrão
+        setMode(current.is_system ? "code" : "code");
+      }
       setDirty(false);
     }
   }, [current]);
@@ -79,7 +91,7 @@ function QuoteTemplatesPage() {
         data: {
           name: "Novo modelo",
           description: "",
-          html: "<!doctype html>\n<html>\n  <body style=\"font-family:sans-serif;padding:32px\">\n    <h1>{{quote.title}}</h1>\n    <p>Total: <strong>{{quote.total}}</strong></p>\n    {{#actions/}}\n  </body>\n</html>",
+          blocks: defaultDocument() as any,
         },
       }),
     onSuccess: (row) => {
@@ -103,16 +115,21 @@ function QuoteTemplatesPage() {
   const saveMut = useMutation({
     mutationFn: () => {
       if (!selectedId) throw new Error("Selecione um modelo.");
-      return update({
-        data: {
-          id: selectedId,
-          patch: {
-            name: isSystem ? undefined : draft.name,
-            description: draft.description || null,
-            html: draft.html,
-          },
-        },
-      });
+      const patch: {
+        name?: string;
+        description?: string | null;
+        html?: string;
+        blocks?: any;
+      } = {
+        description: meta.description || null,
+      };
+      if (!isSystem) patch.name = meta.name;
+      if (mode === "visual" && doc) {
+        patch.blocks = doc as any;
+      } else {
+        patch.html = html;
+      }
+      return update({ data: { id: selectedId, patch } });
     },
     onSuccess: () => {
       toast.success("Modelo salvo.");
@@ -151,13 +168,19 @@ function QuoteTemplatesPage() {
     [templates],
   );
 
+  const initVisualFromLegacy = () => {
+    setDoc(defaultDocument());
+    setMode("visual");
+    setDirty(true);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">Modelos de cotação</h1>
           <p className="text-sm text-muted-foreground">
-            Crie modelos HTML reutilizáveis. Cada cotação no negócio escolhe qual modelo enviar ao cliente.
+            Monte modelos arrastando blocos. Cada cotação no negócio escolhe qual modelo enviar ao cliente.
           </p>
         </div>
         <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
@@ -261,14 +284,74 @@ function QuoteTemplatesPage() {
                   </Button>
                 </div>
                 <Separator />
-                <QuoteTemplateEditor
-                  value={draft}
-                  onChange={(v) => {
-                    setDraft(v);
-                    setDirty(true);
-                  }}
-                  readOnlyName={isSystem}
-                />
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Nome do modelo</Label>
+                    <Input
+                      value={meta.name}
+                      onChange={(e) => { setMeta({ ...meta, name: e.target.value }); setDirty(true); }}
+                      disabled={isSystem}
+                      placeholder="Ex.: Modelo padrão da equipe"
+                    />
+                    {isSystem && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Modelo do sistema. Duplique para personalizar nome e estrutura.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Descrição</Label>
+                    <Input
+                      value={meta.description}
+                      onChange={(e) => { setMeta({ ...meta, description: e.target.value }); setDirty(true); }}
+                      placeholder="Quando usar este modelo"
+                    />
+                  </div>
+                </div>
+
+                <Tabs value={mode} onValueChange={(v) => setMode(v as "visual" | "code")} className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="visual">Visual (arrastar blocos)</TabsTrigger>
+                    <TabsTrigger value="code">Avançado (HTML)</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="visual" className="mt-3">
+                    {doc ? (
+                      <QuoteVisualEditor
+                        doc={doc}
+                        onChange={(d) => { setDoc(d); setDirty(true); }}
+                      />
+                    ) : (
+                      <div className="rounded-md border bg-muted/30 p-6 text-center space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Este modelo foi criado em HTML. Você pode convertê-lo para o editor visual de blocos —
+                          o HTML original será substituído por uma estrutura padrão de blocos editáveis.
+                        </p>
+                        <Button size="sm" onClick={initVisualFromLegacy}>
+                          Converter para editor visual
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="code" className="mt-3">
+                    <QuoteTemplateEditor
+                      value={{ name: meta.name, description: meta.description, html }}
+                      onChange={(v) => {
+                        setMeta({ name: v.name, description: v.description });
+                        setHtml(v.html);
+                        setDirty(true);
+                      }}
+                      readOnlyName={isSystem}
+                    />
+                    {doc && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Atenção: salvar no modo Avançado descarta a estrutura de blocos visual deste modelo.
+                      </p>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </>
             )}
           </CardContent>

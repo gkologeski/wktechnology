@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { blocksToHtml, isTemplateDocument } from "@/lib/quote-template-blocks";
 
 async function activeWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
   const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
@@ -15,11 +16,29 @@ async function activeWorkspace(supabase: SupabaseClient, userId: string): Promis
   return ws;
 }
 
+const BlocksSchema = z
+  .object({
+    version: z.literal(1),
+    theme: z.record(z.string(), z.unknown()),
+    blocks: z.array(
+      z.object({ id: z.string(), type: z.string(), props: z.record(z.string(), z.unknown()) }),
+    ),
+  })
+  .passthrough();
+
 const TemplateInput = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).nullable().optional(),
-  html: z.string().max(200_000),
+  html: z.string().max(200_000).optional(),
+  blocks: BlocksSchema.nullable().optional(),
 });
+
+function compile(input: { html?: string; blocks?: unknown }): { html: string; blocks: any } {
+  if (input.blocks && isTemplateDocument(input.blocks)) {
+    return { html: blocksToHtml(input.blocks), blocks: input.blocks as any };
+  }
+  return { html: input.html ?? "", blocks: null };
+}
 
 export const listQuoteTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -27,7 +46,7 @@ export const listQuoteTemplates = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("quote_templates")
-      .select("id, name, description, html, is_default, is_system, updated_at")
+      .select("id, name, description, html, blocks, is_default, is_system, updated_at")
       .order("is_default", { ascending: false })
       .order("name", { ascending: true });
     if (error) throw error;
@@ -55,6 +74,7 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspace_id = await activeWorkspace(supabase, userId);
+    const compiled = compile({ html: data.html, blocks: data.blocks ?? undefined });
     const { data: row, error } = await supabase
       .from("quote_templates")
       .insert({
@@ -62,7 +82,8 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
         workspace_id,
         name: data.name,
         description: data.description ?? null,
-        html: data.html,
+        html: compiled.html,
+        blocks: compiled.blocks,
         is_default: false,
         is_system: false,
       })
@@ -81,6 +102,7 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(120).optional(),
         description: z.string().trim().max(500).nullable().optional(),
         html: z.string().max(200_000).optional(),
+        blocks: BlocksSchema.nullable().optional(),
       }),
     }).parse(input),
   )
@@ -88,14 +110,21 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: current, error: gErr } = await supabase
       .from("quote_templates")
-      .select("is_system")
+      .select("is_system, html, blocks")
       .eq("id", data.id)
       .maybeSingle();
     if (gErr) throw gErr;
     if (!current) throw new Error("Modelo não encontrado");
 
-    const patch: { html?: string; description?: string | null; name?: string } = {};
-    if (data.patch.html !== undefined) patch.html = data.patch.html;
+    const patch: { html?: string; blocks?: any; description?: string | null; name?: string } = {};
+    if (data.patch.blocks !== undefined) {
+      const compiled = compile({ html: data.patch.html, blocks: data.patch.blocks ?? undefined });
+      patch.blocks = compiled.blocks;
+      patch.html = compiled.html;
+    } else if (data.patch.html !== undefined) {
+      patch.html = data.patch.html;
+      patch.blocks = null; // editar HTML cru desativa o modo visual
+    }
     if (data.patch.description !== undefined) patch.description = data.patch.description;
     if (data.patch.name !== undefined) {
       if (current.is_system) {
