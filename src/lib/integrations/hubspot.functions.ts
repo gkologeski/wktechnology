@@ -43,6 +43,21 @@ async function hsPost(path: string, body: object) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function parseHsDate(v: string | null | undefined): string | null {
+  if (!v) return null;
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    return Number.isFinite(n) ? new Date(n).toISOString() : null;
+  }
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function originalCreatedAt(p: Record<string, string | null | undefined>, createdAt?: string): Record<string, string> {
+  const value = parseHsDate(p.createdate ?? p.hs_createdate ?? createdAt);
+  return value ? { created_at: value, hs_createdate: value } : {};
+}
+
 // ─────────────────────────── Cache em memória (TTL) ──────────────────────────
 // Persiste entre chamadas do server function dentro do mesmo Worker, reduzindo
 // drasticamente o nº de requests ao HubSpot quando o wizard conta os objetos
@@ -121,7 +136,7 @@ async function assocBatchRead(
   return out;
 }
 
-type HSRec = { id: string; properties: Record<string, string | null | undefined> };
+type HSRec = { id: string; properties: Record<string, string | null | undefined>; createdAt?: string; updatedAt?: string };
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
   const out: HSRec[] = [];
