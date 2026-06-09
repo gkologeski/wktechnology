@@ -116,7 +116,7 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
     if (gErr) throw gErr;
     if (!current) throw new Error("Modelo não encontrado");
 
-    const patch: { html?: string; blocks?: unknown; description?: string | null; name?: string } = {};
+    const patch: { html?: string; blocks?: any; description?: string | null; name?: string } = {};
     if (data.patch.blocks !== undefined) {
       const compiled = compile({ html: data.patch.html, blocks: data.patch.blocks ?? undefined });
       patch.blocks = compiled.blocks;
