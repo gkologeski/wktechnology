@@ -105,6 +105,20 @@ function TasksHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("tarefas", rows as unknown as Record<string, unknown>[], [
+      { key: "subject", label: "Assunto" },
+      { key: "task_status", label: "Status" },
+      { key: "task_priority", label: "Prioridade" },
+      { key: "due_date", label: "Vencimento" },
+      { key: "completed", label: "Concluída" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
