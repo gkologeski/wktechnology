@@ -12,12 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Search, Settings as SettingsIcon, User, Mail, ShieldCheck, Building2, Languages,
+  Search, Settings as SettingsIcon, User, Mail, ShieldCheck, Languages,
   Smartphone, Calendar, CalendarCheck, GitBranch, Tag, Layers, LayoutTemplate, Boxes,
   Filter, Package, FileText, FileSignature, BookOpen, Repeat, Upload, Workflow,
-  ArrowRightLeft, Route as RouteIcon, Timer, Star, Sparkles, Database, Users, UsersRound,
+  ArrowRightLeft, Route as RouteIcon, Timer, Star, Sparkles, Users, UsersRound,
   KeyRound, ScrollText, Webhook, Plug, RefreshCw, MessageSquare, MessagesSquare,
-  ShoppingBag, Megaphone,
+  ShoppingBag, Megaphone, CreditCard, Receipt, Repeat2, FileBarChart2,
+  ClipboardList, Globe, MousePointerClick, PhoneCall, Video as VideoIcon,
+  Lock, Database, Download, Bell, Zap, ListChecks, Briefcase,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -27,7 +29,6 @@ export const Route = createFileRoute("/_authenticated/settings")({
 type Tab = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type Section = { label: string; tabs: Tab[] };
 
-// Reagrupado em 3 grandes blocos coerentes com a direção visual escolhida.
 const sections: Section[] = [
   {
     label: "Minha conta",
@@ -38,29 +39,49 @@ const sections: Section[] = [
     ],
   },
   {
-    label: "Organização",
+    label: "Workspace",
     tabs: [
-      // Workspace
       { to: "/settings/branding", label: "White-label", icon: Sparkles },
       { to: "/settings/language", label: "Idioma", icon: Languages },
       { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone },
       { to: "/settings/calendars", label: "Calendários", icon: Calendar },
       { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck },
-      // Estrutura CRM
+      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard },
+      { to: "/settings/data-residency", label: "Residência de dados", icon: Database },
+      { to: "/settings/exports", label: "Exportações", icon: Download },
+    ],
+  },
+  {
+    label: "Estrutura CRM",
+    tabs: [
       { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch },
       { to: "/settings/custom-properties", label: "Propriedades", icon: Tag },
       { to: "/settings/property-groups", label: "Grupos de propriedades", icon: Layers },
       { to: "/settings/record-layouts", label: "Layout do registro", icon: LayoutTemplate },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes },
       { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter },
+      { to: "/settings/segments", label: "Segmentos", icon: Filter },
       { to: "/settings/products", label: "Produtos", icon: Package },
+    ],
+  },
+  {
+    label: "Vendas & Financeiro",
+    tabs: [
       { to: "/settings/quotes", label: "Cotações", icon: FileText },
       { to: "/settings/quote-templates", label: "Modelos de cotação", icon: LayoutTemplate },
-      { to: "/settings/recurring", label: "Recorrência", icon: Repeat },
-      { to: "/settings/esign", label: "Assinaturas eletrônicas", icon: FileSignature },
       { to: "/settings/clauses", label: "Biblioteca de cláusulas", icon: BookOpen },
-      { to: "/settings/import-csv", label: "Importar CSV", icon: Upload },
-      // Automação
+      { to: "/settings/esign", label: "Assinaturas eletrônicas", icon: FileSignature },
+      { to: "/settings/payments", label: "Pagamentos", icon: CreditCard },
+      { to: "/settings/subscriptions", label: "Assinaturas", icon: Repeat2 },
+      { to: "/settings/recurring", label: "Recorrência", icon: Repeat },
+      { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt },
+      { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2 },
+      { to: "/settings/goals", label: "Metas", icon: Star },
+    ],
+  },
+  {
+    label: "Automação",
+    tabs: [
       { to: "/settings/workflows", label: "Workflows", icon: Workflow },
       { to: "/settings/sequences", label: "Sequências", icon: RouteIcon },
       { to: "/settings/rotation", label: "Distribuição", icon: ArrowRightLeft },
@@ -68,25 +89,50 @@ const sections: Section[] = [
       { to: "/settings/scoring", label: "Pontuação", icon: Star },
       { to: "/settings/playbooks", label: "Playbooks", icon: BookOpen },
       { to: "/settings/enrichment", label: "Enriquecimento", icon: Sparkles },
+      { to: "/settings/macros", label: "Macros", icon: ListChecks },
+      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen },
+      { to: "/settings/import-csv", label: "Importar CSV", icon: Upload },
     ],
   },
   {
-    label: "Gestão",
+    label: "Pessoas & Acesso",
     tabs: [
-      // Pessoas
       { to: "/settings/workspace-team", label: "Equipe do workspace", icon: Users },
       { to: "/settings/teams", label: "Usuários", icon: UsersRound },
       { to: "/settings/user-groups", label: "Equipes (grupos)", icon: UsersRound },
       { to: "/settings/roles", label: "Permissões", icon: KeyRound },
-      // Segurança
+      { to: "/settings/access-policy", label: "Política de acesso", icon: Lock },
+      { to: "/settings/sso", label: "SSO", icon: KeyRound },
+      { to: "/settings/scim", label: "SCIM", icon: Users },
       { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText },
+      { to: "/settings/audit-export", label: "Exportar auditoria", icon: Download },
       { to: "/settings/api-keys", label: "API Keys", icon: KeyRound },
-      { to: "/settings/webhooks", label: "Webhooks", icon: Webhook },
-      // Integrações
+    ],
+  },
+  {
+    label: "Engajamento",
+    tabs: [
+      { to: "/settings/forms", label: "Formulários", icon: ClipboardList },
+      { to: "/settings/widget", label: "Widget do site", icon: MousePointerClick },
+      { to: "/settings/portal", label: "Portal do cliente", icon: Globe },
+      { to: "/settings/surveys", label: "Pesquisas", icon: Star },
+      { to: "/settings/email-templates", label: "Templates de email", icon: Mail },
+      { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase },
+      { to: "/settings/prospecting-scripts", label: "Scripts de prospecção", icon: FileText },
+      { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall },
+      { to: "/settings/video", label: "Vídeo / reuniões", icon: VideoIcon },
+    ],
+  },
+  {
+    label: "Integrações",
+    tabs: [
       { to: "/integrations", label: "Conectores", icon: Plug },
+      { to: "/settings/webhooks", label: "Webhooks", icon: Webhook },
+      { to: "/settings/zapier", label: "Zapier", icon: Zap },
+      { to: "/settings/notifications/slack", label: "Slack", icon: Bell },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw },
       { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users },
-      { to: "/settings/email-templates", label: "Templates de email", icon: Mail },
+      { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone },
       { to: "/settings/whatsapp", label: "WhatsApp (Meta)", icon: MessageSquare },
       { to: "/settings/whatsapp-templates", label: "WhatsApp · Templates", icon: MessagesSquare },
       { to: "/settings/whatsapp-catalogs", label: "WhatsApp · Catálogos", icon: ShoppingBag },
