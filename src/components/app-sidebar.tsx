@@ -228,10 +228,32 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {PLATFORM_ITEMS.map((it) => {
+                const Icon = it.icon;
+                const active = isActive(it.url);
+                return (
+                  <SidebarMenuItem key={it.url}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={it.title}
+                      isActive={active}
+                      className="h-auto rounded-xl px-2 py-2"
+                    >
+                      <Link to={it.url} className="flex items-center gap-2.5">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </>
           )}
         </SidebarMenu>
       </SidebarFooter>
+
     </Sidebar>
   );
 }
