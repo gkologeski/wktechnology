@@ -28,7 +28,7 @@ const ADMIN_ONLY = [
 const MANAGER_PLUS = [
   "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
   "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
-  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/esign",
+  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/quote-templates", "/settings/esign",
   "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
   "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
   "/settings/email-templates", "/settings/segments", "/settings/calendars",

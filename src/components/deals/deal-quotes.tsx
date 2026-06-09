@@ -9,19 +9,25 @@ import {
   regenerateQuoteToken,
   createQuotePaymentLink,
 } from "@/lib/quotes.functions";
+import { listQuoteTemplates } from "@/lib/quote-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
+import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const NO_TEMPLATE = "__none__";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -40,15 +46,30 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const regen = useServerFn(regenerateQuoteToken);
   const payLink = useServerFn(createQuotePaymentLink);
 
+  const listTemplates = useServerFn(listQuoteTemplates);
+
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string }>({
-    title: "", validUntil: "", notes: "", terms: "",
+  const [draft, setDraft] = useState<{ title: string; validUntil: string; notes: string; terms: string; templateId: string }>({
+    title: "", validUntil: "", notes: "", terms: "", templateId: "",
   });
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["deal-quotes", dealId],
     queryFn: () => list({ data: { dealId } }),
   });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["quote-templates"],
+    queryFn: () => listTemplates(),
+  });
+
+  const defaultTemplateId = templates.find((t) => t.is_default)?.id ?? "";
+
+  // Inicializa o seletor com o template padrão quando o diálogo abre.
+  function openDialog() {
+    setDraft((d) => ({ ...d, templateId: defaultTemplateId }));
+    setOpen(true);
+  }
 
   const { data: lineItemsCount = 0 } = useQuery({
     queryKey: ["deal-line-items-count", dealId],
@@ -70,16 +91,23 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         validUntil: draft.validUntil || undefined,
         notes: draft.notes || undefined,
         terms: draft.terms || undefined,
+        templateId: draft.templateId ? draft.templateId : null,
       },
     }),
     onSuccess: () => {
       toast.success("Cotação criada.");
       setOpen(false);
-      setDraft({ title: "", validUntil: "", notes: "", terms: "" });
+      setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
       qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  async function changeTemplate(id: string, templateId: string | null) {
+    await update({ data: { id, patch: { template_id: templateId } } });
+    toast.success("Modelo atualizado.");
+    qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+  }
 
   function publicUrl(token: string) {
     return `${window.location.origin}/quote/${token}`;
@@ -120,7 +148,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={hasLineItems ? -1 : 0}>
-                <Button size="sm" onClick={() => setOpen(true)} disabled={!hasLineItems}>
+                <Button size="sm" onClick={openDialog} disabled={!hasLineItems}>
                   <Plus className="h-4 w-4 mr-1" /> Nova cotação
                 </Button>
               </span>
@@ -159,6 +187,28 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   <span className="text-xs text-muted-foreground">Validade {formatDateTime(q.valid_until)}</span>
                 )}
               </div>
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <FileText className="h-3 w-3" />
+                  <span>Modelo:</span>
+                  <Select
+                    value={q.template_id ?? NO_TEMPLATE}
+                    onValueChange={(v) => changeTemplate(q.id, v === NO_TEMPLATE ? null : v)}
+                  >
+                    <SelectTrigger className="h-6 w-[200px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_TEMPLATE}>Layout padrão</SelectItem>
+                      {templates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}{t.is_default ? " (padrão)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="outline" onClick={() => window.open(publicUrl(q.public_token), "_blank")}>
                   <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
@@ -196,6 +246,25 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Nova cotação</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Modelo de cotação</Label>
+              <Select
+                value={draft.templateId || NO_TEMPLATE}
+                onValueChange={(v) => setDraft({ ...draft, templateId: v === NO_TEMPLATE ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_TEMPLATE}>Sem modelo (layout padrão)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_default ? " (padrão)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label>Título</Label>
               <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="(usar nome do negócio)" />

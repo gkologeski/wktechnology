@@ -63,6 +63,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       validUntil: z.string().optional(),
       notes: z.string().max(5000).optional(),
       terms: z.string().max(10000).optional(),
+      templateId: z.string().uuid().nullable().optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -86,6 +87,17 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
     const yearMonth = new Date().toISOString().slice(0, 7).replace("-", "");
     const num = `Q-${yearMonth}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
+    // Quando templateId não vier, usa o modelo padrão do workspace (se houver).
+    let templateId: string | null = data.templateId ?? null;
+    if (templateId === null && data.templateId === undefined) {
+      const { data: def } = await supabase
+        .from("quote_templates")
+        .select("id")
+        .eq("is_default", true)
+        .maybeSingle();
+      templateId = (def as { id?: string } | null)?.id ?? null;
+    }
+
     const { data: quote, error: qErr } = await supabase
       .from("quotes")
       .insert({
@@ -100,6 +112,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
         valid_until: data.validUntil || null,
         notes: data.notes || null,
         terms: data.terms || null,
+        template_id: templateId,
         ...totals,
       })
       .select("*")
@@ -135,6 +148,7 @@ export const updateQuote = createServerFn({ method: "POST" })
         notes: z.string().nullable().optional(),
         terms: z.string().nullable().optional(),
         sent_at: z.string().nullable().optional(),
+        template_id: z.string().uuid().nullable().optional(),
       }),
     }).parse(input),
   )
@@ -282,7 +296,16 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       const r = await supabaseAdmin.from("profiles").select("id, full_name").eq("id", quote.owner_id).maybeSingle();
       if (r.data) agent = { id: r.data.id, full_name: r.data.full_name, email: null };
     }
-    return { quote, items: items ?? [], company, contact, agent };
+    let template: { id: string; name: string; html: string } | null = null;
+    if (quote.template_id) {
+      const r = await supabaseAdmin
+        .from("quote_templates")
+        .select("id, name, html")
+        .eq("id", quote.template_id)
+        .maybeSingle();
+      template = (r.data ?? null) as typeof template;
+    }
+    return { quote, items: items ?? [], company, contact, agent, template };
   });
 
 export const respondToQuote = createServerFn({ method: "POST" })

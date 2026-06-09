@@ -47,6 +47,7 @@ const sections: Section[] = [
       { to: "/settings/lead-sources", label: "Fontes de lead" },
       { to: "/settings/products", label: "Produtos" },
       { to: "/settings/quotes", label: "Cotações" },
+      { to: "/settings/quote-templates", label: "Modelos de cotação" },
       { to: "/settings/recurring", label: "Recorrência" },
       { to: "/settings/esign", label: "Assinaturas eletrônicas" },
       { to: "/settings/clauses", label: "Biblioteca de cláusulas" },
