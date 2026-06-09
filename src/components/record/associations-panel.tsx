@@ -216,9 +216,16 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
       if (error) return toast.error(error.message);
     } else {
+      // Remove vínculo many-to-many
       const { error } = await sb.from("deal_contacts").delete().eq("deal_id", entityId).eq("contact_id", contactId);
       if (error) return toast.error(error.message);
+      // Se for o contato primário do negócio, limpa também
+      const { data: deal } = await supabase.from("deals").select("primary_contact_id").eq("id", entityId).maybeSingle();
+      if ((deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === contactId) {
+        await sb.from("deals").update({ primary_contact_id: null }).eq("id", entityId);
+      }
     }
+    toast.success("Contato desvinculado");
     refresh();
   };
 
