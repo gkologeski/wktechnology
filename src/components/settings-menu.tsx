@@ -75,7 +75,7 @@ const groups: Group[] = [
     items: [
       { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
       { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
-      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare },
+      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
     ],
   },
