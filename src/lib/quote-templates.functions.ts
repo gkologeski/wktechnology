@@ -152,6 +152,7 @@ export const duplicateQuoteTemplate = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspace_id = await activeWorkspace(supabase, userId);
     const { data: src, error: gErr } = await supabase
       .from("quote_templates")
       .select("name, description, html")
@@ -164,6 +165,7 @@ export const duplicateQuoteTemplate = createServerFn({ method: "POST" })
       .from("quote_templates")
       .insert({
         owner_id: userId,
+        workspace_id,
         name: `${src.name} (cópia)`,
         description: src.description,
         html: src.html,
