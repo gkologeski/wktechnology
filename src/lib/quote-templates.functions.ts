@@ -46,7 +46,7 @@ export const listQuoteTemplates = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("quote_templates")
-      .select("id, name, description, html, is_default, is_system, updated_at")
+      .select("id, name, description, html, blocks, is_default, is_system, updated_at")
       .order("is_default", { ascending: false })
       .order("name", { ascending: true });
     if (error) throw error;
