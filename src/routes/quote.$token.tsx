@@ -82,7 +82,7 @@ function PublicQuotePage() {
 
   return (
     <div className="min-h-screen bg-muted/30 print:bg-white">
-      <div className="max-w-3xl mx-auto p-6 space-y-4">
+      <div className="w-full mx-auto p-6 space-y-4">
         <div className="flex items-center justify-between print:hidden">
           <Badge variant={
             quote.status === "accepted" ? "default" :
