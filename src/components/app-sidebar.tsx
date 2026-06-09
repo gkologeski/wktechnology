@@ -26,7 +26,7 @@ const ADMIN_ONLY = new Set<string>(["/leads/import-hubspot"]);
 const MANAGER_PLUS = new Set<string>([
   "/reports", "/dashboards", "/analytics",
   "/campaigns/whatsapp", "/campaigns/email",
-  "/prospecting/campaigns",
+  "/prospecting/campaigns", "/landing-pages", "/agents/sdr",
 ]);
 
 const groups: Group[] = [
