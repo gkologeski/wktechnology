@@ -229,6 +229,21 @@ function CompaniesHubspotView() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("empresas", rows as unknown as Record<string, unknown>[], [
+      { key: "name", label: "Nome" },
+      { key: "domain", label: "Domínio" },
+      { key: "industry", label: "Setor" },
+      { key: "phone", label: "Telefone" },
+      { key: "city", label: "Cidade" },
+      { key: "state", label: "Estado" },
+      { key: "country", label: "País" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
+
   const toggleAll = () =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
