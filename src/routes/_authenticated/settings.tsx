@@ -21,6 +21,8 @@ import {
   ClipboardList, Globe, MousePointerClick, PhoneCall, Video as VideoIcon,
   Lock, Database, Download, Bell, Zap, ListChecks, Briefcase,
 } from "lucide-react";
+import { useMyRole } from "@/lib/use-my-role";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
