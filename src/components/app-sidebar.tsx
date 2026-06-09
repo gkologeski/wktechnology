@@ -1,12 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
-  ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
-  Inbox, ShieldCheck, LifeBuoy, Star, FileText,
-  BarChart3, TrendingUp, Sparkles, Bug, Video, Search, ListChecks, Download,
-  Activity, Bell, Gauge, FlaskConical,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -18,66 +12,9 @@ import { cn } from "@/lib/utils";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-
-type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
-type Group = { label: string; items: Item[] };
-
-const ADMIN_ONLY = new Set<string>(["/leads/import-hubspot"]);
-const MANAGER_PLUS = new Set<string>([
-  "/reports", "/dashboards", "/analytics",
-  "/campaigns/whatsapp", "/campaigns/email",
-  "/prospecting/campaigns", "/landing-pages", "/agents/sdr",
-]);
-
-const groups: Group[] = [
-  {
-    label: "Trabalhar", items: [
-      { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Leads", url: "/leads", icon: UserPlus },
-      { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download },
-      { title: "Contatos", url: "/contacts", icon: Users },
-      { title: "Empresas", url: "/companies", icon: Building2 },
-      { title: "Negócios", url: "/deals", icon: Briefcase },
-      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
-      { title: "Tarefas", url: "/tasks", icon: ListTodo },
-      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
-      { title: "Reuniões", url: "/meetings", icon: Video },
-      { title: "Propostas", url: "/proposals", icon: FileText },
-      { title: "Faturas", url: "/invoices", icon: FileText },
-      { title: "Inbox unificada", url: "/inbox", icon: Inbox },
-      { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
-      { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
-      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
-      { title: "Comunicações", url: "/communications", icon: MessageSquare },
-      { title: "Notas", url: "/notes", icon: StickyNote },
-    ],
-  },
-  {
-    label: "Analisar", items: [
-      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard },
-      { title: "Relatórios", url: "/reports", icon: BarChart3 },
-      { title: "Analytics", url: "/analytics", icon: TrendingUp },
-    ],
-  },
-  {
-    label: "Engajar", items: [
-      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone },
-      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail },
-      { title: "Landing Pages", url: "/landing-pages", icon: FileText },
-      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle },
-      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles },
-      { title: "Pesquisas", url: "/settings/surveys", icon: Star },
-    ],
-  },
-];
-
-const PLATFORM_ITEMS: Item[] = [
-  { title: "Status", url: "/admin/status", icon: Activity },
-  { title: "Alertas", url: "/admin/alerts", icon: Bell },
-  { title: "Quotas", url: "/admin/quotas", icon: Gauge },
-  { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical },
-];
-
+import {
+  SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms,
+} from "@/lib/menu-config";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -87,24 +24,22 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const [query, setQuery] = useState("");
 
+  const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
-  const canSee = (url: string) => {
-    if (ADMIN_ONLY.has(url)) return isAdmin;
-    if (MANAGER_PLUS.has(url)) return isManager;
-    return true;
-  };
 
   const visibleGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return groups
+    return SIDEBAR_GROUPS
       .map((g) => ({
         ...g,
         items: g.items
-          .filter((i) => canSee(i.url))
+          .filter((i) => canSee(i.need, perms))
           .filter((i) => !q || i.title.toLowerCase().includes(q)),
       }))
       .filter((g) => g.items.length > 0);
-  }, [query, isAdmin, isManager]);
+  }, [query, isAdmin, isManager, isPlatformAdmin]);
+
+  const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -196,64 +131,29 @@ export function AppSidebar() {
 
       <SidebarFooter className="gap-1 border-t border-sidebar-border/60 px-2 pt-2">
         <SidebarMenu>
-          {isPlatformAdmin && (
-            <>
-              <SidebarMenuItem>
+          {platformItems.map((it) => {
+            const Icon = it.icon;
+            const active = isActive(it.url);
+            return (
+              <SidebarMenuItem key={it.url}>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Super-admin"
-                  isActive={path.startsWith("/admin/workspaces")}
+                  tooltip={it.title}
+                  isActive={active}
                   className="h-auto rounded-xl px-2 py-2"
                 >
-                  <Link to="/admin/workspaces" className="flex items-center gap-2.5">
+                  <Link to={it.url} className="flex items-center gap-2.5">
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-                      <ShieldCheck className="h-3.5 w-3.5" />
+                      <Icon className="h-3.5 w-3.5" />
                     </span>
-                    <span className="truncate group-data-[collapsible=icon]:hidden">Super-admin</span>
+                    <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Chamados"
-                  isActive={path.startsWith("/admin/bug-reports")}
-                  className="h-auto rounded-xl px-2 py-2"
-                >
-                  <Link to="/admin/bug-reports" className="flex items-center gap-2.5">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-                      <Bug className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="truncate group-data-[collapsible=icon]:hidden">Chamados</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {PLATFORM_ITEMS.map((it) => {
-                const Icon = it.icon;
-                const active = isActive(it.url);
-                return (
-                  <SidebarMenuItem key={it.url}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={it.title}
-                      isActive={active}
-                      className="h-auto rounded-xl px-2 py-2"
-                    >
-                      <Link to={it.url} className="flex items-center gap-2.5">
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-                          <Icon className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </>
-          )}
+            );
+          })}
         </SidebarMenu>
       </SidebarFooter>
-
     </Sidebar>
   );
 }
