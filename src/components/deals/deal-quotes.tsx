@@ -20,6 +20,8 @@ import {
 import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -47,6 +49,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     queryKey: ["deal-quotes", dealId],
     queryFn: () => list({ data: { dealId } }),
   });
+
+  const { data: lineItemsCount = 0 } = useQuery({
+    queryKey: ["deal-line-items-count", dealId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("deal_line_items")
+        .select("id", { count: "exact", head: true })
+        .eq("deal_id", dealId);
+      return count ?? 0;
+    },
+  });
+  const hasLineItems = lineItemsCount > 0;
 
   const createMut = useMutation({
     mutationFn: () => create({
@@ -102,9 +116,22 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Nova cotação
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={hasLineItems ? -1 : 0}>
+                <Button size="sm" onClick={() => setOpen(true)} disabled={!hasLineItems}>
+                  <Plus className="h-4 w-4 mr-1" /> Nova cotação
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasLineItems && (
+              <TooltipContent>
+                Adicione itens de linha ao negócio para gerar uma cotação.
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {isLoading ? (
