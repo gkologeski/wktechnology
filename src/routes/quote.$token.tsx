@@ -256,3 +256,175 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+// ============== Renderer para cotações com modelo HTML ==============
+
+type LineItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  tax_rate: number;
+};
+
+type QuoteForRender = {
+  id: string;
+  number: string;
+  title: string | null;
+  status: string;
+  currency: string;
+  subtotal: number;
+  discount_total: number;
+  tax_total: number;
+  total: number;
+  notes: string | null;
+  terms: string | null;
+  created_at: string;
+  valid_until: string | null;
+  payment_link_url: string | null;
+  paid_at: string | null;
+};
+
+type TemplatedQuoteProps = {
+  html: string;
+  quote: QuoteForRender;
+  items: LineItem[];
+  company: { name?: string | null; website?: string | null } | null;
+  contact: { first_name?: string | null; last_name?: string | null; email?: string | null } | null;
+  agent: { full_name?: string | null; email?: string | null } | null;
+  expired: boolean;
+  responded: boolean;
+  onAcceptClick: () => void;
+  onDeclineClick: () => void;
+  respondPending: boolean;
+  acceptOpen: boolean;
+  setAcceptOpen: (v: boolean) => void;
+  signature: string;
+  setSignature: (v: string) => void;
+  onAcceptSubmit: () => void;
+};
+
+const ACTIONS_MARKER = "__QUOTE_ACTIONS_PLACEHOLDER__";
+
+function TemplatedQuote(props: TemplatedQuoteProps) {
+  const { html, quote, items, company, contact, agent, expired, responded } = props;
+
+  const ctx: QuoteRenderContext = useMemo(() => {
+    const fmt = (n: number) => formatCurrency(Number(n), quote.currency);
+    return {
+      quote: {
+        number: quote.number,
+        title: quote.title ?? "Cotação",
+        created_at: formatDateTime(quote.created_at),
+        valid_until: quote.valid_until ? formatDateTime(quote.valid_until) : "",
+        subtotal: fmt(quote.subtotal),
+        discount_total: fmt(quote.discount_total),
+        tax_total: fmt(quote.tax_total),
+        total: fmt(quote.total),
+        notes: quote.notes ?? "",
+        terms: quote.terms ?? "",
+      },
+      company: { name: company?.name ?? "", domain: company?.website ?? "" },
+      contact: {
+        name: contact ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() : "",
+        email: contact?.email ?? "",
+      },
+      agent: { name: agent?.full_name ?? "", email: agent?.email ?? "" },
+      items: items.map((li) => {
+        const total = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100) * (1 + Number(li.tax_rate) / 100);
+        return {
+          name: li.name,
+          description: li.description ?? "",
+          quantity: Number(li.quantity),
+          unit_price: fmt(Number(li.unit_price)),
+          discount_pct: Number(li.discount_pct),
+          tax_rate: Number(li.tax_rate),
+          line_total: fmt(total),
+        };
+      }),
+    };
+  }, [quote, items, company, contact, agent]);
+
+  const rendered = useMemo(() => {
+    const out = renderQuoteTemplate(html, ctx).replace(/\{\{#actions\/\}\}/g, ACTIONS_MARKER);
+    return DOMPurify.sanitize(out, { WHOLE_DOCUMENT: true, ADD_TAGS: ["style"] });
+  }, [html, ctx]);
+
+  const [before, after] = useMemo(() => {
+    const idx = rendered.indexOf(ACTIONS_MARKER);
+    if (idx === -1) return [rendered, ""];
+    return [rendered.slice(0, idx), rendered.slice(idx + ACTIONS_MARKER.length)];
+  }, [rendered]);
+
+  return (
+    <div className="min-h-screen bg-muted/30 print:bg-white">
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-3">
+        <div className="flex items-center justify-end print:hidden">
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+          </Button>
+        </div>
+
+        <div
+          className="rounded-md border bg-white overflow-hidden print:border-0"
+          dangerouslySetInnerHTML={{ __html: before + makeActionsHtml(props, !!after, expired, responded) + after }}
+        />
+
+        {/* Bind real action handlers via overlay buttons (the marker block in HTML is presentational only) */}
+        {!quote.paid_at && quote.payment_link_url && !responded && (
+          <div className="print:hidden">
+            <Button className="w-full" size="lg" onClick={() => window.location.assign(quote.payment_link_url!)}>
+              <CreditCard className="h-4 w-4 mr-2" /> Pagar {formatCurrency(Number(quote.total), quote.currency)}
+            </Button>
+          </div>
+        )}
+        {!quote.paid_at && !responded && !expired && (
+          <div className="flex gap-2 justify-end print:hidden">
+            <Button variant="outline" onClick={props.onDeclineClick} disabled={props.respondPending}>
+              <X className="h-4 w-4 mr-1" /> Recusar
+            </Button>
+            <Button onClick={props.onAcceptClick}>
+              <Check className="h-4 w-4 mr-1" /> Aceitar
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={props.acceptOpen} onOpenChange={props.setAcceptOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Aceitar cotação</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Digite seu nome completo como assinatura eletrônica.</p>
+            <div className="space-y-1.5">
+              <Label>Nome completo</Label>
+              <Input value={props.signature} onChange={(e) => props.setSignature(e.target.value)} placeholder="Seu nome" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => props.setAcceptOpen(false)}>Cancelar</Button>
+            <Button onClick={props.onAcceptSubmit} disabled={!props.signature.trim() || props.respondPending}>
+              Confirmar aceite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Renders a static informational block inside the templated HTML; the real
+// interactive buttons live outside the dangerouslySetInnerHTML container.
+function makeActionsHtml(p: TemplatedQuoteProps, _hasAfter: boolean, expired: boolean, responded: boolean): string {
+  if (p.quote.paid_at) {
+    return `<div style="margin:24px 0;padding:14px 18px;border-radius:10px;background:#dcfce7;color:#166534;text-align:center;font-weight:600">Pagamento confirmado</div>`;
+  }
+  if (responded) {
+    return `<div style="margin:24px 0;padding:14px 18px;border-radius:10px;background:#f1f5f9;color:#475569;text-align:center">Resposta registrada</div>`;
+  }
+  if (expired) {
+    return `<div style="margin:24px 0;padding:14px 18px;border-radius:10px;background:#fee2e2;color:#991b1b;text-align:center;font-weight:600">Esta cotação expirou</div>`;
+  }
+  return "";
+}
