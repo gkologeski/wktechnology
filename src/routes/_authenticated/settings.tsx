@@ -146,23 +146,39 @@ function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const { isAdmin, isManager } = useMyRole();
+  const { isPlatformAdmin } = useIsPlatformAdmin();
+
+  const canSee = (t: Tab) => {
+    if (t.need === "platform") return isPlatformAdmin;
+    if (t.need === "admin") return isAdmin;
+    if (t.need === "manager") return isManager;
+    return true;
+  };
+
+  const allowedSections = useMemo(
+    () => sections
+      .map((s) => ({ ...s, tabs: s.tabs.filter(canSee) }))
+      .filter((s) => s.tabs.length > 0),
+    [isAdmin, isManager, isPlatformAdmin],
+  );
 
   const isActive = (to: string) =>
     to === "/settings" ? path === "/settings" : path.startsWith(to);
 
   const currentValue =
-    sections
+    allowedSections
       .flatMap((s) => s.tabs)
       .filter((t) => isActive(t.to))
       .sort((a, b) => b.to.length - a.to.length)[0]?.to ?? "/settings";
 
   const filteredSections = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return sections;
-    return sections
+    if (!q) return allowedSections;
+    return allowedSections
       .map((s) => ({ ...s, tabs: s.tabs.filter((t) => t.label.toLowerCase().includes(q)) }))
       .filter((s) => s.tabs.length > 0);
-  }, [query]);
+  }, [query, allowedSections]);
 
   return (
     <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
