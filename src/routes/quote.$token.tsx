@@ -1,7 +1,8 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import DOMPurify from "dompurify";
 import { getQuoteByToken, respondToQuote } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Printer, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
 
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
