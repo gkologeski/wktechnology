@@ -893,9 +893,7 @@ function LeadsHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
