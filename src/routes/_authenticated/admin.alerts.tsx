@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -129,7 +130,7 @@ function AdminAlertsPage() {
               {(events.data?.items ?? []).map((e: any) => (
                 <li key={e.id} className="flex items-center justify-between text-sm border-b pb-2">
                   <span><Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>{e.severity}</Badge> {e.message}</span>
-                  <span className="text-muted-foreground text-xs">{new Date(e.fired_at).toLocaleString("pt-BR")}</span>
+                  <span className="text-muted-foreground text-xs">{formatDateTime(e.fired_at)}</span>
                 </li>
               ))}
             </ul>

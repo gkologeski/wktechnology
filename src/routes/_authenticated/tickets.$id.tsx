@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,9 +118,9 @@ function TicketDetail() {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Criado em {new Date(ticket.created_at).toLocaleDateString("pt-BR")}
-              {ticket.due_at && <span> · Vence {new Date(ticket.due_at).toLocaleDateString("pt-BR")}</span>}
-              {ticket.resolved_at && <span> · Resolvido {new Date(ticket.resolved_at).toLocaleDateString("pt-BR")}</span>}
+              Criado em {formatDateTime(ticket.created_at)}
+              {ticket.due_at && <span> · Vence {formatDateTime(ticket.due_at)}</span>}
+              {ticket.resolved_at && <span> · Resolvido {formatDateTime(ticket.resolved_at)}</span>}
             </p>
           </div>
         </div>

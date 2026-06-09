@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -73,7 +74,7 @@ export function MeetingsPanel({ entity, entityId }: Props) {
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    {new Date(m.created_at).toLocaleString("pt-BR")}
+                    {formatDateTime(m.created_at)}
                     {m.recording_storage_path ? " · gravação anexada" : ""}
                   </div>
                 </button>

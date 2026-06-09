@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -94,7 +95,7 @@ export function NotificationsBell() {
                         <div className="text-sm font-medium truncate">{n.title}</div>
                         {n.body && <div className="text-xs text-muted-foreground line-clamp-2">{n.body}</div>}
                         <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {new Date(n.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                          {formatDateTime(n.created_at)}
                         </div>
                       </div>
                     </div>

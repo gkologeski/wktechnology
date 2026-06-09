@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -109,7 +110,7 @@ function AdminSandboxPage() {
                     <TableCell>
                       <Badge variant={s.status === "promoted" ? "default" : s.status === "archived" ? "secondary" : "outline"}>{s.status}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{s.last_synced_at ? new Date(s.last_synced_at).toLocaleString("pt-BR") : "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{s.last_synced_at ? formatDateTime(s.last_synced_at) : "—"}</TableCell>
                     <TableCell className="text-right space-x-1">
                       {s.status === "active" && (
                         <>

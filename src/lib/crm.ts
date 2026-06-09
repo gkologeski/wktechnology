@@ -92,12 +92,7 @@ function formatBrParts(date: Date, withTime: boolean) {
 }
 
 export function formatDate(d?: string | null) {
-  if (!d) return "—";
-  try {
-    return formatBrParts(new Date(d), false);
-  } catch {
-    return "—";
-  }
+  return formatDateTime(d);
 }
 
 export function formatDateTime(d?: string | null) {

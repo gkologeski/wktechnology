@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -209,7 +210,7 @@ function SurveysPage() {
               {filtered.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell className="text-xs text-muted-foreground">
-                    {new Date(s.sent_at).toLocaleString("pt-BR")}
+                    {formatDateTime(s.sent_at)}
                   </TableCell>
                   <TableCell>
                     {s.score !== null ? (
@@ -222,7 +223,7 @@ function SurveysPage() {
                   </TableCell>
                   <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {s.responded_at ? new Date(s.responded_at).toLocaleString("pt-BR") : "—"}
+                    {s.responded_at ? formatDateTime(s.responded_at) : "—"}
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(s.token)} title="Copiar link público">

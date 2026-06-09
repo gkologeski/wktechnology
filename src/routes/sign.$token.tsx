@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -114,7 +115,7 @@ function SignPage() {
               <CheckCircle2 className="h-6 w-6 text-primary" />
               <div>
                 <div className="font-medium">Você já assinou este documento.</div>
-                <div className="text-xs text-muted-foreground">Assinado em {new Date(signer.signed_at!).toLocaleString("pt-BR")}</div>
+                <div className="text-xs text-muted-foreground">Assinado em {formatDateTime(signer.signed_at!)}</div>
               </div>
             </CardContent>
           </Card>

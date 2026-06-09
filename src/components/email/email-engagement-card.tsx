@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 // Card de engajamento de e-mail 1:1 mostrado dentro do timeline da entidade.
 // Lista os e-mails enviados via o módulo de inbox/composer com contagem de
 // aberturas, cliques e timestamps recentes.
@@ -20,7 +21,7 @@ const ENTITY_BY_KEY: Record<RelatedKey, "contact" | "lead" | "deal" | "company">
 function fmt(d: string | null) {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    return formatDateTime(d);
   } catch {
     return d;
   }

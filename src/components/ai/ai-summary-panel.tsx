@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, RefreshCw, Trash2, Phone, MessageSquare } from "lucide-react";
@@ -127,7 +128,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
                   <Badge variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"} className="text-[10px]">{r.sentiment}</Badge>
                 )}
                 <span className="text-[11px] text-muted-foreground">
-                  {r.source_count} msg · {new Date(r.created_at).toLocaleString("pt-BR")}
+                  {r.source_count} msg · {formatDateTime(r.created_at)}
                 </span>
               </div>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(r.id)}>

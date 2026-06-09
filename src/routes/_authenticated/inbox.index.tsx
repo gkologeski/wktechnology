@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -261,7 +262,7 @@ function UnifiedInboxPage() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                        {it.lastAt ? new Date(it.lastAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : ""}
+                        {it.lastAt ? formatDateTime(it.lastAt) : ""}
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground self-center" />
                     </button>

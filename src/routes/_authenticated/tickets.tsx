@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -483,7 +484,7 @@ function TicketsIndex() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground tabular-nums">
-                        {new Date(t.created_at).toLocaleDateString("pt-BR")}
+                        {formatDateTime(t.created_at)}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeOne(t.id)}>

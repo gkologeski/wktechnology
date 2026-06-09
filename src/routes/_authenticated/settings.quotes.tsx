@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/crm";
+import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/settings/quotes")({
   component: QuotesPage,
@@ -72,7 +72,7 @@ function QuotesPage() {
                       }>{STATUS_LABEL[q.status]}</Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(q.created_at).toLocaleDateString("pt-BR")} · {formatCurrency(Number(q.total), q.currency)}
+                      {formatDateTime(q.created_at)} · {formatCurrency(Number(q.total), q.currency)}
                       {q.view_count > 0 && ` · ${q.view_count} visualizações`}
                     </div>
                   </div>

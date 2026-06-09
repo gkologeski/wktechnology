@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -88,7 +89,7 @@ function LiveChatInbox() {
                 </div>
                 {s.visitor_email && <div className="text-xs text-muted-foreground truncate">{s.visitor_email}</div>}
                 <div className="text-[10px] text-muted-foreground">
-                  {s.last_message_at ? new Date(s.last_message_at).toLocaleString("pt-BR") : ""}
+                  {s.last_message_at ? formatDateTime(s.last_message_at) : ""}
                 </div>
               </button>
             ))}

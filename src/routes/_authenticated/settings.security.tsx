@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 // Página /settings/security — 2FA (TOTP) + sessões.
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -150,7 +151,7 @@ function SecurityPage() {
                         </Badge>
                         <span className="font-medium">{f.friendly_name || f.factor_type.toUpperCase()}</span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(f.created_at).toLocaleString("pt-BR")}
+                          {formatDateTime(f.created_at)}
                         </span>
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => removeFactor(f.id)} aria-label="Remover">
@@ -219,7 +220,7 @@ function SecurityPage() {
             <div><span className="text-muted-foreground">Provedor:</span> {session?.provider ?? "—"}</div>
             <div className="col-span-2">
               <span className="text-muted-foreground">Último login:</span>{" "}
-              {session?.signedInAt ? new Date(session.signedInAt).toLocaleString("pt-BR") : "—"}
+              {session?.signedInAt ? formatDateTime(session.signedInAt) : "—"}
             </div>
           </div>
           <div className="flex gap-2">

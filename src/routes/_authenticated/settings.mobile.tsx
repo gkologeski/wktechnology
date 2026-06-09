@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -170,7 +171,7 @@ function MobilePage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs truncate flex-1">
                     <div className="font-medium truncate">{s.user_agent ?? s.endpoint.slice(0, 60)}</div>
-                    <div className="text-muted-foreground">Registrado em {new Date(s.created_at).toLocaleString("pt-BR")}</div>
+                    <div className="text-muted-foreground">Registrado em {formatDateTime(s.created_at)}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch checked={s.enabled} onCheckedChange={(v) => toggleEnabled(s, v)} aria-label="Ativo" />

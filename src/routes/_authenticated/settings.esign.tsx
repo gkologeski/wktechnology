@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -172,7 +173,7 @@ function EsignPage() {
                 <div className="min-w-0">
                   <div className="font-medium truncate">{d.title}</div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(d.created_at).toLocaleDateString("pt-BR")} · {signed}/{signers.length} assinaram
+                    {formatDateTime(d.created_at)} · {signed}/{signers.length} assinaram
                   </div>
                 </div>
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -271,7 +272,7 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                     </div>
                     {s.signed_at && (
                       <div className="text-xs text-muted-foreground">
-                        Assinado em {new Date(s.signed_at).toLocaleString("pt-BR")}
+                        Assinado em {formatDateTime(s.signed_at)}
                       </div>
                     )}
                   </div>
@@ -301,7 +302,7 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                     <div>
                       <div className="font-medium text-xs">{a.event}</div>
                       <div className="text-[11px] text-muted-foreground">
-                        {new Date(a.created_at).toLocaleString("pt-BR")}
+                        {formatDateTime(a.created_at)}
                         {a.ip_address ? ` · ${a.ip_address}` : ""}
                       </div>
                     </div>
