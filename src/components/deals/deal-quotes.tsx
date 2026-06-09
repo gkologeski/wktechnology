@@ -148,7 +148,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={hasLineItems ? -1 : 0}>
-                <Button size="sm" onClick={() => setOpen(true)} disabled={!hasLineItems}>
+                <Button size="sm" onClick={openDialog} disabled={!hasLineItems}>
                   <Plus className="h-4 w-4 mr-1" /> Nova cotação
                 </Button>
               </span>
