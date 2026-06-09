@@ -6713,6 +6713,53 @@ export type Database = {
           },
         ]
       }
+      quote_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          html: string
+          id: string
+          is_default: boolean
+          is_system: boolean
+          name: string
+          owner_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name: string
+          owner_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name?: string
+          owner_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           accepted_at: string | null
@@ -6736,6 +6783,7 @@ export type Database = {
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
           tax_total: number
+          template_id: string | null
           terms: string | null
           title: string | null
           total: number
@@ -6766,6 +6814,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           tax_total?: number
+          template_id?: string | null
           terms?: string | null
           title?: string | null
           total?: number
@@ -6796,6 +6845,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           tax_total?: number
+          template_id?: string | null
           terms?: string | null
           title?: string | null
           total?: number
@@ -6824,6 +6874,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "quote_templates"
             referencedColumns: ["id"]
           },
           {
@@ -9991,6 +10048,10 @@ export type Database = {
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
+      seed_quote_templates: {
+        Args: { _owner: string; _workspace: string }
+        Returns: undefined
+      }
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
       user_can_act: {
         Args: {
