@@ -71,17 +71,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     setOpen(true);
   }
 
-  const { data: lineItemsCount = 0 } = useQuery({
-    queryKey: ["deal-line-items-count", dealId],
+  const { data: lineItems = [] } = useQuery({
+    queryKey: ["deal_line_items", dealId],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data, error } = await supabase
         .from("deal_line_items")
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("deal_id", dealId);
-      return count ?? 0;
+      if (error) throw error;
+      return data ?? [];
     },
   });
-  const hasLineItems = lineItemsCount > 0;
+  const hasLineItems = lineItems.length > 0;
 
   const createMut = useMutation({
     mutationFn: () => create({
