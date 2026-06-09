@@ -568,9 +568,7 @@ function CompaniesHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
