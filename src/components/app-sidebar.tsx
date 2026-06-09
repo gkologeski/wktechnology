@@ -4,7 +4,7 @@ import {
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
   ChevronRight, Inbox, ShieldCheck, LifeBuoy, Star, Package, FileText,
   BarChart3, TrendingUp, Sparkles, Bug, Briefcase as BriefcaseIcon, Video,
-  GitBranch, Sliders,
+
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
