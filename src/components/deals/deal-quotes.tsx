@@ -20,6 +20,8 @@ import {
 import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
