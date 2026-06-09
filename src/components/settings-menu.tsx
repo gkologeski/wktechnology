@@ -71,6 +71,15 @@ const groups: Group[] = [
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", need: "admin" },
     ],
   },
+  {
+    label: "Plataforma",
+    items: [
+      { to: "/admin/status", label: "Status", need: "platform" },
+      { to: "/admin/alerts", label: "Alertas", need: "platform" },
+      { to: "/admin/quotas", label: "Quotas", need: "platform" },
+      { to: "/admin/sandbox", label: "Sandbox", need: "platform" },
+    ],
+  },
 ];
 
 export function SettingsMenu() {
