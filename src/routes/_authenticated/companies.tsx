@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
