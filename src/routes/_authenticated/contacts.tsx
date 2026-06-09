@@ -57,6 +57,7 @@ import {
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
+import { formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
