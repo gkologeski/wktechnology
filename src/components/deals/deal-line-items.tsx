@@ -101,7 +101,7 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
           <EntityCombobox
             entity="products"
             select="id, name, unit_price, currency"
-            filters={{ active: true }}
+            searchColumns={["name", "sku", "description"]}
             labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
             hintFrom={(r) => {
               const row = r as { unit_price?: number; currency?: string };
