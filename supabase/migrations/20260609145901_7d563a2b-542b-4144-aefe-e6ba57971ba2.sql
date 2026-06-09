@@ -1,0 +1,1 @@
+ALTER TABLE public.quote_templates ADD COLUMN IF NOT EXISTS blocks JSONB;

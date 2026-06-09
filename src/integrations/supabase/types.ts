@@ -6715,6 +6715,7 @@ export type Database = {
       }
       quote_templates: {
         Row: {
+          blocks: Json | null
           created_at: string
           description: string | null
           html: string
@@ -6727,6 +6728,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          blocks?: Json | null
           created_at?: string
           description?: string | null
           html?: string
@@ -6739,6 +6741,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          blocks?: Json | null
           created_at?: string
           description?: string | null
           html?: string

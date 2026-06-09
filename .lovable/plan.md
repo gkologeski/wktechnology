@@ -1,104 +1,74 @@
-## Objetivo
+# Editor de cotação drag-and-drop
 
-Permitir que o usuário crie e gerencie modelos HTML para a página pública da cotação, escolha qual modelo aplicar a cada cotação gerada dentro de um negócio, e tenha 3 modelos prontos para começar.
+Substituir o editor de HTML cru por um construtor visual onde o usuário arrasta blocos (cabeçalho, dados do cliente, tabela de itens, totais, observações, termos, botões de ação, divisor, texto livre, imagem) para montar o modelo. O HTML continua sendo gerado por baixo, mantendo compatibilidade com o renderer atual (`{{quote.*}}`, `{{#each items}}`, `{{#actions/}}`) e com a página pública `/quote/$token`.
 
-## Mudanças de banco (uma migração)
+## Como vai funcionar para o usuário
 
-1. **Nova tabela `quote_templates`** (workspace-scoped):
-   - Campos de domínio: `name`, `description`, `html` (string com o HTML do modelo + placeholders), `is_default` (boolean), `is_system` (boolean — marca os 3 modelos seed).
-   - `owner_id`, `workspace_id`, timestamps padrão, trigger `updated_at`.
-   - GRANTs para `authenticated` e `service_role`.
-   - RLS por workspace, no padrão das demais tabelas do projeto.
-   - Trigger para garantir que só exista um `is_default = true` por workspace.
+- Em **Configurações → Modelos de cotação**, o editor abre em 3 colunas:
+  - Esquerda: paleta de blocos arrastáveis.
+  - Centro: canvas com pré-visualização real do modelo. Cada bloco pode ser reordenado (drag), selecionado, duplicado ou removido. Botão "Visualizar" mostra preview com dados de exemplo.
+  - Direita: painel de propriedades do bloco selecionado (texto, alinhamento, cor, mostrar/ocultar campos, etc.) + propriedades globais (cor primária, fonte, espaçamento).
+- Botão "HTML avançado" continua disponível para quem quiser editar o código (modo legado).
+- Os 3 modelos sistema (Clássico/Moderno/Compacto) são reimportados como estruturas de blocos equivalentes.
 
-2. **`quotes.template_id`** — coluna `uuid` opcional, FK para `quote_templates` com `ON DELETE SET NULL`.
+## Blocos disponíveis
 
-3. **Seed dos 3 modelos por workspace**: feito por trigger `AFTER INSERT ON workspaces` que insere os 3 modelos padrão; e por uma rotina única que cria os modelos nos workspaces existentes (executada como parte da migração). Os 3 modelos:
-   - **Clássico** — layout sóbrio, cabeçalho com dados da empresa, tabela tradicional, rodapé com termos.
-   - **Moderno** — cabeçalho colorido com logo, blocos espaçados, tipografia maior.
-   - **Compacto** — uma página enxuta, ideal para cotações curtas, foco no total e CTA de aceite.
+- **Cabeçalho**: título + número da cotação, alinhamento, cor de fundo opcional.
+- **Logo**: imagem do workspace (branding) com tamanho ajustável.
+- **Dados do cliente**: empresa, contato, e-mail.
+- **Dados do emissor**: agente, e-mail, datas de emissão/validade.
+- **Tabela de itens**: colunas configuráveis (nome, descrição, qtd, preço, desconto, imposto, total).
+- **Totais**: subtotal, descontos, impostos, total (campos opcionais).
+- **Observações** / **Termos**: blocos de texto livre vindos da cotação.
+- **Texto livre**: parágrafo editável pelo usuário (com tokens `{{quote.x}}` autocomplete).
+- **Botões de ação**: marcador `{{#actions/}}` (Aceitar/Recusar/Pagar).
+- **Divisor**, **Espaçador**, **Imagem** (URL).
 
-## Server functions (`src/lib/quote-templates.functions.ts`)
+## Estrutura técnica
 
-- `listQuoteTemplates` — lista os modelos do workspace do usuário (ordenados por `is_default desc`, `name asc`).
-- `getQuoteTemplate({ id })`.
-- `createQuoteTemplate({ name, description, html })`.
-- `updateQuoteTemplate({ id, patch })` — bloqueia editar `is_system` no nome (mas permite clonar/editar HTML).
-- `deleteQuoteTemplate({ id })` — bloqueia exclusão se `is_system`.
-- `setDefaultQuoteTemplate({ id })` — marca default e desmarca os demais.
-- `duplicateQuoteTemplate({ id })` — clona um modelo (útil para partir dos modelos do sistema sem perdê-los).
+- Nova coluna `quote_templates.blocks JSONB` (default `null`). Quando preenchida, é a fonte de verdade; `html` é regenerado a partir dela no salvar. Modelos legados continuam funcionando com `html` puro.
+- Novo módulo `src/lib/quote-template-blocks.ts`:
+  - tipo `TemplateBlock = { id, type, props }` + `TemplateDocument = { blocks, theme }`;
+  - `blocksToHtml(doc)` produz HTML compatível com o renderer atual (gera os mesmos `{{quote.*}}`/`{{#each items}}`/`{{#actions/}}`);
+  - `seedBlocks.classic/modern/compact` (estruturas iniciais para os 3 modelos sistema).
+- Editor novo `src/components/quote-templates/visual-editor.tsx` usando `@dnd-kit/core` + `@dnd-kit/sortable` (já leves, sem SSR issue):
+  - paleta → canvas (drag de novo bloco);
+  - reordenar dentro do canvas (sortable);
+  - painel de propriedades por tipo.
+- `template-editor.tsx` (atual) vira `code-editor.tsx` e fica acessível em uma aba "Avançado".
+- Server functions (`createQuoteTemplate`/`updateQuoteTemplate`) aceitam `blocks` + `html`. Quando vier `blocks`, `html` é recomputado server-side via `blocksToHtml` para garantir consistência.
+- Página pública `/quote/$token` não muda — continua consumindo `html` via `renderQuoteTemplate`.
 
-Todas com `requireSupabaseAuth`; filtro por `workspace_id` do usuário; validação Zod.
+## Migration
 
-Ajuste em `src/lib/quotes.functions.ts`:
-- `createQuoteFromDeal` aceita `templateId?` e grava em `quotes.template_id` (ou usa o modelo default do workspace quando ausente).
-- `updateQuote` aceita atualizar `template_id`.
-- `getQuoteByToken` passa a retornar também o `template` (id, name, html) para o renderer público.
+```sql
+ALTER TABLE public.quote_templates
+  ADD COLUMN IF NOT EXISTS blocks JSONB;
+```
 
-## UI: gestão de modelos
+(Sem mudança de policies/grants.)
 
-**Nova rota:** `src/routes/_authenticated/settings.quote-templates.tsx`
-- Lista de modelos à esquerda (com badge "Padrão" e "Sistema"), ações: novo, duplicar, definir como padrão, excluir (oculto para sistema).
-- Botão "Novo modelo" abre o editor em branco.
-
-**Componente editor** `src/components/quote-templates/template-editor.tsx`:
-- Layout duas colunas (desktop) / abas (mobile).
-- Esquerda: `name`, `description`, e textarea monoespaçada com o HTML. Toolbar acima do textarea lista os placeholders disponíveis — clicar insere no cursor.
-- Direita: iframe sandbox (`sandbox="allow-same-origin"`, `srcDoc`) que renderiza o HTML interpolado com uma cotação fictícia de exemplo, atualizando em tempo real (debounce 200ms).
-- Botões: Salvar, Salvar e fechar, Definir como padrão.
-
-**Renderer compartilhado** `src/lib/quote-template-renderer.ts`:
-- Função `renderQuoteTemplate(html, data)` que substitui placeholders. Suporta:
-  - Escalares: `{{quote.number}}`, `{{quote.title}}`, `{{quote.total}}`, `{{quote.currency}}`, `{{quote.subtotal}}`, `{{quote.discount_total}}`, `{{quote.tax_total}}`, `{{quote.valid_until}}`, `{{quote.notes}}`, `{{quote.terms}}`, `{{company.name}}`, `{{company.domain}}`, `{{contact.name}}`, `{{contact.email}}`, `{{agent.name}}`, `{{agent.email}}`.
-  - Loops: bloco `{{#each items}} ... {{/each}}` com `{{name}}`, `{{quantity}}`, `{{unit_price}}`, `{{discount_pct}}`, `{{tax_rate}}`, `{{line_total}}`.
-  - Condicionais simples: `{{#if quote.valid_until}}...{{/if}}`.
-  - Bloco especial `{{#actions/}}` que o renderer do público troca pelos botões Aceitar/Recusar/Pagar; no preview do editor é renderizado como placeholder visual.
-- Escapa HTML por padrão nos valores interpolados. Sanitiza o HTML final com DOMPurify antes de exibir (no preview do editor e na página pública).
-
-## UI: seleção no negócio
-
-`src/components/deals/deal-quotes.tsx`:
-- No diálogo "Nova cotação", adicionar campo "Modelo" (Select) carregando `listQuoteTemplates`, padrão = template default do workspace, com opção "Sem modelo (layout padrão)".
-- Persistir `template_id` ao criar.
-- Em cada cotação listada, adicionar botão "Trocar modelo" que abre popover com a mesma Select e chama `updateQuote({ id, patch: { template_id } })`.
-
-## UI: página pública da cotação
-
-`src/routes/quote.$token.tsx`:
-- Quando `template` existir, renderizar a página inteira a partir do HTML do modelo via `renderQuoteTemplate`, dentro de um wrapper que injeta os botões Aceitar/Recusar/Pagar (substituindo `{{#actions/}}`) e mantém o modal de assinatura atual.
-- Quando não houver template, manter o layout atual como fallback.
-
-## Navegação
-
-Adicionar item "Modelos de cotação" no menu de Settings (perto de `settings.quotes`).
-
-## Detalhes técnicos
-
-- **Sanitização**: usar `dompurify` + `isomorphic-dompurify` no server (já compatível com o runtime). Adicionar a dependência.
-- **Preview iframe**: `srcDoc` com base CSS mínima injetada para evitar herança de estilos da app.
-- **Sem editor de código pesado**: textarea monoespaçada com `spellcheck=false`, tab handling básico — evita adicionar bundles grandes.
-- **Tipos**: após a migração, o `types.ts` é regenerado automaticamente e as functions consomem os tipos novos.
-
-## Arquivos a criar/editar
+## Arquivos
 
 Criar:
-- `src/lib/quote-templates.functions.ts`
-- `src/lib/quote-template-renderer.ts`
-- `src/components/quote-templates/template-editor.tsx`
-- `src/components/quote-templates/template-list.tsx`
-- `src/routes/_authenticated/settings.quote-templates.tsx`
+- `src/components/quote-templates/visual-editor.tsx`
+- `src/components/quote-templates/block-palette.tsx`
+- `src/components/quote-templates/block-canvas.tsx`
+- `src/components/quote-templates/block-inspector.tsx`
+- `src/components/quote-templates/blocks/*.tsx` (renderers por tipo)
+- `src/lib/quote-template-blocks.ts`
 
 Editar:
-- `src/lib/quotes.functions.ts` (aceitar/retornar `template_id` + template)
-- `src/components/deals/deal-quotes.tsx` (seleção de modelo na criação e troca)
-- `src/routes/quote.$token.tsx` (renderizar via template quando houver)
-- Menu de settings (link para a nova rota)
+- `src/routes/_authenticated/settings.quote-templates.tsx` — abas Visual/Avançado, default Visual.
+- `src/lib/quote-templates.functions.ts` — aceitar/persistir `blocks`, regenerar `html`.
+- `src/integrations/supabase/types.ts` — campo `blocks` (auto).
+- Migration nova.
 
-## Ordem de execução
+Dependências:
+- `bun add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`
 
-1. Migração (tabela + coluna + seed + trigger).
-2. Server functions de templates + ajustes em `quotes.functions.ts`.
-3. Renderer + sanitizer.
-4. Rota e UI de gestão de modelos.
-5. Integração no `deal-quotes` e na página pública.
-6. Verificação: criar/editar/duplicar modelo, gerar cotação no negócio escolhendo modelo, abrir link público e validar render + ações.
+## Fora do escopo
+
+- Reescrever a página pública da cotação.
+- Editor WYSIWYG por bloco com formatação rica (apenas texto + props básicas nesta versão).
+- Versionamento/histórico de modelos.
