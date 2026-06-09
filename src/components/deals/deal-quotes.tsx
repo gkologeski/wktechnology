@@ -9,19 +9,25 @@ import {
   regenerateQuoteToken,
   createQuotePaymentLink,
 } from "@/lib/quotes.functions";
+import { listQuoteTemplates } from "@/lib/quote-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard } from "lucide-react";
+import { Plus, ExternalLink, Copy, RefreshCw, Trash2, Send, CreditCard, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const NO_TEMPLATE = "__none__";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
