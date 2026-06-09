@@ -4,7 +4,8 @@ import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
   Inbox, ShieldCheck, LifeBuoy, Star, FileText,
-  BarChart3, TrendingUp, Sparkles, Bug, Video, Search,
+  BarChart3, TrendingUp, Sparkles, Bug, Video, Search, ListChecks, Download,
+  Activity, Bell, Gauge, FlaskConical,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -33,11 +34,13 @@ const groups: Group[] = [
     label: "Trabalhar", items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Leads", url: "/leads", icon: UserPlus },
+      { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download },
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
+      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
       { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Propostas", url: "/proposals", icon: FileText },
       { title: "Faturas", url: "/invoices", icon: FileText },
@@ -67,6 +70,14 @@ const groups: Group[] = [
     ],
   },
 ];
+
+const PLATFORM_ITEMS: Item[] = [
+  { title: "Status", url: "/admin/status", icon: Activity },
+  { title: "Alertas", url: "/admin/alerts", icon: Bell },
+  { title: "Quotas", url: "/admin/quotas", icon: Gauge },
+  { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical },
+];
+
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -217,10 +228,32 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {PLATFORM_ITEMS.map((it) => {
+                const Icon = it.icon;
+                const active = isActive(it.url);
+                return (
+                  <SidebarMenuItem key={it.url}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={it.title}
+                      isActive={active}
+                      className="h-auto rounded-xl px-2 py-2"
+                    >
+                      <Link to={it.url} className="flex items-center gap-2.5">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </>
           )}
         </SidebarMenu>
       </SidebarFooter>
+
     </Sidebar>
   );
 }
