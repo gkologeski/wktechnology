@@ -503,10 +503,10 @@ function TasksHubspotView() {
           <Button variant="outline" size="sm" asChild>
             <Link to="/tasks/queues">Queues</Link>
           </Button>
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" onClick={exportCsv}>
             <Download className="mr-1.5 h-4 w-4" /> Exportar
           </Button>
-          <Button size="sm" disabled>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
           </Button>
         </div>
