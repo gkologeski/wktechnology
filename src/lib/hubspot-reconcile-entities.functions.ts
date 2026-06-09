@@ -132,6 +132,11 @@ function rawOf(rec: HsRec) {
   return { id: rec.id, properties: rec.properties, createdAt: rec.createdAt, updatedAt: rec.updatedAt } as never;
 }
 
+function originalCreatedAt(rec: HsRec): Record<string, string> {
+  const createdAt = parseHsDate(rec.properties.createdate ?? rec.properties.hs_createdate ?? rec.createdAt);
+  return createdAt ? { created_at: createdAt } : {};
+}
+
 function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<string, unknown> | null {
   const p = rec.properties;
   if (entity === "company") {
@@ -157,6 +162,7 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
       hubspot_owner_id: p.hubspot_owner_id ?? null,
       hs_object_id: p.hs_object_id ?? rec.id,
       hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+      ...originalCreatedAt(rec),
       hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate),
       type: p.type ?? null,
       linkedin_company_page: p.linkedin_company_page ?? null,
@@ -188,6 +194,7 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
       hubspot_owner_id: p.hubspot_owner_id ?? null,
       hs_object_id: p.hs_object_id ?? rec.id,
       hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+      ...originalCreatedAt(rec),
       hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
       linkedin_url: p.linkedin_url ?? p.linkedinbio ?? null,
       twitter_handle: p.twitterhandle ?? null,
@@ -213,6 +220,7 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
       hubspot_owner_id: p.hubspot_owner_id ?? null,
       hs_object_id: p.hs_object_id ?? rec.id,
       hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+      ...originalCreatedAt(rec),
       hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
       closed_lost_reason: p.closed_lost_reason ?? null,
       closed_won_reason: p.closed_won_reason ?? null,
@@ -248,6 +256,7 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
     hubspot_owner_id: p.hubspot_owner_id ?? null,
     hs_object_id: p.hs_object_id ?? rec.id,
     hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    ...originalCreatedAt(rec),
     hs_lastmodifieddate: parseHsDate(p.lastmodifieddate ?? p.hs_lastmodifieddate),
     hs_lead_source_detail: p.hs_analytics_source_data_1 ?? p.hs_analytics_source ?? null,
     external_ids: { hubspot: rec.id } as never,
@@ -273,6 +282,7 @@ function buildTicketPayload(ownerId: string, rec: HsRec): Record<string, unknown
     hubspot_owner_id: p.hubspot_owner_id ?? null,
     hs_object_id: p.hs_object_id ?? rec.id,
     hs_createdate: parseHsDate(p.createdate ?? p.hs_createdate),
+    ...originalCreatedAt(rec),
     hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
     resolved_at: parseHsDate(p.closed_date),
     external_ids: { hubspot: rec.id, hs_pipeline: p.hs_pipeline ?? null, hs_pipeline_stage: p.hs_pipeline_stage ?? null } as never,

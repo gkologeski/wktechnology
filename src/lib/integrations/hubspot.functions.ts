@@ -43,6 +43,21 @@ async function hsPost(path: string, body: object) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function parseHsDate(v: string | null | undefined): string | null {
+  if (!v) return null;
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    return Number.isFinite(n) ? new Date(n).toISOString() : null;
+  }
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function originalCreatedAt(p: Record<string, string | null | undefined>, createdAt?: string): Record<string, string> {
+  const value = parseHsDate(p.createdate ?? p.hs_createdate ?? createdAt);
+  return value ? { created_at: value, hs_createdate: value } : {};
+}
+
 // ─────────────────────────── Cache em memória (TTL) ──────────────────────────
 // Persiste entre chamadas do server function dentro do mesmo Worker, reduzindo
 // drasticamente o nº de requests ao HubSpot quando o wizard conta os objetos
@@ -121,7 +136,7 @@ async function assocBatchRead(
   return out;
 }
 
-type HSRec = { id: string; properties: Record<string, string | null | undefined> };
+type HSRec = { id: string; properties: Record<string, string | null | undefined>; createdAt?: string; updatedAt?: string };
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
   const out: HSRec[] = [];
@@ -1533,6 +1548,8 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             "hs_pipeline_stage_category",
             "hs_primary_contact_id",
             "hubspot_owner_id",
+            "createdate",
+            "hs_createdate",
           ];
           await appendLog({
             level: "info",
@@ -1586,6 +1603,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               status: mapLeadStatusEnum(p.hs_pipeline_stage_category ?? undefined, stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
+                ...originalCreatedAt(p, c.createdAt),
             };
             const existingId = await findExistingId("leads", c.id, [
               { column: "email", value: email },
@@ -1602,9 +1620,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               if (error) stepFail++;
               else stepOk++;
             } else {
-              const { error } = await supabase.from("leads").insert({
+                const { error } = await supabase.from("leads").insert({
                 owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                 ...leadData,
                 external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
               });
