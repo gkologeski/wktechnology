@@ -89,35 +89,38 @@ export function AppSidebar() {
   const groupHasActive = (g: Group) => g.items.some((i) => isActive(i.url));
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-4 gap-2">
-        <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-          <div className="h-7 w-7 rounded-md bg-primary text-primary-foreground grid place-items-center text-sm">C</div>
-          <span className="group-data-[collapsible=icon]:hidden">TechSales CRM</span>
+    <Sidebar collapsible="icon" className="border-r-0">
+      <SidebarHeader className="px-3 py-4 gap-3">
+        <Link to="/dashboard" className="flex items-center gap-2.5 font-semibold">
+          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center text-sm font-bold shadow-md shadow-primary/20">
+            WK
+          </div>
+          <span className="group-data-[collapsible=icon]:hidden tracking-tight">TechSales CRM</span>
         </Link>
         <div className="group-data-[collapsible=icon]:hidden">
           <WorkspaceSwitcher />
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-1.5">
         {visibleGroups.map((group) => {
           let lastSection: string | undefined;
           return (
             <Collapsible key={group.label} defaultOpen={groupHasActive(group)} className="group/collapsible">
               <SidebarGroup>
                 <SidebarGroupLabel asChild>
-                  <CollapsibleTrigger className="flex w-full items-center gap-2">
-                    <group.icon className="h-4 w-4" />
+                  <CollapsibleTrigger className="flex w-full items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+                    <group.icon className="h-3.5 w-3.5" />
                     <span className="flex-1 text-left">{group.label}</span>
                     <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                   </CollapsibleTrigger>
                 </SidebarGroupLabel>
                 <CollapsibleContent>
                   <SidebarGroupContent>
-                    <SidebarMenu>
+                    <SidebarMenu className="gap-0.5">
                       {group.items.map((it) => {
                         const showSection = it.section && it.section !== lastSection;
                         if (it.section) lastSection = it.section;
+                        const active = isActive(it.url);
                         return (
                           <div key={it.url}>
                             {showSection && (
@@ -126,10 +129,22 @@ export function AppSidebar() {
                               </div>
                             )}
                             <SidebarMenuItem>
-                              <SidebarMenuButton asChild isActive={isActive(it.url)} tooltip={it.title}>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={active}
+                                tooltip={it.title}
+                                className={
+                                  active
+                                    ? "relative rounded-xl bg-primary/10 text-primary font-semibold hover:bg-primary/15 hover:text-primary data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
+                                    : "relative rounded-xl text-sidebar-foreground/80 hover:text-foreground"
+                                }
+                              >
                                 <Link to={it.url}>
                                   <it.icon className="h-4 w-4" />
                                   <span>{it.title}</span>
+                                  {active && (
+                                    <span className="ml-auto h-5 w-1 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
+                                  )}
                                 </Link>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -144,12 +159,12 @@ export function AppSidebar() {
           );
         })}
       </SidebarContent>
-      <SidebarFooter className="gap-1">
+      <SidebarFooter className="gap-1 border-t border-sidebar-border/60 px-1.5 pt-2">
         <SidebarMenu>
           {isPlatformAdmin && (
             <>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Super-admin" isActive={path.startsWith("/admin/workspaces")}>
+                <SidebarMenuButton asChild tooltip="Super-admin" isActive={path.startsWith("/admin/workspaces")} className="rounded-xl">
                   <Link to="/admin/workspaces">
                     <ShieldCheck className="h-4 w-4" />
                     <span>Super-admin</span>
@@ -157,7 +172,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Chamados" isActive={path.startsWith("/admin/bug-reports")}>
+                <SidebarMenuButton asChild tooltip="Chamados" isActive={path.startsWith("/admin/bug-reports")} className="rounded-xl">
                   <Link to="/admin/bug-reports">
                     <Bug className="h-4 w-4" />
                     <span>Chamados</span>
