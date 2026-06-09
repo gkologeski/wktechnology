@@ -4,7 +4,8 @@ import {
   LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
   Inbox, ShieldCheck, LifeBuoy, Star, FileText,
-  BarChart3, TrendingUp, Sparkles, Bug, Video, Search,
+  BarChart3, TrendingUp, Sparkles, Bug, Video, Search, ListChecks, Download,
+  Activity, Bell, Gauge, FlaskConical,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -33,11 +34,13 @@ const groups: Group[] = [
     label: "Trabalhar", items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Leads", url: "/leads", icon: UserPlus },
+      { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download },
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Tarefas", url: "/tasks", icon: ListTodo },
+      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
       { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Propostas", url: "/proposals", icon: FileText },
       { title: "Faturas", url: "/invoices", icon: FileText },
@@ -67,6 +70,14 @@ const groups: Group[] = [
     ],
   },
 ];
+
+const PLATFORM_ITEMS: Item[] = [
+  { title: "Status", url: "/admin/status", icon: Activity },
+  { title: "Alertas", url: "/admin/alerts", icon: Bell },
+  { title: "Quotas", url: "/admin/quotas", icon: Gauge },
+  { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical },
+];
+
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
