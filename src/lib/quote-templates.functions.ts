@@ -54,10 +54,12 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
   .inputValidator((input) => TemplateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspace_id = await activeWorkspace(supabase, userId);
     const { data: row, error } = await supabase
       .from("quote_templates")
       .insert({
         owner_id: userId,
+        workspace_id,
         name: data.name,
         description: data.description ?? null,
         html: data.html,
