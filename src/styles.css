@@ -49,7 +49,7 @@
 }
 
 :root {
-  --row-hover: #FFBFBF;
+  --row-hover: color-mix(in oklab, var(--primary) 8%, transparent);
   --radius: 0.5rem;
   --background: oklch(0.99 0.003 250);
   --foreground: oklch(0.22 0.03 250);
