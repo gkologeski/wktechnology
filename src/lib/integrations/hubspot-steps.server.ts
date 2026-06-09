@@ -714,7 +714,7 @@ async function upsertByHsId(
   payload: Record<string, unknown>,
 ): Promise<UpsertResult> {
   const normalizedPayload = withOriginalCreatedAt(payload);
-  const compareKeys = Object.keys(payload).filter(
+  const compareKeys = Object.keys(normalizedPayload).filter(
     (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
   );
   const selectCols = ["id", ...compareKeys].join(",");
