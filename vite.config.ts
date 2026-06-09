@@ -38,29 +38,23 @@ export default defineConfig({
       // URLs while Vite is re-crawling lazy route chunks. Treat those as
       // recoverable so dynamic route imports do not fail with 502/504.
       ignoreOutdatedRequests: true,
-      // TanStack Start discovers these SSR/router helpers during the first
-      // client hydration request. Pre-bundling them up front prevents Vite
-      // from rewriting optimized chunk hashes while lazy route modules such as
-      // /deals are still loading in the browser.
-      include: [
-        "react",
-        "react-dom",
-        "react/jsx-runtime",
-        "react/jsx-dev-runtime",
-        "@tanstack/react-router",
-        "@tanstack/react-query",
-        "events",
-        "@tanstack/history",
-        "@tanstack/router-core",
-        "@tanstack/router-core/ssr/client",
-        "@tanstack/router-core/ssr/server",
-        "h3-v2",
-        "seroval",
-      ],
+      // Do not force TanStack Router/Start into optimizeDeps. The Start plugin
+      // intentionally excludes them; pre-bundling them can create a second
+      // React/router context during dev hydration, which surfaces as
+      // "Cannot read properties of null (reading 'useContext')".
+      include: ["events"],
       // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
       // resolves its `node:events` imports through our `polyfill-node-events`
-      // plugin (esbuild's prebundler does not run that plugin).
-      exclude: ["@twilio/voice-sdk"],
+      // plugin (esbuild's prebundler does not run that plugin). Re-state the
+      // TanStack Start plugin exclusions so this local optimizeDeps block never
+      // weakens them during config merging.
+      exclude: [
+        "@twilio/voice-sdk",
+        "@tanstack/react-start",
+        "@tanstack/react-router",
+        "@tanstack/react-router-devtools",
+        "@tanstack/start-static-server-functions",
+      ],
     },
   },
 });
