@@ -225,6 +225,20 @@ function ContactsHubspotView() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("contatos", rows as unknown as Record<string, unknown>[], [
+      { key: "first_name", label: "Nome" },
+      { key: "last_name", label: "Sobrenome" },
+      { key: "email", label: "Email" },
+      { key: "phone", label: "Telefone" },
+      { key: "job_title", label: "Cargo" },
+      { key: "lifecycle_stage", label: "Estágio" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
+
   const toggleAll = () =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
