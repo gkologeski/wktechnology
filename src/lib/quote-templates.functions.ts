@@ -94,7 +94,7 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
     if (gErr) throw gErr;
     if (!current) throw new Error("Modelo não encontrado");
 
-    const patch: Record<string, unknown> = {};
+    const patch: { html?: string; description?: string | null; name?: string } = {};
     if (data.patch.html !== undefined) patch.html = data.patch.html;
     if (data.patch.description !== undefined) patch.description = data.patch.description;
     if (data.patch.name !== undefined) {
