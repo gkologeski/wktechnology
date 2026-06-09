@@ -33,9 +33,9 @@ const TemplateInput = z.object({
   blocks: BlocksSchema.nullable().optional(),
 });
 
-function compile(input: { html?: string; blocks?: unknown }): { html: string; blocks: unknown } {
+function compile(input: { html?: string; blocks?: unknown }): { html: string; blocks: any } {
   if (input.blocks && isTemplateDocument(input.blocks)) {
-    return { html: blocksToHtml(input.blocks), blocks: input.blocks };
+    return { html: blocksToHtml(input.blocks), blocks: input.blocks as any };
   }
   return { html: input.html ?? "", blocks: null };
 }
