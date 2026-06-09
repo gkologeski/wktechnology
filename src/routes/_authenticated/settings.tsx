@@ -191,7 +191,7 @@ function SettingsLayout() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {sections.map((section) => (
+            {allowedSections.map((section) => (
               <SelectGroup key={section.label}>
                 <SelectLabel>{section.label}</SelectLabel>
                 {section.tabs.map((t) => (
