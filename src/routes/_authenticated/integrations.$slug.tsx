@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -305,7 +306,7 @@ function IntegrationDetail() {
                           <span className="text-muted-foreground"> · {j.entity ?? "—"}</span>
                           <span className="text-muted-foreground">
                             {" "}
-                            · {new Date(j.created_at).toLocaleString("pt-BR")}
+                            · {formatDateTime(j.created_at)}
                           </span>
                         </div>
                         {isRunning && (

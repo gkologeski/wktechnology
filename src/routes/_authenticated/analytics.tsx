@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -362,7 +363,7 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
                     <tr key={r.id} className="border-b">
                       <td className="py-1 max-w-[280px] truncate">{r.subject || "(sem assunto)"}</td>
                       <td className="py-1">{r.to ?? "—"}</td>
-                      <td className="py-1">{r.sent_at ? new Date(r.sent_at).toLocaleString("pt-BR") : "—"}</td>
+                      <td className="py-1">{r.sent_at ? formatDateTime(r.sent_at) : "—"}</td>
                       <td className="py-1 text-right">{r.open_count}</td>
                       <td className="py-1 text-right">{r.click_count}</td>
                     </tr>
@@ -417,7 +418,7 @@ function SentimentTab() {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {r.emotion && <Badge variant="outline">{r.emotion}</Badge>}
                   <span>{Number(r.score).toFixed(2)}</span>
-                  <span>{new Date(r.analyzed_at).toLocaleString("pt-BR")}</span>
+                  <span>{formatDateTime(r.analyzed_at)}</span>
                 </div>
               </div>
             ))}

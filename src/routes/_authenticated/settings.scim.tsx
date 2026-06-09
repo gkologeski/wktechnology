@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -88,8 +89,8 @@ function ScimPage() {
                 <div className="text-sm">
                   <div className="font-medium">{t.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    <code>{t.token_prefix}…</code> · criado em {new Date(t.created_at).toLocaleDateString("pt-BR")}
-                    {t.last_used_at && <> · usado {new Date(t.last_used_at).toLocaleString("pt-BR")}</>}
+                    <code>{t.token_prefix}…</code> · criado em {formatDateTime(t.created_at)}
+                    {t.last_used_at && <> · usado {formatDateTime(t.last_used_at)}</>}
                   </div>
                 </div>
                 {t.revoked_at ? (

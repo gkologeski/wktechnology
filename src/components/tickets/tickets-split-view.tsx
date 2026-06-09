@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useState, useEffect } from "react";
 import { TicketCard } from "./ticket-card";
 import { Badge } from "@/components/ui/badge";
@@ -99,10 +100,10 @@ export function TicketsSplitView({
               <Field
                 icon={Calendar}
                 label="Vencimento"
-                value={selected.due_at ? new Date(selected.due_at).toLocaleString("pt-BR") : "—"}
+                value={selected.due_at ? formatDateTime(selected.due_at) : "—"}
               />
               <Field icon={Mail} label="Fonte" value={selected.source ?? "—"} />
-              <Field icon={Phone} label="Criado em" value={new Date(selected.created_at).toLocaleString("pt-BR")} />
+              <Field icon={Phone} label="Criado em" value={formatDateTime(selected.created_at)} />
             </div>
           </div>
         )}

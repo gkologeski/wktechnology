@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -503,7 +504,7 @@ function HubspotSyncPage() {
             {rows.map((r) => (
               <div key={r.id} className="text-xs border-b py-2 flex justify-between gap-2">
                 <span><Badge variant="outline">{r.entity}</Badge> <code className="ml-2">{r.local_id.slice(0,8)} ↔ {r.hubspot_id}</code></span>
-                <span className="text-muted-foreground">{new Date(r.last_synced_at).toLocaleString("pt-BR")}</span>
+                <span className="text-muted-foreground">{formatDateTime(r.last_synced_at)}</span>
               </div>
             ))}
            </div>}

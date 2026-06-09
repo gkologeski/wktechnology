@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -115,7 +116,7 @@ function WebhooksPage() {
                   <Badge variant={d.status === "success" ? "default" : d.status === "dead" ? "destructive" : "secondary"}>
                     {d.status}{d.response_status ? ` ${d.response_status}` : ""}
                   </Badge>
-                  <span className="text-muted-foreground">{new Date(d.created_at).toLocaleString("pt-BR")}</span>
+                  <span className="text-muted-foreground">{formatDateTime(d.created_at)}</span>
                 </span>
               </div>
             ))}

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -139,7 +140,7 @@ function SequencesPage() {
                       <div className="font-medium truncate">{namesById[e.sequence_id] ?? e.sequence_id}</div>
                       <div className="text-xs text-muted-foreground">
                         Passo {e.current_step + 1} ·{" "}
-                        {e.next_run_at ? `próximo em ${new Date(e.next_run_at).toLocaleString("pt-BR")}` : "sem próximo"}
+                        {e.next_run_at ? `próximo em ${formatDateTime(e.next_run_at)}` : "sem próximo"}
                       </div>
                     </div>
                     <Badge variant={

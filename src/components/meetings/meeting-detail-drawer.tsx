@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -136,7 +137,7 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
                 {meeting.status}
               </Badge>
               <span className="text-xs text-muted-foreground">
-                Criada em {new Date(meeting.created_at).toLocaleString("pt-BR")}
+                Criada em {formatDateTime(meeting.created_at)}
               </span>
             </div>
 
@@ -291,7 +292,7 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
                     <li key={p.id} className="flex items-center justify-between">
                       <span>{p.display_name}</span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(p.joined_at).toLocaleString("pt-BR")}
+                        {formatDateTime(p.joined_at)}
                       </span>
                     </li>
                   ))}

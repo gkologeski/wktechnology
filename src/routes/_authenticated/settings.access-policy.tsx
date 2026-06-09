@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -124,7 +125,7 @@ function AccessPolicyPage() {
             <div key={l.id} className="border rounded p-2 flex justify-between">
               <code className="text-xs">{l.ip_address}</code>
               <Badge variant={l.blocked ? "destructive" : "secondary"}>{l.blocked ? "blocked" : "allowed"}</Badge>
-              <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString("pt-BR")}</span>
+              <span className="text-xs text-muted-foreground">{formatDateTime(l.created_at)}</span>
             </div>
           ))}
         </CardContent>

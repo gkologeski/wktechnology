@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 // Página /settings/audit-log — histórico de alterações.
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -41,7 +42,7 @@ function AuditLogPage() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [entity, action]);
 
-  const fmtDate = (s: string) => new Date(s).toLocaleString("pt-BR");
+  const fmtDate = (s: string) => formatDateTime(s);
 
   return (
     <div className="space-y-4">
@@ -160,7 +161,7 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
         {row && (
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
-              <div><span className="text-muted-foreground">Quando:</span> {new Date(row.created_at).toLocaleString("pt-BR")}</div>
+              <div><span className="text-muted-foreground">Quando:</span> {formatDateTime(row.created_at)}</div>
               <div><span className="text-muted-foreground">Por:</span> {row.actor_name || row.actor_email || row.actor_user_id || "sistema"}</div>
               <div><span className="text-muted-foreground">Entidade:</span> {row.entity}</div>
               <div><span className="text-muted-foreground">ID:</span> <code className="text-xs">{row.entity_id}</code></div>

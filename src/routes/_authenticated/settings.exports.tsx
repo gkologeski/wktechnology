@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -186,7 +187,7 @@ function ExportsPage() {
                       </TableCell>
                       <TableCell className="text-xs">{(s.recipients ?? []).join(", ")}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {s.next_run_at ? new Date(s.next_run_at).toLocaleString("pt-BR") : "—"}
+                        {s.next_run_at ? formatDateTime(s.next_run_at) : "—"}
                       </TableCell>
                       <TableCell>
                         {s.last_status ? (

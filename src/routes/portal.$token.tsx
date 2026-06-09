@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -155,8 +156,8 @@ function PortalPage() {
                 <CardContent className="space-y-2">
                   {t.description && <p className="text-sm whitespace-pre-wrap">{t.description}</p>}
                   <p className="text-xs text-muted-foreground">
-                    Aberto em {new Date(t.created_at).toLocaleString("pt-BR")}
-                    {t.resolved_at && ` • Resolvido em ${new Date(t.resolved_at).toLocaleString("pt-BR")}`}
+                    Aberto em {formatDateTime(t.created_at)}
+                    {t.resolved_at && ` • Resolvido em ${formatDateTime(t.resolved_at)}`}
                   </p>
                 </CardContent>
               </Card>

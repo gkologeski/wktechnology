@@ -13,7 +13,7 @@ import { StageTracker } from "@/components/stage-tracker";
 import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DEAL_STAGES, formatCurrency } from "@/lib/crm";
+import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
 import type { Deal } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -85,7 +85,7 @@ function DealDetail() {
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {formatCurrency(deal.value, deal.currency)}
-              {deal.expected_close_date && <span> · Fechamento {new Date(deal.expected_close_date).toLocaleDateString("pt-BR")}</span>}
+              {deal.expected_close_date && <span> · Fechamento {formatDateTime(deal.expected_close_date)}</span>}
             </p>
           </div>
         </div>

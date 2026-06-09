@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -105,7 +106,7 @@ function MeetingsLibrary() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(m.created_at).toLocaleString("pt-BR")}
+                        {formatDateTime(m.created_at)}
                       </div>
                     </div>
                   </button>

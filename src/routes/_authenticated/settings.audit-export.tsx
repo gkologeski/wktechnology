@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -86,7 +87,7 @@ function AuditExportPage() {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   cron: <code>{r.schedule_cron}</code>
-                  {r.last_run_at && <> · última: {new Date(r.last_run_at).toLocaleString("pt-BR")} ({r.last_status})</>}
+                  {r.last_run_at && <> · última: {formatDateTime(r.last_run_at)} ({r.last_status})</>}
                 </div>
               </div>
               <div className="flex gap-1">

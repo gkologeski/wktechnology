@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 // Painel two-way HubSpot: toggle auto-push, push manual, e fila de conflitos.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -137,8 +138,8 @@ export function HubspotTwoWaySync() {
                   </div>
                   <p className="text-xs text-muted-foreground">{c.conflict_reason ?? "Conflito detectado."}</p>
                   <p className="text-xs text-muted-foreground">
-                    Local: {c.local_updated_at ? new Date(c.local_updated_at as string).toLocaleString("pt-BR") : "—"} ·
-                    {" "}HubSpot: {c.remote_updated_at ? new Date(c.remote_updated_at as string).toLocaleString("pt-BR") : "—"}
+                    Local: {c.local_updated_at ? formatDateTime(c.local_updated_at as string) : "—"} ·
+                    {" "}HubSpot: {c.remote_updated_at ? formatDateTime(c.remote_updated_at as string) : "—"}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">

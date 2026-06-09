@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -175,7 +176,7 @@ function InvoicesPage() {
                         currency: inv.currency || "BRL",
                       })}
                     </TableCell>
-                    <TableCell>{new Date(inv.due_date).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell>{formatDateTime(inv.due_date)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {inv.gateway ?? "—"} {inv.gateway_mode === "sandbox" && <Badge variant="outline" className="ml-1">sandbox</Badge>}
                     </TableCell>

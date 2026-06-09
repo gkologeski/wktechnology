@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -39,7 +40,7 @@ function VerifyPage() {
             <div className="space-y-2 text-sm">
               <div><span className="font-medium">Documento:</span> {data.title}</div>
               <div><span className="font-medium">Status:</span> <Badge>{data.status}</Badge></div>
-              <div><span className="font-medium">Selado em:</span> {data.sealed_at ? new Date(data.sealed_at).toLocaleString("pt-BR") : "—"}</div>
+              <div><span className="font-medium">Selado em:</span> {data.sealed_at ? formatDateTime(data.sealed_at) : "—"}</div>
               <div><span className="font-medium">Assinaturas:</span> {data.signed_count} / {data.signers_count}</div>
               <div className="break-all rounded bg-muted p-2 font-mono text-xs">{hash}</div>
             </div>

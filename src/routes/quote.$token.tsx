@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/crm";
+import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
@@ -96,10 +96,10 @@ function PublicQuotePage() {
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Detalhes</div>
-                <div>Emitida em {new Date(quote.created_at).toLocaleDateString("pt-BR")}</div>
+                <div>Emitida em {formatDateTime(quote.created_at)}</div>
                 {quote.valid_until && (
                   <div className={expired ? "text-destructive" : ""}>
-                    Válida até {new Date(quote.valid_until).toLocaleDateString("pt-BR")}
+                    Válida até {formatDateTime(quote.valid_until)}
                   </div>
                 )}
               </div>
@@ -162,7 +162,7 @@ function PublicQuotePage() {
 
             {quote.status === "accepted" && quote.signature_name && (
               <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 text-sm">
-                <div className="font-medium">Aceita em {new Date(quote.accepted_at!).toLocaleString("pt-BR")}</div>
+                <div className="font-medium">Aceita em {formatDateTime(quote.accepted_at!)}</div>
                 <div className="text-muted-foreground">Assinado por: {quote.signature_name}</div>
               </div>
             )}
@@ -171,7 +171,7 @@ function PublicQuotePage() {
 
         {quote.paid_at ? (
           <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 text-sm print:hidden">
-            <div className="font-medium">Pagamento confirmado em {new Date(quote.paid_at).toLocaleString("pt-BR")}</div>
+            <div className="font-medium">Pagamento confirmado em {formatDateTime(quote.paid_at)}</div>
           </div>
         ) : (
           <>

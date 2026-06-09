@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/crm";
 // Página /settings/teams — gerenciar usuários do workspace (papéis, convites, remoção).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -434,7 +435,7 @@ function UsersPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {r.created_at
-                      ? new Date(r.created_at).toLocaleDateString("pt-BR")
+                      ? formatDateTime(r.created_at)
                       : "—"}
                   </TableCell>
                   <TableCell className="text-right">
