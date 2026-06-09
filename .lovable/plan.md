@@ -1,45 +1,77 @@
 ## Objetivo
+Mostrar de forma clara "onde estou" em cada página, com uma trilha de navegação (breadcrumbs) consistente em todo o app.
 
-Padronizar a navegação do app com a direção escolhida (painéis arredondados com leve glass, busca no topo, agrupamento em cards com cabeçalho de seção, item ativo destacado e ícones em cada item) — aplicando a mesma linguagem nas duas sidebars: principal do app e Configurações.
+## Abordagem
+Implementar um único componente `RouteBreadcrumbs` renderizado no layout autenticado (`src/routes/_authenticated.tsx`), logo abaixo do header e acima do `<Outlet />`. Assim **todas** as páginas autenticadas ganham breadcrumbs automaticamente, sem precisar editar cada rota.
 
-## Mudanças
+A trilha será derivada da URL atual (`useRouterState`) e traduzida para rótulos amigáveis em português usando um mapa central de segmentos. Para rotas de detalhe com `$id` (ex.: `/deals/$id`, `/companies/$id`), o último nível mostrará "Detalhes" como fallback — sem chamadas extras ao backend nesta etapa.
 
-### 1. Sidebar principal (`src/components/app-sidebar.tsx`)
+## Estrutura visual
+- Faixa fina (`h-10`) com fundo `bg-background/60 backdrop-blur` e borda inferior sutil, alinhada ao mesmo padding do conteúdo (`px-6`).
+- Usa o componente já existente `src/components/ui/breadcrumb.tsx` (shadcn) — `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbSeparator`, `BreadcrumbPage`.
+- Primeiro item sempre é "Início" com ícone `Home` levando a `/dashboard`.
+- Último segmento renderizado como `BreadcrumbPage` (não clicável, destacado).
+- Em telas `sm:` mostra a trilha completa; em mobile mostra apenas o último nível + botão "voltar".
+- Oculto no `/dashboard` (raiz) para não poluir.
 
-- Manter shadcn `Sidebar collapsible="icon"` (não quebra rotas nem o trigger).
-- Estilizar o container com cantos arredondados (`rounded-3xl`), borda sutil e sombra suave (m-2 para destacar do fundo).
-- Header: bloco da marca WK + campo de busca (já existe `global-search-trigger` — reaproveitar como botão de busca).
-- Grupos (`Trabalhar`, `Analisar`, `Engajar`): título uppercase em `text-[10px] font-bold tracking-widest text-muted-foreground`.
-- Itens (`SidebarMenuButton`): adicionar ícone lucide à esquerda, label, e quando ativo: fundo `bg-primary/10`, texto `text-primary font-semibold` e barra vertical `w-1.5 h-6 bg-primary rounded-full` à direita.
-- Rodapé fixo com cartão de perfil clicável (avatar + nome + papel) levando ao menu da conta.
+## Mapa de rótulos
+Um arquivo novo `src/lib/breadcrumb-labels.ts` exporta:
 
-### 2. Layout de Configurações (`src/routes/_authenticated/settings.tsx`)
+```ts
+export const SEGMENT_LABELS: Record<string, string> = {
+  dashboard: "Início",
+  leads: "Leads",
+  contacts: "Contatos",
+  companies: "Empresas",
+  deals: "Negócios",
+  tasks: "Tarefas",
+  tickets: "Chamados",
+  proposals: "Propostas",
+  invoices: "Faturas",
+  meetings: "Reuniões",
+  inbox: "Caixa de entrada",
+  campaigns: "Campanhas",
+  prospecting: "Prospecção",
+  analytics: "Analytics",
+  reports: "Relatórios",
+  dashboards: "Dashboards",
+  settings: "Configurações",
+  admin: "Admin",
+  integrations: "Integrações",
+  "quote-templates": "Modelos de orçamento",
+  "bug-reports": "Chamados internos",
+  // ... demais segmentos das ~110 rotas
+};
+```
 
-- Reagrupar as 7 seções atuais em 3 grandes blocos coerentes com a direção escolhida:
-  - **Minha conta** → Perfil, Conexão de email, Segurança (2FA).
-  - **Organização** → Workspace + Estrutura CRM + Automação (cada subseção renderizada como sub-cabeçalho dentro do mesmo card).
-  - **Gestão** → Pessoas & Acesso, Segurança, Integrações.
-- Cada bloco vira um `<section>` com cabeçalho uppercase + um card `bg-card border rounded-2xl p-3 shadow-sm` contendo os links.
-- Topo da sidebar: título "Configurações" com ícone de engrenagem + subtítulo + `Input` de busca que filtra os itens por label (filtragem client-side em estado local).
-- Item ativo: `bg-muted/60 border border-border shadow-sm text-primary`. Itens normais: ícone cinza que muda para `text-primary` no hover.
-- Cada link recebe um ícone lucide adequado (mapa nome→ícone definido no próprio arquivo).
-- Manter o `Select` mobile com a mesma reorganização (3 grupos).
+Segmentos não mapeados caem em um `prettify()` (kebab-case → Title Case). Segmentos que parecem ID (`uuid`, números) viram "Detalhes".
 
-### 3. Tokens / estilo
+## Componente
+`src/components/route-breadcrumbs.tsx`:
 
-- Não introduzir cores novas — usar tokens existentes (`--primary`, `--muted`, `--border`, `--card`, `--card-foreground`).
-- Reaproveitar fonte atual (Inter já carregada via `<link>` em `__root.tsx`). Nenhuma alteração em `src/styles.css`.
+```text
+[ Home ] / Configurações / Modelos de orçamento
+```
 
-## Detalhes técnicos
+- Lê `pathname` via `useRouterState`.
+- Divide em segmentos, monta os links acumulando o caminho.
+- Cada item intermediário é `<BreadcrumbLink asChild><Link to={...}/></BreadcrumbLink>`.
+- O último é `<BreadcrumbPage>`.
 
-- Arquivos editados:
-  - `src/components/app-sidebar.tsx` — reestilizar header/itens/footer; adicionar ícones nos itens existentes; manter rotas e permissões.
-  - `src/routes/_authenticated/settings.tsx` — substituir o array `sections` por um modelo com `icon` por tab; redesenhar render do sidebar desktop; adicionar estado de busca; manter `Select` mobile.
-- Sem mudanças de backend, rotas, RLS ou dados. Sem novas dependências (lucide e shadcn já em uso).
-- Sem alteração nas demais páginas; apenas os dois componentes acima.
+## Integração
+Em `src/routes/_authenticated.tsx`, entre `<header>` e `<main>`:
 
-## Fora de escopo
+```tsx
+{!blocked && <RouteBreadcrumbs />}
+```
 
-- Não recolher/abrir grupos como accordion (a direção escolhida mantém todos abertos).
-- Não criar sistema de favoritos fixáveis.
-- Não mexer em outras rotas, no editor de cotação, ou em estilo global.
+Nenhuma alteração nas rotas individuais nem no `PageHeader`.
+
+## Arquivos
+- **Criar**: `src/lib/breadcrumb-labels.ts`
+- **Criar**: `src/components/route-breadcrumbs.tsx`
+- **Editar**: `src/routes/_authenticated.tsx` (renderizar o componente)
+
+## Fora do escopo (sugestões para depois)
+- Buscar nomes reais de registros para rotas de detalhe (`/deals/$id` → nome do negócio) — requer loaders/queries por rota.
+- Breadcrumbs em rotas públicas (`/login`, landing).
