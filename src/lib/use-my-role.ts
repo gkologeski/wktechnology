@@ -21,7 +21,7 @@ export function useMyRole() {
       // Owner de algum workspace = admin nato desse workspace.
       // Caso contrário, pegamos o role mais alto em user_roles, com fallback "member".
       const [{ data: owned }, { data: rows }] = await Promise.all([
-        supabase.from("workspaces").select("id").eq("owner_id", user.id).limit(1),
+        supabase.from("workspaces").select("id").eq("created_by", user.id).limit(1),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
       ]);
       let best: AppRole = (owned && owned.length > 0) ? "admin" : "member";
