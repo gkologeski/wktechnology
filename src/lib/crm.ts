@@ -55,10 +55,46 @@ export function formatCurrency(v: number, currency = "BRL") {
   }
 }
 
+const BR_TZ = "America/Sao_Paulo";
+
+function capitalizeMonth(s: string) {
+  // Remove trailing dot from abbreviated month and capitalize first letter
+  return s.replace(/\.$/, "").replace(/^\p{L}/u, (c) => c.toUpperCase());
+}
+
+function formatBrParts(date: Date, withTime: boolean) {
+  const opts: Intl.DateTimeFormatOptions = {
+    timeZone: BR_TZ,
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  };
+  if (withTime) {
+    opts.hour = "2-digit";
+    opts.minute = "2-digit";
+    opts.hour12 = false;
+    opts.timeZoneName = "shortOffset";
+  }
+  const parts = new Intl.DateTimeFormat("pt-BR", opts).formatToParts(date);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  const day = get("day");
+  const month = capitalizeMonth(get("month"));
+  const year = get("year");
+  let out = `${day} de ${month} de ${year}`;
+  if (withTime) {
+    const hour = get("hour");
+    const minute = get("minute");
+    // shortOffset returns e.g. "GMT-3" — normalize "GMT-03" → "GMT-3"
+    const tz = get("timeZoneName").replace(/GMT([+-])0?(\d+)/, "GMT$1$2");
+    out += ` ${hour}:${minute} ${tz}`;
+  }
+  return out;
+}
+
 export function formatDate(d?: string | null) {
   if (!d) return "—";
   try {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(d));
+    return formatBrParts(new Date(d), false);
   } catch {
     return "—";
   }
@@ -67,7 +103,7 @@ export function formatDate(d?: string | null) {
 export function formatDateTime(d?: string | null) {
   if (!d) return "—";
   try {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(d));
+    return formatBrParts(new Date(d), true);
   } catch {
     return "—";
   }
