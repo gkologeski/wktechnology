@@ -1,0 +1,189 @@
+// Configuração compartilhada dos menus (Sidebar e Configurações) + helpers
+// puros de visibilidade por papel. Pensada para ser testável sem renderizar
+// componentes React.
+import {
+  LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
+  ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
+  Inbox, LifeBuoy, Star, FileText,
+  BarChart3, TrendingUp, Sparkles, Video, ListChecks, Download,
+  Activity, Bell, Gauge, FlaskConical,
+  User, ShieldCheck, Bug, Languages, Calendar, CreditCard, GitBranch,
+  Tag, Package, Boxes, UsersRound, KeyRound, Workflow, Route as RouteIcon,
+  LayoutTemplate, BookOpen, Plug, ShoppingBag, RefreshCw,
+} from "lucide-react";
+
+export type Need = "admin" | "manager" | "platform" | undefined;
+export type Perms = {
+  isAdmin: boolean;
+  isManager: boolean;
+  isPlatformAdmin: boolean;
+};
+
+export type SidebarItem = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  need?: Need;
+};
+export type SidebarGroup = { label: string; items: SidebarItem[] };
+
+export type SettingsItem = {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  need?: Need;
+};
+export type SettingsGroup = { label: string; items: SettingsItem[] };
+
+// --- SIDEBAR -----------------------------------------------------------------
+
+export const SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    label: "Trabalhar", items: [
+      { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Leads", url: "/leads", icon: UserPlus },
+      { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download, need: "admin" },
+      { title: "Contatos", url: "/contacts", icon: Users },
+      { title: "Empresas", url: "/companies", icon: Building2 },
+      { title: "Negócios", url: "/deals", icon: Briefcase },
+      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
+      { title: "Tarefas", url: "/tasks", icon: ListTodo },
+      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
+      { title: "Reuniões", url: "/meetings", icon: Video },
+      { title: "Propostas", url: "/proposals", icon: FileText },
+      { title: "Faturas", url: "/invoices", icon: FileText },
+      { title: "Inbox unificada", url: "/inbox", icon: Inbox },
+      { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
+      { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
+      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+      { title: "Comunicações", url: "/communications", icon: MessageSquare },
+      { title: "Notas", url: "/notes", icon: StickyNote },
+    ],
+  },
+  {
+    label: "Analisar", items: [
+      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager" },
+      { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager" },
+      { title: "Analytics", url: "/analytics", icon: TrendingUp, need: "manager" },
+    ],
+  },
+  {
+    label: "Engajar", items: [
+      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
+      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
+      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
+      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
+      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
+      { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+    ],
+  },
+];
+
+export const SIDEBAR_PLATFORM_ITEMS: SidebarItem[] = [
+  { title: "Super-admin", url: "/admin/workspaces", icon: ShieldCheck, need: "platform" },
+  { title: "Chamados", url: "/admin/bug-reports", icon: Bug, need: "platform" },
+  { title: "Status", url: "/admin/status", icon: Activity, need: "platform" },
+  { title: "Alertas", url: "/admin/alerts", icon: Bell, need: "platform" },
+  { title: "Quotas", url: "/admin/quotas", icon: Gauge, need: "platform" },
+  { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical, need: "platform" },
+];
+
+// --- SETTINGS ----------------------------------------------------------------
+
+export const SETTINGS_GROUPS: SettingsGroup[] = [
+  {
+    label: "Minha conta",
+    items: [
+      { to: "/settings", label: "Perfil", icon: User },
+      { to: "/settings/email", label: "Conexão de email", icon: Mail },
+      { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
+      { to: "/my-bug-reports", label: "Meus chamados", icon: Bug },
+    ],
+  },
+  {
+    label: "Workspace",
+    items: [
+      { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
+      { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
+      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
+      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
+    ],
+  },
+  {
+    label: "Estrutura CRM",
+    items: [
+      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin" },
+      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin" },
+      { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
+      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
+    ],
+  },
+  {
+    label: "Pessoas & Acesso",
+    items: [
+      { to: "/settings/teams", label: "Usuários", icon: UsersRound, need: "admin" },
+      { to: "/settings/user-groups", label: "Equipes", icon: UsersRound, need: "manager" },
+      { to: "/settings/roles", label: "Permissões", icon: KeyRound, need: "admin" },
+    ],
+  },
+  {
+    label: "Automação & Engajamento",
+    items: [
+      { to: "/settings/workflows", label: "Workflows", icon: Workflow, need: "manager" },
+      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager" },
+      { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
+      { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager" },
+      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager" },
+    ],
+  },
+  {
+    label: "Integrações",
+    items: [
+      { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
+      { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
+      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
+      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
+      { to: "/admin/status", label: "Status", icon: Activity, need: "platform" },
+      { to: "/admin/alerts", label: "Alertas", icon: Bell, need: "platform" },
+      { to: "/admin/quotas", label: "Quotas", icon: Gauge, need: "platform" },
+      { to: "/admin/sandbox", label: "Sandbox", icon: FlaskConical, need: "platform" },
+    ],
+  },
+];
+
+// --- Helpers -----------------------------------------------------------------
+
+export function canSee(need: Need, perms: Perms): boolean {
+  if (need === "platform") return perms.isPlatformAdmin;
+  if (need === "admin") return perms.isAdmin;
+  if (need === "manager") return perms.isManager;
+  return true;
+}
+
+export function permsForRole(
+  role: "admin" | "manager" | "member",
+  isPlatformAdmin = false,
+): Perms {
+  return {
+    isAdmin: role === "admin",
+    isManager: role === "admin" || role === "manager",
+    isPlatformAdmin,
+  };
+}
+
+export function visibleSidebarUrls(perms: Perms): string[] {
+  return SIDEBAR_GROUPS.flatMap((g) => g.items.filter((i) => canSee(i.need, perms)).map((i) => i.url));
+}
+
+export function visibleSidebarPlatformUrls(perms: Perms): string[] {
+  return SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms)).map((i) => i.url);
+}
+
+export function visibleSettingsItems(perms: Perms): string[] {
+  return SETTINGS_GROUPS.flatMap((g) => g.items.filter((i) => canSee(i.need, perms)).map((i) => i.to));
+}
