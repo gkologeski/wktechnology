@@ -322,6 +322,24 @@ function DealsCard({
     refresh();
   };
 
+  const unlink = async (dealId: string) => {
+    if (entity === "company") {
+      const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
+      if (error) return toast.error(error.message);
+    } else {
+      // remove many-to-many
+      const { error } = await sb.from("deal_contacts").delete().eq("deal_id", dealId).eq("contact_id", entityId);
+      if (error) return toast.error(error.message);
+      // se o contato é primário do negócio, limpa
+      const { data: deal } = await supabase.from("deals").select("primary_contact_id").eq("id", dealId).maybeSingle();
+      if ((deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === entityId) {
+        await sb.from("deals").update({ primary_contact_id: null }).eq("id", dealId);
+      }
+    }
+    toast.success("Negócio desvinculado");
+    refresh();
+  };
+
   return (
     <>
       <AssocCard
