@@ -11,8 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMyRole } from "@/lib/use-my-role";
+import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 
-type Item = { to: string; label: string; need?: "admin" | "manager" };
+type Item = { to: string; label: string; need?: "admin" | "manager" | "platform" };
 type Group = { label: string; items: Item[] };
 
 const groups: Group[] = [
@@ -70,11 +71,22 @@ const groups: Group[] = [
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", need: "admin" },
     ],
   },
+  {
+    label: "Plataforma",
+    items: [
+      { to: "/admin/status", label: "Status", need: "platform" },
+      { to: "/admin/alerts", label: "Alertas", need: "platform" },
+      { to: "/admin/quotas", label: "Quotas", need: "platform" },
+      { to: "/admin/sandbox", label: "Sandbox", need: "platform" },
+    ],
+  },
 ];
 
 export function SettingsMenu() {
   const { isAdmin, isManager } = useMyRole();
+  const isPlatformAdmin = useIsPlatformAdmin();
   const canSee = (it: Item) => {
+    if (it.need === "platform") return isPlatformAdmin;
     if (it.need === "admin") return isAdmin;
     if (it.need === "manager") return isManager;
     return true;

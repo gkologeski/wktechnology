@@ -4,7 +4,7 @@ import {
   ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
   ChevronRight, Inbox, ShieldCheck, LifeBuoy, Star, Package, FileText,
   BarChart3, TrendingUp, Sparkles, Bug, Briefcase as BriefcaseIcon, Video,
-  GitBranch, Sliders,
+
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -153,38 +153,6 @@ export function AppSidebar() {
                   <Link to="/admin/workspaces">
                     <ShieldCheck className="h-4 w-4" />
                     <span>Super-admin</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Status" isActive={path.startsWith("/admin/status")}>
-                  <Link to="/admin/status">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Status</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Alertas" isActive={path.startsWith("/admin/alerts")}>
-                  <Link to="/admin/alerts">
-                    <Sparkles className="h-4 w-4" />
-                    <span>Alertas</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Quotas" isActive={path.startsWith("/admin/quotas")}>
-                  <Link to="/admin/quotas">
-                    <Sliders className="h-4 w-4" />
-                    <span>Quotas</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Sandbox" isActive={path.startsWith("/admin/sandbox")}>
-                  <Link to="/admin/sandbox">
-                    <GitBranch className="h-4 w-4" />
-                    <span>Sandbox</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
