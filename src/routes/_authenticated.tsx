@@ -13,6 +13,7 @@ import { GlobalSearchTrigger } from "@/components/global-search-trigger";
 import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SettingsMenu } from "@/components/settings-menu";
 import { AccountMenu } from "@/components/account-menu";
+import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -74,6 +75,7 @@ function AuthenticatedLayout() {
             <NotificationsBell />
             <AccountMenu />
           </header>
+          {!blocked && <RouteBreadcrumbs />}
           <main className="flex-1 p-6 overflow-auto">
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
