@@ -216,9 +216,16 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
       if (error) return toast.error(error.message);
     } else {
+      // Remove vínculo many-to-many
       const { error } = await sb.from("deal_contacts").delete().eq("deal_id", entityId).eq("contact_id", contactId);
       if (error) return toast.error(error.message);
+      // Se for o contato primário do negócio, limpa também
+      const { data: deal } = await supabase.from("deals").select("primary_contact_id").eq("id", entityId).maybeSingle();
+      if ((deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === contactId) {
+        await sb.from("deals").update({ primary_contact_id: null }).eq("id", entityId);
+      }
     }
+    toast.success("Contato desvinculado");
     refresh();
   };
 
@@ -315,6 +322,24 @@ function DealsCard({
     refresh();
   };
 
+  const unlink = async (dealId: string) => {
+    if (entity === "company") {
+      const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
+      if (error) return toast.error(error.message);
+    } else {
+      // remove many-to-many
+      const { error } = await sb.from("deal_contacts").delete().eq("deal_id", dealId).eq("contact_id", entityId);
+      if (error) return toast.error(error.message);
+      // se o contato é primário do negócio, limpa
+      const { data: deal } = await supabase.from("deals").select("primary_contact_id").eq("id", dealId).maybeSingle();
+      if ((deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === entityId) {
+        await sb.from("deals").update({ primary_contact_id: null }).eq("id", dealId);
+      }
+    }
+    toast.success("Negócio desvinculado");
+    refresh();
+  };
+
   return (
     <>
       <AssocCard
@@ -340,15 +365,18 @@ function DealsCard({
         {rows.length === 0 ? <Empty label="Nenhum negócio." /> : (
           <ul className="space-y-2">
             {rows.map((d) => (
-              <li key={d.id}>
+              <li key={d.id} className="flex items-stretch gap-2 group">
                 <Link to="/deals/$id" params={{ id: d.id }}
-                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors">
+                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(d.value, d.currency)}</span>
                     <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium capitalize">{d.stage}</span>
                   </div>
                 </Link>
+                <button onClick={() => unlink(d.id)} className="p-1 text-muted-foreground hover:text-destructive rounded self-center" aria-label="Remover">
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </li>
             ))}
           </ul>
