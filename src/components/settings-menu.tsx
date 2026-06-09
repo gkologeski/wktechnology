@@ -40,7 +40,7 @@ const groups: Group[] = [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
       { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
       { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
-      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard },
+      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
     ],
   },
   {
@@ -56,7 +56,7 @@ const groups: Group[] = [
     label: "Pessoas & Acesso",
     items: [
       { to: "/settings/teams", label: "Usuários", icon: UsersRound, need: "admin" },
-      { to: "/settings/user-groups", label: "Equipes", icon: UsersRound },
+      { to: "/settings/user-groups", label: "Equipes", icon: UsersRound, need: "manager" },
       { to: "/settings/roles", label: "Permissões", icon: KeyRound, need: "admin" },
     ],
   },
@@ -75,7 +75,7 @@ const groups: Group[] = [
     items: [
       { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
       { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
-      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare },
+      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
     ],
   },
