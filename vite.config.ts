@@ -43,6 +43,12 @@ export default defineConfig({
       // from rewriting optimized chunk hashes while lazy route modules such as
       // /deals are still loading in the browser.
       include: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@tanstack/react-router",
+        "@tanstack/react-query",
         "events",
         "@tanstack/history",
         "@tanstack/router-core",
