@@ -148,6 +148,7 @@ export const updateQuote = createServerFn({ method: "POST" })
         notes: z.string().nullable().optional(),
         terms: z.string().nullable().optional(),
         sent_at: z.string().nullable().optional(),
+        template_id: z.string().uuid().nullable().optional(),
       }),
     }).parse(input),
   )
