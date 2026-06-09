@@ -1548,6 +1548,8 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             "hs_pipeline_stage_category",
             "hs_primary_contact_id",
             "hubspot_owner_id",
+            "createdate",
+            "hs_createdate",
           ];
           await appendLog({
             level: "info",
@@ -1601,6 +1603,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               status: mapLeadStatusEnum(p.hs_pipeline_stage_category ?? undefined, stageEntry?.label ?? hsStatus) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
+                ...originalCreatedAt(p, c.createdAt),
             };
             const existingId = await findExistingId("leads", c.id, [
               { column: "email", value: email },
@@ -1617,9 +1620,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               if (error) stepFail++;
               else stepOk++;
             } else {
-              const { error } = await supabase.from("leads").insert({
+                const { error } = await supabase.from("leads").insert({
                 owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                 ...leadData,
                 external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
               });
