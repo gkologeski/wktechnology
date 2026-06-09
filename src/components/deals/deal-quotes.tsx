@@ -50,6 +50,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     queryFn: () => list({ data: { dealId } }),
   });
 
+  const { data: lineItemsCount = 0 } = useQuery({
+    queryKey: ["deal-line-items-count", dealId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("deal_line_items")
+        .select("id", { count: "exact", head: true })
+        .eq("deal_id", dealId);
+      return count ?? 0;
+    },
+  });
+  const hasLineItems = lineItemsCount > 0;
+
   const createMut = useMutation({
     mutationFn: () => create({
       data: {
