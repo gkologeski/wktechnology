@@ -365,15 +365,18 @@ function DealsCard({
         {rows.length === 0 ? <Empty label="Nenhum negócio." /> : (
           <ul className="space-y-2">
             {rows.map((d) => (
-              <li key={d.id}>
+              <li key={d.id} className="flex items-stretch gap-2 group">
                 <Link to="/deals/$id" params={{ id: d.id }}
-                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors">
+                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(d.value, d.currency)}</span>
                     <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium capitalize">{d.stage}</span>
                   </div>
                 </Link>
+                <button onClick={() => unlink(d.id)} className="p-1 text-muted-foreground hover:text-destructive rounded self-center" aria-label="Remover">
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </li>
             ))}
           </ul>
