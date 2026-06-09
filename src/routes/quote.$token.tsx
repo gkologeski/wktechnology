@@ -52,9 +52,32 @@ function PublicQuotePage() {
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data) return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
 
-  const { quote, items, company, contact, agent } = data;
+  const { quote, items, company, contact, agent, template } = data;
   const expired = quote.valid_until && new Date(quote.valid_until) < new Date();
   const responded = quote.status === "accepted" || quote.status === "declined";
+
+  if (template?.html) {
+    return (
+      <TemplatedQuote
+        html={template.html}
+        quote={quote}
+        items={items}
+        company={company}
+        contact={contact}
+        agent={agent}
+        expired={!!expired}
+        responded={responded}
+        onAcceptClick={() => setAcceptOpen(true)}
+        onDeclineClick={() => respondMut.mutate({ action: "decline" })}
+        respondPending={respondMut.isPending}
+        acceptOpen={acceptOpen}
+        setAcceptOpen={setAcceptOpen}
+        signature={signature}
+        setSignature={setSignature}
+        onAcceptSubmit={() => respondMut.mutate({ action: "accept", signature })}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 print:bg-white">
