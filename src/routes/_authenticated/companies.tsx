@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
@@ -118,6 +119,7 @@ function CompaniesHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -399,7 +401,7 @@ function CompaniesHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" disabled>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
           </Button>
         </div>
@@ -666,6 +668,14 @@ function CompaniesHubspotView() {
         count={selectedIds.size}
         entity="empresa(s)"
         onConfirm={confirmBulkDelete}
+      />
+      <QuickCreateCompanyDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          qc.invalidateQueries({ queryKey: ["companies"] });
+          navigate({ to: "/companies/$id", params: { id } });
+        }}
       />
     </div>
   );
