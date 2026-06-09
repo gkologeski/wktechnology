@@ -58,6 +58,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { convertLead } from "@/lib/lead-convert";
+import { exportRowsToCsv } from "@/lib/csv-export";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { toE164 } from "@/lib/validators";
 import { useSavedViews } from "@/lib/saved-views";
@@ -361,6 +362,22 @@ function LeadsHubspotView() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("leads", rows as unknown as Record<string, unknown>[], [
+      { key: "first_name", label: "Nome" },
+      { key: "last_name", label: "Sobrenome" },
+      { key: "email", label: "Email" },
+      { key: "phone", label: "Telefone" },
+      { key: "company", label: "Empresa" },
+      { key: "status", label: "Status" },
+      { key: "source", label: "Origem" },
+      { key: "score", label: "Score" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
+
   const toggleAll = () =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -625,7 +642,7 @@ function LeadsHubspotView() {
             </Button>
           )}
           {can("export") && (
-            <Button variant="outline" size="sm" disabled>
+            <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
@@ -876,9 +893,7 @@ function LeadsHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar view</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

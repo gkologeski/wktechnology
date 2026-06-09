@@ -43,6 +43,8 @@ import {
   type SortDir,
 } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
+import { exportRowsToCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -103,6 +105,20 @@ function TasksHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("tarefas", rows as unknown as Record<string, unknown>[], [
+      { key: "subject", label: "Assunto" },
+      { key: "task_status", label: "Status" },
+      { key: "task_priority", label: "Prioridade" },
+      { key: "due_date", label: "Vencimento" },
+      { key: "completed", label: "Concluída" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -487,10 +503,10 @@ function TasksHubspotView() {
           <Button variant="outline" size="sm" asChild>
             <Link to="/tasks/queues">Queues</Link>
           </Button>
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" onClick={exportCsv}>
             <Download className="mr-1.5 h-4 w-4" /> Exportar
           </Button>
-          <Button size="sm" disabled>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
           </Button>
         </div>
@@ -605,9 +621,7 @@ function TasksHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -735,6 +749,11 @@ function TasksHubspotView() {
         </div>
       </div>
       <ColumnsEditor />
+      <QuickCreateTaskDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["tasks"] })}
+      />
     </div>
   );
 }

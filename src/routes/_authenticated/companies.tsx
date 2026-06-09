@@ -32,6 +32,7 @@ import {
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
+import { exportRowsToCsv } from "@/lib/csv-export";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
@@ -228,6 +229,21 @@ function CompaniesHubspotView() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("empresas", rows as unknown as Record<string, unknown>[], [
+      { key: "name", label: "Nome" },
+      { key: "domain", label: "Domínio" },
+      { key: "industry", label: "Setor" },
+      { key: "phone", label: "Telefone" },
+      { key: "city", label: "Cidade" },
+      { key: "state", label: "Estado" },
+      { key: "country", label: "País" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
+
   const toggleAll = () =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -397,7 +413,7 @@ function CompaniesHubspotView() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("export") && (
-            <Button variant="outline" size="sm" disabled>
+            <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
@@ -552,9 +568,7 @@ function CompaniesHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

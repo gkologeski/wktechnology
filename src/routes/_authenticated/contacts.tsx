@@ -58,6 +58,7 @@ import {
   type SortDir,
 } from "@/components/crm/hubspot-shell";
 import { formatDateTime } from "@/lib/crm";
+import { exportRowsToCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -223,6 +224,20 @@ function ContactsHubspotView() {
   const total = result?.count ?? 0;
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
+
+  const exportCsv = () => {
+    if (!rows.length) return toast.error("Nenhum registro para exportar");
+    exportRowsToCsv("contatos", rows as unknown as Record<string, unknown>[], [
+      { key: "first_name", label: "Nome" },
+      { key: "last_name", label: "Sobrenome" },
+      { key: "email", label: "Email" },
+      { key: "phone", label: "Telefone" },
+      { key: "job_title", label: "Cargo" },
+      { key: "lifecycle_stage", label: "Estágio" },
+      { key: "created_at", label: "Criado em" },
+      { key: "updated_at", label: "Atualizado em" },
+    ]);
+  };
 
   const toggleAll = () =>
     setSelectedIds((prev) => {
@@ -393,7 +408,7 @@ function ContactsHubspotView() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("export") && (
-            <Button variant="outline" size="sm" disabled>
+            <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
@@ -554,9 +569,7 @@ function ContactsHubspotView() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem disabled>Salvar visualização</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled>Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

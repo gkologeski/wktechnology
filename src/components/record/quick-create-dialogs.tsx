@@ -208,3 +208,88 @@ export function QuickCreateTicketDialog({
     </Dialog>
   );
 }
+
+/* ───────────── Task ───────────── */
+export function QuickCreateTaskDialog({
+  open, onOpenChange, onCreated,
+  defaultContactId, defaultCompanyId, defaultDealId, defaultLeadId,
+}: BaseProps & {
+  defaultContactId?: string | null;
+  defaultCompanyId?: string | null;
+  defaultDealId?: string | null;
+  defaultLeadId?: string | null;
+}) {
+  const { user } = useAuth();
+  const [subject, setSubject] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!user) return;
+    if (!subject.trim()) return toast.error("Informe o assunto");
+    setSaving(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("activities")
+        .insert({
+          owner_id: user.id,
+          type: "task",
+          subject: subject.trim(),
+          task_status: "NOT_STARTED",
+          task_priority: priority,
+          due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          completed: false,
+          related_contact_id: defaultContactId ?? null,
+          related_company_id: defaultCompanyId ?? null,
+          related_deal_id: defaultDealId ?? null,
+          related_lead_id: defaultLeadId ?? null,
+        })
+        .select("id").single();
+      if (error) throw error;
+      toast.success("Tarefa criada");
+      onOpenChange(false);
+      setSubject(""); setPriority("MEDIUM"); setDueDate("");
+      onCreated?.(data.id);
+    } catch (e) {
+      toast.error((e as { message?: string })?.message ?? "Falha ao criar");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Criar tarefa</DialogTitle>
+          <DialogDescription>Assunto, prioridade e vencimento.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="qc-ta-subject">Assunto *</Label>
+            <Input id="qc-ta-subject" value={subject} onChange={(e) => setSubject(e.target.value)} autoFocus />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Prioridade</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOW">Baixa</SelectItem>
+                <SelectItem value="MEDIUM">Média</SelectItem>
+                <SelectItem value="HIGH">Alta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="qc-ta-due">Vencimento</Label>
+            <Input id="qc-ta-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving || !subject.trim()}>{saving ? "Criando…" : "Criar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
