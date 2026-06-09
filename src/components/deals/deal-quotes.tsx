@@ -247,6 +247,25 @@ export function DealQuotes({ dealId }: { dealId: string }) {
           <DialogHeader><DialogTitle>Nova cotação</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
+              <Label>Modelo de cotação</Label>
+              <Select
+                value={draft.templateId || NO_TEMPLATE}
+                onValueChange={(v) => setDraft({ ...draft, templateId: v === NO_TEMPLATE ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_TEMPLATE}>Sem modelo (layout padrão)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_default ? " (padrão)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Título</Label>
               <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="(usar nome do negócio)" />
             </div>
