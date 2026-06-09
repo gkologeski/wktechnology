@@ -168,18 +168,18 @@ export function EntityCombobox({
     const id = ++reqIdRef.current;
     setLoading(true);
     const t = setTimeout(async () => {
-      let query = supabase.from(entity as never).select(select).limit(25);
+      let query = supabase.from(entity as never).select(select).limit(50);
       if (q.length > 0) {
         const cols = searchColumns && searchColumns.length ? searchColumns : [searchColumn];
+        const safePhrase = q.replace(/[%,()]/g, " ");
         const tokens = q.split(/\s+/).filter(Boolean);
+        // Inclui sempre matches da frase exata, e exige que cada token
+        // apareça em alguma coluna (OR entre colunas, AND entre tokens).
+        const phraseOr = cols.map((c) => `${c}.ilike.%${safePhrase}%`).join(",");
         for (const tok of tokens) {
           const safe = tok.replace(/[%,()]/g, " ");
-          if (cols.length === 1) {
-            query = query.ilike(cols[0] as never, `%${safe}%`);
-          } else {
-            const orExpr = cols.map((c) => `${c}.ilike.%${safe}%`).join(",");
-            query = query.or(orExpr);
-          }
+          const tokenOr = cols.map((c) => `${c}.ilike.%${safe}%`).join(",");
+          query = query.or(`${phraseOr},${tokenOr}`);
         }
       }
       if (filters) {
@@ -200,7 +200,24 @@ export function EntityCombobox({
         label: labelFrom(row),
         hint: hintFrom?.(row) ?? null,
       }));
-      setResults(items);
+      // Prioriza matches da frase exata, depois prefixo, depois o restante.
+      const phrase = q.toLowerCase();
+      const score = (it: EntityComboboxItem) => {
+        if (!phrase) return 3;
+        const l = it.label.toLowerCase();
+        const h = (it.hint ?? "").toLowerCase();
+        if (l === phrase) return 0;
+        if (l.startsWith(phrase)) return 1;
+        if (l.includes(phrase) || h.includes(phrase)) return 2;
+        return 3;
+      };
+      items.sort((a, b) => {
+        const sa = score(a);
+        const sb = score(b);
+        if (sa !== sb) return sa - sb;
+        return a.label.localeCompare(b.label);
+      });
+      setResults(items.slice(0, 25));
     }, 250);
     return () => {
       clearTimeout(t);
