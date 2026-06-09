@@ -84,7 +84,9 @@ const groups: Group[] = [
 
 export function SettingsMenu() {
   const { isAdmin, isManager } = useMyRole();
+  const isPlatformAdmin = useIsPlatformAdmin();
   const canSee = (it: Item) => {
+    if (it.need === "platform") return isPlatformAdmin;
     if (it.need === "admin") return isAdmin;
     if (it.need === "manager") return isManager;
     return true;
