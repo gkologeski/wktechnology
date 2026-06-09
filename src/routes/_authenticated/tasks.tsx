@@ -749,6 +749,11 @@ function TasksHubspotView() {
         </div>
       </div>
       <ColumnsEditor />
+      <QuickCreateTaskDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["tasks"] })}
+      />
     </div>
   );
 }
