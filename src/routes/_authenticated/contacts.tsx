@@ -57,6 +57,7 @@ import {
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
+import { formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -343,7 +344,7 @@ function ContactsHubspotView() {
             Criado em
           </Th>
         ),
-        render: (c) => timeAgo(c.created_at),
+        render: (c) => formatDateTime(c.created_at),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
