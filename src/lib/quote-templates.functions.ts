@@ -1,6 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function activeWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
+  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  const ws = (data as { active_workspace_id?: string | null } | null)?.active_workspace_id;
+  if (!ws) {
+    const { data: m } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", userId).limit(1).maybeSingle();
+    const fallback = (m as { workspace_id?: string } | null)?.workspace_id;
+    if (!fallback) throw new Error("Workspace ativo não encontrado");
+    return fallback;
+  }
+  return ws;
+}
 
 const TemplateInput = z.object({
   name: z.string().trim().min(1).max(120),
