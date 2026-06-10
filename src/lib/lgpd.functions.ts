@@ -32,7 +32,8 @@ export const exportMyData = createServerFn({ method: "POST" })
       // Each table keys the user by either `id`, `user_id`, or `member_user_id`.
       // Try the common variants and merge anything found.
       const variants = ["user_id", "id", "member_user_id"] as const;
-      const rows: unknown[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rows: any[] = [];
       for (const col of variants) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabaseAdmin as any).from(t).select("*").eq(col, userId);
