@@ -152,6 +152,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { to: "/admin/status", label: "Status", icon: Activity, need: "platform" },
       { to: "/admin/alerts", label: "Alertas", icon: Bell, need: "platform" },
+      { to: "/admin/security-scans", label: "Segurança", icon: ShieldCheck, need: "platform" },
       { to: "/admin/quotas", label: "Quotas", icon: Gauge, need: "platform" },
       { to: "/admin/sandbox", label: "Sandbox", icon: FlaskConical, need: "platform" },
     ],
