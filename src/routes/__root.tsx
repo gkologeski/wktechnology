@@ -142,7 +142,9 @@ function RootComponent() {
         <I18nProvider>
           <BrandingProvider>
             <main id="main-content">
-              <Outlet />
+              <Suspense fallback={null}>
+                <Outlet />
+              </Suspense>
             </main>
             <Toaster richColors position="top-right" />
           </BrandingProvider>
