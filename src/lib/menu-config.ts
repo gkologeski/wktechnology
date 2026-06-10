@@ -7,7 +7,7 @@ import {
   Inbox, LifeBuoy, Star, FileText,
   BarChart3, TrendingUp, Sparkles, Video, ListChecks, Download,
   Activity, Bell, Gauge, FlaskConical,
-  User, ShieldCheck, Bug, Languages, Calendar, CreditCard, GitBranch,
+  User, ShieldCheck, Bug, Lock, Languages, Calendar, CreditCard, GitBranch,
   Tag, Package, Boxes, UsersRound, KeyRound, Workflow, Route as RouteIcon,
   LayoutTemplate, BookOpen, Plug, ShoppingBag, RefreshCw,
 } from "lucide-react";
@@ -97,6 +97,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings", label: "Perfil", icon: User },
       { to: "/settings/email", label: "Conexão de email", icon: Mail },
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
+      { to: "/settings/privacy", label: "Privacidade & Meus Dados", icon: Lock },
       { to: "/my-bug-reports", label: "Meus chamados", icon: Bug },
     ],
   },

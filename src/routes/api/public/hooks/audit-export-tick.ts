@@ -1,18 +1,18 @@
 // Cron tick: executa exportações de audit logs cuja agenda vence.
-// Chamado por pg_cron via /api/public/hooks/audit-export-tick com header apikey.
+// Chamado por pg_cron via /api/public/hooks/audit-export-tick com Bearer CRON_SECRET.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runAuditExport } from "@/lib/audit-export.server";
+import { requireCronAuth } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/audit-export-tick")({
   server: {
     handlers: {
+      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-        const got = request.headers.get("apikey");
-        if (!expected || got !== expected) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const unauth = requireCronAuth(request);
+        if (unauth) return unauth;
+
         const { data: exports } = await supabaseAdmin
           .from("audit_exports")
           .select("id, workspace_id, last_run_at, schedule_cron")

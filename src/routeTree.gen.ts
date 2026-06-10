@@ -90,6 +90,7 @@ import { Route as AuthenticatedSettingsProspectingScriptsRouteImport } from './r
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsPropertyGroupsRouteImport } from './routes/_authenticated/settings.property-groups'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
+import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
@@ -645,6 +646,12 @@ const AuthenticatedSettingsProductsRoute =
   AuthenticatedSettingsProductsRouteImport.update({
     id: '/products',
     path: '/products',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPrivacyRoute =
+  AuthenticatedSettingsPrivacyRouteImport.update({
+    id: '/privacy',
+    path: '/privacy',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsPortalRoute =
@@ -1390,6 +1397,7 @@ export interface FileRoutesByFullPath {
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
+  '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
@@ -1581,6 +1589,7 @@ export interface FileRoutesByTo {
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
+  '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
@@ -1775,6 +1784,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
+  '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/_authenticated/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
@@ -1970,6 +1980,7 @@ export interface FileRouteTypes {
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
+    | '/settings/privacy'
     | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
@@ -2161,6 +2172,7 @@ export interface FileRouteTypes {
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
+    | '/settings/privacy'
     | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
@@ -2354,6 +2366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
+    | '/_authenticated/settings/privacy'
     | '/_authenticated/settings/products'
     | '/_authenticated/settings/property-groups'
     | '/_authenticated/settings/prospecting'
@@ -3087,6 +3100,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/settings/products'
       preLoaderRoute: typeof AuthenticatedSettingsProductsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/privacy': {
+      id: '/_authenticated/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof AuthenticatedSettingsPrivacyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/portal': {
@@ -4048,6 +4068,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
+  AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
   AuthenticatedSettingsPropertyGroupsRoute: typeof AuthenticatedSettingsPropertyGroupsRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
@@ -4125,6 +4146,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
+  AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
   AuthenticatedSettingsPropertyGroupsRoute:
     AuthenticatedSettingsPropertyGroupsRoute,

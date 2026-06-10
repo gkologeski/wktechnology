@@ -57,10 +57,14 @@ function PrivacyPage() {
             trânsito, controle de acesso por workspace e políticas de segurança em nível de linha (RLS).
           </p>
 
-          <h2 className="text-lg font-semibold">6. Seus direitos</h2>
+          <h2 className="text-lg font-semibold">6. Seus direitos (LGPD)</h2>
           <p>
-            Você pode acessar, corrigir ou excluir seus dados a qualquer momento por meio das configurações
-            da conta ou solicitando ao administrador do seu workspace.
+            Você pode acessar, corrigir, exportar ou excluir seus dados pessoais a qualquer momento.
+            Usuários autenticados podem fazer isso diretamente em{" "}
+            <Link to="/settings/privacy" className="text-primary hover:underline">
+              Configurações → Privacidade & Meus Dados
+            </Link>
+            , ou solicitando ao administrador do seu workspace.
           </p>
 
           <h2 className="text-lg font-semibold">7. Contato</h2>
