@@ -120,7 +120,70 @@ export const deleteKbArticle = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ========== PÚBLICO (qualquer um) ==========
+// ========== SEED — base inicial (≥10 artigos essenciais) ==========
+
+const STARTER_CATEGORIES: Array<{ name: string; description: string }> = [
+  { name: "Começando", description: "Primeiros passos para configurar e usar o CRM." },
+  { name: "Vendas", description: "Pipelines, negócios, cotações e propostas." },
+  { name: "Atendimento", description: "Tickets, inbox e portal do cliente." },
+  { name: "Administração", description: "Workspace, usuários, billing e segurança." },
+];
+
+const STARTER_ARTICLES: Array<{ category: string; title: string; excerpt: string; body: string }> = [
+  { category: "Começando", title: "Bem-vindo ao CRM", excerpt: "Visão geral da plataforma e principais módulos.", body: "# Bem-vindo\n\nO CRM organiza leads, contatos, empresas e negócios em um pipeline de vendas. Use o menu lateral para navegar entre os módulos." },
+  { category: "Começando", title: "Convidando usuários para o workspace", excerpt: "Como adicionar colegas ao seu workspace.", body: "# Convidar usuários\n\nAcesse **Configurações → Time** e clique em *Convidar usuário*. Defina o papel (Admin, Membro, Leitura) e envie o convite por e-mail." },
+  { category: "Começando", title: "Importando contatos via CSV", excerpt: "Importação em massa de contatos e empresas.", body: "# Importar CSV\n\nEm **Configurações → Importar CSV**, escolha a entidade (contatos, empresas, leads), mapeie as colunas do arquivo e confirme. Linhas inválidas são ignoradas com relatório." },
+  { category: "Vendas", title: "Configurando seu pipeline", excerpt: "Crie estágios e regras para seu funil de vendas.", body: "# Pipeline\n\nEm **Configurações → Pipelines**, crie um pipeline, defina estágios com probabilidade e mova negócios via kanban em **Negócios**." },
+  { category: "Vendas", title: "Criando e enviando cotações", excerpt: "Monte uma cotação a partir do catálogo de produtos.", body: "# Cotações\n\nAbra um negócio e clique em *Nova cotação*. Adicione itens do catálogo, defina desconto/imposto e envie por e-mail. O cliente assina e paga pelo link público." },
+  { category: "Vendas", title: "Atribuição de leads e rotação", excerpt: "Distribua leads automaticamente entre o time.", body: "# Rotação\n\nEm **Configurações → Rotação**, defina regras (round-robin, por região, por origem). Leads novos serão atribuídos automaticamente." },
+  { category: "Atendimento", title: "Trabalhando com tickets", excerpt: "Abra, atribua e responda chamados de clientes.", body: "# Tickets\n\nEm **Tickets**, abra novos chamados, atribua a um agente, defina prioridade e responda direto pelo timeline. SLAs podem ser configurados em **Configurações → SLA**." },
+  { category: "Atendimento", title: "Inbox unificado: e-mail, WhatsApp e chat", excerpt: "Atenda todos os canais em um só lugar.", body: "# Inbox\n\nEm **Inbox**, veja conversas de e-mail, WhatsApp e chat ao vivo. Responda direto pela plataforma e converta conversas em tickets ou contatos." },
+  { category: "Atendimento", title: "Portal do cliente", excerpt: "Permita que clientes vejam negócios e faturas.", body: "# Portal\n\nGere um link de portal para cada cliente em **Configurações → Portal**. Ele verá negócios em aberto, cotações, faturas e poderá abrir tickets." },
+  { category: "Administração", title: "Planos e cobrança", excerpt: "Como mudar de plano e ver consumo.", body: "# Billing\n\nEm **Configurações → Planos e cobrança**, veja seu plano atual, consumo do mês e faça upgrade/downgrade. Pagamentos via Stripe ou gateways BR." },
+  { category: "Administração", title: "Privacidade e LGPD", excerpt: "Exportar dados e excluir conta.", body: "# Privacidade\n\nEm **Configurações → Privacidade & Meus Dados** você pode exportar todos os seus dados em JSON e solicitar a exclusão da conta conforme LGPD." },
+  { category: "Administração", title: "Segurança: 2FA, SSO e auditoria", excerpt: "Endureça a segurança do seu workspace.", body: "# Segurança\n\nAtive 2FA em **Configurações → Segurança**, configure SSO/SAML em **SSO** e revise o log de auditoria em **Audit log**." },
+];
+
+export const seedStarterKb = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+
+    // Cria categorias (idempotente por slug)
+    const catBySlug = new Map<string, string>();
+    for (const c of STARTER_CATEGORIES) {
+      const slug = slugify(c.name);
+      const { data: existing } = await supabaseAdmin
+        .from("kb_categories").select("id").eq("owner_id", ws).eq("slug", slug).maybeSingle();
+      if (existing?.id) { catBySlug.set(c.name, existing.id); continue; }
+      const { data: ins, error } = await supabaseAdmin
+        .from("kb_categories")
+        .insert({ owner_id: ws, name: c.name, slug, description: c.description, position: 0 })
+        .select("id").single();
+      if (error) throw new Error(error.message);
+      catBySlug.set(c.name, ins.id);
+    }
+
+    let created = 0;
+    let skipped = 0;
+    for (const a of STARTER_ARTICLES) {
+      const slug = slugify(a.title);
+      const { data: existing } = await supabaseAdmin
+        .from("kb_articles").select("id").eq("owner_id", ws).eq("slug", slug).maybeSingle();
+      if (existing?.id) { skipped++; continue; }
+      const { error } = await supabaseAdmin.from("kb_articles").insert({
+        owner_id: ws,
+        category_id: catBySlug.get(a.category) ?? null,
+        slug, title: a.title, excerpt: a.excerpt, body: a.body,
+        published: true, published_at: new Date().toISOString(),
+      });
+      if (error) throw new Error(error.message);
+      created++;
+    }
+    return { created, skipped, total: STARTER_ARTICLES.length };
+  });
+
+
 
 export const listKbPublic = createServerFn({ method: "GET" })
   .handler(async () => {
