@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import { Briefcase, UserPlus, TrendingUp, DollarSign } from "lucide-react";
@@ -81,6 +82,12 @@ function DashboardPage() {
   return (
     <div>
       <PageHeader title="Dashboard" description="Visão geral do seu funil de vendas." />
+
+      <div className="mb-6">
+        <OnboardingChecklist />
+      </div>
+
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard icon={<UserPlus className="h-4 w-4" />} label="Leads abertos" value={String(openLeads)} />
