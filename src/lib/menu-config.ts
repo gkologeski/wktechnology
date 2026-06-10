@@ -97,6 +97,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings", label: "Perfil", icon: User },
       { to: "/settings/email", label: "Conexão de email", icon: Mail },
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
+      { to: "/settings/privacy", label: "Privacidade & Meus Dados", icon: Lock },
       { to: "/my-bug-reports", label: "Meus chamados", icon: Bug },
     ],
   },
