@@ -58,6 +58,8 @@ export const getRouter = () => {
     defaultPreloadDelay: 50,
     // Query controla cache de dados; router só precisa do código da rota
     defaultPreloadStaleTime: 0,
+    defaultErrorComponent: DefaultErrorComponent,
+    defaultNotFoundComponent: DefaultNotFoundComponent,
   });
 
   return router;
