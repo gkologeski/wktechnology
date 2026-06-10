@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   listKbCategoriesAdmin, upsertKbCategory, deleteKbCategory,
   listKbArticlesAdmin, getKbArticleAdmin, upsertKbArticle, deleteKbArticle,
+  seedStarterKb,
 } from "@/lib/kb.functions";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
