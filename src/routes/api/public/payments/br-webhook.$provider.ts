@@ -189,6 +189,22 @@ export const Route = createFileRoute("/api/public/payments/br-webhook/$provider"
             .update({ status: "completed" })
             .eq("invoice_id", invoice.id)
             .eq("status", "active");
+
+          // Auto-enfileira NFS-e como "pending" (idempotente por invoice_id).
+          // Operador finaliza a emissão em /settings/nfse.
+          const { data: existingNfse } = await supabaseAdmin
+            .from("nfse_invoices")
+            .select("id")
+            .eq("invoice_id", invoice.id)
+            .maybeSingle();
+          if (!existingNfse) {
+            await supabaseAdmin.from("nfse_invoices").insert({
+              workspace_id: invoice.workspace_id,
+              invoice_id: invoice.id,
+              status: "pending",
+              amount: parsed.amount ?? null,
+            });
+          }
         }
 
         await supabaseAdmin
