@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   listKbCategoriesAdmin, upsertKbCategory, deleteKbCategory,
   listKbArticlesAdmin, getKbArticleAdmin, upsertKbArticle, deleteKbArticle,
+  seedStarterKb,
 } from "@/lib/kb.functions";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -129,11 +130,27 @@ function ArticlesTab() {
     setEdit({ id: a.id, title: a.title, excerpt: a.excerpt ?? "", body: a.body ?? "", category_id: a.category_id ?? null, published: !!a.published });
   }
 
+  const seedFn = useServerFn(seedStarterKb);
+  const seed = useMutation({
+    mutationFn: () => seedFn(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["kb-arts"] });
+      qc.invalidateQueries({ queryKey: ["kb-cats"] });
+      toast.success(`Base inicial: ${r.created} criados, ${r.skipped} já existiam.`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Artigos</CardTitle>
-        <Button size="sm" onClick={() => openEdit()}><Plus className="h-4 w-4 mr-1" />Novo</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={seed.isPending} onClick={() => seed.mutate()}>
+            Popular base inicial (12 artigos)
+          </Button>
+          <Button size="sm" onClick={() => openEdit()}><Plus className="h-4 w-4 mr-1" />Novo</Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
