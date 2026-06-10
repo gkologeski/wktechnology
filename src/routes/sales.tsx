@@ -91,7 +91,7 @@ function SalesPage() {
             <Button asChild size="lg"><Link to="/signup">Criar conta grátis</Link></Button>
             <Button asChild size="lg" variant="outline"><a href="#pricing">Ver planos</a></Button>
           </div>
-          <p className="text-xs text-muted-foreground">Sem cartão de crédito. 7 dias para se arrepender.</p>
+          <p className="text-xs text-muted-foreground">Sem cartão de crédito. 7 dias para testar.</p>
         </div>
       </section>
 
