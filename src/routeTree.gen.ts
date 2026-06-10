@@ -174,6 +174,7 @@ import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/h
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
+import { Route as ApiPublicHooksSecurityScanTickRouteImport } from './routes/api/public/hooks/security-scan-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
@@ -1136,6 +1137,12 @@ const ApiPublicHooksSegmentsTickRoute =
     path: '/api/public/hooks/segments-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSecurityScanTickRoute =
+  ApiPublicHooksSecurityScanTickRouteImport.update({
+    id: '/api/public/hooks/security-scan-tick',
+    path: '/api/public/hooks/security-scan-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksScoringTickRoute =
   ApiPublicHooksScoringTickRouteImport.update({
     id: '/api/public/hooks/scoring-tick',
@@ -1476,6 +1483,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -1670,6 +1678,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -1869,6 +1878,7 @@ export interface FileRoutesById {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -2068,6 +2078,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2262,6 +2273,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2460,6 +2472,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2539,6 +2552,7 @@ export interface RootRouteChildren {
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
+  ApiPublicHooksSecurityScanTickRoute: typeof ApiPublicHooksSecurityScanTickRoute
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
@@ -3729,6 +3743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSegmentsTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/security-scan-tick': {
+      id: '/api/public/hooks/security-scan-tick'
+      path: '/api/public/hooks/security-scan-tick'
+      fullPath: '/api/public/hooks/security-scan-tick'
+      preLoaderRoute: typeof ApiPublicHooksSecurityScanTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/scoring-tick': {
       id: '/api/public/hooks/scoring-tick'
       path: '/api/public/hooks/scoring-tick'
@@ -4476,6 +4497,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
+  ApiPublicHooksSecurityScanTickRoute: ApiPublicHooksSecurityScanTickRoute,
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
