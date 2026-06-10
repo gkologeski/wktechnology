@@ -185,6 +185,8 @@ export const seedStarterKb = createServerFn({ method: "POST" })
 
 
 
+// ========== PÚBLICO (qualquer um) ==========
+
 export const listKbPublic = createServerFn({ method: "GET" })
   .handler(async () => {
     // Lista todos os artigos publicados de todos workspaces (KB pública multi-tenant simples)
