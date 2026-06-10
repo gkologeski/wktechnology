@@ -26,7 +26,8 @@ export const exportMyData = createServerFn({ method: "POST" })
       "platform_admins",
     ] as const;
 
-    const personal: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const personal: Record<string, any[]> = {};
     for (const t of tables) {
       // Each table keys the user by either `id`, `user_id`, or `member_user_id`.
       // Try the common variants and merge anything found.
