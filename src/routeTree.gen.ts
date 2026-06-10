@@ -145,6 +145,7 @@ import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
+import { Route as AuthenticatedAdminSecurityScansRouteImport } from './routes/_authenticated/admin.security-scans'
 import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authenticated/admin.sandbox'
 import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
@@ -174,6 +175,7 @@ import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/h
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
+import { Route as ApiPublicHooksSecurityScanTickRouteImport } from './routes/api/public/hooks/security-scan-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
@@ -971,6 +973,12 @@ const AuthenticatedAdminStatusRoute =
     path: '/admin/status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminSecurityScansRoute =
+  AuthenticatedAdminSecurityScansRouteImport.update({
+    id: '/admin/security-scans',
+    path: '/admin/security-scans',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSandboxRoute =
   AuthenticatedAdminSandboxRouteImport.update({
     id: '/admin/sandbox',
@@ -1134,6 +1142,12 @@ const ApiPublicHooksSegmentsTickRoute =
   ApiPublicHooksSegmentsTickRouteImport.update({
     id: '/api/public/hooks/segments-tick',
     path: '/api/public/hooks/segments-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSecurityScanTickRoute =
+  ApiPublicHooksSecurityScanTickRouteImport.update({
+    id: '/api/public/hooks/security-scan-tick',
+    path: '/api/public/hooks/security-scan-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksScoringTickRoute =
@@ -1367,6 +1381,7 @@ export interface FileRoutesByFullPath {
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1476,6 +1491,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -1562,6 +1578,7 @@ export interface FileRoutesByTo {
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1670,6 +1687,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -1760,6 +1778,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/_authenticated/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/_authenticated/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1869,6 +1888,7 @@ export interface FileRoutesById {
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
@@ -1959,6 +1979,7 @@ export interface FileRouteTypes {
     | '/admin/bug-reports'
     | '/admin/quotas'
     | '/admin/sandbox'
+    | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2068,6 +2089,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2154,6 +2176,7 @@ export interface FileRouteTypes {
     | '/admin/bug-reports'
     | '/admin/quotas'
     | '/admin/sandbox'
+    | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2262,6 +2285,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2351,6 +2375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/quotas'
     | '/_authenticated/admin/sandbox'
+    | '/_authenticated/admin/security-scans'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
@@ -2460,6 +2485,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
@@ -2539,6 +2565,7 @@ export interface RootRouteChildren {
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
+  ApiPublicHooksSecurityScanTickRoute: typeof ApiPublicHooksSecurityScanTickRoute
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
@@ -3526,6 +3553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/security-scans': {
+      id: '/_authenticated/admin/security-scans'
+      path: '/admin/security-scans'
+      fullPath: '/admin/security-scans'
+      preLoaderRoute: typeof AuthenticatedAdminSecurityScansRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/sandbox': {
       id: '/_authenticated/admin/sandbox'
       path: '/admin/sandbox'
@@ -3727,6 +3761,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/segments-tick'
       fullPath: '/api/public/hooks/segments-tick'
       preLoaderRoute: typeof ApiPublicHooksSegmentsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/security-scan-tick': {
+      id: '/api/public/hooks/security-scan-tick'
+      path: '/api/public/hooks/security-scan-tick'
+      fullPath: '/api/public/hooks/security-scan-tick'
+      preLoaderRoute: typeof ApiPublicHooksSecurityScanTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/scoring-tick': {
@@ -4336,6 +4377,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
   AuthenticatedAdminSandboxRoute: typeof AuthenticatedAdminSandboxRoute
+  AuthenticatedAdminSecurityScansRoute: typeof AuthenticatedAdminSecurityScansRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
@@ -4373,6 +4415,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
   AuthenticatedAdminSandboxRoute: AuthenticatedAdminSandboxRoute,
+  AuthenticatedAdminSecurityScansRoute: AuthenticatedAdminSecurityScansRoute,
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
@@ -4476,6 +4519,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
+  ApiPublicHooksSecurityScanTickRoute: ApiPublicHooksSecurityScanTickRoute,
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,

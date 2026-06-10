@@ -7472,6 +7472,89 @@ export type Database = {
         }
         Relationships: []
       }
+      security_scan_findings: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          detail: string | null
+          fingerprint: string
+          id: string
+          ref: Json
+          run_id: string
+          scanner: string
+          severity: string
+          title: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          detail?: string | null
+          fingerprint: string
+          id?: string
+          ref?: Json
+          run_id: string
+          scanner: string
+          severity: string
+          title: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          detail?: string | null
+          fingerprint?: string
+          id?: string
+          ref?: Json
+          run_id?: string
+          scanner?: string
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_scan_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "security_scan_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_scan_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          totals: Json
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          totals?: Json
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          totals?: Json
+        }
+        Relationships: []
+      }
       segment_members: {
         Row: {
           added_at: string
@@ -10050,6 +10133,7 @@ export type Database = {
       }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
+      security_scan_collect: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
       seed_quote_templates: {
         Args: { _owner: string; _workspace: string }

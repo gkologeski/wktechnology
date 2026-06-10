@@ -37,7 +37,7 @@ const SETTINGS_ADMIN_ONLY = [
   "/marketplace", "/integrations", "/settings/whatsapp", "/settings/hubspot-sync",
 ];
 const SETTINGS_PLATFORM_ONLY = [
-  "/admin/status", "/admin/alerts", "/admin/quotas", "/admin/sandbox",
+  "/admin/status", "/admin/alerts", "/admin/security-scans", "/admin/quotas", "/admin/sandbox",
 ];
 
 describe("Sidebar — visibilidade por papel", () => {
