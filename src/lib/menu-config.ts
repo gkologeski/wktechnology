@@ -84,6 +84,7 @@ export const SIDEBAR_PLATFORM_ITEMS: SidebarItem[] = [
   { title: "Chamados", url: "/admin/bug-reports", icon: Bug, need: "platform" },
   { title: "Status", url: "/admin/status", icon: Activity, need: "platform" },
   { title: "Alertas", url: "/admin/alerts", icon: Bell, need: "platform" },
+  { title: "Segurança", url: "/admin/security-scans", icon: ShieldCheck, need: "platform" },
   { title: "Quotas", url: "/admin/quotas", icon: Gauge, need: "platform" },
   { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical, need: "platform" },
 ];

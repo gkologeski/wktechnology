@@ -145,6 +145,7 @@ import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
+import { Route as AuthenticatedAdminSecurityScansRouteImport } from './routes/_authenticated/admin.security-scans'
 import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authenticated/admin.sandbox'
 import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
@@ -972,6 +973,12 @@ const AuthenticatedAdminStatusRoute =
     path: '/admin/status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminSecurityScansRoute =
+  AuthenticatedAdminSecurityScansRouteImport.update({
+    id: '/admin/security-scans',
+    path: '/admin/security-scans',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSandboxRoute =
   AuthenticatedAdminSandboxRouteImport.update({
     id: '/admin/sandbox',
@@ -1374,6 +1381,7 @@ export interface FileRoutesByFullPath {
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1570,6 +1578,7 @@ export interface FileRoutesByTo {
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1769,6 +1778,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
   '/_authenticated/admin/sandbox': typeof AuthenticatedAdminSandboxRoute
+  '/_authenticated/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
@@ -1969,6 +1979,7 @@ export interface FileRouteTypes {
     | '/admin/bug-reports'
     | '/admin/quotas'
     | '/admin/sandbox'
+    | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2165,6 +2176,7 @@ export interface FileRouteTypes {
     | '/admin/bug-reports'
     | '/admin/quotas'
     | '/admin/sandbox'
+    | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
@@ -2363,6 +2375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/quotas'
     | '/_authenticated/admin/sandbox'
+    | '/_authenticated/admin/security-scans'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
@@ -3540,6 +3553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStatusRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/security-scans': {
+      id: '/_authenticated/admin/security-scans'
+      path: '/admin/security-scans'
+      fullPath: '/admin/security-scans'
+      preLoaderRoute: typeof AuthenticatedAdminSecurityScansRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/sandbox': {
       id: '/_authenticated/admin/sandbox'
       path: '/admin/sandbox'
@@ -4357,6 +4377,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
   AuthenticatedAdminSandboxRoute: typeof AuthenticatedAdminSandboxRoute
+  AuthenticatedAdminSecurityScansRoute: typeof AuthenticatedAdminSecurityScansRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
@@ -4394,6 +4415,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
   AuthenticatedAdminSandboxRoute: AuthenticatedAdminSandboxRoute,
+  AuthenticatedAdminSecurityScansRoute: AuthenticatedAdminSecurityScansRoute,
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
