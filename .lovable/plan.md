@@ -1,77 +1,94 @@
-## Objetivo
-Mostrar de forma clara "onde estou" em cada página, com uma trilha de navegação (breadcrumbs) consistente em todo o app.
+# Roadmap de Releases — Pronto para Comercializar
 
-## Abordagem
-Implementar um único componente `RouteBreadcrumbs` renderizado no layout autenticado (`src/routes/_authenticated.tsx`), logo abaixo do header e acima do `<Outlet />`. Assim **todas** as páginas autenticadas ganham breadcrumbs automaticamente, sem precisar editar cada rota.
+Organizei o trabalho em **6 releases sequenciais**. Cada release é fechado, testável e entregável independentemente. Vou executar **um por vez**, aguardando seu OK antes de iniciar o próximo.
 
-A trilha será derivada da URL atual (`useRouterState`) e traduzida para rótulos amigáveis em português usando um mapa central de segmentos. Para rotas de detalhe com `$id` (ex.: `/deals/$id`, `/companies/$id`), o último nível mostrará "Detalhes" como fallback — sem chamadas extras ao backend nesta etapa.
+---
 
-## Estrutura visual
-- Faixa fina (`h-10`) com fundo `bg-background/60 backdrop-blur` e borda inferior sutil, alinhada ao mesmo padding do conteúdo (`px-6`).
-- Usa o componente já existente `src/components/ui/breadcrumb.tsx` (shadcn) — `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbSeparator`, `BreadcrumbPage`.
-- Primeiro item sempre é "Início" com ícone `Home` levando a `/dashboard`.
-- Último segmento renderizado como `BreadcrumbPage` (não clicável, destacado).
-- Em telas `sm:` mostra a trilha completa; em mobile mostra apenas o último nível + botão "voltar".
-- Oculto no `/dashboard` (raiz) para não poluir.
+## Release 1 — Estabilidade Crítica (bloqueadores)
+**Objetivo:** zerar erros runtime visíveis ao usuário.
 
-## Mapa de rótulos
-Um arquivo novo `src/lib/breadcrumb-labels.ts` exporta:
+- Corrigir hydration mismatch no `__root__` (`<Suspense>` vs `<main>` no SSR).
+- Adicionar `errorComponent` e `notFoundComponent` em todas as rotas com loader que ainda não têm.
+- Garantir `defaultErrorComponent` no router e wrapper SSR (`src/server.ts`) cobrindo erros catastróficos (já parcialmente feito — revisar).
+- Smoke test E2E navegando pelas rotas principais autenticadas e públicas.
 
-```ts
-export const SEGMENT_LABELS: Record<string, string> = {
-  dashboard: "Início",
-  leads: "Leads",
-  contacts: "Contatos",
-  companies: "Empresas",
-  deals: "Negócios",
-  tasks: "Tarefas",
-  tickets: "Chamados",
-  proposals: "Propostas",
-  invoices: "Faturas",
-  meetings: "Reuniões",
-  inbox: "Caixa de entrada",
-  campaigns: "Campanhas",
-  prospecting: "Prospecção",
-  analytics: "Analytics",
-  reports: "Relatórios",
-  dashboards: "Dashboards",
-  settings: "Configurações",
-  admin: "Admin",
-  integrations: "Integrações",
-  "quote-templates": "Modelos de orçamento",
-  "bug-reports": "Chamados internos",
-  // ... demais segmentos das ~110 rotas
-};
-```
+**Critério de aceite:** sem erros no console em `/dashboard`, `/login`, `/quote/:token`, `/deals`, `/settings`. Suite Playwright `navigation-smoke` verde.
 
-Segmentos não mapeados caem em um `prettify()` (kebab-case → Title Case). Segmentos que parecem ID (`uuid`, números) viram "Detalhes".
+---
 
-## Componente
-`src/components/route-breadcrumbs.tsx`:
+## Release 2 — Segurança & Compliance
+**Objetivo:** passar em scan de segurança e atender LGPD básico.
 
-```text
-[ Home ] / Configurações / Modelos de orçamento
-```
+- Rodar `security--run_security_scan` e fechar todos os findings críticos/altos.
+- Auditar GRANTs e RLS em todas as tabelas `public` (lista de 160+ tabelas).
+- Validar assinatura HMAC em todos `/api/public/hooks/*` (Twilio, pagamentos BR, Meta WhatsApp, Zapier).
+- Habilitar HIBP no Auth + exigir verificação de e-mail.
+- Implementar endpoints LGPD: exportação de dados do titular + exclusão de conta (server functions + UI em Settings).
+- Atualizar `security-memory` com posturas aceitas.
 
-- Lê `pathname` via `useRouterState`.
-- Divide em segmentos, monta os links acumulando o caminho.
-- Cada item intermediário é `<BreadcrumbLink asChild><Link to={...}/></BreadcrumbLink>`.
-- O último é `<BreadcrumbPage>`.
+**Critério de aceite:** scan sem críticos; checklist LGPD documentado em `/privacy` com link para "Exportar meus dados" e "Excluir minha conta".
 
-## Integração
-Em `src/routes/_authenticated.tsx`, entre `<header>` e `<main>`:
+---
 
-```tsx
-{!blocked && <RouteBreadcrumbs />}
-```
+## Release 3 — Cobertura de Testes
+**Objetivo:** rede de segurança para regressões.
 
-Nenhuma alteração nas rotas individuais nem no `PageHeader`.
+- E2E Playwright para: cotações (criar, enviar, aceitar), faturamento, fluxo de convite + aceite, isolamento de workspace em todas as entidades.
+- Testes unitários para `permissions.server.ts`, `menu-config.ts`, helpers de billing.
+- CI roda E2E + unit em cada PR (configurar workflow).
 
-## Arquivos
-- **Criar**: `src/lib/breadcrumb-labels.ts`
-- **Criar**: `src/components/route-breadcrumbs.tsx`
-- **Editar**: `src/routes/_authenticated.tsx` (renderizar o componente)
+**Critério de aceite:** ≥70% das jornadas críticas cobertas; CI verde.
 
-## Fora do escopo (sugestões para depois)
-- Buscar nomes reais de registros para rotas de detalhe (`/deals/$id` → nome do negócio) — requer loaders/queries por rota.
-- Breadcrumbs em rotas públicas (`/login`, landing).
+---
+
+## Release 4 — Pagamentos & Billing
+**Objetivo:** clientes conseguem assinar e pagar.
+
+- Stripe go-live: documentar wizard (claim → onboard → install → readiness).
+- Definir planos finais (Free/Pro/Business) com `plan_entitlements` consistentes.
+- Enforcement de quotas (`usage_counters` + `credit_limits`) em pontos de uso.
+- Página `/settings/billing` mostrando plano atual, uso, upgrade/downgrade.
+- Webhook de cobrança BR (Asaas/Pagar.me/MP) testado end-to-end em sandbox.
+- Geração de NFS-e nos pagamentos confirmados (já existe tabela `nfse_invoices` — fechar fluxo).
+
+**Critério de aceite:** assinatura completa do zero ao pagamento em sandbox + emissão de NF.
+
+---
+
+## Release 5 — Operação & Observabilidade
+**Objetivo:** rodar em produção com segurança.
+
+- Alertas: erros 5xx, falhas de cron, queue DLQ, edge function errors → notificação para admin.
+- Painel `/admin/status` mostrando saúde de cron, queues, integrações.
+- Backups documentados + plano de recuperação (RPO/RTO).
+- E-mail transacional com domínio próprio (SPF/DKIM/DMARC) usando Lovable Email.
+- Custom domain `crm.wktechnology.com.br` validado com SSL.
+- Documentação de usuário final (Help Center via `kb_articles`).
+
+**Critério de aceite:** alertas chegando, domínio próprio enviando e-mails, KB com ≥10 artigos essenciais.
+
+---
+
+## Release 6 — Comercial & Go-to-Market
+**Objetivo:** material legal e comercial para vender.
+
+- Contrato de assinatura (Termos de Uso comerciais separados dos atuais).
+- Política de reembolso e cancelamento.
+- DPA (Data Processing Agreement) para clientes B2B.
+- Landing page de vendas (preços, features, CTA).
+- Onboarding guiado no primeiro login (checklist de setup).
+
+**Critério de aceite:** novo usuário consegue assinar, configurar workspace e usar o produto sem suporte humano.
+
+---
+
+## Detalhes Técnicos
+
+- Cada release vira um conjunto de commits agrupados; ao fim, publicação para `wktechnology.lovable.app` e validação no `crm.wktechnology.com.br`.
+- Migrações de DB sempre com GRANT + RLS na mesma migration.
+- Server functions protegidas via `requireSupabaseAuth`; webhooks em `/api/public/*` com verificação de assinatura.
+- Sem mudanças em `src/integrations/supabase/*` auto-gerados.
+
+---
+
+**Próximo passo:** confirme que aprova o roadmap (ou peça ajustes). Quando aprovar, começo pelo **Release 1 — Estabilidade Crítica**.
