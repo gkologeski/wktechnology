@@ -2,9 +2,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 async function assertPlatformAdmin(userId: string) {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!data) throw new Error("Acesso negado: apenas super-admins.");
@@ -15,9 +20,13 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
 
     // Cron status via RPC
     const cronRes = await supabaseAdmin.rpc("platform_cron_status" as never);
+    if (cronRes.error) {
+      throw new Error(`Falha ao carregar status dos crons: ${cronRes.error.message}`);
+    }
     const crons = (cronRes.data ?? []) as Array<{
       jobname: string; schedule: string; last_start: string | null;
       last_end: string | null; status: string | null; duration_ms: number | null;
@@ -77,6 +86,7 @@ export const listAlertRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_alert_rules").select("*").order("created_at", { ascending: false });
     return { items: data ?? [] };
@@ -87,6 +97,7 @@ export const upsertAlertRule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AlertRuleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const payload = {
       name: data.name,
       description: data.description ?? null,
@@ -114,6 +125,7 @@ export const deleteAlertRule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     await supabaseAdmin.from("platform_alert_rules").delete().eq("id", data.id);
     return { ok: true };
   });
@@ -122,6 +134,7 @@ export const listAlertEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_alert_events")
       .select("id, rule_id, fired_at, severity, message, context, resolved_at")
@@ -135,6 +148,7 @@ export const listWorkspaceQuotas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: workspaces } = await supabaseAdmin
       .from("workspaces").select("id, name, slug").order("name");
     const ids = (workspaces ?? []).map((w) => w.id as string);
@@ -175,6 +189,7 @@ export const listSandboxes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_sandboxes")
       .select("id, source_workspace_id, sandbox_workspace_id, name, status, last_synced_at, promoted_at, created_at")
@@ -187,6 +202,7 @@ export const createSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SandboxCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
 
     // Cria um workspace sandbox espelho (somente metadados; clonar dados é tarefa futura).
     const slug = `sandbox-${data.source_workspace_id.slice(0, 6)}-${Date.now().toString(36)}`;
@@ -218,6 +234,7 @@ export const promoteSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await (supabaseAdmin.from("platform_sandboxes") as any)
       .update({ status: "promoted", promoted_at: new Date().toISOString() })
       .eq("id", data.id);
@@ -230,6 +247,7 @@ export const archiveSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     await (supabaseAdmin.from("platform_sandboxes") as any)
       .update({ status: "archived" }).eq("id", data.id);
     return { ok: true };
