@@ -150,8 +150,9 @@ function RolesPage() {
               <Button onClick={handleCreate} disabled={saving}>{saving ? "Criando…" : "Criar"}</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      </div>
+          </Dialog>
+        </div>
+
 
       <Card>
         <CardHeader><CardTitle className="text-base">Perfis</CardTitle></CardHeader>
