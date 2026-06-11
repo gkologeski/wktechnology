@@ -86,6 +86,7 @@ export const listAlertRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_alert_rules").select("*").order("created_at", { ascending: false });
     return { items: data ?? [] };
@@ -96,6 +97,7 @@ export const upsertAlertRule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AlertRuleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const payload = {
       name: data.name,
       description: data.description ?? null,
@@ -123,6 +125,7 @@ export const deleteAlertRule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     await supabaseAdmin.from("platform_alert_rules").delete().eq("id", data.id);
     return { ok: true };
   });
@@ -131,6 +134,7 @@ export const listAlertEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_alert_events")
       .select("id, rule_id, fired_at, severity, message, context, resolved_at")
@@ -144,6 +148,7 @@ export const listWorkspaceQuotas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: workspaces } = await supabaseAdmin
       .from("workspaces").select("id, name, slug").order("name");
     const ids = (workspaces ?? []).map((w) => w.id as string);
@@ -184,6 +189,7 @@ export const listSandboxes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_sandboxes")
       .select("id, source_workspace_id, sandbox_workspace_id, name, status, last_synced_at, promoted_at, created_at")
@@ -196,6 +202,7 @@ export const createSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SandboxCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
 
     // Cria um workspace sandbox espelho (somente metadados; clonar dados é tarefa futura).
     const slug = `sandbox-${data.source_workspace_id.slice(0, 6)}-${Date.now().toString(36)}`;
@@ -227,6 +234,7 @@ export const promoteSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await (supabaseAdmin.from("platform_sandboxes") as any)
       .update({ status: "promoted", promoted_at: new Date().toISOString() })
       .eq("id", data.id);
@@ -239,6 +247,7 @@ export const archiveSandbox = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
     await (supabaseAdmin.from("platform_sandboxes") as any)
       .update({ status: "archived" }).eq("id", data.id);
     return { ok: true };
