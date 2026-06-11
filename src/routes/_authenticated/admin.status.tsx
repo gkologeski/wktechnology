@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlatformStatus } from "@/lib/platform-observability.functions";
+import { rescheduleLovableCron } from "@/lib/admin-cron.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -16,11 +19,22 @@ export const Route = createFileRoute("/_authenticated/admin/status")({
 function AdminStatusPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const fn = useServerFn(getPlatformStatus);
+  const reschedule = useServerFn(rescheduleLovableCron);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["platform-status"],
     queryFn: () => fn(),
     enabled: isPlatformAdmin,
     refetchInterval: 30_000,
+  });
+  const rescheduleMut = useMutation({
+    mutationFn: () => reschedule(),
+    onSuccess: (r: { result?: { rescheduled?: unknown[] } }) => {
+      const n = Array.isArray(r?.result?.rescheduled) ? r.result!.rescheduled!.length : 0;
+      toast.success(`Crons reagendados (${n} jobs).`);
+      qc.invalidateQueries({ queryKey: ["platform-status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (loading) return <div className="p-6">Carregando…</div>;
@@ -41,7 +55,12 @@ function AdminStatusPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Cron Jobs</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Cron Jobs</CardTitle>
+          <Button size="sm" onClick={() => rescheduleMut.mutate()} disabled={rescheduleMut.isPending}>
+            {rescheduleMut.isPending ? "Reagendando…" : "Reagendar crons"}
+          </Button>
+        </CardHeader>
         <CardContent>
           {isLoading ? "Carregando…" : (
             <Table>
