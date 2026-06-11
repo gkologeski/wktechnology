@@ -299,3 +299,64 @@ export const listProfileAssignments = createServerFn({ method: "GET" })
       };
     });
   });
+
+// ---------------- ACCESS MATRIX (todos os perfis × objetos × ferramentas) ----------------
+export const getAccessMatrix = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await supabase.rpc("seed_access_profiles", { _workspace: userId } as never);
+
+    const { data: profiles } = await supabase
+      .from("access_profiles")
+      .select("id, name, description, is_system, base_role")
+      .eq("workspace_owner_id", userId)
+      .order("is_system", { ascending: false })
+      .order("base_role")
+      .order("name");
+
+    const ids = (profiles ?? []).map((p) => (p as { id: string }).id);
+    if (!ids.length) return { profiles: [], permissions: {}, tools: {} };
+
+    const [{ data: perms }, { data: tools }, { data: members }] = await Promise.all([
+      supabase.from("access_profile_permissions")
+        .select("profile_id, object_key, view_scope, edit_scope, delete_scope, create_enabled")
+        .in("profile_id", ids),
+      supabase.from("access_profile_tools")
+        .select("profile_id, tool_key, enabled")
+        .in("profile_id", ids),
+      supabase.from("team_members")
+        .select("access_profile_id")
+        .eq("workspace_owner_id", userId),
+    ]);
+
+    const counts = new Map<string, number>();
+    for (const m of members ?? []) {
+      const id = (m as { access_profile_id: string | null }).access_profile_id;
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+
+    const permsByProfile: Record<string, Record<string, { view_scope: string; edit_scope: string; delete_scope: string; create_enabled: boolean }>> = {};
+    for (const p of perms ?? []) {
+      const row = p as { profile_id: string; object_key: string; view_scope: string; edit_scope: string; delete_scope: string; create_enabled: boolean };
+      (permsByProfile[row.profile_id] ??= {})[row.object_key] = {
+        view_scope: row.view_scope, edit_scope: row.edit_scope,
+        delete_scope: row.delete_scope, create_enabled: row.create_enabled,
+      };
+    }
+    const toolsByProfile: Record<string, Record<string, boolean>> = {};
+    for (const t of tools ?? []) {
+      const row = t as { profile_id: string; tool_key: string; enabled: boolean };
+      (toolsByProfile[row.profile_id] ??= {})[row.tool_key] = row.enabled;
+    }
+
+    return {
+      profiles: (profiles ?? []).map((p) => ({
+        ...(p as { id: string; name: string; description: string | null; is_system: boolean; base_role: "admin" | "manager" | "member" }),
+        user_count: counts.get((p as { id: string }).id) ?? 0,
+      })),
+      permissions: permsByProfile,
+      tools: toolsByProfile,
+    };
+  });
+
