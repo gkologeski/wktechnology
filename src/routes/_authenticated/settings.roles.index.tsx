@@ -101,10 +101,15 @@ function RolesPage() {
             Crie perfis personalizados com permissões granulares por objeto e ferramentas.
           </p>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Criar perfil</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Link to="/settings/roles/matrix">
+            <Button variant="outline"><Shield className="h-4 w-4 mr-2" />Ver matriz de acesso</Button>
+          </Link>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" />Criar perfil</Button>
+            </DialogTrigger>
+
           <DialogContent>
             <DialogHeader><DialogTitle>Novo perfil de acesso</DialogTitle></DialogHeader>
             <div className="space-y-3">

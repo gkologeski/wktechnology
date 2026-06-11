@@ -191,6 +191,7 @@ import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/f
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
+import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
@@ -1237,6 +1238,12 @@ const ApiPublicAdminRescheduleCronRoute =
     path: '/api/public/admin/reschedule-cron',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedSettingsRolesMatrixRoute =
+  AuthenticatedSettingsRolesMatrixRouteImport.update({
+    id: '/matrix',
+    path: '/matrix',
+    getParentRoute: () => AuthenticatedSettingsRolesRoute,
+  } as any)
 const AuthenticatedSettingsRolesRoleIdRoute =
   AuthenticatedSettingsRolesRoleIdRouteImport.update({
     id: '/$roleId',
@@ -1476,6 +1483,7 @@ export interface FileRoutesByFullPath {
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
@@ -1672,6 +1680,7 @@ export interface FileRoutesByTo {
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
@@ -1873,6 +1882,7 @@ export interface FileRoutesById {
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
+  '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
@@ -2074,6 +2084,7 @@ export interface FileRouteTypes {
     | '/prospecting/campaigns/$id'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
+    | '/settings/roles/matrix'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
@@ -2270,6 +2281,7 @@ export interface FileRouteTypes {
     | '/prospecting/campaigns/$id'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
+    | '/settings/roles/matrix'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
@@ -2470,6 +2482,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
+    | '/_authenticated/settings/roles/matrix'
     | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
@@ -3875,6 +3888,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminRescheduleCronRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/roles/matrix': {
+      id: '/_authenticated/settings/roles/matrix'
+      path: '/matrix'
+      fullPath: '/settings/roles/matrix'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesMatrixRouteImport
+      parentRoute: typeof AuthenticatedSettingsRolesRoute
+    }
     '/_authenticated/settings/roles/$roleId': {
       id: '/_authenticated/settings/roles/$roleId'
       path: '/$roleId'
@@ -4119,6 +4139,7 @@ const AuthenticatedProspectingRouteWithChildren =
 
 interface AuthenticatedSettingsRolesRouteChildren {
   AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
+  AuthenticatedSettingsRolesMatrixRoute: typeof AuthenticatedSettingsRolesMatrixRoute
   AuthenticatedSettingsRolesIndexRoute: typeof AuthenticatedSettingsRolesIndexRoute
 }
 
@@ -4126,6 +4147,8 @@ const AuthenticatedSettingsRolesRouteChildren: AuthenticatedSettingsRolesRouteCh
   {
     AuthenticatedSettingsRolesRoleIdRoute:
       AuthenticatedSettingsRolesRoleIdRoute,
+    AuthenticatedSettingsRolesMatrixRoute:
+      AuthenticatedSettingsRolesMatrixRoute,
     AuthenticatedSettingsRolesIndexRoute: AuthenticatedSettingsRolesIndexRoute,
   }
 
