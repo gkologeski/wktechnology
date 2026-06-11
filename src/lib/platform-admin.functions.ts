@@ -5,8 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-let supabaseAdmin: SupabaseClient<Database> | undefined;
-async function getSupabaseAdmin() {
+let supabaseAdmin: SupabaseClient<Database>;
+async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {
   if (!supabaseAdmin) {
     const mod = await import("@/integrations/supabase/client.server");
     supabaseAdmin = mod.supabaseAdmin;
