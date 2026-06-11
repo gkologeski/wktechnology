@@ -21,7 +21,7 @@ function AdminStatusPage() {
   const fn = useServerFn(getPlatformStatus);
   const reschedule = useServerFn(rescheduleLovableCron);
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["platform-status"],
     queryFn: () => fn(),
     enabled: isPlatformAdmin,
@@ -62,7 +62,9 @@ function AdminStatusPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoading ? "Carregando…" : (
+          {error ? (
+            <p className="text-sm text-destructive">{error instanceof Error ? error.message : "Falha ao carregar crons."}</p>
+          ) : isLoading ? "Carregando…" : (
             <Table>
               <TableHeader>
                 <TableRow><TableHead>Job</TableHead><TableHead>Schedule</TableHead><TableHead>Status</TableHead><TableHead>Última execução</TableHead><TableHead>Duração</TableHead></TableRow>
