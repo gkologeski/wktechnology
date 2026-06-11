@@ -2,9 +2,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 async function assertPlatformAdmin(userId: string) {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
   if (!data) throw new Error("Acesso negado: apenas super-admins.");
@@ -15,6 +20,7 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
 
     // Cron status via RPC
     const cronRes = await supabaseAdmin.rpc("platform_cron_status" as never);
