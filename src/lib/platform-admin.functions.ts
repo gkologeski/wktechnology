@@ -2,7 +2,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+let supabaseAdmin: any;
+async function getSupabaseAdmin() {
+  if (!supabaseAdmin) {
+    const mod = await import("@/integrations/supabase/client.server");
+    supabaseAdmin = mod.supabaseAdmin;
+  }
+  return supabaseAdmin;
+}
 
 const WsRole = z.enum(["admin", "member"]);
 
@@ -21,6 +29,7 @@ function resolveInviteOrigin(origin: string | undefined): string {
 }
 
 async function assertPlatformAdmin(userId: string) {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from("platform_admins")
     .select("user_id")
@@ -34,6 +43,7 @@ async function assertPlatformAdmin(userId: string) {
 export const amIPlatformAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_admins")
       .select("user_id")
