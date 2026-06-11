@@ -2,8 +2,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
-let supabaseAdmin: any;
+let supabaseAdmin: SupabaseClient<Database> | undefined;
 async function getSupabaseAdmin() {
   if (!supabaseAdmin) {
     const mod = await import("@/integrations/supabase/client.server");
