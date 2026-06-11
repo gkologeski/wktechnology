@@ -18,6 +18,9 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
 
     // Cron status via RPC
     const cronRes = await supabaseAdmin.rpc("platform_cron_status" as never);
+    if (cronRes.error) {
+      throw new Error(`Falha ao carregar status dos crons: ${cronRes.error.message}`);
+    }
     const crons = (cronRes.data ?? []) as Array<{
       jobname: string; schedule: string; last_start: string | null;
       last_end: string | null; status: string | null; duration_ms: number | null;
