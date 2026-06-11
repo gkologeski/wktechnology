@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { ChevronDown, Search, Shield } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -130,8 +130,93 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="gap-1 border-t border-sidebar-border/60 px-2 pt-2">
+        <PlatformSection
+          items={platformItems}
+          isActive={isActive}
+          collapsed={collapsed}
+        />
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function PlatformSection({
+  items,
+  isActive,
+  collapsed,
+}: {
+  items: typeof SIDEBAR_PLATFORM_ITEMS;
+  isActive: (url: string) => boolean;
+  collapsed: boolean;
+}) {
+  const hasActive = items.some((i) => isActive(i.url));
+  const [open, setOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = window.localStorage.getItem("sidebar:platform-open");
+    if (saved !== null) return saved === "1";
+    return false;
+  });
+
+  useEffect(() => {
+    if (hasActive) setOpen(true);
+  }, [hasActive]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("sidebar:platform-open", open ? "1" : "0");
+    }
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  // No modo colapsado (icon-only), sempre mostra os ícones — sem toggle.
+  if (collapsed) {
+    return (
+      <SidebarMenu>
+        {items.map((it) => {
+          const Icon = it.icon;
+          const active = isActive(it.url);
+          return (
+            <SidebarMenuItem key={it.url}>
+              <SidebarMenuButton
+                asChild
+                tooltip={it.title}
+                isActive={active}
+                className="h-auto rounded-xl px-2 py-2"
+              >
+                <Link to={it.url} className="flex items-center gap-2.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+      >
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+          <Shield className="h-3 w-3" />
+        </span>
+        <span className="flex-1 text-left">Plataforma</span>
+        <ChevronDown
+          className={cn("h-3.5 w-3.5 transition-transform", open ? "rotate-0" : "-rotate-90")}
+        />
+      </button>
+
+      {open && (
         <SidebarMenu>
-          {platformItems.map((it) => {
+          {items.map((it) => {
             const Icon = it.icon;
             const active = isActive(it.url);
             return (
@@ -140,20 +225,28 @@ export function AppSidebar() {
                   asChild
                   tooltip={it.title}
                   isActive={active}
-                  className="h-auto rounded-xl px-2 py-2"
+                  className={cn(
+                    "h-auto rounded-xl px-2 py-2",
+                    active && "bg-primary/10 text-primary font-semibold",
+                  )}
                 >
                   <Link to={it.url} className="flex items-center gap-2.5">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                    <span
+                      className={cn(
+                        "grid h-7 w-7 shrink-0 place-items-center rounded-lg",
+                        active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                      )}
+                    >
                       <Icon className="h-3.5 w-3.5" />
                     </span>
-                    <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
+                    <span className="truncate">{it.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
           })}
         </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+      )}
+    </div>
   );
 }
