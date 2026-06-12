@@ -134,6 +134,20 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         hasAudio = includeMic;
       }
 
+      const imagePaths: string[] = [];
+      for (const img of images) {
+        const ext = (img.file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("bug-reports")
+          .upload(path, img.file, {
+            contentType: img.file.type || `image/${ext}`,
+            upsert: false,
+          });
+        if (upErr) throw upErr;
+        imagePaths.push(path);
+      }
+
       const { error: insErr } = await supabase.from("bug_reports").insert({
         owner_id: user.id,
         kind: parsed.data.kind,
@@ -142,6 +156,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         description: parsed.data.description,
         recording_path: recordingPath,
         recording_has_audio: hasAudio,
+        image_paths: imagePaths,
         page_url: typeof window !== "undefined" ? window.location.href : null,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
