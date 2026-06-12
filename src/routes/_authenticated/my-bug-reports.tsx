@@ -133,6 +133,9 @@ function MyBugReportsPage() {
                       <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
                     </div>
                   )}
+                  {Array.isArray((r as { image_paths?: string[] }).image_paths) && ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
+                    <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
+                  )}
                   {r.recording_path && (
                     <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
                       <Video className="h-4 w-4 mr-2" />
