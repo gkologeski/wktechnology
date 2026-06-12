@@ -1118,6 +1118,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          image_paths: string[]
           kind: string
           owner_id: string
           page_url: string | null
@@ -1135,6 +1136,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          image_paths?: string[]
           kind: string
           owner_id: string
           page_url?: string | null
@@ -1152,6 +1154,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          image_paths?: string[]
           kind?: string
           owner_id?: string
           page_url?: string | null
