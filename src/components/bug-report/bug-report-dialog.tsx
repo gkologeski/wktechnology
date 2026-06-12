@@ -183,7 +183,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle>Abrir chamado</DialogTitle>
             <DialogDescription>
-              Descreva o problema ou sugira uma melhoria. Você pode anexar uma gravação de tela.
+              Descreva o problema ou sugira uma melhoria. Você pode anexar imagens e/ou uma gravação de tela.
             </DialogDescription>
           </DialogHeader>
 
