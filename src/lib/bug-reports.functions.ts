@@ -114,12 +114,17 @@ export const deleteBugReport = createServerFn({ method: "POST" })
 
     const { data: row } = await supabaseAdmin
       .from("bug_reports")
-      .select("recording_path")
+      .select("recording_path, image_paths")
       .eq("id", data.id)
       .maybeSingle();
 
-    if (row?.recording_path) {
-      await supabaseAdmin.storage.from("bug-reports").remove([row.recording_path as string]);
+    const toRemove: string[] = [];
+    if (row?.recording_path) toRemove.push(row.recording_path as string);
+    if (Array.isArray((row as { image_paths?: string[] } | null)?.image_paths)) {
+      toRemove.push(...((row as { image_paths: string[] }).image_paths));
+    }
+    if (toRemove.length > 0) {
+      await supabaseAdmin.storage.from("bug-reports").remove(toRemove);
     }
 
     const { error } = await supabaseAdmin.from("bug_reports").delete().eq("id", data.id);
