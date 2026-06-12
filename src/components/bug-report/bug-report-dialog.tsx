@@ -54,6 +54,8 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
   const [includeMic, setIncludeMic] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [images, setImages] = useState<{ file: File; url: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const recorder = useScreenRecorder();
 
@@ -62,6 +64,11 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     [category],
   );
 
+  const clearImages = () => {
+    images.forEach((i) => URL.revokeObjectURL(i.url));
+    setImages([]);
+  };
+
   const resetAll = () => {
     setKind("existing_broken");
     setCategory("");
@@ -69,6 +76,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     setDescription("");
     setIncludeMic(true);
     setMinimized(false);
+    clearImages();
     recorder.reset();
   };
 
