@@ -241,6 +241,71 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
             </div>
 
             <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Imagens (opcional)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Anexe uma ou mais capturas de tela. Máx. 10 MB por imagem.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={submitting}
+                >
+                  <ImagePlus className="h-4 w-4 mr-2" /> Adicionar imagens
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    const valid: { file: File; url: string }[] = [];
+                    for (const f of files) {
+                      if (!f.type.startsWith("image/")) continue;
+                      if (f.size > 10 * 1024 * 1024) {
+                        toast.error(`${f.name}: imagem maior que 10 MB`);
+                        continue;
+                      }
+                      valid.push({ file: f, url: URL.createObjectURL(f) });
+                    }
+                    setImages((prev) => [...prev, ...valid]);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {images.map((img, idx) => (
+                    <div key={img.url} className="relative group">
+                      <img
+                        src={img.url}
+                        alt={`Anexo ${idx + 1}`}
+                        className="h-24 w-full rounded border object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          URL.revokeObjectURL(img.url);
+                          setImages((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="absolute top-1 right-1 rounded-full bg-background/90 border p-0.5 shadow opacity-0 group-hover:opacity-100 transition"
+                        aria-label="Remover imagem"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Gravação de tela (opcional)</p>
