@@ -579,6 +579,13 @@ function LeadsHubspotView() {
     });
   };
 
+  const refreshLeads = async () => {
+    await qc.invalidateQueries({
+      predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === "leads",
+      refetchType: "all",
+    });
+  };
+
   const removeOne = (id: string) => {
     setPendingAction({
       title: "Excluir lead",
@@ -588,7 +595,7 @@ function LeadsHubspotView() {
       run: async () => {
         await deleteLeadsByIds(supabase, [id]);
         toast.success("Removido");
-        qc.invalidateQueries({ queryKey: ["leads"] });
+        await refreshLeads();
       },
     });
   };
@@ -605,7 +612,7 @@ function LeadsHubspotView() {
         const n = await deleteLeadsByIds(supabase, ids);
         toast.success(`${n} excluído(s)`);
         clearSelection();
-        qc.invalidateQueries({ queryKey: ["leads"] });
+        await refreshLeads();
       },
     });
   };
