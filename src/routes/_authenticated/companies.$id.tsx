@@ -79,7 +79,7 @@ function CompanyDetail() {
             { key: "industry", label: "Indústria", primary: true },
             { key: "size", label: "Tamanho", primary: true },
             { key: "phone", label: "Telefone", type: "tel", primary: true },
-            { key: "cep", label: "CEP", primary: true },
+            { key: "cep", label: "CEP", type: "cep", primary: true },
             { key: "address", label: "Endereço" },
             { key: "city", label: "Cidade" },
             { key: "state", label: "UF" },

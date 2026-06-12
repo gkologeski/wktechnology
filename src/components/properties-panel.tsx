@@ -27,8 +27,14 @@ function sanitizePhoneInput(s: string): string {
 function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
 }
+// CEP: digits only, max 8, formatted as 99999-999.
+function formatCep(s: string): string {
+  const d = (s ?? "").replace(/\D/g, "").slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
 
-export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" };
+export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" | "cep" };
 
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
@@ -117,6 +123,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         return;
       }
     }
+    if (def?.type === "cep" && toSave) {
+      const digits = toSave.replace(/\D/g, "");
+      if (digits.length !== 8) {
+        toast.error("CEP inválido. Use 8 dígitos (99999-999).");
+        return;
+      }
+      toSave = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
@@ -142,13 +156,16 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <div className="flex gap-1">
             <Input
               autoFocus
-              type={p.type ?? "text"}
-              inputMode={p.type === "tel" ? "tel" : undefined}
+              type={p.type === "cep" ? "text" : (p.type ?? "text")}
+              inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
+              maxLength={p.type === "cep" ? 9 : undefined}
+              placeholder={p.type === "cep" ? "99999-999" : undefined}
               value={value}
               onChange={(e) =>
                 setValue(
                   p.type === "tel" ? sanitizePhoneInput(e.target.value)
                   : p.type === "email" ? sanitizeEmailInput(e.target.value)
+                  : p.type === "cep" ? formatCep(e.target.value)
                   : e.target.value
                 )
               }
@@ -163,6 +180,8 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <span className="text-sm text-foreground truncate">
             {p.type === "tel" && row[p.key]
               ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+              : p.type === "cep" && row[p.key]
+              ? formatCep(String(row[p.key]))
               : String(row[p.key] ?? "—")}
           </span>
           <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
@@ -226,6 +245,29 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
                 {p.type === "company" ? (
                   <CompanyFieldAll table={table} rowId={row.id} field={p.key} initial={String(row[p.key] ?? "")} onSaved={onSaved} />
+                ) : p.type === "cep" ? (
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="99999-999"
+                    defaultValue={formatCep(String(row[p.key] ?? ""))}
+                    onChange={(e) => { e.currentTarget.value = formatCep(e.currentTarget.value); }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const digits = raw.replace(/\D/g, "");
+                      const current = String(row[p.key] ?? "");
+                      const toSave = digits ? `${digits.slice(0, 5)}-${digits.slice(5)}` : null;
+                      if ((toSave ?? "") === current) return;
+                      if (digits && digits.length !== 8) {
+                        toast.error("CEP inválido. Use 8 dígitos (99999-999).");
+                        return;
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
                 ) : (
                   <Input
                     type={p.type ?? "text"}
