@@ -46,6 +46,7 @@ import {
   listBugReportAnalyses,
 } from "@/lib/bug-report-analysis.functions";
 import { BugReportResolutionDialog } from "@/components/bug-report/resolution-dialog";
+import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { notifyBugReportStatusChange } from "@/lib/bug-reports-notify.functions";
 import {
   ShieldAlert,
