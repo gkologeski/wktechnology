@@ -123,6 +123,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         return;
       }
     }
+    if (def?.type === "cep" && toSave) {
+      const digits = toSave.replace(/\D/g, "");
+      if (digits.length !== 8) {
+        toast.error("CEP inválido. Use 8 dígitos (99999-999).");
+        return;
+      }
+      toSave = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
     if (error) toast.error(error.message);
