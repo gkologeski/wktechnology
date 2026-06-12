@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import { ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
