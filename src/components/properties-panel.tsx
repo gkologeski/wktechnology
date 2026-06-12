@@ -27,8 +27,14 @@ function sanitizePhoneInput(s: string): string {
 function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
 }
+// CEP: digits only, max 8, formatted as 99999-999.
+function formatCep(s: string): string {
+  const d = (s ?? "").replace(/\D/g, "").slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
 
-export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" };
+export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" | "cep" };
 
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
