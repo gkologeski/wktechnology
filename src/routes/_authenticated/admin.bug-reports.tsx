@@ -343,6 +343,9 @@ function BugReportsAdminPage() {
                       <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
                     </div>
                   )}
+                  {Array.isArray((r as { image_paths?: string[] }).image_paths) && ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
+                    <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
+                  )}
                   <div className="flex flex-wrap gap-2 text-xs">
                     {r.recording_path && (
                       <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
