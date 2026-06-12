@@ -245,6 +245,29 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
                 {p.type === "company" ? (
                   <CompanyFieldAll table={table} rowId={row.id} field={p.key} initial={String(row[p.key] ?? "")} onSaved={onSaved} />
+                ) : p.type === "cep" ? (
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="99999-999"
+                    defaultValue={formatCep(String(row[p.key] ?? ""))}
+                    onChange={(e) => { e.currentTarget.value = formatCep(e.currentTarget.value); }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const digits = raw.replace(/\D/g, "");
+                      const current = String(row[p.key] ?? "");
+                      const toSave = digits ? `${digits.slice(0, 5)}-${digits.slice(5)}` : null;
+                      if ((toSave ?? "") === current) return;
+                      if (digits && digits.length !== 8) {
+                        toast.error("CEP inválido. Use 8 dígitos (99999-999).");
+                        return;
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
                 ) : (
                   <Input
                     type={p.type ?? "text"}
