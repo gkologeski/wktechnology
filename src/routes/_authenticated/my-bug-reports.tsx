@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
+import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { Bug, Video } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/my-bug-reports")({
