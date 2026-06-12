@@ -46,6 +46,7 @@ import {
   listBugReportAnalyses,
 } from "@/lib/bug-report-analysis.functions";
 import { BugReportResolutionDialog } from "@/components/bug-report/resolution-dialog";
+import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { notifyBugReportStatusChange } from "@/lib/bug-reports-notify.functions";
 import {
   ShieldAlert,
@@ -341,6 +342,9 @@ function BugReportsAdminPage() {
                       </p>
                       <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
                     </div>
+                  )}
+                  {Array.isArray((r as { image_paths?: string[] }).image_paths) && ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
+                    <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
                   )}
                   <div className="flex flex-wrap gap-2 text-xs">
                     {r.recording_path && (

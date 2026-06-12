@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import { ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -54,6 +54,8 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
   const [includeMic, setIncludeMic] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [images, setImages] = useState<{ file: File; url: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const recorder = useScreenRecorder();
 
@@ -62,6 +64,11 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     [category],
   );
 
+  const clearImages = () => {
+    images.forEach((i) => URL.revokeObjectURL(i.url));
+    setImages([]);
+  };
+
   const resetAll = () => {
     setKind("existing_broken");
     setCategory("");
@@ -69,6 +76,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     setDescription("");
     setIncludeMic(true);
     setMinimized(false);
+    clearImages();
     recorder.reset();
   };
 
@@ -126,6 +134,20 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         hasAudio = includeMic;
       }
 
+      const imagePaths: string[] = [];
+      for (const img of images) {
+        const ext = (img.file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("bug-reports")
+          .upload(path, img.file, {
+            contentType: img.file.type || `image/${ext}`,
+            upsert: false,
+          });
+        if (upErr) throw upErr;
+        imagePaths.push(path);
+      }
+
       const { error: insErr } = await supabase.from("bug_reports").insert({
         owner_id: user.id,
         kind: parsed.data.kind,
@@ -134,6 +156,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         description: parsed.data.description,
         recording_path: recordingPath,
         recording_has_audio: hasAudio,
+        image_paths: imagePaths,
         page_url: typeof window !== "undefined" ? window.location.href : null,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
@@ -160,7 +183,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle>Abrir chamado</DialogTitle>
             <DialogDescription>
-              Descreva o problema ou sugira uma melhoria. Você pode anexar uma gravação de tela.
+              Descreva o problema ou sugira uma melhoria. Você pode anexar imagens e/ou uma gravação de tela.
             </DialogDescription>
           </DialogHeader>
 
@@ -215,6 +238,71 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
                 maxLength={4000}
               />
               <p className="text-xs text-muted-foreground text-right">{description.length}/4000</p>
+            </div>
+
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Imagens (opcional)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Anexe uma ou mais capturas de tela. Máx. 10 MB por imagem.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={submitting}
+                >
+                  <ImagePlus className="h-4 w-4 mr-2" /> Adicionar imagens
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    const valid: { file: File; url: string }[] = [];
+                    for (const f of files) {
+                      if (!f.type.startsWith("image/")) continue;
+                      if (f.size > 10 * 1024 * 1024) {
+                        toast.error(`${f.name}: imagem maior que 10 MB`);
+                        continue;
+                      }
+                      valid.push({ file: f, url: URL.createObjectURL(f) });
+                    }
+                    setImages((prev) => [...prev, ...valid]);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {images.map((img, idx) => (
+                    <div key={img.url} className="relative group">
+                      <img
+                        src={img.url}
+                        alt={`Anexo ${idx + 1}`}
+                        className="h-24 w-full rounded border object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          URL.revokeObjectURL(img.url);
+                          setImages((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="absolute top-1 right-1 rounded-full bg-background/90 border p-0.5 shadow opacity-0 group-hover:opacity-100 transition"
+                        aria-label="Remover imagem"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-lg border p-3 space-y-3">

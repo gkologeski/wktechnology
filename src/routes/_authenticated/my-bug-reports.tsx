@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
+import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { Bug, Video } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/my-bug-reports")({
@@ -131,6 +132,9 @@ function MyBugReportsPage() {
                       </p>
                       <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
                     </div>
+                  )}
+                  {Array.isArray((r as { image_paths?: string[] }).image_paths) && ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
+                    <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
                   )}
                   {r.recording_path && (
                     <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
