@@ -190,6 +190,7 @@ function BugReportsAdminPage() {
     onSuccess: () => {
       toast.success("Chamado removido");
       qc.invalidateQueries({ queryKey: ["admin-bug-reports"] });
+      qc.invalidateQueries({ queryKey: ["admin-bug-reports-counts"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao remover"),
   });
