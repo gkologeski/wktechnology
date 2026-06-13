@@ -58,23 +58,22 @@ export function OwnerFilter({
 
   const isLoading = loadingMembers || loadingHs;
 
-  const options: Option[] = [
-    ...members.map((m) => ({
-      id: m.user_id,
-      label: m.full_name || m.user_id.slice(0, 8),
-      kind: "user" as const,
-      is_me: m.is_me,
-    })),
-    ...hsOwners.map((o) => {
-      const full = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
-      return {
-        id: `hs:${o.id}`,
-        label: full || o.email || `HubSpot ${o.id}`,
-        kind: "hubspot" as const,
-        archived: (o.status ?? "").toLowerCase() === "archived",
-      };
-    }),
-  ].sort((a, b) => {
+  const userOptions: Option[] = members.map((m) => ({
+    id: m.user_id,
+    label: m.full_name || m.user_id.slice(0, 8),
+    kind: "user",
+    is_me: m.is_me,
+  }));
+  const hsOptions: Option[] = hsOwners.map((o) => {
+    const full = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
+    return {
+      id: `hs:${o.id}`,
+      label: full || o.email || `HubSpot ${o.id}`,
+      kind: "hubspot",
+      archived: (o.status ?? "").toLowerCase() === "archived",
+    };
+  });
+  const options: Option[] = [...userOptions, ...hsOptions].sort((a, b) => {
     if (!!a.is_me !== !!b.is_me) return a.is_me ? -1 : 1;
     return a.label.localeCompare(b.label);
   });
