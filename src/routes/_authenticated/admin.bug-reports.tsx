@@ -114,6 +114,23 @@ function BugReportsAdminPage() {
     queryFn: () => listFn({ data: { status, kind } }),
   });
 
+  const allForCounts = useQuery({
+    queryKey: ["admin-bug-reports-counts"],
+    enabled: isPlatformAdmin,
+    queryFn: () => listFn({ data: { status: "all", kind: "all" } }),
+  });
+
+  const totals = useMemo(() => {
+    const all = (allForCounts.data ?? []) as Array<{ status: string }>;
+    let open = 0;
+    let closed = 0;
+    for (const r of all) {
+      if (r.status === "resolved" || r.status === "wont_fix") closed++;
+      else open++;
+    }
+    return { total: all.length, open, closed };
+  }, [allForCounts.data]);
+
   const reportIds = useMemo(
     () => ((list.data ?? []) as Array<{ id: string }>).map((r) => r.id),
     [list.data],
@@ -155,6 +172,7 @@ function BugReportsAdminPage() {
     onSuccess: () => {
       toast.success("Status atualizado");
       qc.invalidateQueries({ queryKey: ["admin-bug-reports"] });
+      qc.invalidateQueries({ queryKey: ["admin-bug-reports-counts"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao atualizar"),
   });
@@ -172,6 +190,7 @@ function BugReportsAdminPage() {
     onSuccess: () => {
       toast.success("Chamado removido");
       qc.invalidateQueries({ queryKey: ["admin-bug-reports"] });
+      qc.invalidateQueries({ queryKey: ["admin-bug-reports-counts"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao remover"),
   });
@@ -247,6 +266,33 @@ function BugReportsAdminPage() {
           </Button>
         }
       />
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totals.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Abertos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-destructive">{totals.open}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Fechados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-muted-foreground">{totals.closed}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
