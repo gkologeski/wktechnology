@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,13 +22,18 @@ export function ColumnEditorDialog({
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
 
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    // Initialize state only on the transition from closed -> open.
+    // Re-running on every `value`/`allColumns` change causes a double render
+    // when actions like "Restaurar padrão" persist a new value upstream.
+    if (open && !wasOpen.current) {
       const initial = value && value.length ? value : (defaults && defaults.length ? defaults : allColumns.map((c) => c.key));
       setOrder(initial);
       setVisible(new Set(initial));
       setQuery("");
     }
+    wasOpen.current = open;
   }, [open, value, defaults, allColumns]);
 
   const allKeys = allColumns.map((c) => c.key);
