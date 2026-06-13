@@ -60,10 +60,12 @@ export function ColumnEditorDialog({
     onReset?.();
   };
 
+  const normalize = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const filtered = query.trim()
     ? fullOrder.filter((k) => {
         const c = allColumns.find((x) => x.key === k);
-        return c && c.label.toLowerCase().includes(query.toLowerCase());
+        return c && normalize(c.label).includes(normalize(query));
       })
     : fullOrder;
 
