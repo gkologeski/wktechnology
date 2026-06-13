@@ -267,6 +267,33 @@ function BugReportsAdminPage() {
         }
       />
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totals.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Abertos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-destructive">{totals.open}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Fechados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-muted-foreground">{totals.closed}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Status</label>
