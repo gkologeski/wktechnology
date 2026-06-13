@@ -189,11 +189,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               type={p.type === "cep" ? "text" : (p.type ?? "text")}
               inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
               maxLength={p.type === "cep" ? 9 : undefined}
-              placeholder={p.type === "cep" ? "99999-999" : undefined}
+              placeholder={p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined}
               value={value}
               onChange={(e) =>
                 setValue(
-                  p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                  p.type === "tel" ? formatPhoneInput(e.target.value)
                   : p.type === "email" ? sanitizeEmailInput(e.target.value)
                   : p.type === "cep" ? formatCep(e.target.value)
                   : e.target.value
@@ -209,13 +209,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-foreground truncate">
             {p.type === "tel" && row[p.key]
-              ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+              ? formatBrPhone(String(row[p.key]))
               : p.type === "cep" && row[p.key]
               ? formatCep(String(row[p.key]))
               : String(row[p.key] ?? "—")}
           </span>
           <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
+            onClick={() => { setEditing(p.key); setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")); }}>
             <Pencil className="h-3 w-3" />
           </Button>
         </div>
