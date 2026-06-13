@@ -325,13 +325,24 @@ function LeadsHubspotView() {
         if (end) q = q.lt("created_at", end.toISOString());
       }
 
-      // Responsável (multi-select + sem responsável)
-      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
-        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
-      } else if (filters.ownerIds.length > 0) {
-        q = q.in("owner_id", filters.ownerIds);
-      } else if (filters.includeUnassigned) {
-        q = q.is("owner_id", null);
+      // Responsável (multi-select + sem responsável). Suporta IDs prefixados "hs:<id>"
+      // para filtrar por hubspot_owner_id (responsáveis importados do HubSpot).
+      {
+        const userIds: string[] = [];
+        const hsIds: string[] = [];
+        for (const id of filters.ownerIds) {
+          if (id.startsWith("hs:")) hsIds.push(id.slice(3));
+          else userIds.push(id);
+        }
+        const parts: string[] = [];
+        if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
+        if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
+        if (filters.includeUnassigned) parts.push(`owner_id.is.null`);
+        if (parts.length === 1 && filters.includeUnassigned && userIds.length === 0 && hsIds.length === 0) {
+          q = q.is("owner_id", null);
+        } else if (parts.length > 0) {
+          q = q.or(parts.join(","));
+        }
       }
 
       // Search
