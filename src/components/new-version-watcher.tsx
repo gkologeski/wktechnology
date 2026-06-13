@@ -21,9 +21,15 @@ export function NewVersionWatcher() {
     if (typeof window === "undefined") return;
     let cancelled = false;
 
+    // Fixa o caminho pollado no momento da montagem. Não usar
+    // `window.location.pathname` dinamicamente, pois cada rota gera um
+    // conjunto diferente de chunks pré-carregados no HTML SSR e isso
+    // dispararia falsos "nova versão disponível" a cada navegação.
+    const pollPath = window.location.pathname;
+
     const fetchFingerprint = async (): Promise<string | null> => {
       try {
-        const res = await fetch(window.location.pathname + "?__v=" + Date.now(), {
+        const res = await fetch(pollPath + "?__v=" + Date.now(), {
           cache: "no-store",
           headers: { Accept: "text/html" },
           credentials: "same-origin",
@@ -35,6 +41,7 @@ export function NewVersionWatcher() {
         return null;
       }
     };
+
 
     const check = async () => {
       if (typeof document !== "undefined" && document.hidden) return;
