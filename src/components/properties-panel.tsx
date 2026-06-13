@@ -23,6 +23,36 @@ const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
 function sanitizePhoneInput(s: string): string {
   return s.replace(PHONE_INPUT_RE, "");
 }
+// BR phone mask: (99) 9999-9999 / (99) 99999-9999. Strips +55 prefix.
+// Returns the original string for non-BR numbers (kept in E.164).
+function formatBrPhone(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (!s) return "";
+  let digits = s.replace(/\D/g, "");
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+    digits = digits.slice(2);
+  }
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length > 0 && digits.length < 10) {
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return s;
+}
+// Apply mask while editing only when the user is typing a BR-style number
+// (no leading "+"); preserve international input as-is.
+function formatPhoneInput(s: string): string {
+  const cleaned = sanitizePhoneInput(s);
+  if (cleaned.trim().startsWith("+")) return cleaned;
+  return formatBrPhone(cleaned);
+}
 // Email: no whitespace allowed.
 function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
