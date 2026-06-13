@@ -298,6 +298,28 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
                     }}
                   />
+                ) : p.type === "tel" ? (
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="(11) 99999-8888"
+                    defaultValue={formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")}
+                    onChange={(e) => { e.currentTarget.value = formatPhoneInput(e.currentTarget.value); }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const current = String(row[p.key] ?? "");
+                      let toSave: string | null = raw || null;
+                      if (toSave) {
+                        const n = toE164(toSave);
+                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                        toSave = n;
+                      }
+                      if ((toSave ?? "") === current) return;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
                 ) : (
                   <Input
                     type={p.type ?? "text"}
@@ -306,11 +328,6 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       const raw = e.target.value;
                       if (raw === String(row[p.key] ?? "")) return;
                       let toSave: string | null = raw || null;
-                      if (p.type === "tel" && toSave) {
-                        const n = toE164(toSave);
-                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
-                        toSave = n;
-                      }
                       if (p.type === "email" && toSave) {
                         toSave = toSave.trim();
                         if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
