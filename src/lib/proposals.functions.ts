@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import crypto from "crypto";
 
 // ---------- Proposals ----------
 
@@ -166,7 +164,8 @@ export const sendProposal = createServerFn({ method: "POST" })
       total: prop.total_amount, currency: prop.currency,
       version: prop.version, sentAt,
     });
-    const contentHash = crypto.createHash("sha256").update(hashInput).digest("hex");
+    const { createHash } = await import("crypto");
+    const contentHash = createHash("sha256").update(hashInput).digest("hex");
     const { error } = await supabase.from("proposals").update({
       status: "sent", sent_at: sentAt, locked: true,
     }).eq("id", data.id);
@@ -314,6 +313,7 @@ export const removeEsignAttachment = createServerFn({ method: "POST" })
 export const verifyEsignHash = createServerFn({ method: "GET" })
   .inputValidator((d: { hash: string }) => z.object({ hash: z.string().min(16).max(128).regex(/^[a-f0-9]+$/i) }).parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc("esign_verify_hash", { _hash: data.hash });
     if (error) throw new Error(error.message);
     const row = Array.isArray(rows) ? rows[0] : rows;
