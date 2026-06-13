@@ -23,6 +23,36 @@ const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
 function sanitizePhoneInput(s: string): string {
   return s.replace(PHONE_INPUT_RE, "");
 }
+// BR phone mask: (99) 9999-9999 / (99) 99999-9999. Strips +55 prefix.
+// Returns the original string for non-BR numbers (kept in E.164).
+function formatBrPhone(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (!s) return "";
+  let digits = s.replace(/\D/g, "");
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+    digits = digits.slice(2);
+  }
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length > 0 && digits.length < 10) {
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return s;
+}
+// Apply mask while editing only when the user is typing a BR-style number
+// (no leading "+"); preserve international input as-is.
+function formatPhoneInput(s: string): string {
+  const cleaned = sanitizePhoneInput(s);
+  if (cleaned.trim().startsWith("+")) return cleaned;
+  return formatBrPhone(cleaned);
+}
 // Email: no whitespace allowed.
 function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
@@ -159,11 +189,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               type={p.type === "cep" ? "text" : (p.type ?? "text")}
               inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
               maxLength={p.type === "cep" ? 9 : undefined}
-              placeholder={p.type === "cep" ? "99999-999" : undefined}
+              placeholder={p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined}
               value={value}
               onChange={(e) =>
                 setValue(
-                  p.type === "tel" ? sanitizePhoneInput(e.target.value)
+                  p.type === "tel" ? formatPhoneInput(e.target.value)
                   : p.type === "email" ? sanitizeEmailInput(e.target.value)
                   : p.type === "cep" ? formatCep(e.target.value)
                   : e.target.value
@@ -179,13 +209,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-foreground truncate">
             {p.type === "tel" && row[p.key]
-              ? (toE164(String(row[p.key])) ?? String(row[p.key]))
+              ? formatBrPhone(String(row[p.key]))
               : p.type === "cep" && row[p.key]
               ? formatCep(String(row[p.key]))
               : String(row[p.key] ?? "—")}
           </span>
           <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            onClick={() => { setEditing(p.key); setValue(String(row[p.key] ?? "")); }}>
+            onClick={() => { setEditing(p.key); setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")); }}>
             <Pencil className="h-3 w-3" />
           </Button>
         </div>
@@ -268,6 +298,28 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
                     }}
                   />
+                ) : p.type === "tel" ? (
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="(11) 99999-8888"
+                    defaultValue={formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")}
+                    onChange={(e) => { e.currentTarget.value = formatPhoneInput(e.currentTarget.value); }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const current = String(row[p.key] ?? "");
+                      let toSave: string | null = raw || null;
+                      if (toSave) {
+                        const n = toE164(toSave);
+                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                        toSave = n;
+                      }
+                      if ((toSave ?? "") === current) return;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
+                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                    }}
+                  />
                 ) : (
                   <Input
                     type={p.type ?? "text"}
@@ -276,11 +328,6 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       const raw = e.target.value;
                       if (raw === String(row[p.key] ?? "")) return;
                       let toSave: string | null = raw || null;
-                      if (p.type === "tel" && toSave) {
-                        const n = toE164(toSave);
-                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
-                        toSave = n;
-                      }
                       if (p.type === "email" && toSave) {
                         toSave = toSave.trim();
                         if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
