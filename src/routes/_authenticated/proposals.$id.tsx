@@ -102,7 +102,25 @@ function ProposalEditor() {
     setBody((prev) => `${prev}\n<hr/>\n${clauseBody}`);
   };
 
-  if (!prop) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando proposta…</div>;
+  if (isError) return (
+    <div className="p-6 space-y-3">
+      <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm">
+        <p className="font-medium text-destructive">Não foi possível carregar a proposta.</p>
+        <p className="text-muted-foreground mt-1">{(error as Error)?.message ?? "Erro desconhecido"}</p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" asChild><Link to="/proposals"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
+        <Button onClick={() => refetch()}>Tentar novamente</Button>
+      </div>
+    </div>
+  );
+  if (!prop) return (
+    <div className="p-6 space-y-3">
+      <p className="text-sm text-muted-foreground">Proposta não encontrada.</p>
+      <Button variant="outline" asChild><Link to="/proposals"><ArrowLeft className="mr-2 h-4 w-4" />Voltar para propostas</Link></Button>
+    </div>
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-[1fr_320px]">
