@@ -114,6 +114,23 @@ function BugReportsAdminPage() {
     queryFn: () => listFn({ data: { status, kind } }),
   });
 
+  const allForCounts = useQuery({
+    queryKey: ["admin-bug-reports-counts"],
+    enabled: isPlatformAdmin,
+    queryFn: () => listFn({ data: { status: "all", kind: "all" } }),
+  });
+
+  const totals = useMemo(() => {
+    const all = (allForCounts.data ?? []) as Array<{ status: string }>;
+    let open = 0;
+    let closed = 0;
+    for (const r of all) {
+      if (r.status === "resolved" || r.status === "wont_fix") closed++;
+      else open++;
+    }
+    return { total: all.length, open, closed };
+  }, [allForCounts.data]);
+
   const reportIds = useMemo(
     () => ((list.data ?? []) as Array<{ id: string }>).map((r) => r.id),
     [list.data],
