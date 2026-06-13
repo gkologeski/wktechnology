@@ -42,7 +42,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Trabalhar", items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Leads", url: "/leads", icon: UserPlus },
-      { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download, need: "admin" },
+      
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Negócios", url: "/deals", icon: Briefcase },
