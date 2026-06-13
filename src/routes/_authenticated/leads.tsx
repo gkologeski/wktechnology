@@ -490,17 +490,21 @@ function LeadsHubspotView() {
         label: "Responsável",
         render: (lead) => {
           const assigned = lead.assigned_user_id as string | null | undefined;
+          const ownerUserId = (lead as unknown as { owner_id?: string | null }).owner_id;
           const hsId = (lead as unknown as { hubspot_owner_id?: string | null }).hubspot_owner_id;
-          if (assigned) {
+          // Prioriza o usuário responsável (assigned ou owner) sobre o owner do HubSpot,
+          // que muitas vezes guarda apenas o histórico do registro importado.
+          const userId = assigned || ownerUserId || null;
+          if (userId) {
             return (
-              <div className="flex items-center gap-2" title={nameFor(assigned)}>
+              <div className="flex items-center gap-2" title={nameFor(userId)}>
                 <span
                   className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                  style={{ background: colorFromString(assigned) }}
+                  style={{ background: colorFromString(userId) }}
                 >
-                  {initialsFor(assigned)}
+                  {initialsFor(userId)}
                 </span>
-                <span className="truncate text-sm">{nameFor(assigned)}</span>
+                <span className="truncate text-sm">{nameFor(userId)}</span>
               </div>
             );
           }
