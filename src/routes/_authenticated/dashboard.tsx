@@ -79,7 +79,7 @@ function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard icon={<UserPlus className="h-4 w-4" />} label="Leads abertos" value={String(openLeads)} />
-        <StatCard icon={<Briefcase className="h-4 w-4" />} label="Negócios ativos" value={String(activeDeals.length)} />
+        <StatCard icon={<Briefcase className="h-4 w-4" />} label="Negócios ativos" value={String(activeDealsCount)} />
         <StatCard icon={<DollarSign className="h-4 w-4" />} label="Valor do pipeline" value={formatCurrency(pipelineValue)} />
         <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Taxa de conversão" value={`${winRate.toFixed(1)}%`} />
       </div>
