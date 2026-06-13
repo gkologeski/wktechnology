@@ -93,9 +93,10 @@ const STATUS_TONE: Record<string, { dot: string; bg: string; text: string }> = {
   disqualified: { dot: "bg-rose-500", bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-300" },
 };
 
-type ViewId = "all" | "mine" | "unassigned" | "new_week";
+type ViewId = "all" | "open" | "mine" | "unassigned" | "new_week";
 const VIEWS: { id: ViewId; label: string }[] = [
   { id: "all", label: "Todos os leads" },
+  { id: "open", label: "Abertos" },
   { id: "mine", label: "Meus leads" },
   { id: "unassigned", label: "Sem responsável" },
   { id: "new_week", label: "Novos esta semana" },
@@ -303,6 +304,7 @@ function LeadsHubspotView() {
       // View
       if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
       if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
       if (activeView === "new_week") {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
