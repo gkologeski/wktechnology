@@ -304,6 +304,7 @@ function LeadsHubspotView() {
       // View
       if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
       if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
       if (activeView === "new_week") {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
