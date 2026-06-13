@@ -56,6 +56,7 @@ import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
@@ -449,6 +450,12 @@ const AuthenticatedSettingsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedProposalsIndexRoute =
+  AuthenticatedProposalsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProposalsRoute,
   } as any)
 const AuthenticatedIntegrationsIndexRoute =
   AuthenticatedIntegrationsIndexRouteImport.update({
@@ -1478,6 +1485,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -1564,7 +1572,6 @@ export interface FileRoutesByTo {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
-  '/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -1675,6 +1682,7 @@ export interface FileRoutesByTo {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
+  '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -1877,6 +1885,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -2079,6 +2088,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/inbox/'
     | '/integrations/'
+    | '/proposals/'
     | '/settings/'
     | '/admin/workspaces/$id'
     | '/prospecting/campaigns/$id'
@@ -2165,7 +2175,6 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
-    | '/proposals'
     | '/prospecting'
     | '/reports'
     | '/tasks'
@@ -2276,6 +2285,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/inbox'
     | '/integrations'
+    | '/proposals'
     | '/settings'
     | '/admin/workspaces/$id'
     | '/prospecting/campaigns/$id'
@@ -2477,6 +2487,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$id'
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
+    | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/prospecting/campaigns/$id'
@@ -2942,6 +2953,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/proposals/': {
+      id: '/_authenticated/proposals/'
+      path: '/'
+      fullPath: '/proposals/'
+      preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
+      parentRoute: typeof AuthenticatedProposalsRoute
     }
     '/_authenticated/integrations/': {
       id: '/_authenticated/integrations/'
@@ -4107,11 +4125,13 @@ const AuthenticatedMarketplaceRouteWithChildren =
 
 interface AuthenticatedProposalsRouteChildren {
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
+  AuthenticatedProposalsIndexRoute: typeof AuthenticatedProposalsIndexRoute
 }
 
 const AuthenticatedProposalsRouteChildren: AuthenticatedProposalsRouteChildren =
   {
     AuthenticatedProposalsIdRoute: AuthenticatedProposalsIdRoute,
+    AuthenticatedProposalsIndexRoute: AuthenticatedProposalsIndexRoute,
   }
 
 const AuthenticatedProposalsRouteWithChildren =

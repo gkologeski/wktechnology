@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import crypto from "crypto";
+
+async function resolveWorkspaceFor(userId: string): Promise<string> {
+  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+  return resolveActiveWorkspace(userId);
+}
 
 // ---------- Proposals ----------
 
@@ -45,7 +47,7 @@ export const createProposal = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveWorkspaceFor(userId);
     const { data: prop, error } = await supabase.from("proposals").insert({
       owner_id: userId,
       workspace_id: workspaceId,
@@ -107,7 +109,7 @@ export const requestProposalApproval = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveWorkspaceFor(userId);
     const { error: e1 } = await supabase.from("proposals")
       .update({ status: "in_review" }).eq("id", data.proposalId);
     if (e1) throw new Error(e1.message);
@@ -166,7 +168,8 @@ export const sendProposal = createServerFn({ method: "POST" })
       total: prop.total_amount, currency: prop.currency,
       version: prop.version, sentAt,
     });
-    const contentHash = crypto.createHash("sha256").update(hashInput).digest("hex");
+    const { createHash } = await import("crypto");
+    const contentHash = createHash("sha256").update(hashInput).digest("hex");
     const { error } = await supabase.from("proposals").update({
       status: "sent", sent_at: sentAt, locked: true,
     }).eq("id", data.id);
@@ -212,7 +215,7 @@ export const createClause = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveWorkspaceFor(userId);
     const { data: row, error } = await supabase.from("proposal_clauses").insert({
       owner_id: userId,
       workspace_id: workspaceId,
@@ -276,7 +279,7 @@ export const addEsignAttachment = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveWorkspaceFor(userId);
     // CA-14.4: max 10 attachments / 25 MB total
     const { data: existing } = await supabase.from("esign_attachments")
       .select("size_bytes").eq("document_id", data.documentId);
@@ -314,6 +317,7 @@ export const removeEsignAttachment = createServerFn({ method: "POST" })
 export const verifyEsignHash = createServerFn({ method: "GET" })
   .inputValidator((d: { hash: string }) => z.object({ hash: z.string().min(16).max(128).regex(/^[a-f0-9]+$/i) }).parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc("esign_verify_hash", { _hash: data.hash });
     if (error) throw new Error(error.message);
     const row = Array.isArray(rows) ? rows[0] : rows;

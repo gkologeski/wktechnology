@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
@@ -142,9 +142,7 @@ function RootComponent() {
         <I18nProvider>
           <BrandingProvider>
             <main id="main-content">
-              <Suspense fallback={null}>
-                <Outlet />
-              </Suspense>
+              <Outlet />
             </main>
             <Toaster richColors position="top-right" />
           </BrandingProvider>
