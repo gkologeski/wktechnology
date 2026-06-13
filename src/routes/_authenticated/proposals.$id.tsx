@@ -38,7 +38,11 @@ function ProposalEditor() {
   const decide = useServerFn(decideProposalApproval);
   const lcl = useServerFn(listClauses);
 
-  const { data } = useQuery({ queryKey: ["proposal", id], queryFn: () => get({ data: { id } }) });
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["proposal", id],
+    queryFn: () => get({ data: { id } }),
+    retry: 1,
+  });
   const { data: clauses } = useQuery({ queryKey: ["clauses"], queryFn: () => lcl() });
   const prop = data?.proposal;
   const approvals = data?.approvals ?? [];
