@@ -12,34 +12,23 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-async function fetchAll<T>(
-  build: (from: number, to: number) => Promise<{ data: T[] | null }>,
-): Promise<T[]> {
-  const PAGE = 1000;
-  const out: T[] = [];
-  for (let page = 0; ; page++) {
-    const from = page * PAGE;
-    const { data } = await build(from, from + PAGE - 1);
-    const rows = data ?? [];
-    out.push(...rows);
-    if (rows.length < PAGE) break;
-  }
-  return out;
-}
+type DashboardMetrics = {
+  open_leads: number;
+  active_deals: number;
+  pipeline_value: number;
+  won: number;
+  lost: number;
+  value_by_stage: Record<string, number>;
+  deals_last_30_days: Record<string, number>;
+};
 
 function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const [leads, deals, activities] = await Promise.all([
-        fetchAll<{ id: string; status: string; created_at: string }>(async (from, to) => {
-          const r = await supabase.from("leads").select("id,status,created_at").range(from, to);
-          return { data: r.data };
-        }),
-        fetchAll<{ id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }>(async (from, to) => {
-          const r = await supabase.from("deals").select("id,name,value,stage,created_at,expected_close_date").range(from, to);
-          return { data: r.data as { id: string; name: string; value: number; stage: string; created_at: string; expected_close_date: string | null }[] | null };
-        }),
+      const [metricsRes, tasksRes] = await Promise.all([
+        supabase.rpc("dashboard_metrics"),
         supabase
           .from("activities")
           .select("id,subject,due_date,completed,type")
@@ -48,26 +37,25 @@ function DashboardPage() {
           .order("due_date", { ascending: true })
           .limit(10),
       ]);
-      return {
-        leads,
-        deals,
-        tasks: activities.data ?? [],
+      const metrics = (metricsRes.data as DashboardMetrics | null) ?? {
+        open_leads: 0, active_deals: 0, pipeline_value: 0,
+        won: 0, lost: 0, value_by_stage: {}, deals_last_30_days: {},
       };
+      return { metrics, tasks: tasksRes.data ?? [] };
     },
   });
 
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
-  const openLeads = data.leads.filter((l) => l.status === "new" || l.status === "contacted").length;
-  const activeDeals = data.deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
-  const pipelineValue = activeDeals.reduce((s, d) => s + Number(d.value || 0), 0);
-  const wonCount = data.deals.filter((d) => d.stage === "won").length;
-  const lostCount = data.deals.filter((d) => d.stage === "lost").length;
-  const winRate = wonCount + lostCount > 0 ? (wonCount / (wonCount + lostCount)) * 100 : 0;
+  const m = data.metrics;
+  const openLeads = m.open_leads;
+  const activeDealsCount = m.active_deals;
+  const pipelineValue = Number(m.pipeline_value || 0);
+  const winRate = m.won + m.lost > 0 ? (m.won / (m.won + m.lost)) * 100 : 0;
 
   const valueByStage = DEAL_STAGES.map((s) => ({
     stage: s.label,
-    value: data.deals.filter((d) => d.stage === s.value).reduce((sum, d) => sum + Number(d.value || 0), 0),
+    value: Number(m.value_by_stage?.[s.value] ?? 0),
   }));
 
   // Last 30 days deals
@@ -75,7 +63,7 @@ function DashboardPage() {
   for (let i = 29; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    const count = data.deals.filter((x) => x.created_at?.slice(0, 10) === key).length;
+    const count = Number(m.deals_last_30_days?.[key] ?? 0);
     days.push({ day: key.slice(5), count });
   }
 
@@ -91,7 +79,7 @@ function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <StatCard icon={<UserPlus className="h-4 w-4" />} label="Leads abertos" value={String(openLeads)} />
-        <StatCard icon={<Briefcase className="h-4 w-4" />} label="Negócios ativos" value={String(activeDeals.length)} />
+        <StatCard icon={<Briefcase className="h-4 w-4" />} label="Negócios ativos" value={String(activeDealsCount)} />
         <StatCard icon={<DollarSign className="h-4 w-4" />} label="Valor do pipeline" value={formatCurrency(pipelineValue)} />
         <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Taxa de conversão" value={`${winRate.toFixed(1)}%`} />
       </div>

@@ -10015,6 +10015,7 @@ export type Database = {
         }[]
       }
       current_user_workspaces: { Args: never; Returns: string[] }
+      dashboard_metrics: { Args: never; Returns: Json }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
