@@ -580,9 +580,28 @@ function LeadsHubspotView() {
   };
 
   const refreshLeads = async () => {
-    await qc.invalidateQueries({
+    await qc.refetchQueries({
       predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === "leads",
-      refetchType: "all",
+      type: "all",
+    });
+  };
+
+  const removeDeletedFromCache = (ids: string[]) => {
+    const set = new Set(ids);
+    qc.getQueriesData<{ rows: Lead[]; count: number }>({
+      predicate: (q) =>
+        Array.isArray(q.queryKey) &&
+        q.queryKey[0] === "leads" &&
+        q.queryKey[1] === "hubspot-list",
+    }).forEach(([key, data]) => {
+      if (!data?.rows) return;
+      const filtered = data.rows.filter((r) => !set.has(r.id));
+      const removed = data.rows.length - filtered.length;
+      if (removed === 0) return;
+      qc.setQueryData(key, {
+        rows: filtered,
+        count: Math.max(0, (data.count ?? 0) - removed),
+      });
     });
   };
 
@@ -595,6 +614,7 @@ function LeadsHubspotView() {
       run: async () => {
         await deleteLeadsByIds(supabase, [id]);
         toast.success("Removido");
+        removeDeletedFromCache([id]);
         await refreshLeads();
       },
     });
@@ -612,6 +632,7 @@ function LeadsHubspotView() {
         const n = await deleteLeadsByIds(supabase, ids);
         toast.success(`${n} excluído(s)`);
         clearSelection();
+        removeDeletedFromCache(ids);
         await refreshLeads();
       },
     });
