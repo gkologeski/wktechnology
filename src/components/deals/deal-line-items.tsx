@@ -29,14 +29,18 @@ type LineItem = {
   position: number;
 };
 
+function n(v: unknown) {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
+}
 function lineTotal(li: {
-  quantity: number;
-  unit_price: number;
-  discount_pct: number;
-  tax_rate: number;
+  quantity?: number | null;
+  unit_price?: number | null;
+  discount_pct?: number | null;
+  tax_rate?: number | null;
 }) {
-  const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
-  return sub * (1 + Number(li.tax_rate) / 100);
+  const sub = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+  return sub * (1 + n(li.tax_rate) / 100);
 }
 
 function useLineItems(dealId: string) {
