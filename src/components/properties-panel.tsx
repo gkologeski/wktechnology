@@ -283,7 +283,15 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <div className="flex gap-1">
             <Input
               autoFocus
-              type={p.type === "cep" ? "text" : (p.type ?? "text")}
+              type={
+                p.type === "cep"
+                  ? "text"
+                  : p.type === "currency"
+                    ? "number"
+                    : p.type === "datetime"
+                      ? "datetime-local"
+                      : (p.type ?? "text")
+              }
               inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
               maxLength={p.type === "cep" ? 9 : undefined}
               placeholder={
