@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ImportContractWizard } from "@/components/import-contract-wizard";
+
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   component: ProposalsPage,
