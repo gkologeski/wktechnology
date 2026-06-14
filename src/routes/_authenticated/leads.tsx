@@ -419,11 +419,18 @@ function LeadsHubspotView() {
   const selectAllMatching = async () => {
     try {
       setIsSelectingAll(true);
-      let q = supabase.from("leads").select("id");
-      q = applyFilters(q);
-      const { data, error } = await q.limit(100_000);
-      if (error) throw error;
-      const ids = (data ?? []).map((r: { id: string }) => r.id);
+      const ids: string[] = [];
+      const CHUNK = 1000;
+      for (let offset = 0; ; offset += CHUNK) {
+        let q = supabase.from("leads").select("id");
+        q = applyFilters(q);
+        const { data, error } = await q.range(offset, offset + CHUNK - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as { id: string }[];
+        for (const r of batch) ids.push(r.id);
+        if (batch.length < CHUNK) break;
+        if (ids.length >= 100_000) break;
+      }
       setSelectedIds(new Set(ids));
       toast.success(`${ids.length} registros selecionados`);
     } catch (e) {

@@ -263,23 +263,33 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const selectAllMatching = async () => {
     try {
       setIsSelectingAll(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q = (supabase as any).from(table).select("id");
-      q = applyFilters(q, view.filters);
-      if (lockedFilters && lockedFilters.length > 0) {
-        q = applyFilters(q, { type: "group", op: "and", conditions: lockedFilters });
-      }
-      const term = debouncedSearch.trim();
-      if (term && searchKeys && searchKeys.length > 0) {
-        const safe = term.replace(/[,()]/g, " ").trim();
-        if (safe) {
-          const parts = searchKeys.map((k) => `${String(k)}.ilike.%${safe}%`);
-          q = q.or(parts.join(","));
+      const buildQuery = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q = (supabase as any).from(table).select("id");
+        q = applyFilters(q, view.filters);
+        if (lockedFilters && lockedFilters.length > 0) {
+          q = applyFilters(q, { type: "group", op: "and", conditions: lockedFilters });
         }
+        const term = debouncedSearch.trim();
+        if (term && searchKeys && searchKeys.length > 0) {
+          const safe = term.replace(/[,()]/g, " ").trim();
+          if (safe) {
+            const parts = searchKeys.map((k) => `${String(k)}.ilike.%${safe}%`);
+            q = q.or(parts.join(","));
+          }
+        }
+        return q;
+      };
+      const allIds: string[] = [];
+      const CHUNK = 1000;
+      for (let offset = 0; ; offset += CHUNK) {
+        const { data, error } = await buildQuery().range(offset, offset + CHUNK - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as { id: string }[];
+        for (const r of batch) allIds.push(r.id);
+        if (batch.length < CHUNK) break;
+        if (allIds.length >= 100_000) break;
       }
-      const { data, error } = await q.limit(100_000);
-      if (error) throw error;
-      const allIds = (data ?? []).map((r: { id: string }) => r.id);
       setSelectedIds(new Set(allIds));
       toast.success(`${allIds.length} registros selecionados`);
     } catch (e) {
