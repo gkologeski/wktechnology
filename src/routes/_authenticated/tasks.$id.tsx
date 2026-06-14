@@ -135,7 +135,7 @@ function TaskDetail() {
               { key: "subject", label: "Assunto", primary: true },
               { key: "task_status", label: "Status", primary: true },
               { key: "task_priority", label: "Prioridade", primary: true },
-              { key: "due_date", label: "Vencimento", primary: true },
+              { key: "due_date", label: "Vencimento", type: "datetime", primary: true },
               { key: "body", label: "Descrição" },
             ]}
             onSaved={load}
