@@ -141,7 +141,13 @@ export function splitOwnerIds(ids: string[]): { userIds: string[]; hubspotIds: s
 }
 
 /** Constrói cláusula para Supabase com suporte a owner_id e hubspot_owner_id. */
-export function applyOwnerFilter<T extends { in: Function; is: Function; or: Function }>(
+export function applyOwnerFilter<
+  T extends {
+    in: (...args: unknown[]) => unknown;
+    is: (...args: unknown[]) => unknown;
+    or: (...args: unknown[]) => unknown;
+  },
+>(
   query: T,
   value: OwnerFilterValue,
 ): T {
