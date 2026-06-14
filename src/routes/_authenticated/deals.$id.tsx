@@ -128,7 +128,6 @@ function DealDetail() {
           row={deal as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "name", label: "Nome", primary: true },
-            { key: "name", label: "Nome", primary: true },
             { key: "value", label: "Valor", type: "currency", primary: true },
             { key: "currency", label: "Moeda", primary: true },
             { key: "stage", label: "Etapa", primary: true },
