@@ -343,15 +343,17 @@ function ContactsHubspotView() {
       {
         key: "owner",
         label: "Responsável",
-        render: (c) =>
-          c.owner_id ? (
-            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
-              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+        render: (c) => {
+          const responsibleId = c.assigned_user_id ?? c.owner_id;
+          return responsibleId ? (
+            <div className="flex items-center gap-2" title={nameFor(responsibleId)}>
+              <InitialsAvatar text={initialsFor(responsibleId)} seed={responsibleId} size={6} />
+              <span className="truncate text-sm">{nameFor(responsibleId)}</span>
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
+        },
       },
       {
         key: "updated_at",
