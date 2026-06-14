@@ -67,7 +67,6 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
         >
           <div className="flex items-center gap-3">
             {logoUrl ? (
-              
               <img src={logoUrl} alt="" className="h-6 w-6 rounded object-contain" />
             ) : (
               <div className="h-6 w-6 rounded" style={{ background: primary }} />
