@@ -29,14 +29,18 @@ type LineItem = {
   position: number;
 };
 
+function n(v: unknown) {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
+}
 function lineTotal(li: {
-  quantity: number;
-  unit_price: number;
-  discount_pct: number;
-  tax_rate: number;
+  quantity?: number | null;
+  unit_price?: number | null;
+  discount_pct?: number | null;
+  tax_rate?: number | null;
 }) {
-  const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
-  return sub * (1 + Number(li.tax_rate) / 100);
+  const sub = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+  return sub * (1 + n(li.tax_rate) / 100);
 }
 
 function useLineItems(dealId: string) {
@@ -92,8 +96,8 @@ export function DealLineItems({
       {items.map((li) => (
         <li key={li.id} className="flex items-baseline justify-between gap-3 py-2">
           <div className="min-w-0 truncate">
-            <span className="text-sm">{li.name}</span>{" "}
-            <span className="text-xs text-muted-foreground">x{Number(li.quantity)}</span>
+            <span className="text-sm">{li.name || "—"}</span>{" "}
+            <span className="text-xs text-muted-foreground">x{n(li.quantity)}</span>
           </div>
           <div className="text-sm tabular-nums shrink-0">
             {formatCurrency(lineTotal(li), currency)}
@@ -201,14 +205,14 @@ function LineItemsEditorBody({
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
 
-  const subtotal = items.reduce((s, li) => s + Number(li.quantity) * Number(li.unit_price), 0);
+  const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
   const discount = items.reduce(
-    (s, li) => s + Number(li.quantity) * Number(li.unit_price) * (Number(li.discount_pct) / 100),
+    (s, li) => s + n(li.quantity) * n(li.unit_price) * (n(li.discount_pct) / 100),
     0,
   );
   const tax = items.reduce((s, li) => {
-    const base = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
-    return s + base * (Number(li.tax_rate) / 100);
+    const base = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+    return s + base * (n(li.tax_rate) / 100);
   }, 0);
   const total = items.reduce((s, li) => s + lineTotal(li), 0);
 
@@ -252,10 +256,13 @@ function LineItemsEditorBody({
             <div key={li.id} className="rounded-md border p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <Input
+                  key={`${li.id}-name`}
                   className="flex-1"
-                  defaultValue={li.name}
+                  defaultValue={li.name ?? ""}
+                  placeholder="Nome do item"
                   onBlur={(e) =>
-                    e.target.value !== li.name && update(li.id, { name: e.target.value })
+                    e.target.value !== (li.name ?? "") &&
+                    update(li.id, { name: e.target.value })
                   }
                 />
                 <Button variant="ghost" size="icon" onClick={() => remove(li.id)}>
@@ -265,25 +272,25 @@ function LineItemsEditorBody({
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
                   label="Qtd"
-                  value={li.quantity}
+                  value={n(li.quantity)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { quantity: v })}
                 />
                 <LabeledNumber
                   label="Preço"
-                  value={li.unit_price}
+                  value={n(li.unit_price)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { unit_price: v })}
                 />
                 <LabeledNumber
                   label="Desc %"
-                  value={li.discount_pct}
+                  value={n(li.discount_pct)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { discount_pct: v })}
                 />
                 <LabeledNumber
                   label="Imp %"
-                  value={li.tax_rate}
+                  value={n(li.tax_rate)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { tax_rate: v })}
                 />
