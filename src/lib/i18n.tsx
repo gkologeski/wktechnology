@@ -88,7 +88,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     try {
       const v = localStorage.getItem(KEY) as Locale | null;
       if (v && dict[v]) setLocaleState(v);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, []);
   const setLocale = (l: Locale) => {
     setLocaleState(l);
