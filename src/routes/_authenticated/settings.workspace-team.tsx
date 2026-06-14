@@ -95,13 +95,31 @@ function WorkspaceTeamPage() {
   });
 
   const remove = useMutation({
-    mutationFn: (uid: string) => removeFn({ data: { user_id: uid } }),
-    onSuccess: () => {
-      toast.success("Membro removido.");
+    mutationFn: (p: { uid: string; reassign_to: string | null }) =>
+      removeFn({ data: { user_id: p.uid, reassign_to: p.reassign_to } }),
+    onSuccess: (res) => {
+      const n = (res as { reassigned?: number })?.reassigned ?? 0;
+      toast.success(
+        n > 0
+          ? `Membro removido. ${n} ${n === 1 ? "registro reatribuído" : "registros reatribuídos"}.`
+          : "Membro removido.",
+      );
+      setRemoveTarget(null);
+      setReassignTo("__none__");
       qc.invalidateQueries({ queryKey: ["workspace-team"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
+
+  const openRemoveDialog = async (uid: string, label: string) => {
+    try {
+      const res = await countFn({ data: { user_id: uid } });
+      setReassignTo("__none__");
+      setRemoveTarget({ user_id: uid, label, counts: res.counts, total: res.total });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao consultar registros");
+    }
+  };
 
   const changeRole = useMutation({
     mutationFn: (p: { uid: string; role: Role }) =>
