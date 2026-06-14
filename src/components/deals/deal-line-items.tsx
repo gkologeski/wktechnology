@@ -96,8 +96,8 @@ export function DealLineItems({
       {items.map((li) => (
         <li key={li.id} className="flex items-baseline justify-between gap-3 py-2">
           <div className="min-w-0 truncate">
-            <span className="text-sm">{li.name}</span>{" "}
-            <span className="text-xs text-muted-foreground">x{Number(li.quantity)}</span>
+            <span className="text-sm">{li.name || "—"}</span>{" "}
+            <span className="text-xs text-muted-foreground">x{n(li.quantity)}</span>
           </div>
           <div className="text-sm tabular-nums shrink-0">
             {formatCurrency(lineTotal(li), currency)}
