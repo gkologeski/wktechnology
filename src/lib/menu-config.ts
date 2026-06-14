@@ -43,8 +43,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
-      { title: "Widget do site", url: "/settings/widget", icon: Megaphone, need: "admin" },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
       { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
