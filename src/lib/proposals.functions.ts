@@ -37,13 +37,14 @@ export const createProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
     title: z.string().min(1).max(255),
-    body: z.string().max(100_000).default(""),
+    body: z.string().max(500_000).default(""),
     dealId: z.string().uuid().nullable().optional(),
     contactId: z.string().uuid().nullable().optional(),
     companyId: z.string().uuid().nullable().optional(),
     totalAmount: z.number().nullable().optional(),
     currency: z.string().min(3).max(3).default("BRL"),
     expiresAt: z.string().nullable().optional(),
+    variables: z.record(z.string(), z.any()).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -59,10 +60,12 @@ export const createProposal = createServerFn({ method: "POST" })
       total_amount: data.totalAmount ?? null,
       currency: data.currency,
       expires_at: data.expiresAt ?? null,
+      variables: data.variables ?? {},
     }).select("*").single();
     if (error) throw new Error(error.message);
     return prop;
   });
+
 
 export const updateProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
