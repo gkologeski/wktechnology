@@ -39,43 +39,64 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
 
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
-    label: "Trabalhar", items: [
-      { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
+    label: "Captar", items: [
       { title: "Leads", url: "/leads", icon: UserPlus },
-      
+      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
+      { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
+      { title: "Widget do site", url: "/settings/widget", icon: Megaphone, need: "admin" },
+      { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
+      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
+      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
+      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
+    ],
+  },
+  {
+    label: "Relacionar", items: [
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
-      { title: "Negócios", url: "/deals", icon: Briefcase },
-      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
-      { title: "Tarefas", url: "/tasks", icon: ListTodo },
-      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
-      { title: "Reuniões", url: "/meetings", icon: Video },
-      { title: "Propostas", url: "/proposals", icon: FileText },
-      { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
       { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
       { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
       { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
+      { title: "Reuniões", url: "/meetings", icon: Video },
+      { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
+      { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+      { title: "Conexão de Email", url: "/settings/email", icon: Mail },
     ],
   },
   {
-    label: "Analisar", items: [
+    label: "Vender", items: [
+      { title: "Negócios", url: "/deals", icon: Briefcase },
+      { title: "Cotações", url: "/settings/quotes", icon: FileText },
+      { title: "Propostas", url: "/proposals", icon: FileText },
+      { title: "Produtos", url: "/settings/products", icon: Package, need: "manager" },
+      { title: "Faturas", url: "/invoices", icon: FileText },
+      { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin" },
+    ],
+  },
+  {
+    label: "Atender", items: [
+      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
+      { title: "Tarefas", url: "/tasks", icon: ListTodo },
+      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
+      { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager" },
+    ],
+  },
+  {
+    label: "Otimizar", items: [
+      { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager" },
       { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager" },
       { title: "Analytics", url: "/analytics", icon: TrendingUp, need: "manager" },
-    ],
-  },
-  {
-    label: "Engajar", items: [
-      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
-      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
-      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
-      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
-      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
-      { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+      { title: "Workflows", url: "/settings/workflows", icon: Workflow, need: "manager" },
+      { title: "Sequências", url: "/settings/sequences", icon: RouteIcon, need: "manager" },
+      { title: "Distribuição", url: "/settings/rotation", icon: RouteIcon, need: "manager" },
+      { title: "SLA por etapa", url: "/settings/sla", icon: Activity, need: "manager" },
+      { title: "Pontuação", url: "/settings/scoring", icon: Star, need: "manager" },
+      { title: "Macros", url: "/settings/macros", icon: LayoutTemplate, need: "manager" },
     ],
   },
 ];
