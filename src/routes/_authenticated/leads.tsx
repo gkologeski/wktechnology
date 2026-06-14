@@ -1269,5 +1269,3 @@ function ScoreCell({ score }: { score: number }) {
   );
 }
 
-// Silence unused import warning — used only for memo stability if grown
-useMemo;
