@@ -205,14 +205,14 @@ function LineItemsEditorBody({
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
 
-  const subtotal = items.reduce((s, li) => s + Number(li.quantity) * Number(li.unit_price), 0);
+  const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
   const discount = items.reduce(
-    (s, li) => s + Number(li.quantity) * Number(li.unit_price) * (Number(li.discount_pct) / 100),
+    (s, li) => s + n(li.quantity) * n(li.unit_price) * (n(li.discount_pct) / 100),
     0,
   );
   const tax = items.reduce((s, li) => {
-    const base = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
-    return s + base * (Number(li.tax_rate) / 100);
+    const base = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+    return s + base * (n(li.tax_rate) / 100);
   }, 0);
   const total = items.reduce((s, li) => s + lineTotal(li), 0);
 
