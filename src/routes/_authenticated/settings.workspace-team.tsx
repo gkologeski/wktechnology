@@ -330,6 +330,87 @@ function WorkspaceTeamPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!removeTarget}
+        onOpenChange={(v) => {
+          if (!v) {
+            setRemoveTarget(null);
+            setReassignTo("__none__");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover {removeTarget?.label}?</DialogTitle>
+            <DialogDescription>
+              O membro perderá acesso ao workspace. Os registros não serão excluídos.
+            </DialogDescription>
+          </DialogHeader>
+          {removeTarget && (
+            <div className="space-y-4">
+              {removeTarget.total > 0 ? (
+                <>
+                  <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                    <div className="font-medium mb-1">
+                      Este membro é responsável por {removeTarget.total}{" "}
+                      {removeTarget.total === 1 ? "registro" : "registros"}:
+                    </div>
+                    {Object.entries(removeTarget.counts)
+                      .filter(([, n]) => n > 0)
+                      .map(([t, n]) => (
+                        <div key={t} className="flex justify-between text-muted-foreground">
+                          <span className="capitalize">{t}</span>
+                          <span>{n}</span>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reatribuir para</Label>
+                    <Select value={reassignTo} onValueChange={setReassignTo}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Deixar sem responsável</SelectItem>
+                        {(q.data?.members ?? [])
+                          .filter((m) => m.user_id !== removeTarget.user_id)
+                          .map((m) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                              {m.full_name || m.email || m.user_id}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Este membro não é responsável por nenhum registro.
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRemoveTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() =>
+                removeTarget &&
+                remove.mutate({
+                  uid: removeTarget.user_id,
+                  reassign_to: reassignTo === "__none__" ? null : reassignTo,
+                })
+              }
+            >
+              {remove.isPending ? "Removendo…" : "Remover membro"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
