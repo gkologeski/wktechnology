@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -30,15 +29,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Plus,
-  ExternalLink,
-  Copy,
-  RefreshCw,
-  Trash2,
-  Send,
-  CreditCard,
-  FileText,
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, ExternalLink, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,12 +43,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const NO_TEMPLATE = "__none__";
 
+type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
+
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
   sent: "Enviada",
   accepted: "Aceita",
   declined: "Recusada",
   expired: "Expirada",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  draft: "bg-muted-foreground/40",
+  sent: "bg-blue-500",
+  accepted: "bg-emerald-500",
+  declined: "bg-rose-500",
+  expired: "bg-rose-500",
 };
 
 export function DealQuotes({ dealId }: { dealId: string }) {
@@ -92,7 +99,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
 
   const defaultTemplateId = templates.find((t) => t.is_default)?.id ?? "";
 
-  // Inicializa o seletor com o template padrão quando o diálogo abre.
   function openDialog() {
     setDraft((d) => ({ ...d, templateId: defaultTemplateId }));
     setOpen(true);
@@ -132,12 +138,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function changeTemplate(id: string, templateId: string | null) {
-    await update({ data: { id, patch: { template_id: templateId } } });
-    toast.success("Modelo atualizado.");
-    qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
-  }
-
   function publicUrl(token: string) {
     return `${window.location.origin}/quote/${token}`;
   }
@@ -147,6 +147,13 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   }
   async function markSent(id: string) {
     await update({ data: { id, patch: { status: "sent", sent_at: new Date().toISOString() } } });
+    qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+  }
+  async function markAccepted(id: string) {
+    await update({
+      data: { id, patch: { status: "accepted", accepted_at: new Date().toISOString() } },
+    });
+    toast.success("Cotação marcada como aceita.");
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
   }
   async function regenerate(id: string) {
@@ -172,13 +179,22 @@ export function DealQuotes({ dealId }: { dealId: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">
+          {quotes.length === 0 ? "Nenhuma cotação" : `${quotes.length} cotação(ões)`}
+        </span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={hasLineItems ? -1 : 0}>
-                <Button size="sm" onClick={openDialog} disabled={!hasLineItems}>
-                  <Plus className="h-4 w-4 mr-1" /> Nova cotação
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="h-auto p-0"
+                  onClick={openDialog}
+                  disabled={!hasLineItems}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
                 </Button>
               </span>
             </TooltipTrigger>
@@ -193,104 +209,96 @@ export function DealQuotes({ dealId }: { dealId: string }) {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : quotes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhuma cotação gerada. Cotações usam os itens atuais do negócio.
-        </p>
-      ) : (
+      ) : quotes.length === 0 ? null : (
         <div className="space-y-2">
-          {quotes.map((q) => (
-            <div key={q.id} className="rounded-md border p-3 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{q.title || q.number}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {q.number} · {formatDateTime(q.created_at)}
+          {quotes.map((q) => {
+            const status = (q.status as QuoteStatus) ?? "draft";
+            const expiredOrExpiring =
+              status === "expired"
+                ? `Expirou: ${q.valid_until ? formatDateTime(q.valid_until) : "—"}`
+                : q.valid_until
+                  ? `Validade: ${formatDateTime(q.valid_until)}`
+                  : null;
+            return (
+              <div key={q.id} className="rounded-md border p-3 group">
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.open(publicUrl(q.public_token), "_blank")}
+                    className="min-w-0 text-left flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <span className="font-semibold truncate">{q.title || q.number}</span>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0"
+                        aria-label="Ações"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem
+                        onSelect={() => window.open(publicUrl(q.public_token), "_blank")}
+                      >
+                        Detalhes
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => copyLink(q.public_token)}>
+                        Copiar link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {status === "draft" && (
+                        <DropdownMenuItem onSelect={() => markSent(q.id)}>
+                          Marcar como enviada
+                        </DropdownMenuItem>
+                      )}
+                      {status !== "accepted" && (
+                        <DropdownMenuItem onSelect={() => markAccepted(q.id)}>
+                          Marcar como aceita
+                        </DropdownMenuItem>
+                      )}
+                      {!q.paid_at && (
+                        <DropdownMenuItem onSelect={() => genPayLink(q.id)}>
+                          {q.payment_link_url
+                            ? "Regerar link de pagamento"
+                            : "Gerar link de pagamento"}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onSelect={() => regenerate(q.id)}>
+                        Gerar novo link público
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => remove(q.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="mt-2 space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status] ?? ""}`} />
+                    <span>{STATUS_LABEL[status] ?? status}</span>
+                  </div>
+                  {expiredOrExpiring && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                      <span className="text-xs">{expiredOrExpiring}</span>
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground tabular-nums pt-0.5">
+                    {q.number} · {formatCurrency(Number(q.total), q.currency)}
                   </div>
                 </div>
-                <Badge
-                  variant={
-                    q.status === "accepted"
-                      ? "default"
-                      : q.status === "declined"
-                        ? "destructive"
-                        : q.status === "sent"
-                          ? "secondary"
-                          : "outline"
-                  }
-                >
-                  {STATUS_LABEL[q.status] ?? q.status}
-                </Badge>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold tabular-nums">
-                  {formatCurrency(Number(q.total), q.currency)}
-                </span>
-                {q.valid_until && (
-                  <span className="text-xs text-muted-foreground">
-                    Validade {formatDateTime(q.valid_until)}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <FileText className="h-3 w-3" />
-                  <span>Modelo:</span>
-                  <Select
-                    value={q.template_id ?? NO_TEMPLATE}
-                    onValueChange={(v) => changeTemplate(q.id, v === NO_TEMPLATE ? null : v)}
-                  >
-                    <SelectTrigger className="h-6 w-[200px] text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_TEMPLATE}>Layout padrão</SelectItem>
-                      {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                          {t.is_default ? " (padrão)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.open(publicUrl(q.public_token), "_blank")}
-                >
-                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => copyLink(q.public_token)}>
-                  <Copy className="h-3.5 w-3.5 mr-1" /> Copiar link
-                </Button>
-                {q.status === "draft" && (
-                  <Button size="sm" variant="outline" onClick={() => markSent(q.id)}>
-                    <Send className="h-3.5 w-3.5 mr-1" /> Marcar como enviada
-                  </Button>
-                )}
-                {!q.paid_at && (
-                  <Button size="sm" variant="outline" onClick={() => genPayLink(q.id)}>
-                    <CreditCard className="h-3.5 w-3.5 mr-1" />
-                    {q.payment_link_url ? "Regerar link de pagamento" : "Gerar link de pagamento"}
-                  </Button>
-                )}
-                {q.paid_at && (
-                  <Badge variant="default" className="ml-1">
-                    Paga
-                  </Badge>
-                )}
-                <Button size="sm" variant="ghost" onClick={() => regenerate(q.id)}>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1" /> Novo link
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => remove(q.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
