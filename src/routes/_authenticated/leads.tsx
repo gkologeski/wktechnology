@@ -415,6 +415,24 @@ function LeadsHubspotView() {
     });
   const clearSelection = () => setSelectedIds(new Set());
 
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
+  const selectAllMatching = async () => {
+    try {
+      setIsSelectingAll(true);
+      let q = supabase.from("leads").select("id");
+      q = applyFilters(q);
+      const { data, error } = await q.limit(100_000);
+      if (error) throw error;
+      const ids = (data ?? []).map((r: { id: string }) => r.id);
+      setSelectedIds(new Set(ids));
+      toast.success(`${ids.length} registros selecionados`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao selecionar todos");
+    } finally {
+      setIsSelectingAll(false);
+    }
+  };
+
   const onSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else {
