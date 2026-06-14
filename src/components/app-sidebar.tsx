@@ -29,15 +29,21 @@ export function AppSidebar() {
 
   const visibleGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const matches = (title: string) => !q || title.toLowerCase().includes(q);
     return SIDEBAR_GROUPS
       .map((g) => ({
         ...g,
         items: g.items
           .filter((i) => canSee(i.need, perms))
-          .filter((i) => !q || i.title.toLowerCase().includes(q)),
+          .map((i) => ({
+            ...i,
+            children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
+          }))
+          .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
       }))
       .filter((g) => g.items.length > 0);
   }, [query, isAdmin, isManager, isPlatformAdmin]);
+
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
@@ -86,8 +92,11 @@ export function AppSidebar() {
                 <div className="rounded-2xl border border-border bg-card p-1.5 shadow-sm group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:p-0">
                   <SidebarMenu className="gap-0.5">
                     {group.items.map((it) => {
-                      const active = isActive(it.url);
+                      const hasChildren = !!(it.children && it.children.length > 0);
+                      // Pai com filhos: ativo apenas em match exato (evita duplo destaque com filho ativo)
+                      const active = hasChildren ? path === it.url : isActive(it.url);
                       const Icon = it.icon;
+                      const anyChildActive = hasChildren && it.children!.some((c) => isActive(c.url));
                       return (
                         <SidebarMenuItem key={it.url}>
                           <SidebarMenuButton
@@ -105,7 +114,7 @@ export function AppSidebar() {
                               <span
                                 className={cn(
                                   "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
-                                  active
+                                  active || anyChildActive
                                     ? "bg-primary/15 text-primary"
                                     : "bg-muted text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
                                 )}
@@ -118,10 +127,49 @@ export function AppSidebar() {
                               )}
                             </Link>
                           </SidebarMenuButton>
+
+                          {hasChildren && (
+                            <ul
+                              className={cn(
+                                "mt-0.5 ml-[18px] border-l pl-2 space-y-0.5 group-data-[collapsible=icon]:hidden",
+                                anyChildActive ? "border-primary/40" : "border-border/60",
+                              )}
+                            >
+                              {it.children!.map((c) => {
+                                const cActive = isActive(c.url);
+                                const CIcon = c.icon;
+                                return (
+                                  <li key={c.url}>
+                                    <Link
+                                      to={c.url}
+                                      className={cn(
+                                        "group/sub flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+                                        cActive
+                                          ? "bg-primary/10 text-primary font-semibold"
+                                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                                      )}
+                                    >
+                                      <CIcon
+                                        className={cn(
+                                          "h-3.5 w-3.5 shrink-0",
+                                          cActive ? "text-primary" : "text-muted-foreground group-hover/sub:text-foreground",
+                                        )}
+                                      />
+                                      <span className="truncate">{c.title}</span>
+                                      {cActive && (
+                                        <span className="ml-auto h-4 w-1 rounded-full bg-primary" />
+                                      )}
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
                         </SidebarMenuItem>
                       );
                     })}
                   </SidebarMenu>
+
                 </div>
               </section>
             ))

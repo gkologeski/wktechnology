@@ -24,8 +24,10 @@ export type SidebarItem = {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  children?: SidebarItem[];
 };
 export type SidebarGroup = { label: string; items: SidebarItem[] };
+
 
 export type SettingsItem = {
   to: string;
@@ -55,18 +57,27 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Relacionar", items: [
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
-      { title: "Inbox unificada", url: "/inbox", icon: Inbox },
-      { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
-      { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
-      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+      {
+        title: "Inbox unificada", url: "/inbox", icon: Inbox,
+        children: [
+          { title: "Email", url: "/inbox/email", icon: Mail },
+          { title: "WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
+          { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+        ],
+      },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
-      { title: "Reuniões", url: "/meetings", icon: Video },
-      { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
-      { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+      {
+        title: "Reuniões", url: "/meetings", icon: Video,
+        children: [
+          { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
+          { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+        ],
+      },
       { title: "Conexão de Email", url: "/settings/email", icon: Mail },
     ],
   },
+
   {
     label: "Vender", items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
@@ -80,8 +91,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Atender", items: [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
-      { title: "Tarefas", url: "/tasks", icon: ListTodo },
-      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
+      {
+        title: "Tarefas", url: "/tasks", icon: ListTodo,
+        children: [
+          { title: "Filas", url: "/tasks/queues", icon: ListChecks },
+        ],
+      },
+
       { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager" },
     ],
   },
@@ -205,8 +221,19 @@ export function permsForRole(
 }
 
 export function visibleSidebarUrls(perms: Perms): string[] {
-  return SIDEBAR_GROUPS.flatMap((g) => g.items.filter((i) => canSee(i.need, perms)).map((i) => i.url));
+  const out: string[] = [];
+  for (const g of SIDEBAR_GROUPS) {
+    for (const i of g.items) {
+      if (!canSee(i.need, perms)) continue;
+      out.push(i.url);
+      for (const c of i.children ?? []) {
+        if (canSee(c.need, perms)) out.push(c.url);
+      }
+    }
+  }
+  return out;
 }
+
 
 export function visibleSidebarPlatformUrls(perms: Perms): string[] {
   return SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms)).map((i) => i.url);
