@@ -136,14 +136,14 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
 
       const imagePaths: string[] = [];
       for (const img of images) {
-        const ext = (img.file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+        const ext =
+          (img.file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") ||
+          "png";
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("bug-reports")
-          .upload(path, img.file, {
-            contentType: img.file.type || `image/${ext}`,
-            upsert: false,
-          });
+        const { error: upErr } = await supabase.storage.from("bug-reports").upload(path, img.file, {
+          contentType: img.file.type || `image/${ext}`,
+          upsert: false,
+        });
         if (upErr) throw upErr;
         imagePaths.push(path);
       }
@@ -183,7 +183,8 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle>Abrir chamado</DialogTitle>
             <DialogDescription>
-              Descreva o problema ou sugira uma melhoria. Você pode anexar imagens e/ou uma gravação de tela.
+              Descreva o problema ou sugira uma melhoria. Você pode anexar imagens e/ou uma gravação
+              de tela.
             </DialogDescription>
           </DialogHeader>
 
@@ -191,10 +192,14 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {BUG_KINDS.map((k) => (
-                    <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                    <SelectItem key={k.value} value={k.value}>
+                      {k.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -205,12 +210,19 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
                 <Label>Categoria</Label>
                 <Select
                   value={category}
-                  onValueChange={(v) => { setCategory(v); setSubtype(""); }}
+                  onValueChange={(v) => {
+                    setCategory(v);
+                    setSubtype("");
+                  }}
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
                     {BUG_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -218,10 +230,14 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
               <div className="space-y-2">
                 <Label>Subtipo</Label>
                 <Select value={subtype} onValueChange={setSubtype} disabled={!category}>
-                  <SelectTrigger><SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} />
+                  </SelectTrigger>
                   <SelectContent>
                     {subtypes.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -310,7 +326,8 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
                 <div>
                   <p className="text-sm font-medium">Gravação de tela (opcional)</p>
                   <p className="text-xs text-muted-foreground">
-                    Ao iniciar, esta janela será ocultada para você gravar a tela livremente. Limite de 2 minutos.
+                    Ao iniciar, esta janela será ocultada para você gravar a tela livremente. Limite
+                    de 2 minutos.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -333,7 +350,11 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
 
               {recorder.status === "stopped" && recorder.previewUrl && (
                 <div className="space-y-2">
-                  <video src={recorder.previewUrl} controls className="w-full rounded border bg-black" />
+                  <video
+                    src={recorder.previewUrl}
+                    controls
+                    className="w-full rounded border bg-black"
+                  />
                   <div className="flex gap-2">
                     <Button type="button" variant="ghost" size="sm" onClick={recorder.reset}>
                       <X className="h-4 w-4 mr-2" /> Descartar e regravar

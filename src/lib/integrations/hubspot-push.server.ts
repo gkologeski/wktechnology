@@ -60,10 +60,16 @@ async function hsRequest(path: string, init: RequestInit = {}): Promise<Record<s
   });
   const txt = await res.text();
   let body: unknown = null;
-  try { body = txt ? JSON.parse(txt) : null; } catch { body = txt; }
+  try {
+    body = txt ? JSON.parse(txt) : null;
+  } catch {
+    body = txt;
+  }
   if (res.status === 404) throw Object.assign(new Error("hubspot_not_found"), { status: 404 });
   if (!res.ok) {
-    throw new Error(`HubSpot [${res.status}] ${typeof body === "string" ? body : JSON.stringify(body)}`);
+    throw new Error(
+      `HubSpot [${res.status}] ${typeof body === "string" ? body : JSON.stringify(body)}`,
+    );
   }
   return (body ?? {}) as Record<string, unknown>;
 }
@@ -101,7 +107,7 @@ function toHubspotProps(entity: SyncEntity, row: Record<string, unknown>): Recor
 const SELECT_BY_ENTITY: Record<SyncEntity, string> = {
   contact: "id, first_name, last_name, email, phone, company_name, updated_at",
   company: "id, name, domain, website, industry, phone, city, state, updated_at",
-  deal:    "id, name, value, close_date, updated_at",
+  deal: "id, name, value, close_date, updated_at",
 };
 
 export type PushResult = {
@@ -120,7 +126,15 @@ export async function pushEntity(
   entity: SyncEntity,
   limit = 50,
 ): Promise<PushResult> {
-  const out: PushResult = { entity, scanned: 0, created: 0, updated: 0, conflicts: 0, failed: 0, errors: [] };
+  const out: PushResult = {
+    entity,
+    scanned: 0,
+    created: 0,
+    updated: 0,
+    conflicts: 0,
+    failed: 0,
+    errors: [],
+  };
   const table = LOCAL_TABLE_BY_ENTITY[entity];
   const hsObj = HS_OBJECT_BY_ENTITY[entity];
   const props = HS_PROPS_BY_ENTITY[entity].join(",");
@@ -145,7 +159,15 @@ export async function pushEntity(
     .eq("owner_id", ownerId)
     .eq("entity", entity)
     .in("local_id", localIds);
-  const stateByLocal = new Map<string, { id: string; hubspot_id: string; local_updated_at: string | null; remote_updated_at: string | null }>();
+  const stateByLocal = new Map<
+    string,
+    {
+      id: string;
+      hubspot_id: string;
+      local_updated_at: string | null;
+      remote_updated_at: string | null;
+    }
+  >();
   for (const s of stateRows ?? []) {
     stateByLocal.set(s.local_id as string, {
       id: s.id as string,
@@ -169,11 +191,16 @@ export async function pushEntity(
           body: JSON.stringify({ properties: propsPayload }),
         });
         const hsId = String((created as { id?: unknown }).id ?? "");
-        const remoteUpdated = ((created as { properties?: { hs_lastmodifieddate?: string } }).properties?.hs_lastmodifieddate)
-          ?? (created as { updatedAt?: string }).updatedAt
-          ?? new Date().toISOString();
+        const remoteUpdated =
+          (created as { properties?: { hs_lastmodifieddate?: string } }).properties
+            ?.hs_lastmodifieddate ??
+          (created as { updatedAt?: string }).updatedAt ??
+          new Date().toISOString();
         await supabase.from("hubspot_sync_state").insert({
-          owner_id: ownerId, entity, local_id: localId, hubspot_id: hsId,
+          owner_id: ownerId,
+          entity,
+          local_id: localId,
+          hubspot_id: hsId,
           direction: "both",
           local_updated_at: localUpdated,
           remote_updated_at: remoteUpdated,
@@ -189,7 +216,9 @@ export async function pushEntity(
       // (b) com mapping → busca remoto e compara
       let remote: Record<string, unknown> | null = null;
       try {
-        remote = await hsRequest(`/crm/v3/objects/${hsObj}/${state.hubspot_id}?properties=${props}`);
+        remote = await hsRequest(
+          `/crm/v3/objects/${hsObj}/${state.hubspot_id}?properties=${props}`,
+        );
       } catch (e) {
         const err = e as { status?: number; message?: string };
         if (err.status === 404) {
@@ -199,44 +228,59 @@ export async function pushEntity(
             body: JSON.stringify({ properties: propsPayload }),
           });
           const newHsId = String((created as { id?: unknown }).id ?? "");
-          await supabase.from("hubspot_sync_state").update({
-            hubspot_id: newHsId,
-            local_updated_at: localUpdated,
-            remote_updated_at: new Date().toISOString(),
-            last_pushed_at: new Date().toISOString(),
-            last_synced_at: new Date().toISOString(),
-            conflict_status: "ok", conflict_reason: null,
-          } as never).eq("id", state.id);
+          await supabase
+            .from("hubspot_sync_state")
+            .update({
+              hubspot_id: newHsId,
+              local_updated_at: localUpdated,
+              remote_updated_at: new Date().toISOString(),
+              last_pushed_at: new Date().toISOString(),
+              last_synced_at: new Date().toISOString(),
+              conflict_status: "ok",
+              conflict_reason: null,
+            } as never)
+            .eq("id", state.id);
           out.created++;
           continue;
         }
         throw e;
       }
 
-      const remoteLastMod = ((remote as { properties?: { hs_lastmodifieddate?: string } }).properties?.hs_lastmodifieddate)
-        ?? (remote as { updatedAt?: string }).updatedAt
-        ?? null;
+      const remoteLastMod =
+        (remote as { properties?: { hs_lastmodifieddate?: string } }).properties
+          ?.hs_lastmodifieddate ??
+        (remote as { updatedAt?: string }).updatedAt ??
+        null;
 
-      const localChanged = !state.local_updated_at || new Date(localUpdated) > new Date(state.local_updated_at);
-      const remoteChanged = !!remoteLastMod && (!state.remote_updated_at || new Date(remoteLastMod) > new Date(state.remote_updated_at));
+      const localChanged =
+        !state.local_updated_at || new Date(localUpdated) > new Date(state.local_updated_at);
+      const remoteChanged =
+        !!remoteLastMod &&
+        (!state.remote_updated_at || new Date(remoteLastMod) > new Date(state.remote_updated_at));
 
       if (!localChanged) {
         // nada a empurrar; sincroniza watermark remoto se mudou
         if (remoteChanged && remoteLastMod) {
-          await supabase.from("hubspot_sync_state").update({
-            remote_updated_at: remoteLastMod,
-            last_synced_at: new Date().toISOString(),
-          } as never).eq("id", state.id);
+          await supabase
+            .from("hubspot_sync_state")
+            .update({
+              remote_updated_at: remoteLastMod,
+              last_synced_at: new Date().toISOString(),
+            } as never)
+            .eq("id", state.id);
         }
         continue;
       }
 
       if (localChanged && remoteChanged) {
         // CONFLITO
-        await supabase.from("hubspot_sync_state").update({
-          conflict_status: "conflict",
-          conflict_reason: `Local e HubSpot foram alterados desde a última sincronização (local: ${localUpdated}; hubspot: ${remoteLastMod}).`,
-        } as never).eq("id", state.id);
+        await supabase
+          .from("hubspot_sync_state")
+          .update({
+            conflict_status: "conflict",
+            conflict_reason: `Local e HubSpot foram alterados desde a última sincronização (local: ${localUpdated}; hubspot: ${remoteLastMod}).`,
+          } as never)
+          .eq("id", state.id);
         out.conflicts++;
         continue;
       }
@@ -246,13 +290,17 @@ export async function pushEntity(
         method: "PATCH",
         body: JSON.stringify({ properties: propsPayload }),
       });
-      await supabase.from("hubspot_sync_state").update({
-        local_updated_at: localUpdated,
-        remote_updated_at: remoteLastMod ?? state.remote_updated_at ?? new Date().toISOString(),
-        last_pushed_at: new Date().toISOString(),
-        last_synced_at: new Date().toISOString(),
-        conflict_status: "ok", conflict_reason: null,
-      } as never).eq("id", state.id);
+      await supabase
+        .from("hubspot_sync_state")
+        .update({
+          local_updated_at: localUpdated,
+          remote_updated_at: remoteLastMod ?? state.remote_updated_at ?? new Date().toISOString(),
+          last_pushed_at: new Date().toISOString(),
+          last_synced_at: new Date().toISOString(),
+          conflict_status: "ok",
+          conflict_reason: null,
+        } as never)
+        .eq("id", state.id);
       out.updated++;
     } catch (e) {
       out.failed++;
@@ -263,14 +311,23 @@ export async function pushEntity(
 }
 
 /** Empurra as 3 entidades para um workspace. */
-export async function pushAllForOwner(supabase: SupabaseClient, ownerId: string, perEntityLimit = 50) {
+export async function pushAllForOwner(
+  supabase: SupabaseClient,
+  ownerId: string,
+  perEntityLimit = 50,
+) {
   const results: PushResult[] = [];
   for (const e of ["contact", "company", "deal"] as SyncEntity[]) {
     try {
       results.push(await pushEntity(supabase, ownerId, e, perEntityLimit));
     } catch (err) {
       results.push({
-        entity: e, scanned: 0, created: 0, updated: 0, conflicts: 0, failed: 1,
+        entity: e,
+        scanned: 0,
+        created: 0,
+        updated: 0,
+        conflicts: 0,
+        failed: 1,
         errors: [{ local_id: "-", message: err instanceof Error ? err.message : String(err) }],
       });
     }
@@ -305,23 +362,34 @@ export async function resolveConflictRow(
     if (!row) throw new Error("Registro local não existe mais");
     await hsRequest(`/crm/v3/objects/${hsObj}/${state.hubspot_id}`, {
       method: "PATCH",
-      body: JSON.stringify({ properties: toHubspotProps(entity, row as unknown as Record<string, unknown>) }),
+      body: JSON.stringify({
+        properties: toHubspotProps(entity, row as unknown as Record<string, unknown>),
+      }),
     });
-    await supabase.from("hubspot_sync_state").update({
-      conflict_status: "ok", conflict_reason: null,
-      local_updated_at: (row as unknown as { updated_at?: string }).updated_at ?? new Date().toISOString(),
-      remote_updated_at: new Date().toISOString(),
-      last_pushed_at: new Date().toISOString(),
-      last_synced_at: new Date().toISOString(),
-    } as never).eq("id", state.id as string);
+    await supabase
+      .from("hubspot_sync_state")
+      .update({
+        conflict_status: "ok",
+        conflict_reason: null,
+        local_updated_at:
+          (row as unknown as { updated_at?: string }).updated_at ?? new Date().toISOString(),
+        remote_updated_at: new Date().toISOString(),
+        last_pushed_at: new Date().toISOString(),
+        last_synced_at: new Date().toISOString(),
+      } as never)
+      .eq("id", state.id as string);
     return { ok: true };
   }
 
   // remote_wins → marca como resolvido; o tick de pull cuida do pull
-  await supabase.from("hubspot_sync_state").update({
-    conflict_status: "ok", conflict_reason: null,
-    remote_updated_at: new Date().toISOString(),
-    last_synced_at: new Date().toISOString(),
-  } as never).eq("id", state.id as string);
+  await supabase
+    .from("hubspot_sync_state")
+    .update({
+      conflict_status: "ok",
+      conflict_reason: null,
+      remote_updated_at: new Date().toISOString(),
+      last_synced_at: new Date().toISOString(),
+    } as never)
+    .eq("id", state.id as string);
   return { ok: true };
 }

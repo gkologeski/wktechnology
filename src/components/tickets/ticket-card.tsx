@@ -12,7 +12,12 @@ const PRIORITY_VAR: Record<string, string> = {
 
 function initials(s?: string | null) {
   if (!s) return "—";
-  return s.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+  return s
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function timeAgo(iso: string) {
@@ -49,9 +54,13 @@ export function TicketCard({
     disabled: !draggable,
   });
   const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.4 : 1 }
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        opacity: isDragging ? 0.4 : 1,
+      }
     : undefined;
-  const overdue = ticket.due_at && new Date(ticket.due_at).getTime() < Date.now() && !ticket.resolved_at;
+  const overdue =
+    ticket.due_at && new Date(ticket.due_at).getTime() < Date.now() && !ticket.resolved_at;
   const priorityColor = PRIORITY_VAR[ticket.priority] ?? "var(--priority-low)";
 
   return (
@@ -114,7 +123,9 @@ export function TicketCard({
           {overdue && <span className="ml-1">• vencido</span>}
         </div>
         <Avatar className="h-5 w-5 text-[9px]" title={ownerName ?? ""}>
-          <AvatarFallback className="bg-secondary text-secondary-foreground">{initials(ownerName)}</AvatarFallback>
+          <AvatarFallback className="bg-secondary text-secondary-foreground">
+            {initials(ownerName)}
+          </AvatarFallback>
         </Avatar>
       </div>
     </div>

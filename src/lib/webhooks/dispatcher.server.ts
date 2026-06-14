@@ -6,7 +6,11 @@ function sign(secret: string, body: string) {
   return createHmac("sha256", secret).update(body).digest("hex");
 }
 
-export async function enqueueWebhookEvent(ownerId: string, eventType: string, payload: Record<string, unknown>) {
+export async function enqueueWebhookEvent(
+  ownerId: string,
+  eventType: string,
+  payload: Record<string, unknown>,
+) {
   const { data: hooks } = await supabaseAdmin
     .from("outbound_webhooks")
     .select("id")
@@ -46,12 +50,20 @@ export async function runWebhookDispatch() {
       .eq("id", d.webhook_id as string)
       .maybeSingle();
     if (!hook || !hook.active) {
-      await supabaseAdmin.from("webhook_deliveries").update({ status: "dead" }).eq("id", d.id as string);
+      await supabaseAdmin
+        .from("webhook_deliveries")
+        .update({ status: "dead" })
+        .eq("id", d.id as string);
       continue;
     }
-    const body = JSON.stringify({ event: d.event_type, data: d.payload, timestamp: new Date().toISOString() });
+    const body = JSON.stringify({
+      event: d.event_type,
+      data: d.payload,
+      timestamp: new Date().toISOString(),
+    });
     const signature = sign(hook.secret as string, body);
-    let status = 0, text = "";
+    let status = 0,
+      text = "";
     try {
       const res = await fetch(hook.url as string, {
         method: "POST",
@@ -71,14 +83,20 @@ export async function runWebhookDispatch() {
     const attempt = ((d.attempt as number) ?? 0) + 1;
     const newStatus = ok ? "success" : attempt >= MAX_ATTEMPTS ? "dead" : "failed";
     const backoffMin = Math.min(60, Math.pow(2, attempt));
-    await supabaseAdmin.from("webhook_deliveries").update({
-      attempt,
-      status: newStatus,
-      response_status: status || null,
-      response_body: text,
-      next_retry_at: ok || newStatus === "dead" ? null : new Date(Date.now() + backoffMin * 60_000).toISOString(),
-      delivered_at: ok ? new Date().toISOString() : null,
-    }).eq("id", d.id as string);
+    await supabaseAdmin
+      .from("webhook_deliveries")
+      .update({
+        attempt,
+        status: newStatus,
+        response_status: status || null,
+        response_body: text,
+        next_retry_at:
+          ok || newStatus === "dead"
+            ? null
+            : new Date(Date.now() + backoffMin * 60_000).toISOString(),
+        delivered_at: ok ? new Date().toISOString() : null,
+      })
+      .eq("id", d.id as string);
     processed++;
   }
   return { processed };

@@ -106,7 +106,10 @@ test("Server-side: rotas autenticadas só renderizam dados do workspace ativo", 
   const seededIds: Array<{ table: string; id: string; ws: string }> = [];
 
   // Seed em cada workspace (precisa estar ativo p/ RLS aceitar o insert)
-  for (const [wsId, uniq] of [[wsA, uniqA], [wsB, uniqB]] as const) {
+  for (const [wsId, uniq] of [
+    [wsA, uniqA],
+    [wsB, uniqB],
+  ] as const) {
     await setActive(supa, userId, wsId);
     for (const sc of SCENARIOS) {
       const { data, error } = await supa

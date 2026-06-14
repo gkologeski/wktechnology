@@ -107,7 +107,9 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
       const { data } = await supabase
         .from("workspace_branding")
-        .select("brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text, radius, density, heading_font, body_font")
+        .select(
+          "brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text, radius, density, heading_font, body_font",
+        )
         .eq("workspace_id", workspaceId)
         .maybeSingle();
       if (cancelled) return;

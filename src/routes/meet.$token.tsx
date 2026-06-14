@@ -6,18 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  getPublicMeeting,
-  registerPublicParticipant,
-} from "@/lib/meetings-public.functions";
+import { getPublicMeeting, registerPublicParticipant } from "@/lib/meetings-public.functions";
 
 export const Route = createFileRoute("/meet/$token")({
   component: PublicMeetPage,
   head: () => ({
-    meta: [
-      { title: "Sala de vídeo" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Sala de vídeo" }, { name: "robots", content: "noindex" }],
   }),
 });
 
@@ -28,7 +22,12 @@ function PublicMeetPage() {
 
   const [state, setState] = useState<"loading" | "ready" | "joined" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
-  const [meeting, setMeeting] = useState<{ id: string; title: string; room_name: string; recording_consent: boolean } | null>(null);
+  const [meeting, setMeeting] = useState<{
+    id: string;
+    title: string;
+    room_name: string;
+    recording_consent: boolean;
+  } | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +57,9 @@ function PublicMeetPage() {
         setState("error");
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [token, lookup]);
 
   async function join() {
@@ -131,12 +132,16 @@ function PublicMeetPage() {
             </div>
             {meeting.recording_consent && (
               <p className="text-xs text-muted-foreground">
-                Esta reunião pode ser <strong>gravada</strong>. Ao entrar, você consente
-                com a gravação para fins de registro.
+                Esta reunião pode ser <strong>gravada</strong>. Ao entrar, você consente com a
+                gravação para fins de registro.
               </p>
             )}
             <Button onClick={join} disabled={submitting || !name.trim()} className="w-full">
-              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Video className="mr-2 h-4 w-4" />}
+              {submitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Video className="mr-2 h-4 w-4" />
+              )}
               Entrar na sala
             </Button>
           </CardContent>

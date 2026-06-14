@@ -74,7 +74,10 @@ export function useOfflineSync(flusher: (item: QueueItem) => Promise<void>) {
   }, [flusher, refresh]);
 
   useEffect(() => {
-    const onOnline = () => { setOnline(true); void flush(); };
+    const onOnline = () => {
+      setOnline(true);
+      void flush();
+    };
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);

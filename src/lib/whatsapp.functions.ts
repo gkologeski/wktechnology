@@ -85,18 +85,20 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         mediaUrl: z.string().url().optional(),
         mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
-        contentSid: z.string().regex(/^HX[0-9a-fA-F]{32}$/).optional(),
+        contentSid: z
+          .string()
+          .regex(/^HX[0-9a-fA-F]{32}$/)
+          .optional(),
         contentVariables: z.record(z.string(), z.string()).optional(),
       })
-      .refine(
-        (v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.contentSid,
-        { message: "Informe um texto, anexo ou template oficial" },
-      )
+      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.contentSid, {
+        message: "Informe um texto, anexo ou template oficial",
+      })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const from = await resolveFromNumber(supabase, workspaceId);
     const toWaNum = toWa(data.to);
     const toBare = normalizePhone(data.to);
@@ -270,7 +272,7 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const from = data.from_number.trim();
     const base = (data.public_base_url ?? "").trim().replace(/\/$/, "");
     const cfg = await getIntegrationConfig(supabase, workspaceId);
@@ -297,7 +299,7 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: members } = await supabase
       .from("team_members")
       .select("member_user_id")
@@ -365,18 +367,19 @@ const TemplateSchema = z.object({
 export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const cfg = await getIntegrationConfig(context.supabase, await resolveActiveWorkspace(context.userId));
+    const cfg = await getIntegrationConfig(
+      context.supabase,
+      await resolveActiveWorkspace(context.userId),
+    );
     return cfg.templates ?? [];
   });
 
 export const saveWhatsAppTemplates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ templates: z.array(TemplateSchema).max(50) }).parse(input),
-  )
+  .inputValidator((input) => z.object({ templates: z.array(TemplateSchema).max(50) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const cfg = await getIntegrationConfig(supabase, workspaceId);
     const newCfg = { ...cfg, templates: data.templates };
     const { error } = await supabase.from("integrations").upsert(

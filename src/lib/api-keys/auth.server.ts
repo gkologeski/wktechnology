@@ -37,7 +37,8 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthConte
 }
 
 export function requireScope(ctx: ApiAuthContext, scope: "read" | "write"): Response | null {
-  if (scope === "read" && (ctx.scopes.includes("read") || ctx.scopes.includes("write"))) return null;
+  if (scope === "read" && (ctx.scopes.includes("read") || ctx.scopes.includes("write")))
+    return null;
   if (scope === "write" && ctx.scopes.includes("write")) return null;
   return new Response(JSON.stringify({ error: "insufficient_scope" }), {
     status: 403,

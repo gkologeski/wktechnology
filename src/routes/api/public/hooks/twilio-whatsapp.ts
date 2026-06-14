@@ -91,7 +91,6 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
           const params = new URLSearchParams(text);
           const data = Object.fromEntries(params.entries());
 
-
           const from = strip(data.From); // contato
           const to = strip(data.To); // nosso número Twilio
           const body = data.Body ?? "";
@@ -122,7 +121,9 @@ export const Route = createFileRoute("/api/public/hooks/twilio-whatsapp")({
           const { data: contact } = await supabaseAdmin
             .from("contacts")
             .select("id, owner_id")
-            .or(`phone.eq.${from},phone.eq.${phoneNoPlus},mobile_phone.eq.${from},mobile_phone.eq.${phoneNoPlus}`)
+            .or(
+              `phone.eq.${from},phone.eq.${phoneNoPlus},mobile_phone.eq.${from},mobile_phone.eq.${phoneNoPlus}`,
+            )
             .maybeSingle();
           if (contact) {
             contactId = contact.id;

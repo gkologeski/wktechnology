@@ -11,13 +11,16 @@ const sb = supabaseAdmin as any;
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
 const STOPPING_ATTEMPT_STATUSES = ["failed", "no_answer", "busy", "canceled"];
 
-async function maybeRequeueAttempt(row: {
-  id: string;
-  workspace_id: string;
-  campaign_id: string | null;
-  lead_id: string | null;
-  attempt_number: number | null;
-} | null, endedReason: string | null): Promise<boolean> {
+async function maybeRequeueAttempt(
+  row: {
+    id: string;
+    workspace_id: string;
+    campaign_id: string | null;
+    lead_id: string | null;
+    attempt_number: number | null;
+  } | null,
+  endedReason: string | null,
+): Promise<boolean> {
   if (!row?.campaign_id || !row.lead_id) return false;
   if (!isRetriableEndedReason(endedReason)) return false;
 
@@ -73,9 +76,18 @@ async function settleCampaignIfIdle(campaignId: string | null | undefined, attem
     .in("status", ACTIVE_ATTEMPT_STATUSES);
   if ((count ?? 0) > 0) return;
 
-  const nextStatus = attemptStatus === "completed" ? "done" : STOPPING_ATTEMPT_STATUSES.includes(attemptStatus) ? "paused" : null;
+  const nextStatus =
+    attemptStatus === "completed"
+      ? "done"
+      : STOPPING_ATTEMPT_STATUSES.includes(attemptStatus)
+        ? "paused"
+        : null;
   if (!nextStatus) return;
-  await sb.from("prospecting_campaigns").update({ status: nextStatus }).eq("id", campaignId).eq("status", "running");
+  await sb
+    .from("prospecting_campaigns")
+    .update({ status: nextStatus })
+    .eq("id", campaignId)
+    .eq("status", "running");
 }
 
 export const Route = createFileRoute("/api/public/hooks/vapi")({
@@ -84,7 +96,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
       POST: async ({ request }) => {
         const expected = process.env.VAPI_WEBHOOK_SECRET;
         if (!expected) return new Response("Server misconfigured", { status: 500 });
-        const got = request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
+        const got =
+          request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
 
         let body: { message?: Record<string, unknown> } & Record<string, unknown>;
         try {
@@ -94,7 +107,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
         }
         const msg = (body.message ?? body) as Record<string, unknown>;
         const payloadSecret = String(msg.secret ?? body.secret ?? "");
-        if (got !== expected && payloadSecret !== expected) return new Response("Unauthorized", { status: 401 });
+        if (got !== expected && payloadSecret !== expected)
+          return new Response("Unauthorized", { status: 401 });
 
         const type = String(msg.type ?? "");
         const call = (msg.call as Record<string, unknown> | undefined) ?? undefined;
@@ -119,16 +133,19 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             const reason = String(msg.endedReason ?? "").toLowerCase();
             if (reason.includes("no-answer")) updates.status = "no_answer";
             else if (reason.includes("busy")) updates.status = "busy";
-            else if (reason.includes("failed") || reason.includes("error")) updates.status = "failed";
+            else if (reason.includes("failed") || reason.includes("error"))
+              updates.status = "failed";
           }
         } else if (type === "end-of-call-report") {
           updates.status = "completed";
           updates.ended_at = new Date().toISOString();
-          if (typeof msg.durationSeconds === "number") updates.duration_seconds = msg.durationSeconds;
+          if (typeof msg.durationSeconds === "number")
+            updates.duration_seconds = msg.durationSeconds;
           if (typeof msg.cost === "number") updates.cost_usd = msg.cost;
           const artifact = msg.artifact as Record<string, unknown> | undefined;
           if (artifact) {
-            if (typeof artifact.recordingUrl === "string") updates.recording_url = artifact.recordingUrl;
+            if (typeof artifact.recordingUrl === "string")
+              updates.recording_url = artifact.recordingUrl;
             if (typeof artifact.transcript === "string") updates.transcript = artifact.transcript;
           }
           const analysis = msg.analysis as Record<string, unknown> | undefined;
@@ -169,9 +186,14 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
 
         // Re-enfileira se o motivo não indica conversa real (silence, no-answer, error...).
         let requeued = false;
-        const isFinal = updates.status === "completed" || ["failed", "no_answer", "busy"].includes(String(updates.status ?? ""));
+        const isFinal =
+          updates.status === "completed" ||
+          ["failed", "no_answer", "busy"].includes(String(updates.status ?? ""));
         if (isFinal) {
-          requeued = await maybeRequeueAttempt(row, (updates.ended_reason as string | undefined) ?? null);
+          requeued = await maybeRequeueAttempt(
+            row,
+            (updates.ended_reason as string | undefined) ?? null,
+          );
         }
         if (!requeued) {
           await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
@@ -179,7 +201,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
 
         return Response.json({ ok: true });
       },
-      GET: async () => Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" }),
+      GET: async () =>
+        Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" }),
     },
   },
 });

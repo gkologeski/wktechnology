@@ -108,9 +108,7 @@ const LABELS: Record<string, string> = {
 
 function toLabel(col: string): string {
   if (LABELS[col]) return LABELS[col];
-  return col
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return col.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function inferType(dataType: string): EntityFieldType {
@@ -124,20 +122,14 @@ function inferType(dataType: string): EntityFieldType {
     dataType === "smallint"
   )
     return "number";
-  if (
-    dataType.startsWith("timestamp") ||
-    dataType === "date"
-  )
-    return "date";
+  if (dataType.startsWith("timestamp") || dataType === "date") return "date";
   return "text";
 }
 
 export const getEntityFieldCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({ entity: z.enum(["leads", "contacts", "companies", "deals"]) })
-      .parse(input),
+    z.object({ entity: z.enum(["leads", "contacts", "companies", "deals"]) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -159,15 +151,9 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     for (const r of allRows) {
       if (!r.distinct_values) continue;
       if (r.column_name === "pipeline_id") r.distinct_values.forEach((v) => pipelineIds.add(v));
-      else if (
-        r.column_name === "company_id" ||
-        r.column_name === "parent_company_id"
-      )
+      else if (r.column_name === "company_id" || r.column_name === "parent_company_id")
         r.distinct_values.forEach((v) => companyIds.add(v));
-      else if (
-        r.column_name === "assigned_user_id" ||
-        r.column_name === "owner_id"
-      )
+      else if (r.column_name === "assigned_user_id" || r.column_name === "owner_id")
         r.distinct_values.forEach((v) => userIds.add(v));
     }
 
@@ -195,16 +181,10 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     ]);
 
     const pipelineMap = new Map(
-      ((pipelinesRes.data ?? []) as { id: string; name: string }[]).map((p) => [
-        p.id,
-        p.name,
-      ]),
+      ((pipelinesRes.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]),
     );
     const companyMap = new Map(
-      ((companiesRes.data ?? []) as { id: string; name: string }[]).map((c) => [
-        c.id,
-        c.name,
-      ]),
+      ((companiesRes.data ?? []) as { id: string; name: string }[]).map((c) => [c.id, c.name]),
     );
     const userMap = new Map(
       (
@@ -255,10 +235,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       };
 
       // Override: stage / stage_id usam catálogo do pipeline, não distinct values.
-      if (
-        pipelineStageOptions &&
-        (r.column_name === "stage" || r.column_name === "stage_id")
-      ) {
+      if (pipelineStageOptions && (r.column_name === "stage" || r.column_name === "stage_id")) {
         def.type = "select";
         def.options = pipelineStageOptions;
       } else if (
@@ -274,18 +251,11 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         def.options = valuesOnly.map((v) => {
           let label = v;
           if (r.column_name === "pipeline_id") label = pipelineMap.get(v) ?? v;
-          else if (
-            r.column_name === "company_id" ||
-            r.column_name === "parent_company_id"
-          )
+          else if (r.column_name === "company_id" || r.column_name === "parent_company_id")
             label = companyMap.get(v) ?? v;
-          else if (
-            r.column_name === "assigned_user_id" ||
-            r.column_name === "owner_id"
-          )
+          else if (r.column_name === "assigned_user_id" || r.column_name === "owner_id")
             label = userMap.get(v) ?? v;
-          else if (type === "boolean")
-            label = v === "true" ? "Sim" : v === "false" ? "Não" : v;
+          else if (type === "boolean") label = v === "true" ? "Sim" : v === "false" ? "Não" : v;
           return { value: v, label };
         });
       }

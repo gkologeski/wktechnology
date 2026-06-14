@@ -8,9 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  listWabas, listCatalogs, addCatalog, syncCatalogProducts, listCatalogProducts,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  listWabas,
+  listCatalogs,
+  addCatalog,
+  syncCatalogProducts,
+  listCatalogProducts,
 } from "@/lib/whatsapp-meta.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/whatsapp-catalogs")({
@@ -38,20 +48,27 @@ function CatalogsPage() {
     setCatalogs(c as any[]);
     if (!wabaId && (w as any[]).length) setWabaId((w as any[])[0].id);
   }
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!wabaId || !catalogId) return;
     setBusy(true);
     try {
-      await add({ data: { waba_row_id: wabaId, catalog_id: catalogId, name: catName || undefined } });
+      await add({
+        data: { waba_row_id: wabaId, catalog_id: catalogId, name: catName || undefined },
+      });
       toast.success("Catálogo adicionado");
-      setCatalogId(""); setCatName("");
+      setCatalogId("");
+      setCatName("");
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Falha");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onSync(rowId: string) {
@@ -77,31 +94,53 @@ function CatalogsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Plus className="size-4" /> Adicionar catálogo</CardTitle>
-          <CardDescription>Copie o Catalog ID do Commerce Manager (Meta Business Suite).</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Plus className="size-4" /> Adicionar catálogo
+          </CardTitle>
+          <CardDescription>
+            Copie o Catalog ID do Commerce Manager (Meta Business Suite).
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onAdd} className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>WABA</Label>
               <Select value={wabaId} onValueChange={setWabaId}>
-                <SelectTrigger><SelectValue placeholder="Escolha…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {wabas.map((w) => <SelectItem key={w.id} value={w.id}>{w.business_name || w.waba_id}</SelectItem>)}
+                  {wabas.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.business_name || w.waba_id}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
               <Label>Catalog ID</Label>
-              <Input value={catalogId} onChange={(e) => setCatalogId(e.target.value)} placeholder="1234567890" />
+              <Input
+                value={catalogId}
+                onChange={(e) => setCatalogId(e.target.value)}
+                placeholder="1234567890"
+              />
             </div>
             <div className="space-y-1">
               <Label>Nome (opcional)</Label>
-              <Input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="Loja Principal" />
+              <Input
+                value={catName}
+                onChange={(e) => setCatName(e.target.value)}
+                placeholder="Loja Principal"
+              />
             </div>
             <div className="sm:col-span-3">
               <Button type="submit" disabled={busy || !wabaId || !catalogId}>
-                {busy ? <Loader2 className="size-4 animate-spin mr-2" /> : <Plus className="size-4 mr-2" />}
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                ) : (
+                  <Plus className="size-4 mr-2" />
+                )}
                 Adicionar
               </Button>
             </div>
@@ -111,38 +150,55 @@ function CatalogsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Package className="size-4" /> Catálogos</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Package className="size-4" /> Catálogos
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {catalogs.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum catálogo cadastrado.</p>
-          ) : catalogs.map((c) => (
-            <div key={c.id} className="border rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{c.name || c.catalog_id}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{c.catalog_id}</div>
+          ) : (
+            catalogs.map((c) => (
+              <div key={c.id} className="border rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{c.name || c.catalog_id}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{c.catalog_id}</div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => onSync(c.id)}>
+                    <RefreshCw className="size-4 mr-1" /> Sincronizar produtos
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => onSync(c.id)}>
-                  <RefreshCw className="size-4 mr-1" /> Sincronizar produtos
-                </Button>
-              </div>
-              {products[c.id]?.length ? (
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {products[c.id].slice(0, 12).map((p) => (
-                    <div key={p.id} className="text-xs flex items-center gap-2 border rounded p-2">
-                      {p.image_url && <img src={p.image_url} alt={p.name} className="size-10 object-cover rounded" />}
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{p.name}</div>
-                        <div className="text-muted-foreground">{p.price} {p.currency}</div>
+                {products[c.id]?.length ? (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {products[c.id].slice(0, 12).map((p) => (
+                      <div
+                        key={p.id}
+                        className="text-xs flex items-center gap-2 border rounded p-2"
+                      >
+                        {p.image_url && (
+                          <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className="size-10 object-cover rounded"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{p.name}</div>
+                          <div className="text-muted-foreground">
+                            {p.price} {p.currency}
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="ml-auto">
+                          {p.availability}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="ml-auto">{p.availability}</Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ))}
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

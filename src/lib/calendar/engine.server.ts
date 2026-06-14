@@ -35,15 +35,22 @@ async function refreshAccessToken(account: CalendarAccountRow): Promise<string> 
   });
   if (!res.ok) {
     const t = await res.text();
-    await supabaseAdmin.from("calendar_accounts")
+    await supabaseAdmin
+      .from("calendar_accounts")
       .update({ last_status: "error", last_error: `refresh failed: ${res.status} ${t}` })
       .eq("id", account.id);
     throw new Error(`Falha ao renovar token: ${res.status}`);
   }
   const j = (await res.json()) as { access_token: string; expires_in: number };
   const expiresAt = new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString();
-  await supabaseAdmin.from("calendar_accounts")
-    .update({ access_token: j.access_token, expires_at: expiresAt, last_status: "connected", last_error: null })
+  await supabaseAdmin
+    .from("calendar_accounts")
+    .update({
+      access_token: j.access_token,
+      expires_at: expiresAt,
+      last_status: "connected",
+      last_error: null,
+    })
     .eq("id", account.id);
   return j.access_token;
 }
@@ -82,7 +89,9 @@ async function gcalFetch(token: string, path: string, init?: RequestInit) {
   return res.json();
 }
 
-async function pullGoogleEvents(account: CalendarAccountRow): Promise<{ imported: number; deleted: number }> {
+async function pullGoogleEvents(
+  account: CalendarAccountRow,
+): Promise<{ imported: number; deleted: number }> {
   const token = await ensureAccessToken(account);
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
   let pageToken: string | undefined;
@@ -107,12 +116,18 @@ async function pullGoogleEvents(account: CalendarAccountRow): Promise<{ imported
 
     let json: { items?: GCalEvent[]; nextPageToken?: string; nextSyncToken?: string };
     try {
-      json = await gcalFetch(token, `/calendars/${calId}/events?${params.toString()}`) as typeof json;
+      json = (await gcalFetch(
+        token,
+        `/calendars/${calId}/events?${params.toString()}`,
+      )) as typeof json;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // 410 GONE → sync token invalid, do a full re-sync
       if (msg.includes("410") && usingSyncToken) {
-        await supabaseAdmin.from("calendar_accounts").update({ sync_token: null }).eq("id", account.id);
+        await supabaseAdmin
+          .from("calendar_accounts")
+          .update({ sync_token: null })
+          .eq("id", account.id);
         return { imported, deleted };
       }
       throw e;
@@ -121,7 +136,8 @@ async function pullGoogleEvents(account: CalendarAccountRow): Promise<{ imported
     const items = json.items ?? [];
     for (const ev of items) {
       if (ev.status === "cancelled") {
-        const { error: delErr } = await supabaseAdmin.from("calendar_events")
+        const { error: delErr } = await supabaseAdmin
+          .from("calendar_events")
           .delete()
           .eq("calendar_account_id", account.id)
           .eq("provider_event_id", ev.id);
@@ -131,21 +147,24 @@ async function pullGoogleEvents(account: CalendarAccountRow): Promise<{ imported
       const startAt = ev.start?.dateTime ?? (ev.start?.date ? `${ev.start.date}T00:00:00Z` : null);
       const endAt = ev.end?.dateTime ?? (ev.end?.date ? `${ev.end.date}T00:00:00Z` : null);
       const allDay = !!(ev.start?.date && !ev.start?.dateTime);
-      const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert({
-        owner_id: account.owner_id,
-        calendar_account_id: account.id,
-        provider_event_id: ev.id,
-        title: ev.summary ?? "(sem título)",
-        description: ev.description ?? null,
-        location: ev.location ?? null,
-        start_at: startAt,
-        end_at: endAt,
-        all_day: allDay,
-        attendees: ev.attendees ?? [],
-        html_link: ev.htmlLink ?? null,
-        status: ev.status ?? "confirmed",
-        last_synced_at: new Date().toISOString(),
-      }, { onConflict: "calendar_account_id,provider_event_id" });
+      const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert(
+        {
+          owner_id: account.owner_id,
+          calendar_account_id: account.id,
+          provider_event_id: ev.id,
+          title: ev.summary ?? "(sem título)",
+          description: ev.description ?? null,
+          location: ev.location ?? null,
+          start_at: startAt,
+          end_at: endAt,
+          all_day: allDay,
+          attendees: ev.attendees ?? [],
+          html_link: ev.htmlLink ?? null,
+          status: ev.status ?? "confirmed",
+          last_synced_at: new Date().toISOString(),
+        },
+        { onConflict: "calendar_account_id,provider_event_id" },
+      );
       if (!upErr) imported++;
     }
 
@@ -153,17 +172,22 @@ async function pullGoogleEvents(account: CalendarAccountRow): Promise<{ imported
     if (!pageToken && json.nextSyncToken) nextSyncToken = json.nextSyncToken;
   } while (pageToken);
 
-  await supabaseAdmin.from("calendar_accounts").update({
-    sync_token: nextSyncToken ?? account.sync_token,
-    last_synced_at: new Date().toISOString(),
-    last_status: "ok",
-    last_error: null,
-  }).eq("id", account.id);
+  await supabaseAdmin
+    .from("calendar_accounts")
+    .update({
+      sync_token: nextSyncToken ?? account.sync_token,
+      last_synced_at: new Date().toISOString(),
+      last_status: "ok",
+      last_error: null,
+    })
+    .eq("id", account.id);
 
   return { imported, deleted };
 }
 
-async function pushPendingMeetings(account: CalendarAccountRow): Promise<{ created: number; updated: number }> {
+async function pushPendingMeetings(
+  account: CalendarAccountRow,
+): Promise<{ created: number; updated: number }> {
   const token = await ensureAccessToken(account);
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
   // Meetings: activities with type=meeting and due_date in the future
@@ -194,17 +218,22 @@ async function pushPendingMeetings(account: CalendarAccountRow): Promise<{ creat
     };
     try {
       if (existingEventId) {
-        await gcalFetch(token, `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
+        await gcalFetch(
+          token,
+          `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          },
+        );
         updated++;
       } else {
-        const ev = await gcalFetch(token, `/calendars/${calId}/events`, {
+        const ev = (await gcalFetch(token, `/calendars/${calId}/events`, {
           method: "POST",
           body: JSON.stringify(body),
-        }) as { id: string };
-        await supabaseAdmin.from("activities")
+        })) as { id: string };
+        await supabaseAdmin
+          .from("activities")
           .update({ external_ids: { ...ext, [`gcal_${account.id}`]: ev.id } })
           .eq("id", a.id);
         created++;
@@ -216,14 +245,19 @@ async function pushPendingMeetings(account: CalendarAccountRow): Promise<{ creat
   return { created, updated };
 }
 
-export async function syncCalendarAccount(accountId: string): Promise<{ imported: number; deleted: number; pushed_created: number; pushed_updated: number }> {
+export async function syncCalendarAccount(
+  accountId: string,
+): Promise<{ imported: number; deleted: number; pushed_created: number; pushed_updated: number }> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
-    .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at")
+    .select(
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+    )
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
-  if (!account.sync_enabled) return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
+  if (!account.sync_enabled)
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
   if (account.provider !== "google") {
     // Microsoft not yet wired
     return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
@@ -231,20 +265,31 @@ export async function syncCalendarAccount(accountId: string): Promise<{ imported
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     const push = await pushPendingMeetings(account as CalendarAccountRow);
-    return { imported: pull.imported, deleted: pull.deleted, pushed_created: push.created, pushed_updated: push.updated };
+    return {
+      imported: pull.imported,
+      deleted: pull.deleted,
+      pushed_created: push.created,
+      pushed_updated: push.updated,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await supabaseAdmin.from("calendar_accounts")
+    await supabaseAdmin
+      .from("calendar_accounts")
       .update({ last_status: "error", last_error: msg.slice(0, 500) })
       .eq("id", accountId);
     throw e;
   }
 }
 
-export async function pushSingleActivity(accountId: string, activityId: string): Promise<{ created: boolean; updated: boolean; event_id: string; meet_link: string | null }> {
+export async function pushSingleActivity(
+  accountId: string,
+  activityId: string,
+): Promise<{ created: boolean; updated: boolean; event_id: string; meet_link: string | null }> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
-    .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at, auto_create_meet_link")
+    .select(
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at, auto_create_meet_link",
+    )
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
@@ -264,8 +309,9 @@ export async function pushSingleActivity(accountId: string, activityId: string):
   const start = a.due_date as string;
   const att = (a.attachments ?? {}) as { end_at?: string; attendees?: { email: string }[] };
   const end = att.end_at || new Date(new Date(start).getTime() + 30 * 60000).toISOString();
-  const wantsMeet = !!(account as { auto_create_meet_link?: boolean }).auto_create_meet_link
-    && !/meet\.google\.com|zoom\.us|teams\.microsoft\.com/i.test(a.meeting_location || "");
+  const wantsMeet =
+    !!(account as { auto_create_meet_link?: boolean }).auto_create_meet_link &&
+    !/meet\.google\.com|zoom\.us|teams\.microsoft\.com/i.test(a.meeting_location || "");
   const body: Record<string, unknown> = {
     summary: a.subject || "Reunião",
     description: a.body || "",
@@ -287,25 +333,33 @@ export async function pushSingleActivity(accountId: string, activityId: string):
     let eventId = existingEventId;
     let meetLink: string | null = null;
     if (existingEventId) {
-      const ev = await gcalFetch(token, `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}${qs}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      }) as { id: string; hangoutLink?: string };
+      const ev = (await gcalFetch(
+        token,
+        `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}${qs}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        },
+      )) as { id: string; hangoutLink?: string };
       meetLink = ev.hangoutLink ?? null;
       const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
-      const updates: { external_ids: Record<string, string>; meeting_location?: string } = { external_ids: newExt };
+      const updates: { external_ids: Record<string, string>; meeting_location?: string } = {
+        external_ids: newExt,
+      };
       if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
       await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
       return { created: false, updated: true, event_id: ev.id, meet_link: meetLink };
     }
-    const ev = await gcalFetch(token, `/calendars/${calId}/events${qs}`, {
+    const ev = (await gcalFetch(token, `/calendars/${calId}/events${qs}`, {
       method: "POST",
       body: JSON.stringify(body),
-    }) as { id: string; hangoutLink?: string };
+    })) as { id: string; hangoutLink?: string };
     eventId = ev.id;
     meetLink = ev.hangoutLink ?? null;
     const newExt = { ...ext, [`gcal_${account.id}`]: ev.id };
-    const updates: { external_ids: Record<string, string>; meeting_location?: string } = { external_ids: newExt };
+    const updates: { external_ids: Record<string, string>; meeting_location?: string } = {
+      external_ids: newExt,
+    };
     if (meetLink && !a.meeting_location) updates.meeting_location = meetLink;
     await supabaseAdmin.from("activities").update(updates).eq("id", a.id);
     return { created: true, updated: false, event_id: eventId, meet_link: meetLink };
@@ -314,8 +368,6 @@ export async function pushSingleActivity(accountId: string, activityId: string):
     throw new Error(`Falha ao enviar evento ao Google: ${msg.slice(0, 200)}`);
   }
 }
-
-
 
 export async function tickAllCalendars(): Promise<{ processed: number }> {
   const { data: accounts } = await supabaseAdmin

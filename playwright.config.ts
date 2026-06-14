@@ -34,9 +34,7 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
-    baseURL:
-      process.env.E2E_BASE_URL ??
-      "https://crm.wktechnology.com.br",
+    baseURL: process.env.E2E_BASE_URL ?? "https://crm.wktechnology.com.br",
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",

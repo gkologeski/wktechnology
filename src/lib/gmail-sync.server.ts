@@ -258,8 +258,7 @@ async function persistInboundMessage(
   const toEmails = parseAddressList(toRaw);
   const ccEmails = parseAddressList(ccRaw);
   const dateMs = msg.internalDate ? Number(msg.internalDate) : Date.now();
-  const isOutbound =
-    !!fromEmail && fromEmail.toLowerCase() === account.email.toLowerCase();
+  const isOutbound = !!fromEmail && fromEmail.toLowerCase() === account.email.toLowerCase();
   const direction = isOutbound ? "outbound" : "inbound";
 
   // Skip purely internal/work emails — when every participant uses an internal
@@ -270,13 +269,10 @@ async function persistInboundMessage(
     const dom = addr.toLowerCase().split("@")[1];
     return !!dom && INTERNAL_DOMAINS.includes(dom);
   };
-  const participants = [fromEmail, ...toEmails, ...ccEmails].filter(
-    (e): e is string => !!e,
-  );
+  const participants = [fromEmail, ...toEmails, ...ccEmails].filter((e): e is string => !!e);
   if (participants.length > 0 && participants.every(isInternal)) {
     return false;
   }
-
 
   // If we already have the outbound copy (sent via our compose flow) we should
   // not double-insert. Skip when outbound + Message-ID header matches.
@@ -365,7 +361,9 @@ async function persistInboundMessage(
     snippet,
     has_attachments: parsed.attachments.length > 0,
     attachments: parsed.attachments.length > 0 ? parsed.attachments : null,
-    headers: headers ? Object.fromEntries((headers as GmailHeader[]).map((h) => [h.name, h.value])) : null,
+    headers: headers
+      ? Object.fromEntries((headers as GmailHeader[]).map((h) => [h.name, h.value]))
+      : null,
     sent_at: isOutbound ? occurredIso : null,
     received_at: isOutbound ? null : occurredIso,
   });

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { deleteLeadsByIds } from "./lead-delete";
 
-function makeSupabaseMock(result: { data: { id: string }[] | null; error: { message: string } | null }) {
+function makeSupabaseMock(result: {
+  data: { id: string }[] | null;
+  error: { message: string } | null;
+}) {
   const select = vi.fn().mockResolvedValue(result);
   const eq = vi.fn(() => ({ select }));
   const inFn = vi.fn(() => ({ select }));

@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 type Feature = { name: string; weight: number; value: number | string };
 
 const STAGE_BASELINE: Record<string, number> = {
-  new: 0.10,
+  new: 0.1,
   qualified: 0.25,
   proposal: 0.45,
   negotiation: 0.65,
@@ -13,9 +13,17 @@ const STAGE_BASELINE: Record<string, number> = {
   lost: 0.0,
 };
 
-function clamp(x: number, lo = 0.01, hi = 0.99) { return Math.max(lo, Math.min(hi, x)); }
+function clamp(x: number, lo = 0.01, hi = 0.99) {
+  return Math.max(lo, Math.min(hi, x));
+}
 
-function scoreDeal(deal: Record<string, unknown>): { p: number; ev: number; lo: number; hi: number; features: Feature[] } {
+function scoreDeal(deal: Record<string, unknown>): {
+  p: number;
+  ev: number;
+  lo: number;
+  hi: number;
+  features: Feature[];
+} {
   const stage = String(deal.stage ?? "new").toLowerCase();
   const base = STAGE_BASELINE[stage] ?? 0.2;
   const value = Number(deal.value ?? 0);
@@ -24,16 +32,24 @@ function scoreDeal(deal: Record<string, unknown>): { p: number; ev: number; lo: 
   // Recência
   const updated = deal.updated_at ? new Date(deal.updated_at as string).getTime() : Date.now();
   const ageDays = Math.max(0, (Date.now() - updated) / 86400000);
-  const recencyFactor = ageDays > 30 ? -0.10 : ageDays > 14 ? -0.05 : 0.05;
-  features.push({ name: "recency", weight: Math.abs(recencyFactor), value: `${Math.round(ageDays)}d` });
+  const recencyFactor = ageDays > 30 ? -0.1 : ageDays > 14 ? -0.05 : 0.05;
+  features.push({
+    name: "recency",
+    weight: Math.abs(recencyFactor),
+    value: `${Math.round(ageDays)}d`,
+  });
 
   // Proximidade do fechamento esperado
   let closeFactor = 0;
   if (deal.expected_close_date) {
     const d = (new Date(deal.expected_close_date as string).getTime() - Date.now()) / 86400000;
-    if (d >= 0 && d <= 14) closeFactor = 0.10;
-    else if (d < 0) closeFactor = -0.10;
-    features.push({ name: "expected_close", weight: Math.abs(closeFactor) || 0.02, value: `${Math.round(d)}d` });
+    if (d >= 0 && d <= 14) closeFactor = 0.1;
+    else if (d < 0) closeFactor = -0.1;
+    features.push({
+      name: "expected_close",
+      weight: Math.abs(closeFactor) || 0.02,
+      value: `${Math.round(d)}d`,
+    });
   }
 
   // Probabilidade HubSpot, se houver
@@ -48,7 +64,13 @@ function scoreDeal(deal: Record<string, unknown>): { p: number; ev: number; lo: 
   const p = clamp(base + recencyFactor + closeFactor + hsFactor);
   const ev = value * p;
   const margin = 0.15 * (1 - Math.abs(p - 0.5) * 2 + 0.2);
-  return { p, ev, lo: clamp(p - margin), hi: clamp(p + margin), features: features.sort((a, b) => b.weight - a.weight).slice(0, 3) };
+  return {
+    p,
+    ev,
+    lo: clamp(p - margin),
+    hi: clamp(p + margin),
+    features: features.sort((a, b) => b.weight - a.weight).slice(0, 3),
+  };
 }
 
 export const computeDealForecast = createServerFn({ method: "POST" })
@@ -75,7 +97,9 @@ export const computeDealForecast = createServerFn({ method: "POST" })
       model_version: "heuristic-v1",
       computed_at: new Date().toISOString(),
     };
-    const { error: uErr } = await supabase.from("ml_forecast_scores").upsert(row, { onConflict: "deal_id" });
+    const { error: uErr } = await supabase
+      .from("ml_forecast_scores")
+      .upsert(row, { onConflict: "deal_id" });
     if (uErr) throw new Error(uErr.message);
     return row;
   });
@@ -106,7 +130,9 @@ export const recomputeAllForecasts = createServerFn({ method: "POST" })
       };
     });
     if (rows.length) {
-      const { error: uErr } = await supabase.from("ml_forecast_scores").upsert(rows, { onConflict: "deal_id" });
+      const { error: uErr } = await supabase
+        .from("ml_forecast_scores")
+        .upsert(rows, { onConflict: "deal_id" });
       if (uErr) throw new Error(uErr.message);
     }
     return { processed: rows.length };
@@ -118,7 +144,9 @@ export const listForecasts = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("ml_forecast_scores")
-      .select("deal_id, probability, expected_value, confidence_lo, confidence_hi, top_features, model_version, computed_at")
+      .select(
+        "deal_id, probability, expected_value, confidence_lo, confidence_hi, top_features, model_version, computed_at",
+      )
       .order("expected_value", { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);

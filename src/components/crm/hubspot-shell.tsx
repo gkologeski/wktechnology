@@ -3,11 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -15,13 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsUpDown,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, Plus } from "lucide-react";
 import { TablePagination } from "@/components/table-pagination";
 
 // ---------------------------------------------------------------------------
@@ -106,9 +96,7 @@ export function CheckboxFilter({
       <Checkbox checked={checked} onCheckedChange={(v) => onChange(!!v)} />
       {dotClass && <span className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />}
       <span className="flex-1 truncate">{label}</span>
-      {count !== undefined && (
-        <span className="text-xs text-muted-foreground">{count}</span>
-      )}
+      {count !== undefined && <span className="text-xs text-muted-foreground">{count}</span>}
     </label>
   );
 }
@@ -167,9 +155,7 @@ export function ViewsTabs<T extends string>({
           onClick={() => onChange(v.id)}
           className={cn(
             "relative px-3 py-2 text-sm font-medium transition-colors",
-            active === v.id
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground",
+            active === v.id ? "text-primary" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {v.label}
@@ -232,20 +218,9 @@ export function Th({
   );
 }
 
-export function Td({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}) {
+export function Td({ children, className }: { children?: ReactNode; className?: string }) {
   return (
-    <td
-      className={cn(
-        "max-w-[260px] truncate border-b px-3 py-2 align-middle",
-        className,
-      )}
-    >
+    <td className={cn("max-w-[260px] truncate border-b px-3 py-2 align-middle", className)}>
       {children}
     </td>
   );
@@ -324,14 +299,8 @@ export const TONES: Record<string, Tone> = {
   },
 };
 
-export function Pill({
-  tone,
-  label,
-}: {
-  tone: keyof typeof TONES | Tone;
-  label: ReactNode;
-}) {
-  const t = typeof tone === "string" ? TONES[tone] ?? TONES.slate : tone;
+export function Pill({ tone, label }: { tone: keyof typeof TONES | Tone; label: ReactNode }) {
+  const t = typeof tone === "string" ? (TONES[tone] ?? TONES.slate) : tone;
   return (
     <span
       className={cn(

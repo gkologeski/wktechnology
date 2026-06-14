@@ -8,7 +8,13 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { RefreshCw } from "lucide-react";
 import {
@@ -69,7 +75,9 @@ function HubspotUsersPage() {
       />
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Owners ({owners.length})</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Owners ({owners.length})</CardTitle>
+        </CardHeader>
         <CardContent>
           {q.isLoading ? (
             <div className="text-sm text-muted-foreground">Carregando…</div>
@@ -112,7 +120,9 @@ function HubspotUsersPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="h-9"><SelectValue placeholder="— sem vínculo —" /></SelectTrigger>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="— sem vínculo —" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none">— sem vínculo —</SelectItem>
                           {(members.data ?? []).map((m) => (

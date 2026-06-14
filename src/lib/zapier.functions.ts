@@ -19,7 +19,12 @@ export const ZAPIER_TRIGGERS = [
 ] as const;
 
 export const ZAPIER_ACTIONS = [
-  { key: "create_contact", label: "Criar contato", method: "POST", path: "/api/public/v1/contacts" },
+  {
+    key: "create_contact",
+    label: "Criar contato",
+    method: "POST",
+    path: "/api/public/v1/contacts",
+  },
   { key: "create_lead", label: "Criar lead", method: "POST", path: "/api/public/v1/leads" },
   { key: "create_deal", label: "Criar negócio", method: "POST", path: "/api/public/v1/deals" },
 ] as const;

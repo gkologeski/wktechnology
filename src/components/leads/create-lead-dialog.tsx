@@ -20,8 +20,6 @@ import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
 
-
-
 export function CreateLeadDialog({
   open,
   onOpenChange,
@@ -47,7 +45,6 @@ export function CreateLeadDialog({
     setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
     setCompany({ id: null, name: "" });
   };
-
 
   const submit = async () => {
     if (!user) return;
@@ -97,39 +94,58 @@ export function CreateLeadDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!saving) onOpenChange(v);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Criar lead</DialogTitle>
-          <DialogDescription>Preencha as informações básicas. Você poderá editar tudo depois.</DialogDescription>
+          <DialogDescription>
+            Preencha as informações básicas. Você poderá editar tudo depois.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="first_name">Nome *</Label>
-              <Input id="first_name" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} autoFocus />
+              <Input
+                id="first_name"
+                value={form.first_name}
+                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                autoFocus
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="last_name">Sobrenome</Label>
-              <Input id="last_name" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+              <Input
+                id="last_name"
+                value={form.last_name}
+                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <EmailInput id="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+            <EmailInput
+              id="email"
+              value={form.email}
+              onChange={(v) => setForm({ ...form, email: v })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">Telefone</Label>
-            <PhoneInput id="phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+            <PhoneInput
+              id="phone"
+              value={form.phone}
+              onChange={(v) => setForm({ ...form, phone: v })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker
-              id="company_name"
-              value={company}
-              onChange={setCompany}
-              toastOnMatches
-            />
+            <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
           </div>
 
           <div className="space-y-1.5">
@@ -138,15 +154,17 @@ export function CreateLeadDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
           <Button
             onClick={submit}
-            disabled={
-              saving ||
-              !form.first_name.trim() ||
-              (!!company.name.trim() && !company.id)
+            disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
+            title={
+              !!company.name.trim() && !company.id
+                ? "Selecione a empresa na lista para continuar"
+                : undefined
             }
-            title={!!company.name.trim() && !company.id ? "Selecione a empresa na lista para continuar" : undefined}
           >
             {saving ? "Criando…" : "Criar lead"}
           </Button>

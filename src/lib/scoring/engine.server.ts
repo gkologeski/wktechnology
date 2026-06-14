@@ -30,31 +30,47 @@ function evalCondition(c: Condition, after: AnyRow | null, before: AnyRow | null
   if (!c?.field || !c?.op) return false;
   const v = getField(after, c.field);
   switch (c.op) {
-    case "eq": return v === c.value;
-    case "neq": return v !== c.value;
+    case "eq":
+      return v === c.value;
+    case "neq":
+      return v !== c.value;
     case "in": {
       const list = Array.isArray(c.value)
         ? c.value
-        : String(c.value ?? "").split(",").map((s) => s.trim());
+        : String(c.value ?? "")
+            .split(",")
+            .map((s) => s.trim());
       return list.includes(v as never);
     }
     case "contains":
       return typeof v === "string" && v.toLowerCase().includes(String(c.value ?? "").toLowerCase());
-    case "gt": return typeof v === "number" && typeof c.value === "number" && v > c.value;
-    case "lt": return typeof v === "number" && typeof c.value === "number" && v < c.value;
+    case "gt":
+      return typeof v === "number" && typeof c.value === "number" && v > c.value;
+    case "lt":
+      return typeof v === "number" && typeof c.value === "number" && v < c.value;
     case "changed_to": {
       const prev = getField(before, c.field);
       return v === c.value && prev !== c.value;
     }
-    case "is_empty": return v == null || v === "";
-    case "is_not_empty": return v != null && v !== "";
-    default: return false;
+    case "is_empty":
+      return v == null || v === "";
+    case "is_not_empty":
+      return v != null && v !== "";
+    default:
+      return false;
   }
 }
 
-interface TickResult { owners: number; events: number; applied: number; }
+interface TickResult {
+  owners: number;
+  events: number;
+  applied: number;
+}
 
-export async function tickScoring(supabase: SupabaseClient, batchPerOwner = 200): Promise<TickResult> {
+export async function tickScoring(
+  supabase: SupabaseClient,
+  batchPerOwner = 200,
+): Promise<TickResult> {
   const result: TickResult = { owners: 0, events: 0, applied: 0 };
 
   // Donos que têm pelo menos uma regra ativa.
@@ -83,7 +99,10 @@ export async function tickScoring(supabase: SupabaseClient, batchPerOwner = 200)
       .in("entity", ["leads", "contacts", "companies"])
       .order("created_at", { ascending: true })
       .limit(batchPerOwner);
-    if (eErr) { console.error("[scoring] events", eErr); continue; }
+    if (eErr) {
+      console.error("[scoring] events", eErr);
+      continue;
+    }
     if (!events?.length) continue;
 
     const { data: rules, error: rErr } = await supabase
@@ -91,7 +110,10 @@ export async function tickScoring(supabase: SupabaseClient, batchPerOwner = 200)
       .select("id, name, entity, condition, points, enabled")
       .eq("owner_id", ownerId)
       .eq("enabled", true);
-    if (rErr) { console.error("[scoring] rules", rErr); continue; }
+    if (rErr) {
+      console.error("[scoring] rules", rErr);
+      continue;
+    }
 
     let maxAt = since;
     for (const ev of events) {
@@ -138,7 +160,10 @@ export async function tickScoring(supabase: SupabaseClient, batchPerOwner = 200)
           .eq("id", ev.entity_id)
           .maybeSingle();
         const current = Number((row?.score as number | null) ?? 0);
-        await supabase.from(evEntity).update({ score: current + points }).eq("id", ev.entity_id);
+        await supabase
+          .from(evEntity)
+          .update({ score: current + points })
+          .eq("id", ev.entity_id);
         result.applied += 1;
       }
     }

@@ -11,9 +11,10 @@ export const Route = createFileRoute("/lp/$slug")({
     const url = `https://crm.wktechnology.com.br/lp/${params.slug}`;
     const title = p?.title || "Landing page — WK Technology CRM";
     const rawDesc = p?.description || "";
-    const description = rawDesc && rawDesc.length >= 50
-      ? rawDesc
-      : `${title}. Conheça a solução do WK Technology CRM e descubra como organizar seus leads, contatos e negócios em um só lugar.`;
+    const description =
+      rawDesc && rawDesc.length >= 50
+        ? rawDesc
+        : `${title}. Conheça a solução do WK Technology CRM e descubra como organizar seus leads, contatos e negócios em um só lugar.`;
     return {
       meta: [
         { title },
@@ -43,7 +44,9 @@ export const Route = createFileRoute("/lp/$slug")({
 type Block = Record<string, unknown> & { type: string };
 
 function PublicLandingPage() {
-  const { page } = Route.useLoaderData() as { page: { id: string; title: string; blocks: Block[] } | null };
+  const { page } = Route.useLoaderData() as {
+    page: { id: string; title: string; blocks: Block[] } | null;
+  };
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -52,7 +55,11 @@ function PublicLandingPage() {
   }, [page]);
 
   if (!page) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Página não encontrada</p></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Página não encontrada</p>
+      </div>
+    );
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -67,7 +74,10 @@ function PublicLandingPage() {
       {page.blocks.map((b, i) => {
         if (b.type === "hero") {
           return (
-            <section key={i} className="py-24 px-6 text-center bg-gradient-to-b from-primary/5 to-transparent">
+            <section
+              key={i}
+              className="py-24 px-6 text-center bg-gradient-to-b from-primary/5 to-transparent"
+            >
               <h1 className="text-5xl font-bold mb-4">{String(b.headline ?? "")}</h1>
               <p className="text-xl text-muted-foreground mb-8">{String(b.subheadline ?? "")}</p>
               {b.cta ? <Button size="lg">{String(b.cta)}</Button> : null}
@@ -94,9 +104,22 @@ function PublicLandingPage() {
                 <p className="text-center text-lg">Obrigado! Em breve entraremos em contato.</p>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
-                  <input required name="name" placeholder="Nome" className="w-full border rounded px-3 py-2" />
-                  <input required type="email" name="email" placeholder="Email" className="w-full border rounded px-3 py-2" />
-                  <Button type="submit" className="w-full">{String(b.submitLabel ?? "Enviar")}</Button>
+                  <input
+                    required
+                    name="name"
+                    placeholder="Nome"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                  <input
+                    required
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                  <Button type="submit" className="w-full">
+                    {String(b.submitLabel ?? "Enviar")}
+                  </Button>
                 </form>
               )}
             </section>

@@ -24,7 +24,9 @@ export function CopilotCmdK() {
         setOpen((v) => !v);
       }
     }
-    function onOpen() { setOpen(true); }
+    function onOpen() {
+      setOpen(true);
+    }
     window.addEventListener("keydown", onKey);
     window.addEventListener("copilot:open", onOpen as EventListener);
     return () => {
@@ -62,14 +64,22 @@ export function CopilotCmdK() {
               placeholder='Ex.: "negócios prestes a fechar com a Acme"'
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+              }}
             />
             <Button onClick={submit} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="h-4 w-4" />
+              )}
             </Button>
           </div>
           {answer && (
-            <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">{answer}</div>
+            <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
+              {answer}
+            </div>
           )}
           {sources.length > 0 && (
             <div className="space-y-1">
@@ -79,7 +89,11 @@ export function CopilotCmdK() {
                   <li key={`${s.kind}-${s.id}`} className="text-xs flex gap-2">
                     <span className="text-muted-foreground">[{i + 1}]</span>
                     {s.url ? (
-                      <Link to={s.url} onClick={() => setOpen(false)} className="text-primary hover:underline">
+                      <Link
+                        to={s.url}
+                        onClick={() => setOpen(false)}
+                        className="text-primary hover:underline"
+                      >
                         {s.title}
                       </Link>
                     ) : (

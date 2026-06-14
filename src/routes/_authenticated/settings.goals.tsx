@@ -20,8 +20,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Target, Plus } from "lucide-react";
@@ -85,7 +98,11 @@ function GoalsPage() {
   const remove = useServerFn(deleteGoal);
 
   const goalsQ = useQuery({ queryKey: ["goals"], queryFn: () => list() });
-  const progressQ = useQuery({ queryKey: ["goals-progress"], queryFn: () => compute(), refetchInterval: 60000 });
+  const progressQ = useQuery({
+    queryKey: ["goals-progress"],
+    queryFn: () => compute(),
+    refetchInterval: 60000,
+  });
   const teamQ = useQuery({ queryKey: ["team-members"], queryFn: () => teams() });
 
   const progressById = useMemo(() => {
@@ -173,12 +190,18 @@ function GoalsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5" />Metas</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Metas
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Defina metas por usuário ou time, com base em ganhos, atividades, ligações e mais.
             </p>
           </div>
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nova meta</Button>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-1" />
+            Nova meta
+          </Button>
         </CardHeader>
         <CardContent>
           {goalsQ.isLoading ? (
@@ -189,7 +212,8 @@ function GoalsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {(goalsQ.data as GoalRow[]).map((g) => {
                 const current = progressById.get(g.id) ?? 0;
-                const pct = g.target_value > 0 ? Math.min(100, (current / Number(g.target_value)) * 100) : 0;
+                const pct =
+                  g.target_value > 0 ? Math.min(100, (current / Number(g.target_value)) * 100) : 0;
                 return (
                   <Card key={g.id} className="border">
                     <CardHeader className="pb-2">
@@ -213,7 +237,9 @@ function GoalsPage() {
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{formatValue(g.metric, current)}</span>
-                        <span className="text-muted-foreground">de {formatValue(g.metric, Number(g.target_value))}</span>
+                        <span className="text-muted-foreground">
+                          de {formatValue(g.metric, Number(g.target_value))}
+                        </span>
                       </div>
                       <Progress value={pct} />
                       <div className="flex flex-wrap gap-2 text-xs">
@@ -221,7 +247,9 @@ function GoalsPage() {
                         <Badge variant="outline">
                           {g.period_start} → {g.period_end}
                         </Badge>
-                        <Badge variant={pct >= 100 ? "default" : "outline"}>{pct.toFixed(0)}%</Badge>
+                        <Badge variant={pct >= 100 ? "default" : "outline"}>
+                          {pct.toFixed(0)}%
+                        </Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -240,16 +268,26 @@ function GoalsPage() {
           <div className="space-y-3">
             <div>
               <Label>Nome</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Métrica</Label>
-                <Select value={form.metric} onValueChange={(v) => setForm({ ...form, metric: v as GoalMetric })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.metric}
+                  onValueChange={(v) => setForm({ ...form, metric: v as GoalMetric })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {GOAL_METRICS.map((m) => (
-                      <SelectItem key={m} value={m}>{GOAL_METRIC_LABELS[m]}</SelectItem>
+                      <SelectItem key={m} value={m}>
+                        {GOAL_METRIC_LABELS[m]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -260,14 +298,21 @@ function GoalsPage() {
                   value={form.period}
                   onValueChange={(v) => {
                     const p = v as GoalPeriod;
-                    const b = p === "custom" ? { start: form.period_start, end: form.period_end } : periodBounds(p);
+                    const b =
+                      p === "custom"
+                        ? { start: form.period_start, end: form.period_end }
+                        : periodBounds(p);
                     setForm({ ...form, period: p, period_start: b.start, period_end: b.end });
                   }}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {GOAL_PERIODS.map((p) => (
-                      <SelectItem key={p} value={p}>{GOAL_PERIOD_LABELS[p]}</SelectItem>
+                      <SelectItem key={p} value={p}>
+                        {GOAL_PERIOD_LABELS[p]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -276,11 +321,19 @@ function GoalsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Início</Label>
-                <Input type="date" value={form.period_start} onChange={(e) => setForm({ ...form, period_start: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.period_start}
+                  onChange={(e) => setForm({ ...form, period_start: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Fim</Label>
-                <Input type="date" value={form.period_end} onChange={(e) => setForm({ ...form, period_end: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.period_end}
+                  onChange={(e) => setForm({ ...form, period_end: e.target.value })}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -298,9 +351,13 @@ function GoalsPage() {
                 <Label>Atribuir a</Label>
                 <Select
                   value={form.target_user_id ?? "__team__"}
-                  onValueChange={(v) => setForm({ ...form, target_user_id: v === "__team__" ? null : v })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, target_user_id: v === "__team__" ? null : v })
+                  }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__team__">Time todo</SelectItem>
                     {(teamQ.data ?? []).map((m: any) => (
@@ -321,13 +378,18 @@ function GoalsPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              O progresso é calculado a partir dos dados do workspace no período. Metas por usuário são
-              referenciais — quando os registros tiverem atribuição individual, o progresso se ajusta automaticamente.
+              O progresso é calculado a partir dos dados do workspace no período. Metas por usuário
+              são referenciais — quando os registros tiverem atribuição individual, o progresso se
+              ajusta automaticamente.
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saveMut.isPending}>Salvar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={saveMut.isPending}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

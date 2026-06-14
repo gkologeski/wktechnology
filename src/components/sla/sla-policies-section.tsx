@@ -8,22 +8,37 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Zap } from "lucide-react";
 // (Dialog imports above already provide Dialog/DialogContent/etc.)
 import {
-  listSlaPolicies, upsertSlaPolicy, deleteSlaPolicy, listTicketPipelines, runSlaBreachCheck,
+  listSlaPolicies,
+  upsertSlaPolicy,
+  deleteSlaPolicy,
+  listTicketPipelines,
+  runSlaBreachCheck,
 } from "@/lib/sla-policies.functions";
 
 type Policy = Awaited<ReturnType<typeof listSlaPolicies>>[number];
 
 const PRIORITY_LABEL: Record<string, string> = {
-  low: "Baixa", medium: "Média", high: "Alta", urgent: "Urgente",
+  low: "Baixa",
+  medium: "Média",
+  high: "Alta",
+  urgent: "Urgente",
 };
 
 export function SlaPoliciesSection() {
@@ -44,10 +59,13 @@ export function SlaPoliciesSection() {
         <CardTitle className="text-base">Políticas de SLA por prioridade/fila (tickets)</CardTitle>
         <div className="flex gap-2">
           <Button
-            variant="outline" size="sm"
+            variant="outline"
+            size="sm"
             onClick={async () => {
               const r = await runCheck({});
-              toast.success(`Checagem: ${r.first_response_breaches} 1ª resp + ${r.resolution_breaches} resolução`);
+              toast.success(
+                `Checagem: ${r.first_response_breaches} 1ª resp + ${r.resolution_breaches} resolução`,
+              );
               qc.invalidateQueries({ queryKey: ["sla-policies"] });
             }}
           >
@@ -63,7 +81,8 @@ export function SlaPoliciesSection() {
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : (policiesQ.data ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nenhuma política. Crie uma para que tickets ganhem prazos automáticos de primeira resposta e resolução.
+            Nenhuma política. Crie uma para que tickets ganhem prazos automáticos de primeira
+            resposta e resolução.
           </p>
         ) : (
           <div className="divide-y">
@@ -74,7 +93,9 @@ export function SlaPoliciesSection() {
                   <div className="min-w-0">
                     <div className="font-medium truncate">{p.name}</div>
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-1.5 mt-0.5">
-                      <Badge variant="outline">Fila: {pipeName ?? (p.pipeline_id ? "—" : "Todas")}</Badge>
+                      <Badge variant="outline">
+                        Fila: {pipeName ?? (p.pipeline_id ? "—" : "Todas")}
+                      </Badge>
                       <Badge variant="outline">
                         Prioridade: {p.priority ? PRIORITY_LABEL[p.priority] : "Todas"}
                       </Badge>
@@ -88,7 +109,8 @@ export function SlaPoliciesSection() {
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
-                      size="icon" variant="ghost"
+                      size="icon"
+                      variant="ghost"
                       onClick={async () => {
                         if (!confirm(`Excluir "${p.name}"?`)) return;
                         await del({ data: { id: p.id } });
@@ -118,7 +140,11 @@ export function SlaPoliciesSection() {
 }
 
 function PolicyDialog({
-  open, initial, pipelines, onClose, onSaved,
+  open,
+  initial,
+  pipelines,
+  onClose,
+  onSaved,
 }: {
   open: boolean;
   initial: Policy | null;
@@ -154,25 +180,41 @@ function PolicyDialog({
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: VIP — Urgente" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: VIP — Urgente"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Fila (pipeline)</Label>
-              <Select value={pipelineId || "all"} onValueChange={(v) => setPipelineId(v === "all" ? "" : v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={pipelineId || "all"}
+                onValueChange={(v) => setPipelineId(v === "all" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
                   {pipelines.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
               <Label>Prioridade</Label>
-              <Select value={priority || "all"} onValueChange={(v) => setPriority(v === "all" ? "" : v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={priority || "all"}
+                onValueChange={(v) => setPriority(v === "all" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="low">Baixa</SelectItem>
@@ -186,11 +228,21 @@ function PolicyDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>1ª resposta (min)</Label>
-              <Input type="number" min={1} value={firstMins} onChange={(e) => setFirstMins(e.target.value)} />
+              <Input
+                type="number"
+                min={1}
+                value={firstMins}
+                onChange={(e) => setFirstMins(e.target.value)}
+              />
             </div>
             <div className="space-y-1">
               <Label>Resolução (min)</Label>
-              <Input type="number" min={1} value={resMins} onChange={(e) => setResMins(e.target.value)} />
+              <Input
+                type="number"
+                min={1}
+                value={resMins}
+                onChange={(e) => setResMins(e.target.value)}
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -199,27 +251,33 @@ function PolicyDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button
             disabled={saving || !name.trim()}
             onClick={async () => {
               setSaving(true);
               try {
-                await save({ data: {
-                  id: initial?.id,
-                  name: name.trim(),
-                  pipeline_id: pipelineId || null,
-                  priority: (priority || null) as "low" | "medium" | "high" | "urgent" | null,
-                  first_response_mins: Math.max(1, Number(firstMins) || 60),
-                  resolution_mins: Math.max(1, Number(resMins) || 1440),
-                  active,
-                }});
+                await save({
+                  data: {
+                    id: initial?.id,
+                    name: name.trim(),
+                    pipeline_id: pipelineId || null,
+                    priority: (priority || null) as "low" | "medium" | "high" | "urgent" | null,
+                    first_response_mins: Math.max(1, Number(firstMins) || 60),
+                    resolution_mins: Math.max(1, Number(resMins) || 1440),
+                    active,
+                  },
+                });
                 toast.success("Política salva");
                 onSaved();
                 onClose();
               } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Erro ao salvar");
-              } finally { setSaving(false); }
+              } finally {
+                setSaving(false);
+              }
             }}
           >
             {saving ? "Salvando…" : "Salvar"}

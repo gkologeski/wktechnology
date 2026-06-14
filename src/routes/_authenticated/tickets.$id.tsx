@@ -13,7 +13,12 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
-import { PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow, type TicketStatus } from "@/components/tickets/types";
+import {
+  PRIORITIES,
+  PRIORITY_COLOR_VAR,
+  type TicketRow,
+  type TicketStatus,
+} from "@/components/tickets/types";
 import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -31,7 +36,6 @@ function TicketDetail() {
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines } = usePipelines("ticket");
   const [ticket, setTicket] = useState<TicketRow | null>(null);
-
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
@@ -52,8 +56,9 @@ function TicketDetail() {
     setTicket(data as TicketRow | null);
   }, [id]);
 
-  useEffect(() => { void load(); }, [load]);
-
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -75,7 +80,10 @@ function TicketDetail() {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).eq("id", ticket.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (ticket.status !== nextStatus) {
       notifyStatus({ data: { ticket_id: ticket.id, new_status: nextStatus } }).catch(() => {});
     }
@@ -85,12 +93,16 @@ function TicketDetail() {
   const remove = async () => {
     if (!confirm("Excluir este ticket?")) return;
     const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluído");
     navigate({ to: "/tickets" });
   };
 
-  const priorityLabel = PRIORITIES.find((p) => p.value === ticket.priority)?.label ?? ticket.priority;
+  const priorityLabel =
+    PRIORITIES.find((p) => p.value === ticket.priority)?.label ?? ticket.priority;
   const stageLabel = currentStage?.label ?? "—";
   const priorityColor = PRIORITY_COLOR_VAR[ticket.priority] ?? "var(--priority-low)";
 
@@ -99,7 +111,9 @@ function TicketDetail() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-5 min-w-0">
           <Button variant="ghost" size="icon" asChild className="rounded-full">
-            <Link to="/tickets"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link to="/tickets">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </Button>
           <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
             <TicketIcon className="h-7 w-7" />
@@ -107,12 +121,25 @@ function TicketDetail() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground truncate">{ticket.subject}</h1>
-              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{stageLabel}</Badge>
-              {pipeline && <Badge variant="outline" className="rounded-full px-3 text-muted-foreground">{pipeline.name}</Badge>}
+              <Badge
+                variant="outline"
+                className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20"
+              >
+                {stageLabel}
+              </Badge>
+              {pipeline && (
+                <Badge variant="outline" className="rounded-full px-3 text-muted-foreground">
+                  {pipeline.name}
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className="rounded-full px-3 capitalize"
-                style={{ background: `color-mix(in oklab, ${priorityColor} 12%, transparent)`, color: priorityColor, borderColor: `color-mix(in oklab, ${priorityColor} 30%, transparent)` }}
+                style={{
+                  background: `color-mix(in oklab, ${priorityColor} 12%, transparent)`,
+                  color: priorityColor,
+                  borderColor: `color-mix(in oklab, ${priorityColor} 30%, transparent)`,
+                }}
               >
                 {priorityLabel}
               </Badge>
@@ -134,7 +161,12 @@ function TicketDetail() {
             }}
             onApplied={load}
           />
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            onClick={remove}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -154,7 +186,9 @@ function TicketDetail() {
       header={header}
       left={
         <PropertiesPanel
-          entity="tickets" table="tickets" row={ticket as unknown as Record<string, unknown> & { id: string }}
+          entity="tickets"
+          table="tickets"
+          row={ticket as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "subject", label: "Assunto", primary: true },
             { key: "status", label: "Status", primary: true },
@@ -175,18 +209,23 @@ function TicketDetail() {
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
               <h3 className="text-sm font-bold mb-3">Descrição</h3>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
+              <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                {ticket.description}
+              </p>
             </div>
           )}
           {(() => {
-            const timelineKey = ticket.deal_id ? "related_deal_id"
-              : ticket.contact_id ? "related_contact_id"
-              : ticket.company_id ? "related_company_id"
-              : null;
+            const timelineKey = ticket.deal_id
+              ? "related_deal_id"
+              : ticket.contact_id
+                ? "related_contact_id"
+                : ticket.company_id
+                  ? "related_company_id"
+                  : null;
             const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? null;
-            return timelineKey && timelineId
-              ? <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />
-              : null;
+            return timelineKey && timelineId ? (
+              <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />
+            ) : null;
           })()}
         </>
       }
@@ -202,4 +241,3 @@ function TicketDetail() {
     />
   );
 }
-

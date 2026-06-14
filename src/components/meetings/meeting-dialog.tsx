@@ -1,6 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,8 +35,13 @@ function toLocalInput(d: Date) {
 }
 
 export function MeetingDialog({
-  trigger, open: openProp, onOpenChange, defaultAttendee = "",
-  relatedKey, relatedId, onCreated,
+  trigger,
+  open: openProp,
+  onOpenChange,
+  defaultAttendee = "",
+  relatedKey,
+  relatedId,
+  onCreated,
 }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -67,11 +79,20 @@ export function MeetingDialog({
 
   const submit = async () => {
     if (!user) return;
-    if (!title.trim()) { toast.error("Informe um título."); return; }
-    if (!start || !end) { toast.error("Informe início e fim."); return; }
+    if (!title.trim()) {
+      toast.error("Informe um título.");
+      return;
+    }
+    if (!start || !end) {
+      toast.error("Informe início e fim.");
+      return;
+    }
     const startIso = new Date(start).toISOString();
     const endIso = new Date(end).toISOString();
-    if (new Date(endIso) <= new Date(startIso)) { toast.error("O fim deve ser depois do início."); return; }
+    if (new Date(endIso) <= new Date(startIso)) {
+      toast.error("O fim deve ser depois do início.");
+      return;
+    }
     setBusy(true);
     try {
       const attendees = attendee
@@ -89,22 +110,32 @@ export function MeetingDialog({
         attachments: { attendees, end_at: endIso },
         [relatedKey]: relatedId,
       };
-      const { data: inserted, error } = await supabase.from("activities").insert(payload as never).select("id").single();
+      const { data: inserted, error } = await supabase
+        .from("activities")
+        .insert(payload as never)
+        .select("id")
+        .single();
       if (error) throw new Error(error.message);
 
       if (accountId && inserted?.id) {
         try {
-          const r = await pushToCalendar({ data: { account_id: accountId, activity_id: inserted.id } });
+          const r = await pushToCalendar({
+            data: { account_id: accountId, activity_id: inserted.id },
+          });
           if (r.meet_link) toast.success(`Reunião criada com Google Meet: ${r.meet_link}`);
           else toast.success("Reunião criada e sincronizada com o Google Calendar.");
         } catch (e) {
-          toast.warning(`Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`);
+          toast.warning(
+            `Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`,
+          );
         }
       } else {
         toast.success("Reunião registrada no CRM.");
       }
       setOpen(false);
-      setTitle(""); setDescription(""); setLocation("");
+      setTitle("");
+      setDescription("");
+      setLocation("");
       onCreated?.();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar reunião.");
@@ -125,12 +156,20 @@ export function MeetingDialog({
         <div className="space-y-3">
           <div>
             <Label>Título *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Reunião de descoberta" />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Reunião de descoberta"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Início *</Label>
-              <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
             </div>
             <div>
               <Label>Fim *</Label>
@@ -139,28 +178,52 @@ export function MeetingDialog({
           </div>
           <div>
             <Label>Local / Link</Label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="https://meet.google.com/..." />
+            <Input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="https://meet.google.com/..."
+            />
           </div>
           <div>
             <Label>Participantes (e-mails separados por vírgula)</Label>
-            <Input value={attendee} onChange={(e) => setAttendee(e.target.value)} placeholder="cliente@empresa.com" />
+            <Input
+              value={attendee}
+              onChange={(e) => setAttendee(e.target.value)}
+              placeholder="cliente@empresa.com"
+            />
           </div>
           <div>
             <Label>Descrição</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
           </div>
           {!accountId && (
             <div className="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs flex items-center justify-between gap-2">
               <span>Nenhum Google Calendar conectado — a reunião será salva apenas no CRM.</span>
-              <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setOpen(false); navigate({ to: "/settings/calendars" }); }}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-1"
+                onClick={() => {
+                  setOpen(false);
+                  navigate({ to: "/settings/calendars" });
+                }}
+              >
                 Conectar <ExternalLink className="h-3 w-3" />
               </Button>
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancelar</Button>
-          <Button onClick={submit} disabled={busy}>{busy ? "Salvando…" : "Marcar reunião"}</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={busy}>
+            {busy ? "Salvando…" : "Marcar reunião"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

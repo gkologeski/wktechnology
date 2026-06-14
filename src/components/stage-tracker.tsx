@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 export type Stage = { value: string; label: string };
 
 export function StageTracker({
-  stages, current, onChange, disabled, activeClassName,
+  stages,
+  current,
+  onChange,
+  disabled,
+  activeClassName,
 }: {
   stages: Stage[];
   current: string;
@@ -12,7 +16,10 @@ export function StageTracker({
   disabled?: boolean;
   activeClassName?: string;
 }) {
-  const idx = Math.max(0, stages.findIndex((s) => s.value === current));
+  const idx = Math.max(
+    0,
+    stages.findIndex((s) => s.value === current),
+  );
   return (
     <div className="flex items-stretch w-full overflow-x-auto rounded-lg border bg-card">
       {stages.map((s, i) => {
@@ -33,7 +40,9 @@ export function StageTracker({
           >
             <div className="flex items-center gap-1">
               {passed && <Check className="h-3 w-3" />}
-              <span>{i + 1}. {s.label}</span>
+              <span>
+                {i + 1}. {s.label}
+              </span>
             </div>
           </button>
         );

@@ -17,7 +17,7 @@ export type SavedView = {
 };
 
 export type PresetView = {
-  id: string;          // local id, prefixed "preset:"
+  id: string; // local id, prefixed "preset:"
   name: string;
   filters: FilterGroup;
   column_order?: string[];
@@ -32,7 +32,10 @@ export function useSavedViews(entity: string) {
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
-        .from("saved_views").select("*").eq("entity", entity).order("created_at", { ascending: true });
+        .from("saved_views")
+        .select("*")
+        .eq("entity", entity)
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as SavedView[];
     },
@@ -40,7 +43,11 @@ export function useSavedViews(entity: string) {
   const create = useMutation({
     mutationFn: async (input: Partial<SavedView>) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).from("saved_views").insert({ ...input, entity }).select("*").single();
+      const { data, error } = await (supabase as any)
+        .from("saved_views")
+        .insert({ ...input, entity })
+        .select("*")
+        .single();
       if (error) throw error;
       return data as SavedView;
     },

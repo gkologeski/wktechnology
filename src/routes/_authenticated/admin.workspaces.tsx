@@ -11,9 +11,23 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import {
   listAllWorkspaces,
@@ -40,7 +54,13 @@ function WorkspacesAdminPage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", admin_email: "", admin_name: "", admin_phone: "" });
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    admin_email: "",
+    admin_name: "",
+    admin_phone: "",
+  });
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({
@@ -52,16 +72,17 @@ function WorkspacesAdminPage() {
   });
 
   const create = useMutation({
-    mutationFn: async () => createFn({
-      data: {
-        name: form.name.trim(),
-        slug: form.slug.trim(),
-        admin_email: form.admin_email.trim(),
-        admin_name: form.admin_name.trim(),
-        admin_phone: form.admin_phone.trim() || undefined,
-        redirect_origin: window.location.origin,
-      },
-    }),
+    mutationFn: async () =>
+      createFn({
+        data: {
+          name: form.name.trim(),
+          slug: form.slug.trim(),
+          admin_email: form.admin_email.trim(),
+          admin_name: form.admin_name.trim(),
+          admin_phone: form.admin_phone.trim() || undefined,
+          redirect_origin: window.location.origin,
+        },
+      }),
     onSuccess: () => {
       toast.success("Workspace criado! Convite enviado por email.");
       setOpen(false);
@@ -72,16 +93,17 @@ function WorkspacesAdminPage() {
   });
 
   const invite = useMutation({
-    mutationFn: async () => inviteFn({
-      data: {
-        workspace_id: inviteForm.workspace_id,
-        email: inviteForm.email.trim(),
-        full_name: inviteForm.full_name.trim(),
-        phone: inviteForm.phone.trim() || undefined,
-        role: inviteForm.role,
-        redirect_origin: window.location.origin,
-      },
-    }),
+    mutationFn: async () =>
+      inviteFn({
+        data: {
+          workspace_id: inviteForm.workspace_id,
+          email: inviteForm.email.trim(),
+          full_name: inviteForm.full_name.trim(),
+          phone: inviteForm.phone.trim() || undefined,
+          role: inviteForm.role,
+          redirect_origin: window.location.origin,
+        },
+      }),
     onSuccess: () => {
       toast.success("Convite enviado!");
       setInviteOpen(false);
@@ -98,7 +120,10 @@ function WorkspacesAdminPage() {
       <div className="p-8 max-w-md mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5" />Acesso restrito</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Acesso restrito
+            </CardTitle>
             <CardDescription>Esta área é exclusiva do super-admin da plataforma.</CardDescription>
           </CardHeader>
         </Card>
@@ -130,13 +155,17 @@ function WorkspacesAdminPage() {
           <div className="flex gap-2">
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline"><UserPlus className="h-4 w-4 mr-2" />Convidar usuário</Button>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Convidar usuário
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Convidar usuário</DialogTitle>
                   <DialogDescription>
-                    Escolha o workspace ao qual o usuário será adicionado. Ele receberá um email para definir senha.
+                    Escolha o workspace ao qual o usuário será adicionado. Ele receberá um email
+                    para definir senha.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submitInvite} className="space-y-4">
@@ -146,36 +175,55 @@ function WorkspacesAdminPage() {
                       value={inviteForm.workspace_id}
                       onValueChange={(v) => setInviteForm((f) => ({ ...f, workspace_id: v }))}
                     >
-                      <SelectTrigger><SelectValue placeholder="Selecione um workspace" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um workspace" />
+                      </SelectTrigger>
                       <SelectContent>
                         {(list.data ?? []).map((w) => (
-                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                          <SelectItem key={w.id} value={w.id}>
+                            {w.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="iu-name">Nome completo</Label>
-                    <Input id="iu-name" required value={inviteForm.full_name}
-                      onChange={(e) => setInviteForm((f) => ({ ...f, full_name: e.target.value }))} />
+                    <Input
+                      id="iu-name"
+                      required
+                      value={inviteForm.full_name}
+                      onChange={(e) => setInviteForm((f) => ({ ...f, full_name: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="iu-email">Email</Label>
-                    <EmailInput id="iu-email" required value={inviteForm.email}
-                      onChange={(v) => setInviteForm((f) => ({ ...f, email: v }))} />
+                    <EmailInput
+                      id="iu-email"
+                      required
+                      value={inviteForm.email}
+                      onChange={(v) => setInviteForm((f) => ({ ...f, email: v }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="iu-phone">Telefone (opcional)</Label>
-                    <PhoneInput id="iu-phone" value={inviteForm.phone}
-                      onChange={(v) => setInviteForm((f) => ({ ...f, phone: v }))} />
+                    <PhoneInput
+                      id="iu-phone"
+                      value={inviteForm.phone}
+                      onChange={(v) => setInviteForm((f) => ({ ...f, phone: v }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Papel</Label>
                     <Select
                       value={inviteForm.role}
-                      onValueChange={(v) => setInviteForm((f) => ({ ...f, role: v as "admin" | "member" }))}
+                      onValueChange={(v) =>
+                        setInviteForm((f) => ({ ...f, role: v as "admin" | "member" }))
+                      }
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin do workspace</SelectItem>
                         <SelectItem value="member">Membro</SelectItem>
@@ -183,7 +231,9 @@ function WorkspacesAdminPage() {
                     </Select>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</Button>
+                    <Button type="button" variant="ghost" onClick={() => setInviteOpen(false)}>
+                      Cancelar
+                    </Button>
                     <Button type="submit" disabled={invite.isPending}>
                       {invite.isPending ? "Enviando…" : "Enviar convite"}
                     </Button>
@@ -192,51 +242,78 @@ function WorkspacesAdminPage() {
               </DialogContent>
             </Dialog>
             <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Novo workspace</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar workspace</DialogTitle>
-                <DialogDescription>
-                  Um email de convite será enviado ao administrador para definir senha.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={submit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ws-name">Nome da empresa</Label>
-                  <Input id="ws-name" required value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ws-slug">Slug (identificador)</Label>
-                  <Input id="ws-slug" required value={form.slug} placeholder="ex: acme-corp"
-                    onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ws-admin-name">Nome do admin</Label>
-                  <Input id="ws-admin-name" required value={form.admin_name}
-                    onChange={(e) => setForm((f) => ({ ...f, admin_name: e.target.value }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ws-admin-email">Email do admin</Label>
-                  <EmailInput id="ws-admin-email" required value={form.admin_email}
-                    onChange={(v) => setForm((f) => ({ ...f, admin_email: v }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ws-admin-phone">Telefone (opcional)</Label>
-                  <PhoneInput id="ws-admin-phone" value={form.admin_phone}
-                    onChange={(v) => setForm((f) => ({ ...f, admin_phone: v }))} />
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={create.isPending}>
-                    {create.isPending ? "Criando…" : "Criar workspace"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo workspace
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar workspace</DialogTitle>
+                  <DialogDescription>
+                    Um email de convite será enviado ao administrador para definir senha.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ws-name">Nome da empresa</Label>
+                    <Input
+                      id="ws-name"
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ws-slug">Slug (identificador)</Label>
+                    <Input
+                      id="ws-slug"
+                      required
+                      value={form.slug}
+                      placeholder="ex: acme-corp"
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ws-admin-name">Nome do admin</Label>
+                    <Input
+                      id="ws-admin-name"
+                      required
+                      value={form.admin_name}
+                      onChange={(e) => setForm((f) => ({ ...f, admin_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ws-admin-email">Email do admin</Label>
+                    <EmailInput
+                      id="ws-admin-email"
+                      required
+                      value={form.admin_email}
+                      onChange={(v) => setForm((f) => ({ ...f, admin_email: v }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ws-admin-phone">Telefone (opcional)</Label>
+                    <PhoneInput
+                      id="ws-admin-phone"
+                      value={form.admin_phone}
+                      onChange={(v) => setForm((f) => ({ ...f, admin_phone: v }))}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={create.isPending}>
+                      {create.isPending ? "Criando…" : "Criar workspace"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         }
       />
@@ -264,8 +341,13 @@ function WorkspacesAdminPage() {
                   <CardDescription className="text-xs">/{w.slug}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Badge variant={w.status === "active" ? "default" : "secondary"}>{w.status}</Badge>
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{w.member_count}</span>
+                  <Badge variant={w.status === "active" ? "default" : "secondary"}>
+                    {w.status}
+                  </Badge>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5" />
+                    {w.member_count}
+                  </span>
                   {w.custom_domain && <span className="truncate text-xs">{w.custom_domain}</span>}
                 </CardContent>
               </Card>

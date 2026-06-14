@@ -16,10 +16,23 @@ export const Route = createFileRoute("/_authenticated/settings/hubspot-sync")({
   component: HubspotSyncPage,
 });
 
-type Row = { id: string; entity: string; local_id: string; hubspot_id: string; last_synced_at: string; direction: string };
+type Row = {
+  id: string;
+  entity: string;
+  local_id: string;
+  hubspot_id: string;
+  last_synced_at: string;
+  direction: string;
+};
 type ActType = "note" | "task" | "call" | "meeting" | "email";
 type EntityType = "contact" | "company" | "deal" | "lead" | "ticket";
-const ENTITY_LABEL: Record<EntityType, string> = { contact: "Contatos", company: "Empresas", deal: "Negócios", lead: "Leads", ticket: "Tickets" };
+const ENTITY_LABEL: Record<EntityType, string> = {
+  contact: "Contatos",
+  company: "Empresas",
+  deal: "Negócios",
+  lead: "Leads",
+  ticket: "Tickets",
+};
 
 function HubspotSyncPage() {
   const push = useServerFn(pushContactsToHubspot);
@@ -38,7 +51,9 @@ function HubspotSyncPage() {
   const [reconcileCursors, setReconcileCursors] = useState<Record<string, boolean>>({});
   const [entityCursors, setEntityCursors] = useState<Record<string, boolean>>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [stats, setStats] = useState<Record<string, { total: number; linked: number; pending: number }>>({});
+  const [stats, setStats] = useState<
+    Record<string, { total: number; linked: number; pending: number }>
+  >({});
   const [progress, setProgress] = useState<string>("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
@@ -66,8 +81,12 @@ function HubspotSyncPage() {
         ents[t] = !!localStorage.getItem(`hubspot-reconcile-entity-cursor:${t}`);
       }
       setEntityCursors(ents);
-    } catch { /* ignore */ }
-    const id = setInterval(() => { void refreshCounts(); }, 2000);
+    } catch {
+      /* ignore */
+    }
+    const id = setInterval(() => {
+      void refreshCounts();
+    }, 2000);
     return () => clearInterval(id);
   }, []);
 
@@ -77,19 +96,28 @@ function HubspotSyncPage() {
       const r = await push({ data: { limit: 50 } });
       toast.success(`Sync: ${r.pushed} novos, ${r.updated} atualizados, ${r.failed} falhas`);
       await load();
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(false); }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const cursorKey = (t: ActType) => `hubspot-relink-cursor:${t}`;
   const getCursor = (t: ActType) => {
-    try { return localStorage.getItem(cursorKey(t)) || undefined; } catch { return undefined; }
+    try {
+      return localStorage.getItem(cursorKey(t)) || undefined;
+    } catch {
+      return undefined;
+    }
   };
   const setCursor = (t: ActType, v: string | null) => {
     try {
       if (v) localStorage.setItem(cursorKey(t), v);
       else localStorage.removeItem(cursorKey(t));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   const runRelink = async (type: ActType) => {
@@ -104,7 +132,9 @@ function HubspotSyncPage() {
         const r = await relink({ data: { type, batchSize: 500, afterId: cursor } });
         totalProcessed += r.processed;
         totalUpdated += r.updated;
-        setProgress(`${type}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`);
+        setProgress(
+          `${type}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`,
+        );
         if (!r.hasMore || !r.nextCursor) {
           setCursor(type, null);
           break;
@@ -117,10 +147,11 @@ function HubspotSyncPage() {
     } catch (e) {
       // mantém cursor salvo para retomar depois
       toast.error((e as Error).message);
+    } finally {
+      setRelinkBusy(null);
+      setProgress("");
     }
-    finally { setRelinkBusy(null); setProgress(""); }
   };
-
 
   const runRelinkAll = async () => {
     setRelinkBusy("all");
@@ -136,7 +167,9 @@ function HubspotSyncPage() {
           const r = await relink({ data: { type: t, batchSize: 500, afterId: cursor } });
           totalProcessed += r.processed;
           totalUpdated += r.updated;
-          setProgress(`${t}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`);
+          setProgress(
+            `${t}: ${totalProcessed.toLocaleString("pt-BR")} processadas, ${totalUpdated.toLocaleString("pt-BR")} vinculadas...`,
+          );
           if (!r.hasMore || !r.nextCursor) {
             setCursor(t, null);
             break;
@@ -144,23 +177,32 @@ function HubspotSyncPage() {
           cursor = r.nextCursor;
           setCursor(t, cursor);
         }
-
       }
       toast.success("Re-vinculação completa");
       await load();
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setRelinkBusy(null); setProgress(""); }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRelinkBusy(null);
+      setProgress("");
+    }
   };
 
   const reconcileCursorKey = (t: ActType) => `hubspot-reconcile-cursor:${t}`;
   const getReconcileCursor = (t: ActType) => {
-    try { return localStorage.getItem(reconcileCursorKey(t)) || undefined; } catch { return undefined; }
+    try {
+      return localStorage.getItem(reconcileCursorKey(t)) || undefined;
+    } catch {
+      return undefined;
+    }
   };
   const setReconcileCursor = (t: ActType, v: string | null) => {
     try {
       if (v) localStorage.setItem(reconcileCursorKey(t), v);
       else localStorage.removeItem(reconcileCursorKey(t));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setReconcileCursors((s) => ({ ...s, [t]: !!v }));
   };
 
@@ -187,7 +229,12 @@ function HubspotSyncPage() {
       cursor = r.nextAfter;
       setReconcileCursor(t, cursor ?? null);
     }
-    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+    return {
+      scanned: totalScanned,
+      missing: totalMissing,
+      imported: totalImported,
+      failed: totalFailed,
+    };
   };
 
   const runReconcile = async (t: ActType) => {
@@ -227,13 +274,19 @@ function HubspotSyncPage() {
 
   const entityCursorKey = (t: EntityType) => `hubspot-reconcile-entity-cursor:${t}`;
   const getEntityCursor = (t: EntityType) => {
-    try { return localStorage.getItem(entityCursorKey(t)) || undefined; } catch { return undefined; }
+    try {
+      return localStorage.getItem(entityCursorKey(t)) || undefined;
+    } catch {
+      return undefined;
+    }
   };
   const setEntityCursor = (t: EntityType, v: string | null) => {
     try {
       if (v) localStorage.setItem(entityCursorKey(t), v);
       else localStorage.removeItem(entityCursorKey(t));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setEntityCursors((s) => ({ ...s, [t]: !!v }));
   };
 
@@ -260,7 +313,12 @@ function HubspotSyncPage() {
       cursor = r.nextAfter;
       setEntityCursor(t, cursor ?? null);
     }
-    return { scanned: totalScanned, missing: totalMissing, imported: totalImported, failed: totalFailed };
+    return {
+      scanned: totalScanned,
+      missing: totalMissing,
+      imported: totalImported,
+      failed: totalFailed,
+    };
   };
 
   const runEntity = async (t: EntityType) => {
@@ -268,7 +326,9 @@ function HubspotSyncPage() {
     setEntityProgress("");
     try {
       const r = await runEntityOne(t);
-      toast.success(`${ENTITY_LABEL[t]}: ${r.imported} novos importados (${r.scanned} verificados)`);
+      toast.success(
+        `${ENTITY_LABEL[t]}: ${r.imported} novos importados (${r.scanned} verificados)`,
+      );
       await refreshCounts();
     } catch (e) {
       toast.error((e as Error).message);
@@ -304,17 +364,25 @@ function HubspotSyncPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Sync HubSpot</h1>
-        <p className="text-sm text-muted-foreground">Sincronização bidirecional de contatos com HubSpot.</p>
+        <p className="text-sm text-muted-foreground">
+          Sincronização bidirecional de contatos com HubSpot.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Enviar contatos para HubSpot</CardTitle>
-          <CardDescription>Cria contatos novos no HubSpot e atualiza os já mapeados.</CardDescription>
+          <CardDescription>
+            Cria contatos novos no HubSpot e atualiza os já mapeados.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={doPush} disabled={busy}>
-            {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+            )}
             Sincronizar agora
           </Button>
         </CardContent>
@@ -324,7 +392,8 @@ function HubspotSyncPage() {
         <CardHeader>
           <CardTitle>Re-vincular atividades importadas</CardTitle>
           <CardDescription>
-            Busca as associações no HubSpot para atividades que vieram sem vínculo de contato/empresa/negócio/lead e atualiza somente os FKs nulos. Não reimporta conteúdo.
+            Busca as associações no HubSpot para atividades que vieram sem vínculo de
+            contato/empresa/negócio/lead e atualiza somente os FKs nulos. Não reimporta conteúdo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -338,16 +407,22 @@ function HubspotSyncPage() {
                     <div className="flex items-center gap-2">
                       <span className="capitalize font-medium w-16">{t}</span>
                       <span className="text-muted-foreground tabular-nums">
-                        {s.linked.toLocaleString("pt-BR")} / {s.total.toLocaleString("pt-BR")} vinculadas
+                        {s.linked.toLocaleString("pt-BR")} / {s.total.toLocaleString("pt-BR")}{" "}
+                        vinculadas
                       </span>
                       <Badge variant={s.pending ? "default" : "outline"} className="tabular-nums">
                         {s.pending.toLocaleString("pt-BR")} pendentes
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{pct}%</span>
+                      <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
+                        {pct}%
+                      </span>
                       {(relinkBusy === t || relinkBusy === "all") && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Em andamento" />
+                        <span
+                          className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"
+                          title="Em andamento"
+                        />
                       )}
                       <Button
                         size="sm"
@@ -355,7 +430,11 @@ function HubspotSyncPage() {
                         disabled={!!relinkBusy || !counts[t]}
                         onClick={() => runRelink(t)}
                       >
-                        {relinkBusy === t ? <Loader2 className="h-3 w-3 animate-spin" /> : "Re-vincular"}
+                        {relinkBusy === t ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          "Re-vincular"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -381,10 +460,17 @@ function HubspotSyncPage() {
             </span>
             <div className="flex items-center gap-2">
               {relinkBusy === "all" && (
-                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Em andamento" />
+                <span
+                  className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"
+                  title="Em andamento"
+                />
               )}
               <Button onClick={runRelinkAll} disabled={!!relinkBusy || totalPending === 0}>
-                {relinkBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                {relinkBusy === "all" ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Link2 className="h-4 w-4 mr-2" />
+                )}
                 Re-vincular todas
               </Button>
             </div>
@@ -397,9 +483,10 @@ function HubspotSyncPage() {
         <CardHeader>
           <CardTitle>Verificar registros novos no HubSpot</CardTitle>
           <CardDescription>
-            Varre o HubSpot (mais recentes primeiro) e importa para o sistema as notes, tasks, calls, meetings
-            e emails que ainda não existem aqui. Não altera registros já presentes. Para vincular contato/empresa/negócio/lead,
-            use "Re-vincular" acima depois da importação.
+            Varre o HubSpot (mais recentes primeiro) e importa para o sistema as notes, tasks,
+            calls, meetings e emails que ainda não existem aqui. Não altera registros já presentes.
+            Para vincular contato/empresa/negócio/lead, use "Re-vincular" acima depois da
+            importação.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -415,9 +502,17 @@ function HubspotSyncPage() {
                     onClick={() => runReconcile(t)}
                     title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
                   >
-                    {reconcileBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    {reconcileBusy === t ? (
+                      <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3 mr-2" />
+                    )}
                     <span className="capitalize">{t}</span>
-                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                    {resuming && (
+                      <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">
+                        continuar
+                      </Badge>
+                    )}
                   </Button>
                   {resuming && !reconcileBusy && (
                     <Button
@@ -435,12 +530,18 @@ function HubspotSyncPage() {
             })}
             <div className="ml-auto">
               <Button onClick={runReconcileAll} disabled={!!reconcileBusy}>
-                {reconcileBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                {reconcileBusy === "all" ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
                 Verificar todos
               </Button>
             </div>
           </div>
-          {reconcileProgress && <p className="text-xs text-muted-foreground">{reconcileProgress}</p>}
+          {reconcileProgress && (
+            <p className="text-xs text-muted-foreground">{reconcileProgress}</p>
+          )}
         </CardContent>
       </Card>
 
@@ -448,9 +549,9 @@ function HubspotSyncPage() {
         <CardHeader>
           <CardTitle>Verificar registros novos no HubSpot — Entidades</CardTitle>
           <CardDescription>
-            Varre o HubSpot (mais recentes primeiro) e importa as Empresas, Contatos, Negócios e Leads
-            que ainda não existem aqui. Não altera registros já presentes. Associações entre eles
-            (contato↔empresa, negócio↔contato) ficam para o fluxo de importação completa.
+            Varre o HubSpot (mais recentes primeiro) e importa as Empresas, Contatos, Negócios e
+            Leads que ainda não existem aqui. Não altera registros já presentes. Associações entre
+            eles (contato↔empresa, negócio↔contato) ficam para o fluxo de importação completa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -466,9 +567,17 @@ function HubspotSyncPage() {
                     onClick={() => runEntity(t)}
                     title={resuming ? "Retomar de onde parou" : "Iniciar varredura"}
                   >
-                    {entityBusy === t ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-2" />}
+                    {entityBusy === t ? (
+                      <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3 mr-2" />
+                    )}
                     <span>{ENTITY_LABEL[t]}</span>
-                    {resuming && <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">continuar</Badge>}
+                    {resuming && (
+                      <Badge variant="secondary" className="ml-2 h-4 px-1 text-[10px]">
+                        continuar
+                      </Badge>
+                    )}
                   </Button>
                   {resuming && !entityBusy && (
                     <Button
@@ -486,7 +595,11 @@ function HubspotSyncPage() {
             })}
             <div className="ml-auto">
               <Button onClick={runEntityAll} disabled={!!entityBusy}>
-                {entityBusy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                {entityBusy === "all" ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
                 Verificar todas as entidades
               </Button>
             </div>
@@ -495,19 +608,28 @@ function HubspotSyncPage() {
         </CardContent>
       </Card>
 
-
       <Card>
-        <CardHeader><CardTitle>Mapeamentos ativos</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Mapeamentos ativos</CardTitle>
+        </CardHeader>
         <CardContent>
-          {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum mapeamento ainda.</p> :
-           <div className="space-y-1 max-h-96 overflow-auto">
-            {rows.map((r) => (
-              <div key={r.id} className="text-xs border-b py-2 flex justify-between gap-2">
-                <span><Badge variant="outline">{r.entity}</Badge> <code className="ml-2">{r.local_id.slice(0,8)} ↔ {r.hubspot_id}</code></span>
-                <span className="text-muted-foreground">{formatDateTime(r.last_synced_at)}</span>
-              </div>
-            ))}
-           </div>}
+          {rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum mapeamento ainda.</p>
+          ) : (
+            <div className="space-y-1 max-h-96 overflow-auto">
+              {rows.map((r) => (
+                <div key={r.id} className="text-xs border-b py-2 flex justify-between gap-2">
+                  <span>
+                    <Badge variant="outline">{r.entity}</Badge>{" "}
+                    <code className="ml-2">
+                      {r.local_id.slice(0, 8)} ↔ {r.hubspot_id}
+                    </code>
+                  </span>
+                  <span className="text-muted-foreground">{formatDateTime(r.last_synced_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

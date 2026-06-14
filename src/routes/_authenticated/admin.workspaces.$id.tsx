@@ -11,8 +11,22 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import {
@@ -50,19 +64,25 @@ function WorkspaceDetailPage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", full_name: "", phone: "", role: "member" as "admin" | "member" });
+  const [form, setForm] = useState({
+    email: "",
+    full_name: "",
+    phone: "",
+    role: "member" as "admin" | "member",
+  });
 
   const invMut = useMutation({
-    mutationFn: () => invite({
-      data: {
-        workspace_id: id,
-        email: form.email.trim(),
-        full_name: form.full_name.trim(),
-        phone: form.phone.trim() || undefined,
-        role: form.role,
-        redirect_origin: window.location.origin,
-      },
-    }),
+    mutationFn: () =>
+      invite({
+        data: {
+          workspace_id: id,
+          email: form.email.trim(),
+          full_name: form.full_name.trim(),
+          phone: form.phone.trim() || undefined,
+          role: form.role,
+          redirect_origin: window.location.origin,
+        },
+      }),
     onSuccess: () => {
       toast.success("Convite enviado!");
       setOpen(false);
@@ -89,7 +109,10 @@ function WorkspaceDetailPage() {
       <div className="p-8 max-w-md mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5" />Acesso restrito</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Acesso restrito
+            </CardTitle>
             <CardDescription>Esta área é exclusiva do super-admin da plataforma.</CardDescription>
           </CardHeader>
         </Card>
@@ -106,8 +129,12 @@ function WorkspaceDetailPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <Link to="/admin/workspaces" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="h-3.5 w-3.5" />Workspaces
+        <Link
+          to="/admin/workspaces"
+          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Workspaces
         </Link>
       </div>
       <PageHeader
@@ -116,33 +143,54 @@ function WorkspaceDetailPage() {
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Convidar usuário</Button>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Convidar usuário
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Convidar usuário</DialogTitle>
-                <DialogDescription>O usuário receberá um email para definir senha e acessar o workspace.</DialogDescription>
+                <DialogDescription>
+                  O usuário receberá um email para definir senha e acessar o workspace.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={submit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="m-name">Nome completo</Label>
-                  <Input id="m-name" required value={form.full_name}
-                    onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+                  <Input
+                    id="m-name"
+                    required
+                    value={form.full_name}
+                    onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="m-email">Email</Label>
-                  <EmailInput id="m-email" required value={form.email}
-                    onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
+                  <EmailInput
+                    id="m-email"
+                    required
+                    value={form.email}
+                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="m-phone">Telefone (opcional)</Label>
-                  <PhoneInput id="m-phone" value={form.phone}
-                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
+                  <PhoneInput
+                    id="m-phone"
+                    value={form.phone}
+                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Papel</Label>
-                  <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as "admin" | "member" }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.role}
+                    onValueChange={(v) => setForm((f) => ({ ...f, role: v as "admin" | "member" }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin do workspace</SelectItem>
                       <SelectItem value="member">Membro</SelectItem>
@@ -150,7 +198,9 @@ function WorkspaceDetailPage() {
                   </Select>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                    Cancelar
+                  </Button>
                   <Button type="submit" disabled={invMut.isPending}>
                     {invMut.isPending ? "Enviando…" : "Enviar convite"}
                   </Button>
@@ -175,13 +225,17 @@ function WorkspaceDetailPage() {
               {(members.data ?? []).map((m) => (
                 <div key={m.user_id} className="flex items-center justify-between py-3 gap-3">
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{m.full_name || m.email || m.user_id}</div>
+                    <div className="font-medium truncate">
+                      {m.full_name || m.email || m.user_id}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">{m.email}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={m.role === "admin" ? "default" : "secondary"}>{m.role}</Badge>
                     {m.pending && <Badge variant="outline">pendente</Badge>}
-                    <Button size="icon" variant="ghost"
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => {
                         if (confirm(`Remover ${m.full_name || m.email}?`)) rmMut.mutate(m.user_id);
                       }}

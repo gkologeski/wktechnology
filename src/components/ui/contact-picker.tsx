@@ -107,9 +107,7 @@ export function ContactPicker({
         const like = `%${tok}%`;
         query = query.or(cols.map((c) => `${c}.ilike.${like}`).join(","));
       }
-      const { data, error } = await query
-        .order("first_name", { ascending: true })
-        .limit(500);
+      const { data, error } = await query.order("first_name", { ascending: true }).limit(500);
       if (error) return;
       const rows = (data ?? []) as Match[];
       setMatches(rows);
@@ -224,8 +222,10 @@ export function ContactPicker({
  * ContactPickerById — wrapper para callers que só guardam o id.
  * Mantém o nome localmente; hidrata via id quando necessário.
  * ───────────────────────────────────────────────────────────── */
-export interface ContactPickerByIdProps
-  extends Omit<ContactPickerProps, "value" | "onChange" | "id"> {
+export interface ContactPickerByIdProps extends Omit<
+  ContactPickerProps,
+  "value" | "onChange" | "id"
+> {
   id: string | null;
   onChange: (id: string | null) => void;
 }

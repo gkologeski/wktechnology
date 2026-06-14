@@ -180,7 +180,8 @@ function QuoteTemplatesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Modelos de cotação</h1>
           <p className="text-sm text-muted-foreground">
-            Monte modelos arrastando blocos. Cada cotação no negócio escolhe qual modelo enviar ao cliente.
+            Monte modelos arrastando blocos. Cada cotação no negócio escolhe qual modelo enviar ao
+            cliente.
           </p>
         </div>
         <Button onClick={() => createMut.mutate()} disabled={createMut.isPending} size="lg">
@@ -209,7 +210,9 @@ function QuoteTemplatesPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`truncate ${selectedId === t.id ? "font-semibold text-primary" : "font-medium"}`}>
+                        <span
+                          className={`truncate ${selectedId === t.id ? "font-semibold text-primary" : "font-medium"}`}
+                        >
                           {t.name}
                         </span>
                         <span className="flex items-center gap-1 shrink-0">
@@ -258,7 +261,10 @@ function QuoteTemplatesPage() {
                       </Label>
                       <Input
                         value={meta.name}
-                        onChange={(e) => { setMeta({ ...meta, name: e.target.value }); setDirty(true); }}
+                        onChange={(e) => {
+                          setMeta({ ...meta, name: e.target.value });
+                          setDirty(true);
+                        }}
                         disabled={isSystem}
                         placeholder="Ex.: Modelo padrão da equipe"
                       />
@@ -269,7 +275,10 @@ function QuoteTemplatesPage() {
                       </Label>
                       <Input
                         value={meta.description}
-                        onChange={(e) => { setMeta({ ...meta, description: e.target.value }); setDirty(true); }}
+                        onChange={(e) => {
+                          setMeta({ ...meta, description: e.target.value });
+                          setDirty(true);
+                        }}
                         placeholder="Quando usar este modelo"
                       />
                     </div>
@@ -297,7 +306,8 @@ function QuoteTemplatesPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            if (confirm(`Excluir o modelo "${current.name}"?`)) deleteMut.mutate(current.id);
+                            if (confirm(`Excluir o modelo "${current.name}"?`))
+                              deleteMut.mutate(current.id);
                           }}
                           disabled={deleteMut.isPending}
                         >
@@ -321,10 +331,18 @@ function QuoteTemplatesPage() {
                     </p>
                   )}
 
-                  <Tabs value={mode} onValueChange={(v) => setMode(v as "visual" | "code")} className="w-full">
+                  <Tabs
+                    value={mode}
+                    onValueChange={(v) => setMode(v as "visual" | "code")}
+                    className="w-full"
+                  >
                     <TabsList className="h-9">
-                      <TabsTrigger value="visual" className="text-xs">Editor visual</TabsTrigger>
-                      <TabsTrigger value="code" className="text-xs">HTML avançado</TabsTrigger>
+                      <TabsTrigger value="visual" className="text-xs">
+                        Editor visual
+                      </TabsTrigger>
+                      <TabsTrigger value="code" className="text-xs">
+                        HTML avançado
+                      </TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </CardContent>
@@ -335,18 +353,19 @@ function QuoteTemplatesPage() {
                 doc ? (
                   <QuoteVisualEditor
                     doc={doc}
-                    onChange={(d) => { setDoc(d); setDirty(true); }}
+                    onChange={(d) => {
+                      setDoc(d);
+                      setDirty(true);
+                    }}
                   />
                 ) : (
                   <Card>
                     <CardContent className="p-8 text-center space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        Este modelo foi criado em HTML. Você pode convertê-lo para o editor visual de blocos —
-                        o HTML original será substituído por uma estrutura padrão.
+                        Este modelo foi criado em HTML. Você pode convertê-lo para o editor visual
+                        de blocos — o HTML original será substituído por uma estrutura padrão.
                       </p>
-                      <Button onClick={initVisualFromLegacy}>
-                        Converter para editor visual
-                      </Button>
+                      <Button onClick={initVisualFromLegacy}>Converter para editor visual</Button>
                     </CardContent>
                   </Card>
                 )
@@ -364,7 +383,8 @@ function QuoteTemplatesPage() {
                     />
                     {doc && (
                       <p className="mt-2 text-[11px] text-muted-foreground">
-                        Atenção: salvar no modo HTML descarta a estrutura visual de blocos deste modelo.
+                        Atenção: salvar no modo HTML descarta a estrutura visual de blocos deste
+                        modelo.
                       </p>
                     )}
                   </CardContent>
@@ -377,4 +397,3 @@ function QuoteTemplatesPage() {
     </div>
   );
 }
-

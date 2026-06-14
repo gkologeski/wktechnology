@@ -9,9 +9,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/page-header";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
@@ -20,11 +40,28 @@ import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dial
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
-import { applyFilters, type FilterGroup, type FilterCondition, conditionToLabel } from "@/lib/filters";
+import {
+  applyFilters,
+  type FilterGroup,
+  type FilterCondition,
+  conditionToLabel,
+} from "@/lib/filters";
 import { useSavedViews, type SavedView } from "@/lib/saved-views";
 import { PRESET_VIEWS } from "@/lib/preset-views";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Filter, Columns3, Save, Star, X, LayoutGrid, List as ListIcon, ListTodo } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Filter,
+  Columns3,
+  Save,
+  Star,
+  X,
+  LayoutGrid,
+  List as ListIcon,
+  ListTodo,
+} from "lucide-react";
 import Papa from "papaparse";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EmailInput } from "@/components/ui/email-input";
@@ -56,7 +93,12 @@ export type EntityListProps<T extends { id: string }> = {
   inlineEditable?: string[];
   boardStages?: BoardStage[];
   boardStageField?: string;
-  filterFields?: { name: string; label: string; type?: string; options?: { value: string; label: string }[] }[];
+  filterFields?: {
+    name: string;
+    label: string;
+    type?: string;
+    options?: { value: string; label: string }[];
+  }[];
   /** Always-applied filters (not shown in UI). Useful to scope a page to a subset (e.g. activities of type=task). */
   lockedFilters?: FilterCondition[];
   /** Singular label for the "Criar X" button. Overrides default mapping. */
@@ -64,15 +106,35 @@ export type EntityListProps<T extends { id: string }> = {
 };
 
 type ViewState = {
-  viewId: string | null;          // saved view id, or "preset:..."
+  viewId: string | null; // saved view id, or "preset:..."
   filters: FilterGroup;
-  columnOrder: string[] | null;   // null = use default
+  columnOrder: string[] | null; // null = use default
   sortBy: string;
   sortDir: "asc" | "desc";
 };
 
 export function EntityList<T extends { id: string; owner_id?: string }>(props: EntityListProps<T>) {
-  const { table, title, description, columns, fields, defaults, detailPath, searchKeys, csvEnabled, toolbar, rowActions, bulkEditFields, bulkActions, inlineEditable, boardStages, boardStageField, filterFields, lockedFilters, entitySingularLabel } = props;
+  const {
+    table,
+    title,
+    description,
+    columns,
+    fields,
+    defaults,
+    detailPath,
+    searchKeys,
+    csvEnabled,
+    toolbar,
+    rowActions,
+    bulkEditFields,
+    bulkActions,
+    inlineEditable,
+    boardStages,
+    boardStageField,
+    filterFields,
+    lockedFilters,
+    entitySingularLabel,
+  } = props;
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -93,8 +155,11 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const [columnOpen, setColumnOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "board">("table");
   const [view, setView] = useState<ViewState>({
-    viewId: null, filters: { type: "group", op: "and", conditions: [] },
-    columnOrder: null, sortBy: "created_at", sortDir: "desc",
+    viewId: null,
+    filters: { type: "group", op: "and", conditions: [] },
+    columnOrder: null,
+    sortBy: "created_at",
+    sortDir: "desc",
   });
 
   const PAGE_SIZE = pageSize;
@@ -106,7 +171,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   }, [search]);
 
   // Reset page when filters/sort/search/view change
-  useEffect(() => { setPage(0); }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode, pageSize]);
+  useEffect(() => {
+    setPage(0);
+  }, [view.filters, view.sortBy, view.sortDir, debouncedSearch, viewMode, pageSize]);
 
   // Build a slim column projection so we never pull heavy JSONB (hs_raw etc.)
   const selectColumns = useMemo(() => {
@@ -121,7 +188,18 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const isBoard = viewMode === "board" && !!boardStages && !!boardStageField;
 
   const { data: queryResult, isLoading } = useQuery({
-    queryKey: [table, "list", view.filters, view.sortBy, view.sortDir, debouncedSearch, page, isBoard, selectColumns, lockedFilters],
+    queryKey: [
+      table,
+      "list",
+      view.filters,
+      view.sortBy,
+      view.sortDir,
+      debouncedSearch,
+      page,
+      isBoard,
+      selectColumns,
+      lockedFilters,
+    ],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any).from(table).select(selectColumns, { count: "exact" });
@@ -165,21 +243,30 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id));
   const someFilteredSelected = filtered.some((r) => selectedIds.has(r.id));
-  const toggleAll = () => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (allFilteredSelected) for (const r of filtered) next.delete(r.id);
-    else for (const r of filtered) next.add(r.id);
-    return next;
-  });
-  const toggleOne = (id: string) => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
+  const toggleAll = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) for (const r of filtered) next.delete(r.id);
+      else for (const r of filtered) next.add(r.id);
+      return next;
+    });
+  const toggleOne = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const clearSel = () => setSelectedIds(new Set());
 
-  const openNew = () => { setEditing(null); setOpen(true); };
-  const openEdit = (row: T) => { setEditing(row); setOpen(true); };
+  const openNew = () => {
+    setEditing(null);
+    setOpen(true);
+  };
+  const openEdit = (row: T) => {
+    setEditing(row);
+    setOpen(true);
+  };
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este registro?")) return;
@@ -207,14 +294,17 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${table}.csv`; a.click();
+    a.href = url;
+    a.download = `${table}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const importCsv = async (file: File) => {
     if (!user) return;
     Papa.parse<Record<string, string>>(file, {
-      header: true, skipEmptyLines: true,
+      header: true,
+      skipEmptyLines: true,
       complete: async (res) => {
         const fieldNames = new Set(fields.map((f) => f.name));
         const rowsToInsert = res.data.map((r) => {
@@ -225,7 +315,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase as any).from(table).insert(rowsToInsert);
         if (error) toast.error(error.message);
-        else { toast.success(`${rowsToInsert.length} registros importados`); qc.invalidateQueries({ queryKey: [table] }); }
+        else {
+          toast.success(`${rowsToInsert.length} registros importados`);
+          qc.invalidateQueries({ queryKey: [table] });
+        }
       },
     });
   };
@@ -233,7 +326,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   // Inline edit
   const inlineUpdate = async (id: string, field: string, value: unknown) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update({ [field]: value }).eq("id", id);
+    const { error } = await (supabase as any)
+      .from(table)
+      .update({ [field]: value })
+      .eq("id", id);
     if (error) toast.error(error.message);
     else qc.invalidateQueries({ queryKey: [table] });
   };
@@ -241,22 +337,32 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   // Saved views
   const applyView = (sv: SavedView) => {
     setView({
-      viewId: sv.id, filters: sv.filters ?? { type: "group", op: "and", conditions: [] },
-      columnOrder: sv.column_order ?? null, sortBy: sv.sort_by ?? "created_at", sortDir: sv.sort_dir ?? "desc",
+      viewId: sv.id,
+      filters: sv.filters ?? { type: "group", op: "and", conditions: [] },
+      columnOrder: sv.column_order ?? null,
+      sortBy: sv.sort_by ?? "created_at",
+      sortDir: sv.sort_dir ?? "desc",
     });
   };
-  const applyPreset = (p: typeof presets[number]) => {
+  const applyPreset = (p: (typeof presets)[number]) => {
     setView({
-      viewId: p.id, filters: p.filters,
-      columnOrder: p.column_order ?? null, sortBy: p.sort_by ?? "created_at", sortDir: p.sort_dir ?? "desc",
+      viewId: p.id,
+      filters: p.filters,
+      columnOrder: p.column_order ?? null,
+      sortBy: p.sort_by ?? "created_at",
+      sortDir: p.sort_dir ?? "desc",
     });
   };
   const saveAsView = async () => {
     const name = prompt("Nome da view:");
     if (!name) return;
     const sv = await savedViews.create.mutateAsync({
-      name, filters: view.filters, column_order: view.columnOrder ?? undefined,
-      sort_by: view.sortBy, sort_dir: view.sortDir, is_shared: false,
+      name,
+      filters: view.filters,
+      column_order: view.columnOrder ?? undefined,
+      sort_by: view.sortBy,
+      sort_dir: view.sortDir,
+      is_shared: false,
     });
     setView({ ...view, viewId: sv.id });
     toast.success("View salva");
@@ -265,7 +371,12 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     if (!view.viewId || view.viewId.startsWith("preset:")) return;
     await savedViews.update.mutateAsync({
       id: view.viewId,
-      patch: { filters: view.filters, column_order: view.columnOrder ?? undefined, sort_by: view.sortBy, sort_dir: view.sortDir },
+      patch: {
+        filters: view.filters,
+        column_order: view.columnOrder ?? undefined,
+        sort_by: view.sortBy,
+        sort_dir: view.sortDir,
+      },
     });
     toast.success("View atualizada");
   };
@@ -273,7 +384,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     if (!view.viewId || view.viewId.startsWith("preset:")) return;
     if (!confirm("Excluir esta view?")) return;
     await savedViews.remove.mutateAsync(view.viewId);
-    setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" });
+    setView({
+      viewId: null,
+      filters: { type: "group", op: "and", conditions: [] },
+      columnOrder: null,
+      sortBy: "created_at",
+      sortDir: "desc",
+    });
   };
 
   // Apply default view on first load
@@ -286,12 +403,14 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   }, [savedViews.data]);
 
   const currentViewName = view.viewId
-    ? (view.viewId.startsWith("preset:")
-        ? presets.find((p) => p.id === view.viewId)?.name
-        : savedViews.data?.find((v) => v.id === view.viewId)?.name)
+    ? view.viewId.startsWith("preset:")
+      ? presets.find((p) => p.id === view.viewId)?.name
+      : savedViews.data?.find((v) => v.id === view.viewId)?.name
     : "Todos";
 
-  const filterFieldList = filterFields ?? fields.map((f) => ({ name: f.name, label: f.label, type: f.type, options: f.options }));
+  const filterFieldList =
+    filterFields ??
+    fields.map((f) => ({ name: f.name, label: f.label, type: f.type, options: f.options }));
   const allColumns = columns.map((c) => ({ key: String(c.key), label: c.label }));
 
   const selectedRows = filtered.filter((r) => selectedIds.has(r.id));
@@ -300,10 +419,22 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const hasFilter = view.filters.conditions.length > 0;
 
   // Singular entity label for CTA ("Criar lead")
-  const entitySingular = entitySingularLabel ?? ({ leads: "lead", contacts: "contato", companies: "empresa", deals: "negócio", activities: "registro" } as const)[table];
+  const entitySingular =
+    entitySingularLabel ??
+    (
+      {
+        leads: "lead",
+        contacts: "contato",
+        companies: "empresa",
+        deals: "negócio",
+        activities: "registro",
+      } as const
+    )[table];
 
   // Quick-filter fields (select-type only)
-  const quickFilterFields = filterFieldList.filter((f) => f.type === "select" && f.options && f.options.length > 0);
+  const quickFilterFields = filterFieldList.filter(
+    (f) => f.type === "select" && f.options && f.options.length > 0,
+  );
   const getQuickValue = (fname: string) => {
     const cond = view.filters.conditions.find(
       (c) => c.type === "condition" && c.field === fname && c.op === "eq",
@@ -330,10 +461,19 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <>
             {csvEnabled && (
               <>
-                <Button variant="outline" size="sm" onClick={() => exportCsv()}>Exportar CSV</Button>
+                <Button variant="outline" size="sm" onClick={() => exportCsv()}>
+                  Exportar CSV
+                </Button>
                 <label className="inline-flex">
-                  <input type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && importCsv(e.target.files[0])} />
-                  <span className="inline-flex items-center justify-center rounded-md border bg-background px-3 h-9 text-sm cursor-pointer hover:bg-muted">Importar CSV</span>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && importCsv(e.target.files[0])}
+                  />
+                  <span className="inline-flex items-center justify-center rounded-md border bg-background px-3 h-9 text-sm cursor-pointer hover:bg-muted">
+                    Importar CSV
+                  </span>
                 </label>
               </>
             )}
@@ -351,7 +491,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         savedViews={savedViews.data ?? []}
         currentViewId={view.viewId}
         onSelectAll={() =>
-          setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" })
+          setView({
+            viewId: null,
+            filters: { type: "group", op: "and", conditions: [] },
+            columnOrder: null,
+            sortBy: "created_at",
+            sortDir: "desc",
+          })
         }
         onApplyPreset={applyPreset}
         onApplyView={applyView}
@@ -360,22 +506,36 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           if (!confirm("Excluir esta visualização?")) return;
           await savedViews.remove.mutateAsync(id);
           if (view.viewId === id) {
-            setView({ viewId: null, filters: { type: "group", op: "and", conditions: [] }, columnOrder: null, sortBy: "created_at", sortDir: "desc" });
+            setView({
+              viewId: null,
+              filters: { type: "group", op: "and", conditions: [] },
+              columnOrder: null,
+              sortBy: "created_at",
+              sortDir: "desc",
+            });
           }
         }}
       />
 
       {hasSelection && (
         <BulkActionBar count={ids.length} onClear={clearSel}>
-          <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>Exportar selecionados</Button>
+          <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
+            Exportar selecionados
+          </Button>
           {bulkEditFields && bulkEditFields.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>Editar em massa</Button>
+            <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>
+              Editar em massa
+            </Button>
           )}
           {table !== "activities" && (
-            <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}><ListTodo className="h-4 w-4 mr-1" /> Criar atividade</Button>
+            <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}>
+              <ListTodo className="h-4 w-4 mr-1" /> Criar atividade
+            </Button>
           )}
           {bulkActions?.(ids, selectedRows)}
-          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>Excluir</Button>
+          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+            Excluir
+          </Button>
         </BulkActionBar>
       )}
 
@@ -388,12 +548,19 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
             return (
               <DropdownMenu key={qf.name}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className={`text-primary font-medium ${v ? "bg-primary/10" : ""}`}>
-                    {qf.label}{selected ? `: ${selected.label}` : ""} ▾
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`text-primary font-medium ${v ? "bg-primary/10" : ""}`}
+                  >
+                    {qf.label}
+                    {selected ? `: ${selected.label}` : ""} ▾
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 max-h-80 overflow-y-auto">
-                  <DropdownMenuItem onClick={() => setQuickValue(qf.name, "")}>Todos</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setQuickValue(qf.name, "")}>
+                    Todos
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {qf.options?.map((o) => (
                     <DropdownMenuItem key={o.value} onClick={() => setQuickValue(qf.name, o.value)}>
@@ -410,7 +577,8 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
             onClick={() => setFilterOpen(true)}
             className="ml-1"
           >
-            <Filter className="h-4 w-4 mr-1" /> Filtros avançados{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+            <Filter className="h-4 w-4 mr-1" /> Filtros avançados
+            {hasFilter ? ` (${view.filters.conditions.length})` : ""}
           </Button>
         </div>
       )}
@@ -425,7 +593,8 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
         {quickFilterFields.length === 0 && (
           <Button variant="outline" size="sm" onClick={() => setFilterOpen(true)}>
-            <Filter className="h-4 w-4 mr-1" /> Filtros{hasFilter ? ` (${view.filters.conditions.length})` : ""}
+            <Filter className="h-4 w-4 mr-1" /> Filtros
+            {hasFilter ? ` (${view.filters.conditions.length})` : ""}
           </Button>
         )}
 
@@ -435,10 +604,20 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
         {boardStages && boardStageField && (
           <div className="inline-flex rounded-md border">
-            <Button variant={viewMode === "table" ? "secondary" : "ghost"} size="sm" className="rounded-r-none" onClick={() => setViewMode("table")}>
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setViewMode("table")}
+            >
               <ListIcon className="h-4 w-4" />
             </Button>
-            <Button variant={viewMode === "board" ? "secondary" : "ghost"} size="sm" className="rounded-l-none" onClick={() => setViewMode("board")}>
+            <Button
+              variant={viewMode === "board" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode("board")}
+            >
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
@@ -450,33 +629,67 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
               {ids.length} selecionado{ids.length === 1 ? "" : "s"}
             </span>
           )}
-          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs h-9" />
+          <Input
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs h-9"
+          />
         </div>
       </div>
 
       {hasFilter && (
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {view.filters.conditions.map((c, i) => c.type === "condition" && (
-            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs">
-              {conditionToLabel(c, filterFieldList.find((f) => f.name === c.field)?.label)}
-              <button onClick={() => setView({ ...view, filters: { ...view.filters, conditions: view.filters.conditions.filter((_, idx) => idx !== i) } })}>
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-          <Button variant="ghost" size="sm" onClick={() => setView({ ...view, filters: { type: "group", op: "and", conditions: [] } })}>Limpar tudo</Button>
+          {view.filters.conditions.map(
+            (c, i) =>
+              c.type === "condition" && (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs"
+                >
+                  {conditionToLabel(c, filterFieldList.find((f) => f.name === c.field)?.label)}
+                  <button
+                    onClick={() =>
+                      setView({
+                        ...view,
+                        filters: {
+                          ...view.filters,
+                          conditions: view.filters.conditions.filter((_, idx) => idx !== i),
+                        },
+                      })
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ),
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setView({ ...view, filters: { type: "group", op: "and", conditions: [] } })
+            }
+          >
+            Limpar tudo
+          </Button>
         </div>
       )}
 
       {viewMode === "board" && boardStages && boardStageField ? (
         <EntityBoard
-          rows={filtered} table={table} stageField={boardStageField} stages={boardStages}
+          rows={filtered}
+          table={table}
+          stageField={boardStageField}
+          stages={boardStages}
           detailPath={detailPath}
           renderCard={(row) => (
             <div className="space-y-1">
               {visibleColumns.slice(0, 3).map((c) => (
                 <div key={String(c.key)} className="text-sm">
-                  {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
+                  {c.render
+                    ? c.render(row)
+                    : String((row as Record<string, unknown>)[c.key as string] ?? "—")}
                 </div>
               ))}
             </div>
@@ -488,31 +701,64 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
             <TableHeader className="bg-muted/40">
               <TableRow className="hover:bg-transparent border-border/60">
                 <TableHead className="w-10">
-                  <Checkbox checked={allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false} onCheckedChange={toggleAll} />
+                  <Checkbox
+                    checked={
+                      allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false
+                    }
+                    onCheckedChange={toggleAll}
+                  />
                 </TableHead>
                 {visibleColumns.map((c) => (
-                  <TableHead key={String(c.key)} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <TableHead
+                    key={String(c.key)}
+                    className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
                     {c.label}
                   </TableHead>
                 ))}
-                <TableHead className="w-32 text-right whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ações</TableHead>
+                <TableHead className="w-32 text-right whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={visibleColumns.length + 2}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    Carregando...
+                  </TableCell>
+                </TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">Nenhum registro.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={visibleColumns.length + 2}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    Nenhum registro.
+                  </TableCell>
+                </TableRow>
               ) : (
                 filtered.map((row) => {
                   const sel = selectedIds.has(row.id);
                   const href = detailPath ? detailPath(row.id) : null;
                   return (
-                    <TableRow key={row.id} data-state={sel ? "selected" : undefined} className={`h-12 border-border/50 transition-colors hover:bg-muted/40 ${href ? "cursor-pointer" : ""}`} onClick={(e) => {
-                      if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
-                      if (href) navigate({ to: href });
-                    }}>
-                      <TableCell className="py-0 whitespace-nowrap" data-no-row-click onClick={(e) => e.stopPropagation()}>
+                    <TableRow
+                      key={row.id}
+                      data-state={sel ? "selected" : undefined}
+                      className={`h-12 border-border/50 transition-colors hover:bg-muted/40 ${href ? "cursor-pointer" : ""}`}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("[data-no-row-click]")) return;
+                        if (href) navigate({ to: href });
+                      }}
+                    >
+                      <TableCell
+                        className="py-0 whitespace-nowrap"
+                        data-no-row-click
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Checkbox checked={sel} onCheckedChange={() => toggleOne(row.id)} />
                       </TableCell>
                       {visibleColumns.map((c, ci) => {
@@ -526,15 +772,28 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                             fieldDef={fields.find((f) => f.name === k)}
                             onSave={(v) => inlineUpdate(row.id, k, v)}
                           />
+                        ) : c.render ? (
+                          c.render(row)
                         ) : (
-                          c.render ? c.render(row) : String((row as Record<string, unknown>)[k] ?? "—")
+                          String((row as Record<string, unknown>)[k] ?? "—")
                         );
                         return (
-                          <TableCell key={k} className="py-0 whitespace-nowrap truncate max-w-[280px]" data-no-row-click={editable ? true : undefined} onClick={editable ? (e) => e.stopPropagation() : undefined}>
+                          <TableCell
+                            key={k}
+                            className="py-0 whitespace-nowrap truncate max-w-[280px]"
+                            data-no-row-click={editable ? true : undefined}
+                            onClick={editable ? (e) => e.stopPropagation() : undefined}
+                          >
                             {isFirst ? (
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <RowAvatar label={avatarLabel(row, k, c.render)} />
-                                <span className={href && !editable ? "text-primary font-medium hover:underline truncate" : "truncate"}>
+                                <span
+                                  className={
+                                    href && !editable
+                                      ? "text-primary font-medium hover:underline truncate"
+                                      : "truncate"
+                                  }
+                                >
                                   {cellContent}
                                 </span>
                               </div>
@@ -544,11 +803,29 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                           </TableCell>
                         );
                       })}
-                      <TableCell className="py-0 text-right whitespace-nowrap" data-no-row-click onClick={(e) => e.stopPropagation()}>
+                      <TableCell
+                        className="py-0 text-right whitespace-nowrap"
+                        data-no-row-click
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="inline-flex items-center gap-0.5 flex-nowrap">
                           {rowActions?.(row)}
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEdit(row)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => remove(row.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -574,34 +851,80 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
       <EntityDialog
         key={editing?.id ?? "new"}
-        open={open} setOpen={setOpen} table={table} fields={fields} editing={editing} defaults={defaults}
+        open={open}
+        setOpen={setOpen}
+        table={table}
+        fields={fields}
+        editing={editing}
+        defaults={defaults}
         onSaved={() => qc.invalidateQueries({ queryKey: [table] })}
       />
 
       {bulkEditFields && (
-        <BulkEditDialog open={bulkEditOpen} setOpen={setBulkEditOpen} table={table} ids={ids} fields={bulkEditFields}
-          onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: [table] }); }} />
+        <BulkEditDialog
+          open={bulkEditOpen}
+          setOpen={setBulkEditOpen}
+          table={table}
+          ids={ids}
+          fields={bulkEditFields}
+          onDone={() => {
+            clearSel();
+            qc.invalidateQueries({ queryKey: [table] });
+          }}
+        />
       )}
 
-      <ConfirmCountDialog open={bulkDeleteOpen} setOpen={setBulkDeleteOpen} count={ids.length} entity={table} onConfirm={async () => { await bulkDelete(); }} />
+      <ConfirmCountDialog
+        open={bulkDeleteOpen}
+        setOpen={setBulkDeleteOpen}
+        count={ids.length}
+        entity={table}
+        onConfirm={async () => {
+          await bulkDelete();
+        }}
+      />
       {table !== "activities" && (
-        <BulkCreateActivityDialog open={bulkActivityOpen} setOpen={setBulkActivityOpen} ids={ids} entity={table}
-          onDone={() => { clearSel(); qc.invalidateQueries({ queryKey: ["activities"] }); }} />
+        <BulkCreateActivityDialog
+          open={bulkActivityOpen}
+          setOpen={setBulkActivityOpen}
+          ids={ids}
+          entity={table}
+          onDone={() => {
+            clearSel();
+            qc.invalidateQueries({ queryKey: ["activities"] });
+          }}
+        />
       )}
 
-      <FilterBuilderDialog open={filterOpen} setOpen={setFilterOpen} fields={filterFieldList} value={view.filters}
-        onApply={(g) => setView({ ...view, filters: g })} />
+      <FilterBuilderDialog
+        open={filterOpen}
+        setOpen={setFilterOpen}
+        fields={filterFieldList}
+        value={view.filters}
+        onApply={(g) => setView({ ...view, filters: g })}
+      />
 
-      <ColumnEditorDialog open={columnOpen} setOpen={setColumnOpen} allColumns={allColumns} value={view.columnOrder}
-        onApply={(order) => setView({ ...view, columnOrder: order })} />
+      <ColumnEditorDialog
+        open={columnOpen}
+        setOpen={setColumnOpen}
+        allColumns={allColumns}
+        value={view.columnOrder}
+        onApply={(order) => setView({ ...view, columnOrder: order })}
+      />
     </div>
   );
 }
 
 function InlineCell<T extends { id: string }>({
-  row, field, fieldDef, onSave,
+  row,
+  field,
+  fieldDef,
+  onSave,
 }: {
-  row: T; field: string; fieldDef?: Field; onSave: (v: unknown) => void;
+  row: T;
+  field: string;
+  fieldDef?: Field;
+  onSave: (v: unknown) => void;
 }) {
   const initial = (row as Record<string, unknown>)[field];
   const [editing, setEditing] = useState(false);
@@ -617,7 +940,10 @@ function InlineCell<T extends { id: string }>({
 
   if (!editing) {
     return (
-      <button className="text-left w-full hover:bg-muted px-2 py-1 rounded -mx-2 -my-1" onClick={() => setEditing(true)}>
+      <button
+        className="text-left w-full hover:bg-muted px-2 py-1 rounded -mx-2 -my-1"
+        onClick={() => setEditing(true)}
+      >
         {displayValue}
       </button>
     );
@@ -625,27 +951,61 @@ function InlineCell<T extends { id: string }>({
 
   if (fieldDef?.type === "select") {
     return (
-      <select autoFocus className="h-8 rounded-md border bg-background px-2 text-sm w-full" value={val}
-              onChange={(e) => { setVal(e.target.value); onSave(e.target.value || null); setEditing(false); }}
-              onBlur={() => setEditing(false)}>
+      <select
+        autoFocus
+        className="h-8 rounded-md border bg-background px-2 text-sm w-full"
+        value={val}
+        onChange={(e) => {
+          setVal(e.target.value);
+          onSave(e.target.value || null);
+          setEditing(false);
+        }}
+        onBlur={() => setEditing(false)}
+      >
         <option value="">—</option>
-        {fieldDef.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {fieldDef.options?.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
       </select>
     );
   }
   return (
-    <Input autoFocus type={fieldDef?.type ?? "text"} className="h-8" value={val}
+    <Input
+      autoFocus
+      type={fieldDef?.type ?? "text"}
+      className="h-8"
+      value={val}
       onChange={(e) => setVal(e.target.value)}
-      onBlur={() => { onSave(val === "" ? null : val); setEditing(false); }}
-      onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur(); if (e.key === "Escape") setEditing(false); }} />
+      onBlur={() => {
+        onSave(val === "" ? null : val);
+        setEditing(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+        if (e.key === "Escape") setEditing(false);
+      }}
+    />
   );
 }
 
 function EntityDialog<T extends { id: string }>({
-  open, setOpen, table, fields, editing, defaults, onSaved,
+  open,
+  setOpen,
+  table,
+  fields,
+  editing,
+  defaults,
+  onSaved,
 }: {
-  open: boolean; setOpen: (b: boolean) => void; table: string; fields: Field[];
-  editing: T | null; defaults?: Partial<T>; onSaved: () => void;
+  open: boolean;
+  setOpen: (b: boolean) => void;
+  table: string;
+  fields: Field[];
+  editing: T | null;
+  defaults?: Partial<T>;
+  onSaved: () => void;
 }) {
   const { user } = useAuth();
   const init: Record<string, unknown> = editing ? { ...editing } : { ...(defaults ?? {}) };
@@ -660,10 +1020,15 @@ function EntityDialog<T extends { id: string }>({
       const payload: Record<string, unknown> = { ...values };
       for (const f of fields) {
         if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
-        if (f.type === "number" && payload[f.name] != null) payload[f.name] = Number(payload[f.name]);
+        if (f.type === "number" && payload[f.name] != null)
+          payload[f.name] = Number(payload[f.name]);
         if (f.type === "email" && payload[f.name] != null) {
           const v = String(payload[f.name]).trim();
-          if (!isEmail(v)) { toast.error(`${f.label}: email inválido.`); setSubmitting(false); return; }
+          if (!isEmail(v)) {
+            toast.error(`${f.label}: email inválido.`);
+            setSubmitting(false);
+            return;
+          }
           payload[f.name] = v;
         }
       }
@@ -677,7 +1042,10 @@ function EntityDialog<T extends { id: string }>({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ({ error } = await (supabase as any).from(table).insert(payload));
       }
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success("Salvo");
       setOpen(false);
       onSaved();
@@ -688,41 +1056,78 @@ function EntityDialog<T extends { id: string }>({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><span /></DialogTrigger>
+      <DialogTrigger asChild>
+        <span />
+      </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{editing ? "Editar" : "Novo registro"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Editar" : "Novo registro"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           {fields.map((f) => (
             <div key={f.name} className="space-y-1.5">
-              <Label htmlFor={f.name}>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
+              <Label htmlFor={f.name}>
+                {f.label}
+                {f.required && <span className="text-destructive"> *</span>}
+              </Label>
               {f.type === "html" ? (
-                <RichHtmlEditor value={String(values[f.name] ?? "")} onChange={(v: string) => set(f.name, v)} minHeight={140} />
+                <RichHtmlEditor
+                  value={String(values[f.name] ?? "")}
+                  onChange={(v: string) => set(f.name, v)}
+                  minHeight={140}
+                />
               ) : f.type === "textarea" ? (
-                <Textarea id={f.name} value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} rows={3} />
+                <Textarea
+                  id={f.name}
+                  value={String(values[f.name] ?? "")}
+                  onChange={(e) => set(f.name, e.target.value)}
+                  rows={3}
+                />
               ) : f.type === "select" ? (
-                <select id={f.name} className="w-full h-9 rounded-md border bg-background px-3 text-sm" value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value || null)}>
+                <select
+                  id={f.name}
+                  className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                  value={String(values[f.name] ?? "")}
+                  onChange={(e) => set(f.name, e.target.value || null)}
+                >
                   <option value="">—</option>
-                  {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {f.options?.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               ) : f.type === "email" ? (
-                <EmailInput id={f.name} required={f.required}
-                  value={String(values[f.name] ?? "")} onChange={(v) => set(f.name, v)} />
+                <EmailInput
+                  id={f.name}
+                  required={f.required}
+                  value={String(values[f.name] ?? "")}
+                  onChange={(v) => set(f.name, v)}
+                />
               ) : (
-                <Input id={f.name} type={f.type ?? "text"} required={f.required}
-                  value={String(values[f.name] ?? "")} onChange={(e) => set(f.name, e.target.value)} />
+                <Input
+                  id={f.name}
+                  type={f.type ?? "text"}
+                  required={f.required}
+                  value={String(values[f.name] ?? "")}
+                  onChange={(e) => set(f.name, e.target.value)}
+                />
               )}
             </div>
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
-          <Button onClick={submit} disabled={submitting}>{submitting ? "Salvando…" : "Salvar"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={submitting}>
+            {submitting ? "Salvando…" : "Salvar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
 
 function RowAvatar({ label }: { label: string }) {
   // Extract initials from rendered string content (strip non-letters)
@@ -795,7 +1200,9 @@ function SavedViewsTabs({
         return (
           <div key={sv.id} className={`${tabBase} ${isActive ? active : inactive}`}>
             <button onClick={() => onApplyView(sv)} className="flex items-center gap-1">
-              {sv.is_shared ? "🔗 " : ""}{sv.name}{sv.is_default ? " ⭐" : ""}
+              {sv.is_shared ? "🔗 " : ""}
+              {sv.name}
+              {sv.is_default ? " ⭐" : ""}
             </button>
             <button
               onClick={(e) => {

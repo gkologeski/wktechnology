@@ -35,7 +35,7 @@ async function executeStep(
     owner_id: enrollment.owner_id,
     type: step.type === "email" ? "email" : "task",
     subject: step.subject,
-    body: "body" in step ? step.body ?? null : null,
+    body: "body" in step ? (step.body ?? null) : null,
     due_date: new Date().toISOString(),
     [relCol]: enrollment.entity_id,
   });
@@ -92,7 +92,12 @@ export async function tickSequences(supabase: SupabaseClient, limit = 100) {
 
       const nextIdx = enr.current_step + 1;
       const next = steps[nextIdx];
-      const update: { current_step: number; status?: string; next_run_at?: string | null; finished_at?: string } = { current_step: nextIdx };
+      const update: {
+        current_step: number;
+        status?: string;
+        next_run_at?: string | null;
+        finished_at?: string;
+      } = { current_step: nextIdx };
       if (!next) {
         update.status = "completed";
         update.next_run_at = null;

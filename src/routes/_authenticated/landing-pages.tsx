@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { listLandingPages, saveLandingPage, deleteLandingPage } from "@/lib/landing-pages.functions";
+import {
+  listLandingPages,
+  saveLandingPage,
+  deleteLandingPage,
+} from "@/lib/landing-pages.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -26,9 +30,19 @@ function LandingPagesPage() {
     const slug = `lp-${Date.now().toString(36)}`;
     await save({
       data: {
-        slug, title: "Nova landing page", blocks: [
-          { type: "hero", headline: "Headline principal", subheadline: "Subtítulo", cta: "Saiba mais" },
-        ], theme: {}, seo: {}, status: "draft",
+        slug,
+        title: "Nova landing page",
+        blocks: [
+          {
+            type: "hero",
+            headline: "Headline principal",
+            subheadline: "Subtítulo",
+            cta: "Saiba mais",
+          },
+        ],
+        theme: {},
+        seo: {},
+        status: "draft",
       },
     });
     toast.success("Landing page criada");
@@ -47,9 +61,16 @@ function LandingPagesPage() {
       <PageHeader
         title="Landing Pages"
         description="Crie páginas de captura sem código"
-        actions={<Button onClick={createNew}><Plus className="h-4 w-4 mr-2" />Nova</Button>}
+        actions={
+          <Button onClick={createNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova
+          </Button>
+        }
       />
-      {isLoading ? <p className="text-muted-foreground">Carregando…</p> : (
+      {isLoading ? (
+        <p className="text-muted-foreground">Carregando…</p>
+      ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {(data?.pages ?? []).map((p) => (
             <Card key={p.id} className="p-4 space-y-2">
@@ -58,15 +79,22 @@ function LandingPagesPage() {
                   <div className="font-semibold">{p.title}</div>
                   <div className="text-xs text-muted-foreground">/lp/{p.slug}</div>
                 </div>
-                <Badge variant={p.status === "published" ? "default" : "secondary"}>{p.status}</Badge>
+                <Badge variant={p.status === "published" ? "default" : "secondary"}>
+                  {p.status}
+                </Badge>
               </div>
               <div className="flex gap-4 text-xs text-muted-foreground">
-                <span><Eye className="h-3 w-3 inline mr-1" />{p.views_count} views</span>
+                <span>
+                  <Eye className="h-3 w-3 inline mr-1" />
+                  {p.views_count} views
+                </span>
                 <span>{p.conversions_count} conversões</span>
               </div>
               <div className="flex gap-2 pt-2">
                 <Button asChild size="sm" variant="outline">
-                  <Link to="/landing-pages/$id" params={{ id: p.id }}>Editar</Link>
+                  <Link to="/landing-pages/$id" params={{ id: p.id }}>
+                    Editar
+                  </Link>
                 </Button>
                 {p.status === "published" && (
                   <Button asChild size="sm" variant="ghost">

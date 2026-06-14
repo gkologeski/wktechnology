@@ -1,5 +1,14 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, Briefcase, Cloud, MapPin, MessageSquare, Sparkles, Users, Zap } from "lucide-react";
+import {
+  Building2,
+  Briefcase,
+  Cloud,
+  MapPin,
+  MessageSquare,
+  Sparkles,
+  Users,
+  Zap,
+} from "lucide-react";
 
 export type ProviderSlug = "hubspot" | "apollo" | "lusha" | "viacep" | "contaazul" | "clickup";
 export type Entity = "lead" | "contact" | "company" | "deal";
@@ -14,13 +23,13 @@ export type ProviderDef = {
   authMode: "connector_gateway" | "api_key" | "oauth" | "personal_token_or_oauth" | "none";
   entities: Entity[];
   supports: {
-    import?: boolean;        // tem ação de importação
-    enrich?: boolean;        // suporta enriquecimento
-    bulkEnrich?: boolean;    // suporta lote
-    enrichAll?: boolean;     // "Enriquecer tudo"
-    autoOnCreate?: boolean;  // automático ao criar
-    pushTask?: boolean;      // criar item externo (ClickUp etc.)
-    sync?: boolean;          // sincronização bidirecional
+    import?: boolean; // tem ação de importação
+    enrich?: boolean; // suporta enriquecimento
+    bulkEnrich?: boolean; // suporta lote
+    enrichAll?: boolean; // "Enriquecer tudo"
+    autoOnCreate?: boolean; // automático ao criar
+    pushTask?: boolean; // criar item externo (ClickUp etc.)
+    sync?: boolean; // sincronização bidirecional
     addressLookup?: boolean; // ViaCEP
   };
   comingSoon?: boolean;

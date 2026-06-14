@@ -46,15 +46,19 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           }
         }
 
-        const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
+        const ip =
+          request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
 
         const { data: form, error: ferr } = await supabaseAdmin
           .from("forms")
-          .select("id, owner_id, target, fields, active, redirect_url, success_message, submit_count")
+          .select(
+            "id, owner_id, target, fields, active, redirect_url, success_message, submit_count",
+          )
           .eq("slug", params.slug)
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
-        if (!form || !form.active) return Response.json({ error: "Not found" }, { status: 404, headers: cors });
+        if (!form || !form.active)
+          return Response.json({ error: "Not found" }, { status: 404, headers: cors });
 
         // rate limit: max 5 submissions per IP per form in 10 minutes
         if (ip) {
@@ -66,10 +70,12 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             .eq("ip", ip)
             .gte("created_at", since);
           if ((count ?? 0) >= 5) {
-            return Response.json({ error: "Too many submissions, try again later." }, { status: 429, headers: cors });
+            return Response.json(
+              { error: "Too many submissions, try again later." },
+              { status: 429, headers: cors },
+            );
           }
         }
-
 
         const fields = (form.fields as unknown as FormField[]) ?? [];
         const clean: Record<string, string> = {};
@@ -77,7 +83,10 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           const raw = body[f.key];
           const v = raw == null ? "" : String(raw).slice(0, 5000).trim();
           if (f.required && !v) {
-            return Response.json({ error: `Campo "${f.label}" obrigatório` }, { status: 400, headers: cors });
+            return Response.json(
+              { error: `Campo "${f.label}" obrigatório` },
+              { status: 400, headers: cors },
+            );
           }
           if (v) clean[f.key] = v;
         }

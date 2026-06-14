@@ -10,8 +10,27 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import {
-  StickyNote, ListTodo, Phone, Mail, CalendarDays, Trash2, Paperclip, AtSign, X, Download, Pencil, Check,
-  MessageSquare, MessageCircle, Linkedin, Send, Inbox, Workflow, MoreHorizontal, Lock, Sparkles,
+  StickyNote,
+  ListTodo,
+  Phone,
+  Mail,
+  CalendarDays,
+  Trash2,
+  Paperclip,
+  AtSign,
+  X,
+  Download,
+  Pencil,
+  Check,
+  MessageSquare,
+  MessageCircle,
+  Linkedin,
+  Send,
+  Inbox,
+  Workflow,
+  MoreHorizontal,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -22,7 +41,6 @@ import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { EmailEngagementCard } from "@/components/email/email-engagement-card";
-
 
 const ICONS: Record<ActivityType, ReactNode> = {
   note: <StickyNote className="h-4 w-4" />,
@@ -36,7 +54,11 @@ const ICONS: Record<ActivityType, ReactNode> = {
   whatsapp: <MessageCircle className="h-4 w-4" />,
 };
 
-type RelatedKey = "related_lead_id" | "related_contact_id" | "related_company_id" | "related_deal_id";
+type RelatedKey =
+  | "related_lead_id"
+  | "related_contact_id"
+  | "related_company_id"
+  | "related_deal_id";
 type Attachment = { path: string; name: string; size: number; type: string };
 type TeamMember = { id: string; name: string };
 
@@ -68,19 +90,68 @@ const ALL_ACTIONS: BarAction[] = [
   { kind: "create", value: "email", label: "E-mail", icon: <Mail className="h-5 w-5" /> },
   { kind: "create", value: "call", label: "Ligação", icon: <Phone className="h-5 w-5" /> },
   { kind: "log", value: "task", label: "Tarefa", icon: <ListTodo className="h-5 w-5" /> },
-  { kind: "create", value: "meeting", label: "Reunião", icon: <CalendarDays className="h-5 w-5" /> },
-  { kind: "create", value: "whatsapp", label: "Enviar WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
-  { kind: "create", value: "sequence", label: "Inscrever em sequência", icon: <Workflow className="h-5 w-5" />, disabled: true },
-  { kind: "create", value: "linkedin", label: "Envolva-se no LinkedIn", icon: <Linkedin className="h-5 w-5" />, disabled: true },
+  {
+    kind: "create",
+    value: "meeting",
+    label: "Reunião",
+    icon: <CalendarDays className="h-5 w-5" />,
+  },
+  {
+    kind: "create",
+    value: "whatsapp",
+    label: "Enviar WhatsApp",
+    icon: <MessageCircle className="h-5 w-5" />,
+  },
+  {
+    kind: "create",
+    value: "sequence",
+    label: "Inscrever em sequência",
+    icon: <Workflow className="h-5 w-5" />,
+    disabled: true,
+  },
+  {
+    kind: "create",
+    value: "linkedin",
+    label: "Envolva-se no LinkedIn",
+    icon: <Linkedin className="h-5 w-5" />,
+    disabled: true,
+  },
   { kind: "log", value: "email", label: "Registrar e-mail", icon: <Mail className="h-5 w-5" /> },
   { kind: "log", value: "call", label: "Registrar chamada", icon: <Phone className="h-5 w-5" /> },
-  { kind: "log", value: "meeting", label: "Registrar reunião", icon: <CalendarDays className="h-5 w-5" /> },
-  { kind: "log", value: "whatsapp", label: "Registrar conversa do WhatsApp", icon: <MessageCircle className="h-5 w-5" /> },
-  { kind: "log", value: "sms", label: "Registrar SMS", icon: <MessageSquare className="h-5 w-5" /> },
-  { kind: "log", value: "linkedin_message", label: "Registrar mensagem do LinkedIn", icon: <Linkedin className="h-5 w-5" /> },
-  { kind: "log", value: "postal_mail", label: "Registrar correio postal", icon: <Inbox className="h-5 w-5" /> },
+  {
+    kind: "log",
+    value: "meeting",
+    label: "Registrar reunião",
+    icon: <CalendarDays className="h-5 w-5" />,
+  },
+  {
+    kind: "log",
+    value: "whatsapp",
+    label: "Registrar conversa do WhatsApp",
+    icon: <MessageCircle className="h-5 w-5" />,
+  },
+  {
+    kind: "log",
+    value: "sms",
+    label: "Registrar SMS",
+    icon: <MessageSquare className="h-5 w-5" />,
+  },
+  {
+    kind: "log",
+    value: "linkedin_message",
+    label: "Registrar mensagem do LinkedIn",
+    icon: <Linkedin className="h-5 w-5" />,
+  },
+  {
+    kind: "log",
+    value: "postal_mail",
+    label: "Registrar correio postal",
+    icon: <Inbox className="h-5 w-5" />,
+  },
 ];
-const ACTIONS_BY_KEY: Record<string, BarAction> = Object.fromEntries(ALL_ACTIONS.map((a) => [actionKey(a), a]));
+const ACTIONS_BY_KEY: Record<string, BarAction> = Object.fromEntries(
+  ALL_ACTIONS.map((a) => [actionKey(a), a]),
+);
 
 const DEFAULT_PINNED = ALL_ACTIONS.slice(0, 5).map(actionKey);
 const DEFAULT_MORE = ALL_ACTIONS.slice(5).map(actionKey);
@@ -106,8 +177,13 @@ function loadOrder(): OrderState {
   }
 }
 
-
-export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: RelatedKey; relatedId: string }) {
+export function ActivityTimeline({
+  relatedKey,
+  relatedId,
+}: {
+  relatedKey: RelatedKey;
+  relatedId: string;
+}) {
   const { user } = useAuth();
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +205,12 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
 
   // Contact info resolved from parent entity for action dialogs
-  const [target, setTarget] = useState<{ email?: string; phone?: string; contactId?: string; name?: string }>({});
+  const [target, setTarget] = useState<{
+    email?: string;
+    phone?: string;
+    contactId?: string;
+    name?: string;
+  }>({});
 
   // Ordem reorganizável das ações (persistida em localStorage)
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
@@ -137,7 +218,11 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
 
   const persistOrder = (next: OrderState) => {
     setOrder(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
   };
 
   const moveAction = (key: string, targetList: "pinned" | "more", targetIndex: number) => {
@@ -154,10 +239,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("activities")
-      .select("*")
-      .eq(relatedKey, relatedId);
+    const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
     if (error) toast.error(error.message);
     const rows = ((data as Activity[]) ?? []).slice().sort((a, b) => {
       const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
@@ -168,41 +250,75 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     setLoading(false);
   };
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [relatedId]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [relatedId]);
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
     (async () => {
       try {
         if (relatedKey === "related_lead_id") {
-          const { data } = await supabase.from("leads").select("email, phone, first_name, last_name").eq("id", relatedId).maybeSingle();
-          if (data) setTarget({ email: data.email ?? undefined, phone: data.phone ?? undefined, name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() });
+          const { data } = await supabase
+            .from("leads")
+            .select("email, phone, first_name, last_name")
+            .eq("id", relatedId)
+            .maybeSingle();
+          if (data)
+            setTarget({
+              email: data.email ?? undefined,
+              phone: data.phone ?? undefined,
+              name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+            });
         } else if (relatedKey === "related_contact_id") {
-          const { data } = await supabase.from("contacts").select("id, email, phone, mobile_phone, first_name, last_name").eq("id", relatedId).maybeSingle();
-          if (data) setTarget({
-            email: data.email ?? undefined,
-            phone: data.phone ?? data.mobile_phone ?? undefined,
-            contactId: data.id,
-            name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-          });
+          const { data } = await supabase
+            .from("contacts")
+            .select("id, email, phone, mobile_phone, first_name, last_name")
+            .eq("id", relatedId)
+            .maybeSingle();
+          if (data)
+            setTarget({
+              email: data.email ?? undefined,
+              phone: data.phone ?? data.mobile_phone ?? undefined,
+              contactId: data.id,
+              name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+            });
         } else if (relatedKey === "related_company_id") {
-          const { data } = await supabase.from("companies").select("phone, name").eq("id", relatedId).maybeSingle();
+          const { data } = await supabase
+            .from("companies")
+            .select("phone, name")
+            .eq("id", relatedId)
+            .maybeSingle();
           if (data) setTarget({ phone: data.phone ?? undefined, name: data.name ?? undefined });
         } else if (relatedKey === "related_deal_id") {
-          const { data: d } = await supabase.from("deals").select("primary_contact_id, name").eq("id", relatedId).maybeSingle();
+          const { data: d } = await supabase
+            .from("deals")
+            .select("primary_contact_id, name")
+            .eq("id", relatedId)
+            .maybeSingle();
           let contactId = d?.primary_contact_id ?? null;
           if (!contactId) {
-            const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", relatedId).limit(1).maybeSingle();
+            const { data: dc } = await supabase
+              .from("deal_contacts")
+              .select("contact_id")
+              .eq("deal_id", relatedId)
+              .limit(1)
+              .maybeSingle();
             contactId = dc?.contact_id ?? null;
           }
           if (contactId) {
-            const { data: c } = await supabase.from("contacts").select("id, email, phone, mobile_phone, first_name, last_name").eq("id", contactId).maybeSingle();
-            if (c) setTarget({
-              email: c.email ?? undefined,
-              phone: c.phone ?? c.mobile_phone ?? undefined,
-              contactId: c.id,
-              name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
-            });
+            const { data: c } = await supabase
+              .from("contacts")
+              .select("id, email, phone, mobile_phone, first_name, last_name")
+              .eq("id", contactId)
+              .maybeSingle();
+            if (c)
+              setTarget({
+                email: c.email ?? undefined,
+                phone: c.phone ?? c.mobile_phone ?? undefined,
+                contactId: c.id,
+                name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
+              });
           } else {
             setTarget({ name: d?.name ?? undefined });
           }
@@ -231,9 +347,13 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           .eq("workspace_id", wsId);
         const ids = [...new Set((wm ?? []).map((t) => t.user_id))];
         if (ids.length) {
-          const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", ids);
           for (const p of profs ?? []) {
-            if (!list.find((x) => x.id === p.id)) list.push({ id: p.id, name: p.full_name ?? p.id });
+            if (!list.find((x) => x.id === p.id))
+              list.push({ id: p.id, name: p.full_name ?? p.id });
           }
         }
       }
@@ -241,14 +361,18 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     })();
   }, [user]);
 
-
   const uploadFiles = async (): Promise<Attachment[]> => {
     if (!user || pendingFiles.length === 0) return [];
     const out: Attachment[] = [];
     for (const file of pendingFiles) {
       const path = `${user.id}/${crypto.randomUUID()}-${file.name}`;
-      const { error } = await supabase.storage.from("notes-attachments").upload(path, file, { contentType: file.type });
-      if (error) { toast.error(`Falha em ${file.name}: ${error.message}`); continue; }
+      const { error } = await supabase.storage
+        .from("notes-attachments")
+        .upload(path, file, { contentType: file.type });
+      if (error) {
+        toast.error(`Falha em ${file.name}: ${error.message}`);
+        continue;
+      }
       out.push({ path, name: file.name, size: file.size, type: file.type });
     }
     return out;
@@ -258,19 +382,34 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     const links: Partial<Record<RelatedKey, string>> = { [relatedKey]: relatedId };
     try {
       if (relatedKey === "related_deal_id") {
-        const { data: d } = await supabase.from("deals").select("company_id, primary_contact_id").eq("id", relatedId).maybeSingle();
+        const { data: d } = await supabase
+          .from("deals")
+          .select("company_id, primary_contact_id")
+          .eq("id", relatedId)
+          .maybeSingle();
         if (d?.company_id) links.related_company_id = d.company_id;
         let contactId = d?.primary_contact_id ?? null;
         if (!contactId) {
-          const { data: dc } = await supabase.from("deal_contacts").select("contact_id").eq("deal_id", relatedId).limit(1).maybeSingle();
+          const { data: dc } = await supabase
+            .from("deal_contacts")
+            .select("contact_id")
+            .eq("deal_id", relatedId)
+            .limit(1)
+            .maybeSingle();
           contactId = dc?.contact_id ?? null;
         }
         if (contactId) links.related_contact_id = contactId;
       } else if (relatedKey === "related_contact_id") {
-        const { data: c } = await supabase.from("contacts").select("company_id").eq("id", relatedId).maybeSingle();
+        const { data: c } = await supabase
+          .from("contacts")
+          .select("company_id")
+          .eq("id", relatedId)
+          .maybeSingle();
         if (c?.company_id) links.related_company_id = c.company_id;
       }
-    } catch { /* default link already set */ }
+    } catch {
+      /* default link already set */
+    }
     return links;
   };
 
@@ -295,12 +434,20 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     };
     const { error } = await supabase.from("activities").insert(payload as never);
     if (error) return toast.error(error.message);
-    setSubject(""); setBody(""); setDueDate(""); setAssigneeId(""); setPendingFiles([]); setMentions([]);
+    setSubject("");
+    setBody("");
+    setDueDate("");
+    setAssigneeId("");
+    setPendingFiles([]);
+    setMentions([]);
     void load();
   };
 
   const toggleDone = async (a: Activity) => {
-    const { error } = await supabase.from("activities").update({ completed: !a.completed }).eq("id", a.id);
+    const { error } = await supabase
+      .from("activities")
+      .update({ completed: !a.completed })
+      .eq("id", a.id);
     if (error) return toast.error(error.message);
     void load();
   };
@@ -311,21 +458,28 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     void load();
   };
 
-  const startEdit = (a: Activity) => { setEditingId(a.id); setEditingBody(a.body ?? ""); };
+  const startEdit = (a: Activity) => {
+    setEditingId(a.id);
+    setEditingBody(a.body ?? "");
+  };
 
   const saveEdit = async (a: Activity) => {
-    const { error } = await supabase.from("activities").update({ body: editingBody || null }).eq("id", a.id);
+    const { error } = await supabase
+      .from("activities")
+      .update({ body: editingBody || null })
+      .eq("id", a.id);
     if (error) return toast.error(error.message);
     setEditingId(null);
     void load();
   };
 
   const downloadAttachment = async (att: Attachment) => {
-    const { data, error } = await supabase.storage.from("notes-attachments").createSignedUrl(att.path, 60);
+    const { data, error } = await supabase.storage
+      .from("notes-attachments")
+      .createSignedUrl(att.path, 60);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };
-
 
   const pickLog = (kind: LogKind) => {
     setType(kind);
@@ -389,7 +543,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         onDrop={(e) => dropOnItem(e, "pinned", index)}
         onClick={() => handleBarClick(a)}
         disabled={a.kind === "create" && a.disabled}
-        title={a.kind === "create" && a.disabled ? "Em breve" : `${a.label} (arraste para reordenar)`}
+        title={
+          a.kind === "create" && a.disabled ? "Em breve" : `${a.label} (arraste para reordenar)`
+        }
         className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group cursor-grab active:cursor-grabbing ${
           a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
@@ -420,7 +576,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
     <div className="space-y-6">
       <EmailEngagementCard relatedKey={relatedKey} relatedId={relatedId} />
       {/* Composer */}
-      <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
+      <div
+        className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -435,7 +592,7 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           onDrop={(e) => dropOnList(e, "pinned")}
         >
           {pinnedActions.map((a, i) =>
-            renderCircleButton(a, composerOpen && a.kind === "log" && a.value === type, i)
+            renderCircleButton(a, composerOpen && a.kind === "log" && a.value === type, i),
           )}
           <Popover open={moreOpen} onOpenChange={setMoreOpen}>
             <PopoverTrigger asChild>
@@ -444,14 +601,18 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                 title="Mais"
                 className="flex flex-col items-center gap-1.5 w-16 shrink-0 group"
               >
-                <span className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
-                  moreOpen
-                    ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
-                    : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
-                }`}>
+                <span
+                  className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+                    moreOpen
+                      ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+                      : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+                  }`}
+                >
                   <MoreHorizontal className="h-5 w-5" />
                 </span>
-                <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight">Mais</span>
+                <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight">
+                  Mais
+                </span>
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 p-0">
@@ -469,7 +630,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                 onDrop={(e) => dropOnList(e, "more")}
               >
                 {moreFiltered.length === 0 && (
-                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nenhuma ação encontrada.</p>
+                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">
+                    Nenhuma ação encontrada.
+                  </p>
                 )}
                 {moreFiltered.map(({ a, i }) => {
                   const key = actionKey(a);
@@ -483,7 +646,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       onDragEnd={onDragEnd}
                       onDragOver={allowDrop}
                       onDrop={(e) => dropOnItem(e, "more", i)}
-                      onClick={() => { if (!disabled) handleBarClick(a); }}
+                      onClick={() => {
+                        if (!disabled) handleBarClick(a);
+                      }}
                       className={`flex items-center gap-3 px-3 py-2 mx-1 rounded cursor-grab active:cursor-grabbing hover:bg-muted ${
                         disabled ? "opacity-50 cursor-not-allowed" : ""
                       } ${isDragging ? "opacity-40" : ""}`}
@@ -500,7 +665,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           </Popover>
         </div>
 
-
         {/* Inline composer (only when a "log" action is selected) */}
         {composerOpen && (
           <div className="border-t border-border/60 p-4 space-y-3 bg-muted/10">
@@ -509,15 +673,35 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                 <span className="text-primary">{ICONS[type]}</span>
                 {currentLogLabel}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => { setComposerOpen(false); setSubject(""); setBody(""); setDueDate(""); setPendingFiles([]); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setComposerOpen(false);
+                  setSubject("");
+                  setBody("");
+                  setDueDate("");
+                  setPendingFiles([]);
+                }}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Input placeholder="Assunto (opcional)" value={subject} onChange={(e) => setSubject(e.target.value)} className="flex-1 min-w-[200px]" />
+              <Input
+                placeholder="Assunto (opcional)"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="flex-1 min-w-[200px]"
+              />
               {type === "task" && (
                 <>
-                  <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-56" />
+                  <Input
+                    type="datetime-local"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="w-56"
+                  />
                   <select
                     value={assigneeId || user?.id || ""}
                     onChange={(e) => setAssigneeId(e.target.value)}
@@ -526,7 +710,8 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                   >
                     {team.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}{m.id === user?.id ? " (você)" : ""}
+                        {m.name}
+                        {m.id === user?.id ? " (você)" : ""}
                       </option>
                     ))}
                   </select>
@@ -576,7 +761,10 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                 <Paperclip className="h-4 w-4" /> Anexar
               </label>
               <Button
-                onClick={async () => { await add(); setComposerOpen(false); }}
+                onClick={async () => {
+                  await add();
+                  setComposerOpen(false);
+                }}
                 size="sm"
                 className="rounded-xl shadow-md shadow-primary/20 font-semibold"
               >
@@ -586,7 +774,6 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           </div>
         )}
       </div>
-
 
       {/* Action dialogs */}
       <MeetingDialog
@@ -604,11 +791,13 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         contactId={target.contactId}
         contactName={target.name}
       />
-      {openAction === "call" && !target.phone && (() => {
-        toast.error("Sem telefone disponível para esta entidade.");
-        setTimeout(() => setOpenAction(null), 0);
-        return null;
-      })()}
+      {openAction === "call" &&
+        !target.phone &&
+        (() => {
+          toast.error("Sem telefone disponível para esta entidade.");
+          setTimeout(() => setOpenAction(null), 0);
+          return null;
+        })()}
       {target.phone && (
         <CallDialer
           open={openAction === "call"}
@@ -618,11 +807,13 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
           contactName={target.name}
         />
       )}
-      {openAction === "whatsapp" && !target.phone && (() => {
-        toast.error("Sem telefone disponível para esta entidade.");
-        setTimeout(() => setOpenAction(null), 0);
-        return null;
-      })()}
+      {openAction === "whatsapp" &&
+        !target.phone &&
+        (() => {
+          toast.error("Sem telefone disponível para esta entidade.");
+          setTimeout(() => setOpenAction(null), 0);
+          return null;
+        })()}
       {target.phone && (
         <SendWhatsAppDialog
           open={openAction === "whatsapp"}
@@ -633,16 +824,21 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
         />
       )}
 
-
       {/* Timeline rail */}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/60" />
-        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+          Timeline
+        </span>
         {(() => {
           const aiEntity =
-            relatedKey === "related_lead_id" ? "lead" :
-            relatedKey === "related_contact_id" ? "contact" :
-            relatedKey === "related_deal_id" ? "deal" : null;
+            relatedKey === "related_lead_id"
+              ? "lead"
+              : relatedKey === "related_contact_id"
+                ? "contact"
+                : relatedKey === "related_deal_id"
+                  ? "deal"
+                  : null;
           if (!aiEntity) return null;
           return (
             <Sheet>
@@ -671,7 +867,9 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : items.length === 0 ? (
-        <div className="text-sm text-muted-foreground text-center py-6">Nenhuma atividade ainda.</div>
+        <div className="text-sm text-muted-foreground text-center py-6">
+          Nenhuma atividade ainda.
+        </div>
       ) : (
         <ol className="space-y-5">
           {items.map((a) => {
@@ -690,36 +888,53 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                       {a.type === "task" && (
                         <Checkbox checked={a.completed} onCheckedChange={() => toggleDone(a)} />
                       )}
-                      <h4 className={`text-sm font-semibold text-foreground truncate ${a.completed ? "line-through text-muted-foreground" : ""}`}>
+                      <h4
+                        className={`text-sm font-semibold text-foreground truncate ${a.completed ? "line-through text-muted-foreground" : ""}`}
+                      >
                         {a.subject || ACTIVITY_TYPES.find((t) => t.value === a.type)?.label}
                       </h4>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(a.hs_createdate ?? a.created_at)}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDateTime(a.hs_createdate ?? a.created_at)}
+                    </span>
                   </div>
                   {a.due_date && (
-                    <p className="text-xs text-muted-foreground mb-1">Vence {formatDateTime(a.due_date)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Vence {formatDateTime(a.due_date)}
+                    </p>
                   )}
-                  {a.body && (
-                    editingId === a.id ? (
+                  {a.body &&
+                    (editingId === a.id ? (
                       <div className="mt-2 space-y-2">
-                        <RichHtmlEditor value={editingBody} onChange={setEditingBody} minHeight={120} mentions={team} />
+                        <RichHtmlEditor
+                          value={editingBody}
+                          onChange={setEditingBody}
+                          minHeight={120}
+                          mentions={team}
+                        />
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={() => saveEdit(a)}><Check className="h-3 w-3 mr-1" /> Salvar</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                          <Button size="sm" onClick={() => saveEdit(a)}>
+                            <Check className="h-3 w-3 mr-1" /> Salvar
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                            Cancelar
+                          </Button>
                         </div>
                       </div>
                     ) : (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
-                    )
-                  )}
+                    ))}
                   {a.type === "call" && (a.duration_ms || a.disposition) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.disposition && (
-                        <Badge variant="secondary" className="text-[10px]">{a.disposition}</Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {a.disposition}
+                        </Badge>
                       )}
                       {a.duration_ms != null && a.duration_ms > 0 && (
                         <span className="text-muted-foreground">
-                          {Math.floor(a.duration_ms / 60000)}m {Math.floor((a.duration_ms % 60000) / 1000)}s
+                          {Math.floor(a.duration_ms / 60000)}m{" "}
+                          {Math.floor((a.duration_ms % 60000) / 1000)}s
                         </span>
                       )}
                     </div>
@@ -738,11 +953,17 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.email_direction && (
                         <Badge variant="outline" className="text-[10px] capitalize">
-                          {a.email_direction === "inbound" ? "recebido" : a.email_direction === "outbound" ? "enviado" : a.email_direction}
+                          {a.email_direction === "inbound"
+                            ? "recebido"
+                            : a.email_direction === "outbound"
+                              ? "enviado"
+                              : a.email_direction}
                         </Badge>
                       )}
                       {a.email_status && (
-                        <Badge variant="secondary" className="text-[10px] capitalize">{a.email_status}</Badge>
+                        <Badge variant="secondary" className="text-[10px] capitalize">
+                          {a.email_status}
+                        </Badge>
                       )}
                     </div>
                   )}
@@ -773,10 +994,20 @@ export function ActivityTimeline({ relatedKey, relatedId }: { relatedKey: Relate
                     </div>
                   )}
                   <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground"
+                      onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}
+                    >
                       <Pencil className="h-3 w-3 mr-1" /> Editar
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(a.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                      onClick={() => remove(a.id)}
+                    >
                       <Trash2 className="h-3 w-3 mr-1" /> Excluir
                     </Button>
                   </div>

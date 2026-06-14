@@ -15,11 +15,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Plus, Trash2, Pencil, Play, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -147,7 +166,8 @@ function ExportsPage() {
               Exports agendados por email
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Envie relatórios salvos por email automaticamente (diário, semanal ou mensal). O CSV vai como anexo, usando sua conta Gmail conectada.
+              Envie relatórios salvos por email automaticamente (diário, semanal ou mensal). O CSV
+              vai como anexo, usando sua conta Gmail conectada.
             </p>
           </div>
           <Button onClick={openCreate}>
@@ -172,18 +192,31 @@ function ExportsPage() {
               </TableHeader>
               <TableBody>
                 {schedQ.isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Carregando…</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                      Carregando…
+                    </TableCell>
+                  </TableRow>
                 ) : (schedQ.data ?? []).length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhum agendamento.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                      Nenhum agendamento.
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   (schedQ.data as any[]).map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">{s.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{s.custom_reports?.name ?? s.report_id}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {s.custom_reports?.name ?? s.report_id}
+                      </TableCell>
                       <TableCell>
-                        {s.frequency === "daily" && `Diário às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
-                        {s.frequency === "weekly" && `${WEEKDAYS[s.day_of_week ?? 1]} às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
-                        {s.frequency === "monthly" && `Dia ${s.day_of_month} às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
+                        {s.frequency === "daily" &&
+                          `Diário às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
+                        {s.frequency === "weekly" &&
+                          `${WEEKDAYS[s.day_of_week ?? 1]} às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
+                        {s.frequency === "monthly" &&
+                          `Dia ${s.day_of_month} às ${String(s.hour_of_day).padStart(2, "0")}:00 UTC`}
                       </TableCell>
                       <TableCell className="text-xs">{(s.recipients ?? []).join(", ")}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -206,13 +239,29 @@ function ExportsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex gap-0.5">
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => runMut.mutate(s.id)} title="Executar agora">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => runMut.mutate(s.id)}
+                            title="Executar agora"
+                          >
                             <Play className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(s)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => openEdit(s)}
+                          >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => delMut.mutate(s.id)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => delMut.mutate(s.id)}
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -234,18 +283,28 @@ function ExportsPage() {
           <div className="space-y-3">
             <div>
               <Label>Relatório</Label>
-              <Select value={form.report_id} onValueChange={(v) => setForm({ ...form, report_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <Select
+                value={form.report_id}
+                onValueChange={(v) => setForm({ ...form, report_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione…" />
+                </SelectTrigger>
                 <SelectContent>
                   {(reportsQ.data ?? []).map((r: any) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Nome do agendamento</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
             <div>
               <Label>Destinatários (separados por vírgula)</Label>
@@ -258,8 +317,13 @@ function ExportsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Frequência</Label>
-                <Select value={form.frequency} onValueChange={(v) => setForm({ ...form, frequency: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.frequency}
+                  onValueChange={(v) => setForm({ ...form, frequency: v as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="daily">Diário</SelectItem>
                     <SelectItem value="weekly">Semanal</SelectItem>
@@ -281,11 +345,18 @@ function ExportsPage() {
             {form.frequency === "weekly" && (
               <div>
                 <Label>Dia da semana</Label>
-                <Select value={String(form.day_of_week)} onValueChange={(v) => setForm({ ...form, day_of_week: Number(v) })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={String(form.day_of_week)}
+                  onValueChange={(v) => setForm({ ...form, day_of_week: Number(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {WEEKDAYS.map((d, i) => (
-                      <SelectItem key={i} value={String(i)}>{d}</SelectItem>
+                      <SelectItem key={i} value={String(i)}>
+                        {d}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -304,16 +375,24 @@ function ExportsPage() {
               </div>
             )}
             <div className="flex items-center gap-2">
-              <Switch checked={form.enabled} onCheckedChange={(enabled) => setForm({ ...form, enabled })} />
+              <Switch
+                checked={form.enabled}
+                onCheckedChange={(enabled) => setForm({ ...form, enabled })}
+              />
               <Label className="!mt-0">Ativo</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              O envio usa a conta Gmail conectada do dono do workspace (configure em Configurações → Conexão de Email).
+              O envio usa a conta Gmail conectada do dono do workspace (configure em Configurações →
+              Conexão de Email).
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={saveMut.isPending}>Salvar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={saveMut.isPending}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

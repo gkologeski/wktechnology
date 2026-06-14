@@ -57,7 +57,8 @@ function SlaPage() {
                       {b.entity_label}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {b.entity === "leads" ? "Lead" : "Negócio"} · etapa <span className="font-mono">{b.stage_id}</span>
+                      {b.entity === "leads" ? "Lead" : "Negócio"} · etapa{" "}
+                      <span className="font-mono">{b.stage_id}</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -94,7 +95,13 @@ function SlaPage() {
   );
 }
 
-function PipelineEditor({ pipe, onSave }: { pipe: Pipe; onSave: (sla: Record<string, number | null>) => Promise<void> }) {
+function PipelineEditor({
+  pipe,
+  onSave,
+}: {
+  pipe: Pipe;
+  onSave: (sla: Record<string, number | null>) => Promise<void>;
+}) {
   const initial = useMemo(() => {
     const m: Record<string, string> = {};
     for (const s of pipe.stages) m[s.value] = s.sla_hours != null ? String(s.sla_hours) : "";
@@ -109,27 +116,31 @@ function PipelineEditor({ pipe, onSave }: { pipe: Pipe; onSave: (sla: Record<str
       <CardHeader>
         <CardTitle className="text-base">
           {pipe.name}
-          <Badge variant="outline" className="ml-2 capitalize">{pipe.entity}</Badge>
+          <Badge variant="outline" className="ml-2 capitalize">
+            {pipe.entity}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {pipe.stages.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem estágios configurados.</p>
-        ) : pipe.stages.map((s) => (
-          <div key={s.value} className="flex items-center gap-2">
-            <span className="text-sm flex-1 truncate">{s.label || s.value}</span>
-            <Input
-              type="number"
-              min={0}
-              step={1}
-              placeholder="—"
-              className="w-28 h-8"
-              value={values[s.value] ?? ""}
-              onChange={(e) => setValues({ ...values, [s.value]: e.target.value })}
-            />
-            <span className="text-xs text-muted-foreground w-8">h</span>
-          </div>
-        ))}
+        ) : (
+          pipe.stages.map((s) => (
+            <div key={s.value} className="flex items-center gap-2">
+              <span className="text-sm flex-1 truncate">{s.label || s.value}</span>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                placeholder="—"
+                className="w-28 h-8"
+                value={values[s.value] ?? ""}
+                onChange={(e) => setValues({ ...values, [s.value]: e.target.value })}
+              />
+              <span className="text-xs text-muted-foreground w-8">h</span>
+            </div>
+          ))
+        )}
         <div className="flex justify-end">
           <Button
             size="sm"

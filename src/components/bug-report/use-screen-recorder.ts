@@ -5,11 +5,7 @@ export type RecorderStatus = "idle" | "recording" | "stopped" | "error";
 const MAX_DURATION_MS = 120_000; // 2 minutes
 
 function pickMimeType(): string {
-  const candidates = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-  ];
+  const candidates = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
   for (const t of candidates) {
     if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) {
       return t;

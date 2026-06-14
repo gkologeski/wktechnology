@@ -27,7 +27,10 @@ function MarketplacePage() {
 
   return (
     <div className="space-y-4 p-6">
-      <PageHeader title="Marketplace" description="Conecte seu CRM a Slack, Zapier, Make e mais com 1 clique." />
+      <PageHeader
+        title="Marketplace"
+        description="Conecte seu CRM a Slack, Zapier, Make e mais com 1 clique."
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 max-w-md">
@@ -93,7 +96,9 @@ function MarketplacePage() {
                       )}
                       {a.popular && !installed && <Badge>Popular</Badge>}
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{a.short_description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {a.short_description}
+                    </p>
                     <div className="text-xs text-muted-foreground">{a.category}</div>
                   </CardContent>
                 </Card>

@@ -6,12 +6,12 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  listMyNotifications, markNotificationRead, markAllNotificationsRead,
+  listMyNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
 } from "@/lib/notifications.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -37,7 +37,12 @@ export function NotificationsBell() {
       .channel("notif-" + user.id)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload) => {
           const n = payload.new as { title?: string; body?: string };
           toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
@@ -45,7 +50,9 @@ export function NotificationsBell() {
         },
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user?.id, qc]);
 
   const mark = useMutation({
@@ -83,17 +90,25 @@ export function NotificationsBell() {
         </div>
         <ScrollArea className="max-h-96">
           {items.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Nenhuma notificação.</div>
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              Nenhuma notificação.
+            </div>
           ) : (
             <ul className="divide-y">
               {items.map((n) => {
                 const inner = (
-                  <div className={`p-3 hover:bg-muted/50 cursor-pointer ${!n.read_at ? "bg-primary/5" : ""}`}>
+                  <div
+                    className={`p-3 hover:bg-muted/50 cursor-pointer ${!n.read_at ? "bg-primary/5" : ""}`}
+                  >
                     <div className="flex items-start gap-2">
-                      {!n.read_at && <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />}
+                      {!n.read_at && (
+                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium truncate">{n.title}</div>
-                        {n.body && <div className="text-xs text-muted-foreground line-clamp-2">{n.body}</div>}
+                        {n.body && (
+                          <div className="text-xs text-muted-foreground line-clamp-2">{n.body}</div>
+                        )}
                         <div className="text-[10px] text-muted-foreground mt-0.5">
                           {formatDateTime(n.created_at)}
                         </div>
@@ -101,7 +116,9 @@ export function NotificationsBell() {
                     </div>
                   </div>
                 );
-                const handle = () => { if (!n.read_at) mark.mutate(n.id); };
+                const handle = () => {
+                  if (!n.read_at) mark.mutate(n.id);
+                };
                 return (
                   <li key={n.id} onClick={handle}>
                     {n.link ? <Link to={n.link as never}>{inner}</Link> : inner}

@@ -15,7 +15,11 @@ export function useMyRole() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { setRole("member"); setLoading(false); return; }
+    if (!user) {
+      setRole("member");
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       // Owner de algum workspace = admin nato desse workspace.
@@ -24,14 +28,19 @@ export function useMyRole() {
         supabase.from("workspaces").select("id").eq("created_by", user.id).limit(1),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
       ]);
-      let best: AppRole = (owned && owned.length > 0) ? "admin" : "member";
+      let best: AppRole = owned && owned.length > 0 ? "admin" : "member";
       for (const r of rows ?? []) {
         const role = r.role as AppRole;
         if (RANK[role] > RANK[best]) best = role;
       }
-      if (!cancelled) { setRole(best); setLoading(false); }
+      if (!cancelled) {
+        setRole(best);
+        setLoading(false);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, authLoading]);
 
   return {

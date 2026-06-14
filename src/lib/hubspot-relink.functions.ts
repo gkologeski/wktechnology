@@ -54,9 +54,7 @@ async function getAssocBatch(
       for (const row of r.results ?? []) {
         const fromId = String(row.from?.id ?? "");
         if (!fromId) continue;
-        const tos = (row.to ?? [])
-          .map((t) => String(t.toObjectId ?? t.id ?? ""))
-          .filter(Boolean);
+        const tos = (row.to ?? []).map((t) => String(t.toObjectId ?? t.id ?? "")).filter(Boolean);
         out.set(fromId, tos);
       }
     } catch {
@@ -94,7 +92,9 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     const cutoff = new Date(Date.now() - CHECK_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
     let q = supabase
       .from("activities")
-      .select("id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id")
+      .select(
+        "id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id",
+      )
       .eq("owner_id", userId)
       .eq("type", data.type)
       .not("hs_object_id", "is", null)
@@ -111,7 +111,6 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
     if (!acts || acts.length === 0) {
       return { processed: 0, updated: 0, hasMore: false, nextCursor: null as string | null };
     }
-
 
     const hsIds = acts.map((a) => a.hs_object_id!).filter(Boolean);
 
@@ -213,7 +212,6 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       hasMore: acts.length >= data.batchSize,
       nextCursor: acts[acts.length - 1].id as string,
     };
-
   });
 
 export const countActivitiesToRelink = createServerFn({ method: "POST" })

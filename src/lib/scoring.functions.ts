@@ -5,7 +5,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickScoring } from "@/lib/scoring/engine.server";
 
 const EntityEnum = z.enum(["lead", "contact", "company"]);
-const OpEnum = z.enum(["eq","neq","in","contains","gt","lt","changed_to","is_empty","is_not_empty"]);
+const OpEnum = z.enum([
+  "eq",
+  "neq",
+  "in",
+  "contains",
+  "gt",
+  "lt",
+  "changed_to",
+  "is_empty",
+  "is_not_empty",
+]);
 
 const ConditionSchema = z.object({
   field: z.string().min(1).max(100),
@@ -51,7 +61,11 @@ export const saveScoringRule = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabase.from("scoring_rules").insert(payload).select("id").single();
+    const { data: row, error } = await supabase
+      .from("scoring_rules")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });

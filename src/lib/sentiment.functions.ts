@@ -4,16 +4,23 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listSentiments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    contact_id: z.string().uuid().optional(),
-    lead_id: z.string().uuid().optional(),
-    limit: z.number().int().min(1).max(500).default(100),
-  }).parse(i ?? {}))
+  .inputValidator((i) =>
+    z
+      .object({
+        contact_id: z.string().uuid().optional(),
+        lead_id: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(500).default(100),
+      })
+      .parse(i ?? {}),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q = (supabase as any).from("message_sentiments")
-      .select("id, source, source_id, contact_id, lead_id, label, score, emotion, keywords, analyzed_at")
+    let q = (supabase as any)
+      .from("message_sentiments")
+      .select(
+        "id, source, source_id, contact_id, lead_id, label, score, emotion, keywords, analyzed_at",
+      )
       .eq("owner_id", userId)
       .order("analyzed_at", { ascending: false })
       .limit(data.limit);
@@ -22,19 +29,30 @@ export const listSentiments = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as Array<{
-      id: string; source: string; source_id: string; contact_id: string | null; lead_id: string | null;
-      label: "positive"|"neutral"|"negative"; score: number; emotion: string | null; keywords: string[]; analyzed_at: string;
+      id: string;
+      source: string;
+      source_id: string;
+      contact_id: string | null;
+      lead_id: string | null;
+      label: "positive" | "neutral" | "negative";
+      score: number;
+      emotion: string | null;
+      keywords: string[];
+      analyzed_at: string;
     }>;
   });
 
 export const sentimentOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ days: z.number().int().min(1).max(180).default(30) }).parse(i ?? {}))
+  .inputValidator((i) =>
+    z.object({ days: z.number().int().min(1).max(180).default(30) }).parse(i ?? {}),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const from = new Date(Date.now() - data.days * 86400_000).toISOString();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rows, error } = await (supabase as any).from("message_sentiments")
+    const { data: rows, error } = await (supabase as any)
+      .from("message_sentiments")
       .select("label, score")
       .eq("owner_id", userId)
       .gte("analyzed_at", from);
@@ -45,7 +63,13 @@ export const sentimentOverview = createServerFn({ method: "POST" })
     const neg = list.filter((r) => r.label === "negative").length;
     const neu = list.filter((r) => r.label === "neutral").length;
     const avg = list.reduce((s, r) => s + Number(r.score || 0), 0) / total;
-    return { total: list.length, positive: pos, negative: neg, neutral: neu, avg_score: Number(avg.toFixed(3)) };
+    return {
+      total: list.length,
+      positive: pos,
+      negative: neg,
+      neutral: neu,
+      avg_score: Number(avg.toFixed(3)),
+    };
   });
 
 export const runSentimentTick = createServerFn({ method: "POST" })

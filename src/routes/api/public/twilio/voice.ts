@@ -30,12 +30,17 @@ export const Route = createFileRoute("/api/public/twilio/voice")({
         const isE164 = /^\+[1-9]\d{6,14}$/.test(to);
 
         const escape = (s: string) =>
-          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
 
         // Build absolute callback URL honoring proxy headers.
         const url = new URL(request.url);
         const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
-        const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
+        const host =
+          request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
         const recordingCallback = `${proto}://${host}/api/public/twilio/recording-status`;
 
         const dialAttrs = [

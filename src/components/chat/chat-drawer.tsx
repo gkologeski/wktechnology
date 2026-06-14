@@ -57,7 +57,10 @@ export function ChatDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeId]);
 
-  const active = useMemo(() => conversations.find((c) => c.id === activeId) ?? null, [conversations, activeId]);
+  const active = useMemo(
+    () => conversations.find((c) => c.id === activeId) ?? null,
+    [conversations, activeId],
+  );
 
   const labelFor = (c: Conv): string => {
     if (c.kind === "group") return c.title || "Grupo sem nome";
@@ -99,7 +102,9 @@ export function ChatDrawer({
                         <Button
                           size="icon"
                           variant="ghost"
-                          aria-label={soundOn ? "Desativar som de mensagens" : "Ativar som de mensagens"}
+                          aria-label={
+                            soundOn ? "Desativar som de mensagens" : "Ativar som de mensagens"
+                          }
                           aria-pressed={soundOn}
                           onClick={() => {
                             const next = !soundOn;
@@ -110,7 +115,11 @@ export function ChatDrawer({
                             }
                           }}
                         >
-                          {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+                          {soundOn ? (
+                            <Volume2 className="h-4 w-4" />
+                          ) : (
+                            <VolumeX className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>

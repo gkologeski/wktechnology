@@ -23,7 +23,13 @@ export const Route = createFileRoute("/_authenticated/settings/email-templates")
   component: EmailTemplatesPage,
 });
 
-type Template = { id: string; name: string; subject: string | null; body_html: string | null; body_text: string | null };
+type Template = {
+  id: string;
+  name: string;
+  subject: string | null;
+  body_html: string | null;
+  body_text: string | null;
+};
 type Snippet = { id: string; shortcut: string; body: string };
 
 function EmailTemplatesPage() {
@@ -150,9 +156,13 @@ function TemplatesSection() {
                 <Button variant="destructive" size="sm" onClick={() => del.mutate(editing.id!)}>
                   <Trash2 className="mr-1 h-4 w-4" /> Excluir
                 </Button>
-              ) : <span />}
+              ) : (
+                <span />
+              )}
               <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+                <Button variant="ghost" onClick={() => setEditing(null)}>
+                  Cancelar
+                </Button>
                 <Button onClick={() => save.mutate()} disabled={save.isPending || !editing.name}>
                   <Save className="mr-1 h-4 w-4" /> Salvar
                 </Button>
@@ -206,7 +216,9 @@ function SnippetsSection() {
         </CardHeader>
         <CardContent className="space-y-1">
           {q.data?.items.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhum snippet ainda. Use <code>/atalho</code> no corpo.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhum snippet ainda. Use <code>/atalho</code> no corpo.
+            </p>
           )}
           {q.data?.items.map((s) => (
             <button
@@ -253,10 +265,17 @@ function SnippetsSection() {
                 <Button variant="destructive" size="sm" onClick={() => del.mutate(editing.id!)}>
                   <Trash2 className="mr-1 h-4 w-4" /> Excluir
                 </Button>
-              ) : <span />}
+              ) : (
+                <span />
+              )}
               <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending || !editing.shortcut || !editing.body}>
+                <Button variant="ghost" onClick={() => setEditing(null)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending || !editing.shortcut || !editing.body}
+                >
                   <Save className="mr-1 h-4 w-4" /> Salvar
                 </Button>
               </div>

@@ -251,10 +251,9 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
           const r = await processCampaign(c as Campaign);
           results.push({ id: c.id, processed: r.processed });
         }
-        return new Response(
-          JSON.stringify({ ok: true, campaigns: results.length, results }),
-          { headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ ok: true, campaigns: results.length, results }), {
+          headers: { "Content-Type": "application/json" },
+        });
       },
     },
   },

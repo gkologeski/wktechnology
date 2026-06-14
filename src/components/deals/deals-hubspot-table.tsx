@@ -68,7 +68,6 @@ export function DealsHubspotTable({
   const qc = useQueryClient();
   const { pipelines: allPipelines } = usePipelines("deal");
 
-
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(0);
@@ -83,7 +82,8 @@ export function DealsHubspotTable({
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
-      if (sortKey === "value") return sortDir === "asc" ? Number(av) - Number(bv) : Number(bv) - Number(av);
+      if (sortKey === "value")
+        return sortDir === "asc" ? Number(av) - Number(bv) : Number(bv) - Number(av);
       return sortDir === "asc"
         ? String(av).localeCompare(String(bv))
         : String(bv).localeCompare(String(av));
@@ -161,7 +161,10 @@ export function DealsHubspotTable({
     if (!def && allPipelines) {
       for (const p of allPipelines) {
         const f = p.stages.find((s) => s.value === v);
-        if (f) { def = f; break; }
+        if (f) {
+          def = f;
+          break;
+        }
       }
     }
     if (def) return def.label;
@@ -169,7 +172,6 @@ export function DealsHubspotTable({
     if (stageValue && STAGE_ENUM_LABEL[stageValue]) return STAGE_ENUM_LABEL[stageValue];
     return stageValue ?? "—";
   };
-
 
   type DealRow = Deal;
   const dealColumns = useMemo<GridColumnDef<DealRow>[]>(
@@ -196,7 +198,10 @@ export function DealsHubspotTable({
         key: "stage",
         label: "Etapa",
         render: (d) => (
-          <Pill tone={STAGE_TONE[String(d.stage)] ?? "slate"} label={stageLabel(d.stage, d.stage_id)} />
+          <Pill
+            tone={STAGE_TONE[String(d.stage)] ?? "slate"}
+            label={stageLabel(d.stage, d.stage_id)}
+          />
         ),
       },
       {
@@ -215,7 +220,12 @@ export function DealsHubspotTable({
         label: "Fechamento",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "expected_close_date"} dir={sortDir} onClick={() => onSort("expected_close_date")}>
+          <Th
+            sortable
+            active={sortKey === "expected_close_date"}
+            dir={sortDir}
+            onClick={() => onSort("expected_close_date")}
+          >
             Fechamento
           </Th>
         ),
@@ -233,9 +243,15 @@ export function DealsHubspotTable({
         render: (d) => {
           if (!d.owner_id) return <span className="text-muted-foreground">—</span>;
           const name = lookups.owners.get(d.owner_id) ?? "—";
-          const initials = name && name !== "—"
-            ? name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")
-            : d.owner_id.slice(0, 2).toUpperCase();
+          const initials =
+            name && name !== "—"
+              ? name
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0]?.toUpperCase() ?? "")
+                  .join("")
+              : d.owner_id.slice(0, 2).toUpperCase();
           return (
             <div className="flex items-center gap-2" title={name}>
               <InitialsAvatar text={initials} seed={d.owner_id} size={6} />
@@ -288,7 +304,12 @@ export function DealsHubspotTable({
         label: "Criado em",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+          <Th
+            sortable
+            active={sortKey === "created_at"}
+            dir={sortDir}
+            onClick={() => onSort("created_at")}
+          >
             Criado em
           </Th>
         ),
@@ -299,7 +320,11 @@ export function DealsHubspotTable({
     [sortKey, sortDir, pipeline, lookups],
   );
 
-  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<DealRow>({
+  const {
+    columns: visibleColumns,
+    ColumnsButton,
+    ColumnsEditor,
+  } = useGridColumns<DealRow>({
     gridKey: "deals",
     columns: dealColumns,
     defaults: DEFAULT_DEAL_COLS,
@@ -343,8 +368,13 @@ export function DealsHubspotTable({
                   onToggle={toggleAll}
                 />
               </th>
-              {visibleColumns.map((col) =>
-                col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+              {visibleColumns.map(
+                (col) =>
+                  col.header ?? (
+                    <Th key={col.key} className={col.headerClassName}>
+                      {col.label}
+                    </Th>
+                  ),
               )}
               <th className="w-10 border-b px-3 py-2.5" />
             </tr>
@@ -395,9 +425,7 @@ export function DealsHubspotTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onOpen(d)}>
-                            Abrir
-                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onOpen(d)}>Abrir</DropdownMenuItem>
                           {d.stage !== "won" && (
                             <DropdownMenuItem onClick={() => setStage(d.id, "won")}>
                               <Trophy className="mr-2 h-3.5 w-3.5" /> Marcar ganho

@@ -3,7 +3,6 @@ import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  // eslint-disable-next-line no-console
   console.error(error);
   const router = useRouter();
   return (
@@ -13,7 +12,10 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
           type="button"
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           Tentar novamente
@@ -29,7 +31,10 @@ function DefaultNotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-4 text-muted-foreground">Página não encontrada.</p>
-        <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+        <Link
+          to="/"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
           Ir para o início
         </Link>
       </div>
@@ -64,4 +69,3 @@ export const getRouter = () => {
 
   return router;
 };
-

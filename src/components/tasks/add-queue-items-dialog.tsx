@@ -32,16 +32,12 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
       const term = search.trim();
       const tokens = term.split(/\s+/).filter(Boolean);
       const cols = ["first_name", "last_name", "email"];
-      let q = supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email");
+      let q = supabase.from("contacts").select("id, first_name, last_name, email");
       for (const tok of tokens) {
         const safe = tok.replace(/[%,()]/g, " ");
         q = q.or(cols.map((c) => `${c}.ilike.%${safe}%`).join(","));
       }
-      const { data, error } = await q
-        .order("created_at", { ascending: false })
-        .limit(500);
+      const { data, error } = await q.order("created_at", { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
       return (data ?? []) as Contact[];
     },
@@ -88,13 +84,18 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
         />
         <div className="max-h-96 overflow-auto rounded border">
           {search.trim().length < 3 ? (
-            <p className="p-3 text-sm text-muted-foreground">Digite ao menos 3 caracteres para buscar.</p>
+            <p className="p-3 text-sm text-muted-foreground">
+              Digite ao menos 3 caracteres para buscar.
+            </p>
           ) : q.isLoading ? (
             <p className="p-3 text-sm text-muted-foreground">Carregando…</p>
           ) : (
             <>
               {q.data?.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 border-b px-3 py-2 last:border-0 hover:bg-muted">
+                <label
+                  key={c.id}
+                  className="flex items-center gap-2 border-b px-3 py-2 last:border-0 hover:bg-muted"
+                >
                   <Checkbox
                     checked={!!selected[c.id]}
                     onCheckedChange={(v) => setSelected((s) => ({ ...s, [c.id]: !!v }))}
@@ -107,7 +108,9 @@ export function AddQueueItemsDialog({ queueId }: { queueId: string }) {
                   </div>
                 </label>
               ))}
-              {q.data?.length === 0 && <p className="p-3 text-sm text-muted-foreground">Sem resultados.</p>}
+              {q.data?.length === 0 && (
+                <p className="p-3 text-sm text-muted-foreground">Sem resultados.</p>
+              )}
             </>
           )}
         </div>

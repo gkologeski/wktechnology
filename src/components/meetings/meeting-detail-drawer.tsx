@@ -2,12 +2,7 @@ import { formatDateTime } from "@/lib/crm";
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Upload, Sparkles, ListChecks, Video, Copy } from "lucide-react";
@@ -163,13 +158,7 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
                   transcrição e resumo automáticos.
                 </p>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="audio/*,video/*"
-                hidden
-                onChange={onPick}
-              />
+              <input ref={fileRef} type="file" accept="audio/*,video/*" hidden onChange={onPick} />
               <Button
                 size="sm"
                 variant="outline"
@@ -190,12 +179,7 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Resumo & transcrição</h3>
                 {data?.recordingUrl && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={runSummary}
-                    disabled={summarizing}
-                  >
+                  <Button size="sm" variant="outline" onClick={runSummary} disabled={summarizing}>
                     {summarizing ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -237,15 +221,8 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
               {actionItems.length > 0 && (
                 <div>
                   <div className="mt-3 mb-1 flex items-center justify-between">
-                    <h4 className="text-xs font-semibold text-muted-foreground">
-                      Action items
-                    </h4>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={makeTasks}
-                      disabled={creatingTasks}
-                    >
+                    <h4 className="text-xs font-semibold text-muted-foreground">Action items</h4>
+                    <Button size="sm" variant="ghost" onClick={makeTasks} disabled={creatingTasks}>
                       {creatingTasks ? (
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                       ) : (

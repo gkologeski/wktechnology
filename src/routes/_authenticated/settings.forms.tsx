@@ -10,19 +10,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  listForms, upsertForm, deleteForm, listFormSubmissions,
-} from "@/lib/forms.functions";
+import { listForms, upsertForm, deleteForm, listFormSubmissions } from "@/lib/forms.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/forms")({
   component: FormsPage,
 });
 
 type FieldType = "text" | "email" | "tel" | "textarea" | "select" | "number";
-type FormField = { key: string; label: string; type: FieldType; required?: boolean; options?: string[]; placeholder?: string };
+type FormField = {
+  key: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+};
 type DisplayMode = "inline" | "popup" | "slidein";
 type PopupConfig = {
   trigger?: "load" | "time" | "scroll" | "exit_intent";
@@ -34,9 +45,15 @@ type PopupConfig = {
   description?: string;
 };
 type FormRow = {
-  id: string; name: string; slug: string; target: "lead" | "contact";
-  fields: FormField[]; success_message: string; redirect_url: string | null;
-  active: boolean; submit_count: number;
+  id: string;
+  name: string;
+  slug: string;
+  target: "lead" | "contact";
+  fields: FormField[];
+  success_message: string;
+  redirect_url: string | null;
+  active: boolean;
+  submit_count: number;
   display_mode: DisplayMode;
   popup_config: PopupConfig;
 };
@@ -49,7 +66,11 @@ const EMPTY_FIELDS: FormField[] = [
 ];
 
 const DEFAULT_POPUP: PopupConfig = {
-  trigger: "time", delay_seconds: 5, scroll_percent: 50, frequency_days: 7, position: "center",
+  trigger: "time",
+  delay_seconds: 5,
+  scroll_percent: 50,
+  frequency_days: 7,
+  position: "center",
 };
 
 function FormsPage() {
@@ -62,20 +83,21 @@ function FormsPage() {
   const [viewing, setViewing] = useState<FormRow | null>(null);
 
   const save = useMutation({
-    mutationFn: () => upsertFn({
-      data: {
-        id: editing?.id,
-        name: editing?.name ?? "",
-        slug: editing?.slug ?? "",
-        target: (editing?.target as "lead" | "contact") ?? "lead",
-        fields: (editing?.fields ?? []) as FormField[],
-        success_message: editing?.success_message ?? "Obrigado pelo contato!",
-        redirect_url: editing?.redirect_url ?? "",
-        active: editing?.active ?? true,
-        display_mode: (editing?.display_mode as DisplayMode) ?? "inline",
-        popup_config: (editing?.popup_config as PopupConfig) ?? {},
-      },
-    }),
+    mutationFn: () =>
+      upsertFn({
+        data: {
+          id: editing?.id,
+          name: editing?.name ?? "",
+          slug: editing?.slug ?? "",
+          target: (editing?.target as "lead" | "contact") ?? "lead",
+          fields: (editing?.fields ?? []) as FormField[],
+          success_message: editing?.success_message ?? "Obrigado pelo contato!",
+          redirect_url: editing?.redirect_url ?? "",
+          active: editing?.active ?? true,
+          display_mode: (editing?.display_mode as DisplayMode) ?? "inline",
+          popup_config: (editing?.popup_config as PopupConfig) ?? {},
+        },
+      }),
     onSuccess: () => {
       toast.success("Formulário salvo");
       setEditing(null);
@@ -102,7 +124,18 @@ function FormsPage() {
             Crie formulários públicos e incorpore no seu site. Cada envio gera um lead ou contato.
           </p>
         </div>
-        <Button onClick={() => setEditing({ target: "lead", fields: EMPTY_FIELDS, active: true, success_message: "Obrigado pelo contato!", display_mode: "inline", popup_config: DEFAULT_POPUP })}>
+        <Button
+          onClick={() =>
+            setEditing({
+              target: "lead",
+              fields: EMPTY_FIELDS,
+              active: true,
+              success_message: "Obrigado pelo contato!",
+              display_mode: "inline",
+              popup_config: DEFAULT_POPUP,
+            })
+          }
+        >
           <Plus className="mr-1 h-4 w-4" /> Novo formulário
         </Button>
       </div>
@@ -117,13 +150,20 @@ function FormsPage() {
             {q.data?.items.map((f) => {
               const row = f as unknown as FormRow;
               return (
-                <div key={row.id} className="flex items-center justify-between p-3 hover:bg-[var(--row-hover)]">
+                <div
+                  key={row.id}
+                  className="flex items-center justify-between p-3 hover:bg-[var(--row-hover)]"
+                >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{row.name}</span>
                       <Badge variant="outline">{row.target}</Badge>
                       <Badge variant="outline">
-                        {row.display_mode === "popup" ? "Pop-up" : row.display_mode === "slidein" ? "Slide-in" : "Inline"}
+                        {row.display_mode === "popup"
+                          ? "Pop-up"
+                          : row.display_mode === "slidein"
+                            ? "Slide-in"
+                            : "Inline"}
                       </Badge>
                       {!row.active && <Badge variant="secondary">Inativo</Badge>}
                     </div>
@@ -135,10 +175,16 @@ function FormsPage() {
                     <Button variant="ghost" size="sm" onClick={() => setViewing(row)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(row)}>Editar</Button>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      if (confirm("Excluir formulário?")) del.mutate(row.id);
-                    }}>
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(row)}>
+                      Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Excluir formulário?")) del.mutate(row.id);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -151,14 +197,25 @@ function FormsPage() {
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing?.id ? "Editar" : "Novo"} formulário</DialogTitle></DialogHeader>
-          {editing && <EditorBody editing={editing} setEditing={setEditing} onSave={() => save.mutate()} saving={save.isPending} />}
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? "Editar" : "Novo"} formulário</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <EditorBody
+              editing={editing}
+              setEditing={setEditing}
+              onSave={() => save.mutate()}
+              saving={save.isPending}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{viewing?.name} — envios & embed</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{viewing?.name} — envios & embed</DialogTitle>
+          </DialogHeader>
           {viewing && <ViewerBody form={viewing} />}
         </DialogContent>
       </Dialog>
@@ -167,7 +224,10 @@ function FormsPage() {
 }
 
 function EditorBody({
-  editing, setEditing, onSave, saving,
+  editing,
+  setEditing,
+  onSave,
+  saving,
 }: {
   editing: Partial<FormRow>;
   setEditing: (e: Partial<FormRow>) => void;
@@ -190,12 +250,23 @@ function EditorBody({
         </div>
         <div>
           <Label>Slug (URL pública)</Label>
-          <Input value={editing.slug ?? ""} onChange={(e) => update({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} placeholder="contato-site" />
+          <Input
+            value={editing.slug ?? ""}
+            onChange={(e) =>
+              update({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })
+            }
+            placeholder="contato-site"
+          />
         </div>
         <div>
           <Label>Cria como</Label>
-          <Select value={editing.target ?? "lead"} onValueChange={(v) => update({ target: v as "lead" | "contact" })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={editing.target ?? "lead"}
+            onValueChange={(v) => update({ target: v as "lead" | "contact" })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="lead">Lead</SelectItem>
               <SelectItem value="contact">Contato</SelectItem>
@@ -210,31 +281,64 @@ function EditorBody({
 
       <div>
         <Label>Mensagem de sucesso</Label>
-        <Input value={editing.success_message ?? ""} onChange={(e) => update({ success_message: e.target.value })} />
+        <Input
+          value={editing.success_message ?? ""}
+          onChange={(e) => update({ success_message: e.target.value })}
+        />
       </div>
       <div>
         <Label>URL de redirecionamento (opcional)</Label>
-        <Input value={editing.redirect_url ?? ""} onChange={(e) => update({ redirect_url: e.target.value })} placeholder="https://..." />
+        <Input
+          value={editing.redirect_url ?? ""}
+          onChange={(e) => update({ redirect_url: e.target.value })}
+          placeholder="https://..."
+        />
       </div>
 
       <DisplaySection editing={editing} update={update} />
 
-
-
       <div>
         <div className="mb-2 flex items-center justify-between">
           <Label>Campos</Label>
-          <Button size="sm" variant="outline" onClick={() => update({ fields: [...fields, { key: `field_${fields.length + 1}`, label: "Novo campo", type: "text" }] })}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              update({
+                fields: [
+                  ...fields,
+                  { key: `field_${fields.length + 1}`, label: "Novo campo", type: "text" },
+                ],
+              })
+            }
+          >
             <Plus className="mr-1 h-3 w-3" /> Campo
           </Button>
         </div>
         <div className="space-y-2">
           {fields.map((f, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 rounded border p-2">
-              <Input className="col-span-3" value={f.key} onChange={(e) => updateField(i, { key: e.target.value.replace(/[^a-zA-Z0-9_]/g, "_") })} placeholder="key" />
-              <Input className="col-span-4" value={f.label} onChange={(e) => updateField(i, { label: e.target.value })} placeholder="Rótulo" />
-              <Select value={f.type} onValueChange={(v) => updateField(i, { type: v as FieldType })}>
-                <SelectTrigger className="col-span-2"><SelectValue /></SelectTrigger>
+              <Input
+                className="col-span-3"
+                value={f.key}
+                onChange={(e) =>
+                  updateField(i, { key: e.target.value.replace(/[^a-zA-Z0-9_]/g, "_") })
+                }
+                placeholder="key"
+              />
+              <Input
+                className="col-span-4"
+                value={f.label}
+                onChange={(e) => updateField(i, { label: e.target.value })}
+                placeholder="Rótulo"
+              />
+              <Select
+                value={f.type}
+                onValueChange={(v) => updateField(i, { type: v as FieldType })}
+              >
+                <SelectTrigger className="col-span-2">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="text">Texto</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
@@ -245,26 +349,53 @@ function EditorBody({
                 </SelectContent>
               </Select>
               <div className="col-span-2 flex items-center gap-1 text-xs">
-                <Switch checked={!!f.required} onCheckedChange={(v) => updateField(i, { required: v })} />
+                <Switch
+                  checked={!!f.required}
+                  onCheckedChange={(v) => updateField(i, { required: v })}
+                />
                 Obrig.
               </div>
-              <Button size="icon" variant="ghost" className="col-span-1" onClick={() => update({ fields: fields.filter((_, idx) => idx !== i) })}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="col-span-1"
+                onClick={() => update({ fields: fields.filter((_, idx) => idx !== i) })}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
               {f.type === "select" && (
-                <Textarea className="col-span-12" rows={2} placeholder="Opções (uma por linha)" value={(f.options ?? []).join("\n")} onChange={(e) => updateField(i, { options: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })} />
+                <Textarea
+                  className="col-span-12"
+                  rows={2}
+                  placeholder="Opções (uma por linha)"
+                  value={(f.options ?? []).join("\n")}
+                  onChange={(e) =>
+                    updateField(i, {
+                      options: e.target.value
+                        .split("\n")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                />
               )}
             </div>
           ))}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Dica: use chaves <code>name</code>, <code>email</code>, <code>phone</code>, <code>company</code> para mapeamento automático para o lead/contato.
+          Dica: use chaves <code>name</code>, <code>email</code>, <code>phone</code>,{" "}
+          <code>company</code> para mapeamento automático para o lead/contato.
         </p>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" onClick={() => setEditing({})}>Cancelar</Button>
-        <Button onClick={onSave} disabled={saving || !editing.name || !editing.slug || fields.length === 0}>
+        <Button variant="ghost" onClick={() => setEditing({})}>
+          Cancelar
+        </Button>
+        <Button
+          onClick={onSave}
+          disabled={saving || !editing.name || !editing.slug || fields.length === 0}
+        >
           <Save className="mr-1 h-4 w-4" /> Salvar
         </Button>
       </div>
@@ -292,7 +423,9 @@ function ViewerBody({ form }: { form: FormRow }) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle className="text-sm">Incorporar no seu site</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">Incorporar no seu site</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2">
           <Textarea readOnly rows={3} value={embedHtml} className="font-mono text-xs" />
           <div className="flex gap-2">
@@ -312,22 +445,39 @@ function ViewerBody({ form }: { form: FormRow }) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">Envios recentes ({q.data?.items.length ?? 0})</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">Envios recentes ({q.data?.items.length ?? 0})</CardTitle>
+        </CardHeader>
         <CardContent>
           {q.isLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-          {q.data?.items.length === 0 && <p className="text-sm text-muted-foreground">Nenhum envio ainda.</p>}
+          {q.data?.items.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum envio ainda.</p>
+          )}
           <div className="space-y-2">
             {q.data?.items.map((s) => {
-              const sub = s as unknown as { id: string; data: Record<string, string>; created_at: string; referer: string | null };
+              const sub = s as unknown as {
+                id: string;
+                data: Record<string, string>;
+                created_at: string;
+                referer: string | null;
+              };
               return (
                 <div key={sub.id} className="rounded border p-2 text-xs">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
-                    {sub.referer && <span className="truncate text-muted-foreground" title={sub.referer}>{sub.referer}</span>}
+                    <span className="text-muted-foreground">
+                      {new Date(sub.created_at).toLocaleString()}
+                    </span>
+                    {sub.referer && (
+                      <span className="truncate text-muted-foreground" title={sub.referer}>
+                        {sub.referer}
+                      </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-1">
                     {Object.entries(sub.data).map(([k, v]) => (
-                      <div key={k}><span className="font-medium">{k}:</span> {v}</div>
+                      <div key={k}>
+                        <span className="font-medium">{k}:</span> {v}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -341,7 +491,8 @@ function ViewerBody({ form }: { form: FormRow }) {
 }
 
 function DisplaySection({
-  editing, update,
+  editing,
+  update,
 }: {
   editing: Partial<FormRow>;
   update: (patch: Partial<FormRow>) => void;
@@ -359,8 +510,18 @@ function DisplaySection({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Modo</Label>
-            <Select value={mode} onValueChange={(v) => update({ display_mode: v as DisplayMode, popup_config: v === "inline" ? {} : { ...DEFAULT_POPUP, ...cfg } })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={mode}
+              onValueChange={(v) =>
+                update({
+                  display_mode: v as DisplayMode,
+                  popup_config: v === "inline" ? {} : { ...DEFAULT_POPUP, ...cfg },
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="inline">Inline (embed na página)</SelectItem>
                 <SelectItem value="popup">Pop-up (modal)</SelectItem>
@@ -371,8 +532,13 @@ function DisplaySection({
           {mode !== "inline" && (
             <div>
               <Label>Gatilho</Label>
-              <Select value={cfg.trigger ?? "time"} onValueChange={(v) => updateCfg({ trigger: v as PopupConfig["trigger"] })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={cfg.trigger ?? "time"}
+                onValueChange={(v) => updateCfg({ trigger: v as PopupConfig["trigger"] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="load">Ao carregar</SelectItem>
                   <SelectItem value="time">Após X segundos</SelectItem>
@@ -390,23 +556,46 @@ function DisplaySection({
               {cfg.trigger === "time" && (
                 <div>
                   <Label>Atraso (s)</Label>
-                  <Input type="number" min={0} max={600} value={cfg.delay_seconds ?? 5} onChange={(e) => updateCfg({ delay_seconds: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={600}
+                    value={cfg.delay_seconds ?? 5}
+                    onChange={(e) => updateCfg({ delay_seconds: Number(e.target.value) })}
+                  />
                 </div>
               )}
               {cfg.trigger === "scroll" && (
                 <div>
                   <Label>Scroll (%)</Label>
-                  <Input type="number" min={1} max={100} value={cfg.scroll_percent ?? 50} onChange={(e) => updateCfg({ scroll_percent: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={cfg.scroll_percent ?? 50}
+                    onChange={(e) => updateCfg({ scroll_percent: Number(e.target.value) })}
+                  />
                 </div>
               )}
               <div>
                 <Label>Frequência (dias)</Label>
-                <Input type="number" min={0} max={365} value={cfg.frequency_days ?? 7} onChange={(e) => updateCfg({ frequency_days: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={cfg.frequency_days ?? 7}
+                  onChange={(e) => updateCfg({ frequency_days: Number(e.target.value) })}
+                />
               </div>
               <div>
                 <Label>Posição</Label>
-                <Select value={cfg.position ?? "center"} onValueChange={(v) => updateCfg({ position: v as PopupConfig["position"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={cfg.position ?? "center"}
+                  onValueChange={(v) => updateCfg({ position: v as PopupConfig["position"] })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="center">Centro</SelectItem>
                     <SelectItem value="bottom-right">Canto inferior direito</SelectItem>
@@ -418,15 +607,24 @@ function DisplaySection({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Título do pop-up (opcional)</Label>
-                <Input value={cfg.title ?? ""} onChange={(e) => updateCfg({ title: e.target.value })} placeholder="Receba nosso material" />
+                <Input
+                  value={cfg.title ?? ""}
+                  onChange={(e) => updateCfg({ title: e.target.value })}
+                  placeholder="Receba nosso material"
+                />
               </div>
               <div>
                 <Label>Descrição (opcional)</Label>
-                <Input value={cfg.description ?? ""} onChange={(e) => updateCfg({ description: e.target.value })} placeholder="Deixe seu email..." />
+                <Input
+                  value={cfg.description ?? ""}
+                  onChange={(e) => updateCfg({ description: e.target.value })}
+                  placeholder="Deixe seu email..."
+                />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Frequência 0 = mostrar uma única vez por navegador. Exit intent só funciona em desktop; em mobile, há fallback de 60s.
+              Frequência 0 = mostrar uma única vez por navegador. Exit intent só funciona em
+              desktop; em mobile, há fallback de 60s.
             </p>
           </>
         )}

@@ -80,12 +80,10 @@ export const notifyBugReportStatusChange = createServerFn({ method: "POST" })
         .single();
       if (cErr) throw new Error(cErr.message);
       convId = (conv as { id: string }).id;
-      const { error: mErr } = await supabaseAdmin
-        .from("chat_conversation_members")
-        .insert([
-          { conversation_id: convId, user_id: userId },
-          { conversation_id: convId, user_id: opener },
-        ] as never);
+      const { error: mErr } = await supabaseAdmin.from("chat_conversation_members").insert([
+        { conversation_id: convId, user_id: userId },
+        { conversation_id: convId, user_id: opener },
+      ] as never);
       if (mErr) throw new Error(mErr.message);
     }
 
@@ -97,14 +95,12 @@ export const notifyBugReportStatusChange = createServerFn({ method: "POST" })
       body += `\n\n*Resolução:* ${data.resolution_text}`;
     }
 
-    const { error: msgErr } = await supabaseAdmin
-      .from("chat_messages")
-      .insert({
-        conversation_id: convId,
-        workspace_owner_id: ws,
-        sender_user_id: userId,
-        body,
-      } as never);
+    const { error: msgErr } = await supabaseAdmin.from("chat_messages").insert({
+      conversation_id: convId,
+      workspace_owner_id: ws,
+      sender_user_id: userId,
+      body,
+    } as never);
     if (msgErr) throw new Error(msgErr.message);
 
     return { ok: true, conversation_id: convId };

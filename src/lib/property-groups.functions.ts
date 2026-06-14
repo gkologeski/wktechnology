@@ -24,16 +24,22 @@ export const listPropertyGroups = createServerFn({ method: "POST" })
       cur.min_position = Math.min(cur.min_position, r.position ?? 0);
       map.set(name, cur);
     }
-    return Array.from(map.values()).sort((a, b) => a.min_position - b.min_position || a.name.localeCompare(b.name));
+    return Array.from(map.values()).sort(
+      (a, b) => a.min_position - b.min_position || a.name.localeCompare(b.name),
+    );
   });
 
 export const renamePropertyGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: z.enum(CUSTOM_ENTITIES),
-    from: z.string().min(1).max(80),
-    to: z.string().min(1).max(80),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: z.enum(CUSTOM_ENTITIES),
+        from: z.string().min(1).max(80),
+        to: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -48,10 +54,14 @@ export const renamePropertyGroup = createServerFn({ method: "POST" })
 
 export const deletePropertyGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: z.enum(CUSTOM_ENTITIES),
-    name: z.string().min(1).max(80),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: z.enum(CUSTOM_ENTITIES),
+        name: z.string().min(1).max(80),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // Não exclui as propriedades; apenas remove o agrupamento.
@@ -67,11 +77,15 @@ export const deletePropertyGroup = createServerFn({ method: "POST" })
 
 export const reorderPropertyGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: z.enum(CUSTOM_ENTITIES),
-    name: z.string().min(1).max(80),
-    base_position: z.number().int().min(0).max(100000),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: z.enum(CUSTOM_ENTITIES),
+        name: z.string().min(1).max(80),
+        base_position: z.number().int().min(0).max(100000),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: rows, error } = await supabase

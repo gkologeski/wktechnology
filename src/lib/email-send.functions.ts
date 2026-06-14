@@ -42,7 +42,9 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       .eq("owner_id", context.userId)
       .eq("provider", "gmail");
     if (data.account_id) q = q.eq("id", data.account_id);
-    const { data: rows, error: accErr } = await q.order("created_at", { ascending: false }).limit(1);
+    const { data: rows, error: accErr } = await q
+      .order("created_at", { ascending: false })
+      .limit(1);
     if (accErr) throw new Error(accErr.message);
     const account = rows?.[0] as EmailAccountRow | undefined;
     if (!account) throw new Error("Nenhuma conta Gmail conectada");
@@ -79,8 +81,9 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const nowIso = new Date().toISOString();
-    const snippet = (data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : ""))
-      .slice(0, 200);
+    const snippet = (
+      data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
+    ).slice(0, 200);
 
     let threadDbId: string;
     if (existingThread) {

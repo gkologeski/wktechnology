@@ -14,9 +14,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 function buildBaseString(url: string, params: URLSearchParams): string {
-  const entries = Array.from(params.entries()).sort(([a], [b]) =>
-    a < b ? -1 : a > b ? 1 : 0,
-  );
+  const entries = Array.from(params.entries()).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   let out = url;
   for (const [k, v] of entries) out += k + v;
   return out;

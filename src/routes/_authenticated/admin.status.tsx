@@ -6,7 +6,14 @@ import { rescheduleLovableCron } from "@/lib/admin-cron.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -44,30 +51,74 @@ function AdminStatusPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Status da Plataforma</h1>
-        <p className="text-sm text-muted-foreground">Saúde de crons, integrações e alertas recentes. Atualização automática a cada 30s.</p>
+        <p className="text-sm text-muted-foreground">
+          Saúde de crons, integrações e alertas recentes. Atualização automática a cada 30s.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Workspaces</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.workspaces ?? "—"}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Contas Gmail</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.gmail_accounts ?? "—"}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">WhatsApp WABA</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.whatsapp_accounts ?? "—"}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Twilio</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{data?.integrations.twilio_integrations ?? "—"}</CardContent></Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Workspaces</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            {data?.integrations.workspaces ?? "—"}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Contas Gmail</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            {data?.integrations.gmail_accounts ?? "—"}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">WhatsApp WABA</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            {data?.integrations.whatsapp_accounts ?? "—"}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Twilio</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">
+            {data?.integrations.twilio_integrations ?? "—"}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Cron Jobs</CardTitle>
-          <Button size="sm" onClick={() => rescheduleMut.mutate()} disabled={rescheduleMut.isPending}>
+          <Button
+            size="sm"
+            onClick={() => rescheduleMut.mutate()}
+            disabled={rescheduleMut.isPending}
+          >
             {rescheduleMut.isPending ? "Reagendando…" : "Reagendar crons"}
           </Button>
         </CardHeader>
         <CardContent>
           {error ? (
-            <p className="text-sm text-destructive">{error instanceof Error ? error.message : "Falha ao carregar crons."}</p>
-          ) : isLoading ? "Carregando…" : (
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : "Falha ao carregar crons."}
+            </p>
+          ) : isLoading ? (
+            "Carregando…"
+          ) : (
             <Table>
               <TableHeader>
-                <TableRow><TableHead>Job</TableHead><TableHead>Schedule</TableHead><TableHead>Status</TableHead><TableHead>Última execução</TableHead><TableHead>Duração</TableHead></TableRow>
+                <TableRow>
+                  <TableHead>Job</TableHead>
+                  <TableHead>Schedule</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Última execução</TableHead>
+                  <TableHead>Duração</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {(data?.cronJobs ?? []).map((c) => {
@@ -82,7 +133,14 @@ function AdminStatusPage() {
                           {c.status ?? "—"}
                         </Badge>
                       </TableCell>
-                      <TableCell>{c.last_start ? formatDistanceToNow(new Date(c.last_start), { addSuffix: true, locale: ptBR }) : "—"}</TableCell>
+                      <TableCell>
+                        {c.last_start
+                          ? formatDistanceToNow(new Date(c.last_start), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })
+                          : "—"}
+                      </TableCell>
                       <TableCell>{c.duration_ms != null ? `${c.duration_ms} ms` : "—"}</TableCell>
                     </TableRow>
                   );
@@ -94,7 +152,9 @@ function AdminStatusPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Alertas recentes</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Alertas recentes</CardTitle>
+        </CardHeader>
         <CardContent>
           {(data?.recentEvents ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sem alertas recentes.</p>
@@ -102,8 +162,15 @@ function AdminStatusPage() {
             <ul className="space-y-2">
               {(data?.recentEvents ?? []).map((e) => (
                 <li key={e.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span><Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>{e.severity}</Badge> {e.message}</span>
-                  <span className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}</span>
+                  <span>
+                    <Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>
+                      {e.severity}
+                    </Badge>{" "}
+                    {e.message}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}
+                  </span>
                 </li>
               ))}
             </ul>

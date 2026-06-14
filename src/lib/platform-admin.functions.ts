@@ -21,7 +21,11 @@ function resolveInviteOrigin(origin: string | undefined): string {
   if (!origin) return CANONICAL_APP_URL;
   try {
     const host = new URL(origin).hostname.toLowerCase();
-    if (host.endsWith("lovable.app") || host.endsWith("lovable.dev") || host.endsWith("lovableproject.com")) {
+    if (
+      host.endsWith("lovable.app") ||
+      host.endsWith("lovable.dev") ||
+      host.endsWith("lovableproject.com")
+    ) {
       return CANONICAL_APP_URL;
     }
     return origin.replace(/\/+$/, "");
@@ -85,14 +89,21 @@ export const listAllWorkspaces = createServerFn({ method: "GET" })
 export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      name: z.string().trim().min(2).max(120),
-      slug: z.string().trim().min(2).max(64).regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen."),
-      admin_email: z.string().trim().email().max(255),
-      admin_name: z.string().trim().min(2).max(120),
-      admin_phone: z.string().trim().min(8).max(32).optional(),
-      redirect_origin: z.string().trim().url().max(255).optional(),
-    }).parse(i)
+    z
+      .object({
+        name: z.string().trim().min(2).max(120),
+        slug: z
+          .string()
+          .trim()
+          .min(2)
+          .max(64)
+          .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen."),
+        admin_email: z.string().trim().email().max(255),
+        admin_name: z.string().trim().min(2).max(120),
+        admin_phone: z.string().trim().min(8).max(32).optional(),
+        redirect_origin: z.string().trim().url().max(255).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
@@ -118,10 +129,16 @@ export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
     let userIdFound: string | null = null;
     let page = 1;
     while (page <= 20) {
-      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
       if (error) throw new Error(error.message);
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === target);
-      if (u) { userIdFound = u.id; break; }
+      if (u) {
+        userIdFound = u.id;
+        break;
+      }
       if (list.users.length < 200) break;
       page++;
     }
@@ -129,20 +146,26 @@ export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
     const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     if (!userIdFound) {
-      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
-        data: { full_name: data.admin_name, phone: data.admin_phone ?? "" },
-        redirectTo,
-      });
+      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        target,
+        {
+          data: { full_name: data.admin_name, phone: data.admin_phone ?? "" },
+          redirectTo,
+        },
+      );
       if (invErr || !invited?.user) throw new Error(invErr?.message ?? "Falha ao enviar convite.");
       userIdFound = invited.user.id;
     }
 
     // 3) Garante profile
-    await supabaseAdmin.from("profiles").upsert({
-      id: userIdFound,
-      full_name: data.admin_name,
-      phone: data.admin_phone ?? null,
-    } as never, { onConflict: "id" });
+    await supabaseAdmin.from("profiles").upsert(
+      {
+        id: userIdFound,
+        full_name: data.admin_name,
+        phone: data.admin_phone ?? null,
+      } as never,
+      { onConflict: "id" },
+    );
 
     // 4) Adiciona como admin do workspace
     const { error: memErr } = await supabaseAdmin.from("workspace_members").insert({
@@ -175,20 +198,26 @@ export const listWorkspaceMembersAdmin = createServerFn({ method: "GET" })
 
     if (ids.length) {
       const { data: profiles } = await supabaseAdmin
-        .from("profiles").select("id, full_name, phone").in("id", ids);
+        .from("profiles")
+        .select("id, full_name, phone")
+        .in("id", ids);
       for (const p of profiles ?? []) {
         profilesMap.set(p.id as string, {
           name: (p.full_name as string) ?? "",
           phone: ((p as { phone?: string | null }).phone ?? "") as string,
         });
       }
-      await Promise.all(ids.map(async (id) => {
-        try {
-          const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
-          if (u.user?.email) emailMap.set(id, u.user.email);
-          confirmedMap.set(id, Boolean(u.user?.email_confirmed_at || u.user?.last_sign_in_at));
-        } catch { /* ignore */ }
-      }));
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+            if (u.user?.email) emailMap.set(id, u.user.email);
+            confirmedMap.set(id, Boolean(u.user?.email_confirmed_at || u.user?.last_sign_in_at));
+          } catch {
+            /* ignore */
+          }
+        }),
+      );
     }
 
     return (members ?? []).map((m) => ({
@@ -206,14 +235,16 @@ export const listWorkspaceMembersAdmin = createServerFn({ method: "GET" })
 export const inviteUserToWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspace_id: z.string().uuid(),
-      email: z.string().trim().email().max(255),
-      full_name: z.string().trim().min(2).max(120),
-      phone: z.string().trim().max(32).optional(),
-      role: WsRole,
-      redirect_origin: z.string().trim().url().max(255).optional(),
-    }).parse(i)
+    z
+      .object({
+        workspace_id: z.string().uuid(),
+        email: z.string().trim().email().max(255),
+        full_name: z.string().trim().min(2).max(120),
+        phone: z.string().trim().max(32).optional(),
+        role: WsRole,
+        redirect_origin: z.string().trim().url().max(255).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
@@ -223,7 +254,10 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
     let alreadyConfirmed = false;
     let page = 1;
     while (page <= 20) {
-      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
       if (error) throw new Error(error.message);
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === target);
       if (u) {
@@ -238,19 +272,25 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
     const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
 
     if (!userIdFound || !alreadyConfirmed) {
-      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
-        data: { full_name: data.full_name, phone: data.phone ?? "" },
-        redirectTo,
-      });
+      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        target,
+        {
+          data: { full_name: data.full_name, phone: data.phone ?? "" },
+          redirectTo,
+        },
+      );
       if (invErr || !invited?.user) throw new Error(invErr?.message ?? "Falha ao enviar convite.");
       userIdFound = invited.user.id;
     }
 
-    await supabaseAdmin.from("profiles").upsert({
-      id: userIdFound,
-      full_name: data.full_name,
-      phone: data.phone ?? null,
-    } as never, { onConflict: "id" });
+    await supabaseAdmin.from("profiles").upsert(
+      {
+        id: userIdFound,
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+      } as never,
+      { onConflict: "id" },
+    );
 
     const { error: memErr } = await supabaseAdmin.from("workspace_members").insert({
       workspace_id: data.workspace_id,
@@ -270,10 +310,12 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
 export const removeWorkspaceMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspace_id: z.string().uuid(),
-      user_id: z.string().uuid(),
-    }).parse(i)
+    z
+      .object({
+        workspace_id: z.string().uuid(),
+        user_id: z.string().uuid(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
@@ -290,14 +332,16 @@ export const removeWorkspaceMember = createServerFn({ method: "POST" })
 export const updateWorkspaceAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspace_id: z.string().uuid(),
-      name: z.string().trim().min(2).max(120).optional(),
-      logo_url: z.string().trim().url().max(500).nullable().optional(),
-      primary_color: z.string().trim().max(32).nullable().optional(),
-      custom_domain: z.string().trim().max(255).nullable().optional(),
-      status: z.enum(["active", "suspended"]).optional(),
-    }).parse(i)
+    z
+      .object({
+        workspace_id: z.string().uuid(),
+        name: z.string().trim().min(2).max(120).optional(),
+        logo_url: z.string().trim().url().max(500).nullable().optional(),
+        primary_color: z.string().trim().max(32).nullable().optional(),
+        custom_domain: z.string().trim().max(255).nullable().optional(),
+        status: z.enum(["active", "suspended"]).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);

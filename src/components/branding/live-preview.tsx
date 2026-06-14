@@ -19,7 +19,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
   const primaryFg = readableForeground(primary);
   const accentFg = readableForeground(accent);
 
-  const pad = settings.density === "compact" ? "p-3" : settings.density === "comfortable" ? "p-6" : "p-4";
+  const pad =
+    settings.density === "compact" ? "p-3" : settings.density === "comfortable" ? "p-6" : "p-4";
 
   const bg = dark ? "#0b1220" : "#ffffff";
   const surface = dark ? "#111a2e" : "#ffffff";
@@ -60,15 +61,20 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
         style={{ background: bg, color: text, fontFamily: bodyFont, borderColor: border }}
       >
         {/* Top bar */}
-        <div className="h-12 flex items-center justify-between px-4 border-b" style={{ borderColor: border, background: surface }}>
+        <div
+          className="h-12 flex items-center justify-between px-4 border-b"
+          style={{ borderColor: border, background: surface }}
+        >
           <div className="flex items-center gap-3">
             {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt="" className="h-6 w-6 rounded object-contain" />
             ) : (
               <div className="h-6 w-6 rounded" style={{ background: primary }} />
             )}
-            <span className="text-sm font-bold truncate max-w-[160px]" style={{ fontFamily: headingFont, color: text }}>
+            <span
+              className="text-sm font-bold truncate max-w-[160px]"
+              style={{ fontFamily: headingFont, color: text }}
+            >
               {brandName || "Sua marca"}
             </span>
           </div>
@@ -81,7 +87,10 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
 
         <div className="flex-1 flex min-h-0">
           {/* Sidebar */}
-          <aside className="w-44 border-r p-3 space-y-1 hidden sm:block" style={{ borderColor: border, background: surface2 }}>
+          <aside
+            className="w-44 border-r p-3 space-y-1 hidden sm:block"
+            style={{ borderColor: border, background: surface2 }}
+          >
             {["Painel", "Funil", "Contatos", "Empresas", "Tarefas"].map((item, i) => (
               <div
                 key={item}
@@ -92,7 +101,10 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
                   color: i === 0 ? primary : muted,
                 }}
               >
-                <span className="h-2 w-2 rounded-sm" style={{ background: i === 0 ? primary : muted }} />
+                <span
+                  className="h-2 w-2 rounded-sm"
+                  style={{ background: i === 0 ? primary : muted }}
+                />
                 {item}
               </div>
             ))}
@@ -115,19 +127,43 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: "Conversão", value: "24,8%", badge: "+12%", badgeBg: accent, badgeFg: accentFg },
-                { label: "Pipeline", value: "R$ 142k", badge: "Ativo", badgeBg: primary, badgeFg: primaryFg },
-                { label: "Tarefas", value: "38", badge: "Hoje", badgeBg: `${primary}26`, badgeFg: primary },
+                {
+                  label: "Conversão",
+                  value: "24,8%",
+                  badge: "+12%",
+                  badgeBg: accent,
+                  badgeFg: accentFg,
+                },
+                {
+                  label: "Pipeline",
+                  value: "R$ 142k",
+                  badge: "Ativo",
+                  badgeBg: primary,
+                  badgeFg: primaryFg,
+                },
+                {
+                  label: "Tarefas",
+                  value: "38",
+                  badge: "Hoje",
+                  badgeBg: `${primary}26`,
+                  badgeFg: primary,
+                },
               ].map((card) => (
                 <div
                   key={card.label}
                   className="p-3 border shadow-sm space-y-2"
                   style={{ borderRadius: radius, background: surface, borderColor: border }}
                 >
-                  <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: muted }}>
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: muted }}
+                  >
                     {card.label}
                   </div>
-                  <div className="text-xl font-bold" style={{ fontFamily: headingFont, color: text }}>
+                  <div
+                    className="text-xl font-bold"
+                    style={{ fontFamily: headingFont, color: text }}
+                  >
                     {card.value}
                   </div>
                   <span
@@ -144,14 +180,21 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
               className="border p-3 space-y-2"
               style={{ borderRadius: radius, background: surface, borderColor: border }}
             >
-              <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: muted }}>
+              <div
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: muted }}
+              >
                 Tipografia
               </div>
               <div style={{ fontFamily: headingFont, color: text }} className="text-base font-bold">
                 Heading — {headingFont.split(",")[0].replace(/['"]/g, "")}
               </div>
-              <div style={{ fontFamily: bodyFont, color: muted }} className="text-xs leading-relaxed">
-                O texto corrido aparece neste estilo. Inclui números 1234567890 e acentos: ação, coração, gestão.
+              <div
+                style={{ fontFamily: bodyFont, color: muted }}
+                className="text-xs leading-relaxed"
+              >
+                O texto corrido aparece neste estilo. Inclui números 1234567890 e acentos: ação,
+                coração, gestão.
               </div>
             </div>
           </main>

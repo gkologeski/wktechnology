@@ -18,7 +18,14 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
       .maybeSingle();
     const isPlatformAdmin = !!pa;
 
-    type WsRow = { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null; status: string };
+    type WsRow = {
+      id: string;
+      name: string;
+      slug: string;
+      logo_url: string | null;
+      primary_color: string | null;
+      status: string;
+    };
     let workspaces: (WsRow & { role: "admin" | "member" })[] = [];
 
     if (isPlatformAdmin) {
@@ -31,7 +38,9 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
     } else {
       const { data: members, error } = await supabaseAdmin
         .from("workspace_members")
-        .select("workspace_id, role, workspaces:workspace_id(id, name, slug, logo_url, primary_color, status)")
+        .select(
+          "workspace_id, role, workspaces:workspace_id(id, name, slug, logo_url, primary_color, status)",
+        )
         .eq("user_id", context.userId);
       if (error) throw new Error(error.message);
       workspaces = (members ?? [])
@@ -49,13 +58,13 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    let active = (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
+    let active =
+      (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
     if (active && !workspaces.some((w) => w.id === active)) active = null;
     if (!active && workspaces.length > 0) active = workspaces[0].id;
 
     return { workspaces, active_workspace_id: active };
   });
-
 
 /** Define o workspace ativo do usuário logado. */
 export const setActiveWorkspace = createServerFn({ method: "POST" })
@@ -82,8 +91,9 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("profiles")
-      .upsert({ id: context.userId, active_workspace_id: data.workspace_id } as never, { onConflict: "id" });
+      .upsert({ id: context.userId, active_workspace_id: data.workspace_id } as never, {
+        onConflict: "id",
+      });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-

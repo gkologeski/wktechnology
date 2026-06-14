@@ -25,11 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -65,7 +61,10 @@ function catLabel(value: string) {
   return BUG_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 function subLabel(cat: string, value: string) {
-  return BUG_CATEGORIES.find((c) => c.value === cat)?.subtypes.find((s) => s.value === value)?.label ?? value;
+  return (
+    BUG_CATEGORIES.find((c) => c.value === cat)?.subtypes.find((s) => s.value === value)?.label ??
+    value
+  );
 }
 function kindLabel(value: string) {
   return BUG_KINDS.find((k) => k.value === value)?.label ?? value;
@@ -219,7 +218,14 @@ function MyBugReportsPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={statusFilter === "all" || statusFilter === "open" || statusFilter === "closed" ? statusFilter : "all"} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+        <Tabs
+          value={
+            statusFilter === "all" || statusFilter === "open" || statusFilter === "closed"
+              ? statusFilter
+              : "all"
+          }
+          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+        >
           <TabsList>
             <TabsTrigger value="all">Todos ({counts.total})</TabsTrigger>
             <TabsTrigger value="open">Abertos ({counts.open})</TabsTrigger>
@@ -229,13 +235,17 @@ function MyBugReportsPage() {
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Status</Label>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="open">Abertos (não resolvidos)</SelectItem>
               <SelectItem value="closed">Fechados</SelectItem>
               {ALL_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -287,14 +297,20 @@ function MyBugReportsPage() {
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
                       </p>
-                      <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {r.resolution_text}</p>
+                      <p className="whitespace-pre-wrap">
+                        <strong>Resolução:</strong> {r.resolution_text}
+                      </p>
                     </div>
                   )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
                     <BugReportImages paths={r.image_paths} />
                   )}
                   {r.recording_path && (
-                    <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openVideo(r.recording_path as string)}
+                    >
                       <Video className="h-4 w-4 mr-2" />
                       Ver minha gravação
                     </Button>
@@ -306,7 +322,13 @@ function MyBugReportsPage() {
         </div>
       )}
 
-      <Dialog open={videoOpen} onOpenChange={(o) => { setVideoOpen(o); if (!o) setVideoUrl(null); }}>
+      <Dialog
+        open={videoOpen}
+        onOpenChange={(o) => {
+          setVideoOpen(o);
+          if (!o) setVideoUrl(null);
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Gravação do chamado</DialogTitle>
@@ -316,12 +338,19 @@ function MyBugReportsPage() {
             <video src={videoUrl} controls autoPlay className="w-full rounded border bg-black" />
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setVideoOpen(false)}>Fechar</Button>
+            <Button variant="ghost" onClick={() => setVideoOpen(false)}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!edit} onOpenChange={(o) => { if (!o) setEdit(null); }}>
+      <Dialog
+        open={!!edit}
+        onOpenChange={(o) => {
+          if (!o) setEdit(null);
+        }}
+      >
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Editar chamado</DialogTitle>
@@ -333,14 +362,15 @@ function MyBugReportsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select
-                  value={edit.kind}
-                  onValueChange={(v) => setEdit({ ...edit, kind: v })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={edit.kind} onValueChange={(v) => setEdit({ ...edit, kind: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {BUG_KINDS.map((k) => (
-                      <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                      <SelectItem key={k.value} value={k.value}>
+                        {k.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -352,10 +382,14 @@ function MyBugReportsPage() {
                     value={edit.category}
                     onValueChange={(v) => setEdit({ ...edit, category: v, subtype: "" })}
                   >
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
                     <SelectContent>
                       {BUG_CATEGORIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -368,11 +402,15 @@ function MyBugReportsPage() {
                     disabled={!edit.category}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={edit.category ? "Selecione" : "Escolha a categoria"} />
+                      <SelectValue
+                        placeholder={edit.category ? "Selecione" : "Escolha a categoria"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {editSubtypes.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -386,7 +424,9 @@ function MyBugReportsPage() {
                   maxLength={4000}
                   onChange={(e) => setEdit({ ...edit, description: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground text-right">{edit.description.length}/4000</p>
+                <p className="text-xs text-muted-foreground text-right">
+                  {edit.description.length}/4000
+                </p>
               </div>
             </div>
           )}

@@ -114,7 +114,12 @@ const CampaignInput = z.object({
       timezone: z.string().min(1).max(64),
       days: z.array(z.number().int().min(0).max(6)),
     })
-    .default({ start: "09:00", end: "18:00", timezone: "America/Sao_Paulo", days: [1, 2, 3, 4, 5] }),
+    .default({
+      start: "09:00",
+      end: "18:00",
+      timezone: "America/Sao_Paulo",
+      days: [1, 2, 3, 4, 5],
+    }),
   variants: z
     .array(
       z.object({
@@ -250,7 +255,9 @@ export const deleteCampaign = createServerFn({ method: "POST" })
 export const setCampaignStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done"]) }).parse(i),
+    z
+      .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done"]) })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
@@ -288,7 +295,12 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
           .select("lead_id, status, attempt_number, ended_reason")
           .eq("campaign_id", data.id);
         const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
-        for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; ended_reason: string | null }>) {
+        for (const x of (existing ?? []) as Array<{
+          lead_id: string;
+          status: string;
+          attempt_number: number;
+          ended_reason: string | null;
+        }>) {
           const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
           const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
           const isTalked = x.status === "completed" && !isRetriableEndedReason(x.ended_reason);
@@ -376,8 +388,17 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       .select("id, first_name, last_name, company_name, phone")
       .in("id", leadIds);
     const leadMap = new Map<string, { name: string; phone: string | null }>();
-    for (const l of (leads ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>) {
-      const name = [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8);
+    for (const l of (leads ?? []) as Array<{
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      company_name: string | null;
+      phone: string | null;
+    }>) {
+      const name =
+        [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+        l.company_name ||
+        l.id.slice(0, 8);
       leadMap.set(l.id, { name, phone: l.phone });
     }
 
@@ -388,10 +409,26 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
 
-    type Agg = { count: number; lastStatus: string | null; hasBlocking: string | null; lastAttempt: number };
+    type Agg = {
+      count: number;
+      lastStatus: string | null;
+      hasBlocking: string | null;
+      lastAttempt: number;
+    };
     const agg = new Map<string, Agg>();
-    for (const x of (existing ?? []) as Array<{ lead_id: string; status: string; attempt_number: number; created_at: string; ended_reason: string | null }>) {
-      const a = agg.get(x.lead_id) ?? { count: 0, lastStatus: null, hasBlocking: null, lastAttempt: 0 };
+    for (const x of (existing ?? []) as Array<{
+      lead_id: string;
+      status: string;
+      attempt_number: number;
+      created_at: string;
+      ended_reason: string | null;
+    }>) {
+      const a = agg.get(x.lead_id) ?? {
+        count: 0,
+        lastStatus: null,
+        hasBlocking: null,
+        lastAttempt: 0,
+      };
       a.count += 1;
       if (!a.lastStatus) a.lastStatus = x.status;
       const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
@@ -432,7 +469,9 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
   });
 
 function renderTemplate(tpl: string, ctx: { lead: { name: string; company: string } }): string {
-  return tpl.replaceAll("{{lead.name}}", ctx.lead.name).replaceAll("{{lead.company}}", ctx.lead.company);
+  return tpl
+    .replaceAll("{{lead.name}}", ctx.lead.name)
+    .replaceAll("{{lead.company}}", ctx.lead.company);
 }
 
 export const dialLeadNow = createServerFn({ method: "POST" })
@@ -481,7 +520,9 @@ export async function startVapiCall(opts: {
     .eq("id", opts.scriptId)
     .single();
   if (!script) {
-    await persistDiag({ vapi_response: { error: "Script não encontrado", script_id: opts.scriptId } });
+    await persistDiag({
+      vapi_response: { error: "Script não encontrado", script_id: opts.scriptId },
+    });
     return { ok: false, error: "Script não encontrado" };
   }
 
@@ -500,7 +541,8 @@ export async function startVapiCall(opts: {
   const ctx = { lead: { name: leadName, company: lead.company_name ?? "" } };
   const renderedFirst = renderTemplate(script.first_message ?? "", ctx);
   const renderedPrompt = renderTemplate(script.system_prompt ?? "", ctx);
-  const voiceId = (script.voice_id as string | null) ?? (cfg?.default_voice_id as string | undefined);
+  const voiceId =
+    (script.voice_id as string | null) ?? (cfg?.default_voice_id as string | undefined);
 
   const assistant: Record<string, unknown> = {
     name: "Prospecting Agent",
@@ -573,11 +615,18 @@ export async function startVapiCall(opts: {
 
   const rawText = await res.text();
   let parsed: unknown = rawText;
-  try { parsed = JSON.parse(rawText); } catch { /* keep raw text */ }
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    /* keep raw text */
+  }
 
   if (!res.ok) {
     await persistDiag({ vapi_response: { status: res.status, body: parsed } });
-    return { ok: false, error: `Vapi ${res.status}: ${typeof parsed === "string" ? parsed : JSON.stringify(parsed)}` };
+    return {
+      ok: false,
+      error: `Vapi ${res.status}: ${typeof parsed === "string" ? parsed : JSON.stringify(parsed)}`,
+    };
   }
   const json = (parsed && typeof parsed === "object" ? parsed : {}) as { id?: string };
 

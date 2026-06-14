@@ -15,7 +15,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runStep, planSteps, STEP_DEPS, type StepName, type Scope } from "./hubspot-steps.server";
 
-type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+type LogEntry = {
+  ts: string;
+  level: "info" | "warn" | "error";
+  step: string;
+  message: string;
+  count?: number;
+};
 
 async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
   const full: LogEntry = { ...entry, ts: new Date().toISOString() };
@@ -26,7 +32,10 @@ async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<Lo
     .single();
   const arr = Array.isArray(cur?.step_logs) ? (cur!.step_logs as LogEntry[]) : [];
   const next = [...arr, full].slice(-300);
-  await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
+  await supabase
+    .from("enrichment_jobs")
+    .update({ step_logs: next as never })
+    .eq("id", jobId);
 }
 
 // Cria os itens (1 por step) para o job. Idempotente: só cria se ainda não houver.
@@ -36,7 +45,7 @@ export async function ensureJobItems(supabase: SupabaseClient, jobId: string, st
     .select("id, before")
     .eq("job_id", jobId);
   const have = new Set(
-    (existing ?? []).map((it) => (it.before as { step?: string } | null)?.step).filter(Boolean)
+    (existing ?? []).map((it) => (it.before as { step?: string } | null)?.step).filter(Boolean),
   );
   const rows = steps
     .filter((s) => !have.has(s))
@@ -55,8 +64,17 @@ type TickResult =
   | { kind: "busy"; jobId: string }
   | { kind: "error"; jobId: string; message: string };
 
-async function repairPrematureDependents(supabase: SupabaseClient, jobId: string, items: unknown[]) {
-  const rows = items as { id: string; status: string; before: { step?: string; depends_on?: string[]; [k: string]: unknown } | null; after: { succeeded?: number; failed?: number; imported_hs_ids?: string[] } | null }[];
+async function repairPrematureDependents(
+  supabase: SupabaseClient,
+  jobId: string,
+  items: unknown[],
+) {
+  const rows = items as {
+    id: string;
+    status: string;
+    before: { step?: string; depends_on?: string[]; [k: string]: unknown } | null;
+    after: { succeeded?: number; failed?: number; imported_hs_ids?: string[] } | null;
+  }[];
   const unfinishedSteps = new Set(
     rows
       .filter((it) => it.status !== "done")
@@ -65,7 +83,10 @@ async function repairPrematureDependents(supabase: SupabaseClient, jobId: string
   );
   const toReset = rows.filter((it) => {
     const deps = it.before?.depends_on ?? [];
-    const zeroResult = (it.after?.succeeded ?? 0) === 0 && (it.after?.failed ?? 0) === 0 && (it.after?.imported_hs_ids?.length ?? 0) === 0;
+    const zeroResult =
+      (it.after?.succeeded ?? 0) === 0 &&
+      (it.after?.failed ?? 0) === 0 &&
+      (it.after?.imported_hs_ids?.length ?? 0) === 0;
     const depsUnfinished = deps.some((dep) => unfinishedSteps.has(dep));
     if (!depsUnfinished) return false;
     return it.status === "running" || (it.status === "done" && zeroResult);
@@ -96,12 +117,28 @@ export async function tickOnce(
   ownerId?: string,
 ): Promise<TickResult> {
   // 1) Selecionar o job
-  let job: { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null = null;
+  let job: {
+    id: string;
+    scope: unknown;
+    status: string;
+    owner_id: string;
+    workspace_id: string | null;
+  } | null = null;
   if (jobId) {
-    const q = supabase.from("enrichment_jobs").select("id, scope, status, owner_id, workspace_id").eq("id", jobId);
+    const q = supabase
+      .from("enrichment_jobs")
+      .select("id, scope, status, owner_id, workspace_id")
+      .eq("id", jobId);
     if (ownerId) q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = (data as { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null) ?? null;
+    job =
+      (data as {
+        id: string;
+        scope: unknown;
+        status: string;
+        owner_id: string;
+        workspace_id: string | null;
+      } | null) ?? null;
   } else {
     let q = supabase
       .from("enrichment_jobs")
@@ -113,7 +150,14 @@ export async function tickOnce(
       .limit(1);
     if (ownerId) q = q.eq("owner_id", ownerId);
     const { data } = await q.maybeSingle();
-    job = (data as { id: string; scope: unknown; status: string; owner_id: string; workspace_id: string | null } | null) ?? null;
+    job =
+      (data as {
+        id: string;
+        scope: unknown;
+        status: string;
+        owner_id: string;
+        workspace_id: string | null;
+      } | null) ?? null;
   }
   if (!job) return { kind: "no_job" };
   // Cancelled/finished jobs must not execute new steps
@@ -141,7 +185,9 @@ export async function tickOnce(
   const now = Date.now();
   for (const it of allItems) {
     if (it.status !== "running") continue;
-    const before = (it.before as { last_heartbeat_at?: string; started_at?: string; paused?: boolean } | null) ?? {};
+    const before =
+      (it.before as { last_heartbeat_at?: string; started_at?: string; paused?: boolean } | null) ??
+      {};
     if (before.paused) continue;
     const beat = before.last_heartbeat_at ?? before.started_at;
     const age = beat ? now - new Date(beat).getTime() : Infinity;
@@ -163,20 +209,21 @@ export async function tickOnce(
   const doneSteps = new Set(
     allItems
       .filter((it) => it.status === "done")
-      .map((it) => ((it.before as { step?: string } | null)?.step ?? ""))
+      .map((it) => (it.before as { step?: string } | null)?.step ?? "")
       .filter(Boolean),
   );
   // Pendente = status pending OU running+paused (resumível)
   const claimable = allItems
     .filter((it) => {
       if (it.status === "pending") return true;
-      if (it.status === "running" && (it.before as { paused?: boolean } | null)?.paused) return true;
+      if (it.status === "running" && (it.before as { paused?: boolean } | null)?.paused)
+        return true;
       return false;
     })
     .sort(
       (a, b) =>
-        (((a.before as { order?: number } | null)?.order ?? 0) -
-          ((b.before as { order?: number } | null)?.order ?? 0)),
+        ((a.before as { order?: number } | null)?.order ?? 0) -
+        ((b.before as { order?: number } | null)?.order ?? 0),
     );
   const pending = claimable.find((it) => {
     const deps = ((it.before as { depends_on?: string[] } | null)?.depends_on ?? []) as string[];
@@ -236,7 +283,11 @@ export async function tickOnce(
   // dependentes disparam vazios antes da etapa-pai realmente terminar.
   const prevBefore = (pending.before as Record<string, unknown> | null) ?? {};
   const isPaused = (prevBefore as { paused?: boolean }).paused === true;
-  const claimedBefore = { ...prevBefore, paused: false, last_heartbeat_at: new Date().toISOString() };
+  const claimedBefore = {
+    ...prevBefore,
+    paused: false,
+    last_heartbeat_at: new Date().toISOString(),
+  };
   let claimQuery = supabase
     .from("enrichment_job_items")
     .update({ status: "running", before: claimedBefore as never })
@@ -259,7 +310,10 @@ export async function tickOnce(
       .update({ status: "running", started_at: new Date().toISOString() })
       .eq("id", job.id);
   } else {
-    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", job.id);
+    await supabase
+      .from("enrichment_jobs")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", job.id);
   }
 
   const step = (pending.before as { step?: StepName } | null)?.step as StepName;
@@ -292,7 +346,9 @@ export async function tickOnce(
       .from("enrichment_job_items")
       .select("status, before, after")
       .eq("job_id", job.id);
-    const doneCount = (refreshed ?? []).filter((it) => it.status === "done" || it.status === "failed").length;
+    const doneCount = (refreshed ?? []).filter(
+      (it) => it.status === "done" || it.status === "failed",
+    ).length;
     const sumSucc = (refreshed ?? []).reduce((s, it) => {
       const done = (it.after as { succeeded?: number } | null)?.succeeded ?? 0;
       const running = (it.before as { running_succeeded?: number } | null)?.running_succeeded ?? 0;

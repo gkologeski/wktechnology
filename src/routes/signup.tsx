@@ -7,9 +7,16 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Acesso por convite — WK Technology CRM" },
-      { name: "description", content: "O cadastro no WK Technology CRM é feito apenas por convite enviado pelo administrador do workspace." },
+      {
+        name: "description",
+        content:
+          "O cadastro no WK Technology CRM é feito apenas por convite enviado pelo administrador do workspace.",
+      },
       { property: "og:title", content: "Acesso por convite — WK Technology CRM" },
-      { property: "og:description", content: "O cadastro no WK Technology CRM é feito apenas por convite." },
+      {
+        property: "og:description",
+        content: "O cadastro no WK Technology CRM é feito apenas por convite.",
+      },
       { property: "og:url", content: "https://crm.wktechnology.com.br/signup" },
     ],
     links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/signup" }],
@@ -24,14 +31,14 @@ function SignupClosedPage() {
         <CardHeader>
           <CardTitle>Acesso por convite</CardTitle>
           <CardDescription>
-            Este CRM é restrito. O cadastro público está desativado — o acesso é
-            feito apenas via convite enviado por um administrador do workspace.
+            Este CRM é restrito. O cadastro público está desativado — o acesso é feito apenas via
+            convite enviado por um administrador do workspace.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Já recebeu um convite? Abra o link enviado por email para concluir o
-            acesso. Caso já tenha uma conta, basta entrar.
+            Já recebeu um convite? Abra o link enviado por email para concluir o acesso. Caso já
+            tenha uma conta, basta entrar.
           </p>
           <Button asChild className="w-full">
             <Link to="/login">Ir para o login</Link>

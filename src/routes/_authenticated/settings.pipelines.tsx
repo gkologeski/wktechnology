@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
@@ -65,13 +71,15 @@ const VIEWS_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
 };
 
 function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 40) || `stage_${Date.now()}`;
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || `stage_${Date.now()}`
+  );
 }
 
 function PipelinesSettings() {
@@ -127,7 +135,11 @@ function PipelinesSettings() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-medium truncate">{p.name}</span>
-                {p.is_default && <Badge variant="secondary" className="text-xs">Padrão</Badge>}
+                {p.is_default && (
+                  <Badge variant="secondary" className="text-xs">
+                    Padrão
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-xs capitalize">
                   {ENTITIES.find((e) => e.value === p.entity)?.label ?? p.entity}
                 </Badge>
@@ -146,7 +158,10 @@ function PipelinesSettings() {
           ownerId={user.id}
           pipeline={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
-          onSaved={() => { refresh(); setEditing(null); }}
+          onSaved={() => {
+            refresh();
+            setEditing(null);
+          }}
         />
       )}
     </div>
@@ -154,7 +169,10 @@ function PipelinesSettings() {
 }
 
 function PipelineEditor({
-  pipeline, ownerId, onClose, onSaved,
+  pipeline,
+  ownerId,
+  onClose,
+  onSaved,
 }: {
   pipeline: Pipeline | null;
   ownerId: string;
@@ -298,14 +316,24 @@ function PipelineEditor({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label className="text-xs">Nome *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Pipeline padrão" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: Pipeline padrão"
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Entidade</Label>
             <Select value={entity} onValueChange={setEntity}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {ENTITIES.map((e) => <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>)}
+                {ENTITIES.map((e) => (
+                  <SelectItem key={e.value} value={e.value}>
+                    {e.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -313,15 +341,21 @@ function PipelineEditor({
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex items-center gap-2">
             <Switch checked={isDefault} onCheckedChange={setIsDefault} id="is-default" />
-            <Label htmlFor="is-default" className="text-sm cursor-pointer">Pipeline padrão</Label>
+            <Label htmlFor="is-default" className="text-sm cursor-pointer">
+              Pipeline padrão
+            </Label>
           </div>
           <div className="space-y-1 min-w-[200px]">
             <Label className="text-xs">Visualização padrão</Label>
             <Select value={defaultView} onValueChange={setDefaultView}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {(VIEWS_BY_ENTITY[entity] ?? VIEWS_BY_ENTITY.deal).map((v) => (
-                  <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>
+                  <SelectItem key={v.value} value={v.value}>
+                    {v.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -355,12 +389,20 @@ function PipelineEditor({
                 </div>
                 <div className="sm:col-span-3 space-y-1">
                   <Label className="text-[10px] text-muted-foreground">Identificador</Label>
-                  <Input value={s.value} onChange={(e) => updateStage(i, { value: e.target.value })} />
+                  <Input
+                    value={s.value}
+                    onChange={(e) => updateStage(i, { value: e.target.value })}
+                  />
                 </div>
                 <div className="sm:col-span-2 space-y-1">
                   <Label className="text-[10px] text-muted-foreground">Tipo</Label>
-                  <Select value={s.type ?? "open"} onValueChange={(v) => updateStage(i, { type: v as Stage["type"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={s.type ?? "open"}
+                    onValueChange={(v) => updateStage(i, { type: v as Stage["type"] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="open">Aberto</SelectItem>
                       <SelectItem value="won">Ganho</SelectItem>
@@ -371,17 +413,28 @@ function PipelineEditor({
                 <div className="sm:col-span-1 space-y-1">
                   <Label className="text-[10px] text-muted-foreground">Prob. %</Label>
                   <Input
-                    type="number" min={0} max={100}
+                    type="number"
+                    min={0}
+                    max={100}
                     value={s.probability ?? ""}
-                    onChange={(e) => updateStage(i, { probability: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    onChange={(e) =>
+                      updateStage(i, {
+                        probability: e.target.value === "" ? undefined : Number(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div className="sm:col-span-1 space-y-1">
                   <Label className="text-[10px] text-muted-foreground">SLA (h)</Label>
                   <Input
-                    type="number" min={0}
+                    type="number"
+                    min={0}
                     value={s.sla_hours ?? ""}
-                    onChange={(e) => updateStage(i, { sla_hours: e.target.value === "" ? null : Number(e.target.value) })}
+                    onChange={(e) =>
+                      updateStage(i, {
+                        sla_hours: e.target.value === "" ? null : Number(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div className="sm:col-span-1 space-y-1">
@@ -393,10 +446,20 @@ function PipelineEditor({
                   />
                 </div>
                 <div className="sm:col-span-1 flex gap-1 justify-end">
-                  <Button size="icon" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                  >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => move(i, 1)} disabled={i === stages.length - 1}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => move(i, 1)}
+                    disabled={i === stages.length - 1}
+                  >
                     <ArrowDown className="h-4 w-4" />
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => removeStage(i)}>
@@ -442,8 +505,6 @@ function PipelineEditor({
           </div>
         )}
 
-
-
         <div className="flex items-center justify-between gap-2 pt-2">
           <div>
             {!isNew && (
@@ -453,8 +514,12 @@ function PipelineEditor({
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>Cancelar</Button>
-            <Button size="sm" onClick={save} disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving ? "Salvando…" : "Salvar"}
+            </Button>
           </div>
         </div>
       </CardContent>

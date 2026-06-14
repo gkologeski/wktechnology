@@ -15,7 +15,12 @@ import {
   sendTestPush,
   getVapidKey,
 } from "@/lib/push.functions";
-import { registerServiceWorker, usePwaInstall, subscribeToPush, unsubscribeFromPush } from "@/lib/pwa";
+import {
+  registerServiceWorker,
+  usePwaInstall,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/pwa";
 import { Trash2, Smartphone, Bell, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,7 +28,14 @@ export const Route = createFileRoute("/_authenticated/settings/mobile")({
   component: MobilePage,
 });
 
-type Prefs = { mention: boolean; assignment: boolean; sla: boolean; message: boolean; task: boolean; deal: boolean };
+type Prefs = {
+  mention: boolean;
+  assignment: boolean;
+  sla: boolean;
+  message: boolean;
+  task: boolean;
+  deal: boolean;
+};
 type Sub = {
   id: string;
   endpoint: string;
@@ -58,7 +70,10 @@ function MobilePage() {
   const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const { canInstall, installed, install } = usePwaInstall();
 
-  const load = async () => { const r = await list({}); setSubs(r.subs as unknown as Sub[]); };
+  const load = async () => {
+    const r = await list({});
+    setSubs(r.subs as unknown as Sub[]);
+  };
 
   useEffect(() => {
     registerServiceWorker();
@@ -69,7 +84,10 @@ function MobilePage() {
     const off = () => setOnline(false);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
-    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
   }, []);
 
   const enablePush = async () => {
@@ -86,7 +104,9 @@ function MobilePage() {
       await load();
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const disableThisDevice = async () => {
@@ -96,7 +116,9 @@ function MobilePage() {
       if (ep) await unsub({ data: { endpoint: ep } });
       toast.success("Push desativado neste dispositivo");
       await load();
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const togglePref = async (sub: Sub, key: keyof Prefs, value: boolean) => {
@@ -122,7 +144,9 @@ function MobilePage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Mobile / PWA</h1>
-          <p className="text-sm text-muted-foreground">Instale o app, gerencie push e veja status offline.</p>
+          <p className="text-sm text-muted-foreground">
+            Instale o app, gerencie push e veja status offline.
+          </p>
         </div>
         <Badge variant={online ? "default" : "destructive"} className="gap-1">
           {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
@@ -132,7 +156,9 @@ function MobilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> Instalar app</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4" /> Instalar app
+          </CardTitle>
           <CardDescription>Use o CRM como aplicativo no celular ou desktop.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -142,7 +168,8 @@ function MobilePage() {
             <Button onClick={install}>Instalar agora</Button>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Use o menu do navegador → "Adicionar à tela inicial" / "Instalar app". No iOS, abra no Safari → Compartilhar → "Adicionar à Tela de Início".
+              Use o menu do navegador → "Adicionar à tela inicial" / "Instalar app". No iOS, abra no
+              Safari → Compartilhar → "Adicionar à Tela de Início".
             </p>
           )}
         </CardContent>
@@ -150,17 +177,27 @@ function MobilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Bell className="h-4 w-4" /> Notificações push</CardTitle>
-          <CardDescription>Permissão: <strong>{permission}</strong> {!vapidKey && "· VAPID não configurado"}</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Notificações push
+          </CardTitle>
+          <CardDescription>
+            Permissão: <strong>{permission}</strong> {!vapidKey && "· VAPID não configurado"}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {permission !== "granted" || subs.length === 0 ? (
-              <Button onClick={enablePush} disabled={busy || !vapidKey}>Ativar neste dispositivo</Button>
+              <Button onClick={enablePush} disabled={busy || !vapidKey}>
+                Ativar neste dispositivo
+              </Button>
             ) : (
               <>
-                <Button variant="outline" onClick={sendTest}>Enviar teste</Button>
-                <Button variant="ghost" onClick={disableThisDevice} disabled={busy}>Desativar neste dispositivo</Button>
+                <Button variant="outline" onClick={sendTest}>
+                  Enviar teste
+                </Button>
+                <Button variant="ghost" onClick={disableThisDevice} disabled={busy}>
+                  Desativar neste dispositivo
+                </Button>
               </>
             )}
           </div>
@@ -170,12 +207,27 @@ function MobilePage() {
               <div key={s.id} className="border rounded-md p-3 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs truncate flex-1">
-                    <div className="font-medium truncate">{s.user_agent ?? s.endpoint.slice(0, 60)}</div>
-                    <div className="text-muted-foreground">Registrado em {formatDateTime(s.created_at)}</div>
+                    <div className="font-medium truncate">
+                      {s.user_agent ?? s.endpoint.slice(0, 60)}
+                    </div>
+                    <div className="text-muted-foreground">
+                      Registrado em {formatDateTime(s.created_at)}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Switch checked={s.enabled} onCheckedChange={(v) => toggleEnabled(s, v)} aria-label="Ativo" />
-                    <Button variant="ghost" size="sm" onClick={async () => { await unsub({ data: { endpoint: s.endpoint } }); load(); }}>
+                    <Switch
+                      checked={s.enabled}
+                      onCheckedChange={(v) => toggleEnabled(s, v)}
+                      aria-label="Ativo"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        await unsub({ data: { endpoint: s.endpoint } });
+                        load();
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -194,7 +246,9 @@ function MobilePage() {
                 </div>
               </div>
             ))}
-            {subs.length === 0 && <p className="text-xs text-muted-foreground">Nenhum dispositivo registrado.</p>}
+            {subs.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum dispositivo registrado.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -202,7 +256,10 @@ function MobilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Modo offline</CardTitle>
-          <CardDescription>Notas e tarefas criadas sem conexão ficam em fila local e sincronizam automaticamente quando o dispositivo volta a ficar online.</CardDescription>
+          <CardDescription>
+            Notas e tarefas criadas sem conexão ficam em fila local e sincronizam automaticamente
+            quando o dispositivo volta a ficar online.
+          </CardDescription>
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground space-y-1">
           <p>• Shell do app é cacheado pelo service worker (NetworkFirst em HTML).</p>

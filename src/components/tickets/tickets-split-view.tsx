@@ -12,7 +12,11 @@ export function TicketsSplitView({
   onOpenFull,
 }: {
   tickets: TicketRow[];
-  lookups: { contacts: Map<string, string>; companies: Map<string, string>; owners: Map<string, string> };
+  lookups: {
+    contacts: Map<string, string>;
+    companies: Map<string, string>;
+    owners: Map<string, string>;
+  };
   onOpenFull: (t: TicketRow) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(tickets[0]?.id ?? null);
@@ -30,7 +34,9 @@ export function TicketsSplitView({
       <ScrollArea className="border-r bg-[var(--hs-surface)]">
         <div className="p-2 space-y-1.5">
           {tickets.length === 0 && (
-            <p className="text-xs text-[var(--hs-text-muted)] text-center py-8">Nenhum ticket nesta view.</p>
+            <p className="text-xs text-[var(--hs-text-muted)] text-center py-8">
+              Nenhum ticket nesta view.
+            </p>
           )}
           {tickets.map((t) => (
             <TicketCard
@@ -62,7 +68,9 @@ export function TicketsSplitView({
                 </div>
                 <h2 className="text-xl font-semibold leading-tight mt-1">{selected.subject}</h2>
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <Badge variant="secondary">{STATUSES.find((s) => s.value === selected.status)?.label}</Badge>
+                  <Badge variant="secondary">
+                    {STATUSES.find((s) => s.value === selected.status)?.label}
+                  </Badge>
                   <Badge
                     style={{
                       background: `color-mix(in oklab, var(--priority-${selected.priority}) 18%, transparent)`,
@@ -89,14 +97,28 @@ export function TicketsSplitView({
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--hs-text-muted)] mb-2">
                   Descrição
                 </div>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{selected.description}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {selected.description}
+                </p>
               </div>
             )}
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <Field icon={UserIcon} label="Contato" value={selected.contact_id ? lookups.contacts.get(selected.contact_id) : undefined} />
-              <Field icon={Building2} label="Empresa" value={selected.company_id ? lookups.companies.get(selected.company_id) : undefined} />
-              <Field icon={UserIcon} label="Atribuído a" value={selected.assignee_id ? lookups.owners.get(selected.assignee_id) : "—"} />
+              <Field
+                icon={UserIcon}
+                label="Contato"
+                value={selected.contact_id ? lookups.contacts.get(selected.contact_id) : undefined}
+              />
+              <Field
+                icon={Building2}
+                label="Empresa"
+                value={selected.company_id ? lookups.companies.get(selected.company_id) : undefined}
+              />
+              <Field
+                icon={UserIcon}
+                label="Atribuído a"
+                value={selected.assignee_id ? lookups.owners.get(selected.assignee_id) : "—"}
+              />
               <Field
                 icon={Calendar}
                 label="Vencimento"

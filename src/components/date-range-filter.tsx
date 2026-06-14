@@ -12,11 +12,7 @@ import {
 } from "@/lib/date-presets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export type DateRangeValue = {
@@ -52,15 +48,7 @@ const GROUPS: { title: string; presets: DatePreset[] }[] = [
   },
   {
     title: "Últimos N dias",
-    presets: [
-      "last_7d",
-      "last_14d",
-      "last_30d",
-      "last_60d",
-      "last_90d",
-      "last_180d",
-      "last_365d",
-    ],
+    presets: ["last_7d", "last_14d", "last_30d", "last_60d", "last_90d", "last_180d", "last_365d"],
   },
 ];
 
@@ -90,7 +78,9 @@ export function resolveDateRange(value: DateRangeValue | undefined): {
   if (!value) return {};
   const r = getDateRange(value.preset, new Date(), value.custom);
   const toIso = (d?: Date) =>
-    d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : undefined;
+    d
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      : undefined;
   return { start: toIso(r.start), end: toIso(r.end) };
 }
 
@@ -105,7 +95,10 @@ export function DateRangeFilter({
 }) {
   const [open, setOpen] = useState(false);
   const current: DateRangeValue = value ?? { preset: "last_30d" };
-  const resolved = useMemo(() => getDateRange(current.preset, new Date(), current.custom), [current]);
+  const resolved = useMemo(
+    () => getDateRange(current.preset, new Date(), current.custom),
+    [current],
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -120,7 +113,8 @@ export function DateRangeFilter({
           <span className="truncate">{describeRange(current)}</span>
           {current.preset !== "any" && current.preset !== "custom" && (
             <span className="ml-auto text-xs text-muted-foreground hidden md:inline">
-              {format(resolved.start)} – {format(resolved.end ? new Date(resolved.end.getTime() - 86_400_000) : undefined)}
+              {format(resolved.start)} –{" "}
+              {format(resolved.end ? new Date(resolved.end.getTime() - 86_400_000) : undefined)}
             </span>
           )}
         </Button>
@@ -181,9 +175,7 @@ export function DateRangeFilter({
             </div>
           </div>
           <div className="flex-1 p-3 space-y-3">
-            <div className="text-xs text-muted-foreground">
-              {describeRange(current)}
-            </div>
+            <div className="text-xs text-muted-foreground">{describeRange(current)}</div>
             <div className="space-y-2">
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">De</label>
@@ -212,12 +204,7 @@ export function DateRangeFilter({
                 />
               </div>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" size="sm" className="w-full" onClick={() => setOpen(false)}>
               Aplicar
             </Button>
           </div>

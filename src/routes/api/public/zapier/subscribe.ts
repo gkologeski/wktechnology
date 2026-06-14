@@ -22,10 +22,16 @@ export const Route = createFileRoute("/api/public/zapier/subscribe")({
         const body = await request.json().catch(() => null);
         const parsed = SubscribeZ.safeParse(body);
         if (!parsed.success) {
-          return Response.json({ error: "invalid_input", details: parsed.error.flatten() }, { status: 400 });
+          return Response.json(
+            { error: "invalid_input", details: parsed.error.flatten() },
+            { status: 400 },
+          );
         }
         if (!(ZAPIER_TRIGGERS as readonly string[]).includes(parsed.data.event)) {
-          return Response.json({ error: "unknown_event", supported: ZAPIER_TRIGGERS }, { status: 400 });
+          return Response.json(
+            { error: "unknown_event", supported: ZAPIER_TRIGGERS },
+            { status: 400 },
+          );
         }
         const { data, error } = await supabaseAdmin
           .from("zapier_subscriptions")

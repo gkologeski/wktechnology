@@ -23,7 +23,9 @@ export function ColorControl({ label, value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <label className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-foreground uppercase tracking-wide">{label}</span>
+        <span className="text-[11px] font-bold text-foreground uppercase tracking-wide">
+          {label}
+        </span>
         <span className="text-[10px] font-mono text-muted-foreground">{text.toUpperCase()}</span>
       </label>
       <div className="flex items-center gap-2">

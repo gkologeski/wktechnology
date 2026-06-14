@@ -17,9 +17,16 @@ export const Route = createFileRoute("/accept-invite/$token")({
   head: () => ({
     meta: [
       { title: "Aceitar convite — WK Technology CRM" },
-      { name: "description", content: "Conclua seu cadastro no workspace do WK Technology CRM utilizando o convite recebido." },
+      {
+        name: "description",
+        content:
+          "Conclua seu cadastro no workspace do WK Technology CRM utilizando o convite recebido.",
+      },
       { property: "og:title", content: "Aceitar convite — WK Technology CRM" },
-      { property: "og:description", content: "Conclua seu cadastro no workspace do WK Technology CRM." },
+      {
+        property: "og:description",
+        content: "Conclua seu cadastro no workspace do WK Technology CRM.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -57,9 +64,11 @@ function AcceptInviteTokenPage() {
         if (cancelled) return;
         if (!res.valid) {
           setError(
-            res.reason === "expired" ? "Convite expirado." :
-            res.reason === "accepted" ? "Convite já utilizado." :
-            "Convite inválido."
+            res.reason === "expired"
+              ? "Convite expirado."
+              : res.reason === "accepted"
+                ? "Convite já utilizado."
+                : "Convite inválido.",
           );
         } else {
           setInfo(res as InviteInfo);
@@ -70,7 +79,9 @@ function AcceptInviteTokenPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token, lookupFn]);
 
   const canSubmit =
@@ -115,11 +126,16 @@ function AcceptInviteTokenPage() {
         <CardHeader>
           <CardTitle>Aceitar convite</CardTitle>
           <CardDescription>
-            {loading
-              ? "Validando convite…"
-              : info
-                ? <>Você foi convidado para o workspace <strong>{info.workspace.name}</strong> como <strong>{info.role}</strong>.</>
-                : "Convite indisponível."}
+            {loading ? (
+              "Validando convite…"
+            ) : info ? (
+              <>
+                Você foi convidado para o workspace <strong>{info.workspace.name}</strong> como{" "}
+                <strong>{info.role}</strong>.
+              </>
+            ) : (
+              "Convite indisponível."
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,7 +144,9 @@ function AcceptInviteTokenPage() {
           ) : error || !info ? (
             <div className="space-y-3 text-sm">
               <p className="text-destructive">{error ?? "Convite inválido."}</p>
-              <Link to="/login" className="text-primary hover:underline">Ir para o login</Link>
+              <Link to="/login" className="text-primary hover:underline">
+                Ir para o login
+              </Link>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
@@ -138,24 +156,42 @@ function AcceptInviteTokenPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-name">Nome completo</Label>
-                <Input id="ait-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <Input
+                  id="ait-name"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-phone">Telefone celular</Label>
                 <PhoneInput id="ait-phone" required value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ait-pass">{info.user_exists ? "Defina/atualize sua senha" : "Crie uma senha"}</Label>
-                <PasswordInput id="ait-pass" required minLength={8}
-                  value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Label htmlFor="ait-pass">
+                  {info.user_exists ? "Defina/atualize sua senha" : "Crie uma senha"}
+                </Label>
+                <PasswordInput
+                  id="ait-pass"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Use no mínimo 8 caracteres. Recomendamos combinar letras maiúsculas, minúsculas, números e símbolos.
+                  Use no mínimo 8 caracteres. Recomendamos combinar letras maiúsculas, minúsculas,
+                  números e símbolos.
                 </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-pass2">Confirme a senha</Label>
-                <PasswordInput id="ait-pass2" required minLength={8}
-                  value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                <PasswordInput
+                  id="ait-pass2"
+                  required
+                  minLength={8}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                />
                 {confirm && password !== confirm && (
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
                 )}

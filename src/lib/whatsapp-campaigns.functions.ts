@@ -61,9 +61,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
     // Insere em lotes de 500 para evitar payload gigante
     for (let i = 0; i < rows.length; i += 500) {
       const slice = rows.slice(i, i + 500);
-      const { error: rErr } = await supabase
-        .from("whatsapp_campaign_recipients")
-        .insert(slice);
+      const { error: rErr } = await supabase.from("whatsapp_campaign_recipients").insert(slice);
       if (rErr) throw rErr;
     }
     return { id: camp.id as string };

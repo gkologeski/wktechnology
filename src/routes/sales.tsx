@@ -1,15 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Check, Zap, Shield, Users, BarChart3, MessageSquare, FileText, Workflow } from "lucide-react";
+import {
+  Check,
+  Zap,
+  Shield,
+  Users,
+  BarChart3,
+  MessageSquare,
+  FileText,
+  Workflow,
+} from "lucide-react";
 
 export const Route = createFileRoute("/sales")({
   head: () => ({
     meta: [
       { title: "WK Technology CRM — Vendas, atendimento e cobrança em um só lugar" },
-      { name: "description", content: "Plataforma all-in-one para PMEs brasileiras: CRM, WhatsApp, faturamento, NFS-e, propostas, automações e portal do cliente. Teste grátis." },
-      { property: "og:title", content: "WK Technology CRM — Tudo da operação comercial em um só lugar" },
-      { property: "og:description", content: "CRM, WhatsApp, faturamento, NFS-e e automações para PMEs brasileiras. Comece grátis e cresça quando precisar." },
+      {
+        name: "description",
+        content:
+          "Plataforma all-in-one para PMEs brasileiras: CRM, WhatsApp, faturamento, NFS-e, propostas, automações e portal do cliente. Teste grátis.",
+      },
+      {
+        property: "og:title",
+        content: "WK Technology CRM — Tudo da operação comercial em um só lugar",
+      },
+      {
+        property: "og:description",
+        content:
+          "CRM, WhatsApp, faturamento, NFS-e e automações para PMEs brasileiras. Comece grátis e cresça quando precisar.",
+      },
       { property: "og:url", content: "https://crm.wktechnology.com.br/sales" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -22,12 +42,36 @@ export const Route = createFileRoute("/sales")({
 });
 
 const features = [
-  { icon: Users, title: "CRM completo", desc: "Leads, contatos, empresas, negócios e pipeline visual." },
-  { icon: MessageSquare, title: "Omnichannel", desc: "WhatsApp Business, e-mail e chat unificados na mesma caixa." },
-  { icon: FileText, title: "Cotações e NFS-e", desc: "Propostas, assinatura eletrônica, faturamento e emissão automática." },
-  { icon: Workflow, title: "Automações", desc: "Sequências, scoring, rotinas e workflows visuais." },
-  { icon: BarChart3, title: "Dashboards", desc: "Indicadores em tempo real, metas e relatórios customizáveis." },
-  { icon: Shield, title: "LGPD-ready", desc: "Exportação e exclusão pelo titular, RLS por workspace, auditoria." },
+  {
+    icon: Users,
+    title: "CRM completo",
+    desc: "Leads, contatos, empresas, negócios e pipeline visual.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Omnichannel",
+    desc: "WhatsApp Business, e-mail e chat unificados na mesma caixa.",
+  },
+  {
+    icon: FileText,
+    title: "Cotações e NFS-e",
+    desc: "Propostas, assinatura eletrônica, faturamento e emissão automática.",
+  },
+  {
+    icon: Workflow,
+    title: "Automações",
+    desc: "Sequências, scoring, rotinas e workflows visuais.",
+  },
+  {
+    icon: BarChart3,
+    title: "Dashboards",
+    desc: "Indicadores em tempo real, metas e relatórios customizáveis.",
+  },
+  {
+    icon: Shield,
+    title: "LGPD-ready",
+    desc: "Exportação e exclusão pelo titular, RLS por workspace, auditoria.",
+  },
 ];
 
 const plans = [
@@ -45,7 +89,13 @@ const plans = [
     price: "R$ 149",
     cadence: "/usuário/mês",
     desc: "Para times de vendas estruturados.",
-    items: ["Usuários ilimitados", "Automações e sequências", "Cotações e contratos", "Faturamento e cobrança", "Integrações (Google, Meta, Twilio)"],
+    items: [
+      "Usuários ilimitados",
+      "Automações e sequências",
+      "Cotações e contratos",
+      "Faturamento e cobrança",
+      "Integrações (Google, Meta, Twilio)",
+    ],
     cta: "Assinar Pro",
     highlight: true,
     to: "/signup" as const,
@@ -55,7 +105,13 @@ const plans = [
     price: "Sob consulta",
     cadence: "",
     desc: "Para empresas com requisitos avançados.",
-    items: ["SSO/SAML e SCIM", "Auditoria avançada e DPA", "Limites elevados", "Onboarding dedicado", "SLA 99,9%"],
+    items: [
+      "SSO/SAML e SCIM",
+      "Auditoria avançada e DPA",
+      "Limites elevados",
+      "Onboarding dedicado",
+      "SLA 99,9%",
+    ],
     cta: "Falar com vendas",
     to: "/signup" as const,
   },
@@ -67,12 +123,22 @@ function SalesPage() {
       {/* Header */}
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/sales" className="font-bold text-lg">WK Technology CRM</Link>
+          <Link to="/sales" className="font-bold text-lg">
+            WK Technology CRM
+          </Link>
           <nav className="flex items-center gap-4 text-sm">
-            <a href="#features" className="hover:underline">Recursos</a>
-            <a href="#pricing" className="hover:underline">Preços</a>
-            <Link to="/login" className="hover:underline">Entrar</Link>
-            <Button asChild size="sm"><Link to="/signup">Começar grátis</Link></Button>
+            <a href="#features" className="hover:underline">
+              Recursos
+            </a>
+            <a href="#pricing" className="hover:underline">
+              Preços
+            </a>
+            <Link to="/login" className="hover:underline">
+              Entrar
+            </Link>
+            <Button asChild size="sm">
+              <Link to="/signup">Começar grátis</Link>
+            </Button>
           </nav>
         </div>
       </header>
@@ -84,14 +150,20 @@ function SalesPage() {
             Toda a operação comercial em um só lugar
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            CRM, WhatsApp, propostas, NFS-e e automações para PMEs brasileiras.
-            Comece grátis e escale quando precisar — sem migrar de ferramenta.
+            CRM, WhatsApp, propostas, NFS-e e automações para PMEs brasileiras. Comece grátis e
+            escale quando precisar — sem migrar de ferramenta.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Button asChild size="lg"><Link to="/signup">Criar conta grátis</Link></Button>
-            <Button asChild size="lg" variant="outline"><a href="#pricing">Ver planos</a></Button>
+            <Button asChild size="lg">
+              <Link to="/signup">Criar conta grátis</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href="#pricing">Ver planos</a>
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Sem cartão de crédito. 7 dias para testar.</p>
+          <p className="text-xs text-muted-foreground">
+            Sem cartão de crédito. 7 dias para testar.
+          </p>
         </div>
       </section>
 
@@ -158,8 +230,12 @@ function SalesPage() {
         <div className="mx-auto max-w-3xl text-center space-y-4">
           <Zap className="h-10 w-10 text-primary mx-auto" />
           <h2 className="text-3xl font-bold">Pronto para acelerar suas vendas?</h2>
-          <p className="text-muted-foreground">Crie sua conta em 2 minutos. Suporte humano em português.</p>
-          <Button asChild size="lg"><Link to="/signup">Começar agora</Link></Button>
+          <p className="text-muted-foreground">
+            Crie sua conta em 2 minutos. Suporte humano em português.
+          </p>
+          <Button asChild size="lg">
+            <Link to="/signup">Começar agora</Link>
+          </Button>
         </div>
       </section>
 
@@ -168,11 +244,21 @@ function SalesPage() {
         <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-4">
           <div>© {new Date().getFullYear()} WK Technology</div>
           <div className="flex gap-4">
-            <Link to="/terms" className="hover:underline">Termos</Link>
-            <Link to="/privacy" className="hover:underline">Privacidade</Link>
-            <Link to="/refund" className="hover:underline">Reembolso</Link>
-            <Link to="/dpa" className="hover:underline">DPA</Link>
-            <a href="mailto:contato@wktechnology.com.br" className="hover:underline">Contato</a>
+            <Link to="/terms" className="hover:underline">
+              Termos
+            </Link>
+            <Link to="/privacy" className="hover:underline">
+              Privacidade
+            </Link>
+            <Link to="/refund" className="hover:underline">
+              Reembolso
+            </Link>
+            <Link to="/dpa" className="hover:underline">
+              DPA
+            </Link>
+            <a href="mailto:contato@wktechnology.com.br" className="hover:underline">
+              Contato
+            </a>
           </div>
         </div>
       </footer>

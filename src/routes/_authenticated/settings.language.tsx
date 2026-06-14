@@ -21,12 +21,19 @@ function LanguagePage() {
         <p className="text-sm text-muted-foreground">Escolha o idioma da interface.</p>
       </div>
       <Card>
-        <CardHeader><CardTitle>{t("settings.language")}</CardTitle>
-          <CardDescription>Atual: <strong>{locale.toUpperCase()}</strong></CardDescription>
+        <CardHeader>
+          <CardTitle>{t("settings.language")}</CardTitle>
+          <CardDescription>
+            Atual: <strong>{locale.toUpperCase()}</strong>
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-2">
           {langs.map((l) => (
-            <Button key={l.code} variant={locale === l.code ? "default" : "outline"} onClick={() => setLocale(l.code)}>
+            <Button
+              key={l.code}
+              variant={locale === l.code ? "default" : "outline"}
+              onClick={() => setLocale(l.code)}
+            >
               {l.label}
             </Button>
           ))}

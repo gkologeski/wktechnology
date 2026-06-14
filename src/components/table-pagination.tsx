@@ -16,7 +16,9 @@ export type TablePaginationProps = {
 
 function buildPageList(current: number, totalPages: number): (number | "...")[] {
   const pages: number[] = [];
-  const add = (n: number) => { if (!pages.includes(n) && n >= 1 && n <= totalPages) pages.push(n); };
+  const add = (n: number) => {
+    if (!pages.includes(n) && n >= 1 && n <= totalPages) pages.push(n);
+  };
   add(1);
   for (let i = current - 2; i <= current + 2; i++) {
     if (i > 1 && i < totalPages) add(i);
@@ -35,8 +37,11 @@ function buildPageList(current: number, totalPages: number): (number | "...")[] 
 }
 
 export function TablePagination({
-  page, pageSize, total,
-  onPageChange, onPageSizeChange,
+  page,
+  pageSize,
+  total,
+  onPageChange,
+  onPageSizeChange,
   pageSizeOptions = [25, 50, 100],
   isLoading = false,
   entityLabel,
@@ -48,11 +53,16 @@ export function TablePagination({
   const pages = buildPageList(current, totalPages);
 
   const [jumpValue, setJumpValue] = useState("");
-  useEffect(() => { setJumpValue(""); }, [page]);
+  useEffect(() => {
+    setJumpValue("");
+  }, [page]);
 
   const commitJump = () => {
     const n = parseInt(jumpValue, 10);
-    if (!Number.isFinite(n)) { setJumpValue(""); return; }
+    if (!Number.isFinite(n)) {
+      setJumpValue("");
+      return;
+    }
     const clamped = Math.min(Math.max(1, n), totalPages);
     if (clamped - 1 !== page) onPageChange(clamped - 1);
     setJumpValue("");
@@ -184,7 +194,12 @@ export function TablePagination({
               placeholder={String(current)}
               disabled={isLoading}
               onChange={(e) => setJumpValue(e.target.value.replace(/[^\d]/g, ""))}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commitJump(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitJump();
+                }
+              }}
               onBlur={commitJump}
               className="h-8 w-12 rounded-lg border bg-background text-center text-xs font-bold text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />

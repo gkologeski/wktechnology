@@ -3,10 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  listWhatsAppTemplates,
-  saveWhatsAppTemplates,
-} from "@/lib/whatsapp.functions";
+import { listWhatsAppTemplates, saveWhatsAppTemplates } from "@/lib/whatsapp.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,7 +58,9 @@ export function WhatsAppTemplatesEditor() {
             <Input
               value={t.name}
               onChange={(e) =>
-                setItems((prev) => prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+                setItems((prev) =>
+                  prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
+                )
               }
               placeholder="Nome do template"
             />
@@ -107,9 +106,9 @@ export function WhatsAppTemplatesEditor() {
             />
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Cole o <strong>ContentSid</strong> de um template aprovado no Twilio Console
-            (Messaging → Content Template Builder) para enviar como HSM oficial fora da janela de
-            24h. Sem ContentSid, o template é apenas um atalho de texto.
+            Cole o <strong>ContentSid</strong> de um template aprovado no Twilio Console (Messaging
+            → Content Template Builder) para enviar como HSM oficial fora da janela de 24h. Sem
+            ContentSid, o template é apenas um atalho de texto.
           </p>
         </div>
       ))}

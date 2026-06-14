@@ -13,11 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +36,7 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useHubspotOwners } from "@/hooks/use-hubspot-owners";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 
-import {
-  getDateRange,
-  type CustomRange,
-  type DatePreset,
-} from "@/lib/date-presets";
+import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
 
 import {
@@ -88,9 +80,21 @@ export const Route = createFileRoute("/_authenticated/leads")({
 
 const STATUS_TONE: Record<string, { dot: string; bg: string; text: string }> = {
   new: { dot: "bg-sky-500", bg: "bg-sky-500/10", text: "text-sky-700 dark:text-sky-300" },
-  contacted: { dot: "bg-violet-500", bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300" },
-  qualified: { dot: "bg-emerald-500", bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-300" },
-  disqualified: { dot: "bg-rose-500", bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-300" },
+  contacted: {
+    dot: "bg-violet-500",
+    bg: "bg-violet-500/10",
+    text: "text-violet-700 dark:text-violet-300",
+  },
+  qualified: {
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-700 dark:text-emerald-300",
+  },
+  disqualified: {
+    dot: "bg-rose-500",
+    bg: "bg-rose-500/10",
+    text: "text-rose-700 dark:text-rose-300",
+  },
 };
 
 type ViewId = "all" | "open" | "mine" | "unassigned" | "new_week";
@@ -126,7 +130,6 @@ const DEFAULT_FILTERS: Filters = {
   ownerIds: [],
   includeUnassigned: false,
 };
-
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -279,7 +282,6 @@ function LeadsHubspotView() {
     },
   });
 
-
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "leads",
@@ -311,7 +313,11 @@ function LeadsHubspotView() {
       }
 
       // Filters
-      if (filters.status.length > 0) q = q.in("status", filters.status as ("new" | "contacted" | "qualified" | "disqualified")[]);
+      if (filters.status.length > 0)
+        q = q.in(
+          "status",
+          filters.status as ("new" | "contacted" | "qualified" | "disqualified")[],
+        );
       if (filters.source.length > 0) q = q.in("source", filters.source);
       if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
       if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
@@ -338,7 +344,12 @@ function LeadsHubspotView() {
         if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
         if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
         if (filters.includeUnassigned) parts.push(`owner_id.is.null`);
-        if (parts.length === 1 && filters.includeUnassigned && userIds.length === 0 && hsIds.length === 0) {
+        if (
+          parts.length === 1 &&
+          filters.includeUnassigned &&
+          userIds.length === 0 &&
+          hsIds.length === 0
+        ) {
           q = q.is("owner_id", null);
         } else if (parts.length > 0) {
           q = q.or(parts.join(","));
@@ -423,7 +434,12 @@ function LeadsHubspotView() {
         key: "name",
         label: "Nome",
         header: (
-          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+          <Th
+            sortable
+            active={sortKey === "first_name"}
+            dir={sortDir}
+            onClick={() => onSort("first_name")}
+          >
             Nome
           </Th>
         ),
@@ -510,7 +526,9 @@ function LeadsHubspotView() {
           }
           if (hsId) {
             const o = hsOwners.byId?.get(hsId);
-            const name = o ? (`${o.first_name ?? ""} ${o.last_name ?? ""}`.trim() || o.email || hsId) : hsId;
+            const name = o
+              ? `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim() || o.email || hsId
+              : hsId;
             return (
               <div className="flex items-center gap-2" title={`${name} (HubSpot)`}>
                 <span
@@ -520,7 +538,9 @@ function LeadsHubspotView() {
                   {(name?.slice(0, 2) ?? "HS").toUpperCase()}
                 </span>
                 <span className="truncate text-sm">{name}</span>
-                <span className="rounded bg-muted px-1 text-[10px] uppercase text-muted-foreground">HS</span>
+                <span className="rounded bg-muted px-1 text-[10px] uppercase text-muted-foreground">
+                  HS
+                </span>
               </div>
             );
           }
@@ -532,7 +552,12 @@ function LeadsHubspotView() {
         label: "Criado em",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+          <Th
+            sortable
+            active={sortKey === "created_at"}
+            dir={sortDir}
+            onClick={() => onSort("created_at")}
+          >
             Criado em
           </Th>
         ),
@@ -555,7 +580,9 @@ function LeadsHubspotView() {
         label: "Rótulo",
         render: (lead) =>
           lead.label ? (
-            <Badge variant="secondary" className="font-normal">{lead.label}</Badge>
+            <Badge variant="secondary" className="font-normal">
+              {lead.label}
+            </Badge>
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
@@ -565,15 +592,27 @@ function LeadsHubspotView() {
     [sortKey, sortDir, nameFor, initialsFor],
   );
 
-  const DEFAULT_LEAD_COLS = ["name", "email", "phone", "company", "status", "score", "owner", "created_at"];
+  const DEFAULT_LEAD_COLS = [
+    "name",
+    "email",
+    "phone",
+    "company",
+    "status",
+    "score",
+    "owner",
+    "created_at",
+  ];
 
-  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<LeadRow>({
+  const {
+    columns: visibleColumns,
+    ColumnsButton,
+    ColumnsEditor,
+  } = useGridColumns<LeadRow>({
     gridKey: "leads",
     columns: leadColumns,
     defaults: DEFAULT_LEAD_COLS,
     customEntity: "leads",
   });
-
 
   const hasActiveFilters =
     filters.status.length > 0 ||
@@ -586,7 +625,8 @@ function LeadsHubspotView() {
     if (!user) return;
     setPendingAction({
       title: "Converter lead",
-      description: `Será criado um Contato${lead.company_name ? " vinculado à empresa correspondente (reutilizada se já existir)" : ""} e um Negócio em estágio Qualificado para "${lead.first_name ?? ""} ${lead.last_name ?? ""}".`.trim(),
+      description:
+        `Será criado um Contato${lead.company_name ? " vinculado à empresa correspondente (reutilizada se já existir)" : ""} e um Negócio em estágio Qualificado para "${lead.first_name ?? ""} ${lead.last_name ?? ""}".`.trim(),
       confirmLabel: "Converter",
       run: async () => {
         const res = await convertLead(lead, user.id);
@@ -607,9 +647,7 @@ function LeadsHubspotView() {
     const set = new Set(ids);
     qc.getQueriesData<{ rows: Lead[]; count: number }>({
       predicate: (q) =>
-        Array.isArray(q.queryKey) &&
-        q.queryKey[0] === "leads" &&
-        q.queryKey[1] === "hubspot-list",
+        Array.isArray(q.queryKey) && q.queryKey[0] === "leads" && q.queryKey[1] === "hubspot-list",
     }).forEach(([key, data]) => {
       if (!data?.rows) return;
       const filtered = data.rows.filter((r) => !set.has(r.id));
@@ -815,7 +853,11 @@ function LeadsHubspotView() {
               <OwnerFilter
                 value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
                 onChange={(v: OwnerFilterValue) =>
-                  setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+                  setFilters((f) => ({
+                    ...f,
+                    ownerIds: v.ownerIds,
+                    includeUnassigned: v.includeUnassigned,
+                  }))
                 }
               />
             </FilterGroup>
@@ -878,7 +920,6 @@ function LeadsHubspotView() {
                 }
               />
             </FilterGroup>
-
           </div>
         </aside>
 
@@ -919,12 +960,7 @@ function LeadsHubspotView() {
                     Excluir
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={clearSelection}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -961,8 +997,13 @@ function LeadsHubspotView() {
                       onCheckedChange={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map((col) =>
-                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  {visibleColumns.map(
+                    (col) =>
+                      col.header ?? (
+                        <Th key={col.key} className={col.headerClassName}>
+                          {col.label}
+                        </Th>
+                      ),
                   )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
@@ -970,13 +1011,19 @@ function LeadsHubspotView() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Carregando leads…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Nenhum lead encontrado com os filtros atuais.
                     </td>
                   </tr>
@@ -1060,8 +1107,6 @@ function LeadsHubspotView() {
 
       <ColumnsEditor />
 
-
-
       <BulkEnrichDialog
         open={!!enrichIds}
         onOpenChange={(o) => !o && setEnrichIds(null)}
@@ -1093,9 +1138,13 @@ function LeadsHubspotView() {
             <AlertDialogAction
               onClick={runPendingAction}
               disabled={actionBusy}
-              className={pendingAction?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+              className={
+                pendingAction?.destructive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
             >
-              {actionBusy ? "Processando…" : pendingAction?.confirmLabel ?? "Confirmar"}
+              {actionBusy ? "Processando…" : (pendingAction?.confirmLabel ?? "Confirmar")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1219,6 +1268,3 @@ function ScoreCell({ score }: { score: number }) {
     </div>
   );
 }
-
-// Silence unused import warning — used only for memo stability if grown
-useMemo;

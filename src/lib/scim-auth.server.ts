@@ -3,10 +3,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-export async function authenticateScimRequest(request: Request): Promise<{ workspaceId: string } | null> {
+export async function authenticateScimRequest(
+  request: Request,
+): Promise<{ workspaceId: string } | null> {
   const auth = request.headers.get("authorization") || "";
   const m = auth.match(/^Bearer\s+(scim_[a-f0-9]+)/i);
   if (!m) return null;
@@ -30,7 +34,7 @@ export function scimError(status: number, detail: string) {
       status: String(status),
       detail,
     }),
-    { status, headers: { "Content-Type": "application/scim+json" } }
+    { status, headers: { "Content-Type": "application/scim+json" } },
   );
 }
 

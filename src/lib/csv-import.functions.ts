@@ -10,7 +10,10 @@ import { requireTool } from "@/lib/permissions.server";
 export type CsvEntity = "leads" | "contacts" | "companies";
 export type DedupeStrategy = "skip" | "update" | "create_new";
 
-export const ENTITY_FIELDS: Record<CsvEntity, { key: string; label: string; required?: boolean }[]> = {
+export const ENTITY_FIELDS: Record<
+  CsvEntity,
+  { key: string; label: string; required?: boolean }[]
+> = {
   leads: [
     { key: "first_name", label: "Nome", required: true },
     { key: "last_name", label: "Sobrenome" },
@@ -60,7 +63,8 @@ async function getActiveWorkspaceId(userId: string): Promise<string> {
     .select("active_workspace_id")
     .eq("id", userId)
     .maybeSingle();
-  const activeId = (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+  const activeId =
+    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
   if (activeId) return activeId;
   const { data: m } = await supabaseAdmin
     .from("workspace_members")
@@ -77,7 +81,9 @@ const entitySchema = z.enum(["leads", "contacts", "companies"]);
 const strategySchema = z.enum(["skip", "update", "create_new"]);
 
 // Cada row do CSV vira um Record<string,string>. Limitamos tamanho para evitar DoS.
-const rowSchema = z.record(z.string().max(120), z.string().max(2000).nullable()).refine((r) => Object.keys(r).length <= 200);
+const rowSchema = z
+  .record(z.string().max(120), z.string().max(2000).nullable())
+  .refine((r) => Object.keys(r).length <= 200);
 const rowsSchema = z.array(rowSchema).min(1).max(5000);
 const mappingSchema = z.record(z.string().min(1).max(120), z.string().min(1).max(120));
 
@@ -85,7 +91,11 @@ function normalize(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase();
 }
 
-function buildRecord(entity: CsvEntity, row: Record<string, string | null>, mapping: Record<string, string>) {
+function buildRecord(
+  entity: CsvEntity,
+  row: Record<string, string | null>,
+  mapping: Record<string, string>,
+) {
   const out: Record<string, unknown> = {};
   for (const [csvCol, fieldKey] of Object.entries(mapping)) {
     const raw = row[csvCol];
@@ -103,23 +113,29 @@ function buildRecord(entity: CsvEntity, row: Record<string, string | null>, mapp
 
 export const previewCsvImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: entitySchema,
-    rows: rowsSchema,
-    mapping: mappingSchema,
-    dedupeKey: z.string().min(1).max(60),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: entitySchema,
+        rows: rowsSchema,
+        mapping: mappingSchema,
+        dedupeKey: z.string().min(1).max(60),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey } = data;
 
     // Construir records e extrair valores da chave dedupe
     const records = rows.map((r) => buildRecord(entity, r, mapping));
-    const keyValues = Array.from(new Set(
-      records
-        .map((r) => normalize(r[dedupeKey] as string | undefined))
-        .filter((v) => v.length > 0),
-    ));
+    const keyValues = Array.from(
+      new Set(
+        records
+          .map((r) => normalize(r[dedupeKey] as string | undefined))
+          .filter((v) => v.length > 0),
+      ),
+    );
 
     // Buscar existentes no workspace
     const existing = new Map<string, string>(); // key value → id
@@ -130,7 +146,7 @@ export const previewCsvImport = createServerFn({ method: "POST" })
         .eq("workspace_id", workspaceId)
         .in(dedupeKey, keyValues);
       if (error) throw new Error(error.message);
-      for (const row of ((found ?? []) as unknown as Array<Record<string, string>>)) {
+      for (const row of (found ?? []) as unknown as Array<Record<string, string>>) {
         existing.set(normalize(row[dedupeKey]), row.id);
       }
     }
@@ -141,7 +157,10 @@ export const previewCsvImport = createServerFn({ method: "POST" })
     const required = ENTITY_FIELDS[entity].filter((f) => f.required).map((f) => f.key);
     for (const r of records) {
       const missing = required.some((k) => !r[k]);
-      if (missing) { invalid++; continue; }
+      if (missing) {
+        invalid++;
+        continue;
+      }
       const k = normalize(r[dedupeKey] as string | undefined);
       if (k && existing.has(k)) duplicates++;
       else creates++;
@@ -157,24 +176,30 @@ export const previewCsvImport = createServerFn({ method: "POST" })
 
 export const executeCsvImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: entitySchema,
-    rows: rowsSchema,
-    mapping: mappingSchema,
-    dedupeKey: z.string().min(1).max(60),
-    strategy: strategySchema,
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: entitySchema,
+        rows: rowsSchema,
+        mapping: mappingSchema,
+        dedupeKey: z.string().min(1).max(60),
+        strategy: strategySchema,
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await requireTool(context.userId, "import");
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey, strategy } = data;
 
     const records = rows.map((r) => buildRecord(entity, r, mapping));
-    const keyValues = Array.from(new Set(
-      records
-        .map((r) => normalize(r[dedupeKey] as string | undefined))
-        .filter((v) => v.length > 0),
-    ));
+    const keyValues = Array.from(
+      new Set(
+        records
+          .map((r) => normalize(r[dedupeKey] as string | undefined))
+          .filter((v) => v.length > 0),
+      ),
+    );
 
     const existing = new Map<string, string>();
     if (keyValues.length > 0) {
@@ -184,7 +209,7 @@ export const executeCsvImport = createServerFn({ method: "POST" })
         .eq("workspace_id", workspaceId)
         .in(dedupeKey, keyValues);
       if (error) throw new Error(error.message);
-      for (const row of ((found ?? []) as unknown as Array<Record<string, string>>)) {
+      for (const row of (found ?? []) as unknown as Array<Record<string, string>>) {
         existing.set(normalize(row[dedupeKey]), row.id);
       }
     }
@@ -195,12 +220,21 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     let skipped = 0;
     let invalid = 0;
     for (const r of records) {
-      if (required.some((k) => !r[k])) { invalid++; continue; }
+      if (required.some((k) => !r[k])) {
+        invalid++;
+        continue;
+      }
       const k = normalize(r[dedupeKey] as string | undefined);
       const existingId = k ? existing.get(k) : undefined;
       if (existingId) {
-        if (strategy === "skip") { skipped++; continue; }
-        if (strategy === "update") { toUpdate.push({ id: existingId, values: r }); continue; }
+        if (strategy === "skip") {
+          skipped++;
+          continue;
+        }
+        if (strategy === "update") {
+          toUpdate.push({ id: existingId, values: r });
+          continue;
+        }
         // create_new: insere mesmo se duplicado
       }
       // owner_id é setado abaixo

@@ -20,7 +20,13 @@ interface FeatureGateProps {
   blurred?: boolean;
 }
 
-export function FeatureGate({ feature, requiredPlan, children, fallback, blurred }: FeatureGateProps) {
+export function FeatureGate({
+  feature,
+  requiredPlan,
+  children,
+  fallback,
+  blurred,
+}: FeatureGateProps) {
   const ent = useEntitlements();
   if (ent.loading) return null;
   if (ent.isEnabled(feature) && ent.can(feature)) return <>{children}</>;

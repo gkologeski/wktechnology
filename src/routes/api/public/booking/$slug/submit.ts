@@ -24,9 +24,17 @@ export const Route = createFileRoute("/api/public/booking/$slug/submit")({
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders }),
       POST: async ({ request, params }) => {
         let raw: unknown;
-        try { raw = await request.json(); } catch { return Response.json({ error: "invalid_json" }, { status: 400, headers: corsHeaders }); }
+        try {
+          raw = await request.json();
+        } catch {
+          return Response.json({ error: "invalid_json" }, { status: 400, headers: corsHeaders });
+        }
         const parsed = Body.safeParse(raw);
-        if (!parsed.success) return Response.json({ error: "invalid_input", issues: parsed.error.issues }, { status: 400, headers: corsHeaders });
+        if (!parsed.success)
+          return Response.json(
+            { error: "invalid_input", issues: parsed.error.issues },
+            { status: 400, headers: corsHeaders },
+          );
         if (parsed.data.hp) return Response.json({ ok: true }, { headers: corsHeaders }); // honeypot
         try {
           const out = await createPublicBooking({

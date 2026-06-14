@@ -17,11 +17,19 @@ type Run = {
   created_at: string;
 };
 
-export function WorkflowRunsList({ runs, namesById }: { runs: Run[]; namesById?: Record<string, string> }) {
+export function WorkflowRunsList({
+  runs,
+  namesById,
+}: {
+  runs: Run[];
+  namesById?: Record<string, string>;
+}) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   if (runs.length === 0) {
-    return <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma execução ainda.</p>;
+    return (
+      <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma execução ainda.</p>
+    );
   }
 
   return (
@@ -63,14 +71,22 @@ export function WorkflowRunsList({ runs, namesById }: { runs: Run[]; namesById?:
   );
 }
 
-export function WorkflowRunsListWithRefresh({ runs, namesById, onRefresh }: {
-  runs: Run[]; namesById?: Record<string, string>; onRefresh?: () => void;
+export function WorkflowRunsListWithRefresh({
+  runs,
+  namesById,
+  onRefresh,
+}: {
+  runs: Run[];
+  namesById?: Record<string, string>;
+  onRefresh?: () => void;
 }) {
   return (
     <div className="space-y-2">
       {onRefresh && (
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={onRefresh}>Atualizar</Button>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            Atualizar
+          </Button>
         </div>
       )}
       <WorkflowRunsList runs={runs} namesById={namesById} />

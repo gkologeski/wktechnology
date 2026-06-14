@@ -23,14 +23,22 @@ export const listWorkspaceRoles = createServerFn({ method: "GET" })
       .select("member_user_id")
       .eq("workspace_owner_id", userId);
 
-    const ids = Array.from(new Set([userId, ...((members ?? []).map((m) => m.member_user_id as string))]));
+    const ids = Array.from(
+      new Set([userId, ...(members ?? []).map((m) => m.member_user_id as string)]),
+    );
 
     const [{ data: profiles }, { data: roles }] = await Promise.all([
       supabase.from("profiles").select("id, full_name").in("id", ids),
-      supabase.from("user_roles").select("user_id, role").eq("workspace_owner_id", userId).in("user_id", ids),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .eq("workspace_owner_id", userId)
+        .in("user_id", ids),
     ]);
 
-    const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
+    const nameById = new Map(
+      (profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]),
+    );
     const rank: Record<AppRole, number> = { admin: 3, manager: 2, member: 1 };
     const roleByUser = new Map<string, AppRole>();
     for (const r of roles ?? []) {
@@ -50,10 +58,14 @@ export const listWorkspaceRoles = createServerFn({ method: "GET" })
 /** Define o role de um usuário no workspace (substitui os anteriores). */
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    user_id: z.string().uuid(),
-    role: RoleEnum,
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        role: RoleEnum,
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     if (data.user_id === userId) {

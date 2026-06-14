@@ -9,7 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -72,7 +78,10 @@ function MacrosPage() {
     const { error } = editing
       ? await supabase.from("macros").update(payload).eq("id", editing.id)
       : await supabase.from("macros").insert({ ...payload, owner_id: user.id });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(editing ? "Macro atualizada." : "Macro criada.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["macros"] });
@@ -80,12 +89,18 @@ function MacrosPage() {
   async function remove(id: string) {
     if (!confirm("Excluir esta macro?")) return;
     const { error } = await supabase.from("macros").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["macros"] });
   }
   async function toggle(m: Macro, enabled: boolean) {
     const { error } = await supabase.from("macros").update({ enabled }).eq("id", m.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["macros"] });
   }
 
@@ -95,10 +110,17 @@ function MacrosPage() {
         <div>
           <CardTitle>Macros / respostas prontas</CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            Modelos reutilizáveis em tickets. Tokens disponíveis: <code className="text-xs">{"{{contact_first_name}}"}</code>, <code className="text-xs">{"{{contact_name}}"}</code>, <code className="text-xs">{"{{company_name}}"}</code>, <code className="text-xs">{"{{ticket_subject}}"}</code>, <code className="text-xs">{"{{agent_name}}"}</code>.
+            Modelos reutilizáveis em tickets. Tokens disponíveis:{" "}
+            <code className="text-xs">{"{{contact_first_name}}"}</code>,{" "}
+            <code className="text-xs">{"{{contact_name}}"}</code>,{" "}
+            <code className="text-xs">{"{{company_name}}"}</code>,{" "}
+            <code className="text-xs">{"{{ticket_subject}}"}</code>,{" "}
+            <code className="text-xs">{"{{agent_name}}"}</code>.
           </p>
         </div>
-        <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nova macro</Button>
+        <Button size="sm" onClick={openNew}>
+          <Plus className="h-4 w-4 mr-1" /> Nova macro
+        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -108,19 +130,36 @@ function MacrosPage() {
         ) : (
           <div className="space-y-2">
             {macros.map((m) => (
-              <div key={m.id} className="flex items-start justify-between gap-3 rounded-md border p-3">
+              <div
+                key={m.id}
+                className="flex items-start justify-between gap-3 rounded-md border p-3"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium">{m.name}</span>
-                    {m.shortcut && <Badge variant="outline" className="font-mono text-xs">/{m.shortcut}</Badge>}
-                    {m.category && <Badge variant="secondary" className="text-xs">{m.category}</Badge>}
+                    {m.shortcut && (
+                      <Badge variant="outline" className="font-mono text-xs">
+                        /{m.shortcut}
+                      </Badge>
+                    )}
+                    {m.category && (
+                      <Badge variant="secondary" className="text-xs">
+                        {m.category}
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 mt-1">{m.body}</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 mt-1">
+                    {m.body}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Switch checked={m.enabled} onCheckedChange={(v) => toggle(m, v)} />
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(m.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(m)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(m.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -130,33 +169,56 @@ function MacrosPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>{editing ? "Editar macro" : "Nova macro"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar macro" : "Nova macro"}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Nome *</Label>
-                <Input value={draft.name ?? ""} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                <Input
+                  value={draft.name ?? ""}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Atalho</Label>
-                <Input placeholder="ola-cliente" value={draft.shortcut ?? ""} onChange={(e) => setDraft({ ...draft, shortcut: e.target.value })} />
+                <Input
+                  placeholder="ola-cliente"
+                  value={draft.shortcut ?? ""}
+                  onChange={(e) => setDraft({ ...draft, shortcut: e.target.value })}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label>Categoria</Label>
-              <Input placeholder="Suporte, Vendas…" value={draft.category ?? ""} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
+              <Input
+                placeholder="Suporte, Vendas…"
+                value={draft.category ?? ""}
+                onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Corpo *</Label>
-              <Textarea rows={8} value={draft.body ?? ""} onChange={(e) => setDraft({ ...draft, body: e.target.value })} placeholder="Olá {{contact_first_name}}, recebemos seu chamado…" />
+              <Textarea
+                rows={8}
+                value={draft.body ?? ""}
+                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                placeholder="Olá {{contact_first_name}}, recebemos seu chamado…"
+              />
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={draft.enabled ?? true} onCheckedChange={(v) => setDraft({ ...draft, enabled: v })} />
+              <Switch
+                checked={draft.enabled ?? true}
+                onCheckedChange={(v) => setDraft({ ...draft, enabled: v })}
+              />
               <Label className="cursor-pointer">Ativa</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={save}>{editing ? "Salvar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>

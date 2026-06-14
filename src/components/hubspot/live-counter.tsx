@@ -1,4 +1,15 @@
-import { Building2, Users, Target, UserPlus, Activity, LifeBuoy, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import {
+  Building2,
+  Users,
+  Target,
+  UserPlus,
+  Activity,
+  LifeBuoy,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Clock,
+} from "lucide-react";
 import { useAnimatedNumber } from "@/hooks/use-animated-number";
 import { cn } from "@/lib/utils";
 
@@ -33,11 +44,19 @@ export type LiveCounterProps = {
   discovered?: number; // optional discovered total during cascade
 };
 
-export function LiveCounter({ step, status, succeeded, failed, target, discovered }: LiveCounterProps) {
+export function LiveCounter({
+  step,
+  status,
+  succeeded,
+  failed,
+  target,
+  discovered,
+}: LiveCounterProps) {
   const Icon = ICONS[step];
   const animated = useAnimatedNumber(succeeded);
   const denom = target ?? discovered ?? 0;
-  const pct = denom > 0 ? Math.min(100, Math.round((succeeded / denom) * 100)) : status === "done" ? 100 : 0;
+  const pct =
+    denom > 0 ? Math.min(100, Math.round((succeeded / denom) * 100)) : status === "done" ? 100 : 0;
 
   const ring =
     status === "done"
@@ -49,7 +68,13 @@ export function LiveCounter({ step, status, succeeded, failed, target, discovere
           : "border-border";
 
   const StatusIcon =
-    status === "running" ? Loader2 : status === "done" ? CheckCircle2 : status === "failed" ? XCircle : Clock;
+    status === "running"
+      ? Loader2
+      : status === "done"
+        ? CheckCircle2
+        : status === "failed"
+          ? XCircle
+          : Clock;
   const statusColor =
     status === "running"
       ? "text-primary"
@@ -72,7 +97,11 @@ export function LiveCounter({ step, status, succeeded, failed, target, discovere
         <div
           className={cn(
             "h-full transition-[width] duration-700 ease-out",
-            status === "failed" ? "bg-destructive" : status === "done" ? "bg-emerald-500" : "bg-primary",
+            status === "failed"
+              ? "bg-destructive"
+              : status === "done"
+                ? "bg-emerald-500"
+                : "bg-primary",
             status === "running" && "animate-pulse",
           )}
           style={{ width: `${pct}%` }}
@@ -93,14 +122,20 @@ export function LiveCounter({ step, status, succeeded, failed, target, discovere
           </div>
           <span className="text-sm font-medium">{LABELS[step]}</span>
         </div>
-        <StatusIcon className={cn("h-4 w-4", statusColor, status === "running" && "animate-spin")} />
+        <StatusIcon
+          className={cn("h-4 w-4", statusColor, status === "running" && "animate-spin")}
+        />
       </div>
 
       <div className="mt-3 flex items-baseline gap-1.5 font-mono tabular-nums">
         <span
           className={cn(
             "text-3xl font-semibold tracking-tight transition-colors",
-            status === "running" ? "text-foreground" : status === "done" ? "text-emerald-600" : "text-foreground",
+            status === "running"
+              ? "text-foreground"
+              : status === "done"
+                ? "text-emerald-600"
+                : "text-foreground",
           )}
         >
           {animated.toLocaleString("pt-BR")}
@@ -127,11 +162,7 @@ export function LiveCounter({ step, status, succeeded, failed, target, discovere
   );
 }
 
-export function LiveCountersGrid({
-  steps,
-}: {
-  steps: LiveCounterProps[];
-}) {
+export function LiveCountersGrid({ steps }: { steps: LiveCounterProps[] }) {
   if (!steps.length) return null;
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

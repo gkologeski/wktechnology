@@ -10,7 +10,11 @@ import { Eye, MousePointerClick, Mail, ChevronRight, ChevronDown } from "lucide-
 import { useState } from "react";
 import { listEntityEmailEngagement } from "@/lib/email-engagement.functions";
 
-type RelatedKey = "related_lead_id" | "related_contact_id" | "related_company_id" | "related_deal_id";
+type RelatedKey =
+  | "related_lead_id"
+  | "related_contact_id"
+  | "related_company_id"
+  | "related_deal_id";
 const ENTITY_BY_KEY: Record<RelatedKey, "contact" | "lead" | "deal" | "company"> = {
   related_contact_id: "contact",
   related_lead_id: "lead",
@@ -38,7 +42,8 @@ export function EmailEngagementCard({
   const fn = useServerFn(listEntityEmailEngagement);
   const { data: items = [] } = useQuery({
     queryKey: ["email-engagement", relatedKey, relatedId],
-    queryFn: () => fn({ data: { entity: ENTITY_BY_KEY[relatedKey], entity_id: relatedId, limit: 20 } }),
+    queryFn: () =>
+      fn({ data: { entity: ENTITY_BY_KEY[relatedKey], entity_id: relatedId, limit: 20 } }),
   });
 
   if (!items.length) return null;

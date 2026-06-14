@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/page-header";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +29,10 @@ function LandingPageEditor() {
   const fetchPage = useServerFn(getLandingPage);
   const save = useServerFn(saveLandingPage);
   const nav = useNavigate();
-  const { data, refetch } = useQuery({ queryKey: ["lp", id], queryFn: () => fetchPage({ data: { id } }) });
+  const { data, refetch } = useQuery({
+    queryKey: ["lp", id],
+    queryFn: () => fetchPage({ data: { id } }),
+  });
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -32,9 +41,18 @@ function LandingPageEditor() {
 
   useEffect(() => {
     if (data?.page) {
-      const p = data.page as { title: string; slug: string; description: string | null; status: string; blocks: Block[] };
-      setTitle(p.title); setSlug(p.slug); setDescription(p.description ?? "");
-      setStatus(p.status as typeof status); setBlocks(p.blocks ?? []);
+      const p = data.page as {
+        title: string;
+        slug: string;
+        description: string | null;
+        status: string;
+        blocks: Block[];
+      };
+      setTitle(p.title);
+      setSlug(p.slug);
+      setDescription(p.description ?? "");
+      setStatus(p.status as typeof status);
+      setBlocks(p.blocks ?? []);
     }
   }, [data]);
 
@@ -62,21 +80,34 @@ function LandingPageEditor() {
         description="Configure blocos e publique"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => nav({ to: "/landing-pages" })}>Voltar</Button>
+            <Button variant="outline" onClick={() => nav({ to: "/landing-pages" })}>
+              Voltar
+            </Button>
             <Button onClick={handleSave}>Salvar</Button>
           </div>
         }
       />
       <Card className="p-4 space-y-3">
         <div className="grid md:grid-cols-2 gap-3">
-          <div><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <div><Label>Slug</Label><Input value={slug} onChange={(e) => setSlug(e.target.value)} /></div>
+          <div>
+            <Label>Título</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div>
+            <Label>Slug</Label>
+            <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
+          </div>
         </div>
-        <div><Label>Descrição (SEO)</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+        <div>
+          <Label>Descrição (SEO)</Label>
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
         <div>
           <Label>Status</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="draft">Rascunho</SelectItem>
               <SelectItem value="published">Publicada</SelectItem>
@@ -90,8 +121,10 @@ function LandingPageEditor() {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Blocos</h3>
           <div className="flex gap-2">
-            {["hero", "features", "form", "testimonial", "cta"].map(t => (
-              <Button key={t} size="sm" variant="outline" onClick={() => addBlock(t)}>+ {t}</Button>
+            {["hero", "features", "form", "testimonial", "cta"].map((t) => (
+              <Button key={t} size="sm" variant="outline" onClick={() => addBlock(t)}>
+                + {t}
+              </Button>
             ))}
           </div>
         </div>
@@ -100,12 +133,22 @@ function LandingPageEditor() {
             <div key={i} className="border rounded p-3 flex items-center justify-between">
               <div>
                 <Badge>{b.type}</Badge>
-                <span className="ml-2 text-sm text-muted-foreground">{JSON.stringify(b).slice(0, 80)}…</span>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {JSON.stringify(b).slice(0, 80)}…
+                </span>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setBlocks(blocks.filter((_, j) => j !== i))}>Remover</Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setBlocks(blocks.filter((_, j) => j !== i))}
+              >
+                Remover
+              </Button>
             </div>
           ))}
-          {blocks.length === 0 && <p className="text-muted-foreground text-sm">Adicione blocos para começar.</p>}
+          {blocks.length === 0 && (
+            <p className="text-muted-foreground text-sm">Adicione blocos para começar.</p>
+          )}
         </div>
       </Card>
     </div>
@@ -113,5 +156,9 @@ function LandingPageEditor() {
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">{children}</span>;
+  return (
+    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
+      {children}
+    </span>
+  );
 }

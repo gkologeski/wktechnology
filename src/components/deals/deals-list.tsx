@@ -2,7 +2,14 @@ import { Fragment, useMemo, useState } from "react";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { formatCurrency, formatDate } from "@/lib/crm";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export function DealsList({
@@ -13,7 +20,11 @@ export function DealsList({
 }: {
   pipeline: Pipeline;
   deals: Deal[];
-  lookups: { companies: Map<string, string>; contacts: Map<string, string>; owners: Map<string, string> };
+  lookups: {
+    companies: Map<string, string>;
+    contacts: Map<string, string>;
+    owners: Map<string, string>;
+  };
   onOpen: (d: Deal) => void;
 }) {
   const grouped = useMemo(() => {
@@ -55,14 +66,20 @@ export function DealsList({
                 >
                   <TableCell colSpan={6} className="py-1.5">
                     <div className="flex items-center gap-2 text-xs">
-                      {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      {isCollapsed ? (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
                       <span
                         className="inline-block h-2 w-2 rounded-sm"
                         style={{ background: s.color || "var(--hs-stage-1)" }}
                       />
                       <span className="font-semibold uppercase tracking-wide">{s.label}</span>
                       <span className="text-[var(--hs-text-muted)]">· {rows.length} negócios</span>
-                      <span className="ml-auto tabular-nums font-semibold">{formatCurrency(total)}</span>
+                      <span className="ml-auto tabular-nums font-semibold">
+                        {formatCurrency(total)}
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -70,11 +87,23 @@ export function DealsList({
                   rows.map((d) => (
                     <TableRow key={d.id} className="cursor-pointer" onClick={() => onOpen(d)}>
                       <TableCell className="font-medium">{d.name}</TableCell>
-                      <TableCell className="text-sm">{d.company_id ? lookups.companies.get(d.company_id) ?? "—" : "—"}</TableCell>
-                      <TableCell className="text-sm">{d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) ?? "—" : "—"}</TableCell>
-                      <TableCell className="text-sm">{lookups.owners.get(d.owner_id) ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(Number(d.value), d.currency)}</TableCell>
-                      <TableCell className="text-sm">{d.expected_close_date ? formatDate(d.expected_close_date) : "—"}</TableCell>
+                      <TableCell className="text-sm">
+                        {d.company_id ? (lookups.companies.get(d.company_id) ?? "—") : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {d.primary_contact_id
+                          ? (lookups.contacts.get(d.primary_contact_id) ?? "—")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {lookups.owners.get(d.owner_id) ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(Number(d.value), d.currency)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {d.expected_close_date ? formatDate(d.expected_close_date) : "—"}
+                      </TableCell>
                     </TableRow>
                   ))}
               </Fragment>

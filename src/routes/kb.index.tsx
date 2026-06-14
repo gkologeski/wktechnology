@@ -12,9 +12,17 @@ export const Route = createFileRoute("/kb/")({
   head: () => ({
     meta: [
       { title: "Central de Ajuda — WK Technology CRM" },
-      { name: "description", content: "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma." },
+      {
+        name: "description",
+        content:
+          "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma.",
+      },
       { property: "og:title", content: "Central de Ajuda — WK Technology CRM" },
-      { property: "og:description", content: "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma." },
+      {
+        property: "og:description",
+        content:
+          "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma.",
+      },
       { property: "og:url", content: "https://crm.wktechnology.com.br/kb" },
       { property: "og:type", content: "website" },
     ],
@@ -31,15 +39,17 @@ function KbHome() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return articles;
-    return articles.filter((a) =>
-      a.title.toLowerCase().includes(s) || (a.excerpt ?? "").toLowerCase().includes(s));
+    return articles.filter(
+      (a) => a.title.toLowerCase().includes(s) || (a.excerpt ?? "").toLowerCase().includes(s),
+    );
   }, [articles, q]);
   const byCategory = useMemo(() => {
     const map = new Map<string | null, typeof articles>();
     for (const a of filtered) {
       const key = a.category_id ?? null;
       const arr = map.get(key) ?? [];
-      arr.push(a); map.set(key, arr);
+      arr.push(a);
+      map.set(key, arr);
     }
     return map;
   }, [filtered]);
@@ -54,24 +64,41 @@ function KbHome() {
           </div>
           <div className="relative max-w-xl">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar artigo…" className="pl-9 h-11" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar artigo…"
+              className="pl-9 h-11"
+            />
           </div>
         </div>
       </header>
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {filtered.length === 0 && <p className="text-muted-foreground text-sm">Nenhum artigo encontrado.</p>}
+        {filtered.length === 0 && (
+          <p className="text-muted-foreground text-sm">Nenhum artigo encontrado.</p>
+        )}
         {[...byCategory.entries()].map(([catId, list]) => {
           const cat = cats.find((c) => c.id === catId);
           return (
             <Card key={catId ?? "none"}>
-              <CardHeader><CardTitle className="text-base">{cat?.name ?? "Geral"}</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base">{cat?.name ?? "Geral"}</CardTitle>
+              </CardHeader>
               <CardContent>
                 <ul className="divide-y">
                   {list.map((a) => (
                     <li key={a.id}>
-                      <Link to="/kb/$slug" params={{ slug: a.slug }} className="block py-3 hover:bg-muted/40 rounded px-2 -mx-2">
+                      <Link
+                        to="/kb/$slug"
+                        params={{ slug: a.slug }}
+                        className="block py-3 hover:bg-muted/40 rounded px-2 -mx-2"
+                      >
                         <div className="font-medium">{a.title}</div>
-                        {a.excerpt && <div className="text-sm text-muted-foreground line-clamp-2">{a.excerpt}</div>}
+                        {a.excerpt && (
+                          <div className="text-sm text-muted-foreground line-clamp-2">
+                            {a.excerpt}
+                          </div>
+                        )}
                       </Link>
                     </li>
                   ))}

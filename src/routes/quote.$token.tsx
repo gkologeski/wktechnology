@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Printer, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
@@ -19,7 +25,12 @@ export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
 });
 
-function lineTotal(li: { quantity: number; unit_price: number; discount_pct: number; tax_rate: number }) {
+function lineTotal(li: {
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  tax_rate: number;
+}) {
   const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
   return sub * (1 + Number(li.tax_rate) / 100);
 }
@@ -50,10 +61,13 @@ function PublicQuotePage() {
   });
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
-  if (error || !data) return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
+  if (error || !data)
+    return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
 
   const { quote, items, company, contact, agent } = data;
-  const template = (data as unknown as { template: { id: string; name: string; html: string } | null }).template;
+  const template = (
+    data as unknown as { template: { id: string; name: string; html: string } | null }
+  ).template;
   const expired = quote.valid_until && new Date(quote.valid_until) < new Date();
   const responded = quote.status === "accepted" || quote.status === "declined";
 
@@ -84,11 +98,17 @@ function PublicQuotePage() {
     <div className="min-h-screen bg-muted/30 print:bg-white">
       <div className="w-full mx-auto p-6 space-y-4">
         <div className="flex items-center justify-between print:hidden">
-          <Badge variant={
-            quote.status === "accepted" ? "default" :
-            quote.status === "declined" ? "destructive" :
-            quote.status === "sent" ? "secondary" : "outline"
-          }>
+          <Badge
+            variant={
+              quote.status === "accepted"
+                ? "default"
+                : quote.status === "declined"
+                  ? "destructive"
+                  : quote.status === "sent"
+                    ? "secondary"
+                    : "outline"
+            }
+          >
             {quote.status === "draft" && "Rascunho"}
             {quote.status === "sent" && "Enviada"}
             {quote.status === "accepted" && "Aceita"}
@@ -115,13 +135,21 @@ function PublicQuotePage() {
 
             <div className="grid grid-cols-2 gap-6 text-sm">
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Para</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Para
+                </div>
                 {company?.name && <div className="font-medium">{company.name}</div>}
-                {contact && <div>{contact.first_name} {contact.last_name ?? ""}</div>}
+                {contact && (
+                  <div>
+                    {contact.first_name} {contact.last_name ?? ""}
+                  </div>
+                )}
                 {contact?.email && <div className="text-muted-foreground">{contact.email}</div>}
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Detalhes</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Detalhes
+                </div>
                 <div>Emitida em {formatDateTime(quote.created_at)}</div>
                 {quote.valid_until && (
                   <div className={expired ? "text-destructive" : ""}>
@@ -148,13 +176,21 @@ function PublicQuotePage() {
                     <tr key={li.id} className="border-t">
                       <td className="p-3">
                         <div>{li.name}</div>
-                        {li.description && <div className="text-xs text-muted-foreground mt-0.5">{li.description}</div>}
+                        {li.description && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {li.description}
+                          </div>
+                        )}
                       </td>
                       <td className="text-right p-3 tabular-nums">{Number(li.quantity)}</td>
-                      <td className="text-right p-3 tabular-nums">{formatCurrency(Number(li.unit_price), quote.currency)}</td>
+                      <td className="text-right p-3 tabular-nums">
+                        {formatCurrency(Number(li.unit_price), quote.currency)}
+                      </td>
                       <td className="text-right p-3 tabular-nums">{Number(li.discount_pct)}%</td>
                       <td className="text-right p-3 tabular-nums">{Number(li.tax_rate)}%</td>
-                      <td className="text-right p-3 tabular-nums font-medium">{formatCurrency(lineTotal(li), quote.currency)}</td>
+                      <td className="text-right p-3 tabular-nums font-medium">
+                        {formatCurrency(lineTotal(li), quote.currency)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -163,25 +199,40 @@ function PublicQuotePage() {
 
             <div className="flex justify-end">
               <div className="w-64 space-y-1 text-sm">
-                <Row label="Subtotal" value={formatCurrency(Number(quote.subtotal), quote.currency)} />
-                <Row label="Descontos" value={`− ${formatCurrency(Number(quote.discount_total), quote.currency)}`} />
-                <Row label="Impostos" value={`+ ${formatCurrency(Number(quote.tax_total), quote.currency)}`} />
+                <Row
+                  label="Subtotal"
+                  value={formatCurrency(Number(quote.subtotal), quote.currency)}
+                />
+                <Row
+                  label="Descontos"
+                  value={`− ${formatCurrency(Number(quote.discount_total), quote.currency)}`}
+                />
+                <Row
+                  label="Impostos"
+                  value={`+ ${formatCurrency(Number(quote.tax_total), quote.currency)}`}
+                />
                 <div className="border-t pt-1 mt-1 text-base font-semibold flex justify-between">
                   <span>Total</span>
-                  <span className="tabular-nums">{formatCurrency(Number(quote.total), quote.currency)}</span>
+                  <span className="tabular-nums">
+                    {formatCurrency(Number(quote.total), quote.currency)}
+                  </span>
                 </div>
               </div>
             </div>
 
             {quote.notes && (
               <div className="text-sm">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observações</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Observações
+                </div>
                 <p className="whitespace-pre-wrap">{quote.notes}</p>
               </div>
             )}
             {quote.terms && (
               <div className="text-sm">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Termos</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Termos
+                </div>
                 <p className="whitespace-pre-wrap">{quote.terms}</p>
               </div>
             )}
@@ -197,13 +248,19 @@ function PublicQuotePage() {
 
         {quote.paid_at ? (
           <div className="rounded-md border-2 border-primary/30 bg-primary/5 p-4 text-sm print:hidden">
-            <div className="font-medium">Pagamento confirmado em {formatDateTime(quote.paid_at)}</div>
+            <div className="font-medium">
+              Pagamento confirmado em {formatDateTime(quote.paid_at)}
+            </div>
           </div>
         ) : (
           <>
             {quote.payment_link_url && !responded && (
               <div className="print:hidden">
-                <Button className="w-full" size="lg" onClick={() => window.location.assign(quote.payment_link_url!)}>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => window.location.assign(quote.payment_link_url!)}
+                >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Pagar {formatCurrency(Number(quote.total), quote.currency)}
                 </Button>
@@ -211,7 +268,11 @@ function PublicQuotePage() {
             )}
             {!responded && !expired && (
               <div className="flex gap-2 justify-end print:hidden">
-                <Button variant="outline" onClick={() => respondMut.mutate({ action: "decline" })} disabled={respondMut.isPending}>
+                <Button
+                  variant="outline"
+                  onClick={() => respondMut.mutate({ action: "decline" })}
+                  disabled={respondMut.isPending}
+                >
                   <X className="h-4 w-4 mr-1" /> Recusar
                 </Button>
                 <Button onClick={() => setAcceptOpen(true)}>
@@ -225,16 +286,26 @@ function PublicQuotePage() {
 
       <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Aceitar cotação</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Aceitar cotação</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Digite seu nome completo como assinatura eletrônica.</p>
+            <p className="text-sm text-muted-foreground">
+              Digite seu nome completo como assinatura eletrônica.
+            </p>
             <div className="space-y-1.5">
               <Label>Nome completo</Label>
-              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Seu nome" />
+              <Input
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder="Seu nome"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAcceptOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setAcceptOpen(false)}>
+              Cancelar
+            </Button>
             <Button
               onClick={() => respondMut.mutate({ action: "accept", signature })}
               disabled={!signature.trim() || respondMut.isPending}
@@ -333,7 +404,11 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
       },
       agent: { name: agent?.full_name ?? "", email: agent?.email ?? "" },
       items: items.map((li) => {
-        const total = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100) * (1 + Number(li.tax_rate) / 100);
+        const total =
+          Number(li.quantity) *
+          Number(li.unit_price) *
+          (1 - Number(li.discount_pct) / 100) *
+          (1 + Number(li.tax_rate) / 100);
         return {
           name: li.name,
           description: li.description ?? "",
@@ -369,20 +444,31 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
 
         <div
           className="rounded-md border bg-white overflow-hidden print:border-0"
-          dangerouslySetInnerHTML={{ __html: before + makeActionsHtml(props, !!after, expired, responded) + after }}
+          dangerouslySetInnerHTML={{
+            __html: before + makeActionsHtml(props, !!after, expired, responded) + after,
+          }}
         />
 
         {/* Bind real action handlers via overlay buttons (the marker block in HTML is presentational only) */}
         {!quote.paid_at && quote.payment_link_url && !responded && (
           <div className="print:hidden">
-            <Button className="w-full" size="lg" onClick={() => window.location.assign(quote.payment_link_url!)}>
-              <CreditCard className="h-4 w-4 mr-2" /> Pagar {formatCurrency(Number(quote.total), quote.currency)}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => window.location.assign(quote.payment_link_url!)}
+            >
+              <CreditCard className="h-4 w-4 mr-2" /> Pagar{" "}
+              {formatCurrency(Number(quote.total), quote.currency)}
             </Button>
           </div>
         )}
         {!quote.paid_at && !responded && !expired && (
           <div className="flex gap-2 justify-end print:hidden">
-            <Button variant="outline" onClick={props.onDeclineClick} disabled={props.respondPending}>
+            <Button
+              variant="outline"
+              onClick={props.onDeclineClick}
+              disabled={props.respondPending}
+            >
               <X className="h-4 w-4 mr-1" /> Recusar
             </Button>
             <Button onClick={props.onAcceptClick}>
@@ -394,17 +480,30 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
 
       <Dialog open={props.acceptOpen} onOpenChange={props.setAcceptOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Aceitar cotação</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Aceitar cotação</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Digite seu nome completo como assinatura eletrônica.</p>
+            <p className="text-sm text-muted-foreground">
+              Digite seu nome completo como assinatura eletrônica.
+            </p>
             <div className="space-y-1.5">
               <Label>Nome completo</Label>
-              <Input value={props.signature} onChange={(e) => props.setSignature(e.target.value)} placeholder="Seu nome" />
+              <Input
+                value={props.signature}
+                onChange={(e) => props.setSignature(e.target.value)}
+                placeholder="Seu nome"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => props.setAcceptOpen(false)}>Cancelar</Button>
-            <Button onClick={props.onAcceptSubmit} disabled={!props.signature.trim() || props.respondPending}>
+            <Button variant="outline" onClick={() => props.setAcceptOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={props.onAcceptSubmit}
+              disabled={!props.signature.trim() || props.respondPending}
+            >
               Confirmar aceite
             </Button>
           </DialogFooter>
@@ -416,7 +515,12 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
 
 // Renders a static informational block inside the templated HTML; the real
 // interactive buttons live outside the dangerouslySetInnerHTML container.
-function makeActionsHtml(p: TemplatedQuoteProps, _hasAfter: boolean, expired: boolean, responded: boolean): string {
+function makeActionsHtml(
+  p: TemplatedQuoteProps,
+  _hasAfter: boolean,
+  expired: boolean,
+  responded: boolean,
+): string {
   if (p.quote.paid_at) {
     return `<div style="margin:24px 0;padding:14px 18px;border-radius:10px;background:#dcfce7;color:#166534;text-align:center;font-weight:600">Pagamento confirmado</div>`;
   }

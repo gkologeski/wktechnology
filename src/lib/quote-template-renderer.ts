@@ -46,21 +46,30 @@ export function renderQuoteTemplate(html: string, ctx: QuoteRenderContext): stri
   let out = html;
 
   // {{#each items}}...{{/each}}
-  out = out.replace(/\{\{#each\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\/each\}\}/g, (_m, path: string, body: string) => {
-    const arr = getPath(ctx, path);
-    if (!Array.isArray(arr)) return "";
-    return arr
-      .map((item) => {
-        const childCtx = { ...ctx, ...(typeof item === "object" && item ? item as object : {}) };
-        return renderInterpolations(body, childCtx);
-      })
-      .join("");
-  });
+  out = out.replace(
+    /\{\{#each\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\/each\}\}/g,
+    (_m, path: string, body: string) => {
+      const arr = getPath(ctx, path);
+      if (!Array.isArray(arr)) return "";
+      return arr
+        .map((item) => {
+          const childCtx = {
+            ...ctx,
+            ...(typeof item === "object" && item ? (item as object) : {}),
+          };
+          return renderInterpolations(body, childCtx);
+        })
+        .join("");
+    },
+  );
 
   // {{#if path}}...{{/if}}
-  out = out.replace(/\{\{#if\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g, (_m, path: string, body: string) => {
-    return isTruthy(getPath(ctx, path)) ? body : "";
-  });
+  out = out.replace(
+    /\{\{#if\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g,
+    (_m, path: string, body: string) => {
+      return isTruthy(getPath(ctx, path)) ? body : "";
+    },
+  );
 
   out = renderInterpolations(out, ctx);
   return out;
@@ -101,14 +110,33 @@ export function sampleQuoteContext(): QuoteRenderContext {
     contact: { name: "Maria Souza", email: "maria@acme.com" },
     agent: { name: "João Vendedor", email: "joao@suaempresa.com" },
     items: [
-      { name: "Licença Plano Pro", description: "Anual, 25 usuários", quantity: 1, unit_price: "R$ 9.000,00", discount_pct: 10, tax_rate: 9, line_total: "R$ 8.829,00" },
-      { name: "Onboarding", description: "8h de implantação", quantity: 1, unit_price: "R$ 3.000,00", discount_pct: 0, tax_rate: 9, line_total: "R$ 3.270,00" },
+      {
+        name: "Licença Plano Pro",
+        description: "Anual, 25 usuários",
+        quantity: 1,
+        unit_price: "R$ 9.000,00",
+        discount_pct: 10,
+        tax_rate: 9,
+        line_total: "R$ 8.829,00",
+      },
+      {
+        name: "Onboarding",
+        description: "8h de implantação",
+        quantity: 1,
+        unit_price: "R$ 3.000,00",
+        discount_pct: 0,
+        tax_rate: 9,
+        line_total: "R$ 3.270,00",
+      },
     ],
   };
 }
 
 /** Field catalog rendered in the editor toolbar. */
-export const QUOTE_TEMPLATE_TOKENS: Array<{ group: string; items: Array<{ token: string; label: string }> }> = [
+export const QUOTE_TEMPLATE_TOKENS: Array<{
+  group: string;
+  items: Array<{ token: string; label: string }>;
+}> = [
   {
     group: "Cotação",
     items: [

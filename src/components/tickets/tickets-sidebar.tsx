@@ -16,18 +16,27 @@ const ITEMS: { key: ViewKey; label: string; icon: LucideIcon }[] = [
 
 export function filterByView(tickets: TicketRow[], view: ViewKey, userId: string | null) {
   const now = Date.now();
-  const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
   switch (view) {
     case "mine":
-      return tickets.filter((t) => t.assignee_id === userId && t.status !== "closed" && t.status !== "resolved");
+      return tickets.filter(
+        (t) => t.assignee_id === userId && t.status !== "closed" && t.status !== "resolved",
+      );
     case "unassigned":
-      return tickets.filter((t) => !t.assignee_id && t.status !== "closed" && t.status !== "resolved");
+      return tickets.filter(
+        (t) => !t.assignee_id && t.status !== "closed" && t.status !== "resolved",
+      );
     case "urgent":
       return tickets.filter((t) => t.priority === "urgent" && t.status !== "closed");
     case "overdue":
-      return tickets.filter((t) => t.due_at && new Date(t.due_at).getTime() < now && !t.resolved_at);
+      return tickets.filter(
+        (t) => t.due_at && new Date(t.due_at).getTime() < now && !t.resolved_at,
+      );
     case "closed_today":
-      return tickets.filter((t) => t.resolved_at && new Date(t.resolved_at).getTime() >= startOfDay.getTime());
+      return tickets.filter(
+        (t) => t.resolved_at && new Date(t.resolved_at).getTime() >= startOfDay.getTime(),
+      );
     case "all":
     default:
       return tickets;
@@ -75,7 +84,12 @@ export function TicketsSidebar({
         })}
       </nav>
       <div className="p-2 border-t">
-        <Button variant="ghost" size="sm" className="w-full justify-start text-[var(--hs-text-muted)]" disabled>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start text-[var(--hs-text-muted)]"
+          disabled
+        >
           <ListFilter className="h-3.5 w-3.5 mr-1.5" /> Nova view (em breve)
         </Button>
       </div>

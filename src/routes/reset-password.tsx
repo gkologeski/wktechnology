@@ -13,7 +13,10 @@ export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
       { title: "Recuperar senha — WK Technology CRM" },
-      { name: "description", content: "Solicite a redefinição de senha da sua conta no WK Technology CRM." },
+      {
+        name: "description",
+        content: "Solicite a redefinição de senha da sua conta no WK Technology CRM.",
+      },
       { property: "og:title", content: "Recuperar senha — WK Technology CRM" },
       { property: "og:description", content: "Solicite a redefinição de senha da sua conta." },
       { property: "og:url", content: "https://crm.wktechnology.com.br/reset-password" },
@@ -67,7 +70,9 @@ function ResetPasswordPage() {
         <CardHeader>
           <CardTitle>{recoveryMode ? "Nova senha" : "Recuperar senha"}</CardTitle>
           <CardDescription>
-            {recoveryMode ? "Defina uma nova senha para sua conta." : "Enviaremos um link para você redefinir."}
+            {recoveryMode
+              ? "Defina uma nova senha para sua conta."
+              : "Enviaremos um link para você redefinir."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,9 +80,18 @@ function ResetPasswordPage() {
             <form onSubmit={updatePassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Nova senha</Label>
-                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>Atualizar senha</Button>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                Atualizar senha
+              </Button>
             </form>
           ) : (
             <form onSubmit={sendEmail} className="space-y-4">
@@ -85,9 +99,13 @@ function ResetPasswordPage() {
                 <Label htmlFor="email">Email</Label>
                 <EmailInput id="email" required value={email} onChange={setEmail} />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>Enviar link</Button>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                Enviar link
+              </Button>
               <div className="text-sm text-muted-foreground text-center">
-                <Link to="/login" className="text-primary hover:underline">Voltar para o login</Link>
+                <Link to="/login" className="text-primary hover:underline">
+                  Voltar para o login
+                </Link>
               </div>
             </form>
           )}

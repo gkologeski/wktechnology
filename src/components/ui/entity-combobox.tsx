@@ -5,7 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 /**
  * EntityCombobox — picker inteligente para campos vinculados ao banco.
@@ -168,7 +175,10 @@ export function EntityCombobox({
     const id = ++reqIdRef.current;
     setLoading(true);
     const t = setTimeout(async () => {
-      let query = supabase.from(entity as never).select(select).limit(50);
+      let query = supabase
+        .from(entity as never)
+        .select(select)
+        .limit(50);
       if (q.length > 0) {
         const cols = searchColumns && searchColumns.length ? searchColumns : [searchColumn];
         const safePhrase = q.replace(/[%,()]/g, " ");
@@ -269,16 +279,15 @@ export function EntityCombobox({
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
           <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Buscar…"
-              value={search}
-              onValueChange={setSearch}
-            />
+            <CommandInput placeholder="Buscar…" value={search} onValueChange={setSearch} />
             <CommandList>
               {(() => {
                 const q = search.trim().toLowerCase();
                 const priorityFiltered = priorityResults.filter(
-                  (it) => !q || it.label.toLowerCase().includes(q) || (it.hint ?? "").toLowerCase().includes(q),
+                  (it) =>
+                    !q ||
+                    it.label.toLowerCase().includes(q) ||
+                    (it.hint ?? "").toLowerCase().includes(q),
                 );
                 const priorityIdSet = new Set(priorityFiltered.map((it) => it.id));
                 const restFiltered = results.filter((it) => !priorityIdSet.has(it.id));
@@ -297,7 +306,9 @@ export function EntityCombobox({
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate">{item.label}</span>
                       {item.hint ? (
-                        <span className="truncate text-[11px] text-muted-foreground">{item.hint}</span>
+                        <span className="truncate text-[11px] text-muted-foreground">
+                          {item.hint}
+                        </span>
                       ) : null}
                     </span>
                     {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}

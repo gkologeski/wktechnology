@@ -218,7 +218,9 @@ export function HubspotImportWizard() {
         },
       });
       setJobId(r.jobId);
-      toast.success(`Importação enfileirada (${r.steps.length} etapas). Execução em segundo plano iniciada.`);
+      toast.success(
+        `Importação enfileirada (${r.steps.length} etapas). Execução em segundo plano iniciada.`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao enfileirar importação");
       setStage("scope");
@@ -257,28 +259,34 @@ export function HubspotImportWizard() {
             type="button"
             onClick={() => changeMode("linked")}
             className={`text-left rounded-md border p-4 transition-colors ${
-              mode === "linked" ? "border-primary bg-primary/5" : "border-border bg-background hover:bg-muted/50"
+              mode === "linked"
+                ? "border-primary bg-primary/5"
+                : "border-border bg-background hover:bg-muted/50"
             }`}
           >
             <div className="flex items-center gap-2 font-medium text-sm">
               <Building2 className="h-4 w-4" /> Vinculado (a partir de Empresas)
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Importa um conjunto de Empresas e, em cascata, apenas Contatos, Negócios, Leads e Atividades vinculados a elas.
+              Importa um conjunto de Empresas e, em cascata, apenas Contatos, Negócios, Leads e
+              Atividades vinculados a elas.
             </p>
           </button>
           <button
             type="button"
             onClick={() => changeMode("full")}
             className={`text-left rounded-md border p-4 transition-colors ${
-              mode === "full" ? "border-primary bg-primary/5" : "border-border bg-background hover:bg-muted/50"
+              mode === "full"
+                ? "border-primary bg-primary/5"
+                : "border-border bg-background hover:bg-muted/50"
             }`}
           >
             <div className="flex items-center gap-2 font-medium text-sm">
               <Activity className="h-4 w-4" /> Total (todos os registros)
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Importa todos os registros de cada objeto sequencialmente (empresas → contatos → negócios → leads → atividades). Vínculos são feitos quando possível.
+              Importa todos os registros de cada objeto sequencialmente (empresas → contatos →
+              negócios → leads → atividades). Vínculos são feitos quando possível.
             </p>
           </button>
         </div>
@@ -319,7 +327,10 @@ export function HubspotImportWizard() {
                 ? OBJECTS.filter((x) => scope[x.key] && x.deps.includes(o.key)).map((x) => x.label)
                 : [];
             return (
-              <div key={o.key} className="flex items-start gap-3 p-3 rounded-md border bg-background">
+              <div
+                key={o.key}
+                className="flex items-start gap-3 p-3 rounded-md border bg-background"
+              >
                 <Checkbox
                   id={`scope-${o.key}`}
                   checked={scope[o.key]}
@@ -327,7 +338,10 @@ export function HubspotImportWizard() {
                   onCheckedChange={(v) => toggle(o.key, !!v)}
                 />
                 <div className="flex-1">
-                  <Label htmlFor={`scope-${o.key}`} className="flex items-center gap-2 cursor-pointer">
+                  <Label
+                    htmlFor={`scope-${o.key}`}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <Icon className="h-4 w-4" /> {o.label}
                     {o.required && (
                       <Badge variant="secondary" className="text-[10px]">
@@ -341,7 +355,9 @@ export function HubspotImportWizard() {
                       : o.description}
                   </p>
                   {forcedBy.length > 0 && scope[o.key] && !o.required && (
-                    <p className="text-xs text-amber-600 mt-1">Necessário para: {forcedBy.join(", ")}</p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Necessário para: {forcedBy.join(", ")}
+                    </p>
                   )}
                   <label
                     htmlFor={`clear-${o.key}`}
@@ -350,9 +366,7 @@ export function HubspotImportWizard() {
                     <Checkbox
                       id={`clear-${o.key}`}
                       checked={clearScope[o.key]}
-                      onCheckedChange={(v) =>
-                        setClearScope((prev) => ({ ...prev, [o.key]: !!v }))
-                      }
+                      onCheckedChange={(v) => setClearScope((prev) => ({ ...prev, [o.key]: !!v }))}
                     />
                     Limpar tabela local de {o.label.toLowerCase()} antes de importar
                   </label>
@@ -365,7 +379,9 @@ export function HubspotImportWizard() {
 
       <section className="rounded-lg border bg-card p-5">
         <h2 className="font-semibold mb-1">3. Pré-visualização da árvore</h2>
-        <p className="text-sm text-muted-foreground mb-4">Ordem de execução respeitando dependências:</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Ordem de execução respeitando dependências:
+        </p>
         {planned.length === 0 ? (
           <p className="text-sm text-muted-foreground">Selecione ao menos um objeto.</p>
         ) : (
@@ -397,7 +413,10 @@ export function HubspotImportWizard() {
                             <p className="font-medium">{o.label}</p>
                             {o.deps.length > 0 && (
                               <p className="text-xs text-muted-foreground">
-                                Depende de: {o.deps.map((d) => OBJECTS.find((x) => x.key === d)!.label).join(", ")}
+                                Depende de:{" "}
+                                {o.deps
+                                  .map((d) => OBJECTS.find((x) => x.key === d)!.label)
+                                  .join(", ")}
                               </p>
                             )}
                           </div>
@@ -425,7 +444,8 @@ export function HubspotImportWizard() {
                                   </p>
                                 ) : (
                                   <p className="text-xs">
-                                    Apenas {o.label.toLowerCase()} vinculados às empresas dentro do limite de importação.
+                                    Apenas {o.label.toLowerCase()} vinculados às empresas dentro do
+                                    limite de importação.
                                   </p>
                                 )}
                               </TooltipContent>
@@ -451,7 +471,9 @@ export function HubspotImportWizard() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium">A importar</span>: registros que entrarão nesta execução · <span className="font-medium">Local</span>: já existentes no seu banco · <span className="font-medium">HubSpot</span>: total na sua conta HubSpot.
+            <span className="font-medium">A importar</span>: registros que entrarão nesta execução ·{" "}
+            <span className="font-medium">Local</span>: já existentes no seu banco ·{" "}
+            <span className="font-medium">HubSpot</span>: total na sua conta HubSpot.
           </p>
           <Button
             variant="outline"

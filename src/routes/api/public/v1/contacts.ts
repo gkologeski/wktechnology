@@ -37,9 +37,13 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         const body = await request.json().catch(() => null);
         const parsed = CreateContact.safeParse(body);
         if (!parsed.success) {
-          return new Response(JSON.stringify({ error: "invalid_input", details: parsed.error.flatten() }), {
-            status: 400, headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: "invalid_input", details: parsed.error.flatten() }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
         const { data, error } = await supabaseAdmin
           .from("contacts")

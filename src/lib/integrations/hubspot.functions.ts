@@ -37,7 +37,8 @@ async function hsPost(path: string, body: object) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(`HubSpot POST [${res.status}] ${path}: ${JSON.stringify(data).slice(0, 300)}`);
+  if (!res.ok)
+    throw new Error(`HubSpot POST [${res.status}] ${path}: ${JSON.stringify(data).slice(0, 300)}`);
   return data;
 }
 
@@ -53,7 +54,10 @@ function parseHsDate(v: string | null | undefined): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function originalCreatedAt(p: Record<string, string | null | undefined>, createdAt?: string): Record<string, string> {
+function originalCreatedAt(
+  p: Record<string, string | null | undefined>,
+  createdAt?: string,
+): Record<string, string> {
   const value = parseHsDate(p.createdate ?? p.hs_createdate ?? createdAt);
   return value ? { created_at: value, hs_createdate: value } : {};
 }
@@ -83,7 +87,9 @@ async function searchTotal(obj: string, body: object = {}): Promise<number> {
   const hit = cacheGet<number>(key);
   if (hit !== undefined) return hit;
   try {
-    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1, ...body })) as { total?: number };
+    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1, ...body })) as {
+      total?: number;
+    };
     const total = r.total ?? 0;
     cacheSet(key, total);
     return total;
@@ -108,7 +114,7 @@ async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise
 async function assocBatchRead(
   fromObj: string,
   fromIds: string[],
-  toObj: string
+  toObj: string,
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   const unique = Array.from(new Set(fromIds));
@@ -136,7 +142,12 @@ async function assocBatchRead(
   return out;
 }
 
-type HSRec = { id: string; properties: Record<string, string | null | undefined>; createdAt?: string; updatedAt?: string };
+type HSRec = {
+  id: string;
+  properties: Record<string, string | null | undefined>;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
   const out: HSRec[] = [];
@@ -229,11 +240,18 @@ type PipelineMaps = {
   // hubspotPipelineId → { localPipelineId, defaultStageId }
   pipelines: Map<string, { localId: string; defaultStageId: string | null }>;
   // hubspotStageId → { localPipelineId, stageId, label, probability }
-  stages: Map<string, { localPipelineId: string; stageId: string; label: string; probability: number | null }>;
+  stages: Map<
+    string,
+    { localPipelineId: string; stageId: string; label: string; probability: number | null }
+  >;
 };
 
 // Heurística: mapeia label/probabilidade do estágio HubSpot para o enum local deal_stage.
-function mapDealStageEnum(label: string | undefined, probability: number | null, isClosed: boolean): string {
+function mapDealStageEnum(
+  label: string | undefined,
+  probability: number | null,
+  isClosed: boolean,
+): string {
   const l = (label ?? "").toLowerCase();
   if (isClosed) {
     if (probability !== null && probability >= 1) return "won";
@@ -340,13 +358,18 @@ async function syncLeadPipeline(
   supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
   workspaceId: string,
   userId: string,
-): Promise<{ localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> }> {
+): Promise<{
+  localPipelineId: string;
+  stageByValue: Map<string, { stageId: string; label: string }>;
+}> {
   // HubSpot não tem pipeline de leads — usa as opções da propriedade hs_lead_status
   type Opt = { label: string; value: string; displayOrder?: number };
   let options: Opt[] = [];
   try {
     const r = (await hsFetch("/crm/v3/properties/contacts/hs_lead_status")) as { options?: Opt[] };
-    options = (r.options ?? []).slice().sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    options = (r.options ?? [])
+      .slice()
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
   } catch {
     /* ignore */
   }
@@ -388,7 +411,7 @@ async function syncLeadPipeline(
       .from("pipelines")
       .insert({
         owner_id: userId,
-          workspace_id: workspaceId,
+        workspace_id: workspaceId,
         entity: "lead",
         name: "HubSpot Leads",
         stages: stages as never,
@@ -408,7 +431,10 @@ async function syncLeadPipeline(
 const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "tickets", "activities"]);
 type ObjectKey = z.infer<typeof ObjectKey>;
 
-const LOCAL_TABLE: Record<ObjectKey, "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"> = {
+const LOCAL_TABLE: Record<
+  ObjectKey,
+  "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"
+> = {
   companies: "companies",
   contacts: "contacts",
   deals: "deals",
@@ -472,7 +498,11 @@ function scopeSig(ids: string[]): string {
 // Otimizações:
 //  • Cache por (fromObj→toObj, escopo) — evita recomputar entre chamadas do wizard.
 //  • Lote v4 (até 1000 inputs por request) — 100× menos chamadas vs. per-ID.
-async function unionAssocIds(fromObj: string, fromIds: string[], toObj: string): Promise<Set<string>> {
+async function unionAssocIds(
+  fromObj: string,
+  fromIds: string[],
+  toObj: string,
+): Promise<Set<string>> {
   if (fromIds.length === 0) return new Set();
   const cacheKey = `union:${fromObj}→${toObj}:${scopeSig(fromIds)}`;
   const hit = cacheGet<string[]>(cacheKey);
@@ -494,16 +524,14 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
         mode: z.enum(["linked", "full"]).default("linked"),
         maxCompanies: z.number().min(1).max(2000).default(200),
       })
-      .parse(input)
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
     async function localCount(key: ObjectKey): Promise<number> {
       const table = key === "activities" ? "activities" : key;
-      const { count } = await supabase
-        .from(table)
-        .select("*", { count: "exact", head: true });
+      const { count } = await supabase.from(table).select("*", { count: "exact", head: true });
       return count ?? 0;
     }
 
@@ -587,7 +615,13 @@ const ScopeSchema = z
   }));
 type Scope = z.infer<typeof ScopeSchema>;
 
-type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+type LogEntry = {
+  ts: string;
+  level: "info" | "warn" | "error";
+  step: string;
+  message: string;
+  count?: number;
+};
 
 const STEP_ORDER = ["companies", "contacts", "deals", "leads", "tickets", "activities"] as const;
 type StepName = (typeof STEP_ORDER)[number];
@@ -648,7 +682,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
-          workspace_id: workspaceId,
+        workspace_id: workspaceId,
         provider: "hubspot",
         kind: "import",
         entity: "lead",
@@ -690,7 +724,7 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const tables: ("companies" | "contacts" | "deals" | "leads" | "tickets" | "activities")[] = [];
     if (data.companies) tables.push("companies");
     if (data.contacts) tables.push("contacts");
@@ -714,7 +748,9 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
 // Executa UM step do job HubSpot. Chamado pela UI (polling) e pelo cron.
 export const tickHubspotImportJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid().optional() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ jobId: z.string().uuid().optional() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { tickOnce } = await import("./hubspot-tick.server");
     const { supabase, userId } = context;
@@ -727,7 +763,7 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: job, error: jobErr } = await supabase
       .from("enrichment_jobs")
       .select("id, status")
@@ -746,7 +782,10 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
     const stepByItem = new Map<string, string>();
     const depsByStep = new Map<string, string[]>();
     for (const item of items ?? []) {
-      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<
+        string,
+        unknown
+      >;
       const step = typeof before.step === "string" ? before.step : undefined;
       if (!step) continue;
       stepByItem.set(item.id, step);
@@ -756,13 +795,19 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
       (items ?? [])
         .filter((item) => {
           if (item.status === "failed" || item.status === "running") return true;
-          const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
-          const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+          const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<
+            string,
+            unknown
+          >;
           const deps = Array.isArray(before.depends_on) ? (before.depends_on as string[]) : [];
           const zeroResult =
             item.status === "done" &&
-            (Number(after.succeeded ?? 0) === 0) &&
-            (Number(after.failed ?? 0) === 0) &&
+            Number(after.succeeded ?? 0) === 0 &&
+            Number(after.failed ?? 0) === 0 &&
             (!Array.isArray(after.imported_hs_ids) || after.imported_hs_ids.length === 0);
           return zeroResult && deps.length > 0;
         })
@@ -784,16 +829,24 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
     for (const item of items ?? []) {
       const step = stepByItem.get(item.id);
       if (!step || !resumeSteps.has(step)) continue;
-      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
-      const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+      const before = ((item.before as Record<string, unknown> | null) ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const after = ((item.after as Record<string, unknown> | null) ?? {}) as Record<
+        string,
+        unknown
+      >;
       const keepProgress = item.status === "failed" || item.status === "running";
       const mergedBefore = {
         ...before,
         cursor: keepProgress ? before.cursor : undefined,
         read_index: keepProgress ? before.read_index : 0,
-        running_succeeded: keepProgress ? before.running_succeeded ?? after.succeeded ?? 0 : 0,
-        running_failed: keepProgress ? before.running_failed ?? after.failed ?? 0 : 0,
-        imported_hs_ids: keepProgress ? before.imported_hs_ids ?? after.imported_hs_ids ?? [] : [],
+        running_succeeded: keepProgress ? (before.running_succeeded ?? after.succeeded ?? 0) : 0,
+        running_failed: keepProgress ? (before.running_failed ?? after.failed ?? 0) : 0,
+        imported_hs_ids: keepProgress
+          ? (before.imported_hs_ids ?? after.imported_hs_ids ?? [])
+          : [],
       };
       const { error } = await supabase
         .from("enrichment_job_items")
@@ -823,7 +876,7 @@ export const cancelHubspotImport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: job, error: jobErr } = await supabase
       .from("enrichment_jobs")
       .select("id, status, step_logs")
@@ -835,7 +888,9 @@ export const cancelHubspotImport = createServerFn({ method: "POST" })
     if (job.status === "done" || job.status === "failed") {
       return { ok: true, alreadyFinished: true };
     }
-    const logs = Array.isArray(job.step_logs) ? (job.step_logs as Array<Record<string, unknown>>) : [];
+    const logs = Array.isArray(job.step_logs)
+      ? (job.step_logs as Array<Record<string, unknown>>)
+      : [];
     const next = [
       ...logs,
       {
@@ -870,7 +925,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ScopeSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const scope = data;
     const steps = planSteps(scope);
 
@@ -878,7 +933,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
-          workspace_id: workspaceId,
+        workspace_id: workspaceId,
         provider: "hubspot",
         kind: "import",
         entity: "lead",
@@ -910,7 +965,10 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
         .single();
       const arr = Array.isArray(cur?.step_logs) ? (cur!.step_logs as LogEntry[]) : [];
       const next = [...arr, full].slice(-300);
-      await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
+      await supabase
+        .from("enrichment_jobs")
+        .update({ step_logs: next as never })
+        .eq("id", jobId);
     };
 
     // Throttled progress writer — updates `before.running_succeeded/_failed/_discovered`
@@ -927,25 +985,34 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       if (!force && now - (lastProgressAt[step] ?? 0) < 600) return;
       lastProgressAt[step] = now;
       await updateItem(step, {
-        before: { running_succeeded, running_failed, ...(discovered !== undefined ? { discovered } : {}) },
+        before: {
+          running_succeeded,
+          running_failed,
+          ...(discovered !== undefined ? { discovered } : {}),
+        },
       });
     };
 
     const updateItem = async (
       step: StepName,
-      patch: { status?: string; before?: Record<string, unknown>; after?: Record<string, unknown> }
+      patch: { status?: string; before?: Record<string, unknown>; after?: Record<string, unknown> },
     ) => {
       const { data: items } = await supabase
         .from("enrichment_job_items")
         .select("id, before")
         .eq("job_id", jobId);
-      const target = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === step);
+      const target = (items ?? []).find(
+        (it) => (it.before as { step?: string } | null)?.step === step,
+      );
       if (!target) return;
       const merged: Record<string, unknown> = {};
       if (patch.status) merged.status = patch.status;
       if (patch.before) merged.before = { ...(target.before as object), ...patch.before };
       if (patch.after) merged.after = patch.after;
-      await supabase.from("enrichment_job_items").update(merged as never).eq("id", target.id);
+      await supabase
+        .from("enrichment_job_items")
+        .update(merged as never)
+        .eq("id", target.id);
     };
 
     // Maps hubspotId → localId
@@ -997,7 +1064,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
         .select("external_ids")
         .eq("id", id)
         .maybeSingle();
-      const next = { ...(cur?.external_ids as object | null ?? {}), ...patch };
+      const next = { ...((cur?.external_ids as object | null) ?? {}), ...patch };
       return next;
     }
 
@@ -1005,7 +1072,10 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
     const contactLifecycle = new Map<string, string | null | undefined>();
     // Pipelines/estágios espelhados do HubSpot
     let dealPipelines: PipelineMaps = { pipelines: new Map(), stages: new Map() };
-    let leadPipeline: { localPipelineId: string; stageByValue: Map<string, { stageId: string; label: string }> } | null = null;
+    let leadPipeline: {
+      localPipelineId: string;
+      stageByValue: Map<string, { stageId: string; label: string }>;
+    } | null = null;
 
     let totalSucceeded = 0;
     let totalFailed = 0;
@@ -1039,7 +1109,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       // 0) Espelhar pipelines/estágios do HubSpot ANTES de qualquer importação,
       // para que deals/leads referenciem o pipeline e estágio corretos.
       if (steps.includes("deals")) {
-        await appendLog({ level: "info", step: "pipelines", message: "Sincronizando pipelines de deals do HubSpot" });
+        await appendLog({
+          level: "info",
+          step: "pipelines",
+          message: "Sincronizando pipelines de deals do HubSpot",
+        });
         try {
           dealPipelines = await syncDealPipelines(supabase, workspaceId, userId);
           await appendLog({
@@ -1075,7 +1149,10 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
       }
 
       for (const step of steps) {
-        await updateItem(step, { status: "running", before: { started_at: new Date().toISOString() } });
+        await updateItem(step, {
+          status: "running",
+          before: { started_at: new Date().toISOString() },
+        });
         await appendLog({ level: "info", step, message: `Iniciando etapa ${step}` });
 
         let stepOk = 0;
@@ -1090,7 +1167,8 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             const limit = Math.min(100, Number.isFinite(remaining) ? remaining : 100);
             const params: Record<string, string> = {
               limit: String(limit),
-              properties: "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
+              properties:
+                "name,domain,industry,numberofemployees,phone,city,state,zip,address,website",
             };
             if (after) params.after = after;
             const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
@@ -1134,7 +1212,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .eq("id", existingId);
                 if (error) {
                   stepFail++;
-                  await appendLog({ level: "warn", step, message: `Falha empresa (update) ${p.name}: ${error.message}` });
+                  await appendLog({
+                    level: "warn",
+                    step,
+                    message: `Falha empresa (update) ${p.name}: ${error.message}`,
+                  });
                 } else {
                   companyMap.set(c.id, existingId);
                   stepOk++;
@@ -1144,7 +1226,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .from("companies")
                   .insert({
                     owner_id: userId,
-          workspace_id: workspaceId,
+                    workspace_id: workspaceId,
                     ...companyData,
                     external_ids: { hubspot: c.id } as never,
                   })
@@ -1152,15 +1234,23 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .single();
                 if (error || !row) {
                   stepFail++;
-                  await appendLog({ level: "warn", step, message: `Falha empresa ${p.name}: ${error?.message}` });
+                  await appendLog({
+                    level: "warn",
+                    step,
+                    message: `Falha empresa ${p.name}: ${error?.message}`,
+                  });
                 } else {
                   companyMap.set(c.id, row.id);
                   stepOk++;
                 }
               }
-
             }
-            await bumpProgress(step, stepOk, stepFail, Number.isFinite(companyCap) ? companyCap : undefined);
+            await bumpProgress(
+              step,
+              stepOk,
+              stepFail,
+              Number.isFinite(companyCap) ? companyCap : undefined,
+            );
             after = res.paging?.next?.after;
             page++;
             if (!after) break;
@@ -1168,14 +1258,23 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
           }
         } else if (step === "contacts" && scope.mode === "full") {
           // Modo total: lista TODOS os contatos, vínculo com empresa best-effort.
-          await appendLog({ level: "info", step, message: "Listando todos os contatos do HubSpot" });
+          await appendLog({
+            level: "info",
+            step,
+            message: "Listando todos os contatos do HubSpot",
+          });
           const recs = await listAll(
             "contacts",
             ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"],
             ["companies"],
           );
           await bumpProgress(step, 0, 0, recs.length, true);
-          await appendLog({ level: "info", step, message: `Lendo ${recs.length} contatos`, count: recs.length });
+          await appendLog({
+            level: "info",
+            step,
+            message: `Lendo ${recs.length} contatos`,
+            count: recs.length,
+          });
           for (const c of recs) {
             const p = c.properties;
             contactLifecycle.set(c.id, p.lifecyclestage);
@@ -1184,7 +1283,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               continue;
             }
             const hsCo = firstAssocId(c, "companies");
-            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const localCompanyId = hsCo ? (companyMap.get(hsCo) ?? null) : null;
             const contactData = {
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
               last_name: p.lastname ?? null,
@@ -1193,7 +1292,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               job_title: p.jobtitle ?? null,
               company_id: localCompanyId,
             };
-            const existingId = await findExistingId("contacts", c.id, [{ column: "email", value: p.email }]);
+            const existingId = await findExistingId("contacts", c.id, [
+              { column: "email", value: p.email },
+            ]);
             if (existingId) {
               const ext = await mergeExternalIds("contacts", existingId, { hubspot: c.id });
               const { error } = await supabase
@@ -1208,8 +1309,12 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             } else {
               const { data: row, error } = await supabase
                 .from("contacts")
-                .insert({ owner_id: userId,
-          workspace_id: workspaceId, ...contactData, external_ids: { hubspot: c.id } as never })
+                .insert({
+                  owner_id: userId,
+                  workspace_id: workspaceId,
+                  ...contactData,
+                  external_ids: { hubspot: c.id } as never,
+                })
                 .select("id")
                 .single();
               if (error || !row) stepFail++;
@@ -1231,7 +1336,8 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
           let assocCount = 0;
           for (const hsCompanyId of companyMap.keys()) {
             const ids = await getAssoc("companies", hsCompanyId, "contacts");
-            for (const id of ids) if (!contactToCompany.has(id)) contactToCompany.set(id, hsCompanyId);
+            for (const id of ids)
+              if (!contactToCompany.has(id)) contactToCompany.set(id, hsCompanyId);
             assocCount++;
             if (assocCount % 25 === 0) {
               await appendLog({
@@ -1249,14 +1355,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             message: `Lendo ${contactToCompany.size} contatos em lotes de 100`,
             count: contactToCompany.size,
           });
-          const contactRecs = await batchRead("contacts", [...contactToCompany.keys()], [
-            "firstname",
-            "lastname",
-            "email",
-            "phone",
-            "jobtitle",
-            "lifecyclestage",
-          ]);
+          const contactRecs = await batchRead(
+            "contacts",
+            [...contactToCompany.keys()],
+            ["firstname", "lastname", "email", "phone", "jobtitle", "lifecyclestage"],
+          );
           for (const c of contactRecs) {
             const p = c.properties;
             contactLifecycle.set(c.id, p.lifecyclestage);
@@ -1284,7 +1387,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .eq("id", existingId);
               if (error) {
                 stepFail++;
-                await appendLog({ level: "warn", step, message: `Falha contato (update): ${error.message}` });
+                await appendLog({
+                  level: "warn",
+                  step,
+                  message: `Falha contato (update): ${error.message}`,
+                });
               } else {
                 contactMap.set(c.id, existingId);
                 stepOk++;
@@ -1294,7 +1401,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("contacts")
                 .insert({
                   owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                   ...contactData,
                   external_ids: { hubspot: c.id } as never,
                 })
@@ -1302,7 +1409,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .single();
               if (error || !row) {
                 stepFail++;
-                await appendLog({ level: "warn", step, message: `Falha contato: ${error?.message}` });
+                await appendLog({
+                  level: "warn",
+                  step,
+                  message: `Falha contato: ${error?.message}`,
+                });
               } else {
                 contactMap.set(c.id, row.id);
                 stepOk++;
@@ -1313,18 +1424,27 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
           }
         } else if (step === "deals" && scope.mode === "full") {
           // Modo total: lista TODOS os deals; vínculo best-effort para company/contacts.
-          await appendLog({ level: "info", step, message: "Listando todos os negócios do HubSpot" });
+          await appendLog({
+            level: "info",
+            step,
+            message: "Listando todos os negócios do HubSpot",
+          });
           const recs = await listAll(
             "deals",
             ["dealname", "amount", "dealstage", "closedate", "pipeline"],
             ["companies", "contacts"],
           );
           await bumpProgress(step, 0, 0, recs.length, true);
-          await appendLog({ level: "info", step, message: `Lendo ${recs.length} negócios`, count: recs.length });
+          await appendLog({
+            level: "info",
+            step,
+            message: `Lendo ${recs.length} negócios`,
+            count: recs.length,
+          });
           for (const d of recs) {
             const p = d.properties;
             const hsCo = firstAssocId(d, "companies");
-            const localCompanyId = hsCo ? companyMap.get(hsCo) ?? null : null;
+            const localCompanyId = hsCo ? (companyMap.get(hsCo) ?? null) : null;
             const pipelineEntry = p.pipeline ? dealPipelines.pipelines.get(p.pipeline) : undefined;
             const stageEntry = p.dealstage ? dealPipelines.stages.get(p.dealstage) : undefined;
             const localPipelineId = pipelineEntry?.localId ?? stageEntry?.localPipelineId ?? null;
@@ -1334,7 +1454,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               stageEntry?.probability ?? null,
               stageEntry
                 ? (stageEntry.probability !== null && stageEntry.probability >= 1) ||
-                  /lost|perdid|won|ganho|closed/i.test(stageEntry.label)
+                    /lost|perdid|won|ganho|closed/i.test(stageEntry.label)
                 : false,
             );
             const dealData = {
@@ -1381,9 +1501,13 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("deals")
                 .insert({
                   owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                   ...dealData,
-                  external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+                  external_ids: {
+                    hubspot: d.id,
+                    hs_stage: p.dealstage,
+                    hs_pipeline: p.pipeline,
+                  } as never,
                 })
                 .select("id")
                 .single();
@@ -1406,7 +1530,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .eq("contact_id", lc)
                   .maybeSingle();
                 if (!existsLink) {
-                  await supabase.from("deal_contacts").insert({ deal_id: localDealId, contact_id: lc });
+                  await supabase
+                    .from("deal_contacts")
+                    .insert({ deal_id: localDealId, contact_id: lc });
                 }
               }
             }
@@ -1431,13 +1557,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             message: `Lendo ${dealToCompany.size} negócios em lotes de 100`,
             count: dealToCompany.size,
           });
-          const dealRecs = await batchRead("deals", [...dealToCompany.keys()], [
-            "dealname",
-            "amount",
-            "dealstage",
-            "closedate",
-            "pipeline",
-          ]);
+          const dealRecs = await batchRead(
+            "deals",
+            [...dealToCompany.keys()],
+            ["dealname", "amount", "dealstage", "closedate", "pipeline"],
+          );
           for (const d of dealRecs) {
             const p = d.properties;
             const localCompanyId = companyMap.get(dealToCompany.get(d.id) ?? "") ?? null;
@@ -1449,7 +1573,10 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             const stageEnum = mapDealStageEnum(
               stageEntry?.label,
               stageEntry?.probability ?? null,
-              stageEntry ? (stageEntry.probability !== null && stageEntry.probability >= 1) || /lost|perdid|won|ganho|closed/i.test(stageEntry.label) : false,
+              stageEntry
+                ? (stageEntry.probability !== null && stageEntry.probability >= 1) ||
+                    /lost|perdid|won|ganho|closed/i.test(stageEntry.label)
+                : false,
             );
             const dealData = {
               name: p.dealname ?? "Sem nome",
@@ -1487,7 +1614,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .eq("id", existingId);
               if (error) {
                 stepFail++;
-                await appendLog({ level: "warn", step, message: `Falha negócio (update): ${error.message}` });
+                await appendLog({
+                  level: "warn",
+                  step,
+                  message: `Falha negócio (update): ${error.message}`,
+                });
               } else {
                 localDealId = existingId;
                 dealMap.set(d.id, existingId);
@@ -1498,15 +1629,23 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 .from("deals")
                 .insert({
                   owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                   ...dealData,
-                  external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: p.pipeline } as never,
+                  external_ids: {
+                    hubspot: d.id,
+                    hs_stage: p.dealstage,
+                    hs_pipeline: p.pipeline,
+                  } as never,
                 })
                 .select("id")
                 .single();
               if (error || !row) {
                 stepFail++;
-                await appendLog({ level: "warn", step, message: `Falha negócio: ${error?.message}` });
+                await appendLog({
+                  level: "warn",
+                  step,
+                  message: `Falha negócio: ${error?.message}`,
+                });
               } else {
                 localDealId = row.id;
                 dealMap.set(d.id, row.id);
@@ -1526,13 +1665,14 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                   .eq("contact_id", lc)
                   .maybeSingle();
                 if (!existsLink) {
-                  await supabase.from("deal_contacts").insert({ deal_id: localDealId, contact_id: lc });
+                  await supabase
+                    .from("deal_contacts")
+                    .insert({ deal_id: localDealId, contact_id: lc });
                 }
               }
               await sleep(60);
             }
             await bumpProgress(step, stepOk, stepFail, dealToCompany.size);
-
           }
         } else if (step === "leads") {
           // Importa do objeto nativo "leads" do HubSpot (independente de contatos).
@@ -1600,10 +1740,13 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               phone,
               company_name: p.hs_associated_company_name ?? null,
               source: p.hs_lead_source ?? "hubspot",
-              status: mapLeadStatusEnum(p.hs_pipeline_stage_category ?? undefined, stageEntry?.label ?? hsStatus) as never,
+              status: mapLeadStatusEnum(
+                p.hs_pipeline_stage_category ?? undefined,
+                stageEntry?.label ?? hsStatus,
+              ) as never,
               stage_id: stageEntry?.stageId ?? hsStatus ?? null,
               pipeline_id: leadPipeline?.localPipelineId ?? null,
-                ...originalCreatedAt(p, c.createdAt),
+              ...originalCreatedAt(p, c.createdAt),
             };
             const existingId = await findExistingId("leads", c.id, [
               { column: "email", value: email },
@@ -1620,9 +1763,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               if (error) stepFail++;
               else stepOk++;
             } else {
-                const { error } = await supabase.from("leads").insert({
+              const { error } = await supabase.from("leads").insert({
                 owner_id: userId,
-                  workspace_id: workspaceId,
+                workspace_id: workspaceId,
                 ...leadData,
                 external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
               });
@@ -1631,15 +1774,33 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
             }
             await bumpProgress(step, stepOk, stepFail, all.length);
           }
-
-
         } else if (step === "activities") {
-          const types: { obj: string; type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }[] = [
+          const types: {
+            obj: string;
+            type: "note" | "call" | "meeting" | "task" | "email";
+            props: string[];
+          }[] = [
             { obj: "notes", type: "note", props: ["hs_note_body", "hs_timestamp"] },
-            { obj: "calls", type: "call", props: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition"] },
-            { obj: "meetings", type: "meeting", props: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp"] },
-            { obj: "tasks", type: "task", props: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status"] },
-            { obj: "emails", type: "email", props: ["hs_email_subject", "hs_email_text", "hs_timestamp"] },
+            {
+              obj: "calls",
+              type: "call",
+              props: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition"],
+            },
+            {
+              obj: "meetings",
+              type: "meeting",
+              props: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp"],
+            },
+            {
+              obj: "tasks",
+              type: "task",
+              props: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status"],
+            },
+            {
+              obj: "emails",
+              type: "email",
+              props: ["hs_email_subject", "hs_email_text", "hs_timestamp"],
+            },
           ];
           // Para cada entidade conhecida, pegar associações de cada tipo
           const entities: { fromObj: string; ids: string[]; localMap: Map<string, string> }[] = [
@@ -1698,7 +1859,12 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 p.hs_email_subject ??
                 t.type;
               const body =
-                p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
+                p.hs_note_body ??
+                p.hs_call_body ??
+                p.hs_meeting_body ??
+                p.hs_task_body ??
+                p.hs_email_text ??
+                null;
               const due = p.hs_timestamp ?? null;
               const parents = engagementToParents.get(a.id) ?? {};
               const activityData = {
@@ -1707,9 +1873,13 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 body,
                 due_date: due,
                 completed: t.type !== "task",
-                related_contact_id: parents.contactId ? contactMap.get(parents.contactId) ?? null : null,
-                related_company_id: parents.companyId ? companyMap.get(parents.companyId) ?? null : null,
-                related_deal_id: parents.dealId ? dealMap.get(parents.dealId) ?? null : null,
+                related_contact_id: parents.contactId
+                  ? (contactMap.get(parents.contactId) ?? null)
+                  : null,
+                related_company_id: parents.companyId
+                  ? (companyMap.get(parents.companyId) ?? null)
+                  : null,
+                related_deal_id: parents.dealId ? (dealMap.get(parents.dealId) ?? null) : null,
               };
               const existingId = await findExistingId("activities", a.id);
               if (existingId) {
@@ -1726,7 +1896,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               } else {
                 const { error } = await supabase.from("activities").insert({
                   owner_id: userId,
-          workspace_id: workspaceId,
+                  workspace_id: workspaceId,
                   ...activityData,
                   external_ids: { hubspot: a.id, hs_kind: t.obj } as never,
                 });
@@ -1734,7 +1904,6 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 else stepOk++;
               }
               await bumpProgress(step, stepOk, stepFail);
-
             }
           }
         }
@@ -1752,7 +1921,11 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
         });
         await supabase
           .from("enrichment_jobs")
-          .update({ succeeded: totalSucceeded, failed: totalFailed, processed: steps.indexOf(step) + 1 })
+          .update({
+            succeeded: totalSucceeded,
+            failed: totalFailed,
+            processed: steps.indexOf(step) + 1,
+          })
           .eq("id", jobId);
       }
 
@@ -1774,7 +1947,9 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
 // ─────────────────────────── Legacy compat ────────────────────────────────────
 export const previewHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input),
+  )
   .handler(async ({ data }) => {
     const params: Record<string, string> = {
       limit: String(data.limit),

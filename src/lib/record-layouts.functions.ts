@@ -15,7 +15,8 @@ async function getActiveWorkspaceId(userId: string): Promise<string> {
     .select("active_workspace_id")
     .eq("id", userId)
     .maybeSingle();
-  const activeId = (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+  const activeId =
+    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
   if (activeId) return activeId;
   const { data: m } = await supabaseAdmin
     .from("workspace_members")
@@ -41,10 +42,14 @@ async function assertAdmin(workspaceId: string, userId: string) {
 }
 
 const entitySchema = z.enum(["leads", "contacts", "companies", "deals"]);
-const sectionsSchema = z.array(z.object({
-  title: z.string().min(1).max(80),
-  keys: z.array(z.string().min(1).max(120)).max(100),
-})).max(20);
+const sectionsSchema = z
+  .array(
+    z.object({
+      title: z.string().min(1).max(80),
+      keys: z.array(z.string().min(1).max(120)).max(100),
+    }),
+  )
+  .max(20);
 
 export const getRecordLayout = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -66,10 +71,14 @@ export const getRecordLayout = createServerFn({ method: "GET" })
 
 export const upsertRecordLayout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    entity: entitySchema,
-    sections: sectionsSchema,
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        entity: entitySchema,
+        sections: sectionsSchema,
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const workspaceId = await getActiveWorkspaceId(context.userId);
     await assertAdmin(workspaceId, context.userId);

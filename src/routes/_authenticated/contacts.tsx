@@ -34,11 +34,7 @@ import { CreateContactDialog } from "@/components/contacts/create-contact-dialog
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
-import {
-  getDateRange,
-  type CustomRange,
-  type DatePreset,
-} from "@/lib/date-presets";
+import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
 
 import {
@@ -101,7 +97,6 @@ const DEFAULT_FILTERS: Filters = {
   ownerIds: [],
   includeUnassigned: false,
 };
-
 
 function ContactsPage() {
   const location = useLocation();
@@ -210,7 +205,6 @@ function ContactsHubspotView() {
         }
       }
 
-
       q = q.order(sortKey, { ascending: sortDir === "asc" });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
 
@@ -271,7 +265,12 @@ function ContactsHubspotView() {
         key: "name",
         label: "Nome",
         header: (
-          <Th sortable active={sortKey === "first_name"} dir={sortDir} onClick={() => onSort("first_name")}>
+          <Th
+            sortable
+            active={sortKey === "first_name"}
+            dir={sortDir}
+            onClick={() => onSort("first_name")}
+          >
             Nome
           </Th>
         ),
@@ -307,7 +306,12 @@ function ContactsHubspotView() {
           return raw ? (toE164(raw) ?? raw) : "—";
         },
       },
-      { key: "job_title", label: "Cargo", className: "text-muted-foreground", render: (c) => c.job_title ?? "—" },
+      {
+        key: "job_title",
+        label: "Cargo",
+        className: "text-muted-foreground",
+        render: (c) => c.job_title ?? "—",
+      },
       {
         key: "company",
         label: "Empresa",
@@ -323,7 +327,11 @@ function ContactsHubspotView() {
         label: "Etapa do ciclo",
         render: (c) => {
           const stage = LIFECYCLE_STAGES.find((s) => s.value === c.lifecyclestage);
-          return stage ? <Pill tone={stage.tone} label={stage.label} /> : <span className="text-muted-foreground">—</span>;
+          return stage ? (
+            <Pill tone={stage.tone} label={stage.label} />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
         },
       },
       {
@@ -344,7 +352,12 @@ function ContactsHubspotView() {
         label: "Última atividade",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "updated_at"} dir={sortDir} onClick={() => onSort("updated_at")}>
+          <Th
+            sortable
+            active={sortKey === "updated_at"}
+            dir={sortDir}
+            onClick={() => onSort("updated_at")}
+          >
             Última atividade
           </Th>
         ),
@@ -355,7 +368,12 @@ function ContactsHubspotView() {
         label: "Criado em",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+          <Th
+            sortable
+            active={sortKey === "created_at"}
+            dir={sortDir}
+            onClick={() => onSort("created_at")}
+          >
             Criado em
           </Th>
         ),
@@ -365,14 +383,25 @@ function ContactsHubspotView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortKey, sortDir, nameFor, initialsFor, companyMap],
   );
-  const DEFAULT_CONTACT_COLS = ["name", "email", "phone", "company", "lifecycle", "owner", "created_at"];
-  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<ContactRow>({
+  const DEFAULT_CONTACT_COLS = [
+    "name",
+    "email",
+    "phone",
+    "company",
+    "lifecycle",
+    "owner",
+    "created_at",
+  ];
+  const {
+    columns: visibleColumns,
+    ColumnsButton,
+    ColumnsEditor,
+  } = useGridColumns<ContactRow>({
     gridKey: "contacts",
     columns: contactColumns,
     defaults: DEFAULT_CONTACT_COLS,
     customEntity: "contacts",
   });
-
 
   const hasActiveFilters =
     filters.lifecycle.length > 0 ||
@@ -448,7 +477,11 @@ function ContactsHubspotView() {
             <OwnerFilter
               value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
               onChange={(v: OwnerFilterValue) =>
-                setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+                setFilters((f) => ({
+                  ...f,
+                  ownerIds: v.ownerIds,
+                  includeUnassigned: v.includeUnassigned,
+                }))
               }
             />
           </FilterGroup>
@@ -485,7 +518,6 @@ function ContactsHubspotView() {
               }
             />
           </FilterGroup>
-
         </FiltersSidebar>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -523,12 +555,7 @@ function ContactsHubspotView() {
                     Excluir
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={clearSelection}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -542,10 +569,9 @@ function ContactsHubspotView() {
                   onClick={async () => {
                     if (!user?.id) return;
                     const t = toast.loading("Vinculando contatos por domínio…");
-                    const { data, error } = await supabase.rpc(
-                      "link_contacts_by_email_domain",
-                      { p_workspace: user.id },
-                    );
+                    const { data, error } = await supabase.rpc("link_contacts_by_email_domain", {
+                      p_workspace: user.id,
+                    });
                     toast.dismiss(t);
                     if (error) {
                       toast.error(error.message);
@@ -587,8 +613,13 @@ function ContactsHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map((col) =>
-                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  {visibleColumns.map(
+                    (col) =>
+                      col.header ?? (
+                        <Th key={col.key} className={col.headerClassName}>
+                          {col.label}
+                        </Th>
+                      ),
                   )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
@@ -596,13 +627,19 @@ function ContactsHubspotView() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Carregando contatos…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Nenhum contato encontrado com os filtros atuais.
                     </td>
                   </tr>
@@ -674,10 +711,9 @@ function ContactsHubspotView() {
             setPage={setPage}
             setPageSize={setPageSize}
           />
-      </div>
+        </div>
 
-      <ColumnsEditor />
-
+        <ColumnsEditor />
       </div>
 
       <BulkEnrichDialog

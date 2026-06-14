@@ -14,8 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
 
@@ -137,7 +150,11 @@ function CampaignsPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground">Nome</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Black Friday Outubro" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Black Friday Outubro"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -182,12 +199,17 @@ function CampaignsPage() {
               )}
               {isHsm && (
                 <p className="text-xs text-muted-foreground">
-                  Template HSM oficial — corpo aprovado pela Meta. Use as colunas após o telefone para as {selectedTpl?.variableCount ?? 0} variáveis.
+                  Template HSM oficial — corpo aprovado pela Meta. Use as colunas após o telefone
+                  para as {selectedTpl?.variableCount ?? 0} variáveis.
                 </p>
               )}
               <div>
                 <label className="text-xs text-muted-foreground">URL de mídia (opcional)</label>
-                <Input value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} placeholder="https://..." />
+                <Input
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder="https://..."
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">
@@ -226,15 +248,10 @@ function CampaignsPage() {
           <div key={c.id} className="p-4 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Link
-                  to="/campaigns/whatsapp"
-                  className="font-medium truncate hover:underline"
-                >
+                <Link to="/campaigns/whatsapp" className="font-medium truncate hover:underline">
                   {c.name}
                 </Link>
-                <Badge variant={c.status === "running" ? "default" : "secondary"}>
-                  {c.status}
-                </Badge>
+                <Badge variant={c.status === "running" ? "default" : "secondary"}>{c.status}</Badge>
                 <Badge variant="outline">{c.rate_per_minute}/min</Badge>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
@@ -247,9 +264,7 @@ function CampaignsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    changeStatus.mutate({ id: c.id, status: "running" })
-                  }
+                  onClick={() => changeStatus.mutate({ id: c.id, status: "running" })}
                 >
                   <Play className="h-4 w-4 mr-1" /> Iniciar
                 </Button>
@@ -258,9 +273,7 @@ function CampaignsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    changeStatus.mutate({ id: c.id, status: "paused" })
-                  }
+                  onClick={() => changeStatus.mutate({ id: c.id, status: "paused" })}
                 >
                   <Pause className="h-4 w-4 mr-1" /> Pausar
                 </Button>
@@ -269,9 +282,7 @@ function CampaignsPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    changeStatus.mutate({ id: c.id, status: "canceled" })
-                  }
+                  onClick={() => changeStatus.mutate({ id: c.id, status: "canceled" })}
                 >
                   <X className="h-4 w-4" />
                 </Button>

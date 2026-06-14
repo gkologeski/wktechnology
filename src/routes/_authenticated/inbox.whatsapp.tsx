@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Phone, Settings as SettingsIcon, UserCheck, CheckCircle2, Check, CheckCheck, Paperclip, X } from "lucide-react";
+import {
+  Send,
+  MessageCircle,
+  Phone,
+  Settings as SettingsIcon,
+  UserCheck,
+  CheckCircle2,
+  Check,
+  CheckCheck,
+  Paperclip,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
@@ -23,8 +34,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
@@ -79,9 +103,13 @@ function WhatsAppInbox() {
         qc.invalidateQueries({ queryKey: ["wa", "messages"] });
         qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_conversations" }, () => {
-        qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "whatsapp_conversations" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -163,8 +191,12 @@ function WhatsAppInbox() {
     return allConversations;
   }, [allConversations, filter, user?.id]);
   const messages = messagesQ.data ?? [];
-  const current = useMemo(() => conversations.find((c) => c.id === selected) ?? allConversations.find((c) => c.id === selected), [conversations, allConversations, selected]);
-
+  const current = useMemo(
+    () =>
+      conversations.find((c) => c.id === selected) ??
+      allConversations.find((c) => c.id === selected),
+    [conversations, allConversations, selected],
+  );
 
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -207,7 +239,9 @@ function WhatsAppInbox() {
             </div>
           </div>
           <ScrollArea className="flex-1">
-            {conversationsQ.isLoading && <div className="p-4 text-sm text-muted-foreground">Carregando…</div>}
+            {conversationsQ.isLoading && (
+              <div className="p-4 text-sm text-muted-foreground">Carregando…</div>
+            )}
             {!conversationsQ.isLoading && conversations.length === 0 && (
               <div className="p-4 text-sm text-muted-foreground">
                 Nenhuma conversa ainda. Envie uma mensagem para começar.
@@ -227,7 +261,11 @@ function WhatsAppInbox() {
                     <span className="truncate">{c.contact_phone}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {c.status === "closed" && <Badge variant="secondary" className="text-[10px]">fechada</Badge>}
+                    {c.status === "closed" && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        fechada
+                      </Badge>
+                    )}
                     {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
                   </div>
                 </div>
@@ -279,7 +317,9 @@ function WhatsAppInbox() {
                     <SelectContent>
                       <SelectItem value="_none">Sem dono</SelectItem>
                       {user?.id && (
-                        <SelectItem value={user.id}>Eu ({memberMap.get(user.id) ?? "—"})</SelectItem>
+                        <SelectItem value={user.id}>
+                          Eu ({memberMap.get(user.id) ?? "—"})
+                        </SelectItem>
                       )}
                       {(membersQ.data ?? [])
                         .filter((m) => m.id !== user?.id)
@@ -294,7 +334,9 @@ function WhatsAppInbox() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "open" })}
+                      onClick={() =>
+                        statusMut.mutate({ conversationId: current.id, status: "open" })
+                      }
                     >
                       Reabrir
                     </Button>
@@ -302,7 +344,9 @@ function WhatsAppInbox() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => statusMut.mutate({ conversationId: current.id, status: "closed" })}
+                      onClick={() =>
+                        statusMut.mutate({ conversationId: current.id, status: "closed" })
+                      }
                     >
                       <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
                     </Button>
@@ -463,14 +507,23 @@ function WhatsAppSettingsButton() {
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium">From (E.164)</label>
-            <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="+14155238886 (sandbox)" />
+            <Input
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              placeholder="+14155238886 (sandbox)"
+            />
             <p className="mt-1 text-xs text-muted-foreground">
-              Deixe vazio para usar o sandbox padrão da Twilio (+14155238886). Para produção, cole o número aprovado para WhatsApp Business.
+              Deixe vazio para usar o sandbox padrão da Twilio (+14155238886). Para produção, cole o
+              número aprovado para WhatsApp Business.
             </p>
           </div>
           <div>
             <label className="text-sm font-medium">URL pública (base)</label>
-            <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={effectiveBase || "https://seu-dominio.com"} />
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder={effectiveBase || "https://seu-dominio.com"}
+            />
             <p className="mt-1 text-xs text-muted-foreground">
               Usada para webhooks de entrada e status callback. Padrão: domínio publicado.
             </p>
@@ -482,9 +535,12 @@ function WhatsAppSettingsButton() {
             </div>
             <div>
               <div className="font-medium">Status callback (entrega/leitura)</div>
-              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp-status</code>
+              <code className="break-all">
+                {effectiveBase}/api/public/hooks/twilio-whatsapp-status
+              </code>
               <p className="mt-1 text-muted-foreground">
-                Já é enviado automaticamente em cada mensagem. Use no Twilio Console se quiser também receber por número.
+                Já é enviado automaticamente em cada mensagem. Use no Twilio Console se quiser
+                também receber por número.
               </p>
             </div>
           </div>

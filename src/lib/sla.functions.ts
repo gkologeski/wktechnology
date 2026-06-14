@@ -31,15 +31,17 @@ export const listSlaBreaches = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const now = Date.now();
-    const breaches = (open ?? []).map((r) => {
-      const elapsed = (now - new Date(r.entered_at as string).getTime()) / 36e5;
-      const sla = Number(r.sla_hours);
-      return {
-        ...r,
-        elapsed_hours: elapsed,
-        overdue_hours: elapsed - sla,
-      } as Omit<SlaBreach, "entity_label">;
-    }).filter((r) => r.overdue_hours > 0);
+    const breaches = (open ?? [])
+      .map((r) => {
+        const elapsed = (now - new Date(r.entered_at as string).getTime()) / 36e5;
+        const sla = Number(r.sla_hours);
+        return {
+          ...r,
+          elapsed_hours: elapsed,
+          overdue_hours: elapsed - sla,
+        } as Omit<SlaBreach, "entity_label">;
+      })
+      .filter((r) => r.overdue_hours > 0);
 
     // Buscar nomes
     const leadIds = breaches.filter((b) => b.entity === "leads").map((b) => b.entity_id);
@@ -47,17 +49,29 @@ export const listSlaBreaches = createServerFn({ method: "GET" })
     const [leadsRes, dealsRes] = await Promise.all([
       leadIds.length
         ? supabase.from("leads").select("id, first_name, last_name, company_name").in("id", leadIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; first_name: string; last_name?: string | null; company_name?: string | null }> }),
+        : Promise.resolve({
+            data: [] as Array<{
+              id: string;
+              first_name: string;
+              last_name?: string | null;
+              company_name?: string | null;
+            }>,
+          }),
       dealIds.length
         ? supabase.from("deals").select("id, name").in("id", dealIds)
         : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     ]);
 
     const labelMap = new Map<string, string>();
-    for (const l of (leadsRes.data ?? [])) {
-      labelMap.set(`leads:${l.id}`, [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8));
+    for (const l of leadsRes.data ?? []) {
+      labelMap.set(
+        `leads:${l.id}`,
+        [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+          l.company_name ||
+          l.id.slice(0, 8),
+      );
     }
-    for (const d of (dealsRes.data ?? [])) {
+    for (const d of dealsRes.data ?? []) {
       labelMap.set(`deals:${d.id}`, d.name || d.id.slice(0, 8));
     }
 
@@ -81,17 +95,23 @@ export const listPipelinesForSla = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return (data ?? []).map((p) => ({
       ...p,
-      stages: Array.isArray(p.stages) ? (p.stages as Array<{ value: string; label: string; sla_hours?: number | null }>) : [],
+      stages: Array.isArray(p.stages)
+        ? (p.stages as Array<{ value: string; label: string; sla_hours?: number | null }>)
+        : [],
     }));
   });
 
 /** Atualiza sla_hours por estágio em uma pipeline. */
 export const setPipelineSla = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    pipeline_id: z.string().uuid(),
-    sla: z.record(z.string().min(1).max(100), z.number().min(0).max(100000).nullable()),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        pipeline_id: z.string().uuid(),
+        sla: z.record(z.string().min(1).max(100), z.number().min(0).max(100000).nullable()),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: pipe, error } = await supabase
@@ -100,7 +120,9 @@ export const setPipelineSla = createServerFn({ method: "POST" })
       .eq("id", data.pipeline_id)
       .single();
     if (error || !pipe) throw new Error("Pipeline não encontrado");
-    const stages = (Array.isArray(pipe.stages) ? pipe.stages : []) as Array<Record<string, unknown>>;
+    const stages = (Array.isArray(pipe.stages) ? pipe.stages : []) as Array<
+      Record<string, unknown>
+    >;
     const next = stages.map((s) => {
       const v = String(s.value ?? "");
       if (!(v in data.sla)) return s;

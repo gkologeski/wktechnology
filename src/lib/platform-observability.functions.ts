@@ -11,7 +11,10 @@ async function getSupabaseAdmin() {
 async function assertPlatformAdmin(userId: string) {
   const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
-    .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
   if (!data) throw new Error("Acesso negado: apenas super-admins.");
 }
 
@@ -28,8 +31,12 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
       throw new Error(`Falha ao carregar status dos crons: ${cronRes.error.message}`);
     }
     const crons = (cronRes.data ?? []) as Array<{
-      jobname: string; schedule: string; last_start: string | null;
-      last_end: string | null; status: string | null; duration_ms: number | null;
+      jobname: string;
+      schedule: string;
+      last_start: string | null;
+      last_end: string | null;
+      status: string | null;
+      duration_ms: number | null;
     }>;
     const now = Date.now();
     const cronJobs = crons.map((c) => {
@@ -42,7 +49,10 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
     const [emailAcc, waba, twilio, twoFa] = await Promise.all([
       supabaseAdmin.from("email_accounts").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("wa_business_accounts").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("integrations").select("id", { count: "exact", head: true }).eq("provider", "twilio"),
+      supabaseAdmin
+        .from("integrations")
+        .select("id", { count: "exact", head: true })
+        .eq("provider", "twilio"),
       supabaseAdmin.from("workspaces").select("id", { count: "exact", head: true }),
     ]);
 
@@ -75,10 +85,14 @@ const AlertRuleSchema = z.object({
   threshold_pct: z.number().min(0).max(100).optional().nullable(),
   threshold_mins: z.number().int().min(0).max(1440).optional().nullable(),
   target_key: z.string().max(120).optional().nullable(),
-  channels: z.array(z.object({
-    type: z.enum(["email", "slack"]),
-    value: z.string().min(1).max(255),
-  })).default([]),
+  channels: z
+    .array(
+      z.object({
+        type: z.enum(["email", "slack"]),
+        value: z.string().min(1).max(255),
+      }),
+    )
+    .default([]),
   enabled: z.boolean().default(true),
 });
 
@@ -88,7 +102,9 @@ export const listAlertRules = createServerFn({ method: "GET" })
     await assertPlatformAdmin(context.userId);
     const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
-      .from("platform_alert_rules").select("*").order("created_at", { ascending: false });
+      .from("platform_alert_rules")
+      .select("*")
+      .order("created_at", { ascending: false });
     return { items: data ?? [] };
   });
 
@@ -110,12 +126,15 @@ export const upsertAlertRule = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await (supabaseAdmin.from("platform_alert_rules") as any)
-        .update(payload).eq("id", data.id);
+        .update(payload)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
     const { data: ins, error } = await (supabaseAdmin.from("platform_alert_rules") as any)
-      .insert(payload).select("id").maybeSingle();
+      .insert(payload)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return { ok: true, id: ins?.id };
   });
@@ -150,20 +169,33 @@ export const listWorkspaceQuotas = createServerFn({ method: "GET" })
     await assertPlatformAdmin(context.userId);
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: workspaces } = await supabaseAdmin
-      .from("workspaces").select("id, name, slug").order("name");
+      .from("workspaces")
+      .select("id, name, slug")
+      .order("name");
     const ids = (workspaces ?? []).map((w) => w.id as string);
     if (!ids.length) return { items: [] };
 
     const [subs, counters] = await Promise.all([
-      supabaseAdmin.from("workspace_subscriptions").select("workspace_owner_id, plan_code").in("workspace_owner_id", ids),
-      supabaseAdmin.from("usage_counters").select("workspace_owner_id, key, used").in("workspace_owner_id", ids),
+      supabaseAdmin
+        .from("workspace_subscriptions")
+        .select("workspace_owner_id, plan_code")
+        .in("workspace_owner_id", ids),
+      supabaseAdmin
+        .from("usage_counters")
+        .select("workspace_owner_id, key, used")
+        .in("workspace_owner_id", ids),
     ]);
 
     const planMap = new Map<string, string>();
-    for (const s of subs.data ?? []) planMap.set(s.workspace_owner_id as string, s.plan_code as string);
+    for (const s of subs.data ?? [])
+      planMap.set(s.workspace_owner_id as string, s.plan_code as string);
 
     const counterMap = new Map<string, Record<string, number>>();
-    for (const c of (counters.data ?? []) as Array<{ workspace_owner_id: string; key: string; used: number }>) {
+    for (const c of (counters.data ?? []) as Array<{
+      workspace_owner_id: string;
+      key: string;
+      used: number;
+    }>) {
       const k = c.workspace_owner_id;
       const m = counterMap.get(k) ?? {};
       m[c.key] = (m[c.key] ?? 0) + Number(c.used ?? 0);
@@ -172,7 +204,9 @@ export const listWorkspaceQuotas = createServerFn({ method: "GET" })
 
     return {
       items: (workspaces ?? []).map((w) => ({
-        id: w.id, name: w.name, slug: w.slug,
+        id: w.id,
+        name: w.name,
+        slug: w.slug,
         plan: planMap.get(w.id as string) ?? "free",
         usage: counterMap.get(w.id as string) ?? {},
       })),
@@ -192,7 +226,9 @@ export const listSandboxes = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data } = await supabaseAdmin
       .from("platform_sandboxes")
-      .select("id, source_workspace_id, sandbox_workspace_id, name, status, last_synced_at, promoted_at, created_at")
+      .select(
+        "id, source_workspace_id, sandbox_workspace_id, name, status, last_synced_at, promoted_at, created_at",
+      )
       .order("created_at", { ascending: false });
     return { items: data ?? [] };
   });
@@ -213,7 +249,8 @@ export const createSandbox = createServerFn({ method: "POST" })
         status: "active",
         created_by: context.userId,
       })
-      .select("id").maybeSingle();
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
 
     const { error: sbErr } = await (supabaseAdmin.from("platform_sandboxes") as any).insert({
@@ -249,6 +286,7 @@ export const archiveSandbox = createServerFn({ method: "POST" })
     await assertPlatformAdmin(context.userId);
     const supabaseAdmin = await getSupabaseAdmin();
     await (supabaseAdmin.from("platform_sandboxes") as any)
-      .update({ status: "archived" }).eq("id", data.id);
+      .update({ status: "archived" })
+      .eq("id", data.id);
     return { ok: true };
   });

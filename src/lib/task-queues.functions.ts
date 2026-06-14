@@ -19,20 +19,29 @@ export const listTaskQueues = createServerFn({ method: "GET" })
         .from("task_queue_items")
         .select("queue_id, completed_at, skipped_at")
         .in("queue_id", ids);
-      counts = (items ?? []).reduce((acc: Record<string, { pending: number; total: number }>, it) => {
-        const k = it.queue_id as string;
-        acc[k] ??= { pending: 0, total: 0 };
-        acc[k].total += 1;
-        if (!it.completed_at && !it.skipped_at) acc[k].pending += 1;
-        return acc;
-      }, {});
+      counts = (items ?? []).reduce(
+        (acc: Record<string, { pending: number; total: number }>, it) => {
+          const k = it.queue_id as string;
+          acc[k] ??= { pending: 0, total: 0 };
+          acc[k].total += 1;
+          if (!it.completed_at && !it.skipped_at) acc[k].pending += 1;
+          return acc;
+        },
+        {},
+      );
     }
-    return { items: (data ?? []).map((q) => ({ ...q, counts: counts[q.id] ?? { pending: 0, total: 0 } })) };
+    return {
+      items: (data ?? []).map((q) => ({ ...q, counts: counts[q.id] ?? { pending: 0, total: 0 } })),
+    };
   });
 
 export const createTaskQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ name: z.string().min(1).max(120), description: z.string().max(500).optional() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({ name: z.string().min(1).max(120), description: z.string().max(500).optional() })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("task_queues")
@@ -122,20 +131,51 @@ export const getQueueWithItems = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     // hydrate
-    const contactIds = [...new Set((items as Item[]).map((i) => i.contact_id).filter(Boolean) as string[])];
-    const leadIds = [...new Set((items as Item[]).map((i) => i.lead_id).filter(Boolean) as string[])];
-    const dealIds = [...new Set((items as Item[]).map((i) => i.deal_id).filter(Boolean) as string[])];
+    const contactIds = [
+      ...new Set((items as Item[]).map((i) => i.contact_id).filter(Boolean) as string[]),
+    ];
+    const leadIds = [
+      ...new Set((items as Item[]).map((i) => i.lead_id).filter(Boolean) as string[]),
+    ];
+    const dealIds = [
+      ...new Set((items as Item[]).map((i) => i.deal_id).filter(Boolean) as string[]),
+    ];
 
     const [contacts, leads, deals] = await Promise.all([
       contactIds.length
-        ? context.supabase.from("contacts").select("id, first_name, last_name, email, phone").in("id", contactIds)
-        : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string | null; email: string | null; phone: string | null }[] }),
+        ? context.supabase
+            .from("contacts")
+            .select("id, first_name, last_name, email, phone")
+            .in("id", contactIds)
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              first_name: string;
+              last_name: string | null;
+              email: string | null;
+              phone: string | null;
+            }[],
+          }),
       leadIds.length
-        ? context.supabase.from("leads").select("id, first_name, last_name, email, phone, company_name").in("id", leadIds)
-        : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string | null; email: string | null; phone: string | null; company_name: string | null }[] }),
+        ? context.supabase
+            .from("leads")
+            .select("id, first_name, last_name, email, phone, company_name")
+            .in("id", leadIds)
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              first_name: string;
+              last_name: string | null;
+              email: string | null;
+              phone: string | null;
+              company_name: string | null;
+            }[],
+          }),
       dealIds.length
         ? context.supabase.from("deals").select("id, name, value, currency").in("id", dealIds)
-        : Promise.resolve({ data: [] as { id: string; name: string; value: number; currency: string }[] }),
+        : Promise.resolve({
+            data: [] as { id: string; name: string; value: number; currency: string }[],
+          }),
     ]);
 
     const contactsMap = Object.fromEntries((contacts.data ?? []).map((c) => [c.id, c]));
@@ -180,7 +220,10 @@ export const updateQueueItem = createServerFn({ method: "POST" })
       patch.completed_at = null;
       patch.skipped_at = null;
     }
-    const { error } = await context.supabase.from("task_queue_items").update(patch).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("task_queue_items")
+      .update(patch)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -2,8 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, Search, Shield } from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
@@ -12,9 +17,7 @@ import { cn } from "@/lib/utils";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import {
-  SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms,
-} from "@/lib/menu-config";
+import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -30,20 +33,17 @@ export function AppSidebar() {
   const visibleGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const matches = (title: string) => !q || title.toLowerCase().includes(q);
-    return SIDEBAR_GROUPS
-      .map((g) => ({
-        ...g,
-        items: g.items
-          .filter((i) => canSee(i.need, perms))
-          .map((i) => ({
-            ...i,
-            children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
-          }))
-          .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
-      }))
-      .filter((g) => g.items.length > 0);
+    return SIDEBAR_GROUPS.map((g) => ({
+      ...g,
+      items: g.items
+        .filter((i) => canSee(i.need, perms))
+        .map((i) => ({
+          ...i,
+          children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
+        }))
+        .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
+    })).filter((g) => g.items.length > 0);
   }, [query, isAdmin, isManager, isPlatformAdmin]);
-
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
@@ -55,8 +55,12 @@ export function AppSidebar() {
             WK
           </div>
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
-            <h2 className="text-base font-bold tracking-tight leading-tight truncate">TechSales CRM</h2>
-            <p className="text-[11px] text-muted-foreground leading-tight truncate">Operação comercial</p>
+            <h2 className="text-base font-bold tracking-tight leading-tight truncate">
+              TechSales CRM
+            </h2>
+            <p className="text-[11px] text-muted-foreground leading-tight truncate">
+              Operação comercial
+            </p>
           </div>
         </Link>
 
@@ -96,7 +100,8 @@ export function AppSidebar() {
                       // Pai com filhos: ativo apenas em match exato (evita duplo destaque com filho ativo)
                       const active = hasChildren ? path === it.url : isActive(it.url);
                       const Icon = it.icon;
-                      const anyChildActive = hasChildren && it.children!.some((c) => isActive(c.url));
+                      const anyChildActive =
+                        hasChildren && it.children!.some((c) => isActive(c.url));
                       return (
                         <SidebarMenuItem key={it.url}>
                           <SidebarMenuButton
@@ -121,7 +126,9 @@ export function AppSidebar() {
                               >
                                 <Icon className="h-3.5 w-3.5" />
                               </span>
-                              <span className="truncate group-data-[collapsible=icon]:hidden">{it.title}</span>
+                              <span className="truncate group-data-[collapsible=icon]:hidden">
+                                {it.title}
+                              </span>
                               {active && (
                                 <span className="ml-auto h-5 w-1 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
                               )}
@@ -152,7 +159,9 @@ export function AppSidebar() {
                                       <CIcon
                                         className={cn(
                                           "h-3.5 w-3.5 shrink-0",
-                                          cActive ? "text-primary" : "text-muted-foreground group-hover/sub:text-foreground",
+                                          cActive
+                                            ? "text-primary"
+                                            : "text-muted-foreground group-hover/sub:text-foreground",
                                         )}
                                       />
                                       <span className="truncate">{c.title}</span>
@@ -169,7 +178,6 @@ export function AppSidebar() {
                       );
                     })}
                   </SidebarMenu>
-
                 </div>
               </section>
             ))
@@ -178,11 +186,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="gap-1 border-t border-sidebar-border/60 px-2 pt-2">
-        <PlatformSection
-          items={platformItems}
-          isActive={isActive}
-          collapsed={collapsed}
-        />
+        <PlatformSection items={platformItems} isActive={isActive} collapsed={collapsed} />
       </SidebarFooter>
     </Sidebar>
   );

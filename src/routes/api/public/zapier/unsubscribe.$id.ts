@@ -12,7 +12,8 @@ export const Route = createFileRoute("/api/public/zapier/unsubscribe/$id")({
         const denied = requireScope(auth, "write");
         if (denied) return denied;
         const id = String(params.id ?? "");
-        if (!/^[0-9a-f-]{36}$/i.test(id)) return Response.json({ error: "invalid_id" }, { status: 400 });
+        if (!/^[0-9a-f-]{36}$/i.test(id))
+          return Response.json({ error: "invalid_id" }, { status: 400 });
         const { error } = await supabaseAdmin
           .from("zapier_subscriptions")
           .delete()

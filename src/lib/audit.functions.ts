@@ -9,14 +9,16 @@ const ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
 export const listAuditLogs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      entity: z.enum(ENTITIES).nullable().optional(),
-      entity_id: z.string().uuid().nullable().optional(),
-      actor_user_id: z.string().uuid().nullable().optional(),
-      action: z.enum(["created", "updated", "deleted"]).nullable().optional(),
-      since: z.string().datetime().nullable().optional(),
-      limit: z.number().int().min(1).max(500).default(100),
-    }).parse(i ?? {})
+    z
+      .object({
+        entity: z.enum(ENTITIES).nullable().optional(),
+        entity_id: z.string().uuid().nullable().optional(),
+        actor_user_id: z.string().uuid().nullable().optional(),
+        action: z.enum(["created", "updated", "deleted"]).nullable().optional(),
+        since: z.string().datetime().nullable().optional(),
+        limit: z.number().int().min(1).max(500).default(100),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -39,19 +41,29 @@ export const listAuditLogs = createServerFn({ method: "POST" })
 
     // Resolver nomes/emails dos atores
     const actorIds = Array.from(
-      new Set((rows ?? []).map((r) => r.actor_user_id as string | null).filter((x): x is string => !!x))
+      new Set(
+        (rows ?? []).map((r) => r.actor_user_id as string | null).filter((x): x is string => !!x),
+      ),
     );
     const nameById = new Map<string, string>();
     const emailById = new Map<string, string>();
     if (actorIds.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", actorIds);
-      for (const p of profs ?? []) nameById.set(p.id as string, (p.full_name as string | null) ?? "");
-      await Promise.all(actorIds.map(async (id) => {
-        try {
-          const { data } = await supabaseAdmin.auth.admin.getUserById(id);
-          if (data.user?.email) emailById.set(id, data.user.email);
-        } catch { /* ignore */ }
-      }));
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", actorIds);
+      for (const p of profs ?? [])
+        nameById.set(p.id as string, (p.full_name as string | null) ?? "");
+      await Promise.all(
+        actorIds.map(async (id) => {
+          try {
+            const { data } = await supabaseAdmin.auth.admin.getUserById(id);
+            if (data.user?.email) emailById.set(id, data.user.email);
+          } catch {
+            /* ignore */
+          }
+        }),
+      );
     }
 
     // Diff resumido (chaves alteradas)
@@ -69,8 +81,8 @@ export const listAuditLogs = createServerFn({ method: "POST" })
       }
       return {
         ...r,
-        actor_name: r.actor_user_id ? (nameById.get(r.actor_user_id as string) || "") : "",
-        actor_email: r.actor_user_id ? (emailById.get(r.actor_user_id as string) || "") : "",
+        actor_name: r.actor_user_id ? nameById.get(r.actor_user_id as string) || "" : "",
+        actor_email: r.actor_user_id ? emailById.get(r.actor_user_id as string) || "" : "",
         changed_keys: changedKeys,
       };
     });

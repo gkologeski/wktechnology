@@ -68,7 +68,9 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const payload = { workspace_id: ws, owner_id: ws, ...data };
-    const { error } = await sb.from("voice_agent_settings").upsert(payload, { onConflict: "workspace_id" });
+    const { error } = await sb
+      .from("voice_agent_settings")
+      .upsert(payload, { onConflict: "workspace_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -82,8 +84,18 @@ export const listVapiPhoneNumbers = createServerFn({ method: "POST" })
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) throw new Error(`Vapi ${res.status}: ${await res.text()}`);
-    const arr = (await res.json()) as Array<{ id: string; number?: string; name?: string; provider?: string }>;
-    return arr.map((p) => ({ id: p.id, number: p.number ?? "", name: p.name ?? "", provider: p.provider ?? "" }));
+    const arr = (await res.json()) as Array<{
+      id: string;
+      number?: string;
+      name?: string;
+      provider?: string;
+    }>;
+    return arr.map((p) => ({
+      id: p.id,
+      number: p.number ?? "",
+      name: p.name ?? "",
+      provider: p.provider ?? "",
+    }));
   });
 
 type ElevenVoice = {
@@ -101,8 +113,8 @@ function isPortugueseVoice(v: ElevenVoice): boolean {
   const accentLabel = (v.labels?.accent ?? "").toLowerCase();
   const ftLang = (v.fine_tuning?.language ?? "").toLowerCase();
   const topLang = (v.language ?? "").toLowerCase();
-  const verified = (v.verified_languages ?? []).some(
-    (x) => (x.language ?? "").toLowerCase().startsWith("pt"),
+  const verified = (v.verified_languages ?? []).some((x) =>
+    (x.language ?? "").toLowerCase().startsWith("pt"),
   );
   return (
     verified ||
@@ -132,10 +144,9 @@ export const listElevenLabsVoices = createServerFn({ method: "POST" })
     // 2) Voice Library pública (pt) — para usuários que ainda não adicionaram nenhuma
     let shared: ElevenVoice[] = [];
     try {
-      const sharedRes = await fetch(
-        `${ELEVEN_BASE}/v1/shared-voices?language=pt&page_size=100`,
-        { headers: { "xi-api-key": apiKey } },
-      );
+      const sharedRes = await fetch(`${ELEVEN_BASE}/v1/shared-voices?language=pt&page_size=100`, {
+        headers: { "xi-api-key": apiKey },
+      });
       if (sharedRes.ok) {
         const sj = (await sharedRes.json()) as { voices: Array<ElevenVoice & { accent?: string }> };
         shared = (sj.voices ?? []).map((v) => ({

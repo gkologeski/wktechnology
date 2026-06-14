@@ -9,7 +9,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90 active:scale-[0.98] [[data-dialog-content]_&]:rounded-xl [[data-dialog-content]_&]:font-bold [[data-dialog-content]_&]:shadow-[0_4px_12px_-2px_color-mix(in_oklab,var(--primary)_30%,transparent)] [[data-dialog-content]_&]:hover:shadow-[0_8px_20px_-4px_color-mix(in_oklab,var(--primary)_40%,transparent)]",
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90 active:scale-[0.98] [[data-dialog-content]_&]:rounded-xl [[data-dialog-content]_&]:font-bold [[data-dialog-content]_&]:shadow-[0_4px_12px_-2px_color-mix(in_oklab,var(--primary)_30%,transparent)] [[data-dialog-content]_&]:hover:shadow-[0_8px_20px_-4px_color-mix(in_oklab,var(--primary)_40%,transparent)]",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",

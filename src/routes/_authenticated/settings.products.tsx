@@ -9,7 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -63,7 +69,10 @@ function ProductsPage() {
   }
   async function save() {
     if (!user) return;
-    if (!draft.name?.trim()) { toast.error("Informe o nome."); return; }
+    if (!draft.name?.trim()) {
+      toast.error("Informe o nome.");
+      return;
+    }
     const payload = {
       name: draft.name!.trim(),
       sku: draft.sku?.toString().trim() || null,
@@ -79,7 +88,10 @@ function ProductsPage() {
     const { error } = editing
       ? await sb.from("products").update(payload).eq("id", editing.id)
       : await sb.from("products").insert({ ...payload, owner_id: user.id });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(editing ? "Produto atualizado." : "Produto criado.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["products"] });
@@ -88,13 +100,19 @@ function ProductsPage() {
     if (!confirm("Excluir este produto?")) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("products").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["products"] });
   }
   async function toggle(p: Product, active: boolean) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("products").update({ active }).eq("id", p.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["products"] });
   }
 
@@ -107,7 +125,9 @@ function ProductsPage() {
             Catálogo reutilizável de produtos e serviços para usar como itens de linha em negócios.
           </p>
         </div>
-        <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo produto</Button>
+        <Button size="sm" onClick={openNew}>
+          <Plus className="h-4 w-4 mr-1" /> Novo produto
+        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -117,23 +137,45 @@ function ProductsPage() {
         ) : (
           <div className="space-y-2">
             {products.map((p) => (
-              <div key={p.id} className="flex items-start justify-between gap-3 rounded-md border p-3">
+              <div
+                key={p.id}
+                className="flex items-start justify-between gap-3 rounded-md border p-3"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium">{p.name}</span>
-                    {p.sku && <Badge variant="outline" className="font-mono text-xs">{p.sku}</Badge>}
-                    {!p.active && <Badge variant="secondary" className="text-xs">Inativo</Badge>}
+                    {p.sku && (
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {p.sku}
+                      </Badge>
+                    )}
+                    {!p.active && (
+                      <Badge variant="secondary" className="text-xs">
+                        Inativo
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-3">
-                    <span>{formatCurrency(p.unit_price, p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
+                    <span>
+                      {formatCurrency(p.unit_price, p.currency)}
+                      {p.unit ? ` / ${p.unit}` : ""}
+                    </span>
                     {Number(p.tax_rate) > 0 && <span>Imposto {p.tax_rate}%</span>}
                   </div>
-                  {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                  {p.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {p.description}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Switch checked={p.active} onCheckedChange={(v) => toggle(p, v)} />
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(p.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -143,47 +185,81 @@ function ProductsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Nome *</Label>
-                <Input value={draft.name ?? ""} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                <Input
+                  value={draft.name ?? ""}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>SKU</Label>
-                <Input value={draft.sku ?? ""} onChange={(e) => setDraft({ ...draft, sku: e.target.value })} />
+                <Input
+                  value={draft.sku ?? ""}
+                  onChange={(e) => setDraft({ ...draft, sku: e.target.value })}
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Preço unitário</Label>
-                <Input type="number" step="0.01" value={String(draft.unit_price ?? 0)} onChange={(e) => setDraft({ ...draft, unit_price: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={String(draft.unit_price ?? 0)}
+                  onChange={(e) => setDraft({ ...draft, unit_price: Number(e.target.value) })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Moeda</Label>
-                <Input value={draft.currency ?? "BRL"} onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })} />
+                <Input
+                  value={draft.currency ?? "BRL"}
+                  onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Imposto %</Label>
-                <Input type="number" step="0.01" value={String(draft.tax_rate ?? 0)} onChange={(e) => setDraft({ ...draft, tax_rate: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={String(draft.tax_rate ?? 0)}
+                  onChange={(e) => setDraft({ ...draft, tax_rate: Number(e.target.value) })}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label>Unidade</Label>
-              <Input placeholder="hora, peça, mês…" value={draft.unit ?? ""} onChange={(e) => setDraft({ ...draft, unit: e.target.value })} />
+              <Input
+                placeholder="hora, peça, mês…"
+                value={draft.unit ?? ""}
+                onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea rows={3} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={draft.description ?? ""}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              />
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={draft.active ?? true} onCheckedChange={(v) => setDraft({ ...draft, active: v })} />
+              <Switch
+                checked={draft.active ?? true}
+                onCheckedChange={(v) => setDraft({ ...draft, active: v })}
+              />
               <Label className="cursor-pointer">Ativo</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={save}>{editing ? "Salvar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>

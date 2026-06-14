@@ -41,8 +41,7 @@ for (const r of ROUTES) {
 
     // Erros de console graves (ignora warnings de extension, hot reload, etc.)
     const critical = consoleErrors.filter(
-      (e) =>
-        !/Download the React DevTools|extension|favicon|sourcemap|404 \(Not Found\)/i.test(e),
+      (e) => !/Download the React DevTools|extension|favicon|sourcemap|404 \(Not Found\)/i.test(e),
     );
     expect(critical, `console errors em ${r.path}:\n${critical.join("\n")}`).toEqual([]);
   });

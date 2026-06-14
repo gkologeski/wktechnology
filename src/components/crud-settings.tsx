@@ -21,7 +21,13 @@ export type CrudField = {
 };
 
 export function CrudSettings<T extends { id: string }>({
-  table, title, description, fields, columns, defaults, extraInsert,
+  table,
+  title,
+  description,
+  fields,
+  columns,
+  defaults,
+  extraInsert,
 }: {
   table: string;
   title: string;
@@ -37,24 +43,35 @@ export function CrudSettings<T extends { id: string }>({
 
   const load = async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any).from(table).select("*").order("created_at", { ascending: false });
+    const { data, error } = await (supabase as any)
+      .from(table)
+      .select("*")
+      .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setRows((data as T[]) ?? []);
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [table]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [table]);
 
   const startNew = () => {
     const init: Record<string, unknown> = { ...(defaults ?? {}) };
-    fields.forEach((f) => { if (init[f.name] === undefined) init[f.name] = f.defaultValue ?? (f.type === "switch" ? true : ""); });
-    setForm(init); setEditing("new");
+    fields.forEach((f) => {
+      if (init[f.name] === undefined)
+        init[f.name] = f.defaultValue ?? (f.type === "switch" ? true : "");
+    });
+    setForm(init);
+    setEditing("new");
   };
   const startEdit = (r: T) => {
     const init: Record<string, unknown> = {};
     fields.forEach((f) => {
       const v = (r as Record<string, unknown>)[f.name];
-      init[f.name] = f.type === "json" ? JSON.stringify(v ?? (f.defaultValue ?? {}), null, 2) : (v ?? "");
+      init[f.name] =
+        f.type === "json" ? JSON.stringify(v ?? f.defaultValue ?? {}, null, 2) : (v ?? "");
     });
-    setForm(init); setEditing(r);
+    setForm(init);
+    setEditing(r);
   };
 
   const save = async () => {
@@ -62,7 +79,11 @@ export function CrudSettings<T extends { id: string }>({
     for (const f of fields) {
       let v = form[f.name];
       if (f.type === "json") {
-        try { v = JSON.parse(String(v || "{}")); } catch { return toast.error(`JSON inválido em ${f.label}`); }
+        try {
+          v = JSON.parse(String(v || "{}"));
+        } catch {
+          return toast.error(`JSON inválido em ${f.label}`);
+        }
       }
       if (f.type === "number") v = v === "" ? null : Number(v);
       if (f.required && (v === "" || v == null)) return toast.error(`${f.label} obrigatório`);
@@ -77,7 +98,9 @@ export function CrudSettings<T extends { id: string }>({
       ({ error } = await (supabase as any).from(table).update(payload).eq("id", editing.id));
     }
     if (error) return toast.error(error.message);
-    toast.success("Salvo"); setEditing(null); void load();
+    toast.success("Salvo");
+    setEditing(null);
+    void load();
   };
 
   const remove = async (id: string) => {
@@ -95,13 +118,19 @@ export function CrudSettings<T extends { id: string }>({
           <h2 className="font-semibold">{title}</h2>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        <Button size="sm" onClick={startNew}><Plus className="h-4 w-4 mr-1" /> Novo</Button>
+        <Button size="sm" onClick={startNew}>
+          <Plus className="h-4 w-4 mr-1" /> Novo
+        </Button>
       </div>
 
       <div className="rounded-lg border bg-card divide-y">
         {rows.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nenhum item.</p>}
         {rows.map((r) => (
-          <div key={r.id} className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer" onClick={() => startEdit(r)}>
+          <div
+            key={r.id}
+            className="p-3 flex items-center gap-3 hover:bg-accent/30 cursor-pointer"
+            onClick={() => startEdit(r)}
+          >
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
               {columns.map((c) => (
                 <div key={c.key} className="truncate">
@@ -110,7 +139,14 @@ export function CrudSettings<T extends { id: string }>({
                 </div>
               ))}
             </div>
-            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(r.id); }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                remove(r.id);
+              }}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -122,7 +158,10 @@ export function CrudSettings<T extends { id: string }>({
           <h3 className="font-semibold text-sm">{editing === "new" ? "Novo" : "Editar"}</h3>
           {fields.map((f) => (
             <div key={f.name} className="space-y-1">
-              <Label className="text-xs">{f.label}{f.required && " *"}</Label>
+              <Label className="text-xs">
+                {f.label}
+                {f.required && " *"}
+              </Label>
               {f.type === "textarea" || f.type === "json" ? (
                 <Textarea
                   value={String(form[f.name] ?? "")}
@@ -132,7 +171,10 @@ export function CrudSettings<T extends { id: string }>({
                   onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
                 />
               ) : f.type === "switch" ? (
-                <Switch checked={!!form[f.name]} onCheckedChange={(v) => setForm({ ...form, [f.name]: v })} />
+                <Switch
+                  checked={!!form[f.name]}
+                  onCheckedChange={(v) => setForm({ ...form, [f.name]: v })}
+                />
               ) : (
                 <Input
                   type={f.type === "number" ? "number" : "text"}
@@ -145,8 +187,12 @@ export function CrudSettings<T extends { id: string }>({
             </div>
           ))}
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={() => setEditing(null)}>Cancelar</Button>
-            <Button size="sm" onClick={save}>Salvar</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={save}>
+              Salvar
+            </Button>
           </div>
         </div>
       )}

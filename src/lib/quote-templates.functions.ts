@@ -5,10 +5,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { blocksToHtml, isTemplateDocument } from "@/lib/quote-template-blocks";
 
 async function activeWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
-  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
   const ws = (data as { active_workspace_id?: string | null } | null)?.active_workspace_id;
   if (!ws) {
-    const { data: m } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", userId).limit(1).maybeSingle();
+    const { data: m } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
     const fallback = (m as { workspace_id?: string } | null)?.workspace_id;
     if (!fallback) throw new Error("Workspace ativo não encontrado");
     return fallback;
@@ -96,15 +105,17 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
 export const updateQuoteTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      patch: z.object({
-        name: z.string().trim().min(1).max(120).optional(),
-        description: z.string().trim().max(500).nullable().optional(),
-        html: z.string().max(200_000).optional(),
-        blocks: BlocksSchema.nullable().optional(),
-      }),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z.object({
+          name: z.string().trim().min(1).max(120).optional(),
+          description: z.string().trim().max(500).nullable().optional(),
+          html: z.string().max(200_000).optional(),
+          blocks: BlocksSchema.nullable().optional(),
+        }),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -128,7 +139,9 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
     if (data.patch.description !== undefined) patch.description = data.patch.description;
     if (data.patch.name !== undefined) {
       if (current.is_system) {
-        throw new Error("Modelos do sistema não podem ter o nome alterado. Duplique-o para personalizar.");
+        throw new Error(
+          "Modelos do sistema não podem ter o nome alterado. Duplique-o para personalizar.",
+        );
       }
       patch.name = data.patch.name;
     }

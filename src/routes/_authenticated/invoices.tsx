@@ -3,7 +3,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Plus, Loader2, Copy, ExternalLink, Trash2, CheckCircle2, Search } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  Loader2,
+  Copy,
+  ExternalLink,
+  Trash2,
+  CheckCircle2,
+  Search,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,15 +20,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  listInvoices, createInvoice, generateCharge, updateInvoiceStatus, deleteInvoice,
+  listInvoices,
+  createInvoice,
+  generateCharge,
+  updateInvoiceStatus,
+  deleteInvoice,
 } from "@/lib/invoices.functions";
 
 export const Route = createFileRoute("/_authenticated/invoices")({
@@ -44,12 +73,15 @@ function InvoicesPage() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"all" | "draft" | "open" | "paid" | "overdue" | "cancelled" | "refunded">("all");
+  const [status, setStatus] = useState<
+    "all" | "draft" | "open" | "paid" | "overdue" | "cancelled" | "refunded"
+  >("all");
   const [openCreate, setOpenCreate] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["invoices", status, search],
-    queryFn: () => list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
+    queryFn: () =>
+      list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
   });
 
   function invalidate() {
@@ -93,7 +125,6 @@ function InvoicesPage() {
       <PageHeader
         title="Faturas"
         description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."
-       
         actions={
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild>
@@ -166,7 +197,15 @@ function InvoicesPage() {
                   <TableRow key={inv.id}>
                     <TableCell className="font-medium">{inv.invoice_number}</TableCell>
                     <TableCell>
-                      <Badge variant={(statusColor[inv.status] ?? "secondary") as "default" | "secondary" | "destructive" | "outline"}>
+                      <Badge
+                        variant={
+                          (statusColor[inv.status] ?? "secondary") as
+                            | "default"
+                            | "secondary"
+                            | "destructive"
+                            | "outline"
+                        }
+                      >
                         {inv.status}
                       </Badge>
                     </TableCell>
@@ -178,32 +217,61 @@ function InvoicesPage() {
                     </TableCell>
                     <TableCell>{formatDateTime(inv.due_date)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {inv.gateway ?? "—"} {inv.gateway_mode === "sandbox" && <Badge variant="outline" className="ml-1">sandbox</Badge>}
+                      {inv.gateway ?? "—"}{" "}
+                      {inv.gateway_mode === "sandbox" && (
+                        <Badge variant="outline" className="ml-1">
+                          sandbox
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {inv.payment_url && (
-                          <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(inv.payment_url!); toast.success("Link copiado"); }}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              navigator.clipboard.writeText(inv.payment_url!);
+                              toast.success("Link copiado");
+                            }}
+                          >
                             <Copy className="h-4 w-4" />
                           </Button>
                         )}
                         {inv.payment_url && (
-                          <Button variant="ghost" size="icon" onClick={() => window.open(inv.payment_url!, "_blank")}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(inv.payment_url!, "_blank")}
+                          >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         )}
                         {!inv.payment_url && inv.status !== "paid" && (
                           <>
-                            <Button variant="outline" size="sm" onClick={() => onGenerate(inv.id, "pix")}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onGenerate(inv.id, "pix")}
+                            >
                               Pix
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => onGenerate(inv.id, "boleto")}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onGenerate(inv.id, "boleto")}
+                            >
                               Boleto
                             </Button>
                           </>
                         )}
                         {inv.status !== "paid" && (
-                          <Button variant="ghost" size="icon" onClick={() => onPaid(inv.id)} title="Marcar como paga">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onPaid(inv.id)}
+                            title="Marcar como paga"
+                          >
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           </Button>
                         )}
@@ -269,12 +337,23 @@ function CreateInvoiceDialog({
       <div className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="desc">Descrição</Label>
-          <Input id="desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Serviço prestado..." />
+          <Input
+            id="desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Serviço prestado..."
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="amount">Valor (BRL)</Label>
-            <Input id="amount" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="due">Vencimento</Label>

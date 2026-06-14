@@ -12,7 +12,11 @@ const templateSchema = z.object({
 
 const snippetSchema = z.object({
   id: z.string().uuid().optional(),
-  shortcut: z.string().min(1).max(40).regex(/^[a-zA-Z0-9_\-/]+$/, "use só letras, números, _ - /"),
+  shortcut: z
+    .string()
+    .min(1)
+    .max(40)
+    .regex(/^[a-zA-Z0-9_\-/]+$/, "use só letras, números, _ - /"),
   body: z.string().min(1).max(10_000),
 });
 

@@ -67,7 +67,10 @@ function verifySignature(
   return false;
 }
 
-function parseEvent(provider: string, payload: unknown): {
+function parseEvent(
+  provider: string,
+  payload: unknown,
+): {
   externalId: string | null;
   status: "received" | "refunded" | "failed" | "chargeback" | "pending";
   amount: number | null;
@@ -92,9 +95,13 @@ function parseEvent(provider: string, payload: unknown): {
     };
   }
   if (provider === "pagarme") {
-    const data = ((p.data ?? {}) as Record<string, unknown>);
+    const data = (p.data ?? {}) as Record<string, unknown>;
     const event = (p.type as string) ?? (p.event as string) ?? null;
-    const status = event?.includes("paid") ? "received" : event?.includes("refund") ? "refunded" : "pending";
+    const status = event?.includes("paid")
+      ? "received"
+      : event?.includes("refund")
+        ? "refunded"
+        : "pending";
     return {
       externalId: (data.id as string) ?? null,
       status,
@@ -103,7 +110,7 @@ function parseEvent(provider: string, payload: unknown): {
     };
   }
   if (provider === "mercadopago") {
-    const data = ((p.data ?? {}) as Record<string, unknown>);
+    const data = (p.data ?? {}) as Record<string, unknown>;
     return {
       externalId: (data.id as string) ?? null,
       status: (p.action as string)?.includes("payment.updated") ? "received" : "pending",
@@ -129,7 +136,11 @@ export const Route = createFileRoute("/api/public/payments/br-webhook/$provider"
         if (secret) signatureValid = verifySignature(provider, secret, body, request.headers);
 
         let payload: unknown = {};
-        try { payload = JSON.parse(body); } catch { /* keep empty */ }
+        try {
+          payload = JSON.parse(body);
+        } catch {
+          /* keep empty */
+        }
 
         const parsed = parseEvent(provider, payload);
 
@@ -162,21 +173,19 @@ export const Route = createFileRoute("/api/public/payments/br-webhook/$provider"
         if (!invoice) return new Response("ok", { status: 200 });
 
         // Insert payment row (idempotent via uq_customer_payments_gw_ext).
-        await supabaseAdmin
-          .from("customer_payments")
-          .upsert(
-            {
-              workspace_id: invoice.workspace_id,
-              invoice_id: invoice.id,
-              gateway: provider,
-              external_payment_id: parsed.externalId,
-              amount: parsed.amount ?? 0,
-              status: parsed.status,
-              received_at: parsed.status === "received" ? new Date().toISOString() : null,
-              raw: payload as never,
-            },
-            { onConflict: "gateway,external_payment_id" },
-          );
+        await supabaseAdmin.from("customer_payments").upsert(
+          {
+            workspace_id: invoice.workspace_id,
+            invoice_id: invoice.id,
+            gateway: provider,
+            external_payment_id: parsed.externalId,
+            amount: parsed.amount ?? 0,
+            status: parsed.status,
+            received_at: parsed.status === "received" ? new Date().toISOString() : null,
+            raw: payload as never,
+          },
+          { onConflict: "gateway,external_payment_id" },
+        );
 
         if (parsed.status === "received" && invoice.status !== "paid") {
           await supabaseAdmin

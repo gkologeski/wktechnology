@@ -87,9 +87,7 @@ async function getAssocMany(
       for (const row of r.results ?? []) {
         const fromId = String(row.from?.id ?? "");
         if (!fromId) continue;
-        const tos = (row.to ?? [])
-          .map((t) => String(t.toObjectId ?? t.id ?? ""))
-          .filter(Boolean);
+        const tos = (row.to ?? []).map((t) => String(t.toObjectId ?? t.id ?? "")).filter(Boolean);
         out.set(fromId, tos);
       }
       for (const id of chunk) if (!out.has(id)) out.set(id, []);
@@ -228,9 +226,10 @@ function mapDeal(p: HsProps) {
     hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
     closed_lost_reason: p.closed_lost_reason ?? null,
     closed_won_reason: p.closed_won_reason ?? null,
-    num_associated_contacts: parseHsNum(p.num_associated_contacts) !== null
-      ? Math.trunc(parseHsNum(p.num_associated_contacts) as number)
-      : null,
+    num_associated_contacts:
+      parseHsNum(p.num_associated_contacts) !== null
+        ? Math.trunc(parseHsNum(p.num_associated_contacts) as number)
+        : null,
   };
 }
 
@@ -245,10 +244,7 @@ function mapLead(p: HsProps) {
 }
 
 function mapActivity(kind: string, p: HsProps) {
-  const ms =
-    parseHsNum(p.hs_call_duration) ??
-    parseHsNum(p.hs_meeting_duration) ??
-    null;
+  const ms = parseHsNum(p.hs_call_duration) ?? parseHsNum(p.hs_meeting_duration) ?? null;
   return {
     duration_ms: ms !== null ? Math.trunc(ms) : null,
     disposition: p.hs_call_disposition ?? null,
@@ -317,7 +313,10 @@ const STAGE_COLOR_POOL = [
   "var(--hs-stage-lost)",
 ];
 
-function classifyHsStage(s: HsPipelineStage): { type: "open" | "won" | "lost"; legacy: "new" | "won" | "lost" } {
+function classifyHsStage(s: HsPipelineStage): {
+  type: "open" | "won" | "lost";
+  legacy: "new" | "won" | "lost";
+} {
   const prob = Number(s.metadata?.probability ?? "");
   const closed = String(s.metadata?.isClosed ?? "").toLowerCase() === "true";
   if (closed && prob >= 1) return { type: "won", legacy: "won" };
@@ -345,7 +344,11 @@ async function syncHubspotDealPipelines(
 
   const existingByHsId = new Map<string, { id: string; name: string }>();
   const existingByName = new Map<string, { id: string; name: string }>();
-  for (const p of (existing ?? []) as { id: string; name: string; config: { hs_pipeline_id?: string } | null }[]) {
+  for (const p of (existing ?? []) as {
+    id: string;
+    name: string;
+    config: { hs_pipeline_id?: string } | null;
+  }[]) {
     const hsId = p.config?.hs_pipeline_id;
     if (hsId) existingByHsId.set(String(hsId), { id: p.id, name: p.name });
     existingByName.set(p.name, { id: p.id, name: p.name });
@@ -356,14 +359,21 @@ async function syncHubspotDealPipelines(
   const stageMap: Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }> = {};
 
   for (const hp of pipelines) {
-    const sortedStages = [...(hp.stages ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    const sortedStages = [...(hp.stages ?? [])].sort(
+      (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0),
+    );
     const stagesPayload = sortedStages.map((s, i) => {
       const c = classifyHsStage(s);
       stageMap[String(s.id)] = { hsPipelineId: hp.id, legacy: c.legacy };
       return {
         value: String(s.id),
         label: s.label,
-        color: c.type === "won" ? "var(--hs-stage-won)" : c.type === "lost" ? "var(--hs-stage-lost)" : STAGE_COLOR_POOL[i % 4],
+        color:
+          c.type === "won"
+            ? "var(--hs-stage-won)"
+            : c.type === "lost"
+              ? "var(--hs-stage-lost)"
+              : STAGE_COLOR_POOL[i % 4],
         probability: Math.round(Number(s.metadata?.probability ?? 0) * 100),
         type: c.type,
       };
@@ -415,7 +425,11 @@ async function syncHubspotTicketPipelines(
 
   const existingByHsId = new Map<string, { id: string; name: string }>();
   const existingByName = new Map<string, { id: string; name: string }>();
-  for (const p of (existing ?? []) as { id: string; name: string; config: { hs_pipeline_id?: string; hubspot_id?: string } | null }[]) {
+  for (const p of (existing ?? []) as {
+    id: string;
+    name: string;
+    config: { hs_pipeline_id?: string; hubspot_id?: string } | null;
+  }[]) {
     const hsId = p.config?.hs_pipeline_id ?? p.config?.hubspot_id;
     if (hsId) existingByHsId.set(String(hsId), { id: p.id, name: p.name });
     existingByName.set(p.name, { id: p.id, name: p.name });
@@ -423,7 +437,9 @@ async function syncHubspotTicketPipelines(
 
   const pipelineMap: Record<string, string> = {};
   for (const hp of pipelines) {
-    const sortedStages = [...(hp.stages ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    const sortedStages = [...(hp.stages ?? [])].sort(
+      (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0),
+    );
     const stagesPayload = sortedStages.map((s, i) => {
       const isClosed = String(s.metadata?.ticketState ?? "").toUpperCase() === "CLOSED";
       return {
@@ -536,13 +552,24 @@ export function planSteps(scope: Scope): StepName[] {
   return STEP_ORDER.filter((s) => wanted.has(s));
 }
 
-type LogEntry = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+type LogEntry = {
+  ts: string;
+  level: "info" | "warn" | "error";
+  step: string;
+  message: string;
+  count?: number;
+};
 
 type ItemRow = {
   id: string;
   status: string;
   before: { step?: string; order?: number; depends_on?: string[]; [k: string]: unknown } | null;
-  after: { succeeded?: number; failed?: number; imported_hs_ids?: string[]; [k: string]: unknown } | null;
+  after: {
+    succeeded?: number;
+    failed?: number;
+    imported_hs_ids?: string[];
+    [k: string]: unknown;
+  } | null;
 };
 
 export type StepCtx = {
@@ -574,17 +601,27 @@ async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<Lo
     .single();
   const arr = Array.isArray(cur?.step_logs) ? (cur!.step_logs as LogEntry[]) : [];
   const next = [...arr, full].slice(-300);
-  await supabase.from("enrichment_jobs").update({ step_logs: next as never }).eq("id", jobId);
+  await supabase
+    .from("enrichment_jobs")
+    .update({ step_logs: next as never })
+    .eq("id", jobId);
 }
 
-async function patchItemBefore(supabase: SupabaseClient, itemId: string, patch: Record<string, unknown>) {
+async function patchItemBefore(
+  supabase: SupabaseClient,
+  itemId: string,
+  patch: Record<string, unknown>,
+) {
   const { data: cur } = await supabase
     .from("enrichment_job_items")
     .select("before")
     .eq("id", itemId)
     .single();
   const merged = { ...((cur?.before as object) ?? {}), ...patch };
-  await supabase.from("enrichment_job_items").update({ before: merged as never }).eq("id", itemId);
+  await supabase
+    .from("enrichment_job_items")
+    .update({ before: merged as never })
+    .eq("id", itemId);
 }
 
 // Throttled progress writer. Also heartbeats enrichment_jobs.updated_at so the
@@ -639,7 +676,9 @@ async function loadImportedHsIdsForStep(
     .from("enrichment_job_items")
     .select("after, before")
     .eq("job_id", jobId);
-  const item = (items ?? []).find((it) => (it.before as { step?: string } | null)?.step === fromStep);
+  const item = (items ?? []).find(
+    (it) => (it.before as { step?: string } | null)?.step === fromStep,
+  );
   const ids =
     (item?.after as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
     (item?.before as { imported_hs_ids?: string[] } | null)?.imported_hs_ids ??
@@ -697,7 +736,11 @@ async function loadLocalMapForHsIds(
 
 // ─────────────────────── Dedup + resume helpers ──────────────────────────────
 
-type UpsertResult = { status: "inserted" | "updated" | "unchanged" | "failed"; localId?: string; error?: string };
+type UpsertResult = {
+  status: "inserted" | "updated" | "unchanged" | "failed";
+  localId?: string;
+  error?: string;
+};
 type UpsertTask = { hsId: string; payload: Record<string, unknown> };
 
 function withOriginalCreatedAt(payload: Record<string, unknown>): Record<string, unknown> {
@@ -735,7 +778,10 @@ async function upsertByHsId(
       if (JSON.stringify(cur ?? null) !== JSON.stringify(nxt ?? null)) diff[k] = nxt;
     }
     if (Object.keys(diff).length === 0) return { status: "unchanged", localId };
-    const { error } = await supabase.from(table).update(diff as never).eq("id", localId);
+    const { error } = await supabase
+      .from(table)
+      .update(diff as never)
+      .eq("id", localId);
     if (error) return { status: "failed", error: error.message };
     return { status: "updated", localId };
   }
@@ -756,18 +802,33 @@ async function upsertBatchByHsId(
   tasks: UpsertTask[],
 ): Promise<UpsertResult[]> {
   if (tasks.length === 0) return [];
-  const normalizedTasks = tasks.map((task) => ({ ...task, payload: withOriginalCreatedAt(task.payload) }));
+  const normalizedTasks = tasks.map((task) => ({
+    ...task,
+    payload: withOriginalCreatedAt(task.payload),
+  }));
   const compareKeys = Array.from(
-    new Set(normalizedTasks.flatMap((t) => Object.keys(t.payload).filter((k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw"))),
+    new Set(
+      normalizedTasks.flatMap((t) =>
+        Object.keys(t.payload).filter(
+          (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
+        ),
+      ),
+    ),
   );
   const selectCols = ["id", "external_ids", ...compareKeys].join(",");
   const { data: existing, error: selectError } = await supabase
     .from(table)
     .select(selectCols)
     .eq("owner_id", ownerId)
-    .in("external_ids->>hubspot", normalizedTasks.map((t) => t.hsId));
+    .in(
+      "external_ids->>hubspot",
+      normalizedTasks.map((t) => t.hsId),
+    );
 
-  if (selectError) return Promise.all(normalizedTasks.map((t) => upsertByHsId(supabase, table, ownerId, t.hsId, t.payload)));
+  if (selectError)
+    return Promise.all(
+      normalizedTasks.map((t) => upsertByHsId(supabase, table, ownerId, t.hsId, t.payload)),
+    );
 
   const existingByHs = new Map<string, Record<string, unknown>>();
   for (const row of (existing ?? []) as unknown as Record<string, unknown>[]) {
@@ -775,7 +836,9 @@ async function upsertBatchByHsId(
     if (hs && !existingByHs.has(String(hs))) existingByHs.set(String(hs), row);
   }
 
-  const results: UpsertResult[] = Array(normalizedTasks.length).fill(null).map(() => ({ status: "failed", error: "not processed" }));
+  const results: UpsertResult[] = Array(normalizedTasks.length)
+    .fill(null)
+    .map(() => ({ status: "failed", error: "not processed" }));
   const inserts: { index: number; row: Record<string, unknown> }[] = [];
   const updates: { index: number; localId: string; diff: Record<string, unknown> }[] = [];
 
@@ -788,7 +851,8 @@ async function upsertBatchByHsId(
     const localId = existingRow.id as string;
     const diff: Record<string, unknown> = {};
     for (const k of compareKeys) {
-      if (JSON.stringify(existingRow[k] ?? null) !== JSON.stringify(task.payload[k] ?? null)) diff[k] = task.payload[k];
+      if (JSON.stringify(existingRow[k] ?? null) !== JSON.stringify(task.payload[k] ?? null))
+        diff[k] = task.payload[k];
     }
     if (Object.keys(diff).length === 0) results[index] = { status: "unchanged", localId };
     else updates.push({ index, localId, diff });
@@ -796,10 +860,19 @@ async function upsertBatchByHsId(
 
   for (let i = 0; i < updates.length; i += 12) {
     const batch = updates.slice(i, i + 12);
-    const updated = await Promise.all(batch.map((u) => supabase.from(table).update(u.diff as never).eq("id", u.localId)));
+    const updated = await Promise.all(
+      batch.map((u) =>
+        supabase
+          .from(table)
+          .update(u.diff as never)
+          .eq("id", u.localId),
+      ),
+    );
     updated.forEach(({ error }, j) => {
       const u = batch[j];
-      results[u.index] = error ? { status: "failed", error: error.message } : { status: "updated", localId: u.localId };
+      results[u.index] = error
+        ? { status: "failed", error: error.message }
+        : { status: "updated", localId: u.localId };
     });
   }
 
@@ -809,18 +882,24 @@ async function upsertBatchByHsId(
       .insert(inserts.map((i) => i.row) as never)
       .select("id, external_ids");
     if (error) {
-      inserts.forEach((ins) => { results[ins.index] = { status: "failed", error: error.message }; });
+      inserts.forEach((ins) => {
+        results[ins.index] = { status: "failed", error: error.message };
+      });
     } else {
       const insertedByHs = new Map<string, string>();
-      for (const row of (inserted ?? []) as unknown as { id: string; external_ids: { hubspot?: string } | null }[]) {
+      for (const row of (inserted ?? []) as unknown as {
+        id: string;
+        external_ids: { hubspot?: string } | null;
+      }[]) {
         const hs = row.external_ids?.hubspot;
         if (hs) insertedByHs.set(String(hs), row.id);
       }
       inserts.forEach((ins) => {
         const hs = (ins.row.external_ids as { hubspot?: string } | null)?.hubspot;
-        results[ins.index] = hs && insertedByHs.has(String(hs))
-          ? { status: "inserted", localId: insertedByHs.get(String(hs)) }
-          : { status: "failed", error: "insert did not return id" };
+        results[ins.index] =
+          hs && insertedByHs.has(String(hs))
+            ? { status: "inserted", localId: insertedByHs.get(String(hs)) }
+            : { status: "failed", error: "insert did not return id" };
       });
     }
   }
@@ -880,7 +959,12 @@ async function discoverTargetsFromAssociations(args: {
 
   while (assocIndex < fromIds.length) {
     if (Date.now() >= deadlineAt - 1_500) {
-      await patchItemBefore(supabase, itemId, { assoc_index: assocIndex, target_ids: targetIds, parent_map: parentMap, discovered: targetIds.length });
+      await patchItemBefore(supabase, itemId, {
+        assoc_index: assocIndex,
+        target_ids: targetIds,
+        parent_map: parentMap,
+        discovered: targetIds.length,
+      });
       return { targetIds, parentMap, partial: true };
     }
     const chunk = fromIds.slice(assocIndex, assocIndex + CHUNK);
@@ -902,7 +986,10 @@ async function discoverTargetsFromAssociations(args: {
       discovered: targetIds.length,
       last_heartbeat_at: new Date().toISOString(),
     });
-    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+    await supabase
+      .from("enrichment_jobs")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", jobId);
     await appendLog(supabase, jobId, {
       level: "info",
       step,
@@ -910,7 +997,13 @@ async function discoverTargetsFromAssociations(args: {
     });
   }
 
-  await patchItemBefore(supabase, itemId, { assoc_index: assocIndex, discovery_complete: true, target_ids: targetIds, parent_map: parentMap, discovered: targetIds.length });
+  await patchItemBefore(supabase, itemId, {
+    assoc_index: assocIndex,
+    discovery_complete: true,
+    target_ids: targetIds,
+    parent_map: parentMap,
+    discovered: targetIds.length,
+  });
   return { targetIds, parentMap, partial: false };
 }
 
@@ -929,7 +1022,10 @@ async function discoverDealContactsMap(args: {
   const CHUNK = 500;
   while (index < dealIds.length) {
     if (Date.now() >= deadlineAt - 1_500) {
-      await patchItemBefore(supabase, itemId, { deal_contacts_index: index, deal_contacts_map: dealContactsMap });
+      await patchItemBefore(supabase, itemId, {
+        deal_contacts_index: index,
+        deal_contacts_map: dealContactsMap,
+      });
       return { dealContactsMap, partial: true };
     }
     const chunk = dealIds.slice(index, index + CHUNK);
@@ -941,14 +1037,21 @@ async function discoverDealContactsMap(args: {
       deal_contacts_map: dealContactsMap,
       last_heartbeat_at: new Date().toISOString(),
     });
-    await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+    await supabase
+      .from("enrichment_jobs")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", jobId);
     await appendLog(supabase, jobId, {
       level: "info",
       step,
       message: `Associações negócio↔contato mapeadas: ${index}/${dealIds.length}`,
     });
   }
-  await patchItemBefore(supabase, itemId, { deal_contacts_index: index, deal_contacts_complete: true, deal_contacts_map: dealContactsMap });
+  await patchItemBefore(supabase, itemId, {
+    deal_contacts_index: index,
+    deal_contacts_complete: true,
+    deal_contacts_map: dealContactsMap,
+  });
   return { dealContactsMap, partial: false };
 }
 
@@ -958,13 +1061,20 @@ async function discoverActivityTargets(args: {
   itemId: string;
   step: StepName;
   kind: string;
-  entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[];
+  entities: {
+    fromObj: string;
+    ids: string[];
+    key: "companyId" | "contactId" | "dealId" | "leadId";
+  }[];
   resume: ResumeState;
   deadlineAt: number;
 }) {
   const { supabase, jobId, itemId, step, kind, entities, resume, deadlineAt } = args;
   const targetIds = [...(resume.target_ids ?? [])];
-  const parents = { ...(resume.parents_map ?? {}) } as Record<string, { contactId?: string; companyId?: string; dealId?: string; leadId?: string }>;
+  const parents = { ...(resume.parents_map ?? {}) } as Record<
+    string,
+    { contactId?: string; companyId?: string; dealId?: string; leadId?: string }
+  >;
   const seen = new Set(targetIds);
   let entityIndex = resume.discovery_entity_index ?? 0;
   let idIndex = resume.discovery_id_index ?? 0;
@@ -1009,7 +1119,10 @@ async function discoverActivityTargets(args: {
         discovered: targetIds.length,
         last_heartbeat_at: new Date().toISOString(),
       });
-      await supabase.from("enrichment_jobs").update({ updated_at: new Date().toISOString() }).eq("id", jobId);
+      await supabase
+        .from("enrichment_jobs")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", jobId);
       await appendLog(supabase, jobId, {
         level: "info",
         step,
@@ -1038,7 +1151,6 @@ async function searchTotal(obj: string): Promise<number> {
     return 0;
   }
 }
-
 
 const DEFAULT_BUDGET_MS = 22_000;
 
@@ -1073,7 +1185,9 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
   await appendLog(supabase, jobId, {
     level: "info",
     step,
-    message: isResume ? `Retomando etapa ${step} (cursor=${resume.cursor ?? "—"}, idx=${resume.read_index ?? 0})` : `Iniciando etapa ${step}`,
+    message: isResume
+      ? `Retomando etapa ${step} (cursor=${resume.cursor ?? "—"}, idx=${resume.read_index ?? 0})`
+      : `Iniciando etapa ${step}`,
   });
   const bump = makeProgressBumper(supabase, itemId, jobId);
 
@@ -1096,12 +1210,33 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     if (step === "compare") {
       // Count remote (HubSpot) vs local for each planned object and log the diff.
       // Steps where local >= remote are marked to be skipped (no fetch).
-      const objects: { key: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities"; remote: () => Promise<number>; localTable: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities" }[] = [];
-      if (scope.companies !== false) objects.push({ key: "companies", remote: () => searchTotal("companies"), localTable: "companies" });
-      if (scope.contacts) objects.push({ key: "contacts", remote: () => searchTotal("contacts"), localTable: "contacts" });
-      if (scope.deals) objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
-      if (scope.leads) objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
-      if (scope.tickets) objects.push({ key: "tickets", remote: () => searchTotal("tickets"), localTable: "tickets" });
+      const objects: {
+        key: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities";
+        remote: () => Promise<number>;
+        localTable: "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities";
+      }[] = [];
+      if (scope.companies !== false)
+        objects.push({
+          key: "companies",
+          remote: () => searchTotal("companies"),
+          localTable: "companies",
+        });
+      if (scope.contacts)
+        objects.push({
+          key: "contacts",
+          remote: () => searchTotal("contacts"),
+          localTable: "contacts",
+        });
+      if (scope.deals)
+        objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
+      if (scope.leads)
+        objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
+      if (scope.tickets)
+        objects.push({
+          key: "tickets",
+          remote: () => searchTotal("tickets"),
+          localTable: "tickets",
+        });
       if (scope.activities) {
         objects.push({
           key: "activities",
@@ -1142,7 +1277,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         if (diff === 0 && remote > 0) {
           // already in sync — skip the corresponding step(s)
           if (o.key === "activities") {
-            skipSteps.push("activities-notes", "activities-calls", "activities-meetings", "activities-tasks", "activities-emails");
+            skipSteps.push(
+              "activities-notes",
+              "activities-calls",
+              "activities-meetings",
+              "activities-tasks",
+              "activities-emails",
+            );
           } else {
             skipSteps.push(o.key);
           }
@@ -1163,7 +1304,9 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const prevScope = (jobRow?.scope as Record<string, unknown> | null) ?? {};
       await supabase
         .from("enrichment_jobs")
-        .update({ scope: { ...prevScope, compare_summary: summary, skip_steps: skipSteps } as never })
+        .update({
+          scope: { ...prevScope, compare_summary: summary, skip_steps: skipSteps } as never,
+        })
         .eq("id", jobId);
 
       // Mark downstream items as 'done' with 0 imports when in skip list
@@ -1191,7 +1334,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         .from("enrichment_job_items")
         .update({
           status: "done",
-          after: { succeeded: 1, failed: 0, imported_hs_ids: [], compare_summary: summary, skip_steps: skipSteps } as never,
+          after: {
+            succeeded: 1,
+            failed: 0,
+            imported_hs_ids: [],
+            compare_summary: summary,
+            skip_steps: skipSteps,
+          } as never,
         })
         .eq("id", itemId);
       return { succeeded: 1, failed: 0, importedHsIds: [] };
@@ -1204,16 +1353,35 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       // Delta mode: target_ids pre-injetados (reconciliação). Pula pagination/search e faz batchRead direto.
       if (Array.isArray(resume.target_ids) && resume.discovery_complete) {
         const targetIds = resume.target_ids;
-        const propsList = allProps.length ? allProps : ["name","domain","industry","numberofemployees","phone","city","state","zip","address","website"];
+        const propsList = allProps.length
+          ? allProps
+          : [
+              "name",
+              "domain",
+              "industry",
+              "numberofemployees",
+              "phone",
+              "city",
+              "state",
+              "zip",
+              "address",
+              "website",
+            ];
         let idx = (resume.read_index as number) ?? 0;
         const CHUNK = 100;
         while (idx < targetIds.length) {
-          if (isExpired()) { partial = true; break; }
+          if (isExpired()) {
+            partial = true;
+            break;
+          }
           const chunkIds = targetIds.slice(idx, idx + CHUNK);
           const recs = await batchRead("companies", chunkIds, propsList);
           for (const c of recs) {
             const p = c.properties;
-            if (!p.name) { fail++; continue; }
+            if (!p.name) {
+              fail++;
+              continue;
+            }
             const mapped = mapCompany(p);
             const payload = {
               owner_id: userId,
@@ -1234,7 +1402,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             };
             const r = await upsertByHsId(supabase, "companies", userId, c.id, payload);
             if (r.status === "failed") fail++;
-            else { imported.push(c.id); ok++; }
+            else {
+              imported.push(c.id);
+              ok++;
+            }
           }
           idx += chunkIds.length;
           await persistCursor({ read_index: idx });
@@ -1242,115 +1413,124 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         }
         if (partial) await persistCursor({ read_index: idx });
       } else {
-      const alreadyProcessed = ok + fail;
-      let after: string | undefined = resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
-      let page = Math.floor(alreadyProcessed / 100) + 1;
-      // Descobre o total real no HubSpot apenas na primeira execução do step
-      if (resume.discovered === undefined) {
-        const total = await discoverTotal("companies");
-        if (total !== null) {
-          const effective = Math.min(total, scope.maxCompanies);
-          await patchItemBefore(supabase, itemId, { discovered: effective });
+        const alreadyProcessed = ok + fail;
+        let after: string | undefined =
+          resume.cursor ?? (alreadyProcessed > 0 ? String(alreadyProcessed) : undefined);
+        let page = Math.floor(alreadyProcessed / 100) + 1;
+        // Descobre o total real no HubSpot apenas na primeira execução do step
+        if (resume.discovered === undefined) {
+          const total = await discoverTotal("companies");
+          if (total !== null) {
+            const effective = Math.min(total, scope.maxCompanies);
+            await patchItemBefore(supabase, itemId, { discovered: effective });
+            await appendLog(supabase, jobId, {
+              level: "info",
+              step,
+              message: `Total no HubSpot: ${total} · alvo desta execução: ${effective}`,
+            });
+          }
+        }
+        while (ok + fail < scope.maxCompanies) {
+          if (isExpired()) {
+            partial = true;
+            await persistCursor({
+              cursor: after ?? (ok + fail > 0 ? String(ok + fail) : undefined),
+            });
+            break;
+          }
+          const remaining = scope.maxCompanies - (ok + fail);
+          const limit = Math.min(100, remaining);
+          const params: Record<string, string> = { limit: String(limit), properties: propsParam };
+          if (after) params.after = after;
+          const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
+            results: (HSRec & { createdAt?: string; updatedAt?: string })[];
+            paging?: { next?: { after: string } };
+          };
+          if (!res.results.length) break;
           await appendLog(supabase, jobId, {
             level: "info",
             step,
-            message: `Total no HubSpot: ${total} · alvo desta execução: ${effective}`,
+            message: `Página ${page}: ${res.results.length} empresas`,
+            count: res.results.length,
           });
-        }
-      }
-      while (ok + fail < scope.maxCompanies) {
-        if (isExpired()) {
-          partial = true;
-          await persistCursor({ cursor: after ?? (ok + fail > 0 ? String(ok + fail) : undefined) });
-          break;
-        }
-        const remaining = scope.maxCompanies - (ok + fail);
-        const limit = Math.min(100, remaining);
-        const params: Record<string, string> = { limit: String(limit), properties: propsParam };
-        if (after) params.after = after;
-        const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
-          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
-          paging?: { next?: { after: string } };
-        };
-        if (!res.results.length) break;
-        await appendLog(supabase, jobId, {
-          level: "info",
-          step,
-          message: `Página ${page}: ${res.results.length} empresas`,
-          count: res.results.length,
-        });
-        type Task = { hsId: string; name: string; payload: Record<string, unknown> };
-        const tasks: Task[] = [];
-        for (const c of res.results) {
-          const p = c.properties;
-          if (!p.name) continue;
-          const mapped = mapCompany(p);
-          tasks.push({
-            hsId: c.id,
-            name: p.name as string,
-            payload: {
-              owner_id: userId,
-              name: p.name,
-              domain: p.domain ?? null,
-              industry: p.industry ?? null,
-              size: p.numberofemployees ?? null,
-              phone: p.phone ?? null,
-              city: p.city ?? null,
-              state: p.state ?? null,
-              cep: p.zip ?? null,
-              address: p.address ?? null,
-              website: p.website ?? null,
-              ...mapped,
-              external_ids: { hubspot: c.id } as never,
-              hs_raw: rawOf(c),
-            },
-          });
-        }
-
-        // Conta como falha os registros sem nome
-        fail += res.results.length - tasks.length;
-
-        const CONCURRENCY = 12;
-        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-          const batch = tasks.slice(i, i + CONCURRENCY);
-          const results = await Promise.all(
-            batch.map((t) => upsertByHsId(supabase, "companies", userId, t.hsId, t.payload)),
-          );
-          for (let j = 0; j < results.length; j++) {
-            const r = results[j];
-            if (r.status === "failed") {
-              fail++;
-              await appendLog(supabase, jobId, {
-                level: "warn",
-                step,
-                message: `Falha empresa ${batch[j].name}: ${r.error}`,
-              });
-            } else {
-              imported.push(batch[j].hsId);
-              ok++;
-            }
+          type Task = { hsId: string; name: string; payload: Record<string, unknown> };
+          const tasks: Task[] = [];
+          for (const c of res.results) {
+            const p = c.properties;
+            if (!p.name) continue;
+            const mapped = mapCompany(p);
+            tasks.push({
+              hsId: c.id,
+              name: p.name as string,
+              payload: {
+                owner_id: userId,
+                name: p.name,
+                domain: p.domain ?? null,
+                industry: p.industry ?? null,
+                size: p.numberofemployees ?? null,
+                phone: p.phone ?? null,
+                city: p.city ?? null,
+                state: p.state ?? null,
+                cep: p.zip ?? null,
+                address: p.address ?? null,
+                website: p.website ?? null,
+                ...mapped,
+                external_ids: { hubspot: c.id } as never,
+                hs_raw: rawOf(c),
+              },
+            });
           }
-          await bump(ok, fail);
-        }
-        after = res.paging?.next?.after;
-        await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
-        await bump(ok, fail);
-        page++;
-        if (!after) break;
-      }
-      await patchItemBefore(supabase, itemId, { discovered: ok + fail });
-      }
 
+          // Conta como falha os registros sem nome
+          fail += res.results.length - tasks.length;
+
+          const CONCURRENCY = 12;
+          for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+            const batch = tasks.slice(i, i + CONCURRENCY);
+            const results = await Promise.all(
+              batch.map((t) => upsertByHsId(supabase, "companies", userId, t.hsId, t.payload)),
+            );
+            for (let j = 0; j < results.length; j++) {
+              const r = results[j];
+              if (r.status === "failed") {
+                fail++;
+                await appendLog(supabase, jobId, {
+                  level: "warn",
+                  step,
+                  message: `Falha empresa ${batch[j].name}: ${r.error}`,
+                });
+              } else {
+                imported.push(batch[j].hsId);
+                ok++;
+              }
+            }
+            await bump(ok, fail);
+          }
+          after = res.paging?.next?.after;
+          await persistCursor({ cursor: after ?? null, last_processed: ok + fail });
+          await bump(ok, fail);
+          page++;
+          if (!after) break;
+        }
+        await patchItemBefore(supabase, itemId, { discovered: ok + fail });
+      }
     } else if (step === "contacts") {
       // Fase 1 (cacheada em before.target_ids/parent_map): mapear contatos↔empresas.
       // Fase 2: batchRead em chunks pequenos com checkpoint a cada chunk.
       let targetIds = resume.target_ids as string[] | undefined;
       let parentMap = resume.parent_map as Record<string, string> | undefined;
       if (!targetIds || !parentMap || !resume.discovery_complete) {
-        const hsCompanyIds = await loadImportedHsIdsForStep(supabase, userId, jobId, "companies", "companies");
+        const hsCompanyIds = await loadImportedHsIdsForStep(
+          supabase,
+          userId,
+          jobId,
+          "companies",
+          "companies",
+        );
         if ((resume.assoc_index ?? 0) === 0) {
           await appendLog(supabase, jobId, {
-            level: "info", step,
+            level: "info",
+            step,
             message: `Mapeando contatos para ${hsCompanyIds.length} empresas`,
           });
           if (hsCompanyIds.length === 0) {
@@ -1396,26 +1576,51 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           }
         }
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Plano: ${targetIds.length} contatos a importar`,
         });
       }
       const propsList = [
-        "firstname", "lastname", "email", "phone", "jobtitle", "mobilephone",
-        "country", "address", "zip", "city", "state", "website", "company",
-        "lifecyclestage", "hs_lead_status", "hubspot_owner_id", "hs_object_id",
-        "createdate", "hs_createdate", "lastmodifieddate", "hs_lastmodifieddate",
-        "linkedin_url", "linkedinbio", "twitterhandle",
+        "firstname",
+        "lastname",
+        "email",
+        "phone",
+        "jobtitle",
+        "mobilephone",
+        "country",
+        "address",
+        "zip",
+        "city",
+        "state",
+        "website",
+        "company",
+        "lifecyclestage",
+        "hs_lead_status",
+        "hubspot_owner_id",
+        "hs_object_id",
+        "createdate",
+        "hs_createdate",
+        "lastmodifieddate",
+        "hs_lastmodifieddate",
+        "linkedin_url",
+        "linkedinbio",
+        "twitterhandle",
       ];
       let idx = (resume.read_index as number) ?? 0;
       const CHUNK = 100;
       while (idx < targetIds.length) {
-        if (isExpired()) { partial = true; break; }
+        if (isExpired()) {
+          partial = true;
+          break;
+        }
         const chunkIds = targetIds.slice(idx, idx + CHUNK);
         const recs = await batchRead("contacts", chunkIds, propsList);
         const byId = new Map(recs.map((r) => [r.id, r]));
         const parentCompanyHsIds = Array.from(
-          new Set(chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id))),
+          new Set(
+            chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id)),
+          ),
         );
         const companyMap = parentCompanyHsIds.length
           ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
@@ -1423,9 +1628,15 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const hsId of chunkIds) {
           const c = byId.get(hsId);
-          if (!c) { fail++; continue; }
+          if (!c) {
+            fail++;
+            continue;
+          }
           const p = c.properties;
-          if (!p.firstname && !p.email) { fail++; continue; }
+          if (!p.firstname && !p.email) {
+            fail++;
+            continue;
+          }
           const localCompanyId = companyMap.get(parentMap[hsId] ?? "") ?? null;
           const mapped = mapContact(p);
           tasks.push({
@@ -1448,7 +1659,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         for (let j = 0; j < results.length; j++) {
           const r = results[j];
           if (r.status === "failed") fail++;
-          else { imported.push(tasks[j].hsId); ok++; }
+          else {
+            imported.push(tasks[j].hsId);
+            ok++;
+          }
         }
         await bump(ok, fail, targetIds.length, true);
 
@@ -1465,20 +1679,25 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
 
       let pipelineMap = resume.pipeline_map as Record<string, string> | undefined;
-      let stageMap = resume.stage_map as Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }> | undefined;
+      let stageMap = resume.stage_map as
+        | Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }>
+        | undefined;
       if (!pipelineMap || !stageMap) {
         const synced = await syncHubspotDealPipelines(supabase, userId);
         pipelineMap = synced.pipelineMap;
         stageMap = synced.stageMap;
         await patchItemBefore(supabase, itemId, { pipeline_map: pipelineMap, stage_map: stageMap });
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Pipelines sincronizados: ${Object.keys(pipelineMap).length}`,
         });
       }
 
       const dealProps = await loadHsProperties("deals");
-      const dealPropsList = dealProps.length ? dealProps : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
+      const dealPropsList = dealProps.length
+        ? dealProps
+        : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
 
       // Delta mode: target_ids pre-injetados (reconciliação). Pula pagination e faz batchRead direto.
       if (Array.isArray(resume.target_ids) && resume.discovery_complete) {
@@ -1486,7 +1705,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         let idx = (resume.read_index as number) ?? 0;
         const CHUNK = 100;
         while (idx < targetIds.length) {
-          if (isExpired()) { partial = true; break; }
+          if (isExpired()) {
+            partial = true;
+            break;
+          }
           const chunkIds = targetIds.slice(idx, idx + CHUNK);
           const recs = await batchRead("deals", chunkIds, dealPropsList);
           const [dealCompanies, dealContacts] = await Promise.all([
@@ -1500,14 +1722,18 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
             : new Map<string, string>();
 
-          const tasks: { hsId: string; payload: Record<string, unknown>; contactHsIds: string[] }[] = [];
+          const tasks: {
+            hsId: string;
+            payload: Record<string, unknown>;
+            contactHsIds: string[];
+          }[] = [];
           for (const d of recs) {
             const p = d.properties;
             const hsCompanyId = (dealCompanies.get(d.id) ?? [])[0];
-            const localCompanyId = hsCompanyId ? companyMap.get(hsCompanyId) ?? null : null;
+            const localCompanyId = hsCompanyId ? (companyMap.get(hsCompanyId) ?? null) : null;
             const stageInfo = p.dealstage ? stageMap[p.dealstage] : undefined;
             const hsPipelineId = p.pipeline ?? stageInfo?.hsPipelineId ?? null;
-            const localPipelineId = hsPipelineId ? pipelineMap[hsPipelineId] ?? null : null;
+            const localPipelineId = hsPipelineId ? (pipelineMap[hsPipelineId] ?? null) : null;
             const legacyStage: "new" | "won" | "lost" = stageInfo?.legacy ?? "new";
             const mapped = mapDeal(p);
             tasks.push({
@@ -1524,7 +1750,11 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
                 company_id: localCompanyId,
                 expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
                 ...mapped,
-                external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: hsPipelineId } as never,
+                external_ids: {
+                  hubspot: d.id,
+                  hs_stage: p.dealstage,
+                  hs_pipeline: hsPipelineId,
+                } as never,
                 hs_raw: rawOf(d),
                 deleted_at: null,
               },
@@ -1535,7 +1765,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           for (let j = 0; j < results.length; j++) {
             const r = results[j];
             const t = tasks[j];
-            if (r.status === "failed") { fail++; continue; }
+            if (r.status === "failed") {
+              fail++;
+              continue;
+            }
             imported.push(t.hsId);
             ok++;
             if (r.status === "inserted" && r.localId) {
@@ -1555,114 +1788,129 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         }
         if (partial) await persistCursor({ read_index: idx });
       } else {
-
-      if (resume.discovered === undefined) {
-        const total = await searchTotal("deals");
-        await patchItemBefore(supabase, itemId, { discovered: total });
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Total no HubSpot: ${total} negócios`,
-        });
-      }
-
-      const propsParam = dealPropsList.join(",");
-
-
-      let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
-      let page = (resume.page as number | undefined) ?? 1;
-
-      type DealsPage = {
-        results: HSRec[];
-        paging?: { next?: { after: string } };
-      };
-      const fetchPage = async (cursor?: string): Promise<DealsPage> => {
-        const params: Record<string, string> = { limit: "100", properties: propsParam };
-        if (cursor) params.after = cursor;
-        return (await hsFetch("/crm/v3/objects/deals", params)) as DealsPage;
-      };
-
-      let nextPromise: Promise<DealsPage> | null = fetchPage(after);
-
-      while (nextPromise) {
-        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
-        const res: DealsPage = await nextPromise;
-        if (!res.results?.length) break;
-
-        const nextAfter: string | undefined = res.paging?.next?.after;
-        nextPromise = nextAfter ? fetchPage(nextAfter) : null;
-
-        const pageIds = res.results.map((r) => r.id);
-        const [dealCompanies, dealContacts] = await Promise.all([
-          getAssocMany("deals", pageIds, "companies", 20),
-          getAssocMany("deals", pageIds, "contacts", 20),
-        ]);
-        const parentCompanyHsIds = Array.from(
-          new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
-        );
-        const companyMap = parentCompanyHsIds.length
-          ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
-          : new Map<string, string>();
-
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Página ${page}: ${res.results.length} negócios`,
-          count: res.results.length,
-        });
-
-        const tasks: { hsId: string; payload: Record<string, unknown>; contactHsIds: string[] }[] = [];
-        for (const d of res.results) {
-          const p = d.properties;
-          const hsCompanyId = (dealCompanies.get(d.id) ?? [])[0];
-          const localCompanyId = hsCompanyId ? companyMap.get(hsCompanyId) ?? null : null;
-          const stageInfo = p.dealstage ? stageMap[p.dealstage] : undefined;
-          const hsPipelineId = p.pipeline ?? stageInfo?.hsPipelineId ?? null;
-          const localPipelineId = hsPipelineId ? pipelineMap[hsPipelineId] ?? null : null;
-          const legacyStage: "new" | "won" | "lost" = stageInfo?.legacy ?? "new";
-          const mapped = mapDeal(p);
-          tasks.push({
-            hsId: d.id,
-            contactHsIds: dealContacts.get(d.id) ?? [],
-            payload: {
-              owner_id: userId,
-              name: p.dealname ?? "Sem nome",
-              value: p.amount ? Number(p.amount) : 0,
-              currency: "BRL",
-              stage: legacyStage,
-              stage_id: p.dealstage ?? null,
-              pipeline_id: localPipelineId,
-              company_id: localCompanyId,
-              expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
-              ...mapped,
-              external_ids: { hubspot: d.id, hs_stage: p.dealstage, hs_pipeline: hsPipelineId } as never,
-              hs_raw: rawOf(d),
-            },
+        if (resume.discovered === undefined) {
+          const total = await searchTotal("deals");
+          await patchItemBefore(supabase, itemId, { discovered: total });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Total no HubSpot: ${total} negócios`,
           });
         }
 
-        const results = await upsertBatchByHsId(supabase, "deals", userId, tasks);
-        for (let j = 0; j < results.length; j++) {
-          const r = results[j];
-          const t = tasks[j];
-          if (r.status === "failed") { fail++; continue; }
-          imported.push(t.hsId);
-          ok++;
-          if (r.status === "inserted" && r.localId) {
-            const inserts = t.contactHsIds
-              .map((cid) => contactMap.get(cid))
-              .filter((lc): lc is string => !!lc)
-              .map((lc) => ({ deal_id: r.localId as string, contact_id: lc }));
-            if (inserts.length) {
-              await supabase.from("deal_contacts").insert(inserts);
+        const propsParam = dealPropsList.join(",");
+
+        let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
+        let page = (resume.page as number | undefined) ?? 1;
+
+        type DealsPage = {
+          results: HSRec[];
+          paging?: { next?: { after: string } };
+        };
+        const fetchPage = async (cursor?: string): Promise<DealsPage> => {
+          const params: Record<string, string> = { limit: "100", properties: propsParam };
+          if (cursor) params.after = cursor;
+          return (await hsFetch("/crm/v3/objects/deals", params)) as DealsPage;
+        };
+
+        let nextPromise: Promise<DealsPage> | null = fetchPage(after);
+
+        while (nextPromise) {
+          if (isExpired()) {
+            partial = true;
+            await persistCursor({ cursor: after ?? null, page });
+            break;
+          }
+          const res: DealsPage = await nextPromise;
+          if (!res.results?.length) break;
+
+          const nextAfter: string | undefined = res.paging?.next?.after;
+          nextPromise = nextAfter ? fetchPage(nextAfter) : null;
+
+          const pageIds = res.results.map((r) => r.id);
+          const [dealCompanies, dealContacts] = await Promise.all([
+            getAssocMany("deals", pageIds, "companies", 20),
+            getAssocMany("deals", pageIds, "contacts", 20),
+          ]);
+          const parentCompanyHsIds = Array.from(
+            new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
+          );
+          const companyMap = parentCompanyHsIds.length
+            ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+            : new Map<string, string>();
+
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Página ${page}: ${res.results.length} negócios`,
+            count: res.results.length,
+          });
+
+          const tasks: {
+            hsId: string;
+            payload: Record<string, unknown>;
+            contactHsIds: string[];
+          }[] = [];
+          for (const d of res.results) {
+            const p = d.properties;
+            const hsCompanyId = (dealCompanies.get(d.id) ?? [])[0];
+            const localCompanyId = hsCompanyId ? (companyMap.get(hsCompanyId) ?? null) : null;
+            const stageInfo = p.dealstage ? stageMap[p.dealstage] : undefined;
+            const hsPipelineId = p.pipeline ?? stageInfo?.hsPipelineId ?? null;
+            const localPipelineId = hsPipelineId ? (pipelineMap[hsPipelineId] ?? null) : null;
+            const legacyStage: "new" | "won" | "lost" = stageInfo?.legacy ?? "new";
+            const mapped = mapDeal(p);
+            tasks.push({
+              hsId: d.id,
+              contactHsIds: dealContacts.get(d.id) ?? [],
+              payload: {
+                owner_id: userId,
+                name: p.dealname ?? "Sem nome",
+                value: p.amount ? Number(p.amount) : 0,
+                currency: "BRL",
+                stage: legacyStage,
+                stage_id: p.dealstage ?? null,
+                pipeline_id: localPipelineId,
+                company_id: localCompanyId,
+                expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+                ...mapped,
+                external_ids: {
+                  hubspot: d.id,
+                  hs_stage: p.dealstage,
+                  hs_pipeline: hsPipelineId,
+                } as never,
+                hs_raw: rawOf(d),
+              },
+            });
+          }
+
+          const results = await upsertBatchByHsId(supabase, "deals", userId, tasks);
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            const t = tasks[j];
+            if (r.status === "failed") {
+              fail++;
+              continue;
+            }
+            imported.push(t.hsId);
+            ok++;
+            if (r.status === "inserted" && r.localId) {
+              const inserts = t.contactHsIds
+                .map((cid) => contactMap.get(cid))
+                .filter((lc): lc is string => !!lc)
+                .map((lc) => ({ deal_id: r.localId as string, contact_id: lc }));
+              if (inserts.length) {
+                await supabase.from("deal_contacts").insert(inserts);
+              }
             }
           }
-        }
 
-        after = nextAfter;
-        page++;
-        await persistCursor({ cursor: after ?? null, page });
-        await bump(ok, fail);
-        if (!nextAfter) break;
-      }
+          after = nextAfter;
+          page++;
+          await persistCursor({ cursor: after ?? null, page });
+          await bump(ok, fail);
+          if (!nextAfter) break;
+        }
       }
     } else if (step === "leads") {
       // Importa o objeto NATIVO de Leads do HubSpot (/crm/v3/objects/leads),
@@ -1693,7 +1941,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         let idx = (resume.read_index as number) ?? 0;
         const CHUNK = 100;
         while (idx < targetIds.length) {
-          if (isExpired()) { partial = true; break; }
+          if (isExpired()) {
+            partial = true;
+            break;
+          }
           const chunkIds = targetIds.slice(idx, idx + CHUNK);
           const recs = await batchRead("leads", chunkIds, propsList);
           const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
@@ -1733,7 +1984,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           for (let j = 0; j < results.length; j++) {
             const r = results[j];
             if (r.status === "failed") fail++;
-            else { imported.push(tasks[j].hsId); ok++; }
+            else {
+              imported.push(tasks[j].hsId);
+              ok++;
+            }
           }
           idx += chunkIds.length;
           await persistCursor({ read_index: idx });
@@ -1741,107 +1995,111 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         }
         if (partial) await persistCursor({ read_index: idx });
       } else {
-
-      if (resume.discovered === undefined) {
-        const total = await searchTotal("leads");
-        await patchItemBefore(supabase, itemId, { discovered: total });
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Total no HubSpot: ${total} leads`,
-        });
-      }
-
-
-      let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
-      let page = (resume.page as number | undefined) ?? 1;
-
-      type LeadsPage = {
-        results: (HSRec & { createdAt?: string; updatedAt?: string })[];
-        paging?: { next?: { after: string } };
-      };
-      const fetchPage = async (cursor?: string): Promise<LeadsPage> => {
-        const params: Record<string, string> = { limit: "100", properties: propsParam };
-        if (cursor) params.after = cursor;
-        return (await hsFetch("/crm/v3/objects/leads", params)) as LeadsPage;
-      };
-
-      // Prefetch first page; subsequent pages are prefetched in parallel
-      // with the upsert of the current page (network ⇄ DB pipelining).
-      let nextPromise: Promise<LeadsPage> | null = fetchPage(after);
-
-      while (nextPromise) {
-        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
-        const res: LeadsPage = await nextPromise;
-        if (!res.results?.length) break;
-
-        const nextAfter: string | undefined = res.paging?.next?.after;
-        // Start the next page download immediately (overlap with DB work).
-        nextPromise = nextAfter ? fetchPage(nextAfter) : null;
-
-        await appendLog(supabase, jobId, {
-          level: "info", step,
-          message: `Página ${page}: ${res.results.length} leads`,
-          count: res.results.length,
-        });
-
-        const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
-        for (const c of res.results) {
-          const p = c.properties;
-          const mapped = mapLead(p);
-          let first = (p.hs_associated_contact_firstname ?? "") as string;
-          let last = (p.hs_associated_contact_lastname ?? null) as string | null;
-          if (!first) {
-            const full = ((p.hs_lead_name_calculated ?? p.hs_lead_name ?? "") as string).trim();
-            if (full) {
-              const parts = full.split(/\s+/);
-              first = parts[0];
-              last = parts.slice(1).join(" ") || last;
-            }
-          }
-          if (!first) first = (p.hs_associated_contact_email ?? "Sem nome") as string;
-          tasks.push({
-            hsId: c.id,
-            payload: {
-              owner_id: userId,
-              first_name: first,
-              last_name: last,
-              email: p.hs_associated_contact_email ?? null,
-              phone: null,
-              company_name: p.hs_associated_company_name ?? null,
-              source: p.hs_lead_source ?? p.hs_analytics_source ?? "hubspot",
-              status: "new",
-              ...mapped,
-              external_ids: { hubspot: c.id } as never,
-              hs_raw: rawOf(c),
-            },
+        if (resume.discovered === undefined) {
+          const total = await searchTotal("leads");
+          await patchItemBefore(supabase, itemId, { discovered: total });
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Total no HubSpot: ${total} leads`,
           });
         }
 
-        // 1 SELECT + 1 batch INSERT (+ small UPDATE batch) per page
-        // instead of ~100 round-trips.
-        const results = await upsertBatchByHsId(supabase, "leads", userId, tasks);
-        for (let j = 0; j < results.length; j++) {
-          const r = results[j];
-          if (r.status === "failed") {
-            fail++;
-            await appendLog(supabase, jobId, {
-              level: "warn", step,
-              message: `Falha lead ${tasks[j].hsId}: ${r.error}`,
-            });
-          } else {
-            imported.push(tasks[j].hsId);
-            ok++;
+        let after: string | undefined = (resume.cursor as string | undefined) ?? undefined;
+        let page = (resume.page as number | undefined) ?? 1;
+
+        type LeadsPage = {
+          results: (HSRec & { createdAt?: string; updatedAt?: string })[];
+          paging?: { next?: { after: string } };
+        };
+        const fetchPage = async (cursor?: string): Promise<LeadsPage> => {
+          const params: Record<string, string> = { limit: "100", properties: propsParam };
+          if (cursor) params.after = cursor;
+          return (await hsFetch("/crm/v3/objects/leads", params)) as LeadsPage;
+        };
+
+        // Prefetch first page; subsequent pages are prefetched in parallel
+        // with the upsert of the current page (network ⇄ DB pipelining).
+        let nextPromise: Promise<LeadsPage> | null = fetchPage(after);
+
+        while (nextPromise) {
+          if (isExpired()) {
+            partial = true;
+            await persistCursor({ cursor: after ?? null, page });
+            break;
           }
+          const res: LeadsPage = await nextPromise;
+          if (!res.results?.length) break;
+
+          const nextAfter: string | undefined = res.paging?.next?.after;
+          // Start the next page download immediately (overlap with DB work).
+          nextPromise = nextAfter ? fetchPage(nextAfter) : null;
+
+          await appendLog(supabase, jobId, {
+            level: "info",
+            step,
+            message: `Página ${page}: ${res.results.length} leads`,
+            count: res.results.length,
+          });
+
+          const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
+          for (const c of res.results) {
+            const p = c.properties;
+            const mapped = mapLead(p);
+            let first = (p.hs_associated_contact_firstname ?? "") as string;
+            let last = (p.hs_associated_contact_lastname ?? null) as string | null;
+            if (!first) {
+              const full = ((p.hs_lead_name_calculated ?? p.hs_lead_name ?? "") as string).trim();
+              if (full) {
+                const parts = full.split(/\s+/);
+                first = parts[0];
+                last = parts.slice(1).join(" ") || last;
+              }
+            }
+            if (!first) first = (p.hs_associated_contact_email ?? "Sem nome") as string;
+            tasks.push({
+              hsId: c.id,
+              payload: {
+                owner_id: userId,
+                first_name: first,
+                last_name: last,
+                email: p.hs_associated_contact_email ?? null,
+                phone: null,
+                company_name: p.hs_associated_company_name ?? null,
+                source: p.hs_lead_source ?? p.hs_analytics_source ?? "hubspot",
+                status: "new",
+                ...mapped,
+                external_ids: { hubspot: c.id } as never,
+                hs_raw: rawOf(c),
+              },
+            });
+          }
+
+          // 1 SELECT + 1 batch INSERT (+ small UPDATE batch) per page
+          // instead of ~100 round-trips.
+          const results = await upsertBatchByHsId(supabase, "leads", userId, tasks);
+          for (let j = 0; j < results.length; j++) {
+            const r = results[j];
+            if (r.status === "failed") {
+              fail++;
+              await appendLog(supabase, jobId, {
+                level: "warn",
+                step,
+                message: `Falha lead ${tasks[j].hsId}: ${r.error}`,
+              });
+            } else {
+              imported.push(tasks[j].hsId);
+              ok++;
+            }
+          }
+
+          after = nextAfter;
+          page++;
+          await persistCursor({ cursor: after ?? null, page });
+          await bump(ok, fail);
+          if (!nextAfter) break;
         }
-
-        after = nextAfter;
-        page++;
-        await persistCursor({ cursor: after ?? null, page });
-        await bump(ok, fail);
-        if (!nextAfter) break;
       }
-      }
-
     } else if (step === "tickets") {
       // Espelha pipelines de tickets do HubSpot ANTES da importação,
       // para vincular cada ticket ao seu pipeline local.
@@ -1849,13 +2107,15 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       try {
         ticketPipelineMap = await syncHubspotTicketPipelines(supabase, userId);
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Pipelines de tickets sincronizados: ${Object.keys(ticketPipelineMap).length}`,
           count: Object.keys(ticketPipelineMap).length,
         });
       } catch (e) {
         await appendLog(supabase, jobId, {
-          level: "warn", step,
+          level: "warn",
+          step,
           message: `Falha ao sincronizar pipelines de tickets: ${e instanceof Error ? e.message : String(e)}`,
         });
       }
@@ -1903,7 +2163,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         const total = await searchTotal("tickets");
         await patchItemBefore(supabase, itemId, { discovered: total });
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Total no HubSpot: ${total} tickets`,
         });
       }
@@ -1923,7 +2184,11 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
 
       let nextPromise: Promise<TicketsPage> | null = fetchPage(after);
       while (nextPromise) {
-        if (isExpired()) { partial = true; await persistCursor({ cursor: after ?? null, page }); break; }
+        if (isExpired()) {
+          partial = true;
+          await persistCursor({ cursor: after ?? null, page });
+          break;
+        }
         const res: TicketsPage = await nextPromise;
         if (!res.results?.length) break;
         const nextAfter: string | undefined = res.paging?.next?.after;
@@ -1937,7 +2202,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         ]);
 
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Página ${page}: ${res.results.length} tickets`,
           count: res.results.length,
         });
@@ -1961,17 +2227,23 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               status,
               priority,
               source: p.source_type ?? "hubspot",
-              contact_id: contactHs ? contactMap.get(contactHs) ?? null : null,
-              company_id: companyHs ? companyMap.get(companyHs) ?? null : null,
-              deal_id: dealHs ? dealMap.get(dealHs) ?? null : null,
-              pipeline_id: p.hs_pipeline ? (ticketPipelineMap[String(p.hs_pipeline)] ?? null) : null,
+              contact_id: contactHs ? (contactMap.get(contactHs) ?? null) : null,
+              company_id: companyHs ? (companyMap.get(companyHs) ?? null) : null,
+              deal_id: dealHs ? (dealMap.get(dealHs) ?? null) : null,
+              pipeline_id: p.hs_pipeline
+                ? (ticketPipelineMap[String(p.hs_pipeline)] ?? null)
+                : null,
               custom_fields: {
                 hs_pipeline: p.hs_pipeline ?? null,
                 hs_pipeline_stage: stageId,
                 hs_ticket_category: p.hs_ticket_category ?? null,
               } as never,
               ...mapped,
-              external_ids: { hubspot: t.id, hs_pipeline: p.hs_pipeline ?? null, hs_pipeline_stage: stageId } as never,
+              external_ids: {
+                hubspot: t.id,
+                hs_pipeline: p.hs_pipeline ?? null,
+                hs_pipeline_stage: stageId,
+              } as never,
               hs_raw: rawOf(t),
               deleted_at: null,
             },
@@ -1984,7 +2256,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           if (r.status === "failed") {
             fail++;
             await appendLog(supabase, jobId, {
-              level: "warn", step,
+              level: "warn",
+              step,
               message: `Falha ticket ${tasks[j].hsId}: ${r.error}`,
             });
           } else {
@@ -1999,14 +2272,30 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         await bump(ok, fail);
         if (!nextAfter) break;
       }
-
     } else if (step.startsWith("activities-")) {
-      const kind = step.replace("activities-", "") as "notes" | "calls" | "meetings" | "tasks" | "emails";
-      const TYPE_MAP: Record<typeof kind, { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }> = {
+      const kind = step.replace("activities-", "") as
+        | "notes"
+        | "calls"
+        | "meetings"
+        | "tasks"
+        | "emails";
+      const TYPE_MAP: Record<
+        typeof kind,
+        { type: "note" | "call" | "meeting" | "task" | "email"; props: string[] }
+      > = {
         notes: { type: "note", props: ["hs_note_body", "hs_timestamp"] },
-        calls: { type: "call", props: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition"] },
-        meetings: { type: "meeting", props: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp"] },
-        tasks: { type: "task", props: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status"] },
+        calls: {
+          type: "call",
+          props: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition"],
+        },
+        meetings: {
+          type: "meeting",
+          props: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp"],
+        },
+        tasks: {
+          type: "task",
+          props: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status"],
+        },
         emails: { type: "email", props: ["hs_email_subject", "hs_email_text", "hs_timestamp"] },
       };
       const t = TYPE_MAP[kind];
@@ -2020,18 +2309,34 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       type Parents = { contactId?: string; companyId?: string; dealId?: string; leadId?: string };
       let parents = resume.parents_map as Record<string, Parents> | undefined;
       if (!targetIds || !parents || !resume.discovery_complete) {
-        const entities: { fromObj: string; ids: string[]; key: "companyId" | "contactId" | "dealId" | "leadId" }[] = [
+        const entities: {
+          fromObj: string;
+          ids: string[];
+          key: "companyId" | "contactId" | "dealId" | "leadId";
+        }[] = [
           { fromObj: "companies", ids: [...companyMap.keys()], key: "companyId" },
           { fromObj: "contacts", ids: [...contactMap.keys()], key: "contactId" },
           { fromObj: "deals", ids: [...dealMap.keys()], key: "dealId" },
           { fromObj: "leads", ids: [...leadMap.keys()], key: "leadId" },
         ];
-        const discovery = await discoverActivityTargets({ supabase, jobId, itemId, step, kind, entities, resume, deadlineAt });
+        const discovery = await discoverActivityTargets({
+          supabase,
+          jobId,
+          itemId,
+          step,
+          kind,
+          entities,
+          resume,
+          deadlineAt,
+        });
         targetIds = discovery.targetIds;
         parents = discovery.parents;
         await bump(0, 0, targetIds.length, true);
         if (discovery.partial) {
-          await patchItemBefore(supabase, itemId, { paused: true, last_heartbeat_at: new Date().toISOString() });
+          await patchItemBefore(supabase, itemId, {
+            paused: true,
+            last_heartbeat_at: new Date().toISOString(),
+          });
           await appendLog(supabase, jobId, {
             level: "info",
             step,
@@ -2040,7 +2345,8 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           return { succeeded: ok, failed: fail, importedHsIds: imported, partial: true };
         }
         await appendLog(supabase, jobId, {
-          level: "info", step,
+          level: "info",
+          step,
           message: `Plano: ${targetIds.length} ${kind}`,
         });
       }
@@ -2052,26 +2358,38 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
         let idx = (resume.read_index as number) ?? 0;
         const CHUNK = 100;
         while (idx < targetIds.length) {
-          if (isExpired()) { partial = true; break; }
+          if (isExpired()) {
+            partial = true;
+            break;
+          }
           const chunkIds = targetIds.slice(idx, idx + CHUNK);
           const recs = await batchRead(kind, chunkIds, actPropsList);
           for (const a of recs) {
             const p = a.properties;
             const subject =
               p.hs_note_body?.replace(/<[^>]+>/g, "").slice(0, 100) ??
-              p.hs_call_title ?? p.hs_meeting_title ?? p.hs_task_subject ?? p.hs_email_subject ?? t.type;
+              p.hs_call_title ??
+              p.hs_meeting_title ??
+              p.hs_task_subject ??
+              p.hs_email_subject ??
+              t.type;
             const body =
-              p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
+              p.hs_note_body ??
+              p.hs_call_body ??
+              p.hs_meeting_body ??
+              p.hs_task_body ??
+              p.hs_email_text ??
+              null;
             const due = p.hs_timestamp ?? null;
             const pr = parents[a.id] ?? {};
             const mapped = mapActivity(kind, p);
             const hsCreated =
               parseHsDate(p.hs_createdate ?? p.createdate) ??
               parseHsDate(p.hs_timestamp) ??
-              (a.createdAt ?? null);
+              a.createdAt ??
+              null;
             const hsUpdated =
-              parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate) ??
-              (a.updatedAt ?? null);
+              parseHsDate(p.hs_lastmodifieddate ?? p.lastmodifieddate) ?? a.updatedAt ?? null;
             const payload = {
               owner_id: userId,
               type: t.type,
@@ -2079,10 +2397,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
               body,
               due_date: due,
               completed: t.type !== "task",
-              related_contact_id: pr.contactId ? contactMap.get(pr.contactId) ?? null : null,
-              related_company_id: pr.companyId ? companyMap.get(pr.companyId) ?? null : null,
-              related_deal_id: pr.dealId ? dealMap.get(pr.dealId) ?? null : null,
-              related_lead_id: pr.leadId ? leadMap.get(pr.leadId) ?? null : null,
+              related_contact_id: pr.contactId ? (contactMap.get(pr.contactId) ?? null) : null,
+              related_company_id: pr.companyId ? (companyMap.get(pr.companyId) ?? null) : null,
+              related_deal_id: pr.dealId ? (dealMap.get(pr.dealId) ?? null) : null,
+              related_lead_id: pr.leadId ? (leadMap.get(pr.leadId) ?? null) : null,
               ...mapped,
               external_ids: { hubspot: a.id, hs_kind: kind } as never,
               hs_raw: rawOf(a),
@@ -2091,7 +2409,10 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             };
             const r = await upsertByHsId(supabase, "activities", userId, a.id, payload);
             if (r.status === "failed") fail++;
-            else { imported.push(a.id); ok++; }
+            else {
+              imported.push(a.id);
+              ok++;
+            }
           }
           idx += chunkIds.length;
           await persistCursor({ read_index: idx });
@@ -2139,7 +2460,11 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
     const msg = e instanceof Error ? e.message : String(e);
     await supabase
       .from("enrichment_job_items")
-      .update({ status: "failed", error: msg, after: { succeeded: ok, failed: fail, imported_hs_ids: imported } as never })
+      .update({
+        status: "failed",
+        error: msg,
+        after: { succeeded: ok, failed: fail, imported_hs_ids: imported } as never,
+      })
       .eq("id", itemId);
     await appendLog(supabase, jobId, { level: "error", step, message: msg });
     throw e;
@@ -2156,7 +2481,9 @@ export async function pickNextItem(
     .select("id, status, before")
     .eq("job_id", jobId);
   const items = (rows ?? []) as ItemRow[];
-  const doneSteps = new Set(items.filter((it) => it.status === "done").map((it) => it.before?.step ?? ""));
+  const doneSteps = new Set(
+    items.filter((it) => it.status === "done").map((it) => it.before?.step ?? ""),
+  );
   const pending = items
     .filter((it) => it.status === "pending")
     .sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0));

@@ -75,24 +75,28 @@ function VideoSettingsPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Provider</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Provider</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-md border bg-muted/30 p-3 text-sm">
-            <strong>Jitsi Meet</strong> (meet.jit.si) — provider gratuito, sem credenciais.
-            As salas são geradas com nomes longos e únicos.
+            <strong>Jitsi Meet</strong> (meet.jit.si) — provider gratuito, sem credenciais. As salas
+            são geradas com nomes longos e únicos.
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Política de gravação</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Política de gravação</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <Label>Exigir consentimento na criação</Label>
               <p className="text-xs text-muted-foreground">
-                Ao criar a sala, marca por padrão a opção de consentimento e exibe aviso
-                ao convidado na entrada.
+                Ao criar a sala, marca por padrão a opção de consentimento e exibe aviso ao
+                convidado na entrada.
               </p>
             </div>
             <Switch checked={requireConsent} onCheckedChange={setRequireConsent} />
@@ -112,7 +116,9 @@ function VideoSettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Transcrição</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Transcrição</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="model">Modelo (Lovable AI Gateway)</Label>
@@ -131,7 +137,11 @@ function VideoSettingsPage() {
       </Card>
 
       <Button onClick={submit} disabled={saving}>
-        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+        {saving ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="mr-2 h-4 w-4" />
+        )}
         Salvar
       </Button>
     </div>

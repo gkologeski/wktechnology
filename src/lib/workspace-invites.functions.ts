@@ -9,10 +9,17 @@ const Role = z.enum(["admin", "manager", "member"]);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
   const { data: profile } = await supabase
-    .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
   if (profile?.active_workspace_id) return profile.active_workspace_id as string;
   const { data: m } = await supabase
-    .from("workspace_members").select("workspace_id").eq("user_id", userId).limit(1).maybeSingle();
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
   if (!m?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
   return m.workspace_id as string;
 }
@@ -20,16 +27,24 @@ async function resolveActiveWorkspace(supabase: any, userId: string): Promise<st
 async function assertWorkspaceAdmin(workspaceId: string, userId: string) {
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
-    .select("role").eq("workspace_id", workspaceId).eq("user_id", userId).maybeSingle();
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data || data.role !== "admin") throw new Error("Apenas admins do workspace podem fazer isso.");
+  if (!data || data.role !== "admin")
+    throw new Error("Apenas admins do workspace podem fazer isso.");
 }
 
 function randomToken(): string {
   // 32 bytes base64url
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  return Buffer.from(bytes).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 /** Lista membros + convites pendentes do workspace ativo. */
@@ -49,19 +64,25 @@ export const listWorkspaceTeam = createServerFn({ method: "GET" })
     const emailMap = new Map<string, string>();
     if (ids.length) {
       const { data: profs } = await supabaseAdmin
-        .from("profiles").select("id, full_name, phone").in("id", ids);
+        .from("profiles")
+        .select("id, full_name, phone")
+        .in("id", ids);
       for (const p of profs ?? []) {
         profileMap.set(p.id as string, {
           name: (p.full_name as string) ?? "",
           phone: ((p as { phone?: string | null }).phone ?? "") as string,
         });
       }
-      await Promise.all(ids.map(async (id) => {
-        try {
-          const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
-          if (u.user?.email) emailMap.set(id, u.user.email);
-        } catch { /* ignore */ }
-      }));
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+            if (u.user?.email) emailMap.set(id, u.user.email);
+          } catch {
+            /* ignore */
+          }
+        }),
+      );
     }
 
     const { data: invites } = await supabaseAdmin
@@ -95,11 +116,13 @@ export const listWorkspaceTeam = createServerFn({ method: "GET" })
 export const createWorkspaceInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      email: z.string().trim().email().max(255),
-      role: Role,
-      redirect_origin: z.string().trim().url().max(255),
-    }).parse(i)
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        role: Role,
+        redirect_origin: z.string().trim().url().max(255),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -110,8 +133,12 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
     const token = randomToken();
 
     // Revoga qualquer convite pendente do mesmo email para o mesmo workspace
-    await supabaseAdmin.from("workspace_invites")
-      .delete().eq("workspace_id", workspaceId).eq("email", email).is("accepted_at", null);
+    await supabaseAdmin
+      .from("workspace_invites")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("email", email)
+      .is("accepted_at", null);
 
     const { error } = await supabaseAdmin.from("workspace_invites").insert({
       workspace_id: workspaceId,
@@ -193,16 +220,25 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
       return { valid: false as const, reason: "expired" as const };
 
     const { data: ws } = await supabaseAdmin
-      .from("workspaces").select("name, slug").eq("id", inv.workspace_id as string).maybeSingle();
+      .from("workspaces")
+      .select("name, slug")
+      .eq("id", inv.workspace_id as string)
+      .maybeSingle();
 
     // Verifica se já existe usuário com esse email
     const target = (inv.email as string).toLowerCase();
     let userExists = false;
     let page = 1;
     while (page <= 20) {
-      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
       if (error) break;
-      if (list.users.some((u) => (u.email ?? "").toLowerCase() === target)) { userExists = true; break; }
+      if (list.users.some((u) => (u.email ?? "").toLowerCase() === target)) {
+        userExists = true;
+        break;
+      }
       if (list.users.length < 200) break;
       page++;
     }
@@ -211,7 +247,11 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
       valid: true as const,
       email: inv.email as string,
       role: inv.role as "admin" | "manager" | "member",
-      workspace: { id: inv.workspace_id as string, name: (ws?.name as string) ?? "", slug: (ws?.slug as string) ?? "" },
+      workspace: {
+        id: inv.workspace_id as string,
+        name: (ws?.name as string) ?? "",
+        slug: (ws?.slug as string) ?? "",
+      },
       user_exists: userExists,
     };
   });
@@ -219,12 +259,14 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
 /** PÚBLICA: consome convite — cria usuário (se necessário) e adiciona ao workspace. */
 export const consumeInvite = createServerFn({ method: "POST" })
   .inputValidator((i) =>
-    z.object({
-      token: z.string().min(10).max(200),
-      password: z.string().min(8).max(200),
-      full_name: z.string().trim().min(2).max(120),
-      phone: z.string().trim().min(8).max(32),
-    }).parse(i)
+    z
+      .object({
+        token: z.string().min(10).max(200),
+        password: z.string().min(8).max(200),
+        full_name: z.string().trim().min(2).max(120),
+        phone: z.string().trim().min(8).max(32),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
     const { data: inv } = await supabaseAdmin
@@ -234,7 +276,8 @@ export const consumeInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!inv) throw new Error("Convite não encontrado.");
     if (inv.accepted_at) throw new Error("Este convite já foi utilizado.");
-    if (new Date(inv.expires_at as string).getTime() < Date.now()) throw new Error("Convite expirado.");
+    if (new Date(inv.expires_at as string).getTime() < Date.now())
+      throw new Error("Convite expirado.");
 
     const email = (inv.email as string).toLowerCase();
 
@@ -242,10 +285,16 @@ export const consumeInvite = createServerFn({ method: "POST" })
     let userId: string | null = null;
     let page = 1;
     while (page <= 20) {
-      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
       if (error) throw new Error(error.message);
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === email);
-      if (u) { userId = u.id; break; }
+      if (u) {
+        userId = u.id;
+        break;
+      }
       if (list.users.length < 200) break;
       page++;
     }
@@ -269,12 +318,15 @@ export const consumeInvite = createServerFn({ method: "POST" })
     }
 
     // Garante profile
-    await supabaseAdmin.from("profiles").upsert({
-      id: userId,
-      full_name: data.full_name,
-      phone: data.phone,
-      active_workspace_id: inv.workspace_id,
-    } as never, { onConflict: "id" });
+    await supabaseAdmin.from("profiles").upsert(
+      {
+        id: userId,
+        full_name: data.full_name,
+        phone: data.phone,
+        active_workspace_id: inv.workspace_id,
+      } as never,
+      { onConflict: "id" },
+    );
 
     // Adiciona como membro
     const { error: mErr } = await supabaseAdmin.from("workspace_members").insert({
@@ -286,7 +338,8 @@ export const consumeInvite = createServerFn({ method: "POST" })
     if (mErr && mErr.code !== "23505") throw new Error(mErr.message);
 
     // Marca convite como aceito
-    await supabaseAdmin.from("workspace_invites")
+    await supabaseAdmin
+      .from("workspace_invites")
       .update({ accepted_at: new Date().toISOString() } as never)
       .eq("id", inv.id as string);
 

@@ -12,7 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { formatDistanceToNow } from "date-fns";
@@ -80,20 +85,28 @@ function SecurityScansPage() {
             <ShieldAlert className="h-6 w-6" /> Varreduras de Segurança
           </h1>
           <p className="text-sm text-muted-foreground">
-            Cron diário (03:00 UTC) verifica RLS, GRANTs a anon, funções SECURITY DEFINER e segredos de webhooks.
-            Admins recebem notificação quando há aviso ou pior.
+            Cron diário (03:00 UTC) verifica RLS, GRANTs a anon, funções SECURITY DEFINER e segredos
+            de webhooks. Admins recebem notificação quando há aviso ou pior.
           </p>
         </div>
         <Button onClick={() => runNow.mutate()} disabled={runNow.isPending}>
-          {runNow.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+          {runNow.isPending ? (
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4 mr-2" />
+          )}
           Rodar agora
         </Button>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Execuções recentes</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Execuções recentes</CardTitle>
+        </CardHeader>
         <CardContent>
-          {runs.isLoading ? "Carregando…" : (
+          {runs.isLoading ? (
+            "Carregando…"
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -112,25 +125,46 @@ function SecurityScansPage() {
                   const t = r.totals ?? {};
                   return (
                     <TableRow key={r.id} className={selectedRun === r.id ? "bg-muted/50" : ""}>
-                      <TableCell>{formatDistanceToNow(new Date(r.started_at), { addSuffix: true, locale: ptBR })}</TableCell>
                       <TableCell>
-                        <Badge variant={r.status === "success" ? "outline" : r.status === "failed" ? "destructive" : "secondary"}>
+                        {formatDistanceToNow(new Date(r.started_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            r.status === "success"
+                              ? "outline"
+                              : r.status === "failed"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                        >
                           {r.status}
                         </Badge>
                       </TableCell>
                       <TableCell>{t.critical ?? 0}</TableCell>
                       <TableCell>{t.error ?? 0}</TableCell>
                       <TableCell>{t.warning ?? 0}</TableCell>
-                      <TableCell><strong>{t.total ?? 0}</strong></TableCell>
+                      <TableCell>
+                        <strong>{t.total ?? 0}</strong>
+                      </TableCell>
                       <TableCell>{r.duration_ms ? `${r.duration_ms}ms` : "—"}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost" onClick={() => setSelectedRun(r.id)}>Ver achados</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedRun(r.id)}>
+                          Ver achados
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
                 })}
                 {(runs.data?.runs ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhuma varredura ainda.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                      Nenhuma varredura ainda.
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -140,22 +174,32 @@ function SecurityScansPage() {
 
       {selectedRun && (
         <Card>
-          <CardHeader><CardTitle>Achados da execução</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Achados da execução</CardTitle>
+          </CardHeader>
           <CardContent>
-            {findings.isLoading ? "Carregando…" : (findings.data?.findings ?? []).length === 0 ? (
+            {findings.isLoading ? (
+              "Carregando…"
+            ) : (findings.data?.findings ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum achado nessa execução.</p>
             ) : (
               <div className="space-y-3">
                 {(findings.data?.findings ?? []).map((f: any) => (
                   <div key={f.id} className="border rounded-md p-3 space-y-1">
                     <div className="flex items-center gap-2">
-                      <Badge variant={sevVariant(f.severity as Severity)}>{SEVERITY_LABEL[f.severity as Severity] ?? f.severity}</Badge>
-                      <span className="text-xs text-muted-foreground">{f.scanner} · {f.category}</span>
+                      <Badge variant={sevVariant(f.severity as Severity)}>
+                        {SEVERITY_LABEL[f.severity as Severity] ?? f.severity}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {f.scanner} · {f.category}
+                      </span>
                     </div>
                     <div className="font-medium">{f.title}</div>
                     {f.detail && <div className="text-sm text-muted-foreground">{f.detail}</div>}
                     {f.ref && Object.keys(f.ref).length > 0 && (
-                      <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">{JSON.stringify(f.ref, null, 2)}</pre>
+                      <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                        {JSON.stringify(f.ref, null, 2)}
+                      </pre>
                     )}
                   </div>
                 ))}

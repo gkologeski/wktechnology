@@ -10,7 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MessageCircle, Search, Send, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
+import {
+  Mail,
+  MessageCircle,
+  Search,
+  Send,
+  ChevronRight,
+  ExternalLink,
+  Sparkles,
+} from "lucide-react";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { smartCompose } from "@/lib/ai-compose.functions";
@@ -103,9 +111,14 @@ function UnifiedInboxPage() {
         .select("id, first_name, last_name, email")
         .in("id", contactIds);
       const m = new Map<string, string>();
-      (data ?? []).forEach((c) => m.set(c.id,
-        [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email || c.id.slice(0, 8)
-      ));
+      (data ?? []).forEach((c) =>
+        m.set(
+          c.id,
+          [c.first_name, c.last_name].filter(Boolean).join(" ").trim() ||
+            c.email ||
+            c.id.slice(0, 8),
+        ),
+      );
       return m;
     },
   });
@@ -144,13 +157,14 @@ function UnifiedInboxPage() {
     if (channel !== "all") merged = merged.filter((i) => i.channel === channel);
     if (search.trim()) {
       const q = search.toLowerCase();
-      merged = merged.filter((i) =>
-        i.title.toLowerCase().includes(q) ||
-        i.snippet.toLowerCase().includes(q) ||
-        i.contactLabel.toLowerCase().includes(q)
+      merged = merged.filter(
+        (i) =>
+          i.title.toLowerCase().includes(q) ||
+          i.snippet.toLowerCase().includes(q) ||
+          i.contactLabel.toLowerCase().includes(q),
       );
     }
-    merged.sort((x, y) => (new Date(y.lastAt ?? 0).getTime()) - (new Date(x.lastAt ?? 0).getTime()));
+    merged.sort((x, y) => new Date(y.lastAt ?? 0).getTime() - new Date(x.lastAt ?? 0).getTime());
     return merged;
   }, [emailQ.data, waQ.data, contactsQ.data, lastEmailQ.data, channel, search]);
 
@@ -160,8 +174,11 @@ function UnifiedInboxPage() {
     mutationFn: async () => {
       if (!current) throw new Error("Selecione um item.");
       if (current.channel === "email") {
-        if (!current.replyTo) throw new Error("Não foi possível identificar o destinatário do e-mail.");
-        const subject = current.subject?.toLowerCase().startsWith("re:") ? current.subject : `Re: ${current.subject || "(sem assunto)"}`;
+        if (!current.replyTo)
+          throw new Error("Não foi possível identificar o destinatário do e-mail.");
+        const subject = current.subject?.toLowerCase().startsWith("re:")
+          ? current.subject
+          : `Re: ${current.subject || "(sem assunto)"}`;
         await sendEmail({
           data: {
             to: current.replyTo,
@@ -180,7 +197,10 @@ function UnifiedInboxPage() {
         });
       }
     },
-    onSuccess: () => { toast.success("Enviado!"); setDraft(""); },
+    onSuccess: () => {
+      toast.success("Enviado!");
+      setDraft("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -188,7 +208,7 @@ function UnifiedInboxPage() {
     mutationFn: async () => {
       if (!current) throw new Error("Selecione uma conversa.");
       const baseText = `${current.title}\n\n${current.snippet}`.trim();
-      const res = await compose({
+      const res = (await compose({
         data: {
           channel: current.channel,
           mode: "reply",
@@ -196,7 +216,7 @@ function UnifiedInboxPage() {
           contact_name: current.contactLabel,
           language: "pt-BR",
         } as never,
-      }) as { text: string };
+      })) as { text: string };
       setDraft((prev) => (prev ? `${prev}\n\n${res.text}` : res.text));
     },
     onError: (e: Error) => toast.error(e.message),
@@ -213,19 +233,32 @@ function UnifiedInboxPage() {
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={search} onChange={(e) => setSearch(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por contato, assunto ou texto…"
             className="pl-8"
           />
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant={channel === "all" ? "default" : "outline"} onClick={() => setChannel("all")}>
+          <Button
+            size="sm"
+            variant={channel === "all" ? "default" : "outline"}
+            onClick={() => setChannel("all")}
+          >
             Todos
           </Button>
-          <Button size="sm" variant={channel === "email" ? "default" : "outline"} onClick={() => setChannel("email")}>
+          <Button
+            size="sm"
+            variant={channel === "email" ? "default" : "outline"}
+            onClick={() => setChannel("email")}
+          >
             <Mail className="h-4 w-4 mr-1" /> E-mail
           </Button>
-          <Button size="sm" variant={channel === "whatsapp" ? "default" : "outline"} onClick={() => setChannel("whatsapp")}>
+          <Button
+            size="sm"
+            variant={channel === "whatsapp" ? "default" : "outline"}
+            onClick={() => setChannel("whatsapp")}
+          >
             <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
           </Button>
         </div>
@@ -243,18 +276,25 @@ function UnifiedInboxPage() {
                 {items.map((it) => (
                   <li key={it.id}>
                     <button
-                      onClick={() => { setSelected(it.id); setDraft(""); }}
+                      onClick={() => {
+                        setSelected(it.id);
+                        setDraft("");
+                      }}
                       className={`flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors w-full text-left ${selected === it.id ? "bg-muted/60" : ""}`}
                     >
                       <div className="shrink-0 mt-0.5">
-                        {it.channel === "email"
-                          ? <Mail className="h-4 w-4 text-primary" />
-                          : <MessageCircle className="h-4 w-4 text-emerald-500" />}
+                        {it.channel === "email" ? (
+                          <Mail className="h-4 w-4 text-primary" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4 text-emerald-500" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{it.contactLabel}</span>
-                          <Badge variant="outline" className="text-[10px] capitalize">{it.channel}</Badge>
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {it.channel}
+                          </Badge>
                         </div>
                         <div className="text-sm truncate text-foreground/80">{it.title}</div>
                         {it.snippet && (
@@ -276,14 +316,18 @@ function UnifiedInboxPage() {
         <Card className="h-fit sticky top-4">
           <CardContent className="p-4 space-y-3">
             {!current ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Selecione uma conversa para responder inline.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                Selecione uma conversa para responder inline.
+              </p>
             ) : (
               <>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    {current.channel === "email"
-                      ? <Mail className="h-4 w-4 text-primary" />
-                      : <MessageCircle className="h-4 w-4 text-emerald-500" />}
+                    {current.channel === "email" ? (
+                      <Mail className="h-4 w-4 text-primary" />
+                    ) : (
+                      <MessageCircle className="h-4 w-4 text-emerald-500" />
+                    )}
                     <span className="font-medium truncate">{current.contactLabel}</span>
                   </div>
                   <div className="text-sm text-muted-foreground truncate">{current.title}</div>
@@ -295,7 +339,9 @@ function UnifiedInboxPage() {
                   rows={6}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder={current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"}
+                  placeholder={
+                    current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"
+                  }
                 />
                 <div className="flex items-center gap-2 justify-between">
                   <div className="flex items-center gap-1">
@@ -318,7 +364,11 @@ function UnifiedInboxPage() {
                   <Button
                     size="sm"
                     onClick={() => reply.mutate()}
-                    disabled={!draft.trim() || reply.isPending || (current.channel === "email" && !current.replyTo)}
+                    disabled={
+                      !draft.trim() ||
+                      reply.isPending ||
+                      (current.channel === "email" && !current.replyTo)
+                    }
                   >
                     <Send className="h-4 w-4 mr-1" />
                     {reply.isPending ? "Enviando…" : "Enviar"}

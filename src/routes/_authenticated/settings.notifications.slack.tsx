@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   getSlackIntegration,
@@ -57,7 +63,13 @@ function SlackSettingsPage() {
   async function doSave() {
     setBusy(true);
     try {
-      await saveFn({ data: { webhook_url: webhookUrl, team_name: teamName || undefined, default_channel_name: defaultChannel || undefined } });
+      await saveFn({
+        data: {
+          webhook_url: webhookUrl,
+          team_name: teamName || undefined,
+          default_channel_name: defaultChannel || undefined,
+        },
+      });
       toast.success("Salvo");
       setWebhookUrl("");
       setTeamName("");
@@ -72,61 +84,110 @@ function SlackSettingsPage() {
   async function doDelete() {
     if (!confirm("Remover integração com Slack?")) return;
     setBusy(true);
-    try { await delFn(); toast.success("Removido"); await refetch(); }
-    finally { setBusy(false); }
+    try {
+      await delFn();
+      toast.success("Removido");
+      await refetch();
+    } finally {
+      setBusy(false);
+    }
   }
   async function doTest() {
     setBusy(true);
-    try { await testFn(); toast.success("Mensagem enviada"); }
-    catch (e) { toast.error(e instanceof Error ? e.message : "Falha"); }
-    finally { setBusy(false); }
+    try {
+      await testFn();
+      toast.success("Mensagem enviada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setBusy(false);
+    }
   }
   async function addRoute() {
     if (!newChannel.trim()) return;
     setBusy(true);
     try {
-      await upsertRoute({ data: { event_type: newEvent as typeof SLACK_EVENT_TYPES[number], channel_id: newChannel.trim(), enabled: true } });
+      await upsertRoute({
+        data: {
+          event_type: newEvent as (typeof SLACK_EVENT_TYPES)[number],
+          channel_id: newChannel.trim(),
+          enabled: true,
+        },
+      });
       setNewChannel("");
       await refetch();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha"); }
-    finally { setBusy(false); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setBusy(false);
+    }
   }
   async function removeRoute(id: string) {
     setBusy(true);
-    try { await delRoute({ data: { id } }); await refetch(); }
-    finally { setBusy(false); }
+    try {
+      await delRoute({ data: { id } });
+      await refetch();
+    } finally {
+      setBusy(false);
+    }
   }
   async function toggleRoute(id: string, event_type: string, channel_id: string, enabled: boolean) {
-    await upsertRoute({ data: { id, event_type: event_type as typeof SLACK_EVENT_TYPES[number], channel_id, enabled } });
+    await upsertRoute({
+      data: {
+        id,
+        event_type: event_type as (typeof SLACK_EVENT_TYPES)[number],
+        channel_id,
+        enabled,
+      },
+    });
     await refetch();
   }
 
   return (
     <div className="space-y-4 p-6 max-w-3xl">
-      <PageHeader title="Notificações no Slack" description="Receba alertas de leads, deals e tickets em canais do Slack via Incoming Webhook." />
+      <PageHeader
+        title="Notificações no Slack"
+        description="Receba alertas de leads, deals e tickets em canais do Slack via Incoming Webhook."
+      />
 
       <Card>
-        <CardHeader><CardTitle>Conexão</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Conexão</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           {integ ? (
             <>
               <div className="text-sm">
                 Conectado a <strong>{integ.team_name || "Slack"}</strong>
-                {integ.default_channel_name ? ` · canal default: #${integ.default_channel_name}` : ""}
+                {integ.default_channel_name
+                  ? ` · canal default: #${integ.default_channel_name}`
+                  : ""}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={doTest} disabled={busy}><Send className="h-4 w-4 mr-2" />Enviar teste</Button>
-                <Button variant="destructive" onClick={doDelete} disabled={busy}><Trash2 className="h-4 w-4 mr-2" />Desconectar</Button>
+                <Button variant="outline" onClick={doTest} disabled={busy}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar teste
+                </Button>
+                <Button variant="destructive" onClick={doDelete} disabled={busy}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Desconectar
+                </Button>
               </div>
             </>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Crie um Incoming Webhook em <code>api.slack.com/messaging/webhooks</code> e cole a URL abaixo.
+                Crie um Incoming Webhook em <code>api.slack.com/messaging/webhooks</code> e cole a
+                URL abaixo.
               </p>
               <div className="space-y-1.5">
                 <Label htmlFor="hook">Webhook URL</Label>
-                <Input id="hook" placeholder="https://hooks.slack.com/services/..." value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} />
+                <Input
+                  id="hook"
+                  placeholder="https://hooks.slack.com/services/..."
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -135,11 +196,20 @@ function SlackSettingsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ch">Canal default</Label>
-                  <Input id="ch" placeholder="alerts-crm" value={defaultChannel} onChange={(e) => setDefaultChannel(e.target.value)} />
+                  <Input
+                    id="ch"
+                    placeholder="alerts-crm"
+                    value={defaultChannel}
+                    onChange={(e) => setDefaultChannel(e.target.value)}
+                  />
                 </div>
               </div>
               <Button onClick={doSave} disabled={busy || !webhookUrl}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {busy ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
                 Conectar
               </Button>
             </>
@@ -149,10 +219,13 @@ function SlackSettingsPage() {
 
       {integ && (
         <Card>
-          <CardHeader><CardTitle>Eventos → Canal</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Eventos → Canal</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Sem regras, todos os eventos vão para o webhook default. Adicione regras para sobrescrever o canal por tipo de evento.
+              Sem regras, todos os eventos vão para o webhook default. Adicione regras para
+              sobrescrever o canal por tipo de evento.
             </p>
             <div className="space-y-2">
               {routes.map((r) => (
@@ -161,23 +234,42 @@ function SlackSettingsPage() {
                     <span className="font-medium">{r.event_type}</span>
                     <span className="text-muted-foreground"> → #{r.channel_id}</span>
                   </div>
-                  <Switch checked={r.enabled} onCheckedChange={(v) => toggleRoute(r.id, r.event_type, r.channel_id, v)} />
+                  <Switch
+                    checked={r.enabled}
+                    onCheckedChange={(v) => toggleRoute(r.id, r.event_type, r.channel_id, v)}
+                  />
                   <Button size="icon" variant="ghost" onClick={() => removeRoute(r.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              {routes.length === 0 && <div className="text-sm text-muted-foreground">Nenhuma regra ainda.</div>}
+              {routes.length === 0 && (
+                <div className="text-sm text-muted-foreground">Nenhuma regra ainda.</div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
               <Select value={newEvent} onValueChange={setNewEvent}>
-                <SelectTrigger className="sm:w-60"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="sm:w-60">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {SLACK_EVENT_TYPES.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                  {SLACK_EVENT_TYPES.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Input placeholder="canal-alvo" value={newChannel} onChange={(e) => setNewChannel(e.target.value)} className="flex-1" />
-              <Button onClick={addRoute} disabled={busy || !newChannel}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+              <Input
+                placeholder="canal-alvo"
+                value={newChannel}
+                onChange={(e) => setNewChannel(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={addRoute} disabled={busy || !newChannel}>
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar
+              </Button>
             </div>
           </CardContent>
         </Card>

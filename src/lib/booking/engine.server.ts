@@ -2,7 +2,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-type WeekdayKey = typeof WEEKDAY_KEYS[number];
+type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
 
 type WindowSpec = { start: string; end: string }; // "HH:MM" UTC-naive (interpreted in page tz)
 type Availability = Partial<Record<WeekdayKey, WindowSpec[]>>;
@@ -39,7 +39,14 @@ function parseHHMM(s: string): { h: number; m: number } | null {
 }
 
 // Builds a UTC Date for a given Y-M-D + HH:MM in a given IANA timezone.
-function zonedDateToUtc(year: number, month: number, day: number, hour: number, minute: number, timeZone: string): Date {
+function zonedDateToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  timeZone: string,
+): Date {
   // Approach: build naive UTC then compute tz offset for that instant
   const naive = Date.UTC(year, month - 1, day, hour, minute, 0);
   const tzOffsetMs = getTimezoneOffsetMs(timeZone, new Date(naive));
@@ -75,7 +82,9 @@ function getTimezoneOffsetMs(timeZone: string, at: Date): number {
 }
 
 function weekdayInTz(at: Date, timeZone: string): WeekdayKey {
-  const wd = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(at).toLowerCase();
+  const wd = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" })
+    .format(at)
+    .toLowerCase();
   if (wd.startsWith("sun")) return "sun";
   if (wd.startsWith("mon")) return "mon";
   if (wd.startsWith("tue")) return "tue";
@@ -87,7 +96,10 @@ function weekdayInTz(at: Date, timeZone: string): WeekdayKey {
 
 function ymdInTz(at: Date, timeZone: string): { y: number; m: number; d: number } {
   const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
   const parts = dtf.formatToParts(at).reduce<Record<string, string>>((acc, p) => {
     if (p.type !== "literal") acc[p.type] = p.value;
@@ -141,10 +153,16 @@ export async function computeAvailableSlots(
 
   type Range = { s: number; e: number };
   const busy: Range[] = [
-    ...(bookings ?? []).map((b) => ({ s: new Date(b.start_at).getTime(), e: new Date(b.end_at).getTime() })),
+    ...(bookings ?? []).map((b) => ({
+      s: new Date(b.start_at).getTime(),
+      e: new Date(b.end_at).getTime(),
+    })),
     ...((events ?? []) as { start_at: string | null; end_at: string | null }[])
       .filter((e) => e.start_at && e.end_at)
-      .map((e) => ({ s: new Date(e.start_at as string).getTime(), e: new Date(e.end_at as string).getTime() })),
+      .map((e) => ({
+        s: new Date(e.start_at as string).getTime(),
+        e: new Date(e.end_at as string).getTime(),
+      })),
   ].filter((r) => Number.isFinite(r.s) && Number.isFinite(r.e) && r.e > r.s);
 
   const dur = page.duration_minutes * 60_000;
@@ -176,7 +194,8 @@ export async function computeAvailableSlots(
         const slotS = t;
         const slotE = t + dur;
         const conflicts = busy.some((b) => !(slotE + bufA <= b.s || slotS - bufB >= b.e));
-        if (!conflicts) slots.push({ start: new Date(slotS).toISOString(), end: new Date(slotE).toISOString() });
+        if (!conflicts)
+          slots.push({ start: new Date(slotS).toISOString(), end: new Date(slotE).toISOString() });
         t += step;
       }
     }
@@ -188,7 +207,13 @@ export async function computeAvailableSlots(
 
 async function pushBookingToGoogle(
   page: BookingPageRow,
-  booking: { start_at: string; end_at: string; invitee_name: string; invitee_email: string; notes: string | null },
+  booking: {
+    start_at: string;
+    end_at: string;
+    invitee_name: string;
+    invitee_email: string;
+    notes: string | null;
+  },
 ): Promise<string | null> {
   if (!page.calendar_account_id) return null;
   const { data: account } = await supabaseAdmin
@@ -218,25 +243,37 @@ async function pushBookingToGoogle(
     if (!res.ok) return null;
     const j = (await res.json()) as { access_token: string; expires_in: number };
     token = j.access_token;
-    await supabaseAdmin.from("calendar_accounts")
-      .update({ access_token: token, expires_at: new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString() })
+    await supabaseAdmin
+      .from("calendar_accounts")
+      .update({
+        access_token: token,
+        expires_at: new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString(),
+      })
       .eq("id", account.id);
   }
 
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
-  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events?sendUpdates=all`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      summary: `${page.title} — ${booking.invitee_name}`,
-      description: [booking.notes, `Booking via ${page.title}`, `Convidado: ${booking.invitee_name} <${booking.invitee_email}>`]
-        .filter(Boolean).join("\n\n"),
-      location: page.location || undefined,
-      start: { dateTime: booking.start_at },
-      end: { dateTime: booking.end_at },
-      attendees: [{ email: booking.invitee_email, displayName: booking.invitee_name }],
-    }),
-  });
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?sendUpdates=all`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        summary: `${page.title} — ${booking.invitee_name}`,
+        description: [
+          booking.notes,
+          `Booking via ${page.title}`,
+          `Convidado: ${booking.invitee_name} <${booking.invitee_email}>`,
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+        location: page.location || undefined,
+        start: { dateTime: booking.start_at },
+        end: { dateTime: booking.end_at },
+        attendees: [{ email: booking.invitee_email, displayName: booking.invitee_name }],
+      }),
+    },
+  );
   if (!res.ok) return null;
   const j = (await res.json()) as { id: string };
   return j.id ?? null;
@@ -270,76 +307,103 @@ export async function createPublicBooking(input: {
   let contactId: string | null = null;
   if (page.target === "contact") {
     const { data: existing } = await supabaseAdmin
-      .from("contacts").select("id").eq("owner_id", page.owner_id).eq("email", input.invitee_email).maybeSingle();
+      .from("contacts")
+      .select("id")
+      .eq("owner_id", page.owner_id)
+      .eq("email", input.invitee_email)
+      .maybeSingle();
     if (existing) contactId = existing.id;
     else {
       const [first, ...rest] = (input.invitee_name || "").trim().split(/\s+/);
-      const { data: created } = await supabaseAdmin.from("contacts").insert({
-        owner_id: page.owner_id,
-        first_name: first || input.invitee_email,
-        last_name: rest.join(" ") || null,
-        email: input.invitee_email,
-        phone: input.invitee_phone ?? null,
-      }).select("id").single();
+      const { data: created } = await supabaseAdmin
+        .from("contacts")
+        .insert({
+          owner_id: page.owner_id,
+          first_name: first || input.invitee_email,
+          last_name: rest.join(" ") || null,
+          email: input.invitee_email,
+          phone: input.invitee_phone ?? null,
+        })
+        .select("id")
+        .single();
       contactId = created?.id ?? null;
     }
   } else {
     const { data: existing } = await supabaseAdmin
-      .from("leads").select("id").eq("owner_id", page.owner_id).eq("email", input.invitee_email).maybeSingle();
+      .from("leads")
+      .select("id")
+      .eq("owner_id", page.owner_id)
+      .eq("email", input.invitee_email)
+      .maybeSingle();
     if (existing) leadId = existing.id;
     else {
       const [first, ...rest] = (input.invitee_name || "").trim().split(/\s+/);
-      const { data: created } = await supabaseAdmin.from("leads").insert({
-        owner_id: page.owner_id,
-        first_name: first || input.invitee_email,
-        last_name: rest.join(" ") || null,
-        email: input.invitee_email,
-        phone: input.invitee_phone ?? null,
-        source: "booking",
-        status: "new",
-      }).select("id").single();
+      const { data: created } = await supabaseAdmin
+        .from("leads")
+        .insert({
+          owner_id: page.owner_id,
+          first_name: first || input.invitee_email,
+          last_name: rest.join(" ") || null,
+          email: input.invitee_email,
+          phone: input.invitee_phone ?? null,
+          source: "booking",
+          status: "new",
+        })
+        .select("id")
+        .single();
       leadId = created?.id ?? null;
     }
   }
 
   // Push to Google Calendar (best effort)
   const gcalEventId = await pushBookingToGoogle(page, {
-    start_at, end_at,
+    start_at,
+    end_at,
     invitee_name: input.invitee_name,
     invitee_email: input.invitee_email,
     notes: input.notes ?? null,
   });
 
   // Create activity (meeting) so it shows up everywhere
-  const { data: activity } = await supabaseAdmin.from("activities").insert({
-    owner_id: page.owner_id,
-    type: "meeting",
-    subject: `${page.title} — ${input.invitee_name}`,
-    body: input.notes ?? null,
-    due_date: start_at,
-    meeting_location: page.location ?? null,
-    related_contact_id: contactId,
-    related_lead_id: leadId,
-    external_ids: page.calendar_account_id && gcalEventId
-      ? { [`gcal_${page.calendar_account_id}`]: gcalEventId }
-      : {},
-  }).select("id").single();
+  const { data: activity } = await supabaseAdmin
+    .from("activities")
+    .insert({
+      owner_id: page.owner_id,
+      type: "meeting",
+      subject: `${page.title} — ${input.invitee_name}`,
+      body: input.notes ?? null,
+      due_date: start_at,
+      meeting_location: page.location ?? null,
+      related_contact_id: contactId,
+      related_lead_id: leadId,
+      external_ids:
+        page.calendar_account_id && gcalEventId
+          ? { [`gcal_${page.calendar_account_id}`]: gcalEventId }
+          : {},
+    })
+    .select("id")
+    .single();
 
-  const { data: booking, error } = await supabaseAdmin.from("bookings").insert({
-    page_id: page.id,
-    owner_id: page.owner_id,
-    start_at, end_at,
-    invitee_name: input.invitee_name,
-    invitee_email: input.invitee_email,
-    invitee_phone: input.invitee_phone ?? null,
-    notes: input.notes ?? null,
-    status: "confirmed",
-    gcal_event_id: gcalEventId,
-    lead_id: leadId,
-    contact_id: contactId,
-    activity_id: activity?.id ?? null,
-    timezone: input.timezone ?? page.timezone,
-  }).select("id").single();
+  const { data: booking, error } = await supabaseAdmin
+    .from("bookings")
+    .insert({
+      page_id: page.id,
+      owner_id: page.owner_id,
+      start_at,
+      end_at,
+      invitee_name: input.invitee_name,
+      invitee_email: input.invitee_email,
+      invitee_phone: input.invitee_phone ?? null,
+      notes: input.notes ?? null,
+      status: "confirmed",
+      gcal_event_id: gcalEventId,
+      lead_id: leadId,
+      contact_id: contactId,
+      activity_id: activity?.id ?? null,
+      timezone: input.timezone ?? page.timezone,
+    })
+    .select("id")
+    .single();
   if (error || !booking) throw new Error(error?.message || "Falha ao criar reserva");
   return { id: booking.id };
 }

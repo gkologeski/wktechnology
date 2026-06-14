@@ -7,7 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getPaymentsSettings, savePaymentsSettings } from "@/lib/payments-settings.functions";
@@ -29,7 +33,11 @@ function PaymentsSettingsPage() {
     (async () => {
       try {
         const { payments } = await get();
-        const p = (payments ?? {}) as { gateway?: typeof gateway; mode?: typeof mode; default_method?: typeof defaultMethod };
+        const p = (payments ?? {}) as {
+          gateway?: typeof gateway;
+          mode?: typeof mode;
+          default_method?: typeof defaultMethod;
+        };
         if (p.gateway) setGateway(p.gateway);
         if (p.mode) setMode(p.mode);
         if (p.default_method) setDefaultMethod(p.default_method);
@@ -61,15 +69,22 @@ function PaymentsSettingsPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-2xl">
-      <PageHeader title="Cobrança & Pagamentos" description="Configure o gateway para gerar boletos, Pix e cobranças no cartão." />
+      <PageHeader
+        title="Cobrança & Pagamentos"
+        description="Configure o gateway para gerar boletos, Pix e cobranças no cartão."
+      />
 
       <Card>
-        <CardHeader><CardTitle>Gateway</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Gateway</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Provedor</Label>
             <Select value={gateway} onValueChange={(v) => setGateway(v as typeof gateway)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="manual">Manual (sem integração)</SelectItem>
                 <SelectItem value="asaas">Asaas</SelectItem>
@@ -79,15 +94,18 @@ function PaymentsSettingsPage() {
             </Select>
             {gateway !== "manual" && (
               <p className="text-xs text-muted-foreground">
-                Credenciais do gateway devem ser configuradas como segredos do servidor
-                (<code>{gateway.toUpperCase()}_API_KEY</code> e <code>{gateway.toUpperCase()}_WEBHOOK_SECRET</code>).
+                Credenciais do gateway devem ser configuradas como segredos do servidor (
+                <code>{gateway.toUpperCase()}_API_KEY</code> e{" "}
+                <code>{gateway.toUpperCase()}_WEBHOOK_SECRET</code>).
               </p>
             )}
           </div>
           <div className="space-y-2">
             <Label>Ambiente</Label>
             <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="sandbox">Sandbox</SelectItem>
                 <SelectItem value="live">Produção</SelectItem>
@@ -96,8 +114,13 @@ function PaymentsSettingsPage() {
           </div>
           <div className="space-y-2">
             <Label>Método padrão</Label>
-            <Select value={defaultMethod} onValueChange={(v) => setDefaultMethod(v as typeof defaultMethod)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={defaultMethod}
+              onValueChange={(v) => setDefaultMethod(v as typeof defaultMethod)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pix">Pix</SelectItem>
                 <SelectItem value="boleto">Boleto</SelectItem>
@@ -109,7 +132,9 @@ function PaymentsSettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Webhook</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Webhook</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm text-muted-foreground">
             Configure no painel do gateway o webhook abaixo (substitua <code>:provider</code> por
@@ -122,7 +147,11 @@ function PaymentsSettingsPage() {
       </Card>
 
       <Button onClick={submit} disabled={saving}>
-        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+        {saving ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="mr-2 h-4 w-4" />
+        )}
         Salvar
       </Button>
     </div>

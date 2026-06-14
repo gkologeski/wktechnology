@@ -18,7 +18,9 @@ const REL_COL: Record<Entity, string> = {
 function randomToken(len = 24): string {
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("").slice(0, len);
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, len);
 }
 
 function roomName(workspaceId: string): string {
@@ -146,9 +148,7 @@ export const listMeetings = createServerFn({ method: "POST" })
  * ============================================================ */
 export const getMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -209,13 +209,19 @@ export const deleteMeeting = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // delete recording from storage if present
     const { data: m } = await supabaseAdmin
-      .from("meetings").select("recording_storage_path")
-      .eq("id", data.id).eq("owner_id", workspaceId).maybeSingle();
+      .from("meetings")
+      .select("recording_storage_path")
+      .eq("id", data.id)
+      .eq("owner_id", workspaceId)
+      .maybeSingle();
     if (m?.recording_storage_path) {
       await supabaseAdmin.storage.from("meeting-recordings").remove([m.recording_storage_path]);
     }
     const { error } = await supabaseAdmin
-      .from("meetings").delete().eq("id", data.id).eq("owner_id", workspaceId);
+      .from("meetings")
+      .delete()
+      .eq("id", data.id)
+      .eq("owner_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -226,16 +232,21 @@ export const deleteMeeting = createServerFn({ method: "POST" })
 export const createRecordingUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      meeting_id: z.string().uuid(),
-      filename: z.string().min(1).max(255),
-    }).parse(input),
+    z
+      .object({
+        meeting_id: z.string().uuid(),
+        filename: z.string().min(1).max(255),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: m, error: mErr } = await supabaseAdmin
-      .from("meetings").select("id, owner_id")
-      .eq("id", data.meeting_id).eq("owner_id", workspaceId).maybeSingle();
+      .from("meetings")
+      .select("id, owner_id")
+      .eq("id", data.meeting_id)
+      .eq("owner_id", workspaceId)
+      .maybeSingle();
     if (mErr || !m) throw new Error("Reunião não encontrada");
 
     const safe = data.filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
@@ -253,12 +264,14 @@ export const createRecordingUploadUrl = createServerFn({ method: "POST" })
 export const attachRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      meeting_id: z.string().uuid(),
-      path: z.string().min(1).max(500),
-      mime_type: z.string().min(1).max(120).optional(),
-      duration_seconds: z.number().int().min(0).optional(),
-    }).parse(input),
+    z
+      .object({
+        meeting_id: z.string().uuid(),
+        path: z.string().min(1).max(500),
+        mime_type: z.string().min(1).max(120).optional(),
+        duration_seconds: z.number().int().min(0).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
@@ -292,16 +305,21 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
     const { data: meeting, error: mErr } = await supabaseAdmin
-      .from("meetings").select("*").eq("id", data.meeting_id)
-      .eq("owner_id", workspaceId).maybeSingle();
+      .from("meetings")
+      .select("*")
+      .eq("id", data.meeting_id)
+      .eq("owner_id", workspaceId)
+      .maybeSingle();
     if (mErr || !meeting) throw new Error("Reunião não encontrada");
     if (!meeting.recording_storage_path) throw new Error("Sem gravação para transcrever");
 
     // upsert summary as processing
-    await supabaseAdmin.from("meeting_summaries").upsert(
-      { meeting_id: meeting.id, owner_id: workspaceId, status: "processing" },
-      { onConflict: "meeting_id" },
-    );
+    await supabaseAdmin
+      .from("meeting_summaries")
+      .upsert(
+        { meeting_id: meeting.id, owner_id: workspaceId, status: "processing" },
+        { onConflict: "meeting_id" },
+      );
 
     try {
       // 1) download audio from storage
@@ -340,7 +358,16 @@ Responda APENAS com JSON válido.`;
                 { type: "text", text: "Processe esta gravação de reunião." },
                 {
                   type: "input_audio",
-                  input_audio: { data: b64, format: mime.includes("mp4") ? "mp4" : mime.includes("wav") ? "wav" : mime.includes("webm") ? "webm" : "mp3" },
+                  input_audio: {
+                    data: b64,
+                    format: mime.includes("mp4")
+                      ? "mp4"
+                      : mime.includes("wav")
+                        ? "wav"
+                        : mime.includes("webm")
+                          ? "webm"
+                          : "mp3",
+                  },
                 },
               ],
             },
@@ -355,26 +382,35 @@ Responda APENAS com JSON válido.`;
       const json: any = await res.json();
       const content = json.choices?.[0]?.message?.content ?? "";
       let parsed: any = {};
-      try { parsed = JSON.parse(content); } catch {
+      try {
+        parsed = JSON.parse(content);
+      } catch {
         parsed = { summary: content, transcript: content, decisions: [], action_items: [] };
       }
 
-      await supabaseAdmin.from("meeting_summaries").update({
-        status: "completed",
-        transcript: parsed.transcript ?? null,
-        summary: parsed.summary ?? null,
-        decisions: parsed.decisions ?? [],
-        action_items: parsed.action_items ?? [],
-        sentiment: parsed.sentiment ?? null,
-        model: "google/gemini-2.5-flash",
-        error_message: null,
-      }).eq("meeting_id", meeting.id);
+      await supabaseAdmin
+        .from("meeting_summaries")
+        .update({
+          status: "completed",
+          transcript: parsed.transcript ?? null,
+          summary: parsed.summary ?? null,
+          decisions: parsed.decisions ?? [],
+          action_items: parsed.action_items ?? [],
+          sentiment: parsed.sentiment ?? null,
+          model: "google/gemini-2.5-flash",
+          error_message: null,
+        })
+        .eq("meeting_id", meeting.id);
 
       return { ok: true, action_items: parsed.action_items ?? [] };
     } catch (e: any) {
-      await supabaseAdmin.from("meeting_summaries").update({
-        status: "failed", error_message: String(e?.message ?? e),
-      }).eq("meeting_id", meeting.id);
+      await supabaseAdmin
+        .from("meeting_summaries")
+        .update({
+          status: "failed",
+          error_message: String(e?.message ?? e),
+        })
+        .eq("meeting_id", meeting.id);
       throw e;
     }
   });
@@ -388,12 +424,17 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: meeting } = await supabaseAdmin
-      .from("meetings").select("*").eq("id", data.meeting_id)
-      .eq("owner_id", workspaceId).maybeSingle();
+      .from("meetings")
+      .select("*")
+      .eq("id", data.meeting_id)
+      .eq("owner_id", workspaceId)
+      .maybeSingle();
     if (!meeting) throw new Error("Reunião não encontrada");
     const { data: summary } = await supabaseAdmin
-      .from("meeting_summaries").select("action_items")
-      .eq("meeting_id", meeting.id).maybeSingle();
+      .from("meeting_summaries")
+      .select("action_items")
+      .eq("meeting_id", meeting.id)
+      .maybeSingle();
 
     const items = Array.isArray(summary?.action_items) ? (summary!.action_items as any[]) : [];
     if (!items.length) return { created: 0 };
@@ -431,24 +472,31 @@ export const getMeetingSettings = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data } = await supabaseAdmin
-      .from("workspaces").select("meeting_settings").eq("id", workspaceId).maybeSingle();
+      .from("workspaces")
+      .select("meeting_settings")
+      .eq("id", workspaceId)
+      .maybeSingle();
     return { settings: (data?.meeting_settings as any) ?? {} };
   });
 
 export const saveMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      provider: z.enum(["jitsi"]).default("jitsi"),
-      require_consent: z.boolean().default(true),
-      retention_days: z.number().int().min(1).max(365).default(90),
-      transcription_model: z.string().min(1).max(100).default("google/gemini-2.5-flash"),
-    }).parse(input),
+    z
+      .object({
+        provider: z.enum(["jitsi"]).default("jitsi"),
+        require_consent: z.boolean().default(true),
+        retention_days: z.number().int().min(1).max(365).default(90),
+        transcription_model: z.string().min(1).max(100).default("google/gemini-2.5-flash"),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
-      .from("workspaces").update({ meeting_settings: data }).eq("id", workspaceId);
+      .from("workspaces")
+      .update({ meeting_settings: data })
+      .eq("id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

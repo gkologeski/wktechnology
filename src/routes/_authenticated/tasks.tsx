@@ -17,15 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Check,
-  ChevronDown,
-  Download,
-  MoreHorizontal,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
+import { Check, ChevronDown, Download, MoreHorizontal, Plus, Search, X } from "lucide-react";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -155,10 +147,7 @@ function TasksHubspotView() {
       const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
       if (activeView === "mine_open" && user?.id) {
-        q = q
-          .eq("owner_id", user.id)
-          .eq("completed", false)
-          .neq("task_status", "COMPLETED");
+        q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
       } else if (activeView === "due_today") {
         q = q
           .eq("completed", false)
@@ -177,9 +166,7 @@ function TasksHubspotView() {
       if (filters.statuses.length) q = q.in("task_status", filters.statuses);
       if (filters.priorities.length) q = q.in("task_priority", filters.priorities);
       if (filters.duePreset === "today") {
-        q = q
-          .gte("due_date", startOfDay.toISOString())
-          .lt("due_date", endOfDay.toISOString());
+        q = q.gte("due_date", startOfDay.toISOString()).lt("due_date", endOfDay.toISOString());
       } else if (filters.duePreset === "overdue") {
         q = q.lt("due_date", startOfDay.toISOString()).eq("completed", false);
       } else if (filters.duePreset === "next_7d") {
@@ -206,21 +193,23 @@ function TasksHubspotView() {
   const total = result?.count ?? 0;
 
   const { data: relatedMap } = useQuery({
-    queryKey: [
-      "tasks",
-      "related",
-      rows.map((r) => r.id).join(","),
-    ],
+    queryKey: ["tasks", "related", rows.map((r) => r.id).join(",")],
     enabled: rows.length > 0,
     queryFn: async () => {
-      const contactIds = [...new Set(rows.map((r) => r.related_contact_id).filter(Boolean) as string[])];
-      const companyIds = [...new Set(rows.map((r) => r.related_company_id).filter(Boolean) as string[])];
+      const contactIds = [
+        ...new Set(rows.map((r) => r.related_contact_id).filter(Boolean) as string[]),
+      ];
+      const companyIds = [
+        ...new Set(rows.map((r) => r.related_company_id).filter(Boolean) as string[]),
+      ];
       const dealIds = [...new Set(rows.map((r) => r.related_deal_id).filter(Boolean) as string[])];
       const leadIds = [...new Set(rows.map((r) => r.related_lead_id).filter(Boolean) as string[])];
       const [c, co, d, l] = await Promise.all([
         contactIds.length
           ? supabase.from("contacts").select("id, first_name, last_name").in("id", contactIds)
-          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null }[] }),
+          : Promise.resolve({
+              data: [] as { id: string; first_name: string | null; last_name: string | null }[],
+            }),
         companyIds.length
           ? supabase.from("companies").select("id, name").in("id", companyIds)
           : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
@@ -228,8 +217,18 @@ function TasksHubspotView() {
           ? supabase.from("deals").select("id, name").in("id", dealIds)
           : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
         leadIds.length
-          ? supabase.from("leads").select("id, first_name, last_name, company_name").in("id", leadIds)
-          : Promise.resolve({ data: [] as { id: string; first_name: string | null; last_name: string | null; company_name: string | null }[] }),
+          ? supabase
+              .from("leads")
+              .select("id, first_name, last_name, company_name")
+              .in("id", leadIds)
+          : Promise.resolve({
+              data: [] as {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                company_name: string | null;
+              }[],
+            }),
       ]);
       return {
         contacts: Object.fromEntries((c.data ?? []).map((x) => [x.id, x])),
@@ -241,13 +240,23 @@ function TasksHubspotView() {
   });
 
   const { data: ownersMap = {} } = useQuery({
-    queryKey: ["tasks", "owners", rows.map((r) => r.owner_id).filter(Boolean).join(",")],
+    queryKey: [
+      "tasks",
+      "owners",
+      rows
+        .map((r) => r.owner_id)
+        .filter(Boolean)
+        .join(","),
+    ],
     enabled: rows.length > 0,
     queryFn: async () => {
       const ids = [...new Set(rows.map((r) => r.owner_id).filter(Boolean) as string[])];
       if (!ids.length) return {} as Record<string, string>;
       const { data } = await supabase.from("profiles").select("id, full_name").in("id", ids);
-      return Object.fromEntries((data ?? []).map((p) => [p.id, p.full_name ?? ""])) as Record<string, string>;
+      return Object.fromEntries((data ?? []).map((p) => [p.id, p.full_name ?? ""])) as Record<
+        string,
+        string
+      >;
     },
   });
 
@@ -279,9 +288,7 @@ function TasksHubspotView() {
   };
 
   const hasActiveFilters =
-    filters.statuses.length > 0 ||
-    filters.priorities.length > 0 ||
-    filters.duePreset !== "any";
+    filters.statuses.length > 0 || filters.priorities.length > 0 || filters.duePreset !== "any";
 
   const markComplete = async (id: string, complete: boolean) => {
     const { error } = await supabase
@@ -372,14 +379,24 @@ function TasksHubspotView() {
       key: "due_date",
       label: "Vencimento",
       header: (
-        <Th sortable active={sortKey === "due_date"} dir={sortDir} onClick={() => onSort("due_date")}>
+        <Th
+          sortable
+          active={sortKey === "due_date"}
+          dir={sortDir}
+          onClick={() => onSort("due_date")}
+        >
           Vencimento
         </Th>
       ),
       render: (t) => {
         const overdue = !t.completed && t.due_date && new Date(t.due_date).getTime() < Date.now();
         return (
-          <span className={cn("text-muted-foreground", overdue && "font-medium text-rose-600 dark:text-rose-400")}>
+          <span
+            className={cn(
+              "text-muted-foreground",
+              overdue && "font-medium text-rose-600 dark:text-rose-400",
+            )}
+          >
             {formatDateTime(t.due_date)}
           </span>
         );
@@ -448,9 +465,15 @@ function TasksHubspotView() {
       render: (t) => {
         if (!t.owner_id) return <span className="text-muted-foreground">—</span>;
         const name = ownersMap[t.owner_id] || "—";
-        const initials = name && name !== "—"
-          ? name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")
-          : t.owner_id.slice(0, 2).toUpperCase();
+        const initials =
+          name && name !== "—"
+            ? name
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((p) => p[0]?.toUpperCase() ?? "")
+                .join("")
+            : t.owner_id.slice(0, 2).toUpperCase();
         return (
           <div className="flex items-center gap-2" title={name}>
             <InitialsAvatar text={initials} seed={t.owner_id} size={6} />
@@ -464,7 +487,12 @@ function TasksHubspotView() {
       label: "Criado em",
       className: "text-muted-foreground",
       header: (
-        <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+        <Th
+          sortable
+          active={sortKey === "created_at"}
+          dir={sortDir}
+          onClick={() => onSort("created_at")}
+        >
           Criado em
         </Th>
       ),
@@ -483,8 +511,20 @@ function TasksHubspotView() {
       render: (t) => t.type ?? "—",
     },
   ];
-  const DEFAULT_TASK_COLS = ["subject", "status", "priority", "due_date", "related", "owner", "created_at"];
-  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<TaskRow>({
+  const DEFAULT_TASK_COLS = [
+    "subject",
+    "status",
+    "priority",
+    "due_date",
+    "related",
+    "owner",
+    "created_at",
+  ];
+  const {
+    columns: visibleColumns,
+    ColumnsButton,
+    ColumnsEditor,
+  } = useGridColumns<TaskRow>({
     gridKey: "tasks",
     columns: taskColumns,
     defaults: DEFAULT_TASK_COLS,
@@ -602,12 +642,7 @@ function TasksHubspotView() {
                 >
                   Excluir
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={clearSelection}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -640,8 +675,13 @@ function TasksHubspotView() {
                     />
                   </th>
                   <th className="w-10 border-b px-3 py-2.5" />
-                  {visibleColumns.map((col) =>
-                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  {visibleColumns.map(
+                    (col) =>
+                      col.header ?? (
+                        <Th key={col.key} className={col.headerClassName}>
+                          {col.label}
+                        </Th>
+                      ),
                   )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
@@ -710,15 +750,11 @@ function TasksHubspotView() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() =>
-                                  navigate({ to: "/tasks/$id", params: { id: t.id } })
-                                }
+                                onClick={() => navigate({ to: "/tasks/$id", params: { id: t.id } })}
                               >
                                 Abrir
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => markComplete(t.id, !t.completed)}
-                              >
+                              <DropdownMenuItem onClick={() => markComplete(t.id, !t.completed)}>
                                 {t.completed ? "Reabrir" : "Marcar concluída"}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />

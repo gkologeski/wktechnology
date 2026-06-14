@@ -20,21 +20,53 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const ADMIN_ONLY = [
-  "/settings/roles", "/settings/teams", "/settings/api-keys", "/settings/webhooks",
-  "/settings/audit-log", "/settings/security", "/settings/hubspot-sync",
-  "/settings/branding", "/settings/custom-objects", "/settings/custom-properties",
-  "/settings/pipelines", "/integrations", "/settings/email", "/leads/import-hubspot",
-  "/settings/mobile", "/settings/language",
+  "/settings/roles",
+  "/settings/teams",
+  "/settings/api-keys",
+  "/settings/webhooks",
+  "/settings/audit-log",
+  "/settings/security",
+  "/settings/hubspot-sync",
+  "/settings/branding",
+  "/settings/custom-objects",
+  "/settings/custom-properties",
+  "/settings/pipelines",
+  "/integrations",
+  "/settings/email",
+  "/leads/import-hubspot",
+  "/settings/mobile",
+  "/settings/language",
 ];
 const MANAGER_PLUS = [
-  "/settings/workflows", "/settings/sequences", "/settings/rotation", "/settings/sla",
-  "/settings/scoring", "/settings/playbooks", "/settings/goals", "/settings/exports",
-  "/settings/enrichment", "/settings/products", "/settings/quotes", "/settings/quote-templates", "/settings/esign",
-  "/settings/recurring", "/settings/macros", "/settings/surveys", "/settings/portal",
-  "/settings/forms", "/settings/prospecting", "/settings/subscriptions",
-  "/settings/email-templates", "/settings/segments", "/settings/calendars",
-  "/settings/booking", "/reports", "/dashboards", "/analytics",
-  "/campaigns/whatsapp", "/campaigns/email",
+  "/settings/workflows",
+  "/settings/sequences",
+  "/settings/rotation",
+  "/settings/sla",
+  "/settings/scoring",
+  "/settings/playbooks",
+  "/settings/goals",
+  "/settings/exports",
+  "/settings/enrichment",
+  "/settings/products",
+  "/settings/quotes",
+  "/settings/quote-templates",
+  "/settings/esign",
+  "/settings/recurring",
+  "/settings/macros",
+  "/settings/surveys",
+  "/settings/portal",
+  "/settings/forms",
+  "/settings/prospecting",
+  "/settings/subscriptions",
+  "/settings/email-templates",
+  "/settings/segments",
+  "/settings/calendars",
+  "/settings/booking",
+  "/reports",
+  "/dashboards",
+  "/analytics",
+  "/campaigns/whatsapp",
+  "/campaigns/email",
 ];
 
 const matches = (path: string, list: string[]) =>
@@ -52,14 +84,15 @@ function AuthenticatedLayout() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Carregando...</div>
+      <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">
+        Carregando...
+      </div>
     );
   }
 
-  const blocked = !roleLoading && (
-    (matches(path, ADMIN_ONLY) && !isAdmin) ||
-    (matches(path, MANAGER_PLUS) && !isManager)
-  );
+  const blocked =
+    !roleLoading &&
+    ((matches(path, ADMIN_ONLY) && !isAdmin) || (matches(path, MANAGER_PLUS) && !isManager));
 
   return (
     <SidebarProvider>
@@ -82,7 +115,8 @@ function AuthenticatedLayout() {
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
                 <h2 className="text-lg font-semibold">Acesso restrito</h2>
                 <p className="text-sm text-muted-foreground">
-                  Você não tem permissão para acessar esta tela. Fale com um administrador do workspace.
+                  Você não tem permissão para acessar esta tela. Fale com um administrador do
+                  workspace.
                 </p>
               </div>
             ) : (

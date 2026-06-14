@@ -74,7 +74,8 @@ export const listReports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
-      .from("custom_reports").select("*")
+      .from("custom_reports")
+      .select("*")
       .order("is_favorite", { ascending: false })
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -83,13 +84,17 @@ export const listReports = createServerFn({ method: "GET" })
 
 export const saveReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    id: z.string().uuid().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().max(1000).nullable().optional(),
-    config: ConfigSchema,
-    is_favorite: z.boolean().default(false),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        name: z.string().min(1).max(255),
+        description: z.string().max(1000).nullable().optional(),
+        config: ConfigSchema,
+        is_favorite: z.boolean().default(false),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const payload = {
@@ -104,7 +109,11 @@ export const saveReport = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabase.from("custom_reports").insert({ ...payload, owner_id: userId }).select("id").single();
+    const { data: row, error } = await supabase
+      .from("custom_reports")
+      .insert({ ...payload, owner_id: userId })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -135,9 +144,7 @@ export const runReport = createServerFn({ method: "POST" })
       }
     }
     // Select only what we need
-    const selectCols = cfg.metric === "count"
-      ? cfg.groupBy
-      : `${cfg.groupBy},${cfg.metricField}`;
+    const selectCols = cfg.metric === "count" ? cfg.groupBy : `${cfg.groupBy},${cfg.metricField}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q = (supabase as any).from(ent.table).select(selectCols).limit(5000);
     if (cfg.dateField && ent.date.includes(cfg.dateField as never)) {
@@ -149,7 +156,7 @@ export const runReport = createServerFn({ method: "POST" })
 
     // Aggregate in JS (safe, no dynamic SQL)
     const buckets = new Map<string, { key: string; count: number; sum: number }>();
-    for (const r of ((rows ?? []) as Record<string, unknown>[])) {
+    for (const r of (rows ?? []) as Record<string, unknown>[]) {
       const k = String(r[cfg.groupBy] ?? "—");
       const b = buckets.get(k) ?? { key: k, count: 0, sum: 0 };
       b.count += 1;
@@ -161,7 +168,14 @@ export const runReport = createServerFn({ method: "POST" })
     }
     const arr = Array.from(buckets.values()).map((b) => ({
       key: b.key,
-      value: cfg.metric === "count" ? b.count : cfg.metric === "sum" ? b.sum : (b.count ? b.sum / b.count : 0),
+      value:
+        cfg.metric === "count"
+          ? b.count
+          : cfg.metric === "sum"
+            ? b.sum
+            : b.count
+              ? b.sum / b.count
+              : 0,
       count: b.count,
     }));
     arr.sort((a, b) => b.value - a.value);
@@ -172,7 +186,10 @@ export const toggleReportFavorite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid(), is_favorite: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("custom_reports").update({ is_favorite: data.is_favorite }).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("custom_reports")
+      .update({ is_favorite: data.is_favorite })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

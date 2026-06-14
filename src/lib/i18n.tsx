@@ -76,7 +76,11 @@ const dict: Record<Locale, Record<string, string>> = {
 };
 
 const KEY = "lovable.locale";
-const I18nContext = createContext<{ locale: Locale; setLocale: (l: Locale) => void; t: (k: string) => string } | null>(null);
+const I18nContext = createContext<{
+  locale: Locale;
+  setLocale: (l: Locale) => void;
+  t: (k: string) => string;
+} | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("pt");
@@ -84,11 +88,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     try {
       const v = localStorage.getItem(KEY) as Locale | null;
       if (v && dict[v]) setLocaleState(v);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, []);
   const setLocale = (l: Locale) => {
     setLocaleState(l);
-    try { localStorage.setItem(KEY, l); } catch {}
+    try {
+      localStorage.setItem(KEY, l);
+    } catch {
+      /* ignore */
+    }
   };
   const t = (k: string) => dict[locale][k] ?? dict.pt[k] ?? k;
   return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
@@ -96,6 +106,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export function useT() {
   const ctx = useContext(I18nContext);
-  if (!ctx) return { locale: "pt" as Locale, setLocale: () => {}, t: (k: string) => dict.pt[k] ?? k };
+  if (!ctx)
+    return { locale: "pt" as Locale, setLocale: () => {}, t: (k: string) => dict.pt[k] ?? k };
   return ctx;
 }

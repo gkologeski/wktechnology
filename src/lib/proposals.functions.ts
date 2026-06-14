@@ -14,7 +14,9 @@ export const listProposals = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("proposals")
-      .select("id,title,status,version,locked,total_amount,currency,deal_id,contact_id,company_id,expires_at,sent_at,created_at,updated_at")
+      .select(
+        "id,title,status,version,locked,total_amount,currency,deal_id,contact_id,company_id,expires_at,sent_at,created_at,updated_at",
+      )
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -27,7 +29,11 @@ export const getProposal = createServerFn({ method: "GET" })
     const { supabase } = context;
     const [{ data: prop, error }, { data: approvals }] = await Promise.all([
       supabase.from("proposals").select("*").eq("id", data.id).single(),
-      supabase.from("proposal_approvals").select("*").eq("proposal_id", data.id).order("created_at", { ascending: false }),
+      supabase
+        .from("proposal_approvals")
+        .select("*")
+        .eq("proposal_id", data.id)
+        .order("created_at", { ascending: false }),
     ]);
     if (error) throw new Error(error.message);
     return { proposal: prop, approvals: approvals ?? [] };
@@ -35,56 +41,70 @@ export const getProposal = createServerFn({ method: "GET" })
 
 export const createProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    title: z.string().min(1).max(255),
-    body: z.string().max(500_000).default(""),
-    dealId: z.string().uuid().nullable().optional(),
-    contactId: z.string().uuid().nullable().optional(),
-    companyId: z.string().uuid().nullable().optional(),
-    totalAmount: z.number().nullable().optional(),
-    currency: z.string().min(3).max(3).default("BRL"),
-    expiresAt: z.string().nullable().optional(),
-    variables: z.record(z.string(), z.any()).optional(),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        title: z.string().min(1).max(255),
+        body: z.string().max(500_000).default(""),
+        dealId: z.string().uuid().nullable().optional(),
+        contactId: z.string().uuid().nullable().optional(),
+        companyId: z.string().uuid().nullable().optional(),
+        totalAmount: z.number().nullable().optional(),
+        currency: z.string().min(3).max(3).default("BRL"),
+        expiresAt: z.string().nullable().optional(),
+        variables: z.record(z.string(), z.any()).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspaceFor(userId);
-    const { data: prop, error } = await supabase.from("proposals").insert({
-      owner_id: userId,
-      workspace_id: workspaceId,
-      title: data.title,
-      body: data.body,
-      deal_id: data.dealId ?? null,
-      contact_id: data.contactId ?? null,
-      company_id: data.companyId ?? null,
-      total_amount: data.totalAmount ?? null,
-      currency: data.currency,
-      expires_at: data.expiresAt ?? null,
-      variables: data.variables ?? {},
-    }).select("*").single();
+    const { data: prop, error } = await supabase
+      .from("proposals")
+      .insert({
+        owner_id: userId,
+        workspace_id: workspaceId,
+        title: data.title,
+        body: data.body,
+        deal_id: data.dealId ?? null,
+        contact_id: data.contactId ?? null,
+        company_id: data.companyId ?? null,
+        total_amount: data.totalAmount ?? null,
+        currency: data.currency,
+        expires_at: data.expiresAt ?? null,
+        variables: data.variables ?? {},
+      })
+      .select("*")
+      .single();
     if (error) throw new Error(error.message);
     return prop;
   });
 
-
 export const updateProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    id: z.string().uuid(),
-    patch: z.object({
-      title: z.string().min(1).max(255).optional(),
-      body: z.string().max(100_000).optional(),
-      total_amount: z.number().nullable().optional(),
-      currency: z.string().min(3).max(3).optional(),
-      expires_at: z.string().nullable().optional(),
-      deal_id: z.string().uuid().nullable().optional(),
-      contact_id: z.string().uuid().nullable().optional(),
-      company_id: z.string().uuid().nullable().optional(),
-    }),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z.object({
+          title: z.string().min(1).max(255).optional(),
+          body: z.string().max(100_000).optional(),
+          total_amount: z.number().nullable().optional(),
+          currency: z.string().min(3).max(3).optional(),
+          expires_at: z.string().nullable().optional(),
+          deal_id: z.string().uuid().nullable().optional(),
+          contact_id: z.string().uuid().nullable().optional(),
+          company_id: z.string().uuid().nullable().optional(),
+        }),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: cur, error: e0 } = await context.supabase
-      .from("proposals").select("status,locked").eq("id", data.id).single();
+      .from("proposals")
+      .select("status,locked")
+      .eq("id", data.id)
+      .single();
     if (e0) throw new Error(e0.message);
     if (cur.locked) throw new Error("Proposta bloqueada para edição (já enviada).");
     const { error } = await context.supabase.from("proposals").update(data.patch).eq("id", data.id);
@@ -105,16 +125,22 @@ export const deleteProposal = createServerFn({ method: "POST" })
 
 export const requestProposalApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    proposalId: z.string().uuid(),
-    reviewerId: z.string().uuid().nullable().optional(),
-    comment: z.string().max(2000).optional(),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        proposalId: z.string().uuid(),
+        reviewerId: z.string().uuid().nullable().optional(),
+        comment: z.string().max(2000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspaceFor(userId);
-    const { error: e1 } = await supabase.from("proposals")
-      .update({ status: "in_review" }).eq("id", data.proposalId);
+    const { error: e1 } = await supabase
+      .from("proposals")
+      .update({ status: "in_review" })
+      .eq("id", data.proposalId);
     if (e1) throw new Error(e1.message);
     const { error: e2 } = await supabase.from("proposal_approvals").insert({
       workspace_id: workspaceId,
@@ -129,25 +155,39 @@ export const requestProposalApproval = createServerFn({ method: "POST" })
 
 export const decideProposalApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    approvalId: z.string().uuid(),
-    decision: z.enum(["approved", "rejected"]),
-    comment: z.string().max(2000).optional(),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        approvalId: z.string().uuid(),
+        decision: z.enum(["approved", "rejected"]),
+        comment: z.string().max(2000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: appr, error: e0 } = await supabase
-      .from("proposal_approvals").select("proposal_id").eq("id", data.approvalId).single();
+      .from("proposal_approvals")
+      .select("proposal_id")
+      .eq("id", data.approvalId)
+      .single();
     if (e0) throw new Error(e0.message);
     const now = new Date().toISOString();
-    const { error: e1 } = await supabase.from("proposal_approvals").update({
-      status: data.decision, comment: data.comment ?? null,
-      decided_at: now, reviewer_id: userId,
-    }).eq("id", data.approvalId);
+    const { error: e1 } = await supabase
+      .from("proposal_approvals")
+      .update({
+        status: data.decision,
+        comment: data.comment ?? null,
+        decided_at: now,
+        reviewer_id: userId,
+      })
+      .eq("id", data.approvalId);
     if (e1) throw new Error(e1.message);
     const newStatus = data.decision === "approved" ? "approved" : "draft";
-    const { error: e2 } = await supabase.from("proposals")
-      .update({ status: newStatus }).eq("id", appr.proposal_id);
+    const { error: e2 } = await supabase
+      .from("proposals")
+      .update({ status: newStatus })
+      .eq("id", appr.proposal_id);
     if (e2) throw new Error(e2.message);
     return { ok: true };
   });
@@ -160,29 +200,47 @@ export const sendProposal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: prop, error: e0 } = await supabase
-      .from("proposals").select("*").eq("id", data.id).single();
+      .from("proposals")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (e0) throw new Error(e0.message);
     if (prop.status !== "approved" && prop.status !== "draft") {
-      throw new Error("Apenas propostas aprovadas (ou em rascunho sem fluxo de aprovação) podem ser enviadas.");
+      throw new Error(
+        "Apenas propostas aprovadas (ou em rascunho sem fluxo de aprovação) podem ser enviadas.",
+      );
     }
     const sentAt = new Date().toISOString();
     const hashInput = JSON.stringify({
-      id: prop.id, title: prop.title, body: prop.body,
-      total: prop.total_amount, currency: prop.currency,
-      version: prop.version, sentAt,
+      id: prop.id,
+      title: prop.title,
+      body: prop.body,
+      total: prop.total_amount,
+      currency: prop.currency,
+      version: prop.version,
+      sentAt,
     });
     const { createHash } = await import("crypto");
     const contentHash = createHash("sha256").update(hashInput).digest("hex");
-    const { error } = await supabase.from("proposals").update({
-      status: "sent", sent_at: sentAt, locked: true,
-    }).eq("id", data.id);
+    const { error } = await supabase
+      .from("proposals")
+      .update({
+        status: "sent",
+        sent_at: sentAt,
+        locked: true,
+      })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
 
     // Seal linked esign document (if any)
     if (prop.esign_document_id) {
-      await supabase.from("esign_documents").update({
-        content_hash: contentHash, sealed_at: sentAt,
-      }).eq("id", prop.esign_document_id);
+      await supabase
+        .from("esign_documents")
+        .update({
+          content_hash: contentHash,
+          sealed_at: sentAt,
+        })
+        .eq("id", prop.esign_document_id);
       await supabase.from("esign_audit").insert({
         document_id: prop.esign_document_id,
         owner_id: prop.owner_id,
@@ -209,42 +267,61 @@ export const listClauses = createServerFn({ method: "GET" })
 
 export const createClause = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    slug: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/i),
-    title: z.string().min(1).max(255),
-    category: z.string().max(100).optional(),
-    body: z.string().max(50_000).default(""),
-    is_default: z.boolean().default(false),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        slug: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-z0-9_-]+$/i),
+        title: z.string().min(1).max(255),
+        category: z.string().max(100).optional(),
+        body: z.string().max(50_000).default(""),
+        is_default: z.boolean().default(false),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspaceFor(userId);
-    const { data: row, error } = await supabase.from("proposal_clauses").insert({
-      owner_id: userId,
-      workspace_id: workspaceId,
-      slug: data.slug,
-      title: data.title,
-      category: data.category ?? null,
-      body: data.body,
-      is_default: data.is_default,
-    }).select("*").single();
+    const { data: row, error } = await supabase
+      .from("proposal_clauses")
+      .insert({
+        owner_id: userId,
+        workspace_id: workspaceId,
+        slug: data.slug,
+        title: data.title,
+        category: data.category ?? null,
+        body: data.body,
+        is_default: data.is_default,
+      })
+      .select("*")
+      .single();
     if (error) throw new Error(error.message);
     return row;
   });
 
 export const updateClause = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    id: z.string().uuid(),
-    patch: z.object({
-      title: z.string().min(1).max(255).optional(),
-      category: z.string().max(100).nullable().optional(),
-      body: z.string().max(50_000).optional(),
-      is_default: z.boolean().optional(),
-    }),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z.object({
+          title: z.string().min(1).max(255).optional(),
+          category: z.string().max(100).nullable().optional(),
+          body: z.string().max(50_000).optional(),
+          is_default: z.boolean().optional(),
+        }),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("proposal_clauses").update(data.patch).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("proposal_clauses")
+      .update(data.patch)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -262,30 +339,46 @@ export const deleteClause = createServerFn({ method: "POST" })
 
 export const listEsignAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { documentId: string }) => z.object({ documentId: z.string().uuid() }).parse(d))
+  .inputValidator((d: { documentId: string }) =>
+    z.object({ documentId: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase.from("esign_attachments")
-      .select("*").eq("document_id", data.documentId).order("created_at", { ascending: true });
+    const { data: rows, error } = await context.supabase
+      .from("esign_attachments")
+      .select("*")
+      .eq("document_id", data.documentId)
+      .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
 
 export const addEsignAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    documentId: z.string().uuid(),
-    fileName: z.string().min(1).max(255),
-    fileUrl: z.string().url().max(2000),
-    mimeType: z.string().max(100).optional(),
-    sizeBytes: z.number().int().nonnegative().max(25 * 1024 * 1024).optional(),
-    sha256: z.string().length(64).optional(),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        documentId: z.string().uuid(),
+        fileName: z.string().min(1).max(255),
+        fileUrl: z.string().url().max(2000),
+        mimeType: z.string().max(100).optional(),
+        sizeBytes: z
+          .number()
+          .int()
+          .nonnegative()
+          .max(25 * 1024 * 1024)
+          .optional(),
+        sha256: z.string().length(64).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspaceFor(userId);
     // CA-14.4: max 10 attachments / 25 MB total
-    const { data: existing } = await supabase.from("esign_attachments")
-      .select("size_bytes").eq("document_id", data.documentId);
+    const { data: existing } = await supabase
+      .from("esign_attachments")
+      .select("size_bytes")
+      .eq("document_id", data.documentId);
     const count = existing?.length ?? 0;
     const totalBytes = (existing ?? []).reduce((s, r) => s + (r.size_bytes ?? 0), 0);
     if (count >= 10) throw new Error("Limite de 10 anexos por envelope.");
@@ -318,10 +411,22 @@ export const removeEsignAttachment = createServerFn({ method: "POST" })
 // ---------- Public verify (CA-14.5) ----------
 
 export const verifyEsignHash = createServerFn({ method: "GET" })
-  .inputValidator((d: { hash: string }) => z.object({ hash: z.string().min(16).max(128).regex(/^[a-f0-9]+$/i) }).parse(d))
+  .inputValidator((d: { hash: string }) =>
+    z
+      .object({
+        hash: z
+          .string()
+          .min(16)
+          .max(128)
+          .regex(/^[a-f0-9]+$/i),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc("esign_verify_hash", { _hash: data.hash });
+    const { data: rows, error } = await supabaseAdmin.rpc("esign_verify_hash", {
+      _hash: data.hash,
+    });
     if (error) throw new Error(error.message);
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row) return { found: false as const };

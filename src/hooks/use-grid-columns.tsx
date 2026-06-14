@@ -10,10 +10,7 @@ import {
   saveGridPreference,
   resetGridPreference,
 } from "@/lib/grid-preferences.functions";
-import {
-  listCustomProperties,
-  type CustomEntity,
-} from "@/lib/custom-properties.functions";
+import { listCustomProperties, type CustomEntity } from "@/lib/custom-properties.functions";
 
 export type GridColumnDef<T> = ColumnDef & {
   /** Render function for the cell. Receives the row. */
@@ -68,7 +65,10 @@ export function useGridColumns<T extends object>({
         label: p.label,
         group: "Personalizado",
         render: (row: T) => {
-          const cf = ((row as { custom_fields?: unknown }).custom_fields ?? {}) as Record<string, unknown>;
+          const cf = ((row as { custom_fields?: unknown }).custom_fields ?? {}) as Record<
+            string,
+            unknown
+          >;
           const v = cf[p.key];
           if (v == null || v === "") return <span className="text-muted-foreground">—</span>;
           if (Array.isArray(v)) return <span className="truncate">{v.join(", ")}</span>;
@@ -126,7 +126,15 @@ export function useGridColumns<T extends object>({
   const openEditor = useCallback(() => setOpen(true), []);
 
   const ColumnsButton = useCallback(
-    ({ size = "sm", variant = "outline", label = "Colunas" }: { size?: "sm" | "default"; variant?: "outline" | "ghost"; label?: string }) => (
+    ({
+      size = "sm",
+      variant = "outline",
+      label = "Colunas",
+    }: {
+      size?: "sm" | "default";
+      variant?: "outline" | "ghost";
+      label?: string;
+    }) => (
       <Button variant={variant} size={size} onClick={openEditor} className="gap-1.5">
         <Columns3 className="h-3.5 w-3.5" />
         {label}

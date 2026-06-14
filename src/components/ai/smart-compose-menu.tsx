@@ -15,8 +15,16 @@ import { toast } from "sonner";
 import { smartCompose } from "@/lib/ai-compose.functions";
 
 type Mode =
-  | "draft" | "improve" | "shorter" | "longer" | "formal" | "casual"
-  | "translate_en" | "translate_es" | "translate_pt" | "reply";
+  | "draft"
+  | "improve"
+  | "shorter"
+  | "longer"
+  | "formal"
+  | "casual"
+  | "translate_en"
+  | "translate_es"
+  | "translate_pt"
+  | "reply";
 
 type Channel = "email" | "whatsapp";
 
@@ -54,7 +62,13 @@ export function SmartComposeMenu({
     setBusy(true);
     try {
       const r = (await compose({
-        data: { channel, mode, input_text: currentText, prompt: p ?? "", contact_name: contactName ?? "" },
+        data: {
+          channel,
+          mode,
+          input_text: currentText,
+          prompt: p ?? "",
+          contact_name: contactName ?? "",
+        },
       })) as { text: string };
       onApply(r.text);
       toast.success("Texto atualizado");
@@ -71,14 +85,23 @@ export function SmartComposeMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="sm" variant="ghost" disabled={busy}>
-          {busy ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1 text-primary" />}
+          {busy ? (
+            <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4 mr-1 text-primary" />
+          )}
           IA
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <Popover open={draftOpen} onOpenChange={setDraftOpen}>
           <PopoverTrigger asChild>
-            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setDraftOpen(true); }}>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setDraftOpen(true);
+              }}
+            >
               <Sparkles className="h-3.5 w-3.5 mr-2" /> Redigir do zero…
             </DropdownMenuItem>
           </PopoverTrigger>
@@ -89,9 +112,16 @@ export function SmartComposeMenu({
                 placeholder="ex.: follow-up agradecendo a reunião"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && prompt.trim()) void run("draft", prompt); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && prompt.trim()) void run("draft", prompt);
+                }}
               />
-              <Button size="sm" className="w-full" disabled={!prompt.trim() || busy} onClick={() => void run("draft", prompt)}>
+              <Button
+                size="sm"
+                className="w-full"
+                disabled={!prompt.trim() || busy}
+                onClick={() => void run("draft", prompt)}
+              >
                 Gerar
               </Button>
             </div>
@@ -102,13 +132,21 @@ export function SmartComposeMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {QUICK.map((q) => (
-          <DropdownMenuItem key={q.mode} disabled={!currentText.trim() || busy} onSelect={() => void run(q.mode)}>
+          <DropdownMenuItem
+            key={q.mode}
+            disabled={!currentText.trim() || busy}
+            onSelect={() => void run(q.mode)}
+          >
             {q.label}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
         {TRANSLATE.map((q) => (
-          <DropdownMenuItem key={q.mode} disabled={!currentText.trim() || busy} onSelect={() => void run(q.mode)}>
+          <DropdownMenuItem
+            key={q.mode}
+            disabled={!currentText.trim() || busy}
+            onSelect={() => void run(q.mode)}
+          >
             {q.label}
           </DropdownMenuItem>
         ))}

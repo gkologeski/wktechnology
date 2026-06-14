@@ -27,15 +27,13 @@ export function pixelResponse() {
   });
 }
 
-export function injectTracking(opts: {
-  messageId: string;
-  bodyHtml?: string;
-  bodyText?: string;
-}): { html: string; text: string } {
+export function injectTracking(opts: { messageId: string; bodyHtml?: string; bodyText?: string }): {
+  html: string;
+  text: string;
+} {
   const base = trackingBaseUrl();
   const text = opts.bodyText ?? (opts.bodyHtml ? opts.bodyHtml.replace(/<[^>]+>/g, " ") : "");
-  const sourceHtml =
-    opts.bodyHtml ?? `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
+  const sourceHtml = opts.bodyHtml ?? `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
 
   // Rewrite <a href="..."> to go through the click tracker.
   const rewritten = sourceHtml.replace(

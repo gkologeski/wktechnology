@@ -3,7 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const FieldSchema = z.object({
-  key: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_]+$/),
+  key: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-zA-Z0-9_]+$/),
   label: z.string().min(1).max(120),
   type: z.enum(["text", "email", "tel", "textarea", "select", "number"]),
   required: z.boolean().optional().default(false),
@@ -11,20 +15,27 @@ const FieldSchema = z.object({
   placeholder: z.string().max(120).optional(),
 });
 
-const PopupConfigSchema = z.object({
-  trigger: z.enum(["load", "time", "scroll", "exit_intent"]).default("time"),
-  delay_seconds: z.number().int().min(0).max(600).default(5),
-  scroll_percent: z.number().int().min(1).max(100).default(50),
-  frequency_days: z.number().int().min(0).max(365).default(7),
-  position: z.enum(["center", "bottom-right", "bottom-left"]).default("center"),
-  title: z.string().max(160).optional(),
-  description: z.string().max(500).optional(),
-}).partial().default({});
+const PopupConfigSchema = z
+  .object({
+    trigger: z.enum(["load", "time", "scroll", "exit_intent"]).default("time"),
+    delay_seconds: z.number().int().min(0).max(600).default(5),
+    scroll_percent: z.number().int().min(1).max(100).default(50),
+    frequency_days: z.number().int().min(0).max(365).default(7),
+    position: z.enum(["center", "bottom-right", "bottom-left"]).default("center"),
+    title: z.string().max(160).optional(),
+    description: z.string().max(500).optional(),
+  })
+  .partial()
+  .default({});
 
 const UpsertSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1).max(120),
-  slug: z.string().min(3).max(64).regex(/^[a-z0-9-]+$/, "minúsculas, números e hífen"),
+  slug: z
+    .string()
+    .min(3)
+    .max(64)
+    .regex(/^[a-z0-9-]+$/, "minúsculas, números e hífen"),
   target: z.enum(["lead", "contact"]),
   fields: z.array(FieldSchema).min(1).max(30),
   success_message: z.string().max(500).optional(),
@@ -39,7 +50,9 @@ export const listForms = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("forms")
-      .select("id, name, slug, target, fields, success_message, redirect_url, active, submit_count, display_mode, popup_config, created_at, updated_at")
+      .select(
+        "id, name, slug, target, fields, success_message, redirect_url, active, submit_count, display_mode, popup_config, created_at, updated_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { items: data ?? [] };
@@ -67,7 +80,10 @@ export const upsertForm = createServerFn({ method: "POST" })
       return { id: data.id };
     }
     const { data: row, error } = await context.supabase
-      .from("forms").insert(payload).select("id").single();
+      .from("forms")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });

@@ -2,14 +2,52 @@
 // puros de visibilidade por papel. Pensada para ser testável sem renderizar
 // componentes React.
 import {
-  LayoutDashboard, UserPlus, Users, Building2, Briefcase, PlayCircle,
-  ListTodo, MessageSquare, StickyNote, MessageCircle, Megaphone, Mail,
-  Inbox, LifeBuoy, Star, FileText,
-  BarChart3, TrendingUp, Sparkles, Video, ListChecks, Download,
-  Activity, Bell, Gauge, FlaskConical,
-  User, ShieldCheck, Bug, Lock, Languages, Calendar, CreditCard, GitBranch,
-  Tag, Package, Boxes, UsersRound, KeyRound, Workflow, Route as RouteIcon,
-  LayoutTemplate, BookOpen, Plug, ShoppingBag, RefreshCw,
+  LayoutDashboard,
+  UserPlus,
+  Users,
+  Building2,
+  Briefcase,
+  PlayCircle,
+  ListTodo,
+  MessageSquare,
+  StickyNote,
+  MessageCircle,
+  Megaphone,
+  Mail,
+  Inbox,
+  LifeBuoy,
+  Star,
+  FileText,
+  BarChart3,
+  TrendingUp,
+  Sparkles,
+  Video,
+  ListChecks,
+  Download,
+  Activity,
+  Bell,
+  Gauge,
+  FlaskConical,
+  User,
+  ShieldCheck,
+  Bug,
+  Lock,
+  Languages,
+  Calendar,
+  CreditCard,
+  GitBranch,
+  Tag,
+  Package,
+  Boxes,
+  UsersRound,
+  KeyRound,
+  Workflow,
+  Route as RouteIcon,
+  LayoutTemplate,
+  BookOpen,
+  Plug,
+  ShoppingBag,
+  RefreshCw,
 } from "lucide-react";
 
 export type Need = "admin" | "manager" | "platform" | undefined;
@@ -28,7 +66,6 @@ export type SidebarItem = {
 };
 export type SidebarGroup = { label: string; items: SidebarItem[] };
 
-
 export type SettingsItem = {
   to: string;
   label: string;
@@ -41,24 +78,45 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
 
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
-    label: "Captar", items: [
-      { title: "Leads", url: "/leads", icon: UserPlus },
+    label: "Captar",
+    items: [
+      {
+        title: "Leads",
+        url: "/leads",
+        icon: UserPlus,
+        children: [
+          {
+            title: "Importar HubSpot",
+            url: "/leads/import-hubspot",
+            icon: Download,
+            need: "admin",
+          },
+        ],
+      },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
 
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
-      { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
+      {
+        title: "Prospecção por voz",
+        url: "/prospecting/campaigns",
+        icon: PlayCircle,
+        need: "manager",
+      },
       { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
     ],
   },
   {
-    label: "Relacionar", items: [
+    label: "Relacionar",
+    items: [
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       {
-        title: "Inbox unificada", url: "/inbox", icon: Inbox,
+        title: "Inbox unificada",
+        url: "/inbox",
+        icon: Inbox,
         children: [
           { title: "Email", url: "/inbox/email", icon: Mail },
           { title: "WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
@@ -68,7 +126,9 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
       {
-        title: "Reuniões", url: "/meetings", icon: Video,
+        title: "Reuniões",
+        url: "/meetings",
+        icon: Video,
         children: [
           { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
           { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
@@ -79,7 +139,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
 
   {
-    label: "Vender", items: [
+    label: "Vender",
+    items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Contratos", url: "/proposals", icon: FileText },
@@ -89,20 +150,22 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
-    label: "Atender", items: [
+    label: "Atender",
+    items: [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       {
-        title: "Tarefas", url: "/tasks", icon: ListTodo,
-        children: [
-          { title: "Filas", url: "/tasks/queues", icon: ListChecks },
-        ],
+        title: "Tarefas",
+        url: "/tasks",
+        icon: ListTodo,
+        children: [{ title: "Filas", url: "/tasks/queues", icon: ListChecks }],
       },
 
       { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager" },
     ],
   },
   {
-    label: "Otimizar", items: [
+    label: "Otimizar",
+    items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager" },
       { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager" },
@@ -185,7 +248,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
       { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin" },
       { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin" },
-
     ],
   },
   {
@@ -209,10 +271,7 @@ export function canSee(need: Need, perms: Perms): boolean {
   return true;
 }
 
-export function permsForRole(
-  role: "admin" | "manager" | "member",
-  isPlatformAdmin = false,
-): Perms {
+export function permsForRole(role: "admin" | "manager" | "member", isPlatformAdmin = false): Perms {
   return {
     isAdmin: role === "admin",
     isManager: role === "admin" || role === "manager",
@@ -234,11 +293,12 @@ export function visibleSidebarUrls(perms: Perms): string[] {
   return out;
 }
 
-
 export function visibleSidebarPlatformUrls(perms: Perms): string[] {
   return SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms)).map((i) => i.url);
 }
 
 export function visibleSettingsItems(perms: Perms): string[] {
-  return SETTINGS_GROUPS.flatMap((g) => g.items.filter((i) => canSee(i.need, perms)).map((i) => i.to));
+  return SETTINGS_GROUPS.flatMap((g) =>
+    g.items.filter((i) => canSee(i.need, perms)).map((i) => i.to),
+  );
 }

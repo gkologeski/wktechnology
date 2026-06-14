@@ -7,17 +7,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import {
-  CUSTOM_ENTITIES, CUSTOM_ENTITY_LABELS, type CustomEntity,
+  CUSTOM_ENTITIES,
+  CUSTOM_ENTITY_LABELS,
+  type CustomEntity,
 } from "@/lib/custom-properties.functions";
 import {
-  listPropertyGroups, renamePropertyGroup, deletePropertyGroup, reorderPropertyGroup,
+  listPropertyGroups,
+  renamePropertyGroup,
+  deletePropertyGroup,
+  reorderPropertyGroup,
   type PropertyGroupSummary,
 } from "@/lib/property-groups.functions";
 
@@ -40,7 +55,9 @@ function PropertyGroupsPage() {
     const list = await listFn({ data: { entity } });
     setGroups(list);
   };
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [entity]);
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [entity]);
 
   const openRename = (g: PropertyGroupSummary) => {
     if (g.name === "Sem grupo") {
@@ -54,23 +71,35 @@ function PropertyGroupsPage() {
   const handleRename = async () => {
     if (!renaming) return;
     const to = newName.trim();
-    if (!to || to === renaming.name) { setRenaming(null); return; }
+    if (!to || to === renaming.name) {
+      setRenaming(null);
+      return;
+    }
     try {
       await renameFn({ data: { entity, from: renaming.name, to } });
       toast.success("Grupo renomeado");
       setRenaming(null);
       await refresh();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
   const handleDelete = async (g: PropertyGroupSummary) => {
     if (g.name === "Sem grupo") return;
-    if (!confirm(`Remover o grupo "${g.name}"? As ${g.count} propriedades continuarão existindo, sem grupo.`)) return;
+    if (
+      !confirm(
+        `Remover o grupo "${g.name}"? As ${g.count} propriedades continuarão existindo, sem grupo.`,
+      )
+    )
+      return;
     try {
       await delFn({ data: { entity, name: g.name } });
       toast.success("Grupo removido");
       await refresh();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
   const move = async (index: number, dir: -1 | 1) => {
@@ -89,7 +118,9 @@ function PropertyGroupsPage() {
         base += Math.max(g.count, 1) * 10;
       }
       await refresh();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
   return (
@@ -103,15 +134,23 @@ function PropertyGroupsPage() {
           </p>
         </div>
         <Select value={entity} onValueChange={(v) => setEntity(v as CustomEntity)}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {CUSTOM_ENTITIES.map((e) => <SelectItem key={e} value={e}>{CUSTOM_ENTITY_LABELS[e]}</SelectItem>)}
+            {CUSTOM_ENTITIES.map((e) => (
+              <SelectItem key={e} value={e}>
+                {CUSTOM_ENTITY_LABELS[e]}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">{CUSTOM_ENTITY_LABELS[entity]}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">{CUSTOM_ENTITY_LABELS[entity]}</CardTitle>
+        </CardHeader>
         <CardContent>
           {groups.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -120,8 +159,10 @@ function PropertyGroupsPage() {
           ) : (
             <div className="text-sm">
               {groups.map((g, i) => (
-                <div key={g.name}
-                  className="grid grid-cols-[1fr_120px_auto] gap-2 items-center py-2 border-b last:border-0">
+                <div
+                  key={g.name}
+                  className="grid grid-cols-[1fr_120px_auto] gap-2 items-center py-2 border-b last:border-0"
+                >
                   <div className="min-w-0 flex items-center gap-2">
                     <span className="font-medium truncate">{g.name}</span>
                     {g.name === "Sem grupo" && <Badge variant="outline">não agrupadas</Badge>}
@@ -130,22 +171,46 @@ function PropertyGroupsPage() {
                     {g.count} {g.count === 1 ? "propriedade" : "propriedades"}
                   </span>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => move(i, -1)}
-                      disabled={i === 0 || g.name === "Sem grupo" || groups[i - 1]?.name === "Sem grupo"}
-                      aria-label="Mover para cima">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => move(i, -1)}
+                      disabled={
+                        i === 0 || g.name === "Sem grupo" || groups[i - 1]?.name === "Sem grupo"
+                      }
+                      aria-label="Mover para cima"
+                    >
                       <ArrowUp className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => move(i, 1)}
-                      disabled={i === groups.length - 1 || g.name === "Sem grupo" || groups[i + 1]?.name === "Sem grupo"}
-                      aria-label="Mover para baixo">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => move(i, 1)}
+                      disabled={
+                        i === groups.length - 1 ||
+                        g.name === "Sem grupo" ||
+                        groups[i + 1]?.name === "Sem grupo"
+                      }
+                      aria-label="Mover para baixo"
+                    >
                       <ArrowDown className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openRename(g)}
-                      disabled={g.name === "Sem grupo"} aria-label="Renomear">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openRename(g)}
+                      disabled={g.name === "Sem grupo"}
+                      aria-label="Renomear"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(g)}
-                      disabled={g.name === "Sem grupo"} aria-label="Remover grupo">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(g)}
+                      disabled={g.name === "Sem grupo"}
+                      aria-label="Remover grupo"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -156,9 +221,16 @@ function PropertyGroupsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!renaming} onOpenChange={(o) => { if (!o) setRenaming(null); }}>
+      <Dialog
+        open={!!renaming}
+        onOpenChange={(o) => {
+          if (!o) setRenaming(null);
+        }}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>Renomear grupo</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Renomear grupo</DialogTitle>
+          </DialogHeader>
           <div className="space-y-2">
             <Label>Novo nome</Label>
             <Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={80} />
@@ -167,8 +239,12 @@ function PropertyGroupsPage() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRenaming(null)}>Cancelar</Button>
-            <Button onClick={handleRename} disabled={!newName.trim()}>Salvar</Button>
+            <Button variant="ghost" onClick={() => setRenaming(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRename} disabled={!newName.trim()}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

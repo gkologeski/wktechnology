@@ -12,13 +12,7 @@ test.skip(
 );
 
 // Tabelas com isolamento por workspace_id (RLS = current_user_workspaces()).
-const ISOLATED_TABLES = [
-  "contacts",
-  "companies",
-  "deals",
-  "leads",
-  "tickets",
-] as const;
+const ISOLATED_TABLES = ["contacts", "companies", "deals", "leads", "tickets"] as const;
 
 type Supa = SupabaseClient;
 
@@ -78,8 +72,8 @@ test("Workspace isolation — alternar workspace ativo não vaza dados de outro"
     .select("active_workspace_id")
     .eq("id", userId)
     .maybeSingle();
-  const originalActive = (prof as { active_workspace_id?: string | null } | null)
-    ?.active_workspace_id ?? null;
+  const originalActive =
+    (prof as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
 
   const wsA = await createWorkspace(supa, userId, `ISO-A-${tag}`);
   const wsB = await createWorkspace(supa, userId, `ISO-B-${tag}`);
@@ -129,19 +123,24 @@ test("Workspace isolation — alternar workspace ativo não vaza dados de outro"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rpcA = await (supa as any).rpc("current_user_workspaces");
     expect(rpcA.error, "rpc A erro").toBeNull();
-    const listA = ((rpcA.data ?? []) as Array<string | { current_user_workspaces: string }>)
-      .map((r) => (typeof r === "string" ? r : r.current_user_workspaces));
+    const listA = ((rpcA.data ?? []) as Array<string | { current_user_workspaces: string }>).map(
+      (r) => (typeof r === "string" ? r : r.current_user_workspaces),
+    );
     expect(listA, "ativo=A deve restringir ao A").toEqual([wsA]);
 
     await setActive(supa, userId, wsB);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rpcB = await (supa as any).rpc("current_user_workspaces");
-    const listB = ((rpcB.data ?? []) as Array<string | { current_user_workspaces: string }>)
-      .map((r) => (typeof r === "string" ? r : r.current_user_workspaces));
+    const listB = ((rpcB.data ?? []) as Array<string | { current_user_workspaces: string }>).map(
+      (r) => (typeof r === "string" ? r : r.current_user_workspaces),
+    );
     expect(listB, "ativo=B deve restringir ao B").toEqual([wsB]);
   } finally {
     // Cleanup — apaga seeds dos dois lados (RLS scoping pode esconder; itera por workspace)
-    for (const [wsId, ids] of [[wsA, idsA], [wsB, idsB]] as const) {
+    for (const [wsId, ids] of [
+      [wsA, idsA],
+      [wsB, idsB],
+    ] as const) {
       await setActive(supa, userId, wsId);
       for (const table of ISOLATED_TABLES) {
         if (ids[table]) await supa.from(table).delete().eq("id", ids[table]);
@@ -153,9 +152,6 @@ test("Workspace isolation — alternar workspace ativo não vaza dados de outro"
       await supa.from("workspaces").delete().eq("id", wsId);
     }
     // Restaura active_workspace_id original
-    await supa
-      .from("profiles")
-      .update({ active_workspace_id: originalActive })
-      .eq("id", userId);
+    await supa.from("profiles").update({ active_workspace_id: originalActive }).eq("id", userId);
   }
 });

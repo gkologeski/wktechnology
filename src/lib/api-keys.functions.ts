@@ -26,11 +26,13 @@ export const listApiKeys = createServerFn({ method: "GET" })
 export const createApiKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { name: string; scopes?: string[]; expires_at?: string | null }) =>
-    z.object({
-      name: z.string().min(1).max(120),
-      scopes: z.array(z.enum(SCOPES)).min(1).default(["read"]),
-      expires_at: z.string().datetime().nullable().optional(),
-    }).parse(d)
+    z
+      .object({
+        name: z.string().min(1).max(120),
+        scopes: z.array(z.enum(SCOPES)).min(1).default(["read"]),
+        expires_at: z.string().datetime().nullable().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

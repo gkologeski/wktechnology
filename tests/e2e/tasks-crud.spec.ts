@@ -69,7 +69,10 @@ test("Tasks — toggle completed via Supabase persiste e listagem filtra complet
   const ts = Date.now();
   const t = await seedTask(supa, userId, workspaceId, String(ts));
   try {
-    await supa.from("activities").update({ completed: true, task_status: "COMPLETED" }).eq("id", t.id);
+    await supa
+      .from("activities")
+      .update({ completed: true, task_status: "COMPLETED" })
+      .eq("id", t.id);
     const { data } = await supa
       .from("activities")
       .select("completed, task_status")
@@ -81,10 +84,15 @@ test("Tasks — toggle completed via Supabase persiste e listagem filtra complet
     // A view "Completed" deve listar o item
     await page.goto("/tasks");
     // Tenta clicar na aba "Completed" se existir
-    const completedTab = page.getByRole("tab", { name: /completed/i }).or(
-      page.getByRole("button", { name: /^completed$/i }),
-    );
-    if (await completedTab.first().isVisible().catch(() => false)) {
+    const completedTab = page
+      .getByRole("tab", { name: /completed/i })
+      .or(page.getByRole("button", { name: /^completed$/i }));
+    if (
+      await completedTab
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
       await completedTab.first().click();
     }
     await page

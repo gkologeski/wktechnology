@@ -1,9 +1,5 @@
 import { Input } from "@/components/ui/input";
-import {
-  DATE_PRESET_OPTIONS,
-  type CustomRange,
-  type DatePreset,
-} from "@/lib/date-presets";
+import { DATE_PRESET_OPTIONS, type CustomRange, type DatePreset } from "@/lib/date-presets";
 
 export function DateFilter({
   name,

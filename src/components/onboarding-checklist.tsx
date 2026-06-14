@@ -40,11 +40,27 @@ export function OnboardingChecklist() {
   if (dismissed || isLoading || !data) return null;
 
   const steps = [
-    { done: data.pipelines, label: "Configure seu pipeline de vendas", to: "/settings/pipelines" as const },
-    { done: data.contacts, label: "Importe ou cadastre seu primeiro contato", to: "/contacts" as const },
+    {
+      done: data.pipelines,
+      label: "Configure seu pipeline de vendas",
+      to: "/settings/pipelines" as const,
+    },
+    {
+      done: data.contacts,
+      label: "Importe ou cadastre seu primeiro contato",
+      to: "/contacts" as const,
+    },
     { done: data.deals, label: "Crie sua primeira oportunidade", to: "/deals" as const },
-    { done: data.integrations, label: "Conecte uma integração (Google, WhatsApp, etc.)", to: "/integrations" as const },
-    { done: data.team, label: "Convide um membro do seu time", to: "/settings/workspace-team" as const },
+    {
+      done: data.integrations,
+      label: "Conecte uma integração (Google, WhatsApp, etc.)",
+      to: "/integrations" as const,
+    },
+    {
+      done: data.team,
+      label: "Convide um membro do seu time",
+      to: "/settings/workspace-team" as const,
+    },
   ];
 
   const completed = steps.filter((s) => s.done).length;
@@ -54,7 +70,9 @@ export function OnboardingChecklist() {
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div>
-          <CardTitle className="text-base">Configure seu CRM ({completed}/{steps.length})</CardTitle>
+          <CardTitle className="text-base">
+            Configure seu CRM ({completed}/{steps.length})
+          </CardTitle>
           <CardDescription>Conclua os passos para tirar o máximo da plataforma.</CardDescription>
         </div>
         <Button
@@ -79,7 +97,9 @@ export function OnboardingChecklist() {
                 ) : (
                   <Circle className="h-4 w-4 text-muted-foreground" />
                 )}
-                <span className={s.done ? "text-muted-foreground line-through" : ""}>{s.label}</span>
+                <span className={s.done ? "text-muted-foreground line-through" : ""}>
+                  {s.label}
+                </span>
               </div>
               {!s.done && (
                 <Button asChild size="sm" variant="outline">

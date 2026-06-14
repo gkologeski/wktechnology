@@ -42,7 +42,10 @@ const ENTITY_TO_OBJECT: Record<EntityKind, string> = {
   ticket: "tickets",
 };
 
-const ENTITY_TO_TABLE: Record<EntityKind, "contacts" | "companies" | "deals" | "leads" | "tickets"> = {
+const ENTITY_TO_TABLE: Record<
+  EntityKind,
+  "contacts" | "companies" | "deals" | "leads" | "tickets"
+> = {
   contact: "contacts",
   company: "companies",
   deal: "deals",
@@ -52,40 +55,111 @@ const ENTITY_TO_TABLE: Record<EntityKind, "contacts" | "companies" | "deals" | "
 
 const PROPS_BY_ENTITY: Record<EntityKind, string[]> = {
   contact: [
-    "firstname", "lastname", "email", "phone", "jobtitle", "mobilephone",
-    "country", "address", "zip", "city", "state", "website", "company",
-    "lifecyclestage", "hs_lead_status", "hubspot_owner_id", "hs_object_id",
-    "createdate", "hs_createdate", "lastmodifieddate", "hs_lastmodifieddate",
-    "linkedin_url", "linkedinbio", "twitterhandle",
+    "firstname",
+    "lastname",
+    "email",
+    "phone",
+    "jobtitle",
+    "mobilephone",
+    "country",
+    "address",
+    "zip",
+    "city",
+    "state",
+    "website",
+    "company",
+    "lifecyclestage",
+    "hs_lead_status",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "hs_createdate",
+    "lastmodifieddate",
+    "hs_lastmodifieddate",
+    "linkedin_url",
+    "linkedinbio",
+    "twitterhandle",
   ],
   company: [
-    "name", "domain", "industry", "numberofemployees", "phone",
-    "city", "state", "zip", "address", "website",
-    "annualrevenue", "lifecyclestage", "hs_lead_status", "description",
-    "country", "timezone", "hubspot_owner_id", "hs_object_id",
-    "createdate", "hs_createdate", "lastmodifieddate", "hs_lastmodifieddate",
-    "type", "linkedin_company_page", "twitterhandle", "facebook_company_page",
+    "name",
+    "domain",
+    "industry",
+    "numberofemployees",
+    "phone",
+    "city",
+    "state",
+    "zip",
+    "address",
+    "website",
+    "annualrevenue",
+    "lifecyclestage",
+    "hs_lead_status",
+    "description",
+    "country",
+    "timezone",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "hs_createdate",
+    "lastmodifieddate",
+    "hs_lastmodifieddate",
+    "type",
+    "linkedin_company_page",
+    "twitterhandle",
+    "facebook_company_page",
   ],
   deal: [
-    "dealname", "amount", "dealstage", "closedate", "pipeline",
-    "description", "dealtype", "hs_priority", "hs_deal_stage_probability",
-    "hubspot_owner_id", "hs_object_id", "createdate", "hs_createdate",
-    "hs_lastmodifieddate", "closed_lost_reason", "closed_won_reason",
+    "dealname",
+    "amount",
+    "dealstage",
+    "closedate",
+    "pipeline",
+    "description",
+    "dealtype",
+    "hs_priority",
+    "hs_deal_stage_probability",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+    "closed_lost_reason",
+    "closed_won_reason",
     "num_associated_contacts",
   ],
   lead: [
-    "hs_lead_name", "hs_lead_name_calculated",
-    "hs_associated_contact_firstname", "hs_associated_contact_lastname",
-    "hs_associated_contact_email", "hs_associated_company_name",
-    "hs_lead_source", "hs_analytics_source", "hs_analytics_source_data_1",
-    "hs_pipeline_stage", "hubspot_owner_id", "hs_object_id",
-    "createdate", "lastmodifieddate", "hs_lastmodifieddate",
+    "hs_lead_name",
+    "hs_lead_name_calculated",
+    "hs_associated_contact_firstname",
+    "hs_associated_contact_lastname",
+    "hs_associated_contact_email",
+    "hs_associated_company_name",
+    "hs_lead_source",
+    "hs_analytics_source",
+    "hs_analytics_source_data_1",
+    "hs_pipeline_stage",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "lastmodifieddate",
+    "hs_lastmodifieddate",
   ],
   ticket: [
-    "subject", "content", "hs_pipeline", "hs_pipeline_stage", "hs_ticket_priority",
-    "hs_ticket_category", "source_type", "hubspot_owner_id", "hs_object_id",
-    "createdate", "hs_createdate", "hs_lastmodifieddate",
-    "closed_date", "time_to_close", "hs_resolution",
+    "subject",
+    "content",
+    "hs_pipeline",
+    "hs_pipeline_stage",
+    "hs_ticket_priority",
+    "hs_ticket_category",
+    "source_type",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+    "closed_date",
+    "time_to_close",
+    "hs_resolution",
   ],
 };
 
@@ -129,15 +203,26 @@ function hsSearchDateValue(value: string | undefined): string | undefined {
 }
 
 function rawOf(rec: HsRec) {
-  return { id: rec.id, properties: rec.properties, createdAt: rec.createdAt, updatedAt: rec.updatedAt } as never;
+  return {
+    id: rec.id,
+    properties: rec.properties,
+    createdAt: rec.createdAt,
+    updatedAt: rec.updatedAt,
+  } as never;
 }
 
 function originalCreatedAt(rec: HsRec): Record<string, string> {
-  const createdAt = parseHsDate(rec.properties.createdate ?? rec.properties.hs_createdate ?? rec.createdAt);
+  const createdAt = parseHsDate(
+    rec.properties.createdate ?? rec.properties.hs_createdate ?? rec.createdAt,
+  );
   return createdAt ? { created_at: createdAt } : {};
 }
 
-function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<string, unknown> | null {
+function buildPayload(
+  entity: EntityKind,
+  ownerId: string,
+  rec: HsRec,
+): Record<string, unknown> | null {
   const p = rec.properties;
   if (entity === "company") {
     if (!p.name) return null;
@@ -228,7 +313,11 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
         parseHsNum(p.num_associated_contacts) !== null
           ? Math.trunc(parseHsNum(p.num_associated_contacts) as number)
           : null,
-      external_ids: { hubspot: rec.id, hs_stage: p.dealstage ?? null, hs_pipeline: p.pipeline ?? null } as never,
+      external_ids: {
+        hubspot: rec.id,
+        hs_stage: p.dealstage ?? null,
+        hs_pipeline: p.pipeline ?? null,
+      } as never,
       hs_raw: rawOf(rec),
     };
   }
@@ -267,7 +356,12 @@ function buildPayload(entity: EntityKind, ownerId: string, rec: HsRec): Record<s
 function buildTicketPayload(ownerId: string, rec: HsRec): Record<string, unknown> | null {
   const p = rec.properties;
   const subject = (p.subject ?? `Ticket ${rec.id}`) as string;
-  const prMap: Record<string, string> = { LOW: "low", MEDIUM: "medium", HIGH: "high", URGENT: "urgent" };
+  const prMap: Record<string, string> = {
+    LOW: "low",
+    MEDIUM: "medium",
+    HIGH: "high",
+    URGENT: "urgent",
+  };
   const priority = prMap[(p.hs_ticket_priority ?? "").toUpperCase()] ?? "medium";
   // status mapping fica simplificado; o importador completo já mapeia via pipelines.
   const closed = !!p.closed_date;
@@ -285,7 +379,11 @@ function buildTicketPayload(ownerId: string, rec: HsRec): Record<string, unknown
     ...originalCreatedAt(rec),
     hs_lastmodifieddate: parseHsDate(p.hs_lastmodifieddate),
     resolved_at: parseHsDate(p.closed_date),
-    external_ids: { hubspot: rec.id, hs_pipeline: p.hs_pipeline ?? null, hs_pipeline_stage: p.hs_pipeline_stage ?? null } as never,
+    external_ids: {
+      hubspot: rec.id,
+      hs_pipeline: p.hs_pipeline ?? null,
+      hs_pipeline_stage: p.hs_pipeline_stage ?? null,
+    } as never,
     hs_raw: rawOf(rec),
   };
 }
@@ -314,7 +412,10 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
     const tsProp = entity === "contact" ? "lastmodifieddate" : "hs_lastmodifieddate";
 
     for (let page = 0; page < data.pages; page++) {
-      const filters = [{ propertyName: tsProp, operator: "GTE", value: "0" }] as Record<string, string>[];
+      const filters = [{ propertyName: tsProp, operator: "GTE", value: "0" }] as Record<
+        string,
+        string
+      >[];
       const beforeValue = hsSearchDateValue(cursor.before);
       if (beforeValue) filters.push({ propertyName: tsProp, operator: "LT", value: beforeValue });
 
@@ -343,7 +444,11 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
         .select("hs_object_id")
         .eq("owner_id", userId)
         .in("hs_object_id", ids);
-      const have = new Set(((existing ?? []) as { hs_object_id: string | null }[]).map((x) => x.hs_object_id).filter(Boolean) as string[]);
+      const have = new Set(
+        ((existing ?? []) as { hs_object_id: string | null }[])
+          .map((x) => x.hs_object_id)
+          .filter(Boolean) as string[],
+      );
       const missing = ids.filter((id) => !have.has(id));
       missingCount += missing.length;
 
@@ -356,7 +461,10 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
           })) as { results?: HsRec[] };
           const rows: Record<string, unknown>[] = [];
           for (const rec of rd.results ?? []) {
-            const payload = entity === "ticket" ? buildTicketPayload(userId, rec) : buildPayload(entity as Exclude<EntityKind, "ticket">, userId, rec);
+            const payload =
+              entity === "ticket"
+                ? buildTicketPayload(userId, rec)
+                : buildPayload(entity as Exclude<EntityKind, "ticket">, userId, rec);
             if (payload) rows.push(payload);
             else failed++;
           }
@@ -377,7 +485,8 @@ export const reconcileHubspotEntities = createServerFn({ method: "POST" })
       }
       if (Number(nextAfter) >= 10000) {
         const last = r.results?.at(-1);
-        const before = last?.properties?.[tsProp] ?? last?.properties?.hs_lastmodifieddate ?? last?.updatedAt;
+        const before =
+          last?.properties?.[tsProp] ?? last?.properties?.hs_lastmodifieddate ?? last?.updatedAt;
         cursor = before ? { before } : {};
       } else {
         cursor = { ...cursor, after: nextAfter };

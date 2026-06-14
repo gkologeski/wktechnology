@@ -25,7 +25,13 @@ export interface WorkflowTrigger {
 
 export type WorkflowAction =
   | { type: "set_field"; field: string; value: unknown }
-  | { type: "create_activity"; activity_type?: string; subject: string; body?: string; due_in_days?: number }
+  | {
+      type: "create_activity";
+      activity_type?: string;
+      subject: string;
+      body?: string;
+      due_in_days?: number;
+    }
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
@@ -60,11 +66,63 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
-  leads: ["first_name", "last_name", "email", "phone", "company_name", "source", "status", "score", "label", "owner_id"],
-  contacts: ["first_name", "last_name", "email", "phone", "job_title", "company_name", "label", "score", "owner_id"],
-  companies: ["name", "domain", "industry", "size", "city", "state", "country", "is_target_account", "owner_id"],
-  deals: ["name", "value", "currency", "stage", "stage_id", "pipeline_id", "expected_close_date", "owner_id"],
-  tickets: ["subject", "description", "status", "priority", "source", "assignee_id", "pipeline_id", "contact_id", "company_id", "deal_id", "due_at"],
+  leads: [
+    "first_name",
+    "last_name",
+    "email",
+    "phone",
+    "company_name",
+    "source",
+    "status",
+    "score",
+    "label",
+    "owner_id",
+  ],
+  contacts: [
+    "first_name",
+    "last_name",
+    "email",
+    "phone",
+    "job_title",
+    "company_name",
+    "label",
+    "score",
+    "owner_id",
+  ],
+  companies: [
+    "name",
+    "domain",
+    "industry",
+    "size",
+    "city",
+    "state",
+    "country",
+    "is_target_account",
+    "owner_id",
+  ],
+  deals: [
+    "name",
+    "value",
+    "currency",
+    "stage",
+    "stage_id",
+    "pipeline_id",
+    "expected_close_date",
+    "owner_id",
+  ],
+  tickets: [
+    "subject",
+    "description",
+    "status",
+    "priority",
+    "source",
+    "assignee_id",
+    "pipeline_id",
+    "contact_id",
+    "company_id",
+    "deal_id",
+    "due_at",
+  ],
 };
 
 export const FILTER_OPS: Array<{ value: FilterOp; label: string }> = [

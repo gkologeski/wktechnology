@@ -4,7 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { listMyWorkspaces, setActiveWorkspace } from "@/lib/workspaces.functions";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
@@ -52,9 +57,11 @@ export function WorkspaceSwitcher() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton tooltip={active?.name} className="gap-2">
-            {active?.logo_url
-              ? <img src={active.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
-              : <Building2 className="h-4 w-4" />}
+            {active?.logo_url ? (
+              <img src={active.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
+            ) : (
+              <Building2 className="h-4 w-4" />
+            )}
             <span className="truncate font-medium">{active?.name}</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -68,10 +75,14 @@ export function WorkspaceSwitcher() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton tooltip={active?.name} className="gap-2">
-              {active?.logo_url
-                ? <img src={active.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
-                : <Building2 className="h-4 w-4" />}
-              <span className="truncate font-medium flex-1 text-left">{active?.name ?? "Workspace"}</span>
+              {active?.logo_url ? (
+                <img src={active.logo_url} alt="" className="h-5 w-5 rounded object-cover" />
+              ) : (
+                <Building2 className="h-4 w-4" />
+              )}
+              <span className="truncate font-medium flex-1 text-left">
+                {active?.name ?? "Workspace"}
+              </span>
               <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -84,9 +95,11 @@ export function WorkspaceSwitcher() {
                 onClick={() => w.id !== active?.id && switchMut.mutate(w.id)}
                 disabled={switchMut.isPending}
               >
-                {w.logo_url
-                  ? <img src={w.logo_url} alt="" className="h-4 w-4 rounded mr-2 object-cover" />
-                  : <Building2 className="h-4 w-4 mr-2" />}
+                {w.logo_url ? (
+                  <img src={w.logo_url} alt="" className="h-4 w-4 rounded mr-2 object-cover" />
+                ) : (
+                  <Building2 className="h-4 w-4 mr-2" />
+                )}
                 <span className="flex-1 truncate">{w.name}</span>
                 {w.id === active?.id && <Check className="h-4 w-4 ml-2" />}
               </DropdownMenuItem>

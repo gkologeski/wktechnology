@@ -34,7 +34,9 @@ test("Deals — listagem mostra negócio seed e busca filtra pelo nome", async (
   try {
     await page.goto("/deals");
     const search = page
-      .locator('input[placeholder*="Buscar" i], input[placeholder*="Pesquisar" i], input[placeholder*="Search" i]')
+      .locator(
+        'input[placeholder*="Buscar" i], input[placeholder*="Pesquisar" i], input[placeholder*="Search" i]',
+      )
       .first();
     if (await search.isVisible().catch(() => false)) {
       await search.fill(String(ts));

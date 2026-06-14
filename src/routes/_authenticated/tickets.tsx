@@ -13,32 +13,64 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Plus, LayoutGrid, Rows3, Columns2, Trash2, Search, Briefcase, X,
-  UserCheck, ArrowRightLeft, Settings2, User, Building2,
+  Plus,
+  LayoutGrid,
+  Rows3,
+  Columns2,
+  Trash2,
+  Search,
+  Briefcase,
+  X,
+  UserCheck,
+  ArrowRightLeft,
+  Settings2,
+  User,
+  Building2,
 } from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { filterByView, type ViewKey } from "@/components/tickets/tickets-sidebar";
 import { TicketsBoard } from "@/components/tickets/tickets-board";
 import { TicketsSplitView } from "@/components/tickets/tickets-split-view";
-import { STATUSES, PRIORITIES, PRIORITY_COLOR_VAR, type TicketRow } from "@/components/tickets/types";
+import {
+  STATUSES,
+  PRIORITIES,
+  PRIORITY_COLOR_VAR,
+  type TicketRow,
+} from "@/components/tickets/types";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { SlaBadge } from "@/components/sla/sla-badge";
@@ -88,8 +120,6 @@ function TicketsIndex() {
     dealId: draft.deal_id ?? null,
   });
 
-
-
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
     queryFn: async () => {
@@ -105,11 +135,14 @@ function TicketsIndex() {
 
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts", "select"],
-    queryFn: async () => (await supabase.from("contacts").select("id,first_name,last_name").order("first_name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("contacts").select("id,first_name,last_name").order("first_name"))
+        .data ?? [],
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
-    queryFn: async () => (await supabase.from("companies").select("id,name").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("companies").select("id,name").order("name")).data ?? [],
   });
   const { data: sourceOptions = [] } = useQuery({
     queryKey: ["tickets", "distinct-sources"],
@@ -128,7 +161,8 @@ function TicketsIndex() {
 
   const lookups = useMemo(() => {
     const contactMap = new Map<string, string>();
-    for (const c of contacts) contactMap.set(c.id, `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Contato");
+    for (const c of contacts)
+      contactMap.set(c.id, `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Contato");
     const companyMap = new Map<string, string>();
     for (const c of companies) companyMap.set(c.id, c.name);
     const ownerMap = new Map<string, string>();
@@ -144,9 +178,12 @@ function TicketsIndex() {
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((t) => {
-        const contact = t.contact_id ? lookups.contacts.get(t.contact_id) ?? "" : "";
-        const company = t.company_id ? lookups.companies.get(t.company_id) ?? "" : "";
-        return [t.subject, t.description ?? "", contact, company].join(" ").toLowerCase().includes(q);
+        const contact = t.contact_id ? (lookups.contacts.get(t.contact_id) ?? "") : "";
+        const company = t.company_id ? (lookups.companies.get(t.company_id) ?? "") : "";
+        return [t.subject, t.description ?? "", contact, company]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
       });
     }
     return list;
@@ -181,7 +218,7 @@ function TicketsIndex() {
       pipeline_id: pipeline?.id ?? null,
       resolved_at:
         (draft.status ?? "new") === "resolved" || (draft.status ?? "new") === "closed"
-          ? editing?.resolved_at ?? new Date().toISOString()
+          ? (editing?.resolved_at ?? new Date().toISOString())
           : null,
     };
     let error;
@@ -190,7 +227,10 @@ function TicketsIndex() {
     } else {
       ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id }));
     }
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (editing && editing.status !== payload.status) {
       notifyStatus({ data: { ticket_id: editing.id, new_status: payload.status } }).catch(() => {});
     }
@@ -202,14 +242,18 @@ function TicketsIndex() {
   async function removeOne(id: string) {
     if (!confirm("Excluir este ticket?")) return;
     const { error } = await supabase.from("tickets").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
 
   function toggle(id: string) {
     setSelected((s) => {
       const next = new Set(s);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -217,17 +261,24 @@ function TicketsIndex() {
     if (selected.size === filtered.length) setSelected(new Set());
     else setSelected(new Set(filtered.map((t) => t.id)));
   }
-  function clearSelection() { setSelected(new Set()); }
+  function clearSelection() {
+    setSelected(new Set());
+  }
 
   async function bulkUpdate(patch: Partial<TicketRow>) {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("tickets").update(patch).in("id", ids);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (patch.status) {
       for (const id of ids) {
-        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(() => {});
+        notifyStatus({ data: { ticket_id: id, new_status: patch.status as string } }).catch(
+          () => {},
+        );
       }
     }
     toast.success(`${ids.length} ticket(s) atualizado(s).`);
@@ -240,7 +291,10 @@ function TicketsIndex() {
     if (!confirm(`Excluir ${selected.size} ticket(s)?`)) return;
     const ids = Array.from(selected);
     const { error } = await supabase.from("tickets").delete().in("id", ids);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(`${ids.length} ticket(s) excluído(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
@@ -258,7 +312,11 @@ function TicketsIndex() {
         title="Tickets"
         description="Help desk estilo HubSpot."
         actions={
-          <Button size="sm" onClick={openNew} className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90">
+          <Button
+            size="sm"
+            onClick={openNew}
+            className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+          >
             <Plus className="h-4 w-4 mr-1" /> Adicionar tickets
           </Button>
         }
@@ -288,14 +346,17 @@ function TicketsIndex() {
             <SelectItem value="__all__">Todos os pipelines</SelectItem>
             {pipelines.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name}{p.is_default && " · padrão"}
+                {p.name}
+                {p.is_default && " · padrão"}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Button asChild variant="ghost" size="sm" className="h-9 px-2">
-          <Link to="/settings/pipelines"><Settings2 className="h-4 w-4" /></Link>
+          <Link to="/settings/pipelines">
+            <Settings2 className="h-4 w-4" />
+          </Link>
         </Button>
 
         <div className="flex-1" />
@@ -311,21 +372,29 @@ function TicketsIndex() {
         </div>
 
         <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Responsável" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[160px]">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os responsáveis</SelectItem>
             {members.map((m) => (
-              <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>
+              <SelectItem key={m.user_id} value={m.user_id}>
+                {m.full_name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[160px]">
+            <SelectValue placeholder="Prioridade" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas prioridades</SelectItem>
             {PRIORITIES.map((p) => (
-              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -334,9 +403,15 @@ function TicketsIndex() {
       {/* Layout tabs */}
       <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)} className="mt-4">
         <TabsList>
-          <TabsTrigger value="table"><Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela</TabsTrigger>
-          <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro</TabsTrigger>
-          <TabsTrigger value="split"><Columns2 className="h-3.5 w-3.5 mr-1" /> Split</TabsTrigger>
+          <TabsTrigger value="table">
+            <Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela
+          </TabsTrigger>
+          <TabsTrigger value="board">
+            <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro
+          </TabsTrigger>
+          <TabsTrigger value="split">
+            <Columns2 className="h-3.5 w-3.5 mr-1" /> Split
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="table" className="mt-4">
@@ -346,11 +421,17 @@ function TicketsIndex() {
               <div className="h-4 w-px bg-border mx-1" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7"><UserCheck className="h-3.5 w-3.5 mr-1" />Atribuir</Button>
+                  <Button size="sm" variant="ghost" className="h-7">
+                    <UserCheck className="h-3.5 w-3.5 mr-1" />
+                    Atribuir
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {members.map((m) => (
-                    <DropdownMenuItem key={m.user_id} onSelect={() => bulkUpdate({ assignee_id: m.user_id })}>
+                    <DropdownMenuItem
+                      key={m.user_id}
+                      onSelect={() => bulkUpdate({ assignee_id: m.user_id })}
+                    >
                       {m.full_name}
                     </DropdownMenuItem>
                   ))}
@@ -358,11 +439,17 @@ function TicketsIndex() {
               </DropdownMenu>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7"><ArrowRightLeft className="h-3.5 w-3.5 mr-1" />Status</Button>
+                  <Button size="sm" variant="ghost" className="h-7">
+                    <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />
+                    Status
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {STATUSES.map((s) => (
-                    <DropdownMenuItem key={s.value} onSelect={() => bulkUpdate({ status: s.value })}>
+                    <DropdownMenuItem
+                      key={s.value}
+                      onSelect={() => bulkUpdate({ status: s.value })}
+                    >
                       {s.label}
                     </DropdownMenuItem>
                   ))}
@@ -370,19 +457,30 @@ function TicketsIndex() {
               </DropdownMenu>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7">Prioridade</Button>
+                  <Button size="sm" variant="ghost" className="h-7">
+                    Prioridade
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {PRIORITIES.map((p) => (
-                    <DropdownMenuItem key={p.value} onSelect={() => bulkUpdate({ priority: p.value })}>
+                    <DropdownMenuItem
+                      key={p.value}
+                      onSelect={() => bulkUpdate({ priority: p.value })}
+                    >
                       {p.label}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
               {can("bulk_delete") && (
-                <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={bulkDelete}>
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-destructive"
+                  onClick={bulkDelete}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Excluir
                 </Button>
               )}
               <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
@@ -413,17 +511,28 @@ function TicketsIndex() {
               </TableHeader>
               <TableBody>
                 {isLoading && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Carregando…</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
+                      Carregando…
+                    </TableCell>
+                  </TableRow>
                 )}
                 {!isLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Nenhum ticket nesta view.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
+                      Nenhum ticket nesta view.
+                    </TableCell>
+                  </TableRow>
                 )}
                 {filtered.map((t) => {
                   const ownerName = t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined;
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggle(t.id)} />
+                        <Checkbox
+                          checked={selected.has(t.id)}
+                          onCheckedChange={() => toggle(t.id)}
+                        />
                       </TableCell>
                       <TableCell className="font-medium max-w-[320px]">
                         <div className="flex items-center gap-2">
@@ -454,27 +563,48 @@ function TicketsIndex() {
                           </Badge>
                           <SlaBadge
                             compact
-                            resolutionDueAt={(t as TicketRow & { sla_resolution_due_at?: string | null }).sla_resolution_due_at}
-                            resolutionBreached={(t as TicketRow & { sla_resolution_breached?: boolean }).sla_resolution_breached}
-                            resolvedAt={(t as TicketRow & { resolved_at?: string | null }).resolved_at}
-                            firstResponseDueAt={(t as TicketRow & { sla_first_response_due_at?: string | null }).sla_first_response_due_at}
-                            firstResponseAt={(t as TicketRow & { sla_first_response_at?: string | null }).sla_first_response_at}
-                            firstResponseBreached={(t as TicketRow & { sla_first_response_breached?: boolean }).sla_first_response_breached}
+                            resolutionDueAt={
+                              (t as TicketRow & { sla_resolution_due_at?: string | null })
+                                .sla_resolution_due_at
+                            }
+                            resolutionBreached={
+                              (t as TicketRow & { sla_resolution_breached?: boolean })
+                                .sla_resolution_breached
+                            }
+                            resolvedAt={
+                              (t as TicketRow & { resolved_at?: string | null }).resolved_at
+                            }
+                            firstResponseDueAt={
+                              (t as TicketRow & { sla_first_response_due_at?: string | null })
+                                .sla_first_response_due_at
+                            }
+                            firstResponseAt={
+                              (t as TicketRow & { sla_first_response_at?: string | null })
+                                .sla_first_response_at
+                            }
+                            firstResponseBreached={
+                              (t as TicketRow & { sla_first_response_breached?: boolean })
+                                .sla_first_response_breached
+                            }
                           />
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {t.contact_id ? lookups.contacts.get(t.contact_id) ?? "—" : "—"}
+                        {t.contact_id ? (lookups.contacts.get(t.contact_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {t.company_id ? lookups.companies.get(t.company_id) ?? "—" : "—"}
+                        {t.company_id ? (lookups.companies.get(t.company_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell>
                         {ownerName ? (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-5 w-5 text-[9px]">
                               <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                {ownerName.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                                {ownerName
+                                  .split(" ")
+                                  .map((p) => p[0])
+                                  .slice(0, 2)
+                                  .join("")}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs">{ownerName}</span>
@@ -487,7 +617,12 @@ function TicketsIndex() {
                         {formatDateTime(t.created_at)}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeOne(t.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => removeOne(t.id)}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </TableCell>
@@ -502,7 +637,8 @@ function TicketsIndex() {
         <TabsContent value="board" className="mt-4">
           <TicketsBoard
             pipeline={
-              pipeline ?? ({
+              pipeline ??
+              ({
                 id: "__fallback__",
                 name: "Pipeline de Tickets",
                 entity: "ticket",
@@ -530,24 +666,53 @@ function TicketsIndex() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2 space-y-1.5">
               <Label>Assunto *</Label>
-              <Input value={draft.subject ?? ""} onChange={(e) => setDraft({ ...draft, subject: e.target.value })} />
+              <Input
+                value={draft.subject ?? ""}
+                onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
+              />
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea rows={4} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+              <Textarea
+                rows={4}
+                value={draft.description ?? ""}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <Select value={draft.status ?? "new"} onValueChange={(v) => setDraft({ ...draft, status: v as TicketRow["status"] })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              <Select
+                value={draft.status ?? "new"}
+                onValueChange={(v) => setDraft({ ...draft, status: v as TicketRow["status"] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Prioridade</Label>
-              <Select value={draft.priority ?? "medium"} onValueChange={(v) => setDraft({ ...draft, priority: v as TicketRow["priority"] })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+              <Select
+                value={draft.priority ?? "medium"}
+                onValueChange={(v) => setDraft({ ...draft, priority: v as TicketRow["priority"] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
@@ -556,10 +721,14 @@ function TicketsIndex() {
                 value={draft.assignee_id ?? ""}
                 onValueChange={(v) => setDraft({ ...draft, assignee_id: v || null })}
               >
-                <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar…" />
+                </SelectTrigger>
                 <SelectContent>
                   {members.map((m) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>
+                    <SelectItem key={m.user_id} value={m.user_id}>
+                      {m.full_name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -570,18 +739,31 @@ function TicketsIndex() {
                 value={draft.source ?? "__none__"}
                 onValueChange={(v) => setDraft({ ...draft, source: v === "__none__" ? null : v })}
               >
-                <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar…" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Nenhuma —</SelectItem>
                   {sourceOptions.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Vencimento</Label>
-              <Input type="datetime-local" value={draft.due_at ? draft.due_at.slice(0, 16) : ""} onChange={(e) => setDraft({ ...draft, due_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              <Input
+                type="datetime-local"
+                value={draft.due_at ? draft.due_at.slice(0, 16) : ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    due_at: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  })
+                }
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Contato</Label>
@@ -592,7 +774,11 @@ function TicketsIndex() {
                 searchColumns={["first_name", "last_name", "email", "phone"]}
                 labelFrom={(r) => {
                   const row = r as { first_name?: string; last_name?: string; email?: string };
-                  return [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || row.email || "Contato";
+                  return (
+                    [row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
+                    row.email ||
+                    "Contato"
+                  );
                 }}
                 hintFrom={(r) => (r as { email?: string }).email ?? null}
                 value={draft.contact_id ?? null}
@@ -632,8 +818,13 @@ function TicketsIndex() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={save} className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={save}
+              className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+            >
               {editing ? "Salvar" : "Criar"}
             </Button>
           </DialogFooter>

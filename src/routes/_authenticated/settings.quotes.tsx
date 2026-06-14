@@ -14,7 +14,11 @@ export const Route = createFileRoute("/_authenticated/settings/quotes")({
 });
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: "Rascunho", sent: "Enviada", accepted: "Aceita", declined: "Recusada", expired: "Expirada",
+  draft: "Rascunho",
+  sent: "Enviada",
+  accepted: "Aceita",
+  declined: "Recusada",
+  expired: "Expirada",
 };
 
 function QuotesPage() {
@@ -51,25 +55,42 @@ function QuotesPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Cotações</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Cotações</CardTitle>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : quotes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma cotação. Crie a partir da aba "Cotações" em um negócio.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma cotação. Crie a partir da aba "Cotações" em um negócio.
+            </p>
           ) : (
             <div className="space-y-2">
               {quotes.map((q) => (
-                <div key={q.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                <div
+                  key={q.id}
+                  className="flex items-center justify-between gap-3 rounded-md border p-3"
+                >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium truncate">{q.title || q.number}</span>
-                      <Badge variant="outline" className="font-mono text-xs">{q.number}</Badge>
-                      <Badge variant={
-                        q.status === "accepted" ? "default" :
-                        q.status === "declined" ? "destructive" :
-                        q.status === "sent" ? "secondary" : "outline"
-                      }>{STATUS_LABEL[q.status]}</Badge>
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {q.number}
+                      </Badge>
+                      <Badge
+                        variant={
+                          q.status === "accepted"
+                            ? "default"
+                            : q.status === "declined"
+                              ? "destructive"
+                              : q.status === "sent"
+                                ? "secondary"
+                                : "outline"
+                        }
+                      >
+                        {STATUS_LABEL[q.status]}
+                      </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {formatDateTime(q.created_at)} · {formatCurrency(Number(q.total), q.currency)}
@@ -77,7 +98,11 @@ function QuotesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => window.open(`/quote/${q.public_token}`, "_blank")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => window.open(`/quote/${q.public_token}`, "_blank")}
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(q.public_token)}>

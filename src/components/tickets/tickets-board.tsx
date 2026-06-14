@@ -1,4 +1,11 @@
-import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -31,9 +38,16 @@ function Column({
     >
       <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="inline-block h-2 w-2 rounded-sm shrink-0" style={{ background: color }} />
-          <span className="text-[11px] font-semibold uppercase tracking-wide truncate">{stage.label}</span>
-          <span className="ml-auto text-[11px] text-[var(--hs-text-muted)] tabular-nums">{count}</span>
+          <span
+            className="inline-block h-2 w-2 rounded-sm shrink-0"
+            style={{ background: color }}
+          />
+          <span className="text-[11px] font-semibold uppercase tracking-wide truncate">
+            {stage.label}
+          </span>
+          <span className="ml-auto text-[11px] text-[var(--hs-text-muted)] tabular-nums">
+            {count}
+          </span>
         </div>
       </div>
       <div className="p-2 space-y-1.5 flex-1 min-h-[200px] overflow-y-auto max-h-[calc(100vh-260px)]">
@@ -56,7 +70,11 @@ export function TicketsBoard({
 }: {
   pipeline: Pipeline;
   tickets: TicketRow[];
-  lookups: { contacts: Map<string, string>; companies: Map<string, string>; owners: Map<string, string> };
+  lookups: {
+    contacts: Map<string, string>;
+    companies: Map<string, string>;
+    owners: Map<string, string>;
+  };
   onOpen: (t: TicketRow) => void;
 }) {
   const qc = useQueryClient();
@@ -71,7 +89,8 @@ export function TicketsBoard({
     for (const t of tickets) {
       let key: string | undefined;
       // 1) Try HubSpot stage id from external_ids
-      const hsStage = (t.external_ids as { hs_pipeline_stage?: string } | null | undefined)?.hs_pipeline_stage;
+      const hsStage = (t.external_ids as { hs_pipeline_stage?: string } | null | undefined)
+        ?.hs_pipeline_stage;
       if (hsStage && stageValues.has(hsStage)) key = hsStage;
       // 2) Try matching by status (default ticket stages)
       if (!key && stageValues.has(t.status)) key = t.status;

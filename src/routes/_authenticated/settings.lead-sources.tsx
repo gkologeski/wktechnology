@@ -40,7 +40,9 @@ function LeadSourcesPage() {
     if (error) return toast.error(error.message);
     setRows((data ?? []) as Row[]);
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   const add = async () => {
     if (!user || !name.trim()) return;
@@ -56,7 +58,10 @@ function LeadSourcesPage() {
   };
 
   const toggle = async (r: Row) => {
-    const { error } = await supabase.from("lead_sources").update({ active: !r.active }).eq("id", r.id);
+    const { error } = await supabase
+      .from("lead_sources")
+      .update({ active: !r.active })
+      .eq("id", r.id);
     if (error) return toast.error(error.message);
     void load();
   };
@@ -106,7 +111,9 @@ function LeadSourcesPage() {
               onBlur={(e) => e.target.value.trim() !== r.name && rename(r.id, e.target.value)}
             />
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{r.active ? "Ativa" : "Inativa"}</span>
+              <span className="text-xs text-muted-foreground">
+                {r.active ? "Ativa" : "Inativa"}
+              </span>
               <Switch checked={r.active} onCheckedChange={() => toggle(r)} />
             </div>
             <Button variant="ghost" size="icon" onClick={() => setConfirmId(r.id)}>

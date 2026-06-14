@@ -3,8 +3,12 @@
 // sem vazamento entre níveis.
 import { describe, expect, it } from "vitest";
 import {
-  SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, SETTINGS_GROUPS,
-  permsForRole, visibleSidebarUrls, visibleSidebarPlatformUrls,
+  SIDEBAR_GROUPS,
+  SIDEBAR_PLATFORM_ITEMS,
+  SETTINGS_GROUPS,
+  permsForRole,
+  visibleSidebarUrls,
+  visibleSidebarPlatformUrls,
   visibleSettingsItems,
 } from "./menu-config";
 
@@ -16,28 +20,48 @@ const PLATFORM_ADMIN = permsForRole("admin", true);
 // URLs do Sidebar agrupadas por need esperado
 const SIDEBAR_ADMIN_ONLY = ["/leads/import-hubspot"];
 const SIDEBAR_MANAGER_PLUS = [
-  "/dashboards", "/reports", "/analytics",
-  "/campaigns/whatsapp", "/campaigns/email", "/landing-pages",
-  "/prospecting/campaigns", "/agents/sdr",
+  "/dashboards",
+  "/reports",
+  "/analytics",
+  "/campaigns/whatsapp",
+  "/campaigns/email",
+  "/landing-pages",
+  "/prospecting/campaigns",
+  "/agents/sdr",
 ];
 
 // Itens de Configurações por need esperado
-const SETTINGS_PUBLIC = [
-  "/settings", "/settings/email", "/settings/security", "/my-bug-reports",
-];
+const SETTINGS_PUBLIC = ["/settings", "/settings/email", "/settings/security", "/my-bug-reports"];
 const SETTINGS_MANAGER_PLUS = [
-  "/settings/calendars", "/settings/products", "/settings/user-groups",
-  "/settings/workflows", "/settings/sequences", "/settings/email-templates",
-  "/settings/macros", "/settings/kb",
+  "/settings/calendars",
+  "/settings/products",
+  "/settings/user-groups",
+  "/settings/workflows",
+  "/settings/sequences",
+  "/settings/email-templates",
+  "/settings/macros",
+  "/settings/kb",
 ];
 const SETTINGS_ADMIN_ONLY = [
-  "/settings/branding", "/settings/language", "/settings/billing",
-  "/settings/pipelines", "/settings/custom-properties", "/settings/custom-objects",
-  "/settings/teams", "/settings/roles",
-  "/marketplace", "/integrations", "/settings/whatsapp", "/settings/hubspot-sync",
+  "/settings/branding",
+  "/settings/language",
+  "/settings/billing",
+  "/settings/pipelines",
+  "/settings/custom-properties",
+  "/settings/custom-objects",
+  "/settings/teams",
+  "/settings/roles",
+  "/marketplace",
+  "/integrations",
+  "/settings/whatsapp",
+  "/settings/hubspot-sync",
 ];
 const SETTINGS_PLATFORM_ONLY = [
-  "/admin/status", "/admin/alerts", "/admin/security-scans", "/admin/quotas", "/admin/sandbox",
+  "/admin/status",
+  "/admin/alerts",
+  "/admin/security-scans",
+  "/admin/quotas",
+  "/admin/sandbox",
 ];
 
 describe("Sidebar — visibilidade por papel", () => {

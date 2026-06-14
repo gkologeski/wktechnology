@@ -10,7 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { listAdSlugs, upsertAdSlug, deleteAdSlug, listPhoneNumbers } from "@/lib/whatsapp-meta.functions";
+import {
+  listAdSlugs,
+  upsertAdSlug,
+  deleteAdSlug,
+  listPhoneNumbers,
+} from "@/lib/whatsapp-meta.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/wa-ads")({
   component: WaAdsPage,
@@ -43,30 +48,44 @@ function WaAdsPage() {
       const [s, n] = await Promise.all([fetchSlugs(), fetchNumbers()]);
       setSlugs(s as any[]);
       setNumbers(n as any[]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!slug || !display) return;
     setSaving(true);
     try {
-      await upsert({ data: {
-        slug, display_phone_number: display,
-        phone_number_id: phoneNumberId || undefined,
-        prefill_message: prefill || undefined,
-        utm_source: utmSource || undefined,
-        utm_medium: utmMedium || undefined,
-        utm_campaign: utmCampaign || undefined,
-      }});
+      await upsert({
+        data: {
+          slug,
+          display_phone_number: display,
+          phone_number_id: phoneNumberId || undefined,
+          prefill_message: prefill || undefined,
+          utm_source: utmSource || undefined,
+          utm_medium: utmMedium || undefined,
+          utm_campaign: utmCampaign || undefined,
+        },
+      });
       toast.success("Slug criado");
-      setSlug(""); setDisplay(""); setPhoneNumberId(""); setPrefill("");
-      setUtmSource(""); setUtmMedium(""); setUtmCampaign("");
+      setSlug("");
+      setDisplay("");
+      setPhoneNumberId("");
+      setPrefill("");
+      setUtmSource("");
+      setUtmMedium("");
+      setUtmCampaign("");
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Falha");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   function copyLink(s: string) {
@@ -80,53 +99,91 @@ function WaAdsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Click-to-WhatsApp (Ads)</h1>
         <p className="text-muted-foreground text-sm">
-          Crie links curtos <code>/wa/$slug</code> para usar em anúncios. O CRM contabiliza cliques e atribui as conversas geradas.
+          Crie links curtos <code>/wa/$slug</code> para usar em anúncios. O CRM contabiliza cliques
+          e atribui as conversas geradas.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Plus className="size-4" /> Novo slug</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Plus className="size-4" /> Novo slug
+          </CardTitle>
           <CardDescription>O slug compõe a URL pública /wa/&lt;slug&gt;.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Slug *</Label>
-              <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="black-friday" />
+              <Input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                placeholder="black-friday"
+              />
             </div>
             <div className="space-y-1">
               <Label>Número (display) *</Label>
-              <Input value={display} onChange={(e) => setDisplay(e.target.value)} placeholder="+55 11 99999-0000" />
+              <Input
+                value={display}
+                onChange={(e) => setDisplay(e.target.value)}
+                placeholder="+55 11 99999-0000"
+              />
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label>phone_number_id (opcional, para atribuição)</Label>
-              <select className="border rounded h-9 px-2 w-full bg-background" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)}>
+              <select
+                className="border rounded h-9 px-2 w-full bg-background"
+                value={phoneNumberId}
+                onChange={(e) => setPhoneNumberId(e.target.value)}
+              >
                 <option value="">—</option>
                 {numbers.map((n) => (
-                  <option key={n.id} value={n.phone_number_id}>{n.display_phone_number} ({n.phone_number_id})</option>
+                  <option key={n.id} value={n.phone_number_id}>
+                    {n.display_phone_number} ({n.phone_number_id})
+                  </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label>Mensagem pré-preenchida</Label>
-              <Textarea value={prefill} onChange={(e) => setPrefill(e.target.value)} rows={2} placeholder="Olá! Vi o anúncio e quero saber mais." />
+              <Textarea
+                value={prefill}
+                onChange={(e) => setPrefill(e.target.value)}
+                rows={2}
+                placeholder="Olá! Vi o anúncio e quero saber mais."
+              />
             </div>
             <div className="space-y-1">
               <Label>utm_source</Label>
-              <Input value={utmSource} onChange={(e) => setUtmSource(e.target.value)} placeholder="facebook" />
+              <Input
+                value={utmSource}
+                onChange={(e) => setUtmSource(e.target.value)}
+                placeholder="facebook"
+              />
             </div>
             <div className="space-y-1">
               <Label>utm_medium</Label>
-              <Input value={utmMedium} onChange={(e) => setUtmMedium(e.target.value)} placeholder="cpc" />
+              <Input
+                value={utmMedium}
+                onChange={(e) => setUtmMedium(e.target.value)}
+                placeholder="cpc"
+              />
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label>utm_campaign</Label>
-              <Input value={utmCampaign} onChange={(e) => setUtmCampaign(e.target.value)} placeholder="bf2025" />
+              <Input
+                value={utmCampaign}
+                onChange={(e) => setUtmCampaign(e.target.value)}
+                placeholder="bf2025"
+              />
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" disabled={saving}>
-                {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : <Plus className="size-4 mr-2" />}
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                ) : (
+                  <Plus className="size-4 mr-2" />
+                )}
                 Criar slug
               </Button>
             </div>
@@ -139,41 +196,73 @@ function WaAdsPage() {
           <CardTitle className="text-base">Slugs ativos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {loading ? <Loader2 className="size-4 animate-spin" /> : slugs.length === 0 ? (
+          {loading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : slugs.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum slug ainda.</p>
-          ) : slugs.map((s) => (
-            <div key={s.id} className="border rounded-lg p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
+          ) : (
+            slugs.map((s) => (
+              <div
+                key={s.id}
+                className="border rounded-lg p-3 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium font-mono text-sm truncate">/wa/{s.slug}</div>
+                    {!s.is_active && <Badge variant="secondary">inativo</Badge>}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    → {s.display_phone_number}
+                    {s.utm_campaign ? ` · ${s.utm_campaign}` : ""}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <div className="font-medium font-mono text-sm truncate">/wa/{s.slug}</div>
-                  {!s.is_active && <Badge variant="secondary">inativo</Badge>}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  → {s.display_phone_number}{s.utm_campaign ? ` · ${s.utm_campaign}` : ""}
+                  <Badge variant="secondary">
+                    <MousePointerClick className="size-3 mr-1" /> {s.click_count}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyLink(s.slug)}
+                    title="Copiar"
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                  <a href={`${baseUrl}/wa/${s.slug}`} target="_blank" rel="noreferrer">
+                    <Button variant="ghost" size="icon" title="Abrir">
+                      <ExternalLink className="size-4" />
+                    </Button>
+                  </a>
+                  <Switch
+                    checked={s.is_active}
+                    onCheckedChange={async (v) => {
+                      await upsert({
+                        data: {
+                          id: s.id,
+                          slug: s.slug,
+                          display_phone_number: s.display_phone_number,
+                          phone_number_id: s.phone_number_id ?? undefined,
+                          is_active: v,
+                        },
+                      });
+                      refresh();
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={async () => {
+                      if (!confirm("Apagar este slug?")) return;
+                      await remove({ data: { id: s.id } });
+                      refresh();
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary"><MousePointerClick className="size-3 mr-1" /> {s.click_count}</Badge>
-                <Button variant="ghost" size="icon" onClick={() => copyLink(s.slug)} title="Copiar"><Copy className="size-4" /></Button>
-                <a href={`${baseUrl}/wa/${s.slug}`} target="_blank" rel="noreferrer">
-                  <Button variant="ghost" size="icon" title="Abrir"><ExternalLink className="size-4" /></Button>
-                </a>
-                <Switch checked={s.is_active} onCheckedChange={async (v) => {
-                  await upsert({ data: {
-                    id: s.id, slug: s.slug, display_phone_number: s.display_phone_number,
-                    phone_number_id: s.phone_number_id ?? undefined,
-                    is_active: v,
-                  }});
-                  refresh();
-                }} />
-                <Button variant="ghost" size="icon" onClick={async () => {
-                  if (!confirm("Apagar este slug?")) return;
-                  await remove({ data: { id: s.id } });
-                  refresh();
-                }}><Trash2 className="size-4" /></Button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

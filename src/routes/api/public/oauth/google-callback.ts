@@ -90,15 +90,22 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             };
             if (existing) {
               const { error } = await supabaseAdmin
-                .from("calendar_accounts").update(payload).eq("id", existing.id);
+                .from("calendar_accounts")
+                .update(payload)
+                .eq("id", existing.id);
               if (error) throw new Error(error.message);
             } else {
               const { error } = await supabaseAdmin.from("calendar_accounts").insert(payload);
               if (error) throw new Error(error.message);
             }
-            const returnTo = parsed.return_to && parsed.return_to.startsWith("/")
-              ? parsed.return_to : "/settings/calendars";
-            return new Response(null, { status: 302, headers: { Location: `${returnTo}?calendar=connected` } });
+            const returnTo =
+              parsed.return_to && parsed.return_to.startsWith("/")
+                ? parsed.return_to
+                : "/settings/calendars";
+            return new Response(null, {
+              status: 302,
+              headers: { Location: `${returnTo}?calendar=connected` },
+            });
           }
 
           // Default: gmail
@@ -135,10 +142,14 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             if (error) throw new Error(error.message);
           }
 
-          const returnTo = parsed.return_to && parsed.return_to.startsWith("/")
-            ? parsed.return_to
-            : "/settings/email";
-          return new Response(null, { status: 302, headers: { Location: `${returnTo}?gmail=connected` } });
+          const returnTo =
+            parsed.return_to && parsed.return_to.startsWith("/")
+              ? parsed.return_to
+              : "/settings/email";
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `${returnTo}?gmail=connected` },
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(

@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
@@ -8,7 +15,13 @@ import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
 export type ColumnDef = { key: string; label: string; group?: string };
 
 export function ColumnEditorDialog({
-  open, setOpen, allColumns, value, defaults, onApply, onReset,
+  open,
+  setOpen,
+  allColumns,
+  value,
+  defaults,
+  onApply,
+  onReset,
 }: {
   open: boolean;
   setOpen: (b: boolean) => void;
@@ -28,7 +41,12 @@ export function ColumnEditorDialog({
     // Re-running on every `value`/`allColumns` change causes a double render
     // when actions like "Restaurar padrão" persist a new value upstream.
     if (open && !wasOpen.current) {
-      const initial = value && value.length ? value : (defaults && defaults.length ? defaults : allColumns.map((c) => c.key));
+      const initial =
+        value && value.length
+          ? value
+          : defaults && defaults.length
+            ? defaults
+            : allColumns.map((c) => c.key);
       setOrder(initial);
       setVisible(new Set(initial));
       setQuery("");
@@ -37,7 +55,10 @@ export function ColumnEditorDialog({
   }, [open, value, defaults, allColumns]);
 
   const allKeys = allColumns.map((c) => c.key);
-  const fullOrder = [...order.filter((k) => allKeys.includes(k)), ...allKeys.filter((k) => !order.includes(k))];
+  const fullOrder = [
+    ...order.filter((k) => allKeys.includes(k)),
+    ...allKeys.filter((k) => !order.includes(k)),
+  ];
 
   const move = (key: string, dir: -1 | 1) => {
     const idx = fullOrder.indexOf(key);
@@ -49,7 +70,8 @@ export function ColumnEditorDialog({
   };
   const toggle = (key: string) => {
     const next = new Set(visible);
-    if (next.has(key)) next.delete(key); else next.add(key);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
     setVisible(next);
   };
 
@@ -66,7 +88,10 @@ export function ColumnEditorDialog({
   };
 
   const normalize = (s: string) =>
-    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
   const filtered = query.trim()
     ? fullOrder.filter((k) => {
         const c = allColumns.find((x) => x.key === k);
@@ -82,7 +107,8 @@ export function ColumnEditorDialog({
         <DialogHeader>
           <DialogTitle>Editar colunas</DialogTitle>
           <DialogDescription>
-            Marque, desmarque e reordene as colunas exibidas nesta tela. As preferências ficam salvas na sua conta.
+            Marque, desmarque e reordene as colunas exibidas nesta tela. As preferências ficam
+            salvas na sua conta.
           </DialogDescription>
         </DialogHeader>
 
@@ -98,7 +124,9 @@ export function ColumnEditorDialog({
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{visibleCount} de {allColumns.length} visíveis</span>
+            <span>
+              {visibleCount} de {allColumns.length} visíveis
+            </span>
             <button
               type="button"
               onClick={resetToDefault}
@@ -110,20 +138,41 @@ export function ColumnEditorDialog({
 
           <div className="space-y-0.5 max-h-[55vh] overflow-y-auto rounded border bg-muted/30 p-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-8 text-center text-sm text-muted-foreground">Nenhum campo encontrado.</div>
+              <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                Nenhum campo encontrado.
+              </div>
             ) : (
               filtered.map((key) => {
                 const col = allColumns.find((c) => c.key === key);
                 if (!col) return null;
                 return (
-                  <div key={key} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-background">
+                  <div
+                    key={key}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-background"
+                  >
                     <Checkbox checked={visible.has(key)} onCheckedChange={() => toggle(key)} />
                     <span className="flex-1 text-sm truncate">
                       {col.label}
-                      {col.group ? <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span> : null}
+                      {col.group ? (
+                        <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span>
+                      ) : null}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => move(key, -1)}><ChevronUp className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => move(key, 1)}><ChevronDown className="h-3.5 w-3.5" /></Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => move(key, -1)}
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => move(key, 1)}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 );
               })
@@ -132,7 +181,9 @@ export function ColumnEditorDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
           <Button onClick={apply}>Aplicar</Button>
         </DialogFooter>
       </DialogContent>

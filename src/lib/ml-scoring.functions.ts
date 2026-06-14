@@ -8,8 +8,20 @@ export const getMlScoringStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase.from("ml_scoring_models").select("*").eq("owner_id", userId).maybeSingle();
-    return data ?? { owner_id: userId, status: "untrained", weight_ml: 0.5, sample_size: 0, features: [] };
+    const { data } = await supabase
+      .from("ml_scoring_models")
+      .select("*")
+      .eq("owner_id", userId)
+      .maybeSingle();
+    return (
+      data ?? {
+        owner_id: userId,
+        status: "untrained",
+        weight_ml: 0.5,
+        sample_size: 0,
+        features: [],
+      }
+    );
   });
 
 export const setMlWeight = createServerFn({ method: "POST" })

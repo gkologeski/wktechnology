@@ -11,7 +11,10 @@ import type { ReactNode } from "react";
  * On narrow screens columns stack.
  */
 export function RecordLayout({
-  header, left, center, right,
+  header,
+  left,
+  center,
+  right,
 }: {
   header?: ReactNode;
   left: ReactNode;

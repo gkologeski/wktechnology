@@ -46,16 +46,16 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
             if (row.sender_user_id === user.id) return;
             if (activeRef.current === row.conversation_id) return;
             playMessageSound();
-            const who = resolveRef.current ? resolveRef.current(row.sender_user_id) : "Nova mensagem";
+            const who = resolveRef.current
+              ? resolveRef.current(row.sender_user_id)
+              : "Nova mensagem";
             toast(who, {
               description: row.body?.slice(0, 140) ?? "(anexo)",
             });
           },
         )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "chat_conversations" },
-          () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+        .on("postgres_changes", { event: "*", schema: "public", table: "chat_conversations" }, () =>
+          qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
         )
         .on(
           "postgres_changes",

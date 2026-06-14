@@ -88,7 +88,9 @@ type Props = {
 
 export function QuoteVisualEditor({ doc, onChange }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dragging, setDragging] = useState<{ kind: "palette" | "block"; payload: string } | null>(null);
+  const [dragging, setDragging] = useState<{ kind: "palette" | "block"; payload: string } | null>(
+    null,
+  );
   const [zoom, setZoom] = useState(0.85);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -103,7 +105,11 @@ export function QuoteVisualEditor({ doc, onChange }: Props) {
 
   const updateBlocks = (blocks: TemplateBlock[]) => onChange({ ...doc, blocks });
   const updateBlock = (id: string, patch: Partial<TemplateBlock>) => {
-    updateBlocks(doc.blocks.map((b) => (b.id === id ? { ...b, ...patch, props: { ...b.props, ...(patch.props ?? {}) } } : b)));
+    updateBlocks(
+      doc.blocks.map((b) =>
+        b.id === id ? { ...b, ...patch, props: { ...b.props, ...(patch.props ?? {}) } } : b,
+      ),
+    );
   };
   const removeBlock = (id: string) => {
     updateBlocks(doc.blocks.filter((b) => b.id !== id));
@@ -112,7 +118,11 @@ export function QuoteVisualEditor({ doc, onChange }: Props) {
   const duplicateBlock = (id: string) => {
     const idx = doc.blocks.findIndex((b) => b.id === id);
     if (idx < 0) return;
-    const copy = { ...doc.blocks[idx], id: `b_${Math.random().toString(36).slice(2, 10)}`, props: { ...doc.blocks[idx].props } };
+    const copy = {
+      ...doc.blocks[idx],
+      id: `b_${Math.random().toString(36).slice(2, 10)}`,
+      props: { ...doc.blocks[idx].props },
+    };
     const next = [...doc.blocks];
     next.splice(idx + 1, 0, copy);
     updateBlocks(next);
@@ -198,9 +208,7 @@ export function QuoteVisualEditor({ doc, onChange }: Props) {
               </div>
             </div>
 
-            {previewOpen && (
-              <PreviewOverlay doc={doc} onClose={() => setPreviewOpen(false)} />
-            )}
+            {previewOpen && <PreviewOverlay doc={doc} onClose={() => setPreviewOpen(false)} />}
           </div>
 
           {/* RIGHT — floating inspector */}
@@ -292,7 +300,9 @@ function RailItem({
       <TooltipContent side="right" className="max-w-[200px]">
         <div className="font-medium">{label}</div>
         <div className="text-xs text-muted-foreground">{description}</div>
-        <div className="mt-1 text-[10px] text-muted-foreground">Clique para adicionar · arraste para posicionar</div>
+        <div className="mt-1 text-[10px] text-muted-foreground">
+          Clique para adicionar · arraste para posicionar
+        </div>
       </TooltipContent>
     </Tooltip>
   );
@@ -448,7 +458,9 @@ function CanvasBlock({
   onRemove: () => void;
   onDuplicate: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: block.id,
+  });
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition };
   const def = BLOCK_LIBRARY.find((b) => b.type === block.type);
   const Icon = ICONS[def?.icon ?? "Type"] ?? Type;
@@ -582,19 +594,30 @@ function InspectorPanel({
                 </div>
                 {selectedBlock && (
                   <div className="text-sm font-medium">
-                    {BLOCK_LIBRARY.find((b) => b.type === selectedBlock.type)?.label ?? selectedBlock.type}
+                    {BLOCK_LIBRARY.find((b) => b.type === selectedBlock.type)?.label ??
+                      selectedBlock.type}
                   </div>
                 )}
               </div>
               {selectedBlock && (
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onClearSelection} title="Voltar ao tema">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={onClearSelection}
+                  title="Voltar ao tema"
+                >
                   <X className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {selectedBlock ? (
-                <BlockInspector block={selectedBlock} onChange={onBlockChange} onRemove={onRemoveBlock} />
+                <BlockInspector
+                  block={selectedBlock}
+                  onChange={onBlockChange}
+                  onRemove={onRemoveBlock}
+                />
               ) : (
                 <ThemeInspector theme={theme} onChange={onThemeChange} />
               )}
@@ -622,13 +645,45 @@ function BlockInspector({
     <div className="space-y-4 text-sm">
       {block.type === "header" && (
         <>
-          <Field label="Título"><Input value={String(p.title ?? "")} onChange={(e) => setProp("title", e.target.value)} /></Field>
-          <Field label="Subtítulo"><Input value={String(p.subtitle ?? "")} onChange={(e) => setProp("subtitle", e.target.value)} /></Field>
-          <Field label="Alinhamento"><SelectGroup value={String(p.align ?? "left")} options={[["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]]} onChange={(v) => setProp("align", v)} /></Field>
+          <Field label="Título">
+            <Input
+              value={String(p.title ?? "")}
+              onChange={(e) => setProp("title", e.target.value)}
+            />
+          </Field>
+          <Field label="Subtítulo">
+            <Input
+              value={String(p.subtitle ?? "")}
+              onChange={(e) => setProp("subtitle", e.target.value)}
+            />
+          </Field>
+          <Field label="Alinhamento">
+            <SelectGroup
+              value={String(p.align ?? "left")}
+              options={[
+                ["left", "Esquerda"],
+                ["center", "Centro"],
+                ["right", "Direita"],
+              ]}
+              onChange={(v) => setProp("align", v)}
+            />
+          </Field>
           <Field label="Cor de fundo (opcional)">
             <div className="flex items-center gap-2">
-              <Input type="color" className="h-9 w-14 p-1" value={String(p.bg || "#ffffff")} onChange={(e) => setProp("bg", e.target.value)} />
-              <Button size="sm" variant="outline" className="flex-1" onClick={() => setProp("bg", "")}>Sem fundo</Button>
+              <Input
+                type="color"
+                className="h-9 w-14 p-1"
+                value={String(p.bg || "#ffffff")}
+                onChange={(e) => setProp("bg", e.target.value)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setProp("bg", "")}
+              >
+                Sem fundo
+              </Button>
             </div>
           </Field>
         </>
@@ -636,39 +691,119 @@ function BlockInspector({
 
       {block.type === "logo" && (
         <>
-          <Field label="URL da imagem"><Input value={String(p.url ?? "")} onChange={(e) => setProp("url", e.target.value)} placeholder="https://..." /></Field>
-          <Field label="Largura (px)"><Input type="number" value={Number(p.width ?? 140)} onChange={(e) => setProp("width", Number(e.target.value))} /></Field>
-          <Field label="Alinhamento"><SelectGroup value={String(p.align ?? "left")} options={[["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]]} onChange={(v) => setProp("align", v)} /></Field>
+          <Field label="URL da imagem">
+            <Input
+              value={String(p.url ?? "")}
+              onChange={(e) => setProp("url", e.target.value)}
+              placeholder="https://..."
+            />
+          </Field>
+          <Field label="Largura (px)">
+            <Input
+              type="number"
+              value={Number(p.width ?? 140)}
+              onChange={(e) => setProp("width", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Alinhamento">
+            <SelectGroup
+              value={String(p.align ?? "left")}
+              options={[
+                ["left", "Esquerda"],
+                ["center", "Centro"],
+                ["right", "Direita"],
+              ]}
+              onChange={(v) => setProp("align", v)}
+            />
+          </Field>
         </>
       )}
 
       {block.type === "customer" && (
         <>
-          <Field label="Título"><Input value={String(p.title ?? "Para")} onChange={(e) => setProp("title", e.target.value)} /></Field>
-          <ToggleField label="Mostrar nome da empresa" checked={Boolean(p.showCompany)} onChange={(v) => setProp("showCompany", v)} />
-          <ToggleField label="Mostrar contato" checked={Boolean(p.showContact)} onChange={(v) => setProp("showContact", v)} />
-          <ToggleField label="Mostrar e-mail" checked={Boolean(p.showEmail)} onChange={(v) => setProp("showEmail", v)} />
+          <Field label="Título">
+            <Input
+              value={String(p.title ?? "Para")}
+              onChange={(e) => setProp("title", e.target.value)}
+            />
+          </Field>
+          <ToggleField
+            label="Mostrar nome da empresa"
+            checked={Boolean(p.showCompany)}
+            onChange={(v) => setProp("showCompany", v)}
+          />
+          <ToggleField
+            label="Mostrar contato"
+            checked={Boolean(p.showContact)}
+            onChange={(v) => setProp("showContact", v)}
+          />
+          <ToggleField
+            label="Mostrar e-mail"
+            checked={Boolean(p.showEmail)}
+            onChange={(v) => setProp("showEmail", v)}
+          />
         </>
       )}
 
       {block.type === "agent" && (
         <>
-          <Field label="Título"><Input value={String(p.title ?? "Emissor")} onChange={(e) => setProp("title", e.target.value)} /></Field>
-          <ToggleField label="Mostrar vendedor" checked={Boolean(p.showAgent)} onChange={(v) => setProp("showAgent", v)} />
-          <ToggleField label="Data de emissão" checked={Boolean(p.showCreated)} onChange={(v) => setProp("showCreated", v)} />
-          <ToggleField label="Validade" checked={Boolean(p.showValidity)} onChange={(v) => setProp("showValidity", v)} />
+          <Field label="Título">
+            <Input
+              value={String(p.title ?? "Emissor")}
+              onChange={(e) => setProp("title", e.target.value)}
+            />
+          </Field>
+          <ToggleField
+            label="Mostrar vendedor"
+            checked={Boolean(p.showAgent)}
+            onChange={(v) => setProp("showAgent", v)}
+          />
+          <ToggleField
+            label="Data de emissão"
+            checked={Boolean(p.showCreated)}
+            onChange={(v) => setProp("showCreated", v)}
+          />
+          <ToggleField
+            label="Validade"
+            checked={Boolean(p.showValidity)}
+            onChange={(v) => setProp("showValidity", v)}
+          />
         </>
       )}
 
       {block.type === "items_table" && (
         <>
-          <ToggleField label="Coluna descrição" checked={Boolean(p.showDescription)} onChange={(v) => setProp("showDescription", v)} />
-          <ToggleField label="Coluna desconto" checked={Boolean(p.showDiscount)} onChange={(v) => setProp("showDiscount", v)} />
-          <ToggleField label="Coluna imposto" checked={Boolean(p.showTax)} onChange={(v) => setProp("showTax", v)} />
+          <ToggleField
+            label="Coluna descrição"
+            checked={Boolean(p.showDescription)}
+            onChange={(v) => setProp("showDescription", v)}
+          />
+          <ToggleField
+            label="Coluna desconto"
+            checked={Boolean(p.showDiscount)}
+            onChange={(v) => setProp("showDiscount", v)}
+          />
+          <ToggleField
+            label="Coluna imposto"
+            checked={Boolean(p.showTax)}
+            onChange={(v) => setProp("showTax", v)}
+          />
           <Field label="Cor do cabeçalho">
             <div className="flex items-center gap-2">
-              <Input type="color" className="h-9 w-14 p-1" value={String(p.headerBg === "auto" || !p.headerBg ? "#4f46e5" : p.headerBg)} onChange={(e) => setProp("headerBg", e.target.value)} />
-              <Button size="sm" variant="outline" className="flex-1" onClick={() => setProp("headerBg", "auto")}>Cor do tema</Button>
+              <Input
+                type="color"
+                className="h-9 w-14 p-1"
+                value={String(p.headerBg === "auto" || !p.headerBg ? "#4f46e5" : p.headerBg)}
+                onChange={(e) => setProp("headerBg", e.target.value)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setProp("headerBg", "auto")}
+              >
+                Cor do tema
+              </Button>
             </div>
           </Field>
         </>
@@ -676,35 +811,102 @@ function BlockInspector({
 
       {block.type === "totals" && (
         <>
-          <ToggleField label="Subtotal" checked={Boolean(p.showSubtotal)} onChange={(v) => setProp("showSubtotal", v)} />
-          <ToggleField label="Descontos" checked={Boolean(p.showDiscount)} onChange={(v) => setProp("showDiscount", v)} />
-          <ToggleField label="Impostos" checked={Boolean(p.showTax)} onChange={(v) => setProp("showTax", v)} />
-          <Field label="Alinhamento"><SelectGroup value={String(p.align ?? "right")} options={[["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]]} onChange={(v) => setProp("align", v)} /></Field>
+          <ToggleField
+            label="Subtotal"
+            checked={Boolean(p.showSubtotal)}
+            onChange={(v) => setProp("showSubtotal", v)}
+          />
+          <ToggleField
+            label="Descontos"
+            checked={Boolean(p.showDiscount)}
+            onChange={(v) => setProp("showDiscount", v)}
+          />
+          <ToggleField
+            label="Impostos"
+            checked={Boolean(p.showTax)}
+            onChange={(v) => setProp("showTax", v)}
+          />
+          <Field label="Alinhamento">
+            <SelectGroup
+              value={String(p.align ?? "right")}
+              options={[
+                ["left", "Esquerda"],
+                ["center", "Centro"],
+                ["right", "Direita"],
+              ]}
+              onChange={(v) => setProp("align", v)}
+            />
+          </Field>
         </>
       )}
 
       {(block.type === "notes" || block.type === "terms") && (
-        <Field label="Título"><Input value={String(p.title ?? "")} onChange={(e) => setProp("title", e.target.value)} /></Field>
+        <Field label="Título">
+          <Input value={String(p.title ?? "")} onChange={(e) => setProp("title", e.target.value)} />
+        </Field>
       )}
 
       {block.type === "text" && (
         <>
           <Field label="Conteúdo">
-            <Textarea rows={6} value={String(p.content ?? "")} onChange={(e) => setProp("content", e.target.value)} placeholder="Pode usar {{quote.total}}, {{contact.name}}…" />
+            <Textarea
+              rows={6}
+              value={String(p.content ?? "")}
+              onChange={(e) => setProp("content", e.target.value)}
+              placeholder="Pode usar {{quote.total}}, {{contact.name}}…"
+            />
           </Field>
-          <Field label="Alinhamento"><SelectGroup value={String(p.align ?? "left")} options={[["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]]} onChange={(v) => setProp("align", v)} /></Field>
+          <Field label="Alinhamento">
+            <SelectGroup
+              value={String(p.align ?? "left")}
+              options={[
+                ["left", "Esquerda"],
+                ["center", "Centro"],
+                ["right", "Direita"],
+              ]}
+              onChange={(v) => setProp("align", v)}
+            />
+          </Field>
         </>
       )}
 
       {block.type === "spacer" && (
-        <Field label="Altura (px)"><Input type="number" value={Number(p.height ?? 24)} onChange={(e) => setProp("height", Number(e.target.value))} /></Field>
+        <Field label="Altura (px)">
+          <Input
+            type="number"
+            value={Number(p.height ?? 24)}
+            onChange={(e) => setProp("height", Number(e.target.value))}
+          />
+        </Field>
       )}
 
       {block.type === "image" && (
         <>
-          <Field label="URL"><Input value={String(p.url ?? "")} onChange={(e) => setProp("url", e.target.value)} placeholder="https://..." /></Field>
-          <Field label="Largura (px)"><Input type="number" value={Number(p.width ?? 480)} onChange={(e) => setProp("width", Number(e.target.value))} /></Field>
-          <Field label="Alinhamento"><SelectGroup value={String(p.align ?? "center")} options={[["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]]} onChange={(v) => setProp("align", v)} /></Field>
+          <Field label="URL">
+            <Input
+              value={String(p.url ?? "")}
+              onChange={(e) => setProp("url", e.target.value)}
+              placeholder="https://..."
+            />
+          </Field>
+          <Field label="Largura (px)">
+            <Input
+              type="number"
+              value={Number(p.width ?? 480)}
+              onChange={(e) => setProp("width", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Alinhamento">
+            <SelectGroup
+              value={String(p.align ?? "center")}
+              options={[
+                ["left", "Esquerda"],
+                ["center", "Centro"],
+                ["right", "Direita"],
+              ]}
+              onChange={(v) => setProp("align", v)}
+            />
+          </Field>
         </>
       )}
 
@@ -713,14 +915,24 @@ function BlockInspector({
       )}
 
       <Separator />
-      <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={onRemove}>
+      <Button
+        variant="outline"
+        className="w-full text-destructive hover:text-destructive"
+        onClick={onRemove}
+      >
         <Trash2 className="mr-2 h-3.5 w-3.5" /> Remover bloco
       </Button>
     </div>
   );
 }
 
-function ThemeInspector({ theme, onChange }: { theme: TemplateTheme; onChange: (t: TemplateTheme) => void }) {
+function ThemeInspector({
+  theme,
+  onChange,
+}: {
+  theme: TemplateTheme;
+  onChange: (t: TemplateTheme) => void;
+}) {
   const set = (patch: Partial<TemplateTheme>) => onChange({ ...theme, ...patch });
   const palettes: Array<[string, string]> = [
     ["#4f46e5", "Índigo"],
@@ -733,7 +945,8 @@ function ThemeInspector({ theme, onChange }: { theme: TemplateTheme; onChange: (
   return (
     <div className="space-y-4 text-sm">
       <p className="text-xs text-muted-foreground">
-        Sem bloco selecionado. Ajuste o tema global do modelo aqui — ou clique em um bloco na página para editar.
+        Sem bloco selecionado. Ajuste o tema global do modelo aqui — ou clique em um bloco na página
+        para editar.
       </p>
       <Separator />
 
@@ -750,15 +963,30 @@ function ThemeInspector({ theme, onChange }: { theme: TemplateTheme; onChange: (
               aria-label={name}
             />
           ))}
-          <Input type="color" className="h-7 w-10 p-0.5" value={theme.primaryColor} onChange={(e) => set({ primaryColor: e.target.value })} />
+          <Input
+            type="color"
+            className="h-7 w-10 p-0.5"
+            value={theme.primaryColor}
+            onChange={(e) => set({ primaryColor: e.target.value })}
+          />
         </div>
       </Field>
 
       <Field label="Cor de fundo">
-        <Input type="color" className="h-9 w-full" value={theme.bgColor} onChange={(e) => set({ bgColor: e.target.value })} />
+        <Input
+          type="color"
+          className="h-9 w-full"
+          value={theme.bgColor}
+          onChange={(e) => set({ bgColor: e.target.value })}
+        />
       </Field>
       <Field label="Cor do texto">
-        <Input type="color" className="h-9 w-full" value={theme.textColor} onChange={(e) => set({ textColor: e.target.value })} />
+        <Input
+          type="color"
+          className="h-9 w-full"
+          value={theme.textColor}
+          onChange={(e) => set({ textColor: e.target.value })}
+        />
       </Field>
       <Field label="Fonte">
         <SelectGroup
@@ -774,13 +1002,26 @@ function ThemeInspector({ theme, onChange }: { theme: TemplateTheme; onChange: (
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Espaçamento (px)">
-          <Input type="number" value={theme.pagePadding} onChange={(e) => set({ pagePadding: Number(e.target.value) })} />
+          <Input
+            type="number"
+            value={theme.pagePadding}
+            onChange={(e) => set({ pagePadding: Number(e.target.value) })}
+          />
         </Field>
         <Field label="Raio (px)">
-          <Input type="number" value={theme.radius} onChange={(e) => set({ radius: Number(e.target.value) })} />
+          <Input
+            type="number"
+            value={theme.radius}
+            onChange={(e) => set({ radius: Number(e.target.value) })}
+          />
         </Field>
       </div>
-      <Button size="sm" variant="outline" className="w-full" onClick={() => onChange({ ...DEFAULT_THEME })}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={() => onChange({ ...DEFAULT_THEME })}
+      >
         Restaurar tema padrão
       </Button>
     </div>
@@ -790,13 +1031,23 @@ function ThemeInspector({ theme, onChange }: { theme: TemplateTheme; onChange: (
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </Label>
       {children}
     </div>
   );
 }
 
-function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between rounded-md border border-border/60 bg-muted/30 px-3 py-2">
       <Label className="text-xs">{label}</Label>
@@ -805,7 +1056,15 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
-function SelectGroup({ value, options, onChange }: { value: string; options: Array<[string, string]>; onChange: (v: string) => void }) {
+function SelectGroup({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: Array<[string, string]>;
+  onChange: (v: string) => void;
+}) {
   return (
     <div className="flex flex-wrap gap-1">
       {options.map(([val, label]) => (
@@ -841,12 +1100,23 @@ function PreviewOverlay({ doc, onClose }: { doc: TemplateDocument; onClose: () =
     <div className="absolute inset-0 top-[52px] z-30 flex flex-col bg-slate-900/95 backdrop-blur">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
         <div className="text-sm font-medium text-white">Pré-visualização com dados de exemplo</div>
-        <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={onClose}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-white hover:bg-white/10"
+          onClick={onClose}
+        >
           <X className="mr-1 h-3.5 w-3.5" /> Fechar
         </Button>
       </div>
       <div className="flex-1 overflow-auto p-6">
-        <iframe ref={ref} title="preview" sandbox="" srcDoc={safe} className="mx-auto block h-full min-h-[700px] w-full max-w-[900px] rounded-lg border border-white/10 bg-white shadow-2xl" />
+        <iframe
+          ref={ref}
+          title="preview"
+          sandbox=""
+          srcDoc={safe}
+          className="mx-auto block h-full min-h-[700px] w-full max-w-[900px] rounded-lg border border-white/10 bg-white shadow-2xl"
+        />
       </div>
     </div>
   );

@@ -6,8 +6,14 @@ import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/a
 import { ZAPIER_TRIGGERS } from "@/lib/zapier.functions";
 
 const EVENT_TO_TABLE: Record<string, { table: string; cols: string }> = {
-  "lead.created": { table: "leads", cols: "id,first_name,last_name,email,phone,company,source,status,created_at" },
-  "lead.assigned": { table: "leads", cols: "id,first_name,last_name,email,assigned_user_id,status,updated_at" },
+  "lead.created": {
+    table: "leads",
+    cols: "id,first_name,last_name,email,phone,company,source,status,created_at",
+  },
+  "lead.assigned": {
+    table: "leads",
+    cols: "id,first_name,last_name,email,assigned_user_id,status,updated_at",
+  },
   "deal.created": { table: "deals", cols: "id,title,value,currency,stage,created_at" },
   "deal.won": { table: "deals", cols: "id,title,value,currency,stage,won_at,updated_at" },
   "deal.lost": { table: "deals", cols: "id,title,value,currency,stage,lost_at,updated_at" },
@@ -26,7 +32,10 @@ export const Route = createFileRoute("/api/public/zapier/triggers/$event")({
         if (denied) return denied;
         const event = String(params.event ?? "");
         if (!(ZAPIER_TRIGGERS as readonly string[]).includes(event)) {
-          return Response.json({ error: "unknown_event", supported: ZAPIER_TRIGGERS }, { status: 400 });
+          return Response.json(
+            { error: "unknown_event", supported: ZAPIER_TRIGGERS },
+            { status: 400 },
+          );
         }
         const cfg = EVENT_TO_TABLE[event];
         if (!cfg) return Response.json({ data: [] });

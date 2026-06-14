@@ -96,18 +96,20 @@ function PlayQueue() {
           <CardContent className="pt-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs text-muted-foreground">Item {idx + 1} de {q.data.items.length}</div>
+                <div className="text-xs text-muted-foreground">
+                  Item {idx + 1} de {q.data.items.length}
+                </div>
                 <h2 className="text-xl font-semibold">{subject}</h2>
                 {email && <div className="text-sm text-muted-foreground">{email}</div>}
                 {phone && <div className="text-sm text-muted-foreground">{phone}</div>}
               </div>
               <div className="flex flex-col gap-2">
-                {current.contact_id && (
-                  <Badge variant="secondary">Contato</Badge>
-                )}
+                {current.contact_id && <Badge variant="secondary">Contato</Badge>}
                 {current.lead_id && (
                   <Badge variant="secondary">
-                    <Link to="/leads/$id" params={{ id: current.lead_id }}>Abrir lead →</Link>
+                    <Link to="/leads/$id" params={{ id: current.lead_id }}>
+                      Abrir lead →
+                    </Link>
                   </Badge>
                 )}
                 {current.deal_id && <Badge variant="secondary">Deal</Badge>}
@@ -149,7 +151,11 @@ function PlayQueue() {
             </div>
 
             <div className="flex justify-between gap-2">
-              <Button variant="outline" onClick={() => action.mutate("skip")} disabled={action.isPending}>
+              <Button
+                variant="outline"
+                onClick={() => action.mutate("skip")}
+                disabled={action.isPending}
+              >
                 <SkipForward className="mr-1 h-4 w-4" /> Pular (S)
               </Button>
               <Button onClick={() => action.mutate("complete")} disabled={action.isPending}>
@@ -168,7 +174,8 @@ type HydratedItem = QueueData["items"][number];
 
 function displayName(item: HydratedItem | undefined): string {
   if (!item) return "";
-  if (item.contact) return `${item.contact.first_name ?? ""} ${item.contact.last_name ?? ""}`.trim();
+  if (item.contact)
+    return `${item.contact.first_name ?? ""} ${item.contact.last_name ?? ""}`.trim();
   if (item.lead)
     return (
       `${item.lead.first_name ?? ""} ${item.lead.last_name ?? ""}`.trim() ||

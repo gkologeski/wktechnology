@@ -24,7 +24,9 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
         const { data } = await supabaseAdmin
           .from("leads")
-          .select("id, first_name, last_name, email, phone, company_name, status, source, created_at")
+          .select(
+            "id, first_name, last_name, email, phone, company_name, status, source, created_at",
+          )
           .eq("owner_id", auth.ownerId)
           .order("created_at", { ascending: false })
           .limit(limit);
@@ -38,14 +40,20 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         const body = await request.json().catch(() => null);
         const parsed = CreateLead.safeParse(body);
         if (!parsed.success) {
-          return new Response(JSON.stringify({ error: "invalid_input", details: parsed.error.flatten() }), {
-            status: 400, headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: "invalid_input", details: parsed.error.flatten() }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
         const { data, error } = await supabaseAdmin
           .from("leads")
           .insert({ owner_id: auth.ownerId, status: "new", ...parsed.data })
-          .select("id, first_name, last_name, email, phone, company_name, status, source, created_at")
+          .select(
+            "id, first_name, last_name, email, phone, company_name, status, source, created_at",
+          )
           .single();
         if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         return Response.json({ data });
