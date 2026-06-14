@@ -139,18 +139,30 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
 
   const pipelines = q.data ?? [];
 
-  const [selectedId, setSelectedIdState] = useState<string | null>(null);
+  const [selectedId, setSelectedIdState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(LS_KEY(entity));
+    } catch {
+      return null;
+    }
+  });
 
+  // Re-hydrate when entity changes (hook reused across entities)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = localStorage.getItem(LS_KEY(entity));
-    if (stored) setSelectedIdState(stored);
+    try {
+      setSelectedIdState(localStorage.getItem(LS_KEY(entity)));
+    } catch {
+      setSelectedIdState(null);
+    }
   }, [entity]);
 
   useEffect(() => {
     if (pipelines.length === 0) return;
     if (selectedId === "__all__") return;
     if (selectedId && pipelines.some((p) => p.id === selectedId)) return;
+    // Sem seleção persistida (1ª entrada) ou seleção inválida → usa o pipeline padrão
     const def = pipelines.find((p) => p.is_default) ?? pipelines[0];
     setSelectedIdState(def.id);
     try {
