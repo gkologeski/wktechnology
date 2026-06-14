@@ -221,8 +221,19 @@ export function permsForRole(
 }
 
 export function visibleSidebarUrls(perms: Perms): string[] {
-  return SIDEBAR_GROUPS.flatMap((g) => g.items.filter((i) => canSee(i.need, perms)).map((i) => i.url));
+  const out: string[] = [];
+  for (const g of SIDEBAR_GROUPS) {
+    for (const i of g.items) {
+      if (!canSee(i.need, perms)) continue;
+      out.push(i.url);
+      for (const c of i.children ?? []) {
+        if (canSee(c.need, perms)) out.push(c.url);
+      }
+    }
+  }
+  return out;
 }
+
 
 export function visibleSidebarPlatformUrls(perms: Perms): string[] {
   return SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms)).map((i) => i.url);
