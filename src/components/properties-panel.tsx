@@ -36,6 +36,7 @@ import {
 } from "@/lib/record-layouts.functions";
 import { toE164, isEmail } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
