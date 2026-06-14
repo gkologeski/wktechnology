@@ -1,7 +1,8 @@
 import { isValidPhoneNumber, parsePhoneNumberFromString } from "libphonenumber-js";
 
 // Canonical email validation regex (HTML5-style, case-insensitive).
-const EMAIL_RE = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
+const EMAIL_RE =
+  /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
 // TLD must have at least 2 letters (rejects ".b", ".1", etc.).
 const TLD_MIN_RE = /\.[a-z]{2,}$/i;
 
@@ -31,7 +32,10 @@ export function toE164(v: string | null | undefined, defaultCountry: "BR" = "BR"
   const raw = String(v).trim();
   if (!raw) return null;
   try {
-    const parsed = parsePhoneNumberFromString(raw, raw.startsWith("+") ? undefined : defaultCountry);
+    const parsed = parsePhoneNumberFromString(
+      raw,
+      raw.startsWith("+") ? undefined : defaultCountry,
+    );
     if (parsed && parsed.isValid()) return parsed.number; // E.164
   } catch {
     // fall through

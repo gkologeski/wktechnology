@@ -102,7 +102,9 @@ function MeetingsLibrary() {
                           {m.status}
                         </Badge>
                         {m.recording_storage_path && (
-                          <Badge variant="outline" className="text-xs">gravação</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            gravação
+                          </Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -118,11 +120,7 @@ function MeetingsLibrary() {
       </Card>
 
       {openId && (
-        <MeetingDetailDrawer
-          meetingId={openId}
-          open={!!openId}
-          onClose={() => setOpenId(null)}
-        />
+        <MeetingDetailDrawer meetingId={openId} open={!!openId} onClose={() => setOpenId(null)} />
       )}
     </div>
   );

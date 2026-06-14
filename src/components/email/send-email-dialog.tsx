@@ -192,7 +192,10 @@ export function SendEmailDialog({
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Link to="/settings/email-templates" className="text-xs underline text-muted-foreground">
+              <Link
+                to="/settings/email-templates"
+                className="text-xs underline text-muted-foreground"
+              >
                 Gerenciar
               </Link>
             </div>
@@ -220,7 +223,12 @@ export function SendEmailDialog({
                     · tokens <code>{"{{first_name}}"}</code> · snippets <code>/atalho</code>
                   </span>
                 </Label>
-                <SmartComposeMenu channel="email" currentText={body} contactName={contactName} onApply={setBody} />
+                <SmartComposeMenu
+                  channel="email"
+                  currentText={body}
+                  contactName={contactName}
+                  onApply={setBody}
+                />
               </div>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} />
             </div>
@@ -230,15 +238,27 @@ export function SendEmailDialog({
         <DialogFooter>
           <Button
             onClick={() => {
-              const split = (s: string) => s.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+              const split = (s: string) =>
+                s
+                  .split(/[,;]/)
+                  .map((x) => x.trim())
+                  .filter(Boolean);
               const toList = split(to);
               const ccList = split(cc);
-              if (toList.length === 0) { toast.error("Informe ao menos um destinatário."); return; }
+              if (toList.length === 0) {
+                toast.error("Informe ao menos um destinatário.");
+                return;
+              }
               const bad = [...toList, ...ccList].find((e) => !isEmail(e));
-              if (bad) { toast.error(`Email inválido: ${bad}`); return; }
+              if (bad) {
+                toast.error(`Email inválido: ${bad}`);
+                return;
+              }
               sendMut.mutate();
             }}
-            disabled={!account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending}
+            disabled={
+              !account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending
+            }
           >
             <Send className="mr-2 h-4 w-4" />
             {sendMut.isPending ? "Enviando…" : "Enviar"}

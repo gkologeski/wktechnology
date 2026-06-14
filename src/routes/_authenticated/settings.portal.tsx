@@ -11,7 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import { Copy, RefreshCw, ExternalLink } from "lucide-react";
 
@@ -72,7 +79,8 @@ function PortalSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Habilite o portal por contato. Cada cliente recebe um link único onde pode ver suas solicitações (tickets) e abrir novas.
+            Habilite o portal por contato. Cada cliente recebe um link único onde pode ver suas
+            solicitações (tickets) e abrir novas.
           </p>
           <Input
             placeholder="Buscar contato…"
@@ -92,40 +100,68 @@ function PortalSettingsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Carregando…</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Nenhum contato.</TableCell></TableRow>
-                ) : filtered.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.first_name} {c.last_name ?? ""}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.email ?? "—"}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={c.portal_enabled}
-                        onCheckedChange={(enabled) => toggleMutation.mutate({ contactId: c.id, enabled })}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {c.portal_enabled && c.portal_token ? (
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => copyLink(c.portal_token!)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" />Copiar
-                          </Button>
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={portalUrl(c.portal_token)} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => regenMutation.mutate(c.id)} title="Gerar novo token">
-                            <RefreshCw className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Desativado</span>
-                      )}
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      Carregando…
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      Nenhum contato.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">
+                        {c.first_name} {c.last_name ?? ""}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{c.email ?? "—"}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={c.portal_enabled}
+                          onCheckedChange={(enabled) =>
+                            toggleMutation.mutate({ contactId: c.id, enabled })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {c.portal_enabled && c.portal_token ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyLink(c.portal_token!)}
+                            >
+                              <Copy className="h-3.5 w-3.5 mr-1" />
+                              Copiar
+                            </Button>
+                            <Button size="sm" variant="outline" asChild>
+                              <a
+                                href={portalUrl(c.portal_token)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => regenMutation.mutate(c.id)}
+                              title="Gerar novo token"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Desativado</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

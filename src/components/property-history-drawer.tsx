@@ -4,8 +4,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { formatDateTime } from "@/lib/crm";
 
 type Row = {
-  id: string; property: string; old_value: unknown; new_value: unknown;
-  changed_at: string; changed_by: string | null;
+  id: string;
+  property: string;
+  old_value: unknown;
+  new_value: unknown;
+  changed_at: string;
+  changed_by: string | null;
 };
 
 // pt-BR labels for property names shown in the history drawer.
@@ -85,9 +89,7 @@ const VALUE_LABELS: Record<string, string> = {
 function labelProperty(key: string): string {
   if (PROPERTY_LABELS[key]) return PROPERTY_LABELS[key];
   // Fallback: snake_case → Title Case
-  return key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function labelValue(v: unknown): string {
@@ -98,7 +100,10 @@ function labelValue(v: unknown): string {
 }
 
 export function PropertyHistoryDrawer({
-  open, onOpenChange, entity, entityId,
+  open,
+  onOpenChange,
+  entity,
+  entityId,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
@@ -109,18 +114,26 @@ export function PropertyHistoryDrawer({
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from("property_history").select("*")
-      .eq("entity", entity).eq("entity_id", entityId)
-      .order("changed_at", { ascending: false }).limit(200)
+    (supabase as any)
+      .from("property_history")
+      .select("*")
+      .eq("entity", entity)
+      .eq("entity_id", entityId)
+      .order("changed_at", { ascending: false })
+      .limit(200)
       .then((r: { data: Row[] | null }) => setRows(r.data ?? []));
   }, [open, entity, entityId]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
-        <SheetHeader><SheetTitle>Histórico de propriedades</SheetTitle></SheetHeader>
+        <SheetHeader>
+          <SheetTitle>Histórico de propriedades</SheetTitle>
+        </SheetHeader>
         <ol className="mt-4 space-y-3">
-          {rows.length === 0 && <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>}
+          {rows.length === 0 && (
+            <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
+          )}
           {rows.map((h) => (
             <li key={h.id} className="rounded border p-3 text-sm">
               <div className="font-medium">{labelProperty(h.property)}</div>
@@ -129,7 +142,9 @@ export function PropertyHistoryDrawer({
                 {" → "}
                 <span className="text-foreground">{labelValue(h.new_value)}</span>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">{formatDateTime(h.changed_at)}</div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                {formatDateTime(h.changed_at)}
+              </div>
             </li>
           ))}
         </ol>

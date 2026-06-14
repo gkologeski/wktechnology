@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getAccessProfile, updateAccessProfile,
-} from "@/lib/access-profiles.functions";
+import { getAccessProfile, updateAccessProfile } from "@/lib/access-profiles.functions";
 import { ACCESS_OBJECTS, ACCESS_TOOLS, SCOPE_LABELS } from "@/lib/access-profiles.constants";
 import { TOOL_REQUIRED_ENTITLEMENT, PLAN_LABELS } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/use-entitlements";
@@ -23,15 +27,24 @@ export const Route = createFileRoute("/_authenticated/settings/roles/$roleId")({
 });
 
 type Scope = "none" | "own" | "team" | "all";
-type Perm = { object_key: string; view_scope: Scope; edit_scope: Scope; delete_scope: Scope; create_enabled: boolean };
+type Perm = {
+  object_key: string;
+  view_scope: Scope;
+  edit_scope: Scope;
+  delete_scope: Scope;
+  create_enabled: boolean;
+};
 type Tool = { tool_key: string; enabled: boolean };
 
-const CATEGORIES: Array<{ key: "crm" | "sales" | "service" | "marketing" | "account"; label: string }> = [
-  { key: "crm",       label: "CRM" },
-  { key: "sales",     label: "Vendas" },
-  { key: "service",   label: "Atendimento" },
+const CATEGORIES: Array<{
+  key: "crm" | "sales" | "service" | "marketing" | "account";
+  label: string;
+}> = [
+  { key: "crm", label: "CRM" },
+  { key: "sales", label: "Vendas" },
+  { key: "service", label: "Atendimento" },
   { key: "marketing", label: "Marketing" },
-  { key: "account",   label: "Conta" },
+  { key: "account", label: "Conta" },
 ];
 
 function EditRolePage() {
@@ -47,7 +60,9 @@ function EditRolePage() {
   const [isSystem, setIsSystem] = useState(false);
   const [perms, setPerms] = useState<Record<string, Perm>>({});
   const [tools, setTools] = useState<Record<string, Tool>>({});
-  const [category, setCategory] = useState<"crm" | "sales" | "service" | "marketing" | "account">("crm");
+  const [category, setCategory] = useState<"crm" | "sales" | "service" | "marketing" | "account">(
+    "crm",
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -63,7 +78,13 @@ function EditRolePage() {
         const pmap: Record<string, Perm> = {};
         for (const o of ACCESS_OBJECTS) {
           const found = res.permissions.find((p) => p.object_key === o.key);
-          pmap[o.key] = found ?? { object_key: o.key, view_scope: "none", edit_scope: "none", delete_scope: "none", create_enabled: false };
+          pmap[o.key] = found ?? {
+            object_key: o.key,
+            view_scope: "none",
+            edit_scope: "none",
+            delete_scope: "none",
+            create_enabled: false,
+          };
         }
         setPerms(pmap);
         const tmap: Record<string, Tool> = {};
@@ -74,12 +95,20 @@ function EditRolePage() {
         setTools(tmap);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erro ao carregar perfil");
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [roleId, getFn]);
 
-  const visibleObjects = useMemo(() => ACCESS_OBJECTS.filter((o) => o.category === category), [category]);
-  const visibleTools = useMemo(() => ACCESS_TOOLS.filter((t) => t.category === category), [category]);
+  const visibleObjects = useMemo(
+    () => ACCESS_OBJECTS.filter((o) => o.category === category),
+    [category],
+  );
+  const visibleTools = useMemo(
+    () => ACCESS_TOOLS.filter((t) => t.category === category),
+    [category],
+  );
 
   const updatePerm = (key: string, patch: Partial<Perm>) =>
     setPerms((m) => ({ ...m, [key]: { ...m[key], ...patch } }));
@@ -87,21 +116,28 @@ function EditRolePage() {
     setTools((m) => ({ ...m, [key]: { ...m[key], enabled } }));
 
   const handleSave = async () => {
-    if (name.trim().length < 2) { toast.error("Nome muito curto"); return; }
+    if (name.trim().length < 2) {
+      toast.error("Nome muito curto");
+      return;
+    }
     setSaving(true);
     try {
-      await updateFn({ data: {
-        id: roleId,
-        name: isSystem ? undefined : name.trim(),
-        description: description.trim() || null,
-        base_role: isSystem ? undefined : baseRole,
-        permissions: Object.values(perms),
-        tools: Object.values(tools),
-      } });
+      await updateFn({
+        data: {
+          id: roleId,
+          name: isSystem ? undefined : name.trim(),
+          description: description.trim() || null,
+          base_role: isSystem ? undefined : baseRole,
+          permissions: Object.values(perms),
+          tools: Object.values(tools),
+        },
+      });
       toast.success("Perfil atualizado");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
@@ -111,15 +147,23 @@ function EditRolePage() {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Link to="/settings/roles">
-            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1.5" />Voltar</Button>
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Voltar
+            </Button>
           </Link>
           <div className="min-w-0">
             <h2 className="text-lg font-semibold truncate">Editando perfil: {name}</h2>
-            {isSystem && <Badge variant="secondary" className="mt-1">Sistema — nome e papel base bloqueados</Badge>}
+            {isSystem && (
+              <Badge variant="secondary" className="mt-1">
+                Sistema — nome e papel base bloqueados
+              </Badge>
+            )}
           </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-1.5" />{saving ? "Salvando…" : "Salvar"}
+          <Save className="h-4 w-4 mr-1.5" />
+          {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
 
@@ -131,8 +175,14 @@ function EditRolePage() {
           </div>
           <div className="md:col-span-1">
             <label className="text-xs font-medium">Papel base (compat. RLS)</label>
-            <Select value={baseRole} onValueChange={(v) => setBaseRole(v as "admin" | "manager" | "member")} disabled={isSystem}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={baseRole}
+              onValueChange={(v) => setBaseRole(v as "admin" | "manager" | "member")}
+              disabled={isSystem}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="manager">Gestor</SelectItem>
@@ -142,7 +192,11 @@ function EditRolePage() {
           </div>
           <div className="md:col-span-1">
             <label className="text-xs font-medium">Descrição</label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={1} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={1}
+            />
           </div>
         </CardContent>
       </Card>
@@ -150,7 +204,9 @@ function EditRolePage() {
       <div className="grid grid-cols-[200px_1fr] gap-4">
         {/* sidebar de categorias */}
         <Card>
-          <CardHeader><CardTitle className="text-sm">Categorias</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">Categorias</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-1 pt-0">
             {CATEGORIES.map((c) => (
               <button
@@ -168,7 +224,11 @@ function EditRolePage() {
         <div className="space-y-4">
           {visibleObjects.length > 0 && (
             <Card>
-              <CardHeader><CardTitle className="text-sm">Objetos — {CATEGORIES.find((c) => c.key === category)?.label}</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Objetos — {CATEGORIES.find((c) => c.key === category)?.label}
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-3">
                 {visibleObjects.map((o) => {
                   const p = perms[o.key];
@@ -177,14 +237,31 @@ function EditRolePage() {
                     <div key={o.key} className="border rounded-md p-3 space-y-2">
                       <div className="font-medium text-sm">{o.label}</div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <ScopeSelect label="Visualizar" value={p.view_scope} onChange={(v) => updatePerm(o.key, { view_scope: v })} />
-                        <ScopeSelect label="Editar" value={p.edit_scope} onChange={(v) => updatePerm(o.key, { edit_scope: v })} />
-                        <ScopeSelect label="Excluir" value={p.delete_scope} onChange={(v) => updatePerm(o.key, { delete_scope: v })} />
+                        <ScopeSelect
+                          label="Visualizar"
+                          value={p.view_scope}
+                          onChange={(v) => updatePerm(o.key, { view_scope: v })}
+                        />
+                        <ScopeSelect
+                          label="Editar"
+                          value={p.edit_scope}
+                          onChange={(v) => updatePerm(o.key, { edit_scope: v })}
+                        />
+                        <ScopeSelect
+                          label="Excluir"
+                          value={p.delete_scope}
+                          onChange={(v) => updatePerm(o.key, { delete_scope: v })}
+                        />
                         <div>
                           <label className="text-xs font-medium block mb-1">Criar</label>
                           <div className="flex items-center h-9">
-                            <Switch checked={p.create_enabled} onCheckedChange={(v) => updatePerm(o.key, { create_enabled: v })} />
-                            <span className="ml-2 text-xs text-muted-foreground">{p.create_enabled ? "Permitido" : "Bloqueado"}</span>
+                            <Switch
+                              checked={p.create_enabled}
+                              onCheckedChange={(v) => updatePerm(o.key, { create_enabled: v })}
+                            />
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {p.create_enabled ? "Permitido" : "Bloqueado"}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -197,7 +274,11 @@ function EditRolePage() {
 
           {visibleTools.length > 0 && (
             <Card>
-              <CardHeader><CardTitle className="text-sm">Ferramentas — {CATEGORIES.find((c) => c.key === category)?.label}</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Ferramentas — {CATEGORIES.find((c) => c.key === category)?.label}
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-2">
                 {visibleTools.map((t) => {
                   const v = tools[t.key];
@@ -206,7 +287,10 @@ function EditRolePage() {
                   const locked = !!reqKey && !ents.loading && !ents.isEnabled(reqKey);
                   const effectiveEnabled = locked ? false : v.enabled;
                   return (
-                    <div key={t.key} className={`flex items-center justify-between border rounded-md p-3 ${locked ? "bg-muted/30" : ""}`}>
+                    <div
+                      key={t.key}
+                      className={`flex items-center justify-between border rounded-md p-3 ${locked ? "bg-muted/30" : ""}`}
+                    >
                       <div className="min-w-0 pr-3">
                         <div className="text-sm font-medium flex items-center gap-2">
                           {t.label}
@@ -231,7 +315,9 @@ function EditRolePage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{effectiveEnabled ? "Ligado" : "Desligado"}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {effectiveEnabled ? "Ligado" : "Desligado"}
+                        </span>
                         <Switch
                           checked={effectiveEnabled}
                           disabled={locked}
@@ -246,31 +332,52 @@ function EditRolePage() {
           )}
 
           {visibleObjects.length === 0 && visibleTools.length === 0 && (
-            <Card><CardContent className="pt-6 text-sm text-muted-foreground">Nada para configurar nesta categoria.</CardContent></Card>
+            <Card>
+              <CardContent className="pt-6 text-sm text-muted-foreground">
+                Nada para configurar nesta categoria.
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
 
       <div className="flex justify-end pt-2">
         <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-1.5" />{saving ? "Salvando…" : "Salvar"}
+          <Save className="h-4 w-4 mr-1.5" />
+          {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
 
-      <button type="button" className="hidden" onClick={() => navigate({ to: "/settings/roles" })} />
+      <button
+        type="button"
+        className="hidden"
+        onClick={() => navigate({ to: "/settings/roles" })}
+      />
     </div>
   );
 }
 
-function ScopeSelect({ label, value, onChange }: { label: string; value: Scope; onChange: (v: Scope) => void }) {
+function ScopeSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: Scope;
+  onChange: (v: Scope) => void;
+}) {
   return (
     <div>
       <label className="text-xs font-medium block mb-1">{label}</label>
       <Select value={value} onValueChange={(v) => onChange(v as Scope)}>
-        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-9">
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
           {(Object.keys(SCOPE_LABELS) as Scope[]).map((k) => (
-            <SelectItem key={k} value={k}>{SCOPE_LABELS[k]}</SelectItem>
+            <SelectItem key={k} value={k}>
+              {SCOPE_LABELS[k]}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/settings/surveys")({
   component: SurveysPage,
@@ -86,7 +93,9 @@ function SurveysPage() {
     if (tab === "nps") {
       const promoters = answered.filter((s) => (s.score ?? 0) >= 9).length;
       const detractors = answered.filter((s) => (s.score ?? 0) <= 6).length;
-      const nps = answered.length ? Math.round(((promoters - detractors) / answered.length) * 100) : null;
+      const nps = answered.length
+        ? Math.round(((promoters - detractors) / answered.length) * 100)
+        : null;
       return { total: filtered.length, answered: answered.length, nps, avg: null as number | null };
     }
     const avg = answered.length
@@ -96,7 +105,10 @@ function SurveysPage() {
   }, [filtered, tab]);
 
   const perAgent = useMemo(() => {
-    const groups = new Map<string, { answered: number; sum: number; promoters: number; detractors: number }>();
+    const groups = new Map<
+      string,
+      { answered: number; sum: number; promoters: number; detractors: number }
+    >();
     for (const s of filtered) {
       if (s.score === null) continue;
       const agentId = ticketAgents[s.ticket_id] ?? "unassigned";
@@ -130,7 +142,8 @@ function SurveysPage() {
         <CardHeader>
           <CardTitle>Pesquisas pós-resolução</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao cliente.
+            Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
+            cliente.
           </p>
         </CardHeader>
         <CardContent>
@@ -187,7 +200,6 @@ function SurveysPage() {
         </Card>
       )}
 
-
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -202,10 +214,18 @@ function SurveysPage() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Carregando…
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma pesquisa.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Nenhuma pesquisa.
+                  </TableCell>
+                </TableRow>
               )}
               {filtered.map((s) => (
                 <TableRow key={s.id}>
@@ -214,19 +234,38 @@ function SurveysPage() {
                   </TableCell>
                   <TableCell>
                     {s.score !== null ? (
-                      <Badge variant={
-                        tab === "nps"
-                          ? (s.score >= 9 ? "default" : s.score <= 6 ? "destructive" : "secondary")
-                          : (s.score >= 4 ? "default" : s.score >= 3 ? "secondary" : "destructive")
-                      }>{s.score}</Badge>
-                    ) : <span className="text-muted-foreground">—</span>}
+                      <Badge
+                        variant={
+                          tab === "nps"
+                            ? s.score >= 9
+                              ? "default"
+                              : s.score <= 6
+                                ? "destructive"
+                                : "secondary"
+                            : s.score >= 4
+                              ? "default"
+                              : s.score >= 3
+                                ? "secondary"
+                                : "destructive"
+                        }
+                      >
+                        {s.score}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {s.responded_at ? formatDateTime(s.responded_at) : "—"}
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => copyLink(s.token)} title="Copiar link público">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyLink(s.token)}
+                      title="Copiar link público"
+                    >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </TableCell>

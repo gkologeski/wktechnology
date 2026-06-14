@@ -42,7 +42,9 @@ export function QuoteTemplateEditor({ value, onChange, readOnlyName }: Props) {
         });
         setPreviewHtml(safe);
       } catch (e) {
-        setPreviewHtml(`<pre style="color:#b91c1c;padding:16px;font-family:monospace">${String(e)}</pre>`);
+        setPreviewHtml(
+          `<pre style="color:#b91c1c;padding:16px;font-family:monospace">${String(e)}</pre>`,
+        );
       }
     }, 200);
     return () => clearTimeout(t);
@@ -176,12 +178,10 @@ function EditorSide({
         placeholder="<html>...</html>"
       />
       <p className="text-[11px] text-muted-foreground">
-        Dica: use{" "}
-        <code className="rounded bg-muted px-1">{`{{quote.total}}`}</code>,{" "}
-        <code className="rounded bg-muted px-1">{`{{#each items}}…{{/each}}`}</code>{" "}
-        e{" "}
-        <code className="rounded bg-muted px-1">{`{{#actions/}}`}</code>{" "}
-        para inserir os botões finais.
+        Dica: use <code className="rounded bg-muted px-1">{`{{quote.total}}`}</code>,{" "}
+        <code className="rounded bg-muted px-1">{`{{#each items}}…{{/each}}`}</code> e{" "}
+        <code className="rounded bg-muted px-1">{`{{#actions/}}`}</code> para inserir os botões
+        finais.
       </p>
     </div>
   );

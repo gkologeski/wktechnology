@@ -21,20 +21,91 @@ function kindLabel(value: string) {
 // Compact map of high-level areas → likely files. Helps the model ground
 // `suspected_files` instead of inventing paths.
 const PROJECT_AREAS: { area: string; hints: string[] }[] = [
-  { area: "Autenticação / convites", hints: ["src/routes/login.tsx", "src/routes/signup.tsx", "src/routes/accept-invite.$token.tsx", "src/lib/auth.ts", "src/lib/teams.functions.ts"] },
-  { area: "Leads", hints: ["src/routes/_authenticated/leads.tsx", "src/routes/_authenticated/leads.$id.tsx", "src/components/leads/*"] },
-  { area: "Negócios / pipeline", hints: ["src/routes/_authenticated/deals.tsx", "src/routes/_authenticated/deals.$id.tsx", "src/components/deals/*"] },
-  { area: "Contatos / empresas", hints: ["src/routes/_authenticated/contacts.tsx", "src/routes/_authenticated/companies.tsx"] },
-  { area: "Tarefas / filas", hints: ["src/routes/_authenticated/tasks.tsx", "src/routes/_authenticated/tasks.queues.$queueId.play.tsx"] },
-  { area: "Inbox e-mail", hints: ["src/routes/_authenticated/inbox.email.tsx", "src/components/email/*"] },
-  { area: "Inbox / campanhas WhatsApp", hints: ["src/routes/_authenticated/inbox.whatsapp.tsx", "src/routes/_authenticated/campaigns.whatsapp.tsx", "src/components/whatsapp/*", "src/routes/api/public/hooks/twilio-whatsapp.ts"] },
-  { area: "Voz / discador", hints: ["src/components/voice/call-dialer.tsx", "src/routes/api/public/twilio/voice.ts"] },
-  { area: "Workflows / automações", hints: ["src/components/workflows/*", "src/routes/_authenticated/settings.workflows.tsx", "src/routes/api/public/hooks/workflows-tick.ts"] },
-  { area: "Sequências de prospecção", hints: ["src/components/sequences/*", "src/routes/api/public/hooks/sequences-tick.ts"] },
-  { area: "Reuniões / agendamento público", hints: ["src/routes/book.$slug.tsx", "src/routes/api/public/booking/*"] },
-  { area: "Configurações / branding", hints: ["src/routes/_authenticated/settings.*", "src/components/branding/*"] },
-  { area: "Integrações (HubSpot, Google, etc.)", hints: ["src/routes/_authenticated/integrations.*", "src/lib/integrations/*"] },
-  { area: "Cobrança / planos", hints: ["src/routes/_authenticated/settings.billing.tsx", "src/components/billing/feature-gate.tsx"] },
+  {
+    area: "Autenticação / convites",
+    hints: [
+      "src/routes/login.tsx",
+      "src/routes/signup.tsx",
+      "src/routes/accept-invite.$token.tsx",
+      "src/lib/auth.ts",
+      "src/lib/teams.functions.ts",
+    ],
+  },
+  {
+    area: "Leads",
+    hints: [
+      "src/routes/_authenticated/leads.tsx",
+      "src/routes/_authenticated/leads.$id.tsx",
+      "src/components/leads/*",
+    ],
+  },
+  {
+    area: "Negócios / pipeline",
+    hints: [
+      "src/routes/_authenticated/deals.tsx",
+      "src/routes/_authenticated/deals.$id.tsx",
+      "src/components/deals/*",
+    ],
+  },
+  {
+    area: "Contatos / empresas",
+    hints: ["src/routes/_authenticated/contacts.tsx", "src/routes/_authenticated/companies.tsx"],
+  },
+  {
+    area: "Tarefas / filas",
+    hints: [
+      "src/routes/_authenticated/tasks.tsx",
+      "src/routes/_authenticated/tasks.queues.$queueId.play.tsx",
+    ],
+  },
+  {
+    area: "Inbox e-mail",
+    hints: ["src/routes/_authenticated/inbox.email.tsx", "src/components/email/*"],
+  },
+  {
+    area: "Inbox / campanhas WhatsApp",
+    hints: [
+      "src/routes/_authenticated/inbox.whatsapp.tsx",
+      "src/routes/_authenticated/campaigns.whatsapp.tsx",
+      "src/components/whatsapp/*",
+      "src/routes/api/public/hooks/twilio-whatsapp.ts",
+    ],
+  },
+  {
+    area: "Voz / discador",
+    hints: ["src/components/voice/call-dialer.tsx", "src/routes/api/public/twilio/voice.ts"],
+  },
+  {
+    area: "Workflows / automações",
+    hints: [
+      "src/components/workflows/*",
+      "src/routes/_authenticated/settings.workflows.tsx",
+      "src/routes/api/public/hooks/workflows-tick.ts",
+    ],
+  },
+  {
+    area: "Sequências de prospecção",
+    hints: ["src/components/sequences/*", "src/routes/api/public/hooks/sequences-tick.ts"],
+  },
+  {
+    area: "Reuniões / agendamento público",
+    hints: ["src/routes/book.$slug.tsx", "src/routes/api/public/booking/*"],
+  },
+  {
+    area: "Configurações / branding",
+    hints: ["src/routes/_authenticated/settings.*", "src/components/branding/*"],
+  },
+  {
+    area: "Integrações (HubSpot, Google, etc.)",
+    hints: ["src/routes/_authenticated/integrations.*", "src/lib/integrations/*"],
+  },
+  {
+    area: "Cobrança / planos",
+    hints: [
+      "src/routes/_authenticated/settings.billing.tsx",
+      "src/components/billing/feature-gate.tsx",
+    ],
+  },
   { area: "Admin da plataforma", hints: ["src/routes/_authenticated/admin.*"] },
 ];
 
@@ -59,9 +130,8 @@ type Reporter = {
 
 function buildPrompt(r: BugReport, reporter: Reporter): string {
   const areasBlock = PROJECT_AREAS.map((a) => `- ${a.area}: ${a.hints.join(", ")}`).join("\n");
-  const reporterLine = reporter.email || reporter.name
-    ? `${reporter.name ?? "—"} <${reporter.email ?? "—"}>`
-    : "—";
+  const reporterLine =
+    reporter.email || reporter.name ? `${reporter.name ?? "—"} <${reporter.email ?? "—"}>` : "—";
   return `Você é um engenheiro sênior de software analisando um chamado interno
 de um CRM construído em TanStack Start + Supabase (Lovable Cloud).
 
@@ -166,7 +236,9 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
 export async function analyzeBugReportById(bugReportId: string) {
   const { data: r, error } = await supabaseAdmin
     .from("bug_reports")
-    .select("id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio, owner_id, created_at")
+    .select(
+      "id, kind, category, subtype, description, page_url, user_agent, recording_path, recording_has_audio, owner_id, created_at",
+    )
     .eq("id", bugReportId)
     .maybeSingle();
   if (error) throw new Error(error.message);

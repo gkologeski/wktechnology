@@ -32,12 +32,19 @@ function DealDetail() {
     const { data } = await supabase.from("deals").select("*").eq("id", id).single();
     setDeal(data as Deal | null);
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [id]);
 
   const dealPipeline = useMemo(() => {
     if (!deal) return null;
     const pid = (deal as unknown as { pipeline_id?: string | null }).pipeline_id;
-    return pipelines.find((p) => p.id === pid) ?? pipelines.find((p) => p.is_default) ?? pipelines[0] ?? null;
+    return (
+      pipelines.find((p) => p.id === pid) ??
+      pipelines.find((p) => p.is_default) ??
+      pipelines[0] ??
+      null
+    );
   }, [deal, pipelines]);
 
   const stages = useMemo(
@@ -73,7 +80,9 @@ function DealDetail() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-5 min-w-0">
           <Button variant="ghost" size="icon" asChild className="rounded-full">
-            <Link to="/deals"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link to="/deals">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </Button>
           <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
             <Briefcase className="h-7 w-7" />
@@ -81,15 +90,27 @@ function DealDetail() {
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground truncate">{deal.name}</h1>
-              <Badge variant="outline" className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20">{stages.find(s => s.value === currentStage)?.label ?? deal.stage}</Badge>
+              <Badge
+                variant="outline"
+                className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20"
+              >
+                {stages.find((s) => s.value === currentStage)?.label ?? deal.stage}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {formatCurrency(deal.value, deal.currency)}
-              {deal.expected_close_date && <span> · Fechamento {formatDateTime(deal.expected_close_date)}</span>}
+              {deal.expected_close_date && (
+                <span> · Fechamento {formatDateTime(deal.expected_close_date)}</span>
+              )}
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+          onClick={remove}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -102,7 +123,9 @@ function DealDetail() {
       header={header}
       left={
         <PropertiesPanel
-          entity="deals" table="deals" row={deal as unknown as Record<string, unknown> & { id: string }}
+          entity="deals"
+          table="deals"
+          row={deal as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "name", label: "Nome", primary: true },
             { key: "value", label: "Valor", type: "number", primary: true },
@@ -131,7 +154,11 @@ function DealDetail() {
               <CardTitle className="text-base">Itens de linha</CardTitle>
             </CardHeader>
             <CardContent>
-              <DealLineItems dealId={deal.id} ownerId={deal.owner_id} currency={deal.currency ?? "BRL"} />
+              <DealLineItems
+                dealId={deal.id}
+                ownerId={deal.owner_id}
+                currency={deal.currency ?? "BRL"}
+              />
             </CardContent>
           </Card>
           <Card>

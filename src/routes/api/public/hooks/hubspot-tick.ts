@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
 
           // Auto-push: para cada workspace com hubspot.config.auto_push_enabled = true,
           // dispara um push leve (10 por entidade) das 3 entidades.
-          let pushResults: Array<{ owner: string; results: unknown }> = [];
+          const pushResults: Array<{ owner: string; results: unknown }> = [];
           try {
             const { data: owners } = await supabaseAdmin
               .from("integrations")
@@ -24,7 +24,8 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
               .eq("status", "connected")
               .limit(50);
             const enabled = (owners ?? []).filter(
-              (o) => (o.config as { auto_push_enabled?: boolean } | null)?.auto_push_enabled === true,
+              (o) =>
+                (o.config as { auto_push_enabled?: boolean } | null)?.auto_push_enabled === true,
             );
             for (const o of enabled) {
               try {

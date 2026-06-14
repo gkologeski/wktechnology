@@ -9,30 +9,77 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Trash2, Star, StarOff, Pencil, LayoutDashboard, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import {
-  listDashboards, createDashboard, updateDashboard, deleteDashboard,
-  listWidgets, upsertWidget, deleteWidget,
+  listDashboards,
+  createDashboard,
+  updateDashboard,
+  deleteDashboard,
+  listWidgets,
+  upsertWidget,
+  deleteWidget,
 } from "@/lib/dashboards.functions";
 import { listReports, runReport } from "@/lib/reports.functions";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip,
-  LineChart, Line, PieChart, Pie, Cell, CartesianGrid,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  CartesianGrid,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dashboards")({
   component: DashboardsPage,
 });
 
-const PALETTE = ["hsl(var(--primary))", "hsl(var(--chart-2, 215 80% 60%))", "hsl(var(--chart-3, 145 60% 50%))", "hsl(var(--chart-4, 35 90% 55%))", "hsl(var(--chart-5, 280 65% 60%))", "hsl(var(--muted-foreground))"];
+const PALETTE = [
+  "hsl(var(--primary))",
+  "hsl(var(--chart-2, 215 80% 60%))",
+  "hsl(var(--chart-3, 145 60% 50%))",
+  "hsl(var(--chart-4, 35 90% 55%))",
+  "hsl(var(--chart-5, 280 65% 60%))",
+  "hsl(var(--muted-foreground))",
+];
 
-type Dashboard = { id: string; name: string; description: string | null; is_default: boolean; is_favorite: boolean };
+type Dashboard = {
+  id: string;
+  name: string;
+  description: string | null;
+  is_default: boolean;
+  is_favorite: boolean;
+};
 type Widget = {
-  id: string; dashboard_id: string; title: string; widget_type: string;
-  report_id: string | null; config: Record<string, unknown>; position: number; width: number; height: number;
+  id: string;
+  dashboard_id: string;
+  title: string;
+  widget_type: string;
+  report_id: string | null;
+  config: Record<string, unknown>;
+  position: number;
+  width: number;
+  height: number;
 };
 type Report = { id: string; name: string; entity: string; config: Record<string, unknown> };
 
@@ -47,8 +94,14 @@ function DashboardsPage() {
   const deleteW = useServerFn(deleteWidget);
   const listRep = useServerFn(listReports);
 
-  const { data: dashboards = [] } = useQuery({ queryKey: ["dashboards"], queryFn: () => listDash() as Promise<Dashboard[]> });
-  const { data: reports = [] } = useQuery({ queryKey: ["custom-reports"], queryFn: () => listRep() as unknown as Promise<Report[]> });
+  const { data: dashboards = [] } = useQuery({
+    queryKey: ["dashboards"],
+    queryFn: () => listDash() as Promise<Dashboard[]>,
+  });
+  const { data: reports = [] } = useQuery({
+    queryKey: ["custom-reports"],
+    queryFn: () => listRep() as unknown as Promise<Report[]>,
+  });
 
   const [activeId, setActiveId] = useState<string | null>(null);
   useEffect(() => {
@@ -63,7 +116,6 @@ function DashboardsPage() {
     queryFn: () => listW({ data: { dashboard_id: activeId! } }) as unknown as Promise<Widget[]>,
     enabled: !!activeId,
   });
-
 
   const [newDashOpen, setNewDashOpen] = useState(false);
   const [newName, setNewName] = useState("");
@@ -82,15 +134,22 @@ function DashboardsPage() {
 
   async function handleCreateDash() {
     if (!newName.trim()) return toast.error("Informe um nome");
-    await createDash({ data: { name: newName.trim(), description: newDesc.trim() || null, is_default: newDefault } });
-    setNewDashOpen(false); setNewName(""); setNewDesc(""); setNewDefault(false);
+    await createDash({
+      data: { name: newName.trim(), description: newDesc.trim() || null, is_default: newDefault },
+    });
+    setNewDashOpen(false);
+    setNewName("");
+    setNewDesc("");
+    setNewDefault(false);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
     toast.success("Painel criado");
   }
 
   async function handleEditDash() {
     if (!active || !editName.trim()) return;
-    await updateDash({ data: { id: active.id, name: editName.trim(), description: editDesc.trim() || null } });
+    await updateDash({
+      data: { id: active.id, name: editName.trim(), description: editDesc.trim() || null },
+    });
     setEditDashOpen(false);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
     toast.success("Painel atualizado");
@@ -117,11 +176,17 @@ function DashboardsPage() {
   }
 
   function openAddWidget() {
-    setEditingWidget(null); setWTitle(""); setWReportId(""); setWWidth("6");
+    setEditingWidget(null);
+    setWTitle("");
+    setWReportId("");
+    setWWidth("6");
     setWidgetDialogOpen(true);
   }
   function openEditWidget(w: Widget) {
-    setEditingWidget(w); setWTitle(w.title); setWReportId(w.report_id ?? ""); setWWidth(String(w.width));
+    setEditingWidget(w);
+    setWTitle(w.title);
+    setWReportId(w.report_id ?? "");
+    setWWidth(String(w.width));
     setWidgetDialogOpen(true);
   }
 
@@ -167,7 +232,9 @@ function DashboardsPage() {
 
       <div className="grid grid-cols-12 gap-4">
         <Card className="col-span-12 md:col-span-3">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Painéis</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Painéis</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-1 px-2 pb-3">
             {dashboards.length === 0 && (
               <p className="text-xs text-muted-foreground p-2">Nenhum painel ainda.</p>
@@ -180,9 +247,23 @@ function DashboardsPage() {
               >
                 <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="text-sm flex-1 truncate">{d.name}</span>
-                {d.is_default && <Badge variant="outline" className="text-[10px] py-0 h-4">padrão</Badge>}
-                <button onClick={(e) => { e.stopPropagation(); toggleFav(d); }} className="text-muted-foreground hover:text-amber-500">
-                  {d.is_favorite ? <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> : <StarOff className="h-3.5 w-3.5" />}
+                {d.is_default && (
+                  <Badge variant="outline" className="text-[10px] py-0 h-4">
+                    padrão
+                  </Badge>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFav(d);
+                  }}
+                  className="text-muted-foreground hover:text-amber-500"
+                >
+                  {d.is_favorite ? (
+                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                  ) : (
+                    <StarOff className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             ))}
@@ -191,7 +272,11 @@ function DashboardsPage() {
 
         <div className="col-span-12 md:col-span-9 space-y-4">
           {!active ? (
-            <Card><CardContent className="py-12 text-center text-muted-foreground">Selecione ou crie um painel.</CardContent></Card>
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Selecione ou crie um painel.
+              </CardContent>
+            </Card>
           ) : (
             <>
               <Card>
@@ -199,14 +284,30 @@ function DashboardsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h2 className="font-semibold">{active.name}</h2>
-                      {active.is_default && <Badge variant="secondary" className="text-[10px]">padrão</Badge>}
+                      {active.is_default && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          padrão
+                        </Badge>
+                      )}
                     </div>
-                    {active.description && <p className="text-xs text-muted-foreground">{active.description}</p>}
+                    {active.description && (
+                      <p className="text-xs text-muted-foreground">{active.description}</p>
+                    )}
                   </div>
                   {!active.is_default && (
-                    <Button size="sm" variant="outline" onClick={() => setDefault(active)}>Tornar padrão</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDefault(active)}>
+                      Tornar padrão
+                    </Button>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => { setEditName(active.name); setEditDesc(active.description ?? ""); setEditDashOpen(true); }}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditName(active.name);
+                      setEditDesc(active.description ?? "");
+                      setEditDashOpen(true);
+                    }}
+                  >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleDeleteDash}>
@@ -244,17 +345,31 @@ function DashboardsPage() {
       {/* Dialog: new dashboard */}
       <Dialog open={newDashOpen} onOpenChange={setNewDashOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Novo painel</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Novo painel</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
-            <div><Label>Descrição</Label><Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={2} /></div>
+            <div>
+              <Label>Nome</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={2} />
+            </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={newDefault} onChange={(e) => setNewDefault(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={newDefault}
+                onChange={(e) => setNewDefault(e.target.checked)}
+              />
               Definir como padrão
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNewDashOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setNewDashOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={handleCreateDash}>Criar</Button>
           </DialogFooter>
         </DialogContent>
@@ -263,13 +378,23 @@ function DashboardsPage() {
       {/* Dialog: edit dashboard */}
       <Dialog open={editDashOpen} onOpenChange={setEditDashOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar painel</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Editar painel</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
-            <div><Label>Descrição</Label><Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={2} /></div>
+            <div>
+              <Label>Nome</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={2} />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDashOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setEditDashOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={handleEditDash}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
@@ -278,27 +403,40 @@ function DashboardsPage() {
       {/* Dialog: widget */}
       <Dialog open={widgetDialogOpen} onOpenChange={setWidgetDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingWidget ? "Editar widget" : "Novo widget"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingWidget ? "Editar widget" : "Novo widget"}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
-            <div><Label>Título</Label><Input value={wTitle} onChange={(e) => setWTitle(e.target.value)} /></div>
+            <div>
+              <Label>Título</Label>
+              <Input value={wTitle} onChange={(e) => setWTitle(e.target.value)} />
+            </div>
             <div>
               <Label>Relatório</Label>
               <Select value={wReportId} onValueChange={setWReportId}>
-                <SelectTrigger><SelectValue placeholder="Selecione um relatório salvo" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um relatório salvo" />
+                </SelectTrigger>
                 <SelectContent>
                   {reports.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {reports.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">Crie um relatório em Relatórios primeiro.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Crie um relatório em Relatórios primeiro.
+                </p>
               )}
             </div>
             <div>
               <Label>Largura (colunas de 12)</Label>
               <Select value={wWidth} onValueChange={setWWidth}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="3">3 — pequeno</SelectItem>
                   <SelectItem value="4">4 — terço</SelectItem>
@@ -310,7 +448,9 @@ function DashboardsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setWidgetDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setWidgetDialogOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={saveWidget}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
@@ -319,8 +459,16 @@ function DashboardsPage() {
   );
 }
 
-function WidgetCard({ widget, reports, onEdit, onDelete }: {
-  widget: Widget; reports: Report[]; onEdit: () => void; onDelete: () => void;
+function WidgetCard({
+  widget,
+  reports,
+  onEdit,
+  onDelete,
+}: {
+  widget: Widget;
+  reports: Report[];
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const runRep = useServerFn(runReport);
   const report = reports.find((r) => r.id === widget.report_id);
@@ -345,7 +493,6 @@ function WidgetCard({ widget, reports, onEdit, onDelete }: {
     return map[widget.width] ?? "col-span-12 md:col-span-6";
   }, [widget.width]);
 
-
   const cfg = (report?.config ?? {}) as { chartType?: string };
   const chartType = cfg.chartType ?? "bar";
   const rows = (data?.rows ?? []) as Array<{ key: string; value: number; count: number }>;
@@ -361,8 +508,12 @@ function WidgetCard({ widget, reports, onEdit, onDelete }: {
           {!report && <p className="text-xs text-destructive">Relatório removido</p>}
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={onEdit}><Pencil className="h-3.5 w-3.5" /></Button>
-          <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></Button>
+          <Button size="sm" variant="ghost" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -387,16 +538,26 @@ function WidgetCard({ widget, reports, onEdit, onDelete }: {
                 <PieChart>
                   <RTooltip />
                   <Pie data={rows} dataKey="value" nameKey="key" outerRadius={80}>
-                    {rows.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                    {rows.map((_, i) => (
+                      <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                    ))}
                   </Pie>
                 </PieChart>
               ) : chartType === "table" ? (
                 <div className="overflow-auto h-full">
                   <table className="w-full text-xs">
-                    <thead><tr className="border-b"><th className="text-left py-1">Chave</th><th className="text-right py-1">Valor</th></tr></thead>
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-1">Chave</th>
+                        <th className="text-right py-1">Valor</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {rows.slice(0, 20).map((r) => (
-                        <tr key={r.key} className="border-b"><td className="py-1">{r.key}</td><td className="text-right py-1">{r.value}</td></tr>
+                        <tr key={r.key} className="border-b">
+                          <td className="py-1">{r.key}</td>
+                          <td className="text-right py-1">{r.value}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>

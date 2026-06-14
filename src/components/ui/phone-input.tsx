@@ -22,7 +22,10 @@ export type PhoneInputProps = {
  * Styled to blend with the shadcn Input look.
  */
 export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({ value, onChange, defaultCountry = "BR", required, showError = true, className, id, ...rest }, _ref) => {
+  (
+    { value, onChange, defaultCountry = "BR", required, showError = true, className, id, ...rest },
+    _ref,
+  ) => {
     const [touched, setTouched] = React.useState(false);
     const v = value ?? "";
     const empty = v.length === 0;

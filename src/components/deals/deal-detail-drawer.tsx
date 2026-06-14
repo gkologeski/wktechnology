@@ -8,7 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 
@@ -111,11 +117,23 @@ export function DealDetailDrawer({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hsRaw = (deal as any)?.hs_raw as { properties?: Record<string, unknown> } | undefined;
   const knownKeys = new Set([
-    "name", "amount", "dealstage", "pipeline", "closedate", "dealtype", "description", "hs_priority",
-    "hubspot_owner_id", "hs_object_id", "createdate", "hs_lastmodifieddate",
+    "name",
+    "amount",
+    "dealstage",
+    "pipeline",
+    "closedate",
+    "dealtype",
+    "description",
+    "hs_priority",
+    "hubspot_owner_id",
+    "hs_object_id",
+    "createdate",
+    "hs_lastmodifieddate",
   ]);
   const hsExtras = hsRaw?.properties
-    ? Object.entries(hsRaw.properties).filter(([k, val]) => !knownKeys.has(k) && val !== null && val !== "")
+    ? Object.entries(hsRaw.properties).filter(
+        ([k, val]) => !knownKeys.has(k) && val !== null && val !== "",
+      )
     : [];
 
   return (
@@ -132,9 +150,14 @@ export function DealDetailDrawer({
                 <Badge
                   variant="secondary"
                   className="gap-1.5"
-                  style={{ background: `color-mix(in oklab, ${currentStage.color} 20%, transparent)` }}
+                  style={{
+                    background: `color-mix(in oklab, ${currentStage.color} 20%, transparent)`,
+                  }}
                 >
-                  <span className="inline-block h-2 w-2 rounded-sm" style={{ background: currentStage.color }} />
+                  <span
+                    className="inline-block h-2 w-2 rounded-sm"
+                    style={{ background: currentStage.color }}
+                  />
                   {currentStage.label}
                 </Badge>
               )}
@@ -145,8 +168,18 @@ export function DealDetailDrawer({
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-5 mt-3 self-start">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
-            {!isNew && <TabsTrigger value="items"><Package className="h-3.5 w-3.5 mr-1" />Itens</TabsTrigger>}
-            {!isNew && <TabsTrigger value="quotes"><FileText className="h-3.5 w-3.5 mr-1" />Cotações</TabsTrigger>}
+            {!isNew && (
+              <TabsTrigger value="items">
+                <Package className="h-3.5 w-3.5 mr-1" />
+                Itens
+              </TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger value="quotes">
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Cotações
+              </TabsTrigger>
+            )}
             {!isNew && <TabsTrigger value="activity">Atividades</TabsTrigger>}
             {!isNew && hsExtras.length > 0 && (
               <TabsTrigger value="hs">
@@ -170,7 +203,10 @@ export function DealDetailDrawer({
                   />
                 </Field>
                 <Field label="Moeda">
-                  <Input value={String(v.currency ?? "BRL")} onChange={(e) => set("currency", e.target.value)} />
+                  <Input
+                    value={String(v.currency ?? "BRL")}
+                    onChange={(e) => set("currency", e.target.value)}
+                  />
                 </Field>
               </div>
               <Field label="Estágio">
@@ -181,7 +217,9 @@ export function DealDetailDrawer({
                     set("stage", val);
                   }}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {(pipeline?.stages ?? []).map((s) => (
                       <SelectItem key={s.value} value={s.value}>
@@ -207,7 +245,9 @@ export function DealDetailDrawer({
                     value={String(v.hs_priority ?? "none")}
                     onValueChange={(val) => set("hs_priority", val === "none" ? null : val)}
                   >
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">—</SelectItem>
                       <SelectItem value="low">Baixa</SelectItem>
@@ -269,8 +309,12 @@ export function DealDetailDrawer({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {hsExtras.map(([k, val]) => (
                     <div key={k} className="rounded border bg-muted/30 p-2">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{k}</div>
-                      <div className="text-sm truncate" title={String(val)}>{String(val)}</div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {k}
+                      </div>
+                      <div className="text-sm truncate" title={String(val)}>
+                        {String(val)}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -301,7 +345,9 @@ export function DealDetailDrawer({
             <span />
           )}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
             <Button onClick={save}>Salvar</Button>
           </div>
         </div>
@@ -364,4 +410,3 @@ function DealRelatedFields({
     </>
   );
 }
-

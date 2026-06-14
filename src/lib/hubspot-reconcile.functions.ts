@@ -43,10 +43,44 @@ type Kind = keyof typeof KIND_TO_OBJECT;
 
 const PROPS_BY_KIND: Record<Kind, string[]> = {
   note: ["hs_note_body", "hs_timestamp", "hs_createdate", "hs_lastmodifieddate"],
-  task: ["hs_task_subject", "hs_task_body", "hs_timestamp", "hs_task_status", "hs_task_priority", "hs_createdate", "hs_lastmodifieddate"],
-  call: ["hs_call_title", "hs_call_body", "hs_timestamp", "hs_call_disposition", "hs_call_duration", "hs_call_recording_url", "hs_createdate", "hs_lastmodifieddate"],
-  meeting: ["hs_meeting_title", "hs_meeting_body", "hs_timestamp", "hs_meeting_outcome", "hs_meeting_location", "hs_meeting_duration", "hs_createdate", "hs_lastmodifieddate"],
-  email: ["hs_email_subject", "hs_email_text", "hs_email_direction", "hs_email_status", "hs_timestamp", "hs_createdate", "hs_lastmodifieddate"],
+  task: [
+    "hs_task_subject",
+    "hs_task_body",
+    "hs_timestamp",
+    "hs_task_status",
+    "hs_task_priority",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+  ],
+  call: [
+    "hs_call_title",
+    "hs_call_body",
+    "hs_timestamp",
+    "hs_call_disposition",
+    "hs_call_duration",
+    "hs_call_recording_url",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+  ],
+  meeting: [
+    "hs_meeting_title",
+    "hs_meeting_body",
+    "hs_timestamp",
+    "hs_meeting_outcome",
+    "hs_meeting_location",
+    "hs_meeting_duration",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+  ],
+  email: [
+    "hs_email_subject",
+    "hs_email_text",
+    "hs_email_direction",
+    "hs_email_status",
+    "hs_timestamp",
+    "hs_createdate",
+    "hs_lastmodifieddate",
+  ],
 };
 
 function parseHsDate(v: string | null | undefined): string | null {
@@ -100,10 +134,16 @@ function buildPayload(kind: Kind, ownerId: string, rec: HsRec) {
     p.hs_email_subject ??
     kind;
   const body =
-    p.hs_note_body ?? p.hs_call_body ?? p.hs_meeting_body ?? p.hs_task_body ?? p.hs_email_text ?? null;
+    p.hs_note_body ??
+    p.hs_call_body ??
+    p.hs_meeting_body ??
+    p.hs_task_body ??
+    p.hs_email_text ??
+    null;
   const due = parseHsDate(p.hs_timestamp);
   const ms = parseHsNum(p.hs_call_duration) ?? parseHsNum(p.hs_meeting_duration) ?? null;
-  const hsCreated = parseHsDate(p.hs_createdate) ?? parseHsDate(p.hs_timestamp) ?? rec.createdAt ?? null;
+  const hsCreated =
+    parseHsDate(p.hs_createdate) ?? parseHsDate(p.hs_timestamp) ?? rec.createdAt ?? null;
   const hsUpdated = parseHsDate(p.hs_lastmodifieddate) ?? rec.updatedAt ?? null;
   return {
     owner_id: ownerId,
@@ -125,7 +165,12 @@ function buildPayload(kind: Kind, ownerId: string, rec: HsRec) {
     email_direction: p.hs_email_direction ?? null,
     email_status: p.hs_email_status ?? null,
     external_ids: { hubspot: rec.id, hs_kind: KIND_TO_OBJECT[kind] } as never,
-    hs_raw: { id: rec.id, properties: p, createdAt: rec.createdAt, updatedAt: rec.updatedAt } as never,
+    hs_raw: {
+      id: rec.id,
+      properties: p,
+      createdAt: rec.createdAt,
+      updatedAt: rec.updatedAt,
+    } as never,
     ...(hsCreated ? { created_at: hsCreated } : {}),
     ...(hsUpdated ? { updated_at: hsUpdated } : {}),
   };
@@ -152,9 +197,12 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
     let failed = 0;
 
     for (let page = 0; page < data.pages; page++) {
-      const filters = [{ propertyName: "hs_lastmodifieddate", operator: "GTE", value: "0" }] as Record<string, string>[];
+      const filters = [
+        { propertyName: "hs_lastmodifieddate", operator: "GTE", value: "0" },
+      ] as Record<string, string>[];
       const beforeValue = hsSearchDateValue(cursor.before);
-      if (beforeValue) filters.push({ propertyName: "hs_lastmodifieddate", operator: "LT", value: beforeValue });
+      if (beforeValue)
+        filters.push({ propertyName: "hs_lastmodifieddate", operator: "LT", value: beforeValue });
       const searchBody: Record<string, unknown> = {
         limit: 100,
         properties: ["hs_object_id", "hs_lastmodifieddate"],

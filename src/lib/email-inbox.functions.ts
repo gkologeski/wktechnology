@@ -20,7 +20,9 @@ export const getEmailThread = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: thread, error: tErr } = await context.supabase
       .from("email_threads")
-      .select("id, subject, snippet, last_message_at, message_count, contact_id, account_id, provider_thread_id")
+      .select(
+        "id, subject, snippet, last_message_at, message_count, contact_id, account_id, provider_thread_id",
+      )
       .eq("id", data.thread_id)
       .maybeSingle();
     if (tErr) throw new Error(tErr.message);

@@ -16,8 +16,6 @@ import {
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
-
-
 const searchSchema = z.object({ gmail: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/settings/email")({
@@ -46,9 +44,7 @@ function EmailSettings() {
       const errs = res.results.filter((r) => r.error);
       if (errs.length) toast.error(`Erros: ${errs.map((e) => e.error).join("; ")}`);
       toast.success(
-        inserted > 0
-          ? `${inserted} mensagem(ns) sincronizada(s)`
-          : "Nenhuma mensagem nova",
+        inserted > 0 ? `${inserted} mensagem(ns) sincronizada(s)` : "Nenhuma mensagem nova",
       );
       qc.invalidateQueries({ queryKey: ["email_accounts"] });
       qc.invalidateQueries({ queryKey: ["email_threads"] });
@@ -65,7 +61,9 @@ function EmailSettings() {
 
   const connect = async () => {
     try {
-      const r = await start({ data: { return_to: "/settings/email", origin: window.location.origin } });
+      const r = await start({
+        data: { return_to: "/settings/email", origin: window.location.origin },
+      });
       window.location.href = r.url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
@@ -127,9 +125,7 @@ function EmailSettings() {
                       <span>último sync: {new Date(a.last_sync_at).toLocaleString()}</span>
                     )}
                   </div>
-                  {a.last_error && (
-                    <p className="text-xs text-destructive mt-1">{a.last_error}</p>
-                  )}
+                  {a.last_error && <p className="text-xs text-destructive mt-1">{a.last_error}</p>}
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -139,10 +135,17 @@ function EmailSettings() {
                     disabled={syncMut.isPending}
                     title="Sincronizar agora"
                   >
-                    <RefreshCw className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`}
+                    />
                     Sincronizar
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(a.id)} title="Desconectar">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(a.id)}
+                    title="Desconectar"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

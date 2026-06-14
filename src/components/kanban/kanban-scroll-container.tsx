@@ -37,7 +37,11 @@ export function KanbanScrollContainer({
     ro.observe(content);
     const observeDescendants = () => {
       content.querySelectorAll("*").forEach((el) => {
-        try { ro.observe(el); } catch { /* ignore */ }
+        try {
+          ro.observe(el);
+        } catch {
+          /* ignore */
+        }
       });
     };
     observeDescendants();
@@ -84,18 +88,14 @@ export function KanbanScrollContainer({
 
     if (isCard) {
       e.preventDefault();
-      const cards = Array.from(
-        root.querySelectorAll<HTMLElement>("[data-kanban-card]"),
-      );
+      const cards = Array.from(root.querySelectorAll<HTMLElement>("[data-kanban-card]"));
       const cols: string[] = [];
       cards.forEach((c) => {
         const col = c.getAttribute("data-kanban-column") || "";
         if (!cols.includes(col)) cols.push(col);
       });
       const currentCol = active!.getAttribute("data-kanban-column") || "";
-      const colCards = cards.filter(
-        (c) => c.getAttribute("data-kanban-column") === currentCol,
-      );
+      const colCards = cards.filter((c) => c.getAttribute("data-kanban-column") === currentCol);
       const idxInCol = colCards.indexOf(active!);
       if (key === "ArrowUp" || key === "ArrowDown") {
         const next = colCards[idxInCol + (key === "ArrowDown" ? 1 : -1)];
@@ -106,9 +106,7 @@ export function KanbanScrollContainer({
       const colIdx = cols.indexOf(currentCol);
       const targetCol = cols[colIdx + (key === "ArrowRight" ? 1 : -1)];
       if (!targetCol) return;
-      const targetCard = cards.find(
-        (c) => c.getAttribute("data-kanban-column") === targetCol,
-      );
+      const targetCard = cards.find((c) => c.getAttribute("data-kanban-column") === targetCol);
       if (targetCard) {
         targetCard.focus();
         const colRoot = root.querySelector<HTMLElement>(
@@ -145,7 +143,11 @@ export function KanbanScrollContainer({
       >
         <div ref={topInnerRef} style={{ height: 1 }} />
       </div>
-      <div ref={contentRef} onScroll={onContentScroll} className="kanban-content-scroll overflow-x-auto">
+      <div
+        ref={contentRef}
+        onScroll={onContentScroll}
+        className="kanban-content-scroll overflow-x-auto"
+      >
         {children}
       </div>
     </div>

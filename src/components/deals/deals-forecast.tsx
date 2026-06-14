@@ -2,7 +2,14 @@ import { useMemo } from "react";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
 import { formatCurrency } from "@/lib/crm";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -41,7 +48,9 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
         <KPI label="Total" value={formatCurrency(totals.amount)} />
         <KPI label="Previsão ponderada" value={formatCurrency(totals.weighted)} accent />
         <div className="rounded-md border bg-card p-3">
-          <div className="text-[11px] uppercase tracking-wide text-[var(--hs-text-muted)]">Meta</div>
+          <div className="text-[11px] uppercase tracking-wide text-[var(--hs-text-muted)]">
+            Meta
+          </div>
           <div className="mt-1 flex items-center gap-2">
             <Input
               type="number"
@@ -85,10 +94,18 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
           <TableHeader>
             <TableRow className="bg-[var(--hs-surface)]">
               <TableHead className="text-[11px] uppercase tracking-wide">Estágio</TableHead>
-              <TableHead className="text-[11px] uppercase tracking-wide text-right">Negócios</TableHead>
-              <TableHead className="text-[11px] uppercase tracking-wide text-right">Probabilidade</TableHead>
-              <TableHead className="text-[11px] uppercase tracking-wide text-right">Valor</TableHead>
-              <TableHead className="text-[11px] uppercase tracking-wide text-right">Ponderado</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wide text-right">
+                Negócios
+              </TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wide text-right">
+                Probabilidade
+              </TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wide text-right">
+                Valor
+              </TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wide text-right">
+                Ponderado
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,16 +124,24 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
                 <TableCell className="text-right tabular-nums text-muted-foreground">
                   {typeof r.stage.probability === "number" ? `${r.stage.probability}%` : "—"}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{formatCurrency(r.amount)}</TableCell>
-                <TableCell className="text-right tabular-nums font-semibold">{formatCurrency(r.weighted)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatCurrency(r.amount)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums font-semibold">
+                  {formatCurrency(r.weighted)}
+                </TableCell>
               </TableRow>
             ))}
             <TableRow className="bg-[var(--hs-surface)] font-semibold">
               <TableCell>Total</TableCell>
               <TableCell className="text-right tabular-nums">{totals.count}</TableCell>
               <TableCell />
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.amount)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.weighted)}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {formatCurrency(totals.amount)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {formatCurrency(totals.weighted)}
+              </TableCell>
             </TableRow>
           </TableBody>
         </Table>

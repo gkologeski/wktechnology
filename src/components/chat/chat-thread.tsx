@@ -65,7 +65,8 @@ export function ChatThread({
 
   const { data: messages = [] } = useQuery({
     queryKey: ["chat", "messages", conversation.id],
-    queryFn: () => listFn({ data: { conversation_id: conversation.id, limit: 50 } }) as Promise<Msg[]>,
+    queryFn: () =>
+      listFn({ data: { conversation_id: conversation.id, limit: 50 } }) as Promise<Msg[]>,
     staleTime: 30_000,
   });
 
@@ -86,7 +87,12 @@ export function ChatThread({
       // it client-side; the bucket policy only checks segment 2 (conversation_id).
       // We use a stable workspace placeholder "ws" since RLS only validates seg-2.
       // (If you ever scope per-workspace listing, replace with real id.)
-      const attachments: { storage_path: string; file_name: string; mime_type?: string; size_bytes?: number }[] = [];
+      const attachments: {
+        storage_path: string;
+        file_name: string;
+        mime_type?: string;
+        size_bytes?: number;
+      }[] = [];
       for (const f of files) {
         const safeName = f.name.replace(/[^\w.\-]+/g, "_");
         const path = `ws/${conversation.id}/${messageId}/${safeName}`;
@@ -169,9 +175,13 @@ export function ChatThread({
                 ) : (
                   <div className="w-7 shrink-0" />
                 )}
-                <div className={`max-w-[75%] ${mine ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                <div
+                  className={`max-w-[75%] ${mine ? "items-end" : "items-start"} flex flex-col gap-1`}
+                >
                   {showHeader && conversation.kind === "group" && !mine && (
-                    <span className="text-xs text-muted-foreground px-1">{nameFor(m.sender_user_id)}</span>
+                    <span className="text-xs text-muted-foreground px-1">
+                      {nameFor(m.sender_user_id)}
+                    </span>
                   )}
                   <div
                     className={`rounded-2xl px-3 py-2 text-sm break-words ${
@@ -188,7 +198,10 @@ export function ChatThread({
                     )}
                   </div>
                   <span className="text-[10px] text-muted-foreground px-1">
-                    {new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
               </div>
@@ -201,7 +214,10 @@ export function ChatThread({
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {files.map((f, idx) => (
-              <div key={idx} className="flex items-center gap-1 text-xs border rounded px-2 py-1 bg-muted">
+              <div
+                key={idx}
+                className="flex items-center gap-1 text-xs border rounded px-2 py-1 bg-muted"
+              >
                 <FileIcon className="h-3 w-3" />
                 <span className="max-w-[140px] truncate">{f.name}</span>
                 <button
@@ -218,8 +234,17 @@ export function ChatThread({
         )}
         <div className="flex items-end gap-2">
           <label className="cursor-pointer" aria-label="Anexar arquivo">
-            <input type="file" multiple className="hidden" onChange={onPickFiles} aria-label="Anexar arquivo" />
-            <span className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted" aria-hidden="true">
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={onPickFiles}
+              aria-label="Anexar arquivo"
+            />
+            <span
+              className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted"
+              aria-hidden="true"
+            >
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
@@ -257,7 +282,9 @@ function AttachmentItem({ att }: { att: Attachment }) {
         .createSignedUrl(att.storage_path, 3600);
       if (!cancel) setUrl(data?.signedUrl ?? null);
     })();
-    return () => { cancel = true; };
+    return () => {
+      cancel = true;
+    };
   }, [att.storage_path]);
 
   if (isImage && url) {

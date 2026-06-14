@@ -4,7 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function activeWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
   if (!data?.active_workspace_id) throw new Error("Workspace ativo não encontrado");
   return data.active_workspace_id as string;
 }
@@ -52,12 +56,16 @@ export const upsertAuditExport = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await (supabase.from("audit_exports") as any)
-        .update(payload).eq("id", data.id).eq("workspace_id", ws);
+        .update(payload)
+        .eq("id", data.id)
+        .eq("workspace_id", ws);
       if (error) throw new Error(error.message);
       return { ok: true, id: data.id };
     }
     const { data: ins, error } = await (supabase.from("audit_exports") as any)
-      .insert(payload).select("id").maybeSingle();
+      .insert(payload)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return { ok: true, id: ins?.id };
   });

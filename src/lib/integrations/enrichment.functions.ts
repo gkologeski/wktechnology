@@ -12,13 +12,15 @@ export type EnrichProvider = (typeof ENRICH_PROVIDERS)[number];
 export const enrichBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      entity: z.enum(["lead", "contact"]),
-      ids: z.array(z.string().uuid()).min(1).max(500),
-      providers: z.array(ProviderEnum).min(1).max(2),
-      mode: z.enum(["fill_empty", "overwrite"]).default("fill_empty"),
-      dryRun: z.boolean().default(false),
-    }).parse(input)
+    z
+      .object({
+        entity: z.enum(["lead", "contact"]),
+        ids: z.array(z.string().uuid()).min(1).max(500),
+        providers: z.array(ProviderEnum).min(1).max(2),
+        mode: z.enum(["fill_empty", "overwrite"]).default("fill_empty"),
+        dryRun: z.boolean().default(false),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { runEnrichmentBatch } = await import("@/lib/integrations/enrichment-engine.server");
@@ -38,7 +40,9 @@ export const listEnrichmentJobs = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("enrichment_jobs")
-      .select("id, provider, entity, status, total, processed, succeeded, failed, credits_used, scope, started_at, finished_at, created_at, error")
+      .select(
+        "id, provider, entity, status, total, processed, succeeded, failed, credits_used, scope, started_at, finished_at, created_at, error",
+      )
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw error;

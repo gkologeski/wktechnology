@@ -84,14 +84,22 @@ export function CreateContactDialog({
       const err = e as { message?: string; code?: string; details?: string; hint?: string } | null;
       const code = err?.code;
       const raw = err?.message || err?.details || "";
-      // eslint-disable-next-line no-console
-      console.error("[create-contact] insert failed", { code, message: err?.message, details: err?.details, hint: err?.hint });
+
+      console.error("[create-contact] insert failed", {
+        code,
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+      });
       let friendly = "Não foi possível criar o contato.";
       if (code === "23505") friendly = "Já existe um contato com esses dados (duplicado).";
-      else if (code === "23503") friendly = "Empresa selecionada não é mais válida. Selecione outra ou deixe em branco.";
+      else if (code === "23503")
+        friendly = "Empresa selecionada não é mais válida. Selecione outra ou deixe em branco.";
       else if (code === "23514") friendly = "Algum campo está com valor inválido.";
-      else if (code === "42501" || /row-level security/i.test(raw)) friendly = "Você não tem permissão para criar contatos neste workspace.";
-      else if (/plan_limit_exceeded/i.test(raw)) friendly = "Limite de contatos do plano atingido. Faça upgrade para criar mais.";
+      else if (code === "42501" || /row-level security/i.test(raw))
+        friendly = "Você não tem permissão para criar contatos neste workspace.";
+      else if (/plan_limit_exceeded/i.test(raw))
+        friendly = "Limite de contatos do plano atingido. Faça upgrade para criar mais.";
       else if (raw) friendly = raw;
       toast.error(friendly);
     } finally {
@@ -99,57 +107,81 @@ export function CreateContactDialog({
     }
   };
 
-
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!saving) onOpenChange(v);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Criar contato</DialogTitle>
-          <DialogDescription>Preencha as informações básicas. Você poderá editar tudo depois.</DialogDescription>
+          <DialogDescription>
+            Preencha as informações básicas. Você poderá editar tudo depois.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="first_name">Nome *</Label>
-              <Input id="first_name" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} autoFocus />
+              <Input
+                id="first_name"
+                value={form.first_name}
+                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                autoFocus
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="last_name">Sobrenome</Label>
-              <Input id="last_name" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+              <Input
+                id="last_name"
+                value={form.last_name}
+                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <EmailInput id="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+            <EmailInput
+              id="email"
+              value={form.email}
+              onChange={(v) => setForm({ ...form, email: v })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">Telefone</Label>
-            <PhoneInput id="phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+            <PhoneInput
+              id="phone"
+              value={form.phone}
+              onChange={(v) => setForm({ ...form, phone: v })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="job_title">Cargo</Label>
-            <Input id="job_title" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
+            <Input
+              id="job_title"
+              value={form.job_title}
+              onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker
-              id="company_name"
-              value={company}
-              onChange={setCompany}
-              toastOnMatches
-            />
+            <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
           <Button
             onClick={submit}
-            disabled={
-              saving ||
-              !form.first_name.trim() ||
-              (!!company.name.trim() && !company.id)
+            disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
+            title={
+              !!company.name.trim() && !company.id
+                ? "Selecione a empresa na lista para continuar"
+                : undefined
             }
-            title={!!company.name.trim() && !company.id ? "Selecione a empresa na lista para continuar" : undefined}
           >
             {saving ? "Criando…" : "Criar contato"}
           </Button>

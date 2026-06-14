@@ -70,8 +70,8 @@ function PrivacyPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Baixe um arquivo JSON com seus dados pessoais armazenados na plataforma
-            (perfil, vínculos com workspaces, papéis, notificações, integrações conectadas).
+            Baixe um arquivo JSON com seus dados pessoais armazenados na plataforma (perfil,
+            vínculos com workspaces, papéis, notificações, integrações conectadas).
           </p>
           <Button onClick={handleExport} disabled={exporting}>
             {exporting ? (
@@ -92,9 +92,9 @@ function PrivacyPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Esta ação remove permanentemente sua conta de acesso e seus vínculos com workspaces.
-            Se você é proprietário de um workspace com assinatura ativa, cancele a assinatura
-            ou transfira a propriedade antes.
+            Esta ação remove permanentemente sua conta de acesso e seus vínculos com workspaces. Se
+            você é proprietário de um workspace com assinatura ativa, cancele a assinatura ou
+            transfira a propriedade antes.
           </p>
           <div className="space-y-2">
             <Label htmlFor="confirm">

@@ -6,7 +6,8 @@ export function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   // Não registrar em previews Lovable (evita cache stale).
   const h = window.location.hostname;
-  if (h.startsWith("id-preview--") || h.startsWith("preview--") || h.endsWith("lovableproject.com")) return;
+  if (h.startsWith("id-preview--") || h.startsWith("preview--") || h.endsWith("lovableproject.com"))
+    return;
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
 
@@ -14,8 +15,14 @@ export function usePwaInstall() {
   const [prompt, setPrompt] = useState<Event | null>(null);
   const [installed, setInstalled] = useState(false);
   useEffect(() => {
-    const onBeforeInstall = (e: Event) => { e.preventDefault(); setPrompt(e); };
-    const onInstalled = () => { setInstalled(true); setPrompt(null); };
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setPrompt(e);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setPrompt(null);
+    };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
     if (window.matchMedia?.("(display-mode: standalone)").matches) setInstalled(true);

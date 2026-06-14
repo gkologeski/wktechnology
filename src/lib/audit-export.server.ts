@@ -15,11 +15,16 @@ type ExportRow = {
 
 async function hmacSha256Hex(secret: string, body: string) {
   const key = await crypto.subtle.importKey(
-    "raw", new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function toCsv(rows: Record<string, unknown>[]): string {
@@ -30,21 +35,29 @@ function toCsv(rows: Record<string, unknown>[]): string {
     const s = typeof v === "string" ? v : JSON.stringify(v);
     return `"${s.replace(/"/g, '""')}"`;
   };
-  return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
+  return [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join(
+    "\n",
+  );
 }
 
 export async function runAuditExport(exportId: string, workspaceId: string) {
   const { data: cfg } = await supabaseAdmin
-    .from("audit_exports").select("*").eq("id", exportId).maybeSingle();
+    .from("audit_exports")
+    .select("*")
+    .eq("id", exportId)
+    .maybeSingle();
   if (!cfg) return { ok: false, error: "export not found" };
   const ex = cfg as ExportRow;
 
-  const { data: run } = await (supabaseAdmin.from("audit_export_runs") as any).insert({
-    owner_id: ex.owner_id,
-    workspace_id: ex.workspace_id,
-    export_id: ex.id,
-    status: "running",
-  }).select("id").maybeSingle();
+  const { data: run } = await (supabaseAdmin.from("audit_export_runs") as any)
+    .insert({
+      owner_id: ex.owner_id,
+      workspace_id: ex.workspace_id,
+      export_id: ex.id,
+      status: "running",
+    })
+    .select("id")
+    .maybeSingle();
   const runId = run?.id as string | undefined;
 
   try {
@@ -57,7 +70,8 @@ export async function runAuditExport(exportId: string, workspaceId: string) {
       .order("created_at", { ascending: true })
       .limit(10000);
     const rows = logs ?? [];
-    const body = ex.format === "csv" ? toCsv(rows as Record<string, unknown>[]) : JSON.stringify(rows);
+    const body =
+      ex.format === "csv" ? toCsv(rows as Record<string, unknown>[]) : JSON.stringify(rows);
     const contentType = ex.format === "csv" ? "text/csv" : "application/json";
 
     let outputUrl: string | null = null;
@@ -73,7 +87,11 @@ export async function runAuditExport(exportId: string, workspaceId: string) {
       // S3 upload via signed URL — config: { presigned_url }
       const url = ex.config.presigned_url;
       if (!url) throw new Error("s3 presigned_url missing");
-      const res = await fetch(url, { method: "PUT", headers: { "Content-Type": contentType }, body });
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      });
       if (!res.ok) throw new Error(`s3 ${res.status}`);
       outputUrl = url.split("?")[0];
     } else if (ex.destination === "email") {
@@ -82,17 +100,24 @@ export async function runAuditExport(exportId: string, workspaceId: string) {
     }
 
     await (supabaseAdmin.from("audit_exports") as any)
-      .update({ last_run_at: new Date().toISOString(), last_status: "success" }).eq("id", ex.id);
+      .update({ last_run_at: new Date().toISOString(), last_status: "success" })
+      .eq("id", ex.id);
     if (runId) {
       await (supabaseAdmin.from("audit_export_runs") as any)
-        .update({ status: "success", finished_at: new Date().toISOString(), records_count: rows.length, output_url: outputUrl })
+        .update({
+          status: "success",
+          finished_at: new Date().toISOString(),
+          records_count: rows.length,
+          output_url: outputUrl,
+        })
         .eq("id", runId);
     }
     return { ok: true, count: rows.length };
   } catch (err) {
     const msg = (err as Error).message;
     await (supabaseAdmin.from("audit_exports") as any)
-      .update({ last_run_at: new Date().toISOString(), last_status: "failed" }).eq("id", ex.id);
+      .update({ last_run_at: new Date().toISOString(), last_status: "failed" })
+      .eq("id", ex.id);
     if (runId) {
       await (supabaseAdmin.from("audit_export_runs") as any)
         .update({ status: "failed", finished_at: new Date().toISOString(), error_message: msg })

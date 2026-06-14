@@ -19,24 +19,40 @@ function ProfileSettings() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name").eq("id", user.id).single()
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single()
       .then(({ data }) => setFullName(data?.full_name ?? ""));
   }, [user]);
 
   const save = async () => {
     if (!user) return;
     setLoading(true);
-    const { error } = await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: fullName })
+      .eq("id", user.id);
     setLoading(false);
-    if (error) toast.error(error.message); else toast.success("Salvo");
+    if (error) toast.error(error.message);
+    else toast.success("Salvo");
   };
 
   return (
     <Card className="max-w-lg">
       <CardContent className="pt-6 space-y-4">
-        <div className="space-y-2"><Label>Email</Label><Input value={user?.email ?? ""} disabled /></div>
-        <div className="space-y-2"><Label>Nome completo</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
-        <Button onClick={save} disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
+        <div className="space-y-2">
+          <Label>Email</Label>
+          <Input value={user?.email ?? ""} disabled />
+        </div>
+        <div className="space-y-2">
+          <Label>Nome completo</Label>
+          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </div>
+        <Button onClick={save} disabled={loading}>
+          {loading ? "Salvando..." : "Salvar"}
+        </Button>
       </CardContent>
     </Card>
   );

@@ -6,7 +6,13 @@ import { EmailInput } from "@/components/ui/email-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { isEmail } from "@/lib/validators";
 
@@ -18,7 +24,12 @@ export type BulkField = {
 };
 
 export function BulkEditDialog({
-  open, setOpen, table, ids, fields, onDone,
+  open,
+  setOpen,
+  table,
+  ids,
+  fields,
+  onDone,
 }: {
   open: boolean;
   setOpen: (b: boolean) => void;
@@ -40,7 +51,10 @@ export function BulkEditDialog({
       if (f.type === "number" && v != null) v = Number(v);
       if (f.type === "email" && v != null) {
         const s = String(v).trim();
-        if (!isEmail(s)) { toast.error(`${f.label}: email inválido.`); return; }
+        if (!isEmail(s)) {
+          toast.error(`${f.label}: email inválido.`);
+          return;
+        }
         v = s;
       }
       payload[f.name] = v;
@@ -77,11 +91,17 @@ export function BulkEditDialog({
                   checked={!!enabled[f.name]}
                   onCheckedChange={(v) => setEnabled((s) => ({ ...s, [f.name]: !!v }))}
                 />
-                <Label htmlFor={`en-${f.name}`} className="cursor-pointer">{f.label}</Label>
+                <Label htmlFor={`en-${f.name}`} className="cursor-pointer">
+                  {f.label}
+                </Label>
               </div>
-              {enabled[f.name] && (
-                f.type === "textarea" ? (
-                  <Textarea rows={3} value={String(values[f.name] ?? "")} onChange={(e) => setValues((s) => ({ ...s, [f.name]: e.target.value }))} />
+              {enabled[f.name] &&
+                (f.type === "textarea" ? (
+                  <Textarea
+                    rows={3}
+                    value={String(values[f.name] ?? "")}
+                    onChange={(e) => setValues((s) => ({ ...s, [f.name]: e.target.value }))}
+                  />
                 ) : f.type === "select" ? (
                   <select
                     className="w-full h-9 rounded-md border bg-background px-3 text-sm"
@@ -89,7 +109,11 @@ export function BulkEditDialog({
                     onChange={(e) => setValues((s) => ({ ...s, [f.name]: e.target.value }))}
                   >
                     <option value="">— (limpar)</option>
-                    {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {f.options?.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
                   </select>
                 ) : f.type === "email" ? (
                   <EmailInput
@@ -102,14 +126,17 @@ export function BulkEditDialog({
                     value={String(values[f.name] ?? "")}
                     onChange={(e) => setValues((s) => ({ ...s, [f.name]: e.target.value }))}
                   />
-                )
-              )}
+                ))}
             </div>
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={busy}>{busy ? "Salvando..." : "Aplicar"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={busy}>
+            {busy ? "Salvando..." : "Aplicar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

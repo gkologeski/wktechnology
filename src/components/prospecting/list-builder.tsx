@@ -11,7 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Eye, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -24,11 +28,12 @@ import {
   type ResolvedAudience,
 } from "@/lib/prospecting-audience.functions";
 import { listSegments } from "@/lib/segments.functions";
+import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import {
-  getEntityFieldCatalog,
-  type EntityFieldDef,
-} from "@/lib/entity-fields.functions";
-import { DateRangeFilter, resolveDateRange, type DateRangeValue } from "@/components/date-range-filter";
+  DateRangeFilter,
+  resolveDateRange,
+  type DateRangeValue,
+} from "@/components/date-range-filter";
 
 type EntitySource = Exclude<AudienceSource, "manual" | "segment">;
 
@@ -90,7 +95,6 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
-
 export function HubspotListBuilder({
   mode,
   rules,
@@ -105,7 +109,8 @@ export function HubspotListBuilder({
   // Determina aba inicial a partir das regras existentes
   const initialTab = useMemo<"builder" | "segments" | "manual">(() => {
     if (rules.some((r) => r.source === "segment")) return "segments";
-    if (rules.some((r) => r.source === "manual") && !rules.some((r) => isEntitySource(r.source))) return "manual";
+    if (rules.some((r) => r.source === "manual") && !rules.some((r) => isEntitySource(r.source)))
+      return "manual";
     return "builder";
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState<"builder" | "segments" | "manual">(initialTab);
@@ -146,14 +151,21 @@ export function HubspotListBuilder({
       <div className="flex items-center gap-3">
         <Label className="text-sm">Tipo de lista</Label>
         <Select value={mode} onValueChange={(v) => onModeChange(v as "static" | "dynamic")}>
-          <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="static">Estática — congela ao salvar</SelectItem>
             <SelectItem value="dynamic">Ativa — recalcula ao iniciar</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex-1" />
-        <PreviewBadge preview={preview.data} loading={preview.isFetching} onShowSample={() => setShowSample((s) => !s)} hasRules={rules.length > 0} />
+        <PreviewBadge
+          preview={preview.data}
+          loading={preview.isFetching}
+          onShowSample={() => setShowSample((s) => !s)}
+          hasRules={rules.length > 0}
+        />
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
@@ -168,22 +180,33 @@ export function HubspotListBuilder({
         </TabsContent>
 
         <TabsContent value="segments" className="pt-3">
-          <SegmentPicker value={segmentRule?.segment_id ?? null} onChange={(id) => setSegmentRule(id ? { source: "segment", segment_id: id } : null)} />
+          <SegmentPicker
+            value={segmentRule?.segment_id ?? null}
+            onChange={(id) => setSegmentRule(id ? { source: "segment", segment_id: id } : null)}
+          />
         </TabsContent>
 
         <TabsContent value="manual" className="pt-3">
-          <ManualEditor ids={manualRule?.lead_ids ?? []} onChange={(ids) => setManualRule(ids.length ? { source: "manual", lead_ids: ids } : null)} />
+          <ManualEditor
+            ids={manualRule?.lead_ids ?? []}
+            onChange={(ids) =>
+              setManualRule(ids.length ? { source: "manual", lead_ids: ids } : null)
+            }
+          />
         </TabsContent>
       </Tabs>
 
-      {showSample && preview.data && (
-        <SamplePanel data={preview.data} />
-      )}
+      {showSample && preview.data && <SamplePanel data={preview.data} />}
     </div>
   );
 }
 
-function PreviewBadge({ preview, loading, onShowSample, hasRules }: {
+function PreviewBadge({
+  preview,
+  loading,
+  onShowSample,
+  hasRules,
+}: {
   preview: ResolvedAudience | undefined;
   loading: boolean;
   onShowSample: () => void;
@@ -196,8 +219,15 @@ function PreviewBadge({ preview, loading, onShowSample, hasRules }: {
         <Users className="h-3 w-3" />
         {loading ? "Calculando…" : `${preview?.total ?? 0} leads correspondem`}
       </Badge>
-      <Button type="button" size="sm" variant="ghost" onClick={onShowSample} disabled={!preview || preview.total === 0}>
-        <Eye className="h-3.5 w-3.5 mr-1" />Ver amostra
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={onShowSample}
+        disabled={!preview || preview.total === 0}
+      >
+        <Eye className="h-3.5 w-3.5 mr-1" />
+        Ver amostra
       </Button>
     </div>
   );
@@ -207,8 +237,11 @@ function SamplePanel({ data }: { data: ResolvedAudience }) {
   return (
     <Card className="p-3 bg-muted/40">
       <div className="text-xs text-muted-foreground mb-2">
-        Distribuição: {data.per_rule.map((r, i) => (
-          <span key={i} className="mr-3">{r.source}: {r.matched}→{r.resolved_leads}</span>
+        Distribuição:{" "}
+        {data.per_rule.map((r, i) => (
+          <span key={i} className="mr-3">
+            {r.source}: {r.matched}→{r.resolved_leads}
+          </span>
         ))}
       </div>
       {data.sample.length === 0 ? (
@@ -217,7 +250,9 @@ function SamplePanel({ data }: { data: ResolvedAudience }) {
         <ul className="text-xs space-y-1 max-h-56 overflow-y-auto">
           {data.sample.map((s) => (
             <li key={s.id} className="flex gap-2">
-              <Badge variant="outline" className="text-[10px]">{s.source}</Badge>
+              <Badge variant="outline" className="text-[10px]">
+                {s.source}
+              </Badge>
               <span className="truncate flex-1">{s.name}</span>
               <span className="text-muted-foreground">{s.phone ?? "sem telefone"}</span>
             </li>
@@ -230,14 +265,19 @@ function SamplePanel({ data }: { data: ResolvedAudience }) {
 
 // ---------- Inline builder com grupos AND/OR ----------
 
-function InlineBuilder({ rules, onChange }: { rules: AudienceRule[]; onChange: (r: AudienceRule[]) => void }) {
+function InlineBuilder({
+  rules,
+  onChange,
+}: {
+  rules: AudienceRule[];
+  onChange: (r: AudienceRule[]) => void;
+}) {
   const addGroup = () => {
     onChange([...rules, { source: "leads", filter: { ...EMPTY_FILTER } }]);
   };
   const updateGroup = (i: number, next: AudienceRule) =>
     onChange(rules.map((r, idx) => (idx === i ? next : r)));
-  const removeGroup = (i: number) =>
-    onChange(rules.filter((_, idx) => idx !== i));
+  const removeGroup = (i: number) => onChange(rules.filter((_, idx) => idx !== i));
 
   return (
     <div className="space-y-2">
@@ -247,7 +287,8 @@ function InlineBuilder({ rules, onChange }: { rules: AudienceRule[]; onChange: (
             Nenhum grupo de filtros. Crie um grupo para começar a montar seu público.
           </p>
           <Button type="button" size="sm" onClick={addGroup}>
-            <Plus className="h-3.5 w-3.5 mr-1" />Adicionar grupo de filtros
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Adicionar grupo de filtros
           </Button>
         </Card>
       )}
@@ -264,7 +305,9 @@ function InlineBuilder({ rules, onChange }: { rules: AudienceRule[]; onChange: (
             {i < rules.length - 1 && (
               <div className="flex items-center gap-2 my-2 px-2">
                 <div className="flex-1 h-px bg-border" />
-                <Badge variant="outline" className="font-semibold">OU</Badge>
+                <Badge variant="outline" className="font-semibold">
+                  OU
+                </Badge>
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
@@ -274,7 +317,8 @@ function InlineBuilder({ rules, onChange }: { rules: AudienceRule[]; onChange: (
 
       {rules.length > 0 && (
         <Button type="button" size="sm" variant="outline" onClick={addGroup} className="w-full">
-          <Plus className="h-3.5 w-3.5 mr-1" />Adicionar grupo (OU)
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          Adicionar grupo (OU)
         </Button>
       )}
     </div>
@@ -282,7 +326,9 @@ function InlineBuilder({ rules, onChange }: { rules: AudienceRule[]; onChange: (
 }
 
 function FilterGroupCard({
-  rule, onChange, onRemove,
+  rule,
+  onChange,
+  onRemove,
 }: {
   rule: AudienceRule & { source: EntitySource };
   onChange: (r: AudienceRule) => void;
@@ -345,10 +391,14 @@ function FilterGroupCard({
             onChange({ source, filter: { ...EMPTY_FILTER } });
           }}
         >
-          <SelectTrigger className="h-8 w-64"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 w-64">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {(Object.keys(ENTITY_LABEL) as EntitySource[]).map((s) => (
-              <SelectItem key={s} value={s}>{ENTITY_LABEL[s]}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {ENTITY_LABEL[s]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -380,7 +430,9 @@ function FilterGroupCard({
             <div key={idx}>
               {idx > 0 && (
                 <div className="flex items-center gap-2 my-1 pl-1">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase">E</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                    E
+                  </span>
                   <div className="flex-1 h-px bg-border/60" />
                 </div>
               )}
@@ -388,17 +440,16 @@ function FilterGroupCard({
                 <Select
                   value={c.field}
                   onValueChange={(v) => {
-                    const newField =
-                      fields.find((f) => f.name === v) ?? fields[0];
+                    const newField = fields.find((f) => f.name === v) ?? fields[0];
                     const newOp = opsFor(newField.type)[0].value;
                     const initial =
-                      newField.type === "date"
-                        ? buildBetweenValue({ preset: "last_30d" })
-                        : "";
+                      newField.type === "date" ? buildBetweenValue({ preset: "last_30d" }) : "";
                     updateCond(idx, { ...c, field: v, op: newOp, value: initial });
                   }}
                 >
-                  <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-56">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent className="max-h-80">
                     {fields.map((f) => (
                       <SelectItem key={f.name} value={f.name}>
@@ -414,22 +465,23 @@ function FilterGroupCard({
                     updateCond(idx, {
                       ...c,
                       op: v as FilterOp,
-                      value:
-                        v === "between"
-                          ? buildBetweenValue({ preset: "last_30d" })
-                          : c.value,
+                      value: v === "between" ? buildBetweenValue({ preset: "last_30d" }) : c.value,
                     })
                   }
                 >
-                  <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-44">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {ops.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {needsValue && (
-                  field.type === "date" ? (
+                {needsValue &&
+                  (field.type === "date" ? (
                     <DateRangeFilter
                       value={readBetweenUi(c.value)}
                       onChange={(dr) =>
@@ -459,7 +511,9 @@ function FilterGroupCard({
                       </SelectTrigger>
                       <SelectContent className="max-h-72">
                         {field.options.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -471,9 +525,14 @@ function FilterGroupCard({
                       onChange={(e) => updateCond(idx, { ...c, value: e.target.value })}
                       placeholder="Valor"
                     />
-                  )
-                )}
-                <Button type="button" size="icon" variant="ghost" onClick={() => removeCond(idx)} title="Remover condição">
+                  ))}
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeCond(idx)}
+                  title="Remover condição"
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -500,7 +559,13 @@ function FilterGroupCard({
 
 type SegmentRow = { id: string; name: string; entity: string; kind: string; member_count: number };
 
-function SegmentPicker({ value, onChange }: { value: string | null; onChange: (id: string | null) => void }) {
+function SegmentPicker({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (id: string | null) => void;
+}) {
   const listFn = useServerFn(listSegments);
   const q = useQuery({
     queryKey: ["segments"],
@@ -542,7 +607,8 @@ function SegmentPicker({ value, onChange }: { value: string | null; onChange: (i
         </span>
         <Button type="button" asChild size="sm" variant="link">
           <Link to="/settings/segments">
-            <ExternalLink className="h-3 w-3 mr-1" />Gerenciar listas
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Gerenciar listas
           </Link>
         </Button>
       </div>
@@ -561,7 +627,10 @@ function ManualEditor({ ids, onChange }: { ids: string[]; onChange: (ids: string
         placeholder="Cole UUIDs de leads — um por linha"
         value={ids.join("\n")}
         onChange={(e) => {
-          const next = e.target.value.split(/\s+/).map((s) => s.trim()).filter(Boolean);
+          const next = e.target.value
+            .split(/\s+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
           onChange(next);
         }}
         onBlur={() => {

@@ -66,7 +66,12 @@ export const BLOCK_LIBRARY: Array<{
     label: "Cabeçalho",
     description: "Título e número da cotação",
     icon: "Heading",
-    defaultProps: { title: "{{quote.title}}", subtitle: "Cotação Nº {{quote.number}}", align: "left", bg: "" },
+    defaultProps: {
+      title: "{{quote.title}}",
+      subtitle: "Cotação Nº {{quote.number}}",
+      align: "left",
+      bg: "",
+    },
   },
   {
     type: "logo",
@@ -127,7 +132,10 @@ export const BLOCK_LIBRARY: Array<{
     label: "Texto livre",
     description: "Parágrafo personalizado",
     icon: "Type",
-    defaultProps: { content: "Escreva aqui um texto livre. Você pode usar {{quote.total}}, {{contact.name}} etc.", align: "left" },
+    defaultProps: {
+      content: "Escreva aqui um texto livre. Você pode usar {{quote.total}}, {{contact.name}} etc.",
+      align: "left",
+    },
   },
   {
     type: "actions",
@@ -188,7 +196,10 @@ export function defaultDocument(): TemplateDocument {
 const esc = (s: unknown) =>
   s == null
     ? ""
-    : String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+    : String(s).replace(
+        /[&<>"]/g,
+        (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!,
+      );
 
 const prop = (b: TemplateBlock, k: string, fallback = ""): string => {
   const v = b.props[k];
@@ -209,7 +220,9 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
     case "header": {
       const align = prop(b, "align", "left");
       const bg = prop(b, "bg", "");
-      const bgStyle = bg ? `background:${esc(bg)};color:#fff;padding:24px;border-radius:${theme.radius}px;` : "";
+      const bgStyle = bg
+        ? `background:${esc(bg)};color:#fff;padding:24px;border-radius:${theme.radius}px;`
+        : "";
       return `<section style="text-align:${esc(align)};margin-bottom:20px;${bgStyle}">
   <h1 style="margin:0;font-size:28px;font-weight:700;line-height:1.2;">${prop(b, "title")}</h1>
   ${prop(b, "subtitle") ? `<div style="margin-top:6px;font-size:14px;opacity:.8;">${prop(b, "subtitle")}</div>` : ""}
@@ -225,17 +238,25 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
     case "customer": {
       const title = prop(b, "title", "Para");
       const lines: string[] = [];
-      if (bool(b, "showCompany", true)) lines.push(`<div style="font-weight:600;font-size:15px;">{{company.name}}</div>`);
+      if (bool(b, "showCompany", true))
+        lines.push(`<div style="font-weight:600;font-size:15px;">{{company.name}}</div>`);
       if (bool(b, "showContact", true)) lines.push(`<div>{{contact.name}}</div>`);
-      if (bool(b, "showEmail", true)) lines.push(`<div style="color:#64748b;">{{contact.email}}</div>`);
+      if (bool(b, "showEmail", true))
+        lines.push(`<div style="color:#64748b;">{{contact.email}}</div>`);
       return blockCard(title, lines.join(""), theme);
     }
     case "agent": {
       const title = prop(b, "title", "Emissor");
       const lines: string[] = [];
-      if (bool(b, "showAgent", true)) lines.push(`<div style="font-weight:600;">{{agent.name}}</div><div style="color:#64748b;">{{agent.email}}</div>`);
+      if (bool(b, "showAgent", true))
+        lines.push(
+          `<div style="font-weight:600;">{{agent.name}}</div><div style="color:#64748b;">{{agent.email}}</div>`,
+        );
       if (bool(b, "showCreated", true)) lines.push(`<div>Emitida em {{quote.created_at}}</div>`);
-      if (bool(b, "showValidity", true)) lines.push(`{{#if quote.valid_until}}<div>Válida até <strong>{{quote.valid_until}}</strong></div>{{/if}}`);
+      if (bool(b, "showValidity", true))
+        lines.push(
+          `{{#if quote.valid_until}}<div>Válida até <strong>{{quote.valid_until}}</strong></div>{{/if}}`,
+        );
       return blockCard(title, lines.join(""), theme);
     }
     case "items_table": {
@@ -243,21 +264,30 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
       const showDisc = bool(b, "showDiscount", true);
       const showTax = bool(b, "showTax", false);
       const headerBgRaw = prop(b, "headerBg", "auto");
-      const headerBg = headerBgRaw === "auto" ? theme.primaryColor : headerBgRaw || theme.primaryColor;
-      const cols: string[] = ["<th style=\"text-align:left;padding:10px;color:#fff;\">Item</th>"];
-      cols.push("<th style=\"text-align:right;padding:10px;color:#fff;\">Qtd</th>");
-      cols.push("<th style=\"text-align:right;padding:10px;color:#fff;\">Preço</th>");
-      if (showDisc) cols.push("<th style=\"text-align:right;padding:10px;color:#fff;\">Desc</th>");
-      if (showTax) cols.push("<th style=\"text-align:right;padding:10px;color:#fff;\">Imp</th>");
-      cols.push("<th style=\"text-align:right;padding:10px;color:#fff;\">Total</th>");
+      const headerBg =
+        headerBgRaw === "auto" ? theme.primaryColor : headerBgRaw || theme.primaryColor;
+      const cols: string[] = ['<th style="text-align:left;padding:10px;color:#fff;">Item</th>'];
+      cols.push('<th style="text-align:right;padding:10px;color:#fff;">Qtd</th>');
+      cols.push('<th style="text-align:right;padding:10px;color:#fff;">Preço</th>');
+      if (showDisc) cols.push('<th style="text-align:right;padding:10px;color:#fff;">Desc</th>');
+      if (showTax) cols.push('<th style="text-align:right;padding:10px;color:#fff;">Imp</th>');
+      cols.push('<th style="text-align:right;padding:10px;color:#fff;">Total</th>');
       const rowCells: string[] = [
         `<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><strong>{{name}}</strong>${showDesc ? `<div style="color:#64748b;font-size:12px;">{{description}}</div>` : ""}</td>`,
         `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{quantity}}</td>`,
         `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{unit_price}}</td>`,
       ];
-      if (showDisc) rowCells.push(`<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{discount_pct}}%</td>`);
-      if (showTax) rowCells.push(`<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{tax_rate}}%</td>`);
-      rowCells.push(`<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;"><strong>{{line_total}}</strong></td>`);
+      if (showDisc)
+        rowCells.push(
+          `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{discount_pct}}%</td>`,
+        );
+      if (showTax)
+        rowCells.push(
+          `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{tax_rate}}%</td>`,
+        );
+      rowCells.push(
+        `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;"><strong>{{line_total}}</strong></td>`,
+      );
       return `<table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;border-radius:${theme.radius}px;overflow:hidden;">
   <thead style="background:${esc(headerBg)};"><tr>${cols.join("")}</tr></thead>
   <tbody>
@@ -270,12 +300,24 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
     case "totals": {
       const align = prop(b, "align", "right");
       const rows: string[] = [];
-      if (bool(b, "showSubtotal", true)) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Subtotal</span><span>{{quote.subtotal}}</span></div>`);
-      if (bool(b, "showDiscount", true)) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Descontos</span><span>− {{quote.discount_total}}</span></div>`);
-      if (bool(b, "showTax", true)) rows.push(`<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Impostos</span><span>+ {{quote.tax_total}}</span></div>`);
-      rows.push(`<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:2px solid ${esc(theme.primaryColor)};font-size:18px;font-weight:700;color:${esc(theme.textColor)};"><span>Total</span><span>{{quote.total}}</span></div>`);
+      if (bool(b, "showSubtotal", true))
+        rows.push(
+          `<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Subtotal</span><span>{{quote.subtotal}}</span></div>`,
+        );
+      if (bool(b, "showDiscount", true))
+        rows.push(
+          `<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Descontos</span><span>− {{quote.discount_total}}</span></div>`,
+        );
+      if (bool(b, "showTax", true))
+        rows.push(
+          `<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569;"><span>Impostos</span><span>+ {{quote.tax_total}}</span></div>`,
+        );
+      rows.push(
+        `<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:2px solid ${esc(theme.primaryColor)};font-size:18px;font-weight:700;color:${esc(theme.textColor)};"><span>Total</span><span>{{quote.total}}</span></div>`,
+      );
       const widthStyle = "max-width:320px;";
-      const wrapAlign = align === "right" ? "margin-left:auto;" : align === "center" ? "margin:0 auto;" : "";
+      const wrapAlign =
+        align === "right" ? "margin-left:auto;" : align === "center" ? "margin:0 auto;" : "";
       return `<div style="${widthStyle}${wrapAlign}margin-top:8px;margin-bottom:20px;background:#f8fafc;border-radius:${theme.radius}px;padding:18px;">${rows.join("")}</div><div style="clear:both"></div>`;
     }
     case "notes":

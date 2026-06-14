@@ -6,13 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,10 +35,7 @@ import {
   updateBugReportStatus,
   type BugReportStatus,
 } from "@/lib/bug-reports.functions";
-import {
-  analyzeBugReport,
-  listBugReportAnalyses,
-} from "@/lib/bug-report-analysis.functions";
+import { analyzeBugReport, listBugReportAnalyses } from "@/lib/bug-report-analysis.functions";
 import { BugReportResolutionDialog } from "@/components/bug-report/resolution-dialog";
 import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { notifyBugReportStatusChange } from "@/lib/bug-reports-notify.functions";
@@ -72,19 +63,23 @@ const STATUS_LABEL: Record<BugReportStatus, string> = {
   wont_fix: "Não será corrigido",
 };
 
-const STATUS_VARIANT: Record<BugReportStatus, "default" | "secondary" | "outline" | "destructive"> = {
-  open: "destructive",
-  triaged: "secondary",
-  in_progress: "default",
-  resolved: "outline",
-  wont_fix: "outline",
-};
+const STATUS_VARIANT: Record<BugReportStatus, "default" | "secondary" | "outline" | "destructive"> =
+  {
+    open: "destructive",
+    triaged: "secondary",
+    in_progress: "default",
+    resolved: "outline",
+    wont_fix: "outline",
+  };
 
 function catLabel(value: string) {
   return BUG_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 function subLabel(cat: string, value: string) {
-  return BUG_CATEGORIES.find((c) => c.value === cat)?.subtypes.find((s) => s.value === value)?.label ?? value;
+  return (
+    BUG_CATEGORIES.find((c) => c.value === cat)?.subtypes.find((s) => s.value === value)?.label ??
+    value
+  );
 }
 function kindLabel(value: string) {
   return BUG_KINDS.find((k) => k.value === value)?.label ?? value;
@@ -144,7 +139,7 @@ function BugReportsAdminPage() {
 
   const latestByReport = useMemo(() => {
     const m = new Map<string, any>();
-    for (const a of ((analyses.data ?? []) as Array<{ bug_report_id: string }>)) {
+    for (const a of (analyses.data ?? []) as Array<{ bug_report_id: string }>) {
       if (!m.has(a.bug_report_id)) m.set(a.bug_report_id, a);
     }
     return m;
@@ -227,7 +222,6 @@ function BugReportsAdminPage() {
     }
   };
 
-
   const rows = list.data ?? [];
 
   const counts = useMemo(() => {
@@ -298,12 +292,16 @@ function BugReportsAdminPage() {
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Status</label>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="unresolved">Não resolvidos</SelectItem>
               <SelectItem value="all">Todos ({counts.all ?? 0})</SelectItem>
               {BUG_REPORT_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -311,11 +309,15 @@ function BugReportsAdminPage() {
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Tipo</label>
           <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
-            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {BUG_KINDS.map((k) => (
-                <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                <SelectItem key={k.value} value={k.value}>
+                  {k.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -346,7 +348,8 @@ function BugReportsAdminPage() {
                         </Badge>
                         <Badge variant="outline">{kindLabel(r.kind as string)}</Badge>
                         <Badge variant="outline">
-                          {catLabel(r.category as string)} · {subLabel(r.category as string, r.subtype as string)}
+                          {catLabel(r.category as string)} ·{" "}
+                          {subLabel(r.category as string, r.subtype as string)}
                         </Badge>
                       </div>
                       <CardDescription className="text-xs">
@@ -357,12 +360,18 @@ function BugReportsAdminPage() {
                     <div className="flex items-center gap-2">
                       <Select
                         value={r.status as string}
-                        onValueChange={(v) => handleStatusChange(r.id as string, v as BugReportStatus)}
+                        onValueChange={(v) =>
+                          handleStatusChange(r.id as string, v as BugReportStatus)
+                        }
                       >
-                        <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-44 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {BUG_REPORT_STATUSES.map((s) => (
-                            <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                            <SelectItem key={s} value={s}>
+                              {STATUS_LABEL[s]}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -381,20 +390,29 @@ function BugReportsAdminPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm whitespace-pre-wrap">{r.description as string}</p>
-                  {r.status === "resolved" && (r as { resolution_text?: string }).resolution_text && (
-                    <div className="rounded-md border bg-muted/40 p-3 text-sm">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        O status deste chamado foi atualizado para <strong>Resolvido</strong>.
-                      </p>
-                      <p className="whitespace-pre-wrap"><strong>Resolução:</strong> {(r as { resolution_text?: string }).resolution_text}</p>
-                    </div>
-                  )}
-                  {Array.isArray((r as { image_paths?: string[] }).image_paths) && ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
-                    <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
-                  )}
+                  {r.status === "resolved" &&
+                    (r as { resolution_text?: string }).resolution_text && (
+                      <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          O status deste chamado foi atualizado para <strong>Resolvido</strong>.
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          <strong>Resolução:</strong>{" "}
+                          {(r as { resolution_text?: string }).resolution_text}
+                        </p>
+                      </div>
+                    )}
+                  {Array.isArray((r as { image_paths?: string[] }).image_paths) &&
+                    ((r as { image_paths?: string[] }).image_paths?.length ?? 0) > 0 && (
+                      <BugReportImages paths={(r as { image_paths: string[] }).image_paths} />
+                    )}
                   <div className="flex flex-wrap gap-2 text-xs">
                     {r.recording_path && (
-                      <Button variant="secondary" size="sm" onClick={() => openVideo(r.recording_path as string)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openVideo(r.recording_path as string)}
+                      >
                         <Video className="h-4 w-4 mr-2" />
                         Ver gravação {r.recording_has_audio ? "(com áudio)" : ""}
                       </Button>
@@ -412,7 +430,9 @@ function BugReportsAdminPage() {
                     )}
                   </div>
                   {r.user_agent && (
-                    <p className="text-[10px] text-muted-foreground truncate">{r.user_agent as string}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {r.user_agent as string}
+                    </p>
                   )}
 
                   {(() => {
@@ -460,8 +480,8 @@ function BugReportsAdminPage() {
 
                         {!a && !isAnalyzing && (
                           <p className="text-xs text-muted-foreground">
-                            Ainda sem análise. Clique em "Analisar com IA" para gerar resumo,
-                            causa provável e proposta de correção.
+                            Ainda sem análise. Clique em "Analisar com IA" para gerar resumo, causa
+                            provável e proposta de correção.
                           </p>
                         )}
 
@@ -534,7 +554,8 @@ function BugReportsAdminPage() {
                               </div>
                             )}
                             <p className="text-[10px] text-muted-foreground">
-                              {a.model} · {format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                              {a.model} ·{" "}
+                              {format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                             </p>
                           </div>
                         )}
@@ -542,14 +563,19 @@ function BugReportsAdminPage() {
                     );
                   })()}
                 </CardContent>
-
               </Card>
             );
           })}
         </div>
       )}
 
-      <Dialog open={videoOpen} onOpenChange={(o) => { setVideoOpen(o); if (!o) setVideoUrl(null); }}>
+      <Dialog
+        open={videoOpen}
+        onOpenChange={(o) => {
+          setVideoOpen(o);
+          if (!o) setVideoUrl(null);
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Gravação do chamado</DialogTitle>
@@ -559,14 +585,18 @@ function BugReportsAdminPage() {
             <video src={videoUrl} controls autoPlay className="w-full rounded border bg-black" />
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setVideoOpen(false)}>Fechar</Button>
+            <Button variant="ghost" onClick={() => setVideoOpen(false)}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <BugReportResolutionDialog
         open={!!resolvingId}
-        onOpenChange={(v) => { if (!v) setResolvingId(null); }}
+        onOpenChange={(v) => {
+          if (!v) setResolvingId(null);
+        }}
         onConfirm={async (text) => {
           if (!resolvingId) return;
           await update.mutateAsync({ id: resolvingId, status: "resolved", resolution_text: text });

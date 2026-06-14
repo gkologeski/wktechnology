@@ -7,20 +7,51 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Gauge, Layers, Smile, Frown, Meh, Play, Mail, Eye, MousePointerClick, Timer } from "lucide-react";
+import {
+  TrendingUp,
+  Gauge,
+  Layers,
+  Smile,
+  Frown,
+  Meh,
+  Play,
+  Mail,
+  Eye,
+  MousePointerClick,
+  Timer,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  getFunnel, getSalesVelocity, getCohort, listPipelinesForFunnel,
+  getFunnel,
+  getSalesVelocity,
+  getCohort,
+  listPipelinesForFunnel,
 } from "@/lib/analytics.functions";
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
 import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
 import { getSlaSummary, getSlaOffenders } from "@/lib/sla-reports.functions";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid, Cell, LineChart, Line, Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  CartesianGrid,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
@@ -28,10 +59,18 @@ export const Route = createFileRoute("/_authenticated/analytics")({
 });
 
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(n || 0);
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(n || 0);
 }
-function fmtPct(n: number) { return `${(n || 0).toFixed(1)}%`; }
-function fmtDays(n: number) { return `${(n || 0).toFixed(1)} d`; }
+function fmtPct(n: number) {
+  return `${(n || 0).toFixed(1)}%`;
+}
+function fmtDays(n: number) {
+  return `${(n || 0).toFixed(1)} d`;
+}
 
 function AnalyticsPage() {
   const funnelFn = useServerFn(getFunnel);
@@ -40,21 +79,38 @@ function AnalyticsPage() {
   const pipelinesFn = useServerFn(listPipelinesForFunnel);
 
   const today = new Date();
-  const defaultFrom = new Date(today.getFullYear(), today.getMonth() - 5, 1).toISOString().slice(0, 10);
+  const defaultFrom = new Date(today.getFullYear(), today.getMonth() - 5, 1)
+    .toISOString()
+    .slice(0, 10);
   const [dateFrom, setDateFrom] = useState(defaultFrom);
   const [dateTo, setDateTo] = useState("");
   const [pipelineId, setPipelineId] = useState<string>("all");
 
-  const filters = useMemo(() => ({
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-    pipelineId: pipelineId === "all" ? null : pipelineId,
-  }), [dateFrom, dateTo, pipelineId]);
+  const filters = useMemo(
+    () => ({
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      pipelineId: pipelineId === "all" ? null : pipelineId,
+    }),
+    [dateFrom, dateTo, pipelineId],
+  );
 
-  const { data: pipelines = [] } = useQuery({ queryKey: ["pipelines-funnel"], queryFn: () => pipelinesFn() });
-  const { data: funnel } = useQuery({ queryKey: ["analytics-funnel", filters], queryFn: () => funnelFn({ data: filters }) });
-  const { data: velocity } = useQuery({ queryKey: ["analytics-velocity", filters], queryFn: () => velocityFn({ data: filters }) });
-  const { data: cohort } = useQuery({ queryKey: ["analytics-cohort", filters], queryFn: () => cohortFn({ data: filters }) });
+  const { data: pipelines = [] } = useQuery({
+    queryKey: ["pipelines-funnel"],
+    queryFn: () => pipelinesFn(),
+  });
+  const { data: funnel } = useQuery({
+    queryKey: ["analytics-funnel", filters],
+    queryFn: () => funnelFn({ data: filters }),
+  });
+  const { data: velocity } = useQuery({
+    queryKey: ["analytics-velocity", filters],
+    queryFn: () => velocityFn({ data: filters }),
+  });
+  const { data: cohort } = useQuery({
+    queryKey: ["analytics-cohort", filters],
+    queryFn: () => cohortFn({ data: filters }),
+  });
 
   return (
     <div className="p-6 space-y-4">
@@ -62,15 +118,27 @@ function AnalyticsPage() {
 
       <Card>
         <CardContent className="py-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-          <div><Label className="text-xs">De</Label><Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></div>
-          <div><Label className="text-xs">Até</Label><Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></div>
+          <div>
+            <Label className="text-xs">De</Label>
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Até</Label>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </div>
           <div>
             <Label className="text-xs">Pipeline</Label>
             <Select value={pipelineId} onValueChange={setPipelineId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                {pipelines.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -79,24 +147,41 @@ function AnalyticsPage() {
 
       <Tabs defaultValue="funnel" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="funnel"><Layers className="h-3.5 w-3.5 mr-1" /> Funil</TabsTrigger>
-          <TabsTrigger value="velocity"><Gauge className="h-3.5 w-3.5 mr-1" /> Sales Velocity</TabsTrigger>
-          <TabsTrigger value="cohort"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort</TabsTrigger>
-          <TabsTrigger value="sentiment"><Smile className="h-3.5 w-3.5 mr-1" /> Sentimento</TabsTrigger>
-          <TabsTrigger value="emails"><Mail className="h-3.5 w-3.5 mr-1" /> E-mails 1:1</TabsTrigger>
-          <TabsTrigger value="sla"><Timer className="h-3.5 w-3.5 mr-1" /> SLA</TabsTrigger>
+          <TabsTrigger value="funnel">
+            <Layers className="h-3.5 w-3.5 mr-1" /> Funil
+          </TabsTrigger>
+          <TabsTrigger value="velocity">
+            <Gauge className="h-3.5 w-3.5 mr-1" /> Sales Velocity
+          </TabsTrigger>
+          <TabsTrigger value="cohort">
+            <TrendingUp className="h-3.5 w-3.5 mr-1" /> Cohort
+          </TabsTrigger>
+          <TabsTrigger value="sentiment">
+            <Smile className="h-3.5 w-3.5 mr-1" /> Sentimento
+          </TabsTrigger>
+          <TabsTrigger value="emails">
+            <Mail className="h-3.5 w-3.5 mr-1" /> E-mails 1:1
+          </TabsTrigger>
+          <TabsTrigger value="sla">
+            <Timer className="h-3.5 w-3.5 mr-1" /> SLA
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Kpi label="Negócios" value={String(funnel?.total ?? 0)} />
-            <Kpi label="Ganhos" value={String(funnel?.stages.find((s) => s.stage === "won")?.count ?? 0)} />
+            <Kpi
+              label="Ganhos"
+              value={String(funnel?.stages.find((s) => s.stage === "won")?.count ?? 0)}
+            />
             <Kpi label="Perdidos" value={String(funnel?.lost?.count ?? 0)} />
             <Kpi label="Conversão geral" value={fmtPct(funnel?.overall_conversion ?? 0)} />
           </div>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Funil por estágio</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Funil por estágio</CardTitle>
+            </CardHeader>
             <CardContent>
               {!funnel || funnel.stages.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Sem dados no período.</p>
@@ -110,13 +195,22 @@ function AnalyticsPage() {
                         <div className="flex items-center text-sm">
                           <span className="w-32 font-medium">{s.label}</span>
                           <div className="flex-1 bg-muted rounded h-7 overflow-hidden relative">
-                            <div className="bg-primary h-full flex items-center px-2 text-primary-foreground text-xs" style={{ width: `${widthPct}%` }}>
+                            <div
+                              className="bg-primary h-full flex items-center px-2 text-primary-foreground text-xs"
+                              style={{ width: `${widthPct}%` }}
+                            >
                               {s.cumulative} negócio(s)
                             </div>
                           </div>
-                          <span className="w-28 text-right text-xs text-muted-foreground">{fmtCurrency(s.value)}</span>
+                          <span className="w-28 text-right text-xs text-muted-foreground">
+                            {fmtCurrency(s.value)}
+                          </span>
                           <span className="w-20 text-right text-xs">
-                            {i === 0 ? "—" : <Badge variant="secondary">{fmtPct(s.conversion_pct)}</Badge>}
+                            {i === 0 ? (
+                              "—"
+                            ) : (
+                              <Badge variant="secondary">{fmtPct(s.conversion_pct)}</Badge>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -136,16 +230,29 @@ function AnalyticsPage() {
             <Kpi label="Ciclo médio" value={fmtDays(velocity?.avg_cycle_days ?? 0)} />
           </div>
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Sales velocity (receita/dia)</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Sales velocity (receita/dia)</CardTitle>
+            </CardHeader>
             <CardContent>
-              <div className="text-3xl font-semibold">{fmtCurrency(velocity?.velocity_per_day ?? 0)}</div>
+              <div className="text-3xl font-semibold">
+                {fmtCurrency(velocity?.velocity_per_day ?? 0)}
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Fórmula: (Oportunidades × Ticket médio × Win rate) ÷ Ciclo médio em dias.
               </p>
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Pipeline aberto:</span> {fmtCurrency(velocity?.pipeline_value ?? 0)}</div>
-                <div><span className="text-muted-foreground">Receita ganha:</span> {fmtCurrency(velocity?.won_value ?? 0)}</div>
-                <div><span className="text-muted-foreground">Em aberto:</span> {velocity?.open_count ?? 0}</div>
+                <div>
+                  <span className="text-muted-foreground">Pipeline aberto:</span>{" "}
+                  {fmtCurrency(velocity?.pipeline_value ?? 0)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Receita ganha:</span>{" "}
+                  {fmtCurrency(velocity?.won_value ?? 0)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Em aberto:</span>{" "}
+                  {velocity?.open_count ?? 0}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -153,7 +260,9 @@ function AnalyticsPage() {
 
         <TabsContent value="cohort" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Cohort por mês de criação</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Cohort por mês de criação</CardTitle>
+            </CardHeader>
             <CardContent>
               {!cohort || cohort.rows.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Sem dados no período.</p>
@@ -194,7 +303,9 @@ function AnalyticsPage() {
                             <td className="text-right">{r.w60}</td>
                             <td className="text-right">{r.w90}</td>
                             <td className="text-right">{r.won}</td>
-                            <td className="text-right">{fmtPct(r.created ? (r.won / r.created) * 100 : 0)}</td>
+                            <td className="text-right">
+                              {fmtPct(r.created ? (r.won / r.created) * 100 : 0)}
+                            </td>
                             <td className="text-right">{fmtCurrency(r.revenue)}</td>
                           </tr>
                         ))}
@@ -226,14 +337,23 @@ function AnalyticsPage() {
 function SlaReportsTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
   const sumFn = useServerFn(getSlaSummary);
   const offFn = useServerFn(getSlaOffenders);
-  const filters = useMemo(() => ({
-    from: dateFrom ? new Date(dateFrom).toISOString() : undefined,
-    to: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
-  }), [dateFrom, dateTo]);
-  const sumQ = useQuery({ queryKey: ["sla-summary", filters], queryFn: () => sumFn({ data: filters }) });
-  const offQ = useQuery({ queryKey: ["sla-offenders", filters], queryFn: () => offFn({ data: filters }) });
+  const filters = useMemo(
+    () => ({
+      from: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+      to: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
+    }),
+    [dateFrom, dateTo],
+  );
+  const sumQ = useQuery({
+    queryKey: ["sla-summary", filters],
+    queryFn: () => sumFn({ data: filters }),
+  });
+  const offQ = useQuery({
+    queryKey: ["sla-offenders", filters],
+    queryFn: () => offFn({ data: filters }),
+  });
   const s = sumQ.data;
-  const fmtMin = (m: number) => m < 60 ? `${m} min` : `${(m / 60).toFixed(1)} h`;
+  const fmtMin = (m: number) => (m < 60 ? `${m} min` : `${(m / 60).toFixed(1)} h`);
 
   return (
     <div className="space-y-4">
@@ -245,13 +365,22 @@ function SlaReportsTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string 
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Top agentes com violações</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top agentes com violações</CardTitle>
+          </CardHeader>
           <CardContent>
             {!offQ.data?.agents.length ? (
               <p className="text-xs text-muted-foreground">Sem dados.</p>
             ) : (
               <table className="w-full text-xs">
-                <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1">Agente</th><th className="text-right py-1">Tickets</th><th className="text-right py-1">Violações</th><th className="text-right py-1">%</th></tr></thead>
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="text-left py-1">Agente</th>
+                    <th className="text-right py-1">Tickets</th>
+                    <th className="text-right py-1">Violações</th>
+                    <th className="text-right py-1">%</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {offQ.data.agents.map((a) => (
                     <tr key={a.key} className="border-b last:border-0">
@@ -267,13 +396,22 @@ function SlaReportsTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string 
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Top filas com violações</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top filas com violações</CardTitle>
+          </CardHeader>
           <CardContent>
             {!offQ.data?.pipelines.length ? (
               <p className="text-xs text-muted-foreground">Sem dados.</p>
             ) : (
               <table className="w-full text-xs">
-                <thead><tr className="border-b text-muted-foreground"><th className="text-left py-1">Fila</th><th className="text-right py-1">Tickets</th><th className="text-right py-1">Violações</th><th className="text-right py-1">%</th></tr></thead>
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="text-left py-1">Fila</th>
+                    <th className="text-right py-1">Tickets</th>
+                    <th className="text-right py-1">Violações</th>
+                    <th className="text-right py-1">%</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {offQ.data.pipelines.map((p) => (
                     <tr key={p.key} className="border-b last:border-0">
@@ -295,10 +433,13 @@ function SlaReportsTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string 
 
 function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
   const fn = useServerFn(getEmailEngagementReport);
-  const filters = useMemo(() => ({
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-  }), [dateFrom, dateTo]);
+  const filters = useMemo(
+    () => ({
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    }),
+    [dateFrom, dateTo],
+  );
   const { data } = useQuery({
     queryKey: ["email-engagement-report", filters],
     queryFn: () => fn({ data: filters }),
@@ -331,9 +472,24 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
                   <YAxis tick={{ fontSize: 11 }} />
                   <RTooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="sent" name="Enviados" stroke="hsl(var(--muted-foreground))" />
-                  <Line type="monotone" dataKey="opened" name="Abertos" stroke="hsl(var(--primary))" />
-                  <Line type="monotone" dataKey="clicked" name="Clicados" stroke="hsl(var(--destructive))" />
+                  <Line
+                    type="monotone"
+                    dataKey="sent"
+                    name="Enviados"
+                    stroke="hsl(var(--muted-foreground))"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="opened"
+                    name="Abertos"
+                    stroke="hsl(var(--primary))"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="clicked"
+                    name="Clicados"
+                    stroke="hsl(var(--destructive))"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -342,7 +498,9 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
       </Card>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Top mensagens por engajamento</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Top mensagens por engajamento</CardTitle>
+        </CardHeader>
         <CardContent>
           {!data?.top.length ? (
             <p className="text-xs text-muted-foreground">Sem mensagens no período.</p>
@@ -354,14 +512,20 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
                     <th className="text-left py-1">Assunto</th>
                     <th className="text-left py-1">Para</th>
                     <th className="text-left py-1">Enviado em</th>
-                    <th className="text-right py-1"><Eye className="h-3 w-3 inline" /> Aberturas</th>
-                    <th className="text-right py-1"><MousePointerClick className="h-3 w-3 inline" /> Cliques</th>
+                    <th className="text-right py-1">
+                      <Eye className="h-3 w-3 inline" /> Aberturas
+                    </th>
+                    <th className="text-right py-1">
+                      <MousePointerClick className="h-3 w-3 inline" /> Cliques
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.top.map((r) => (
                     <tr key={r.id} className="border-b">
-                      <td className="py-1 max-w-[280px] truncate">{r.subject || "(sem assunto)"}</td>
+                      <td className="py-1 max-w-[280px] truncate">
+                        {r.subject || "(sem assunto)"}
+                      </td>
                       <td className="py-1">{r.to ?? "—"}</td>
                       <td className="py-1">{r.sent_at ? formatDateTime(r.sent_at) : "—"}</td>
                       <td className="py-1 text-right">{r.open_count}</td>
@@ -391,10 +555,23 @@ function SentimentTab() {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={async () => {
-          try { const r = await tickFn(); toast.success(`Analisadas ${r.processed} mensagens`); ov.refetch(); ls.refetch(); }
-          catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
-        }}><Play className="h-3.5 w-3.5 mr-1" />Analisar agora</Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            try {
+              const r = await tickFn();
+              toast.success(`Analisadas ${r.processed} mensagens`);
+              ov.refetch();
+              ls.refetch();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro");
+            }
+          }}
+        >
+          <Play className="h-3.5 w-3.5 mr-1" />
+          Analisar agora
+        </Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Mensagens analisadas (30d)" value={String(ov.data?.total ?? 0)} />
@@ -403,17 +580,25 @@ function SentimentTab() {
         <Kpi label="Negativas" value={String(ov.data?.negative ?? 0)} />
       </div>
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Mensagens recentes</CardTitle></CardHeader>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Mensagens recentes</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="text-sm divide-y">
             {(ls.data ?? []).map((r) => (
               <div key={r.id} className="py-2 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  {r.label === "positive" ? <Smile className="h-4 w-4 text-emerald-600" />
-                    : r.label === "negative" ? <Frown className="h-4 w-4 text-rose-600" />
-                    : <Meh className="h-4 w-4 text-muted-foreground" />}
+                  {r.label === "positive" ? (
+                    <Smile className="h-4 w-4 text-emerald-600" />
+                  ) : r.label === "negative" ? (
+                    <Frown className="h-4 w-4 text-rose-600" />
+                  ) : (
+                    <Meh className="h-4 w-4 text-muted-foreground" />
+                  )}
                   <span className="text-xs uppercase">{r.source}</span>
-                  <span className="text-xs text-muted-foreground truncate">{(r.keywords ?? []).slice(0, 4).join(", ")}</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {(r.keywords ?? []).slice(0, 4).join(", ")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {r.emotion && <Badge variant="outline">{r.emotion}</Badge>}
@@ -422,7 +607,9 @@ function SentimentTab() {
                 </div>
               </div>
             ))}
-            {!ls.data?.length && <p className="text-muted-foreground py-4 text-center">Sem análises ainda.</p>}
+            {!ls.data?.length && (
+              <p className="text-muted-foreground py-4 text-center">Sem análises ainda.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -432,9 +619,11 @@ function SentimentTab() {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <Card><CardContent className="py-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-xl font-semibold mt-1">{value}</div>
-    </CardContent></Card>
+    <Card>
+      <CardContent className="py-3">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-xl font-semibold mt-1">{value}</div>
+      </CardContent>
+    </Card>
   );
 }

@@ -19,8 +19,19 @@ export type ToolKey =
   | "manage_users";
 
 export type ObjectKey =
-  | "contacts" | "companies" | "leads" | "deals" | "quotes" | "products"
-  | "tickets" | "tasks" | "notes" | "calls" | "meetings" | "emails" | "activities";
+  | "contacts"
+  | "companies"
+  | "leads"
+  | "deals"
+  | "quotes"
+  | "products"
+  | "tickets"
+  | "tasks"
+  | "notes"
+  | "calls"
+  | "meetings"
+  | "emails"
+  | "activities";
 
 export type ActionKey = "view" | "edit" | "delete";
 export type Scope = "none" | "own" | "team" | "all";
@@ -59,7 +70,10 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function getAccessProfileId(workspaceOwnerId: string, userId: string): Promise<string | null> {
+async function getAccessProfileId(
+  workspaceOwnerId: string,
+  userId: string,
+): Promise<string | null> {
   const { data } = await supabaseAdmin
     .from("team_members")
     .select("access_profile_id")
@@ -70,7 +84,11 @@ async function getAccessProfileId(workspaceOwnerId: string, userId: string): Pro
 }
 
 /** Retorna true se o usuário pode usar a ferramenta no workspace. */
-export async function userHasTool(userId: string, toolKey: ToolKey, workspaceOwnerId?: string): Promise<boolean> {
+export async function userHasTool(
+  userId: string,
+  toolKey: ToolKey,
+  workspaceOwnerId?: string,
+): Promise<boolean> {
   const owner = workspaceOwnerId ?? (await resolveWorkspaceOwner(userId));
   if (owner === userId) return true;
   if (await isPlatformAdmin(userId)) return true;
@@ -84,15 +102,19 @@ export async function userHasTool(userId: string, toolKey: ToolKey, workspaceOwn
     .eq("profile_id", profileId)
     .eq("tool_key", toolKey)
     .maybeSingle();
-  return !!(data?.enabled);
+  return !!data?.enabled;
 }
 
 /** Lança erro amigável caso o usuário não tenha a ferramenta. */
-export async function requireTool(userId: string, toolKey: ToolKey, workspaceOwnerId?: string): Promise<void> {
+export async function requireTool(
+  userId: string,
+  toolKey: ToolKey,
+  workspaceOwnerId?: string,
+): Promise<void> {
   const ok = await userHasTool(userId, toolKey, workspaceOwnerId);
   if (!ok) {
     throw new Error(
-      `Permissão negada: sua função não permite "${toolKey}". Peça ao administrador para ajustar seu perfil de acesso.`
+      `Permissão negada: sua função não permite "${toolKey}". Peça ao administrador para ajustar seu perfil de acesso.`,
     );
   }
 }
@@ -102,7 +124,7 @@ export async function getUserScope(
   userId: string,
   objectKey: ObjectKey,
   action: ActionKey,
-  workspaceOwnerId?: string
+  workspaceOwnerId?: string,
 ): Promise<Scope> {
   const owner = workspaceOwnerId ?? (await resolveWorkspaceOwner(userId));
   if (owner === userId) return "all";
@@ -128,7 +150,7 @@ export async function assertCanAct(
   objectKey: ObjectKey,
   action: ActionKey,
   rowOwnerId: string,
-  rowAssigneeId: string | null
+  rowAssigneeId: string | null,
 ): Promise<void> {
   if (userId === rowOwnerId) return;
   if (await isPlatformAdmin(userId)) return;

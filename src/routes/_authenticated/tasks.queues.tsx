@@ -10,11 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { AddQueueItemsDialog } from "@/components/tasks/add-queue-items-dialog";
-import {
-  listTaskQueues,
-  createTaskQueue,
-  deleteTaskQueue,
-} from "@/lib/task-queues.functions";
+import { listTaskQueues, createTaskQueue, deleteTaskQueue } from "@/lib/task-queues.functions";
 
 export const Route = createFileRoute("/_authenticated/tasks/queues")({
   component: QueuesPage,
@@ -59,15 +55,25 @@ function QueuesPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Nova fila</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Nova fila</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           <div>
             <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Prospecção semana 21" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Prospecção semana 21"
+            />
           </div>
           <div>
             <Label>Descrição (opcional)</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
           </div>
           <Button onClick={() => create.mutate()} disabled={!name || create.isPending}>
             <Plus className="mr-1 h-4 w-4" /> Criar fila
@@ -80,7 +86,9 @@ function QueuesPage() {
           <Card key={row.id}>
             <CardContent className="pt-6 space-y-2">
               <div className="font-medium">{row.name}</div>
-              {row.description && <p className="text-sm text-muted-foreground">{row.description}</p>}
+              {row.description && (
+                <p className="text-sm text-muted-foreground">{row.description}</p>
+              )}
               <div className="text-xs text-muted-foreground">
                 {row.counts.pending} pendentes · {row.counts.total} total
               </div>

@@ -10,7 +10,8 @@ async function getActiveWorkspaceId(userId: string): Promise<string> {
     .select("active_workspace_id")
     .eq("id", userId)
     .maybeSingle();
-  const activeId = (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+  const activeId =
+    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
   if (activeId) return activeId;
   const { data: m } = await supabaseAdmin
     .from("workspace_members")
@@ -48,7 +49,14 @@ export const listUserGroups = createServerFn({ method: "GET" })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const list = (groups ?? []) as Array<{ id: string; name: string; color: string | null; description: string | null; workspace_id: string; created_at: string }>;
+    const list = (groups ?? []) as Array<{
+      id: string;
+      name: string;
+      color: string | null;
+      description: string | null;
+      workspace_id: string;
+      created_at: string;
+    }>;
     const ids = list.map((g) => g.id);
     let membersByGroup: Record<string, string[]> = {};
     if (ids.length) {
@@ -68,11 +76,15 @@ export const listUserGroups = createServerFn({ method: "GET" })
 
 export const createUserGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    name: z.string().min(1).max(80),
-    color: z.string().max(20).optional().nullable(),
-    description: z.string().max(500).optional().nullable(),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        name: z.string().min(1).max(80),
+        color: z.string().max(20).optional().nullable(),
+        description: z.string().max(500).optional().nullable(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const workspaceId = await getActiveWorkspaceId(context.userId);
     await assertAdmin(workspaceId, context.userId);
@@ -92,16 +104,24 @@ export const createUserGroup = createServerFn({ method: "POST" })
 
 export const updateUserGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1).max(80),
-    color: z.string().max(20).optional().nullable(),
-    description: z.string().max(500).optional().nullable(),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).max(80),
+        color: z.string().max(20).optional().nullable(),
+        description: z.string().max(500).optional().nullable(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("user_groups")
-      .update({ name: data.name.trim(), color: data.color ?? null, description: data.description ?? null } as never)
+      .update({
+        name: data.name.trim(),
+        color: data.color ?? null,
+        description: data.description ?? null,
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -118,16 +138,25 @@ export const deleteUserGroup = createServerFn({ method: "POST" })
 
 export const setGroupMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    group_id: z.string().uuid(),
-    user_ids: z.array(z.string().uuid()).max(500),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        group_id: z.string().uuid(),
+        user_ids: z.array(z.string().uuid()).max(500),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const { error: dErr } = await context.supabase.from("user_group_members").delete().eq("group_id", data.group_id);
+    const { error: dErr } = await context.supabase
+      .from("user_group_members")
+      .delete()
+      .eq("group_id", data.group_id);
     if (dErr) throw new Error(dErr.message);
     if (data.user_ids.length) {
       const rows = data.user_ids.map((uid) => ({ group_id: data.group_id, user_id: uid }));
-      const { error: iErr } = await context.supabase.from("user_group_members").insert(rows as never);
+      const { error: iErr } = await context.supabase
+        .from("user_group_members")
+        .insert(rows as never);
       if (iErr) throw new Error(iErr.message);
     }
     return { ok: true };

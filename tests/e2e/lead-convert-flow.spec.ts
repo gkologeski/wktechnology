@@ -46,7 +46,10 @@ test("Lead → Empresa → Contato → Negócio (tela de detalhes + diálogos)",
   await expect(page.getByRole("heading", { name: `${firstName} ${lastName}` })).toBeVisible();
 
   // ─── Diálogo de conversão ───
-  await page.getByRole("button", { name: /converter/i }).first().click();
+  await page
+    .getByRole("button", { name: /converter/i })
+    .first()
+    .click();
   const convertDialog = page.getByRole("alertdialog");
   await expect(convertDialog.getByText(/converter lead/i)).toBeVisible();
   await expect(convertDialog.getByText(/qualificado/i)).toBeVisible();

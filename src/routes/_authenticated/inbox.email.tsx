@@ -115,9 +115,7 @@ function EmailInbox() {
                     </Badge>
                   )}
                 </div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {t.snippet || "—"}
-                </div>
+                <div className="truncate text-xs text-muted-foreground">{t.snippet || "—"}</div>
                 <div className="text-[10px] text-muted-foreground">
                   {t.last_message_at ? formatDateTime(t.last_message_at) : ""}
                 </div>
@@ -166,7 +164,9 @@ function EmailInbox() {
   );
 }
 
-type Msg = NonNullable<ReturnType<typeof getEmailThread> extends Promise<infer T> ? T : never>["messages"][number];
+type Msg = NonNullable<
+  ReturnType<typeof getEmailThread> extends Promise<infer T> ? T : never
+>["messages"][number];
 
 function MessageCard({ message: m }: { message: Msg }) {
   const isOut = m.direction === "outbound";

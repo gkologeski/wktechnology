@@ -109,10 +109,7 @@ export function OwnerFilter({
               key={opt.id}
               className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(v) => toggleOwner(opt.id, !!v)}
-              />
+              <Checkbox checked={checked} onCheckedChange={(v) => toggleOwner(opt.id, !!v)} />
               <span
                 className={
                   "h-1.5 w-1.5 rounded-full " +
@@ -154,7 +151,12 @@ export function applyOwnerFilter<T extends { in: Function; is: Function; or: Fun
   if (hubspotIds.length > 0) parts.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
   if (value.includeUnassigned) parts.push(`owner_id.is.null`);
   if (parts.length === 0) return query;
-  if (parts.length === 1 && value.includeUnassigned && userIds.length === 0 && hubspotIds.length === 0) {
+  if (
+    parts.length === 1 &&
+    value.includeUnassigned &&
+    userIds.length === 0 &&
+    hubspotIds.length === 0
+  ) {
     return query.is("owner_id", null) as T;
   }
   return query.or(parts.join(",")) as T;

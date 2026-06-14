@@ -12,13 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -60,7 +54,11 @@ function ImportCsvPage() {
   const mappedTargets = useMemo(() => new Set(Object.values(mapping)), [mapping]);
 
   function reset() {
-    setHeaders([]); setRows([]); setMapping({}); setPreview(null); setResult(null);
+    setHeaders([]);
+    setRows([]);
+    setMapping({});
+    setPreview(null);
+    setResult(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -87,8 +85,13 @@ function ImportCsvPage() {
         const taken = new Set<string>();
         for (const h of hdrs) {
           const low = h.toLowerCase().replace(/[\s-]+/g, "_");
-          const match = fields.find((f) => f.key === low || f.label.toLowerCase() === h.toLowerCase());
-          if (match && !taken.has(match.key)) { auto[h] = match.key; taken.add(match.key); }
+          const match = fields.find(
+            (f) => f.key === low || f.label.toLowerCase() === h.toLowerCase(),
+          );
+          if (match && !taken.has(match.key)) {
+            auto[h] = match.key;
+            taken.add(match.key);
+          }
         }
         setMapping(auto);
         setPreview(null);
@@ -103,7 +106,8 @@ function ImportCsvPage() {
     if (rows.length === 0) return toast.error("Carregue um CSV primeiro");
     const required = fields.filter((f) => f.required).map((f) => f.key);
     const missing = required.filter((k) => !Object.values(mapping).includes(k));
-    if (missing.length > 0) return toast.error(`Mapeie os campos obrigatórios: ${missing.join(", ")}`);
+    if (missing.length > 0)
+      return toast.error(`Mapeie os campos obrigatórios: ${missing.join(", ")}`);
     if (!Object.values(mapping).includes(dedupeKey)) {
       return toast.error(`Mapeie uma coluna para o campo de dedupe: ${dedupeKey}`);
     }
@@ -113,7 +117,9 @@ function ImportCsvPage() {
       setPreview(p);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao analisar");
-    } finally { setLoading(null); }
+    } finally {
+      setLoading(null);
+    }
   }
 
   async function runExecute() {
@@ -122,17 +128,23 @@ function ImportCsvPage() {
     try {
       const r = await executeFn({ data: { entity, rows, mapping, dedupeKey, strategy } });
       setResult(r);
-      toast.success(`Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`);
+      toast.success(
+        `Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao importar");
-    } finally { setLoading(null); }
+    } finally {
+      setLoading(null);
+    }
   }
 
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-2xl font-semibold">Importar CSV</h1>
-        <p className="text-sm text-muted-foreground">Importe leads, contatos ou empresas com mapeamento de colunas e deduplicação automática.</p>
+        <p className="text-sm text-muted-foreground">
+          Importe leads, contatos ou empresas com mapeamento de colunas e deduplicação automática.
+        </p>
       </div>
 
       <Card>
@@ -145,7 +157,9 @@ function ImportCsvPage() {
             <div>
               <Label>Entidade</Label>
               <Select value={entity} onValueChange={(v) => changeEntity(v as CsvEntity)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="leads">Leads</SelectItem>
                   <SelectItem value="contacts">Contatos</SelectItem>
@@ -168,8 +182,11 @@ function ImportCsvPage() {
           </div>
           {headers.length > 0 && (
             <div className="text-sm text-muted-foreground flex items-center gap-2">
-              <Upload className="h-4 w-4" /> {rows.length} linhas · {headers.length} colunas detectadas
-              <Button variant="ghost" size="sm" onClick={reset}>Limpar</Button>
+              <Upload className="h-4 w-4" /> {rows.length} linhas · {headers.length} colunas
+              detectadas
+              <Button variant="ghost" size="sm" onClick={reset}>
+                Limpar
+              </Button>
             </div>
           )}
         </CardContent>
@@ -179,13 +196,17 @@ function ImportCsvPage() {
         <Card>
           <CardHeader>
             <CardTitle>2. Mapeamento de colunas</CardTitle>
-            <CardDescription>Associe cada coluna do CSV a um campo do CRM. Deixe em branco para ignorar.</CardDescription>
+            <CardDescription>
+              Associe cada coluna do CSV a um campo do CRM. Deixe em branco para ignorar.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {headers.map((h) => (
                 <div key={h} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <div className="text-sm font-mono truncate" title={h}>{h}</div>
+                  <div className="text-sm font-mono truncate" title={h}>
+                    {h}
+                  </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <Select
                     value={mapping[h] ?? "__none__"}
@@ -203,12 +224,19 @@ function ImportCsvPage() {
                       setPreview(null);
                     }}
                   >
-                    <SelectTrigger><SelectValue placeholder="— ignorar —" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="— ignorar —" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">— ignorar —</SelectItem>
                       {fields.map((f) => (
-                        <SelectItem key={f.key} value={f.key} disabled={mappedTargets.has(f.key) && mapping[h] !== f.key}>
-                          {f.label}{f.required ? " *" : ""}
+                        <SelectItem
+                          key={f.key}
+                          value={f.key}
+                          disabled={mappedTargets.has(f.key) && mapping[h] !== f.key}
+                        >
+                          {f.label}
+                          {f.required ? " *" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -224,17 +252,29 @@ function ImportCsvPage() {
         <Card>
           <CardHeader>
             <CardTitle>3. Deduplicação</CardTitle>
-            <CardDescription>Defina como tratar registros já existentes no workspace.</CardDescription>
+            <CardDescription>
+              Defina como tratar registros já existentes no workspace.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label>Chave de dedupe</Label>
-                <Select value={dedupeKey} onValueChange={(v) => { setDedupeKey(v); setPreview(null); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={dedupeKey}
+                  onValueChange={(v) => {
+                    setDedupeKey(v);
+                    setPreview(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {dedupeOptions.map((k) => (
-                      <SelectItem key={k} value={k}>{k}</SelectItem>
+                      <SelectItem key={k} value={k}>
+                        {k}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -242,7 +282,9 @@ function ImportCsvPage() {
               <div>
                 <Label>Estratégia quando duplicado</Label>
                 <Select value={strategy} onValueChange={(v) => setStrategy(v as DedupeStrategy)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Ignorar duplicados</SelectItem>
                     <SelectItem value="update">Atualizar registros existentes</SelectItem>
@@ -261,7 +303,9 @@ function ImportCsvPage() {
                   <Badge variant="secondary">Total: {preview.totalRows}</Badge>
                   <Badge variant="default">Novos: {preview.newRecords}</Badge>
                   <Badge variant="outline">Duplicados: {preview.duplicates}</Badge>
-                  {preview.invalidRows > 0 && <Badge variant="destructive">Inválidos: {preview.invalidRows}</Badge>}
+                  {preview.invalidRows > 0 && (
+                    <Badge variant="destructive">Inválidos: {preview.invalidRows}</Badge>
+                  )}
                 </div>
               )}
             </div>
@@ -274,20 +318,30 @@ function ImportCsvPage() {
           <CardHeader>
             <CardTitle>4. Executar</CardTitle>
             <CardDescription>
-              {strategy === "skip" && `Serão criados ${preview.newRecords} registros. ${preview.duplicates} duplicados serão ignorados.`}
-              {strategy === "update" && `Serão criados ${preview.newRecords} e atualizados ${preview.duplicates} registros existentes.`}
-              {strategy === "create_new" && `Serão criados ${preview.newRecords + preview.duplicates} registros (incluindo duplicados).`}
+              {strategy === "skip" &&
+                `Serão criados ${preview.newRecords} registros. ${preview.duplicates} duplicados serão ignorados.`}
+              {strategy === "update" &&
+                `Serão criados ${preview.newRecords} e atualizados ${preview.duplicates} registros existentes.`}
+              {strategy === "create_new" &&
+                `Serão criados ${preview.newRecords + preview.duplicates} registros (incluindo duplicados).`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={runExecute} disabled={loading !== null || preview.newRecords + (strategy === "update" ? preview.duplicates : 0) === 0}>
+            <Button
+              onClick={runExecute}
+              disabled={
+                loading !== null ||
+                preview.newRecords + (strategy === "update" ? preview.duplicates : 0) === 0
+              }
+            >
               {loading === "execute" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Importar agora
             </Button>
             {result && (
               <div className="mt-4 flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                {result.inserted} criados · {result.updated} atualizados · {result.skipped} ignorados · {result.invalid} inválidos
+                {result.inserted} criados · {result.updated} atualizados · {result.skipped}{" "}
+                ignorados · {result.invalid} inválidos
               </div>
             )}
           </CardContent>

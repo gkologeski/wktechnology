@@ -21,10 +21,14 @@ export const Route = createFileRoute("/api/public/forms/$slug")({
           .eq("slug", params.slug)
           .maybeSingle();
         if (error) return Response.json({ error: error.message }, { status: 500, headers: cors() });
-        if (!data || !data.active) return Response.json({ error: "Not found" }, { status: 404, headers: cors() });
+        if (!data || !data.active)
+          return Response.json({ error: "Not found" }, { status: 404, headers: cors() });
         return Response.json(
           {
-            id: data.id, name: data.name, slug: data.slug, fields: data.fields,
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            fields: data.fields,
             success_message: data.success_message,
             display_mode: data.display_mode ?? "inline",
             popup_config: data.popup_config ?? {},

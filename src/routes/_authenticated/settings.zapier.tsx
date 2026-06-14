@@ -29,56 +29,98 @@ function ZapierSettingsPage() {
 
   async function remove(id: string) {
     setBusy(true);
-    try { await del({ data: { id } }); toast.success("Removido"); await refetch(); }
-    catch (e) { toast.error(e instanceof Error ? e.message : "Falha"); }
-    finally { setBusy(false); }
+    try {
+      await del({ data: { id } });
+      toast.success("Removido");
+      await refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="space-y-4 p-6 max-w-3xl">
-      <PageHeader title="Zapier / Make" description="Triggers e actions REST para publicar automações no Zapier e Make." />
+      <PageHeader
+        title="Zapier / Make"
+        description="Triggers e actions REST para publicar automações no Zapier e Make."
+      />
 
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4" />Autenticação</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            Autenticação
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p className="text-muted-foreground">
             Use uma API key do CRM como Bearer token em todas as chamadas. Crie uma chave em{" "}
-            <Link to="/settings/api-keys" className="underline">API Keys</Link>.
+            <Link to="/settings/api-keys" className="underline">
+              API Keys
+            </Link>
+            .
           </p>
-          <code className="block rounded-md border bg-muted/40 p-2 text-xs">Authorization: Bearer lvb_...</code>
+          <code className="block rounded-md border bg-muted/40 p-2 text-xs">
+            Authorization: Bearer lvb_...
+          </code>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Triggers (REST Hooks)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Triggers (REST Hooks)</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p className="text-muted-foreground">
-            Configure o Zapier para usar REST Hook. Subscribe POST cria a inscrição, Unsubscribe DELETE remove.
+            Configure o Zapier para usar REST Hook. Subscribe POST cria a inscrição, Unsubscribe
+            DELETE remove.
           </p>
           <div className="space-y-1">
             <div className="text-xs font-medium uppercase text-muted-foreground">Subscribe URL</div>
-            <code className="block rounded-md border bg-muted/40 p-2 text-xs">POST {baseUrl}/api/public/zapier/subscribe</code>
-            <div className="text-xs text-muted-foreground">Body: {`{ "event": "lead.created", "target_url": "https://hooks.zapier.com/..." }`}</div>
+            <code className="block rounded-md border bg-muted/40 p-2 text-xs">
+              POST {baseUrl}/api/public/zapier/subscribe
+            </code>
+            <div className="text-xs text-muted-foreground">
+              Body: {`{ "event": "lead.created", "target_url": "https://hooks.zapier.com/..." }`}
+            </div>
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-medium uppercase text-muted-foreground">Unsubscribe URL</div>
-            <code className="block rounded-md border bg-muted/40 p-2 text-xs">DELETE {baseUrl}/api/public/zapier/unsubscribe/{`{id}`}</code>
+            <div className="text-xs font-medium uppercase text-muted-foreground">
+              Unsubscribe URL
+            </div>
+            <code className="block rounded-md border bg-muted/40 p-2 text-xs">
+              DELETE {baseUrl}/api/public/zapier/unsubscribe/{`{id}`}
+            </code>
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-medium uppercase text-muted-foreground">Perform List (test)</div>
-            <code className="block rounded-md border bg-muted/40 p-2 text-xs">GET {baseUrl}/api/public/zapier/triggers/{`{event}`}</code>
+            <div className="text-xs font-medium uppercase text-muted-foreground">
+              Perform List (test)
+            </div>
+            <code className="block rounded-md border bg-muted/40 p-2 text-xs">
+              GET {baseUrl}/api/public/zapier/triggers/{`{event}`}
+            </code>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Eventos suportados</div>
+            <div className="text-xs font-medium uppercase text-muted-foreground mb-1">
+              Eventos suportados
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {ZAPIER_TRIGGERS.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+              {ZAPIER_TRIGGERS.map((t) => (
+                <Badge key={t} variant="outline">
+                  {t}
+                </Badge>
+              ))}
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Actions</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p className="text-muted-foreground">
             Actions reutilizam a API pública v1 do CRM. Autenticadas com a mesma API key.
@@ -88,7 +130,10 @@ function ZapierSettingsPage() {
               <div key={a.key} className="flex items-center justify-between rounded-md border p-2">
                 <div>
                   <div className="font-medium">{a.label}</div>
-                  <code className="text-xs text-muted-foreground">{a.method} {baseUrl}{a.path}</code>
+                  <code className="text-xs text-muted-foreground">
+                    {a.method} {baseUrl}
+                    {a.path}
+                  </code>
                 </div>
                 <Badge variant="outline">{a.key}</Badge>
               </div>
@@ -112,7 +157,9 @@ function ZapierSettingsPage() {
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : (data?.subscriptions ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma inscrição. Crie um Zap usando a Subscribe URL acima.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma inscrição. Crie um Zap usando a Subscribe URL acima.
+            </p>
           ) : (
             <div className="space-y-2">
               {data!.subscriptions.map((s) => (
@@ -122,7 +169,8 @@ function ZapierSettingsPage() {
                     <div className="text-xs text-muted-foreground truncate">{s.target_url}</div>
                     {s.last_delivery_at && (
                       <div className="text-xs text-muted-foreground">
-                        Última entrega: {new Date(s.last_delivery_at).toLocaleString()} · status {s.last_delivery_status ?? "—"}
+                        Última entrega: {new Date(s.last_delivery_at).toLocaleString()} · status{" "}
+                        {s.last_delivery_status ?? "—"}
                       </div>
                     )}
                   </div>

@@ -90,8 +90,11 @@ export const PLAN_RANK: Record<PlanCode, number> = {
 
 /** Retorna o menor plano que habilita uma key (consulta entitlements). */
 export function minPlanFor(
-  entitlements: Record<string, Array<{ plan_code: PlanCode; enabled: boolean; limit_int: number | null }>>,
-  key: EntKey
+  entitlements: Record<
+    string,
+    Array<{ plan_code: PlanCode; enabled: boolean; limit_int: number | null }>
+  >,
+  key: EntKey,
 ): PlanCode | null {
   const rows = entitlements[key] ?? [];
   const sorted = [...rows].sort((a, b) => PLAN_RANK[a.plan_code] - PLAN_RANK[b.plan_code]);

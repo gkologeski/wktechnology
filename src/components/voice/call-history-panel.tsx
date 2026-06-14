@@ -76,7 +76,12 @@ export function CallHistoryPanel({ entity, entityId, limit = 25 }: Props) {
                 {c.recording_url ? (
                   <div className="flex items-center gap-2">
                     <AudioLines className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <audio controls preload="none" src={c.recording_url} className="h-8 w-full max-w-md" />
+                    <audio
+                      controls
+                      preload="none"
+                      src={c.recording_url}
+                      className="h-8 w-full max-w-md"
+                    />
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground italic">
@@ -90,9 +95,7 @@ export function CallHistoryPanel({ entity, entityId, limit = 25 }: Props) {
                   <div className="text-xs">
                     <button
                       type="button"
-                      onClick={() =>
-                        setOpenTranscript((p) => ({ ...p, [c.id]: !transcriptOpen }))
-                      }
+                      onClick={() => setOpenTranscript((p) => ({ ...p, [c.id]: !transcriptOpen }))}
                       className="inline-flex items-center gap-1 text-primary hover:underline"
                     >
                       <FileText className="h-3 w-3" />

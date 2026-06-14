@@ -26,7 +26,10 @@ export const Route = createFileRoute("/api/public/admin/reschedule-cron")({
         return Response.json({ ok: true, result: data });
       },
       GET: async () =>
-        Response.json({ ok: true, info: "POST with Bearer CRON_SECRET to reschedule pg_cron jobs" }),
+        Response.json({
+          ok: true,
+          info: "POST with Bearer CRON_SECRET to reschedule pg_cron jobs",
+        }),
     },
   },
 });

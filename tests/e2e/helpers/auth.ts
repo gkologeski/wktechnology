@@ -20,7 +20,13 @@ export function makeUserClient(): SupabaseClient {
 export async function loginViaUI(page: Page) {
   await page.goto("/login");
   // Fallback se a rota for /auth
-  if (!(await page.locator('input[type="email"]').first().isVisible().catch(() => false))) {
+  if (
+    !(await page
+      .locator('input[type="email"]')
+      .first()
+      .isVisible()
+      .catch(() => false))
+  ) {
     await page.goto("/auth");
   }
   await page.locator('input[type="email"]').first().fill(EMAIL);

@@ -8,13 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Plus, Trash2, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
 import {
-  listScoringRules, saveScoringRule, deleteScoringRule,
-  listRecentScoreEvents, runScoringTickNow,
+  listScoringRules,
+  saveScoringRule,
+  deleteScoringRule,
+  listRecentScoreEvents,
+  runScoringTickNow,
 } from "@/lib/scoring.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/scoring")({
@@ -22,7 +31,16 @@ export const Route = createFileRoute("/_authenticated/settings/scoring")({
 });
 
 type RuleEntity = "lead" | "contact" | "company";
-type Op = "eq"|"neq"|"in"|"contains"|"gt"|"lt"|"changed_to"|"is_empty"|"is_not_empty";
+type Op =
+  | "eq"
+  | "neq"
+  | "in"
+  | "contains"
+  | "gt"
+  | "lt"
+  | "changed_to"
+  | "is_empty"
+  | "is_not_empty";
 
 type Draft = {
   id?: string;
@@ -42,18 +60,33 @@ const EMPTY: Draft = {
 };
 
 const ENTITY_LABEL: Record<RuleEntity, string> = {
-  lead: "Lead", contact: "Contato", company: "Empresa",
+  lead: "Lead",
+  contact: "Contato",
+  company: "Empresa",
 };
 
 const OP_LABEL: Record<Op, string> = {
-  eq: "= igual a", neq: "≠ diferente de", in: "está em (lista)",
-  contains: "contém", gt: "> maior que", lt: "< menor que",
-  changed_to: "mudou para", is_empty: "está vazio", is_not_empty: "não está vazio",
+  eq: "= igual a",
+  neq: "≠ diferente de",
+  in: "está em (lista)",
+  contains: "contém",
+  gt: "> maior que",
+  lt: "< menor que",
+  changed_to: "mudou para",
+  is_empty: "está vazio",
+  is_not_empty: "não está vazio",
 };
 
 const NEEDS_VALUE: Record<Op, boolean> = {
-  eq: true, neq: true, in: true, contains: true, gt: true, lt: true,
-  changed_to: true, is_empty: false, is_not_empty: false,
+  eq: true,
+  neq: true,
+  in: true,
+  contains: true,
+  gt: true,
+  lt: true,
+  changed_to: true,
+  is_empty: false,
+  is_not_empty: false,
 };
 
 function ScoringPage() {
@@ -73,10 +106,15 @@ function ScoringPage() {
     setLoading(true);
     try {
       const [r, e] = await Promise.all([listFn(), logsFn()]);
-      setRules(r); setEvents(e);
-    } finally { setLoading(false); }
+      setRules(r);
+      setEvents(e);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   const totalPoints = useMemo(
     () => events.reduce((s, e) => s + Number((e as { points: number }).points ?? 0), 0),
@@ -117,7 +155,9 @@ function ScoringPage() {
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
-    } finally { setRunning(false); }
+    } finally {
+      setRunning(false);
+    }
   };
 
   return (
@@ -126,23 +166,27 @@ function ScoringPage() {
         <div>
           <h2 className="text-lg font-semibold">Lead Scoring</h2>
           <p className="text-sm text-muted-foreground">
-            Regras que somam pontos automaticamente quando uma condição é atendida.
-            O executor roda a cada minuto via cron.
+            Regras que somam pontos automaticamente quando uma condição é atendida. O executor roda
+            a cada minuto via cron.
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleRunNow} disabled={running}>
             <Play className="h-4 w-4 mr-1" /> {running ? "Processando…" : "Executar agora"}
           </Button>
-          <Button onClick={() => setDraft({ ...EMPTY })}><Plus className="h-4 w-4 mr-1" /> Nova regra</Button>
+          <Button onClick={() => setDraft({ ...EMPTY })}>
+            <Plus className="h-4 w-4 mr-1" /> Nova regra
+          </Button>
         </div>
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       {!loading && rules.length === 0 && (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Nenhuma regra ainda.
-        </CardContent></Card>
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma regra ainda.
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-3">
@@ -159,24 +203,36 @@ function ScoringPage() {
                     {!r.enabled && <Badge variant="destructive">pausada</Badge>}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    <code className="bg-muted px-1.5 py-0.5 rounded">{cond.field}</code>
-                    {" "}{OP_LABEL[(cond.op as Op) ?? "eq"]}{" "}
+                    <code className="bg-muted px-1.5 py-0.5 rounded">{cond.field}</code>{" "}
+                    {OP_LABEL[(cond.op as Op) ?? "eq"]}{" "}
                     {NEEDS_VALUE[(cond.op as Op) ?? "eq"] && (
-                      <code className="bg-muted px-1.5 py-0.5 rounded">{JSON.stringify(cond.value ?? "")}</code>
+                      <code className="bg-muted px-1.5 py-0.5 rounded">
+                        {JSON.stringify(cond.value ?? "")}
+                      </code>
                     )}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => setDraft({
-                    id: r.id as string, name: r.name as string,
-                    entity: r.entity as RuleEntity, enabled: r.enabled as boolean,
-                    points: r.points as number,
-                    condition: {
-                      field: (cond.field as string) ?? "",
-                      op: (cond.op as Op) ?? "eq",
-                      value: cond.value,
-                    },
-                  })}><Pencil className="h-4 w-4" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setDraft({
+                        id: r.id as string,
+                        name: r.name as string,
+                        entity: r.entity as RuleEntity,
+                        enabled: r.enabled as boolean,
+                        points: r.points as number,
+                        condition: {
+                          field: (cond.field as string) ?? "",
+                          op: (cond.op as Op) ?? "eq",
+                          value: cond.value,
+                        },
+                      })
+                    }
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id as string)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -189,7 +245,9 @@ function ScoringPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Últimas aplicações ({events.length}) — {totalPoints} pts</CardTitle>
+          <CardTitle className="text-base">
+            Últimas aplicações ({events.length}) — {totalPoints} pts
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {events.length === 0 && (
@@ -197,11 +255,16 @@ function ScoringPage() {
           )}
           <div className="space-y-2">
             {events.map((e) => (
-              <div key={e.id as string} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
+              <div
+                key={e.id as string}
+                className="flex items-center justify-between text-sm border-b pb-2 last:border-0"
+              >
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{String(e.entity)}</Badge>
                   <span>{(e.reason as string | null) ?? "—"}</span>
-                  <code className="text-xs text-muted-foreground">{String(e.entity_id).slice(0, 8)}</code>
+                  <code className="text-xs text-muted-foreground">
+                    {String(e.entity_id).slice(0, 8)}
+                  </code>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge>{e.points as number} pts</Badge>
@@ -217,17 +280,25 @@ function ScoringPage() {
 
       <Sheet open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader><SheetTitle>{draft?.id ? "Editar regra" : "Nova regra de scoring"}</SheetTitle></SheetHeader>
+          <SheetHeader>
+            <SheetTitle>{draft?.id ? "Editar regra" : "Nova regra de scoring"}</SheetTitle>
+          </SheetHeader>
           {draft && (
             <div className="space-y-5 py-4">
               <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
                   <Label>Nome</Label>
-                  <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                    placeholder="Ex: Lead veio do site" />
+                  <Input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="Ex: Lead veio do site"
+                  />
                 </div>
                 <div className="flex items-center gap-2 pb-2">
-                  <Switch checked={draft.enabled} onCheckedChange={(v) => setDraft({ ...draft, enabled: v })} />
+                  <Switch
+                    checked={draft.enabled}
+                    onCheckedChange={(v) => setDraft({ ...draft, enabled: v })}
+                  />
                   <span className="text-sm">{draft.enabled ? "Ativa" : "Pausada"}</span>
                 </div>
               </div>
@@ -235,19 +306,31 @@ function ScoringPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Entidade</Label>
-                  <Select value={draft.entity} onValueChange={(v) => setDraft({ ...draft, entity: v as RuleEntity })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={draft.entity}
+                    onValueChange={(v) => setDraft({ ...draft, entity: v as RuleEntity })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {(Object.keys(ENTITY_LABEL) as RuleEntity[]).map((e) => (
-                        <SelectItem key={e} value={e}>{ENTITY_LABEL[e]}</SelectItem>
+                        <SelectItem key={e} value={e}>
+                          {ENTITY_LABEL[e]}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label>Pontos</Label>
-                  <Input type="number" min={-1000} max={1000} value={draft.points}
-                    onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) || 0 })} />
+                  <Input
+                    type="number"
+                    min={-1000}
+                    max={1000}
+                    value={draft.points}
+                    onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) || 0 })}
+                  />
                 </div>
               </div>
 
@@ -256,18 +339,33 @@ function ScoringPage() {
                 <div className="grid grid-cols-[1fr_180px] gap-2">
                   <div>
                     <Label>Campo</Label>
-                    <Input value={draft.condition.field}
-                      onChange={(e) => setDraft({ ...draft, condition: { ...draft.condition, field: e.target.value } })}
-                      placeholder="ex.: source, status, email" />
+                    <Input
+                      value={draft.condition.field}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          condition: { ...draft.condition, field: e.target.value },
+                        })
+                      }
+                      placeholder="ex.: source, status, email"
+                    />
                   </div>
                   <div>
                     <Label>Operador</Label>
-                    <Select value={draft.condition.op}
-                      onValueChange={(v) => setDraft({ ...draft, condition: { ...draft.condition, op: v as Op } })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={draft.condition.op}
+                      onValueChange={(v) =>
+                        setDraft({ ...draft, condition: { ...draft.condition, op: v as Op } })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {(Object.keys(OP_LABEL) as Op[]).map((op) => (
-                          <SelectItem key={op} value={op}>{OP_LABEL[op]}</SelectItem>
+                          <SelectItem key={op} value={op}>
+                            {OP_LABEL[op]}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -278,7 +376,12 @@ function ScoringPage() {
                     <Label>Valor</Label>
                     <Input
                       value={String(draft.condition.value ?? "")}
-                      onChange={(e) => setDraft({ ...draft, condition: { ...draft.condition, value: e.target.value } })}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          condition: { ...draft.condition, value: e.target.value },
+                        })
+                      }
                       placeholder="ex.: site"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -294,7 +397,9 @@ function ScoringPage() {
             </div>
           )}
           <SheetFooter>
-            <Button variant="outline" onClick={() => setDraft(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setDraft(null)}>
+              Cancelar
+            </Button>
             <Button onClick={handleSave}>Salvar</Button>
           </SheetFooter>
         </SheetContent>

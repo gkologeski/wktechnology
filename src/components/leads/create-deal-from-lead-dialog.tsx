@@ -26,10 +26,6 @@ import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
 
-
-
-
-
 export function CreateDealFromLeadDialog({
   open,
   onOpenChange,
@@ -62,9 +58,6 @@ export function CreateDealFromLeadDialog({
 
   const [contactId, setContactId] = useState<string | null>(null);
 
-
-
-
   const [saving, setSaving] = useState(false);
 
   const pipeline = useMemo(
@@ -77,8 +70,7 @@ export function CreateDealFromLeadDialog({
     if (!open) return;
     const p = defaultPipeline ?? pipelines[0] ?? null;
     setPipelineId(p?.id ?? "");
-    const qualifiedStage =
-      p?.stages.find((s) => s.value === "qualified") ?? p?.stages[0] ?? null;
+    const qualifiedStage = p?.stages.find((s) => s.value === "qualified") ?? p?.stages[0] ?? null;
     setStageId(qualifiedStage?.value ?? "");
     const fullName = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim();
     setName(fullName ? `Negócio - ${fullName}` : "Novo negócio");
@@ -105,8 +97,14 @@ export function CreateDealFromLeadDialog({
 
   const submit = async () => {
     if (!user) return;
-    if (!name.trim()) { toast.error("Informe o nome do negócio"); return; }
-    if (!pipeline || !stageId) { toast.error("Selecione pipeline e estágio"); return; }
+    if (!name.trim()) {
+      toast.error("Informe o nome do negócio");
+      return;
+    }
+    if (!pipeline || !stageId) {
+      toast.error("Selecione pipeline e estágio");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -154,13 +152,10 @@ export function CreateDealFromLeadDialog({
         resolvedContactId = ct?.id ?? null;
       }
 
-
       const numericValue = value ? Number(value) : 0;
       const stageEntry = pipeline.stages.find((s) => s.value === stageId);
       const legacyStage: "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost" =
-        stageEntry?.type === "won" ? "won"
-        : stageEntry?.type === "lost" ? "lost"
-        : "qualified";
+        stageEntry?.type === "won" ? "won" : stageEntry?.type === "lost" ? "lost" : "qualified";
       const { data: deal, error: de } = await supabase
         .from("deals")
         .insert({
@@ -192,7 +187,6 @@ export function CreateDealFromLeadDialog({
         })
         .eq("id", lead.id);
 
-
       toast.success("Negócio criado e lead qualificado");
       onCreated?.(deal!.id);
       onOpenChange(false);
@@ -217,10 +211,14 @@ export function CreateDealFromLeadDialog({
           <div className="space-y-1.5">
             <Label>Pipeline</Label>
             <Select value={pipelineId} onValueChange={setPipelineId}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
               <SelectContent>
                 {pipelines.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -228,10 +226,14 @@ export function CreateDealFromLeadDialog({
           <div className="space-y-1.5">
             <Label>Estágio</Label>
             <Select value={stageId} onValueChange={setStageId}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
               <SelectContent>
                 {(pipeline?.stages ?? []).map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -278,15 +280,22 @@ export function CreateDealFromLeadDialog({
             />
           </div>
 
-
           <div className="space-y-1.5">
             <Label>Valor</Label>
-            <Input type="number" min="0" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Moeda</Label>
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="BRL">BRL</SelectItem>
                 <SelectItem value="USD">USD</SelectItem>
@@ -297,24 +306,30 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5 col-span-2">
             <Label>Previsão de fechamento</Label>
-            <Input type="date" value={expectedClose} onChange={(e) => setExpectedClose(e.target.value)} />
+            <Input
+              type="date"
+              value={expectedClose}
+              onChange={(e) => setExpectedClose(e.target.value)}
+            />
           </div>
 
           <div className="space-y-1.5 col-span-2">
             <Label>Descrição</Label>
-            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
-          <Button
-            onClick={submit}
-            disabled={saving || !name.trim() || !pipelineId || !stageId}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={saving || !name.trim() || !pipelineId || !stageId}>
             {saving ? "Criando…" : "Criar negócio"}
           </Button>
-
         </DialogFooter>
       </DialogContent>
     </Dialog>

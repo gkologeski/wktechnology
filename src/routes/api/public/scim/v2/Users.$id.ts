@@ -11,7 +11,9 @@ export const Route = createFileRoute("/api/public/scim/v2/Users/$id")({
         if (!auth) return scimError(401, "Unauthorized");
         const { data } = await supabaseAdmin
           .from("team_members")
-          .select("member_user_id, created_at, profiles:profiles!team_members_member_user_id_fkey(id, full_name, email)")
+          .select(
+            "member_user_id, created_at, profiles:profiles!team_members_member_user_id_fkey(id, full_name, email)",
+          )
           .eq("workspace_owner_id", auth.workspaceId)
           .eq("member_user_id", params.id)
           .maybeSingle();
@@ -29,10 +31,14 @@ export const Route = createFileRoute("/api/public/scim/v2/Users/$id")({
       DELETE: async ({ request, params }) => {
         const auth = await authenticateScimRequest(request);
         if (!auth) return scimError(401, "Unauthorized");
-        await supabaseAdmin.from("team_members").delete()
+        await supabaseAdmin
+          .from("team_members")
+          .delete()
           .eq("workspace_owner_id", auth.workspaceId)
           .eq("member_user_id", params.id);
-        await supabaseAdmin.from("workspace_members").delete()
+        await supabaseAdmin
+          .from("workspace_members")
+          .delete()
           .eq("workspace_id", auth.workspaceId)
           .eq("user_id", params.id);
         return new Response(null, { status: 204 });
@@ -41,11 +47,17 @@ export const Route = createFileRoute("/api/public/scim/v2/Users/$id")({
         const auth = await authenticateScimRequest(request);
         if (!auth) return scimError(401, "Unauthorized");
         let body: any;
-        try { body = await request.json(); } catch { return scimError(400, "Invalid JSON"); }
+        try {
+          body = await request.json();
+        } catch {
+          return scimError(400, "Invalid JSON");
+        }
         const ops: any[] = body.Operations ?? [];
         const setActive = ops.find((o) => o.path === "active");
         if (setActive && setActive.value === false) {
-          await supabaseAdmin.from("team_members").delete()
+          await supabaseAdmin
+            .from("team_members")
+            .delete()
             .eq("workspace_owner_id", auth.workspaceId)
             .eq("member_user_id", params.id);
         }

@@ -35,11 +35,13 @@ export const getPublicMeeting = createServerFn({ method: "POST" })
 /** Registers a guest participant. No auth — protected by token validation. */
 export const registerPublicParticipant = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({
-      token: z.string().min(8).max(64),
-      display_name: z.string().min(1).max(120),
-      email: z.string().email().max(255).optional().nullable(),
-    }).parse(input),
+    z
+      .object({
+        token: z.string().min(8).max(64),
+        display_name: z.string().min(1).max(120),
+        email: z.string().email().max(255).optional().nullable(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const { data: m } = await supabaseAdmin
@@ -57,9 +59,13 @@ export const registerPublicParticipant = createServerFn({ method: "POST" })
       email: data.email ?? null,
     });
     // mark live on first join
-    await supabaseAdmin.from("meetings").update({
-      status: "live",
-      started_at: new Date().toISOString(),
-    }).eq("id", m.id).is("started_at", null);
+    await supabaseAdmin
+      .from("meetings")
+      .update({
+        status: "live",
+        started_at: new Date().toISOString(),
+      })
+      .eq("id", m.id)
+      .is("started_at", null);
     return { ok: true };
   });

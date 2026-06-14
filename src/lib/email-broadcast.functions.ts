@@ -24,7 +24,9 @@ export const listEmailBroadcasts = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await anyOf(context.supabase)
       .from("email_broadcasts")
-      .select("id, name, subject, status, total, sent, failed, rate_per_minute, scheduled_at, started_at, finished_at, segment_id, email_account_id, created_at, last_error")
+      .select(
+        "id, name, subject, status, total, sent, failed, rate_per_minute, scheduled_at, started_at, finished_at, segment_id, email_account_id, created_at, last_error",
+      )
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw error;
@@ -37,7 +39,10 @@ export const getEmailBroadcast = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sb = anyOf(context.supabase);
     const { data: b, error } = await sb
-      .from("email_broadcasts").select("*").eq("id", data.id).single();
+      .from("email_broadcasts")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error) throw error;
     const { data: recips } = await sb
       .from("email_broadcast_recipients")
@@ -95,7 +100,9 @@ export const deleteEmailBroadcast = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { error } = await anyOf(context.supabase)
-      .from("email_broadcasts").delete().eq("id", data.id);
+      .from("email_broadcasts")
+      .delete()
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -125,16 +132,20 @@ export const scheduleEmailBroadcast = createServerFn({ method: "POST" })
 export const setEmailBroadcastStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["paused", "running", "canceled"]),
-    }).parse(i),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["paused", "running", "canceled"]),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "canceled") patch.finished_at = new Date().toISOString();
     const { error } = await anyOf(context.supabase)
-      .from("email_broadcasts").update(patch).eq("id", data.id);
+      .from("email_broadcasts")
+      .update(patch)
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -142,13 +153,15 @@ export const setEmailBroadcastStatus = createServerFn({ method: "POST" })
 export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      subject: z.string().min(1),
-      body_html: z.string().optional().default(""),
-      body_text: z.string().optional().default(""),
-      to: z.string().email(),
-      email_account_id: z.string().uuid().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        subject: z.string().min(1),
+        body_html: z.string().optional().default(""),
+        body_text: z.string().optional().default(""),
+        to: z.string().email(),
+        email_account_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -47,7 +47,9 @@ function LeadDetail() {
     const { data } = await supabase.from("leads").select("*").eq("id", id).single();
     setLead(data as Lead | null);
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [id]);
 
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -56,8 +58,11 @@ function LeadDetail() {
       setCreateDealOpen(true);
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.from("leads").update({ status: v as any }).eq("id", lead.id);
+
+    await supabase
+      .from("leads")
+      .update({ status: v as any })
+      .eq("id", lead.id);
     void load();
   };
   const doDelete = async () => {
@@ -79,15 +84,25 @@ function LeadDetail() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-5 min-w-0">
           <Button variant="ghost" size="icon" asChild className="rounded-full">
-            <Link to="/leads"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link to="/leads">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </Button>
           <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20 border-4 border-card">
-            {(lead.first_name?.[0] ?? "?").toUpperCase()}{(lead.last_name?.[0] ?? "").toUpperCase()}
+            {(lead.first_name?.[0] ?? "?").toUpperCase()}
+            {(lead.last_name?.[0] ?? "").toUpperCase()}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-foreground truncate">{lead.first_name} {lead.last_name ?? ""}</h1>
-              <Badge variant="outline" className="rounded-full px-3 bg-primary/10 text-primary border-primary/20">Score: {lead.score ?? 0}</Badge>
+              <h1 className="text-2xl font-bold text-foreground truncate">
+                {lead.first_name} {lead.last_name ?? ""}
+              </h1>
+              <Badge
+                variant="outline"
+                className="rounded-full px-3 bg-primary/10 text-primary border-primary/20"
+              >
+                Score: {lead.score ?? 0}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground truncate mt-0.5">
               {lead.company_name && <span>{lead.company_name} · </span>}
@@ -96,20 +111,28 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => setConfirmDelete(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            onClick={() => setConfirmDelete(true)}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
       <StageTracker
-        stages={LEAD_STATUSES.map(s => ({ value: s.value, label: s.label }))}
+        stages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
         current={lead.status}
         onChange={setStatus}
         activeClassName={
-          lead.status === "contacted" ? "bg-black text-white" :
-          lead.status === "qualified" ? "bg-green-600 text-white" :
-          lead.status === "disqualified" ? "bg-red-600 text-white" :
-          undefined
+          lead.status === "contacted"
+            ? "bg-black text-white"
+            : lead.status === "qualified"
+              ? "bg-green-600 text-white"
+              : lead.status === "disqualified"
+                ? "bg-red-600 text-white"
+                : undefined
         }
       />
     </div>
@@ -121,7 +144,9 @@ function LeadDetail() {
         header={header}
         left={
           <PropertiesPanel
-            entity="leads" table="leads" row={lead as unknown as Record<string, unknown> & { id: string }}
+            entity="leads"
+            table="leads"
+            row={lead as unknown as Record<string, unknown> & { id: string }}
             props={[
               { key: "first_name", label: "Nome", primary: true },
               { key: "last_name", label: "Sobrenome", primary: true },
@@ -166,7 +191,11 @@ function LeadDetail() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={doDelete} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={doDelete}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {busy ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>

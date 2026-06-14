@@ -41,7 +41,9 @@ type Props = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{title}</h3>
+      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+        {title}
+      </h3>
       <div className="space-y-4">{children}</div>
     </section>
   );
@@ -59,20 +61,39 @@ export function ControlsPanel({ form, set }: Props) {
         </div>
         <div className="space-y-2">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Logo (URL)</Label>
-          <Input value={form.logo_url} onChange={(e) => set("logo_url", e.target.value)} placeholder="https://" />
+          <Input
+            value={form.logo_url}
+            onChange={(e) => set("logo_url", e.target.value)}
+            placeholder="https://"
+          />
         </div>
         <div className="space-y-2">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Favicon (URL)</Label>
-          <Input value={form.favicon_url} onChange={(e) => set("favicon_url", e.target.value)} placeholder="https://" />
+          <Input
+            value={form.favicon_url}
+            onChange={(e) => set("favicon_url", e.target.value)}
+            placeholder="https://"
+          />
         </div>
       </Section>
 
       <Section title="Sistema de cores">
-        <ColorControl label="Primária" value={form.primary_color} onChange={(v) => set("primary_color", v)} />
-        <ColorControl label="Destaque (accent)" value={form.accent_color} onChange={(v) => set("accent_color", v)} />
+        <ColorControl
+          label="Primária"
+          value={form.primary_color}
+          onChange={(v) => set("primary_color", v)}
+        />
+        <ColorControl
+          label="Destaque (accent)"
+          value={form.accent_color}
+          onChange={(v) => set("accent_color", v)}
+        />
         <PalettePresets
           activePrimary={form.primary_color}
-          onPick={(p, a) => { set("primary_color", p); set("accent_color", a); }}
+          onPick={(p, a) => {
+            set("primary_color", p);
+            set("accent_color", a);
+          }}
         />
       </Section>
 
@@ -119,7 +140,11 @@ export function ControlsPanel({ form, set }: Props) {
             onChange={(e) => set("heading_font", e.target.value)}
             className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
           >
-            {FONTS.map((f) => <option key={f.label} value={f.value}>{f.label}</option>)}
+            {FONTS.map((f) => (
+              <option key={f.label} value={f.value}>
+                {f.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -130,23 +155,40 @@ export function ControlsPanel({ form, set }: Props) {
             onChange={(e) => set("body_font", e.target.value)}
             className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
           >
-            {FONTS.map((f) => <option key={f.label} value={f.value}>{f.label}</option>)}
+            {FONTS.map((f) => (
+              <option key={f.label} value={f.value}>
+                {f.label}
+              </option>
+            ))}
           </select>
         </div>
       </Section>
 
       <Section title="Contato & domínio">
         <div className="space-y-2">
-          <Label className="text-[11px] font-bold uppercase tracking-wide">Domínio customizado</Label>
-          <Input value={form.custom_domain} onChange={(e) => set("custom_domain", e.target.value)} placeholder="crm.suaempresa.com" />
+          <Label className="text-[11px] font-bold uppercase tracking-wide">
+            Domínio customizado
+          </Label>
+          <Input
+            value={form.custom_domain}
+            onChange={(e) => set("custom_domain", e.target.value)}
+            placeholder="crm.suaempresa.com"
+          />
         </div>
         <div className="space-y-2">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Email de suporte</Label>
-          <Input value={form.support_email} onChange={(e) => set("support_email", e.target.value)} />
+          <Input
+            value={form.support_email}
+            onChange={(e) => set("support_email", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Rodapé</Label>
-          <Textarea rows={3} value={form.footer_text} onChange={(e) => set("footer_text", e.target.value)} />
+          <Textarea
+            rows={3}
+            value={form.footer_text}
+            onChange={(e) => set("footer_text", e.target.value)}
+          />
         </div>
       </Section>
     </div>

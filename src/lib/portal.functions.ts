@@ -25,7 +25,7 @@ export const listPortalContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabaseAdmin
       .from("contacts")
       .select("id, first_name, last_name, email, portal_enabled, portal_token")
@@ -39,14 +39,16 @@ export const listPortalContacts = createServerFn({ method: "GET" })
 export const togglePortalAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      contactId: z.string().uuid(),
-      enabled: z.boolean(),
-    }).parse(input),
+    z
+      .object({
+        contactId: z.string().uuid(),
+        enabled: z.boolean(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
     const patch: { portal_enabled: boolean; portal_token?: string } = {
       portal_enabled: data.enabled,
@@ -75,7 +77,7 @@ export const regeneratePortalToken = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ contactId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
-      const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
     const token = randomBytes(24).toString("hex");
     const { error } = await supabaseAdmin
@@ -132,12 +134,14 @@ export const listPortalTickets = createServerFn({ method: "GET" })
 
 export const createPortalTicket = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({
-      token: tokenSchema,
-      subject: z.string().min(2).max(200),
-      description: z.string().max(5000).optional(),
-      priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-    }).parse(input),
+    z
+      .object({
+        token: tokenSchema,
+        subject: z.string().min(2).max(200),
+        description: z.string().max(5000).optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const contact = await loadContactByToken(data.token);

@@ -59,7 +59,11 @@ export function useRelatedIds({ contactId, companyId, dealId }: RelatedFormState
         const [{ data: cs }, { data: ds }] = await Promise.all([
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any).from("contacts").select("id").eq("company_id", companyId).limit(50),
-          supabase.from("deals").select("id, primary_contact_id").eq("company_id", companyId).limit(50),
+          supabase
+            .from("deals")
+            .select("id, primary_contact_id")
+            .eq("company_id", companyId)
+            .limit(50),
         ]);
         (cs ?? []).forEach((r: { id: string }) => contacts.add(r.id));
         (ds ?? []).forEach((r) => {
@@ -72,7 +76,11 @@ export function useRelatedIds({ contactId, companyId, dealId }: RelatedFormState
       if (dealId) {
         deals.add(dealId);
         const [{ data: d }, { data: dc2 }] = await Promise.all([
-          supabase.from("deals").select("company_id, primary_contact_id").eq("id", dealId).maybeSingle(),
+          supabase
+            .from("deals")
+            .select("company_id, primary_contact_id")
+            .eq("id", dealId)
+            .maybeSingle(),
           supabase.from("deal_contacts").select("contact_id").eq("deal_id", dealId),
         ]);
         if (d?.company_id) companies.add(d.company_id as string);

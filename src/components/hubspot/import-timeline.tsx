@@ -6,11 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Play, StopCircle } from "lucide-react";
 import { toast } from "sonner";
-import { resumeHubspotImport, tickHubspotImportJob, cancelHubspotImport } from "@/lib/integrations/hubspot.functions";
+import {
+  resumeHubspotImport,
+  tickHubspotImportJob,
+  cancelHubspotImport,
+} from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
 
-type StepLog = { ts: string; level: "info" | "warn" | "error"; step: string; message: string; count?: number };
+type StepLog = {
+  ts: string;
+  level: "info" | "warn" | "error";
+  step: string;
+  message: string;
+  count?: number;
+};
 
 type Job = {
   id: string;
@@ -50,7 +60,14 @@ type Item = {
   after: { succeeded?: number; failed?: number; finished_at?: string } | null;
 };
 
-const KNOWN_STEPS: CounterStep[] = ["companies", "contacts", "deals", "leads", "tickets", "activities"];
+const KNOWN_STEPS: CounterStep[] = [
+  "companies",
+  "contacts",
+  "deals",
+  "leads",
+  "tickets",
+  "activities",
+];
 
 function fmtElapsed(startedAt: string | null, finishedAt: string | null): string {
   if (!startedAt) return "00:00:00";
@@ -97,16 +114,24 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     const loadSnapshot = async () => {
       const { data: j } = await supabase
         .from("enrichment_jobs")
-        .select("id,status,succeeded,failed,processed,total,error,step_logs,finished_at,started_at,scope")
+        .select(
+          "id,status,succeeded,failed,processed,total,error,step_logs,finished_at,started_at,scope",
+        )
         .eq("id", jobId)
         .single();
       if (active && j) setJob(j as unknown as Job);
       const { data: its } = await supabase
         .from("enrichment_job_items")
-        .select("id,status,step:before->>step,order:before->>order,depends_on:before->depends_on,started_at:before->>started_at,running_succeeded:before->>running_succeeded,running_failed:before->>running_failed,discovered:before->>discovered,after_succeeded:after->>succeeded,after_failed:after->>failed,after_finished_at:after->>finished_at")
+        .select(
+          "id,status,step:before->>step,order:before->>order,depends_on:before->depends_on,started_at:before->>started_at,running_succeeded:before->>running_succeeded,running_failed:before->>running_failed,discovered:before->>discovered,after_succeeded:after->>succeeded,after_failed:after->>failed,after_finished_at:after->>finished_at",
+        )
         .eq("job_id", jobId);
       if (active && its)
-        setItems((its as unknown as Item[]).map(normalizeItem).sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)));
+        setItems(
+          (its as unknown as Item[])
+            .map(normalizeItem)
+            .sort((a, b) => (a.before?.order ?? 0) - (b.before?.order ?? 0)),
+        );
     };
     void loadSnapshot();
 
@@ -135,7 +160,12 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "enrichment_job_items", filter: `job_id=eq.${jobId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "enrichment_job_items",
+          filter: `job_id=eq.${jobId}`,
+        },
         () => scheduleSnapshot(),
       )
       .subscribe();
@@ -210,7 +240,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   if (liveSucceeded > highWaterRef.current.succeeded) {
     highWaterRef.current.succeeded = liveSucceeded;
   }
-  const displaySucceeded = Math.max(job?.succeeded ?? 0, liveSucceeded, highWaterRef.current.succeeded);
+  const displaySucceeded = Math.max(
+    job?.succeeded ?? 0,
+    liveSucceeded,
+    highWaterRef.current.succeeded,
+  );
   const displayFailed = Math.max(job?.failed ?? 0, liveFailed);
 
   // Progresso ponderado por registros: cada etapa contribui com sua fração
@@ -235,7 +269,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }
   const progress = Math.max(rawProgress, highWaterRef.current.progress);
   const stableProcessed = Math.max(job?.processed ?? 0, highWaterRef.current.processed);
-  const elapsed = fmtElapsed(job?.started_at ?? null, finished ? job?.finished_at ?? null : null);
+  const elapsed = fmtElapsed(job?.started_at ?? null, finished ? (job?.finished_at ?? null) : null);
 
   // Build counter cards in the canonical order — only for steps present in the plan
   const counters: LiveCounterProps[] = useMemo(() => {
@@ -259,8 +293,14 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
           ...(base.before ?? { step: "activities", order: 4 }),
           step: "activities",
           discovered: activityItems.reduce((acc, it) => acc + (it.before?.discovered ?? 0), 0),
-          running_succeeded: activityItems.reduce((acc, it) => acc + (it.before?.running_succeeded ?? 0), 0),
-          running_failed: activityItems.reduce((acc, it) => acc + (it.before?.running_failed ?? 0), 0),
+          running_succeeded: activityItems.reduce(
+            (acc, it) => acc + (it.before?.running_succeeded ?? 0),
+            0,
+          ),
+          running_failed: activityItems.reduce(
+            (acc, it) => acc + (it.before?.running_failed ?? 0),
+            0,
+          ),
         },
         after: {
           succeeded: activityItems.reduce((acc, it) => acc + (it.after?.succeeded ?? 0), 0),
@@ -285,7 +325,9 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
     setContinuing(true);
     try {
       await resumeFn({ data: { jobId } });
-      setJob((prev) => (prev ? { ...prev, status: "queued", error: null, finished_at: null } : prev));
+      setJob((prev) =>
+        prev ? { ...prev, status: "queued", error: null, finished_at: null } : prev,
+      );
       void tickFn({ data: { jobId } });
       toast.success("Importação retomada do último ponto salvo");
     } catch (e) {
@@ -296,7 +338,8 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }
 
   async function handleCancel() {
-    if (!window.confirm("Cancelar a importação em andamento? Você poderá retomá-la depois.")) return;
+    if (!window.confirm("Cancelar a importação em andamento? Você poderá retomá-la depois."))
+      return;
     setCancelling(true);
     try {
       await cancelFn({ data: { jobId } });
@@ -320,7 +363,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
           </div>
           <Badge
             variant={
-              job?.status === "done" ? "default" : job?.status === "failed" ? "destructive" : "secondary"
+              job?.status === "done"
+                ? "default"
+                : job?.status === "failed"
+                  ? "destructive"
+                  : "secondary"
             }
           >
             {job?.status ?? "iniciando"}
@@ -336,7 +383,11 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             <div className="flex items-center gap-2">
               {canContinue && (
                 <Button size="sm" onClick={() => void handleContinue()} disabled={continuing}>
-                  {continuing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                  {continuing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 h-4 w-4" />
+                  )}
                   Continuar importação
                 </Button>
               )}
@@ -372,7 +423,10 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
             const ok = it.after?.succeeded ?? it.before?.running_succeeded ?? 0;
             const fail = it.after?.failed ?? it.before?.running_failed ?? 0;
             return (
-              <li key={it.id} className="flex items-center gap-3 p-3 rounded-md border bg-background">
+              <li
+                key={it.id}
+                className="flex items-center gap-3 p-3 rounded-md border bg-background"
+              >
                 <StatusIcon status={it.status} />
                 <div className="flex-1">
                   <p className="font-medium text-sm capitalize">{it.before?.step ?? "—"}</p>

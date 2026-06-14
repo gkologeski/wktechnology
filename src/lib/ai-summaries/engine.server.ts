@@ -23,29 +23,40 @@ const RELATED_KEY: Partial<Record<Entity, string>> = {
   deal: "related_deal_id",
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveContactId(entity: Entity, entityId: string): Promise<string | null> {
   if (entity === "contact") return entityId;
   if (entity === "deal") {
     const { data } = await supabaseAdmin
-      .from("deals").select("primary_contact_id").eq("id", entityId).maybeSingle();
+      .from("deals")
+      .select("primary_contact_id")
+      .eq("id", entityId)
+      .maybeSingle();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data as any)?.primary_contact_id ?? null;
   }
   if (entity === "ticket") {
     const { data } = await supabaseAdmin
-      .from("tickets").select("contact_id").eq("id", entityId).maybeSingle();
+      .from("tickets")
+      .select("contact_id")
+      .eq("id", entityId)
+      .maybeSingle();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data as any)?.contact_id ?? null;
   }
   const { data: lead } = await supabaseAdmin
-    .from("leads").select("email, converted_contact_id").eq("id", entityId).maybeSingle();
+    .from("leads")
+    .select("email, converted_contact_id")
+    .eq("id", entityId)
+    .maybeSingle();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const l = lead as any;
   if (l?.converted_contact_id) return l.converted_contact_id;
   if (l?.email) {
     const { data: c } = await supabaseAdmin
-      .from("contacts").select("id").eq("email", l.email).maybeSingle();
+      .from("contacts")
+      .select("id")
+      .eq("email", l.email)
+      .maybeSingle();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (c as any)?.id ?? null;
   }
@@ -76,7 +87,7 @@ async function collectMessages(
   }
   const { data: acts } = await q;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const a of ((acts ?? []) as any[])) {
+  for (const a of (acts ?? []) as any[]) {
     if (kind === "call" && a.type !== "call" && a.type !== "meeting") continue;
     const body = [a.subject, a.body].filter(Boolean).join(" — ");
     if (!body) continue;
@@ -93,7 +104,9 @@ async function collectMessages(
     const contactId = await resolveContactId(entity, entityId);
     if (contactId) {
       const { data: convs } = await supabaseAdmin
-        .from("whatsapp_conversations").select("id").eq("contact_id", contactId);
+        .from("whatsapp_conversations")
+        .select("id")
+        .eq("contact_id", contactId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const convIds = ((convs ?? []) as any[]).map((c) => c.id);
       if (convIds.length > 0) {
@@ -105,7 +118,7 @@ async function collectMessages(
           .order("created_at", { ascending: true })
           .limit(300);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for (const m of ((wa ?? []) as any[])) {
+        for (const m of (wa ?? []) as any[]) {
           if (!m.body) continue;
           msgs.push({
             at: m.created_at,
@@ -123,12 +136,14 @@ async function collectMessages(
 }
 
 function buildPrompt(msgs: Msg[], kind: Kind): string {
-  const lines = msgs.map((m) =>
-    `[${new Date(m.at).toLocaleString("pt-BR")}] (${m.channel}/${m.direction}) ${m.who}: ${m.text.slice(0, 800)}`
+  const lines = msgs.map(
+    (m) =>
+      `[${new Date(m.at).toLocaleString("pt-BR")}] (${m.channel}/${m.direction}) ${m.who}: ${m.text.slice(0, 800)}`,
   );
-  const header = kind === "call"
-    ? "Você é um analista de vendas. Resuma as ligações/reuniões abaixo."
-    : "Você é um analista de vendas. Resuma a conversa multi-canal abaixo.";
+  const header =
+    kind === "call"
+      ? "Você é um analista de vendas. Resuma as ligações/reuniões abaixo."
+      : "Você é um analista de vendas. Resuma a conversa multi-canal abaixo.";
   return `${header}
 Responda APENAS em JSON válido com este schema:
 {
@@ -160,16 +175,24 @@ async function callAi(prompt: string) {
   if (!res.ok) throw new Error(`AI Gateway ${res.status}`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = j.choices?.[0]?.message?.content ?? "";
-  const jsonStr = raw.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim();
+  const jsonStr = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/, "")
+    .replace(/```$/, "")
+    .trim();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let parsed: any = {};
-  try { parsed = JSON.parse(jsonStr); } catch {
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
     parsed = { summary: raw.slice(0, 600), key_points: [], next_actions: [], sentiment: "neutro" };
   }
   return {
     summary: String(parsed.summary ?? "").slice(0, 4000),
     key_points: Array.isArray(parsed.key_points) ? parsed.key_points.slice(0, 12).map(String) : [],
-    next_actions: Array.isArray(parsed.next_actions) ? parsed.next_actions.slice(0, 12).map(String) : [],
+    next_actions: Array.isArray(parsed.next_actions)
+      ? parsed.next_actions.slice(0, 12).map(String)
+      : [],
     sentiment: String(parsed.sentiment ?? "neutro"),
   };
 }
@@ -194,7 +217,7 @@ async function findCandidates(lookbackHours: number, limit: number): Promise<Can
     .limit(500);
   const seen = new Map<string, Candidate>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const a of ((acts ?? []) as any[])) {
+  for (const a of (acts ?? []) as any[]) {
     const pairs: Array<[Entity, string | null]> = [
       ["lead", a.related_lead_id],
       ["contact", a.related_contact_id],
@@ -204,7 +227,12 @@ async function findCandidates(lookbackHours: number, limit: number): Promise<Can
       if (!id) continue;
       const key = `${entity}:${id}`;
       if (seen.has(key)) continue;
-      seen.set(key, { owner_id: a.owner_id, entity, entity_id: id, last_activity_at: a.created_at });
+      seen.set(key, {
+        owner_id: a.owner_id,
+        entity,
+        entity_id: id,
+        last_activity_at: a.created_at,
+      });
       if (seen.size >= limit * 4) break;
     }
   }
@@ -258,11 +286,19 @@ async function summarizeOne(c: Candidate): Promise<"ok" | "skipped" | "error"> {
   }
 }
 
-export async function tickAiSummaries(batch = 10, lookbackHours = 6): Promise<{
-  processed: number; skipped: number; errors: number; candidates: number;
+export async function tickAiSummaries(
+  batch = 10,
+  lookbackHours = 6,
+): Promise<{
+  processed: number;
+  skipped: number;
+  errors: number;
+  candidates: number;
 }> {
   const cands = await findCandidates(lookbackHours, batch);
-  let processed = 0, skipped = 0, errors = 0;
+  let processed = 0,
+    skipped = 0,
+    errors = 0;
   for (const c of cands) {
     const r = await summarizeOne(c);
     if (r === "ok") processed++;

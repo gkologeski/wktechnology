@@ -17,7 +17,10 @@ type Json = Record<string, unknown>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const admin = supabaseAdmin as any;
 
-async function getGmailAccount(ownerId: string, accountId: string | null): Promise<EmailAccountRow | null> {
+async function getGmailAccount(
+  ownerId: string,
+  accountId: string | null,
+): Promise<EmailAccountRow | null> {
   let q = admin
     .from("email_accounts")
     .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
@@ -40,7 +43,11 @@ function buildUnsubscribeLink(token: string, baseUrl: string) {
   return `${baseUrl}/api/public/email/unsubscribe/${token}`;
 }
 
-function appendUnsubFooter(html: string | null | undefined, text: string | null | undefined, unsubUrl: string) {
+function appendUnsubFooter(
+  html: string | null | undefined,
+  text: string | null | undefined,
+  unsubUrl: string,
+) {
   const safeHtml = (html ?? "").trim();
   const safeText = (text ?? "").trim();
   const footerHtml = `<hr style="margin-top:32px;border:none;border-top:1px solid #eaeaea"/><p style="color:#888;font-size:12px;margin-top:12px">Não quer mais receber estes emails? <a href="${unsubUrl}">Cancelar inscrição</a>.</p>`;
@@ -51,7 +58,9 @@ function appendUnsubFooter(html: string | null | undefined, text: string | null 
   };
 }
 
-export async function resolveBroadcastRecipients(broadcastId: string): Promise<{ added: number; skipped: number }> {
+export async function resolveBroadcastRecipients(
+  broadcastId: string,
+): Promise<{ added: number; skipped: number }> {
   const { data: b, error: bErr } = await admin
     .from("email_broadcasts")
     .select("id, owner_id, segment_id")
@@ -62,7 +71,13 @@ export async function resolveBroadcastRecipients(broadcastId: string): Promise<{
   // limpar existentes pendentes
   await admin.from("email_broadcast_recipients").delete().eq("broadcast_id", broadcastId);
 
-  const list: Array<{ email: string; name: string | null; contact_id: string | null; lead_id: string | null; variables: Json }> = [];
+  const list: Array<{
+    email: string;
+    name: string | null;
+    contact_id: string | null;
+    lead_id: string | null;
+    variables: Json;
+  }> = [];
 
   if (b.segment_id) {
     const { data: seg } = await admin
@@ -71,7 +86,12 @@ export async function resolveBroadcastRecipients(broadcastId: string): Promise<{
       .eq("id", b.segment_id)
       .single();
     if (!seg) throw new Error("Segmento não encontrado");
-    if (seg.entity !== "lead" && seg.entity !== "contact" && seg.entity !== "leads" && seg.entity !== "contacts") {
+    if (
+      seg.entity !== "lead" &&
+      seg.entity !== "contact" &&
+      seg.entity !== "leads" &&
+      seg.entity !== "contacts"
+    ) {
       throw new Error("Segmento deve ser de leads ou contatos");
     }
     const { data: members } = await admin
@@ -121,8 +141,14 @@ export async function resolveBroadcastRecipients(broadcastId: string): Promise<{
   // dedupe por email
   const seen = new Set<string>();
   const rows = [] as Array<{
-    broadcast_id: string; owner_id: string; email: string; name: string | null;
-    contact_id: string | null; lead_id: string | null; variables: Json; status: "pending" | "unsubscribed";
+    broadcast_id: string;
+    owner_id: string;
+    email: string;
+    name: string | null;
+    contact_id: string | null;
+    lead_id: string | null;
+    variables: Json;
+    status: "pending" | "unsubscribed";
   }>;
   let skipped = 0;
   for (const r of list) {
@@ -148,10 +174,7 @@ export async function resolveBroadcastRecipients(broadcastId: string): Promise<{
     const { error } = await admin.from("email_broadcast_recipients").insert(slice);
     if (error) throw error;
   }
-  await admin
-    .from("email_broadcasts")
-    .update({ total: rows.length })
-    .eq("id", broadcastId);
+  await admin.from("email_broadcasts").update({ total: rows.length }).eq("id", broadcastId);
 
   return { added: rows.filter((r) => r.status === "pending").length, skipped };
 }
@@ -190,7 +213,9 @@ async function ensureUnsubToken(ownerId: string, email: string): Promise<string>
   return token;
 }
 
-export async function tickEmailBroadcasts(limit = 5): Promise<{ processed: number; sent: number; failed: number }> {
+export async function tickEmailBroadcasts(
+  limit = 5,
+): Promise<{ processed: number; sent: number; failed: number }> {
   const nowIso = new Date().toISOString();
   const { data: due, error } = await admin
     .from("email_broadcasts")
@@ -201,7 +226,9 @@ export async function tickEmailBroadcasts(limit = 5): Promise<{ processed: numbe
     .limit(limit);
   if (error) throw error;
 
-  let processed = 0, sent = 0, failed = 0;
+  let processed = 0,
+    sent = 0,
+    failed = 0;
   for (const b of (due ?? []) as { id: string }[]) {
     const r = await processBroadcast(b.id).catch((e) => {
       console.error("[email-broadcast-tick]", b.id, e);
@@ -233,7 +260,11 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
   if (!account) {
     await admin
       .from("email_broadcasts")
-      .update({ status: "failed", last_error: "Nenhuma conta Gmail conectada", finished_at: new Date().toISOString() })
+      .update({
+        status: "failed",
+        last_error: "Nenhuma conta Gmail conectada",
+        finished_at: new Date().toISOString(),
+      })
       .eq("id", b.id);
     return { sent: 0, failed: 0 };
   }
@@ -246,7 +277,12 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     .eq("status", "pending")
     .limit(batchSize);
 
-  const list = (recips ?? []) as Array<{ id: string; email: string; name: string | null; variables: Record<string, string> }>;
+  const list = (recips ?? []) as Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    variables: Record<string, string>;
+  }>;
   if (list.length === 0) {
     // verifica se ainda há pendentes
     const { count } = await admin
@@ -263,7 +299,9 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     return { sent: 0, failed: 0 };
   }
 
-  const baseUrl = process.env.PUBLIC_APP_URL || "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
+  const baseUrl =
+    process.env.PUBLIC_APP_URL ||
+    "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
 
   let accessToken: string;
   try {
@@ -277,7 +315,8 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     return { sent: 0, failed: 0 };
   }
 
-  let sent = 0, failed = 0;
+  let sent = 0,
+    failed = 0;
   for (const r of list) {
     try {
       const vars = { ...(r.variables ?? {}), name: r.name ?? "" };
@@ -342,7 +381,10 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
   return { sent, failed };
 }
 
-export async function recordUnsubscribe(token: string, reason?: string): Promise<{ email: string } | null> {
+export async function recordUnsubscribe(
+  token: string,
+  reason?: string,
+): Promise<{ email: string } | null> {
   const { data: row } = await admin
     .from("email_unsubscribes")
     .select("id, owner_id, email")

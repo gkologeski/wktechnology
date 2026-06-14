@@ -19,7 +19,7 @@ const FilterNodeSchema: z.ZodType = z.lazy(() =>
       op: z.string(),
       value: z.unknown().optional(),
     }),
-  ])
+  ]),
 );
 
 export const listSegments = createServerFn({ method: "GET" })
@@ -47,7 +47,7 @@ export const upsertSegment = createServerFn({ method: "POST" })
         enabled: z.boolean().optional(),
         refresh_interval_minutes: z.number().int().min(5).max(1440).optional(),
       })
-      .parse(input)
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -70,11 +70,7 @@ export const upsertSegment = createServerFn({ method: "POST" })
       if (error) throw error;
       return { segment: row };
     }
-    const { data: row, error } = await supabase
-      .from("segments")
-      .insert(payload)
-      .select()
-      .single();
+    const { data: row, error } = await supabase.from("segments").insert(payload).select().single();
     if (error) throw error;
     return { segment: row };
   });
@@ -91,10 +87,12 @@ export const deleteSegment = createServerFn({ method: "POST" })
 export const listSegmentMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      segmentId: z.string().uuid(),
-      limit: z.number().int().min(1).max(500).optional(),
-    }).parse(input)
+    z
+      .object({
+        segmentId: z.string().uuid(),
+        limit: z.number().int().min(1).max(500).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -148,10 +146,12 @@ export const refreshSegmentNow = createServerFn({ method: "POST" })
 export const addStaticMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      segmentId: z.string().uuid(),
-      entityIds: z.array(z.string().uuid()).min(1).max(5000),
-    }).parse(input)
+    z
+      .object({
+        segmentId: z.string().uuid(),
+        entityIds: z.array(z.string().uuid()).min(1).max(5000),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -174,10 +174,12 @@ export const addStaticMembers = createServerFn({ method: "POST" })
 export const removeStaticMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      segmentId: z.string().uuid(),
-      entityId: z.string().uuid(),
-    }).parse(input)
+    z
+      .object({
+        segmentId: z.string().uuid(),
+        entityId: z.string().uuid(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;

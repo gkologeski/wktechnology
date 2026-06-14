@@ -3,7 +3,11 @@ function escapeCell(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "object") {
-    try { return JSON.stringify(value); } catch { return String(value); }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
   }
   const s = String(value);
   if (/[",\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -24,9 +28,7 @@ export function exportRowsToCsv<T extends Record<string, unknown>>(
     }
   }
 
-  const cols: CsvColumn<T>[] =
-    columns ??
-    Object.keys(rows[0] ?? {}).map((k) => ({ key: k }));
+  const cols: CsvColumn<T>[] = columns ?? Object.keys(rows[0] ?? {}).map((k) => ({ key: k }));
 
   const header = cols.map((c) => escapeCell(c.label ?? c.key)).join(",");
   const body = rows

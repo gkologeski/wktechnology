@@ -121,7 +121,7 @@ export const deleteBugReport = createServerFn({ method: "POST" })
     const toRemove: string[] = [];
     if (row?.recording_path) toRemove.push(row.recording_path as string);
     if (Array.isArray((row as { image_paths?: string[] } | null)?.image_paths)) {
-      toRemove.push(...((row as { image_paths: string[] }).image_paths));
+      toRemove.push(...(row as { image_paths: string[] }).image_paths);
     }
     if (toRemove.length > 0) {
       await supabaseAdmin.storage.from("bug-reports").remove(toRemove);

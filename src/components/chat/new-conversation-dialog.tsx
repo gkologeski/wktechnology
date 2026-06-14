@@ -3,7 +3,14 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,10 +38,7 @@ export function NewConversationDialog({
   const dmFn = useServerFn(getOrCreateDM);
   const groupFn = useServerFn(createGroup);
 
-  const others = useMemo(
-    () => members.filter((m) => m.user_id !== user?.id),
-    [members, user?.id],
-  );
+  const others = useMemo(() => members.filter((m) => m.user_id !== user?.id), [members, user?.id]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return others;
@@ -64,7 +68,13 @@ export function NewConversationDialog({
         const res = await dmFn({ data: { other_user_id: ids[0] } });
         return res.conversation_id;
       }
-      const title = groupTitle.trim() || ids.map((id) => members.find((m) => m.user_id === id)?.full_name || "").filter(Boolean).slice(0, 3).join(", ");
+      const title =
+        groupTitle.trim() ||
+        ids
+          .map((id) => members.find((m) => m.user_id === id)?.full_name || "")
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(", ");
       const res = await groupFn({ data: { title, member_user_ids: ids } });
       return res.conversation_id;
     },
@@ -76,7 +86,13 @@ export function NewConversationDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) reset();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Nova conversa</DialogTitle>
@@ -85,17 +101,28 @@ export function NewConversationDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <Input placeholder="Buscar membro…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            placeholder="Buscar membro…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <ScrollArea className="h-64 border rounded">
             <ul className="divide-y">
               {filtered.length === 0 && (
-                <li className="p-3 text-sm text-muted-foreground text-center">Nenhum membro encontrado.</li>
+                <li className="p-3 text-sm text-muted-foreground text-center">
+                  Nenhum membro encontrado.
+                </li>
               )}
               {filtered.map((m) => (
                 <li key={m.user_id}>
                   <label className="flex items-center gap-3 p-2.5 hover:bg-muted/50 cursor-pointer">
-                    <Checkbox checked={selected.has(m.user_id)} onCheckedChange={() => toggle(m.user_id)} />
-                    <span className="text-sm flex-1 truncate">{m.full_name || m.user_id.slice(0, 8)}</span>
+                    <Checkbox
+                      checked={selected.has(m.user_id)}
+                      onCheckedChange={() => toggle(m.user_id)}
+                    />
+                    <span className="text-sm flex-1 truncate">
+                      {m.full_name || m.user_id.slice(0, 8)}
+                    </span>
                   </label>
                 </li>
               ))}
@@ -104,14 +131,28 @@ export function NewConversationDialog({
           {selected.size >= 2 && (
             <div className="space-y-1">
               <Label htmlFor="g-title">Nome do grupo (opcional)</Label>
-              <Input id="g-title" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} placeholder="Ex: Squad Vendas" />
+              <Input
+                id="g-title"
+                value={groupTitle}
+                onChange={(e) => setGroupTitle(e.target.value)}
+                placeholder="Ex: Squad Vendas"
+              />
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => create.mutate()} disabled={create.isPending || selected.size === 0}>
-            {create.isPending ? "Criando…" : selected.size >= 2 ? "Criar grupo" : "Iniciar conversa"}
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => create.mutate()}
+            disabled={create.isPending || selected.size === 0}
+          >
+            {create.isPending
+              ? "Criando…"
+              : selected.size >= 2
+                ? "Criar grupo"
+                : "Iniciar conversa"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -14,7 +14,9 @@ export function BulkActionBar({ count, onClear, children }: BulkActionBarProps) 
       <Button variant="ghost" size="icon" onClick={onClear} aria-label="Limpar seleção">
         <X className="h-4 w-4" />
       </Button>
-      <span className="text-sm font-medium">{count} selecionado{count === 1 ? "" : "s"}</span>
+      <span className="text-sm font-medium">
+        {count} selecionado{count === 1 ? "" : "s"}
+      </span>
       <div className="ml-auto flex flex-wrap gap-2">{children}</div>
     </div>
   );

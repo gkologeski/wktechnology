@@ -24,14 +24,15 @@ const SCRIPT = `(function(){
 export const Route = createFileRoute("/api/public/widget/script")({
   server: {
     handlers: {
-      GET: async () => new Response(SCRIPT, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/javascript; charset=utf-8",
-          "Cache-Control": "public, max-age=300",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }),
+      GET: async () =>
+        new Response(SCRIPT, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/javascript; charset=utf-8",
+            "Cache-Control": "public, max-age=300",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }),
     },
   },
 });

@@ -42,12 +42,18 @@ export function BugReportResolutionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!saving) onOpenChange(v);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Resolução do chamado</DialogTitle>
           <DialogDescription>
-            Descreva a resolução aplicada. O texto será exibido junto à mensagem de mudança de status para quem abriu o chamado.
+            Descreva a resolução aplicada. O texto será exibido junto à mensagem de mudança de
+            status para quem abriu o chamado.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5 py-2">

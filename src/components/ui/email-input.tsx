@@ -3,7 +3,10 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { isEmail } from "@/lib/validators";
 
-export type EmailInputProps = Omit<React.ComponentProps<typeof Input>, "type" | "onChange" | "value"> & {
+export type EmailInputProps = Omit<
+  React.ComponentProps<typeof Input>,
+  "type" | "onChange" | "value"
+> & {
   value: string;
   onChange: (v: string) => void;
   /** Show validation message after first blur. Defaults to true. */
@@ -30,7 +33,10 @@ export const EmailInput = React.forwardRef<HTMLInputElement, EmailInputProps>(
           spellCheck={false}
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value.replace(/\s+/g, ""))}
-          onBlur={(e) => { setTouched(true); onBlur?.(e); }}
+          onBlur={(e) => {
+            setTouched(true);
+            onBlur?.(e);
+          }}
           aria-invalid={err || undefined}
           className={cn(err && "border-destructive focus-visible:ring-destructive", className)}
           {...rest}

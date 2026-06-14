@@ -79,7 +79,9 @@ function normalize(l: HSLead) {
 
 export const previewHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input),
+  )
   .handler(async ({ data }) => {
     const result = await fetchHubspotLeads(data.limit);
     return { contacts: result.results.map(normalize) };
@@ -87,7 +89,9 @@ export const previewHubspotLeads = createServerFn({ method: "POST" })
 
 export const importHubspotLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ maxRecords: z.number().min(1).max(20000).default(200) }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ maxRecords: z.number().min(1).max(20000).default(200) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let imported = 0;

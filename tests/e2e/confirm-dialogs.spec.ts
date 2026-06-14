@@ -40,7 +40,7 @@ test("AlertDialog de exclusão na tela de detalhes do lead", async ({
   await page.goto(`/leads/${id}`);
 
   // Botão lixeira no header
-  await page.locator('button:has(svg.lucide-trash-2)').first().click();
+  await page.locator("button:has(svg.lucide-trash-2)").first().click();
   const dlg = page.getByRole("alertdialog");
   await expect(dlg.getByText(/excluir lead/i)).toBeVisible();
 
@@ -49,8 +49,11 @@ test("AlertDialog de exclusão na tela de detalhes do lead", async ({
   await expect(dlg).not.toBeVisible();
 
   // Reabre e confirma
-  await page.locator('button:has(svg.lucide-trash-2)').first().click();
-  await page.getByRole("alertdialog").getByRole("button", { name: /^excluir$/i }).click();
+  await page.locator("button:has(svg.lucide-trash-2)").first().click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: /^excluir$/i })
+    .click();
 
   await page.waitForURL(/\/leads$/);
   const { data } = await supa.from("leads").select("id").eq("id", id).maybeSingle();
@@ -71,11 +74,18 @@ test("AlertDialog de exclusão em massa de leads (/leads)", async ({
 
   await page.goto("/leads");
   // Filtra para garantir que aparecem
-  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]').first().fill(String(ts));
+  await page
+    .locator(
+      'input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]',
+    )
+    .first()
+    .fill(String(ts));
   await page.waitForTimeout(500);
 
   // Seleciona as duas primeiras linhas via checkbox
-  const checkboxes = page.locator('table tbody input[type="checkbox"], table tbody [role="checkbox"]');
+  const checkboxes = page.locator(
+    'table tbody input[type="checkbox"], table tbody [role="checkbox"]',
+  );
   await checkboxes.nth(0).click();
   await checkboxes.nth(1).click();
 
@@ -104,13 +114,25 @@ test("ConfirmCountDialog — exige digitar a quantidade (companies)", async ({
   const names = [`E2E Bulk Co A ${ts}`, `E2E Bulk Co B ${ts}`];
   const inserted = await supa
     .from("companies")
-    .insert(names.map((name) => ({ owner_id: userId, workspace_id: workspaceId, assigned_user_id: userId, name })))
+    .insert(
+      names.map((name) => ({
+        owner_id: userId,
+        workspace_id: workspaceId,
+        assigned_user_id: userId,
+        name,
+      })),
+    )
     .select("id");
   const ids = (inserted.data ?? []).map((r: any) => r.id);
   expect(ids.length).toBe(2);
 
   await page.goto("/companies");
-  await page.locator('input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]').first().fill(String(ts));
+  await page
+    .locator(
+      'input[placeholder*="Pesquisar" i], input[placeholder*="Buscar" i], input[placeholder*="Search" i]',
+    )
+    .first()
+    .fill(String(ts));
   await page.waitForTimeout(500);
 
   const rowCbs = page.locator('table tbody input[type="checkbox"], table tbody [role="checkbox"]');

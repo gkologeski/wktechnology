@@ -20,7 +20,8 @@ async function cuFetch(path: string, init?: RequestInit) {
     },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`ClickUp erro [${res.status}]: ${JSON.stringify(data).slice(0, 300)}`);
+  if (!res.ok)
+    throw new Error(`ClickUp erro [${res.status}]: ${JSON.stringify(data).slice(0, 300)}`);
   return data;
 }
 
@@ -47,14 +48,20 @@ export const listClickUpLists = createServerFn({ method: "POST" })
 
 export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({
-    deal_ids: z.array(z.string().uuid()).min(1).max(100),
-  }).parse(i))
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        deal_ids: z.array(z.string().uuid()).min(1).max(100),
+      })
+      .parse(i),
+  )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { data: integ } = await supabase.from("integrations")
+    const { data: integ } = await supabase
+      .from("integrations")
       .select("config")
-      .eq("provider", "clickup").maybeSingle();
+      .eq("provider", "clickup")
+      .maybeSingle();
     const listId = (integ?.config as { list_id?: string } | null)?.list_id;
     if (!listId) throw new Error("Selecione uma lista padrão do ClickUp na tela de integração.");
 
@@ -64,14 +71,23 @@ export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
       .in("id", data.deal_ids);
     if (error) throw new Error(error.message);
 
-    const { data: job } = await supabase.from("enrichment_jobs").insert({
-      owner_id: userId, provider: "clickup", kind: "sync",
-      entity: "deal", status: "running",
-      total: deals?.length ?? 0, started_at: new Date().toISOString(),
-      scope: { ids: data.deal_ids } as never,
-    }).select("id").single();
+    const { data: job } = await supabase
+      .from("enrichment_jobs")
+      .insert({
+        owner_id: userId,
+        provider: "clickup",
+        kind: "sync",
+        entity: "deal",
+        status: "running",
+        total: deals?.length ?? 0,
+        started_at: new Date().toISOString(),
+        scope: { ids: data.deal_ids } as never,
+      })
+      .select("id")
+      .single();
 
-    let succeeded = 0, failed = 0;
+    let succeeded = 0,
+      failed = 0;
     for (const d of deals ?? []) {
       try {
         const due = d.expected_close_date ? new Date(d.expected_close_date).getTime() : null;
@@ -89,11 +105,16 @@ export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
       }
     }
 
-    await supabase.from("enrichment_jobs").update({
-      status: failed === 0 ? "done" : (succeeded === 0 ? "failed" : "partial"),
-      processed: succeeded + failed, succeeded, failed,
-      finished_at: new Date().toISOString(),
-    }).eq("id", job!.id);
+    await supabase
+      .from("enrichment_jobs")
+      .update({
+        status: failed === 0 ? "done" : succeeded === 0 ? "failed" : "partial",
+        processed: succeeded + failed,
+        succeeded,
+        failed,
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", job!.id);
 
     return { succeeded, failed };
   });

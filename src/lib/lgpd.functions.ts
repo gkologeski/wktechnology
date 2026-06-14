@@ -73,14 +73,12 @@ export const exportMyData = createServerFn({ method: "POST" })
  */
 export const requestAccountDeletion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { confirm: string }) => {
-      if (input?.confirm !== "EXCLUIR MINHA CONTA") {
-        throw new Error('Confirme digitando exatamente "EXCLUIR MINHA CONTA".');
-      }
-      return input;
-    },
-  )
+  .inputValidator((input: { confirm: string }) => {
+    if (input?.confirm !== "EXCLUIR MINHA CONTA") {
+      throw new Error('Confirme digitando exatamente "EXCLUIR MINHA CONTA".');
+    }
+    return input;
+  })
   .handler(async ({ context }) => {
     const { userId } = context;
 

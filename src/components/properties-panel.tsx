@@ -6,15 +6,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { History, Pencil, Database, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyHistoryDrawer } from "@/components/property-history-drawer";
 import {
-  listCustomProperties, setCustomFieldValue, computeAiProperty, type CustomEntity,
+  listCustomProperties,
+  setCustomFieldValue,
+  computeAiProperty,
+  type CustomEntity,
 } from "@/lib/custom-properties.functions";
-import { getRecordLayout, type LayoutSection, type RecordEntity } from "@/lib/record-layouts.functions";
+import {
+  getRecordLayout,
+  type LayoutSection,
+  type RecordEntity,
+} from "@/lib/record-layouts.functions";
 import { toE164, isEmail } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 
@@ -64,13 +83,21 @@ function formatCep(s: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-export type PropDef = { key: string; label: string; primary?: boolean; type?: "text" | "email" | "tel" | "number" | "url" | "company" | "cep" };
-
+export type PropDef = {
+  key: string;
+  label: string;
+  primary?: boolean;
+  type?: "text" | "email" | "tel" | "number" | "url" | "company" | "cep";
+};
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
 export function PropertiesPanel<T extends Record<string, unknown> & { id: string }>({
-  entity, table, row, props, onSaved,
+  entity,
+  table,
+  row,
+  props,
+  onSaved,
 }: {
   entity: string;
   table: string;
@@ -90,35 +117,51 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const getLayoutFn = useServerFn(getRecordLayout);
   const customEntity = entity as CustomEntity;
   const isCustomEntity = ["leads", "contacts", "companies", "deals"].includes(entity);
-  const customValues = ((row as Record<string, unknown>).custom_fields ?? {}) as Record<string, unknown>;
+  const customValues = ((row as Record<string, unknown>).custom_fields ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   useEffect(() => {
     if (!isCustomEntity) return;
     listCustomFn({ data: { entity: customEntity } })
       .then((d) => setCustomDefs(d.filter((p) => p.enabled)))
-      .catch(() => { /* ignore */ });
+      .catch(() => {
+        /* ignore */
+      });
   }, [customEntity, isCustomEntity, listCustomFn]);
 
   useEffect(() => {
     if (!isCustomEntity) return;
     getLayoutFn({ data: { entity: customEntity as RecordEntity } })
       .then((r) => setLayoutSections(r.sections))
-      .catch(() => { /* ignore */ });
+      .catch(() => {
+        /* ignore */
+      });
   }, [customEntity, isCustomEntity, getLayoutFn]);
 
   const saveCustom = async (key: string, val: unknown) => {
     try {
-      await setCustomFn({ data: { entity: customEntity, entity_id: row.id, key, value: val as never } });
+      await setCustomFn({
+        data: { entity: customEntity, entity_id: row.id, key, value: val as never },
+      });
       toast.success("Atualizado");
       onSaved?.();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
-  const hsRaw = (row as Record<string, unknown>).hs_raw as { properties?: Record<string, unknown> } | null | undefined;
+  const hsRaw = (row as Record<string, unknown>).hs_raw as
+    | { properties?: Record<string, unknown> }
+    | null
+    | undefined;
   const hsProps = hsRaw?.properties ?? null;
   const knownKeys = new Set(props.map((p) => p.key));
   const extraHsEntries = hsProps
-    ? Object.entries(hsProps).filter(([k, v]) => !knownKeys.has(k) && v !== null && v !== "" && v !== undefined)
+    ? Object.entries(hsProps).filter(
+        ([k, v]) => !knownKeys.has(k) && v !== null && v !== "" && v !== undefined,
+      )
     : [];
 
   const primary = props.filter((p) => p.primary);
@@ -162,14 +205,23 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       toSave = `${digits.slice(0, 5)}-${digits.slice(5)}`;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update({ [key]: toSave }).eq("id", row.id);
+    const { error } = await (supabase as any)
+      .from(table)
+      .update({ [key]: toSave })
+      .eq("id", row.id);
     if (error) toast.error(error.message);
-    else { toast.success("Atualizado"); setEditing(null); onSaved?.(); }
+    else {
+      toast.success("Atualizado");
+      setEditing(null);
+      onSaved?.();
+    }
   };
 
   const renderField = (p: PropDef) => (
     <div key={p.key} className="group">
-      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">{p.label}</label>
+      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+        {p.label}
+      </label>
       {editing === p.key ? (
         p.type === "company" ? (
           <div className="space-y-2">
@@ -178,8 +230,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               onChange={(v: CompanyPickerValue) => setValue(v.name)}
             />
             <div className="flex gap-1">
-              <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
-              <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+                OK
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+                Cancelar
+              </Button>
             </div>
           </div>
         ) : (
@@ -189,20 +245,27 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               type={p.type === "cep" ? "text" : (p.type ?? "text")}
               inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
               maxLength={p.type === "cep" ? 9 : undefined}
-              placeholder={p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined}
+              placeholder={
+                p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined
+              }
               value={value}
               onChange={(e) =>
                 setValue(
-                  p.type === "tel" ? formatPhoneInput(e.target.value)
-                  : p.type === "email" ? sanitizeEmailInput(e.target.value)
-                  : p.type === "cep" ? formatCep(e.target.value)
-                  : e.target.value
+                  p.type === "tel"
+                    ? formatPhoneInput(e.target.value)
+                    : p.type === "email"
+                      ? sanitizeEmailInput(e.target.value)
+                      : p.type === "cep"
+                        ? formatCep(e.target.value)
+                        : e.target.value,
                 )
               }
               onKeyDown={(e) => e.key === "Enter" && save(p.key)}
               className="h-8"
             />
-            <Button size="sm" className="h-8" onClick={() => save(p.key)}>OK</Button>
+            <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+              OK
+            </Button>
           </div>
         )
       ) : (
@@ -211,11 +274,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             {p.type === "tel" && row[p.key]
               ? formatBrPhone(String(row[p.key]))
               : p.type === "cep" && row[p.key]
-              ? formatCep(String(row[p.key]))
-              : String(row[p.key] ?? "—")}
+                ? formatCep(String(row[p.key]))
+                : String(row[p.key] ?? "—")}
           </span>
-          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            onClick={() => { setEditing(p.key); setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")); }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+            onClick={() => {
+              setEditing(p.key);
+              setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? ""));
+            }}
+          >
             <Pencil className="h-3 w-3" />
           </Button>
         </div>
@@ -227,7 +297,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60 space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-foreground">Sobre</h3>
-        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10" onClick={() => setShowHist(true)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10"
+          onClick={() => setShowHist(true)}
+        >
           <History className="h-3 w-3 mr-1" /> Histórico
         </Button>
       </div>
@@ -235,7 +310,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         <div className="space-y-5">
           {renderableSections.map((s) => (
             <div key={s.title} className="space-y-3">
-              <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{s.title}</div>
+              <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
+                {s.title}
+              </div>
               <div className="space-y-4">{s.items.map(renderField)}</div>
             </div>
           ))}
@@ -256,7 +333,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <div key={g} className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">{g}</div>
               {list.map((d) => (
-                <CustomFieldRow key={d.id} def={d} value={customValues[d.key]} onChange={(v) => saveCustom(d.key, v)} entityId={row.id} onComputed={onSaved} />
+                <CustomFieldRow
+                  key={d.id}
+                  def={d}
+                  value={customValues[d.key]}
+                  onChange={(v) => saveCustom(d.key, v)}
+                  entityId={row.id}
+                  onComputed={onSaved}
+                />
               ))}
             </div>
           ))}
@@ -265,16 +349,26 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
 
       <Dialog open={showAll} onOpenChange={setShowAll}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full">Ver todas as propriedades</Button>
+          <Button variant="outline" size="sm" className="w-full">
+            Ver todas as propriedades
+          </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Todas as propriedades</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Todas as propriedades</DialogTitle>
+          </DialogHeader>
           <div className="grid grid-cols-2 gap-3 mt-2">
             {props.map((p) => (
               <div key={p.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
                 {p.type === "company" ? (
-                  <CompanyFieldAll table={table} rowId={row.id} field={p.key} initial={String(row[p.key] ?? "")} onSaved={onSaved} />
+                  <CompanyFieldAll
+                    table={table}
+                    rowId={row.id}
+                    field={p.key}
+                    initial={String(row[p.key] ?? "")}
+                    onSaved={onSaved}
+                  />
                 ) : p.type === "cep" ? (
                   <Input
                     type="text"
@@ -282,7 +376,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     maxLength={9}
                     placeholder="99999-999"
                     defaultValue={formatCep(String(row[p.key] ?? ""))}
-                    onChange={(e) => { e.currentTarget.value = formatCep(e.currentTarget.value); }}
+                    onChange={(e) => {
+                      e.currentTarget.value = formatCep(e.currentTarget.value);
+                    }}
                     onBlur={async (e) => {
                       const raw = e.target.value;
                       const digits = raw.replace(/\D/g, "");
@@ -294,8 +390,15 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                         return;
                       }
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
-                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: toSave })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
                     }}
                   />
                 ) : p.type === "tel" ? (
@@ -303,21 +406,35 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     type="tel"
                     inputMode="tel"
                     placeholder="(11) 99999-8888"
-                    defaultValue={formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")}
-                    onChange={(e) => { e.currentTarget.value = formatPhoneInput(e.currentTarget.value); }}
+                    defaultValue={
+                      formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")
+                    }
+                    onChange={(e) => {
+                      e.currentTarget.value = formatPhoneInput(e.currentTarget.value);
+                    }}
                     onBlur={async (e) => {
                       const raw = e.target.value;
                       const current = String(row[p.key] ?? "");
                       let toSave: string | null = raw || null;
                       if (toSave) {
                         const n = toE164(toSave);
-                        if (!n) { toast.error("Telefone inválido. Use o formato E.164."); return; }
+                        if (!n) {
+                          toast.error("Telefone inválido. Use o formato E.164.");
+                          return;
+                        }
                         toSave = n;
                       }
                       if ((toSave ?? "") === current) return;
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
-                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: toSave })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
                     }}
                   />
                 ) : (
@@ -330,17 +447,26 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       let toSave: string | null = raw || null;
                       if (p.type === "email" && toSave) {
                         toSave = toSave.trim();
-                        if (!isEmail(toSave)) { toast.error("Email inválido."); return; }
+                        if (!isEmail(toSave)) {
+                          toast.error("Email inválido.");
+                          return;
+                        }
                       }
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const { error } = await (supabase as any).from(table).update({ [p.key]: toSave }).eq("id", row.id);
-                      if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: toSave })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
                     }}
                   />
                 )}
               </div>
             ))}
-
           </div>
         </DialogContent>
       </Dialog>
@@ -374,21 +500,43 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         </Dialog>
       )}
 
-      <PropertyHistoryDrawer open={showHist} onOpenChange={setShowHist} entity={entity} entityId={row.id} />
+      <PropertyHistoryDrawer
+        open={showHist}
+        onOpenChange={setShowHist}
+        entity={entity}
+        entityId={row.id}
+      />
     </div>
   );
 }
 
 function CompanyFieldAll({
-  table, rowId, field, initial, onSaved,
-}: { table: string; rowId: string; field: string; initial: string; onSaved?: () => void }) {
+  table,
+  rowId,
+  field,
+  initial,
+  onSaved,
+}: {
+  table: string;
+  rowId: string;
+  field: string;
+  initial: string;
+  onSaved?: () => void;
+}) {
   const [val, setVal] = useState<CompanyPickerValue>({ id: null, name: initial });
   const save = async () => {
     const toSave = val.name.trim() || null;
     if (toSave === (initial || null)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update({ [field]: toSave }).eq("id", rowId);
-    if (error) toast.error(error.message); else { toast.success("Atualizado"); onSaved?.(); }
+    const { error } = await (supabase as any)
+      .from(table)
+      .update({ [field]: toSave })
+      .eq("id", rowId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Atualizado");
+      onSaved?.();
+    }
   };
   return (
     <div onBlur={save}>
@@ -397,20 +545,40 @@ function CompanyFieldAll({
   );
 }
 
-
 function CustomFieldRow({
-  def, value, onChange, entityId, onComputed,
-}: { def: CustomProp; value: unknown; onChange: (v: unknown) => void | Promise<void>; entityId: string; onComputed?: () => void }) {
-  const [draft, setDraft] = useState<string>(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
+  def,
+  value,
+  onChange,
+  entityId,
+  onComputed,
+}: {
+  def: CustomProp;
+  value: unknown;
+  onChange: (v: unknown) => void | Promise<void>;
+  entityId: string;
+  onComputed?: () => void;
+}) {
+  const [draft, setDraft] = useState<string>(
+    value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value),
+  );
   const [computing, setComputing] = useState(false);
   const computeFn = useServerFn(computeAiProperty);
   useEffect(() => {
-    setDraft(value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value));
+    setDraft(
+      value == null ? "" : Array.isArray(value) ? (value as string[]).join(",") : String(value),
+    );
   }, [value]);
 
   const commit = (raw: string) => {
-    if (raw === "" || raw == null) { onChange(null); return; }
-    if (def.type === "number") { const n = Number(raw); onChange(Number.isFinite(n) ? n : null); return; }
+    if (raw === "" || raw == null) {
+      onChange(null);
+      return;
+    }
+    if (def.type === "number") {
+      const n = Number(raw);
+      onChange(Number.isFinite(n) ? n : null);
+      return;
+    }
     onChange(raw);
   };
 
@@ -420,31 +588,64 @@ function CustomFieldRow({
       await computeFn({ data: { property_id: def.id, entity_id: entityId } });
       toast.success("Calculado pela IA");
       onComputed?.();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
-    finally { setComputing(false); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setComputing(false);
+    }
   };
 
   return (
     <div className="text-sm">
       <div className="text-xs text-muted-foreground flex items-center justify-between gap-1">
         <span className="flex items-center gap-1">
-          {def.label}{def.required && <span className="text-destructive">*</span>}
+          {def.label}
+          {def.required && <span className="text-destructive">*</span>}
         </span>
         {def.ai_prompt && (
-          <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={runAi} disabled={computing} title="Calcular com IA">
-            {computing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={runAi}
+            disabled={computing}
+            title="Calcular com IA"
+          >
+            {computing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3" />
+            )}
           </Button>
         )}
       </div>
       {def.type === "textarea" ? (
-        <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={(e) => commit(e.target.value)} rows={3} className="mt-0.5" />
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          rows={3}
+          className="mt-0.5"
+        />
       ) : def.type === "boolean" ? (
-        <div className="mt-1"><Switch checked={!!value} onCheckedChange={(v) => onChange(v)} /></div>
+        <div className="mt-1">
+          <Switch checked={!!value} onCheckedChange={(v) => onChange(v)} />
+        </div>
       ) : def.type === "select" ? (
-        <Select value={(value as string | undefined) ?? ""} onValueChange={(v) => onChange(v || null)}>
-          <SelectTrigger className="h-8 mt-0.5"><SelectValue placeholder="—" /></SelectTrigger>
+        <Select
+          value={(value as string | undefined) ?? ""}
+          onValueChange={(v) => onChange(v || null)}
+        >
+          <SelectTrigger className="h-8 mt-0.5">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
           <SelectContent>
-            {((def.options as string[] | undefined) ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            {((def.options as string[] | undefined) ?? []).map((o) => (
+              <SelectItem key={o} value={o}>
+                {o}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       ) : def.type === "multiselect" ? (
@@ -453,9 +654,14 @@ function CustomFieldRow({
             const arr = Array.isArray(value) ? (value as string[]) : [];
             const on = arr.includes(o);
             return (
-              <Button key={o} type="button" size="sm" variant={on ? "default" : "outline"}
+              <Button
+                key={o}
+                type="button"
+                size="sm"
+                variant={on ? "default" : "outline"}
                 className="h-6 text-xs"
-                onClick={() => onChange(on ? arr.filter((x) => x !== o) : [...arr, o])}>
+                onClick={() => onChange(on ? arr.filter((x) => x !== o) : [...arr, o])}
+              >
                 {o}
               </Button>
             );
@@ -463,8 +669,19 @@ function CustomFieldRow({
         </div>
       ) : (
         <Input
-          type={def.type === "number" ? "number" : def.type === "date" ? "date" : def.type === "email" ? "email"
-            : def.type === "url" ? "url" : def.type === "tel" ? "tel" : "text"}
+          type={
+            def.type === "number"
+              ? "number"
+              : def.type === "date"
+                ? "date"
+                : def.type === "email"
+                  ? "email"
+                  : def.type === "url"
+                    ? "url"
+                    : def.type === "tel"
+                      ? "tel"
+                      : "text"
+          }
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => commit(e.target.value)}

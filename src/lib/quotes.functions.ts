@@ -8,10 +8,18 @@ function token() {
   return randomBytes(24).toString("hex");
 }
 
-function recompute(items: Array<{ quantity: number; unit_price: number; discount_pct: number; tax_rate: number }>) {
-  let subtotal = 0, discount = 0, tax = 0, total = 0;
+function recompute(
+  items: Array<{ quantity: number; unit_price: number; discount_pct: number; tax_rate: number }>,
+) {
+  let subtotal = 0,
+    discount = 0,
+    tax = 0,
+    total = 0;
   for (const li of items) {
-    const q = Number(li.quantity), p = Number(li.unit_price), d = Number(li.discount_pct), t = Number(li.tax_rate);
+    const q = Number(li.quantity),
+      p = Number(li.unit_price),
+      d = Number(li.discount_pct),
+      t = Number(li.tax_rate);
     const sub = q * p;
     const disc = sub * (d / 100);
     const base = sub - disc;
@@ -57,14 +65,16 @@ export const listDealQuotes = createServerFn({ method: "POST" })
 export const createQuoteFromDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      dealId: z.string().uuid(),
-      title: z.string().max(255).optional(),
-      validUntil: z.string().optional(),
-      notes: z.string().max(5000).optional(),
-      terms: z.string().max(10000).optional(),
-      templateId: z.string().uuid().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        dealId: z.string().uuid(),
+        title: z.string().max(255).optional(),
+        validUntil: z.string().optional(),
+        notes: z.string().max(5000).optional(),
+        terms: z.string().max(10000).optional(),
+        templateId: z.string().uuid().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -139,18 +149,20 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
 export const updateQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      patch: z.object({
-        title: z.string().nullable().optional(),
-        status: z.enum(["draft", "sent", "accepted", "declined", "expired"]).optional(),
-        valid_until: z.string().nullable().optional(),
-        notes: z.string().nullable().optional(),
-        terms: z.string().nullable().optional(),
-        sent_at: z.string().nullable().optional(),
-        template_id: z.string().uuid().nullable().optional(),
-      }),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z.object({
+          title: z.string().nullable().optional(),
+          status: z.enum(["draft", "sent", "accepted", "declined", "expired"]).optional(),
+          valid_until: z.string().nullable().optional(),
+          notes: z.string().nullable().optional(),
+          terms: z.string().nullable().optional(),
+          sent_at: z.string().nullable().optional(),
+          template_id: z.string().uuid().nullable().optional(),
+        }),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -184,9 +196,7 @@ export const regenerateQuoteToken = createServerFn({ method: "POST" })
 
 function siteOrigin() {
   return (
-    process.env.SITE_URL ||
-    process.env.LOVABLE_PROJECT_URL ||
-    "https://wktechnology.lovable.app"
+    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || "https://wktechnology.lovable.app"
   );
 }
 
@@ -283,17 +293,29 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
 
     let company = null;
     if (quote.company_id) {
-      const r = await supabaseAdmin.from("companies").select("id, name, website").eq("id", quote.company_id).maybeSingle();
+      const r = await supabaseAdmin
+        .from("companies")
+        .select("id, name, website")
+        .eq("id", quote.company_id)
+        .maybeSingle();
       company = r.data;
     }
     let contact = null;
     if (quote.contact_id) {
-      const r = await supabaseAdmin.from("contacts").select("id, first_name, last_name, email").eq("id", quote.contact_id).maybeSingle();
+      const r = await supabaseAdmin
+        .from("contacts")
+        .select("id, first_name, last_name, email")
+        .eq("id", quote.contact_id)
+        .maybeSingle();
       contact = r.data;
     }
     let agent: { id: string; full_name: string | null; email: string | null } | null = null;
     {
-      const r = await supabaseAdmin.from("profiles").select("id, full_name").eq("id", quote.owner_id).maybeSingle();
+      const r = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name")
+        .eq("id", quote.owner_id)
+        .maybeSingle();
       if (r.data) agent = { id: r.data.id, full_name: r.data.full_name, email: null };
     }
     let template: { id: string; name: string; html: string } | null = null;
@@ -310,11 +332,13 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
 
 export const respondToQuote = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({
-      token: z.string().min(1).max(128),
-      action: z.enum(["accept", "decline"]),
-      signature: z.string().max(255).optional(),
-    }).parse(input),
+    z
+      .object({
+        token: z.string().min(1).max(128),
+        action: z.enum(["accept", "decline"]),
+        signature: z.string().max(255).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const { data: quote, error } = await supabaseAdmin

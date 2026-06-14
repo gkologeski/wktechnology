@@ -108,7 +108,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
 
 export function prettifySegment(seg: string): string {
   // ID-like (uuid or numeric) → Detalhes
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg)) return "Detalhes";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg))
+    return "Detalhes";
   if (/^\d+$/.test(seg)) return "Detalhes";
   if (SEGMENT_LABELS[seg]) return SEGMENT_LABELS[seg];
   return seg

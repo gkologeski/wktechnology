@@ -6,8 +6,18 @@ import { tickSequences } from "@/lib/sequences/engine.server";
 import type { SequenceEntity, SequenceStep } from "@/lib/sequences/types";
 
 const stepSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("task"), wait_days: z.number().min(0).max(365), subject: z.string().min(1).max(255), body: z.string().max(5000).optional() }),
-  z.object({ type: z.literal("email"), wait_days: z.number().min(0).max(365), subject: z.string().min(1).max(255), body: z.string().max(10000).optional() }),
+  z.object({
+    type: z.literal("task"),
+    wait_days: z.number().min(0).max(365),
+    subject: z.string().min(1).max(255),
+    body: z.string().max(5000).optional(),
+  }),
+  z.object({
+    type: z.literal("email"),
+    wait_days: z.number().min(0).max(365),
+    subject: z.string().min(1).max(255),
+    body: z.string().max(10000).optional(),
+  }),
   z.object({ type: z.literal("wait"), wait_days: z.number().min(0).max(365) }),
 ]);
 
@@ -56,14 +66,22 @@ export const saveSequence = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => saveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload = { name: data.name, entity: data.entity, enabled: data.enabled, steps: data.steps as unknown as SequenceStep[] };
+    const payload = {
+      name: data.name,
+      entity: data.entity,
+      enabled: data.enabled,
+      steps: data.steps as unknown as SequenceStep[],
+    };
     if (data.id) {
       const { error } = await supabase.from("sequences").update(payload).eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     const { data: row, error } = await supabase
-      .from("sequences").insert({ ...payload, owner_id: userId }).select("id").single();
+      .from("sequences")
+      .insert({ ...payload, owner_id: userId })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -80,11 +98,19 @@ export const deleteSequence = createServerFn({ method: "POST" })
 export const listEnrollments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ sequenceId: z.string().uuid().optional(), limit: z.number().min(1).max(200).default(50) }).parse(input))
+    z
+      .object({
+        sequenceId: z.string().uuid().optional(),
+        limit: z.number().min(1).max(200).default(50),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("sequence_enrollments")
-      .select("id, sequence_id, entity_id, current_step, status, enrolled_at, next_run_at, finished_at")
+      .select(
+        "id, sequence_id, entity_id, current_step, status, enrolled_at, next_run_at, finished_at",
+      )
       .order("enrolled_at", { ascending: false })
       .limit(data.limit);
     if (data.sequenceId) q = q.eq("sequence_id", data.sequenceId);
@@ -96,14 +122,20 @@ export const listEnrollments = createServerFn({ method: "POST" })
 export const enrollInSequence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      sequenceId: z.string().uuid(),
-      entityIds: z.array(z.string().uuid()).min(1).max(500),
-    }).parse(input))
+    z
+      .object({
+        sequenceId: z.string().uuid(),
+        entityIds: z.array(z.string().uuid()).min(1).max(500),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: seq } = await supabase
-      .from("sequences").select("id, steps").eq("id", data.sequenceId).maybeSingle();
+      .from("sequences")
+      .select("id, steps")
+      .eq("id", data.sequenceId)
+      .maybeSingle();
     if (!seq) throw new Error("Sequência não encontrada");
     const steps = (seq.steps as SequenceStep[] | null) ?? [];
     const firstWait = steps[0]?.wait_days ?? 0;
@@ -124,16 +156,21 @@ export const enrollInSequence = createServerFn({ method: "POST" })
 export const updateEnrollmentStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["active", "paused", "removed"]),
-    }).parse(input))
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["active", "paused", "removed"]),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const patch: { status: string; next_run_at?: string | null } = { status: data.status };
     if (data.status === "removed") patch.next_run_at = null;
     if (data.status === "active") patch.next_run_at = new Date().toISOString();
     const { error } = await context.supabase
-      .from("sequence_enrollments").update(patch).eq("id", data.id);
+      .from("sequence_enrollments")
+      .update(patch)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

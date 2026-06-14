@@ -4,20 +4,28 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function activeWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
   if (!data?.active_workspace_id) throw new Error("Workspace ativo não encontrado");
   return data.active_workspace_id as string;
 }
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function genToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
-  const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
   return `scim_${hex}`;
 }
 
@@ -36,9 +44,7 @@ export const listScimTokens = createServerFn({ method: "GET" })
 
 export const createScimToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { name: string }) =>
-    z.object({ name: z.string().min(1).max(120) }).parse(d)
-  )
+  .inputValidator((d: { name: string }) => z.object({ name: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);

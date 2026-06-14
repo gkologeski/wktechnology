@@ -9,11 +9,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Pencil, Zap } from "lucide-react";
 import { toast } from "sonner";
 import {
-  listWorkflows, saveWorkflow, deleteWorkflow, listRecentRuns, triggerTickNow,
+  listWorkflows,
+  saveWorkflow,
+  deleteWorkflow,
+  listRecentRuns,
+  triggerTickNow,
 } from "@/lib/workflows.functions";
-import { WorkflowBuilder, EMPTY_DRAFT, type WorkflowDraft } from "@/components/workflows/workflow-builder";
+import {
+  WorkflowBuilder,
+  EMPTY_DRAFT,
+  type WorkflowDraft,
+} from "@/components/workflows/workflow-builder";
 import { WorkflowRunsList } from "@/components/workflows/workflow-runs-list";
-import { ENTITY_LABELS, EVENT_LABELS, type WorkflowEntity, type WorkflowTrigger, type WorkflowAction } from "@/lib/workflows/types";
+import {
+  ENTITY_LABELS,
+  EVENT_LABELS,
+  type WorkflowEntity,
+  type WorkflowTrigger,
+  type WorkflowAction,
+} from "@/lib/workflows/types";
 
 export const Route = createFileRoute("/_authenticated/settings/workflows")({
   component: WorkflowsPage,
@@ -49,10 +63,14 @@ function WorkflowsPage() {
       const [w, r] = await Promise.all([listFn(), runsFn({ data: { limit: 20 } })]);
       setRows(w as unknown as WorkflowRow[]);
       setRuns(r);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   const handleSave = async (d: WorkflowDraft) => {
     try {
@@ -78,7 +96,16 @@ function WorkflowsPage() {
 
   const handleToggle = async (row: WorkflowRow, enabled: boolean) => {
     try {
-      await saveFn({ data: { id: row.id, name: row.name, entity: row.entity, enabled, trigger: row.trigger, actions: row.actions } });
+      await saveFn({
+        data: {
+          id: row.id,
+          name: row.name,
+          entity: row.entity,
+          enabled,
+          trigger: row.trigger,
+          actions: row.actions,
+        },
+      });
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
@@ -102,11 +129,17 @@ function WorkflowsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Workflows</h2>
-          <p className="text-sm text-muted-foreground">Automações disparadas por eventos nos seus registros.</p>
+          <p className="text-sm text-muted-foreground">
+            Automações disparadas por eventos nos seus registros.
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTick}><Zap className="h-4 w-4 mr-1" /> Rodar agora</Button>
-          <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}><Plus className="h-4 w-4 mr-1" /> Novo workflow</Button>
+          <Button variant="outline" onClick={handleTick}>
+            <Zap className="h-4 w-4 mr-1" /> Rodar agora
+          </Button>
+          <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
+            <Plus className="h-4 w-4 mr-1" /> Novo workflow
+          </Button>
         </div>
       </div>
 
@@ -119,9 +152,11 @@ function WorkflowsPage() {
         <TabsContent value="list" className="space-y-3 mt-3">
           {loading && <p className="text-sm text-muted-foreground">Carregando…</p>}
           {!loading && rows.length === 0 && (
-            <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
-              Nenhum workflow ainda. Crie o primeiro para começar a automatizar.
-            </CardContent></Card>
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                Nenhum workflow ainda. Crie o primeiro para começar a automatizar.
+              </CardContent>
+            </Card>
           )}
           {rows.map((row) => (
             <Card key={row.id}>
@@ -129,19 +164,31 @@ function WorkflowsPage() {
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     {row.name}
-                    {row.errors_24h > 0 && <Badge variant="destructive">{row.errors_24h} erro(s) hoje</Badge>}
+                    {row.errors_24h > 0 && (
+                      <Badge variant="destructive">{row.errors_24h} erro(s) hoje</Badge>
+                    )}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[row.trigger?.event ?? "created"]} · {row.actions?.length ?? 0} ação(ões) · {row.runs_24h} exec / 24h
+                    {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[row.trigger?.event ?? "created"]} ·{" "}
+                    {row.actions?.length ?? 0} ação(ões) · {row.runs_24h} exec / 24h
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
-                  <Button variant="ghost" size="icon" onClick={() => setDraft({
-                    id: row.id, name: row.name, entity: row.entity, enabled: row.enabled,
-                    trigger: row.trigger ?? { event: "created", filters: [] },
-                    actions: row.actions ?? [],
-                  })}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setDraft({
+                        id: row.id,
+                        name: row.name,
+                        entity: row.entity,
+                        enabled: row.enabled,
+                        trigger: row.trigger ?? { event: "created", filters: [] },
+                        actions: row.actions ?? [],
+                      })
+                    }
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>

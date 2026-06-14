@@ -26,7 +26,9 @@ function TaskDetail() {
     const { data } = await supabase.from("activities").select("*").eq("id", id).single();
     setTask(data as TaskRow | null);
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [id]);
 
   if (!task) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -39,7 +41,10 @@ function TaskDetail() {
 
   const complete = async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("activities").update({ completed: true, task_status: "COMPLETED" }).eq("id", task.id);
+    await (supabase as any)
+      .from("activities")
+      .update({ completed: true, task_status: "COMPLETED" })
+      .eq("id", task.id);
     toast.success("Concluída");
     void load();
   };
@@ -47,7 +52,10 @@ function TaskDetail() {
   const reassign = async (newOwnerId: string) => {
     if (!newOwnerId || newOwnerId === task.owner_id) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("activities").update({ owner_id: newOwnerId }).eq("id", task.id);
+    const { error } = await (supabase as any)
+      .from("activities")
+      .update({ owner_id: newOwnerId })
+      .eq("id", task.id);
     if (error) return toast.error(error.message);
     toast.success("Responsável atualizado");
     void load();
@@ -60,13 +68,19 @@ function TaskDetail() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/tasks"><ArrowLeft className="h-4 w-4 mr-1" /> Tarefas</Link>
+          <Link to="/tasks">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Tarefas
+          </Link>
         </Button>
         <div className="flex gap-2">
           {!task.completed && (
-            <Button variant="outline" size="sm" onClick={complete}><Check className="h-4 w-4 mr-1" /> Concluir</Button>
+            <Button variant="outline" size="sm" onClick={complete}>
+              <Check className="h-4 w-4 mr-1" /> Concluir
+            </Button>
           )}
-          <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-4 w-4 mr-1" /> Excluir</Button>
+          <Button variant="destructive" size="sm" onClick={remove}>
+            <Trash2 className="h-4 w-4 mr-1" /> Excluir
+          </Button>
         </div>
       </div>
 
@@ -77,7 +91,11 @@ function TaskDetail() {
             <p className="text-sm text-muted-foreground mt-1">
               Venc.: {formatDateTime(task.due_date)} · Criada em {formatDateTime(task.created_at)}
               {task.created_by && task.created_by !== task.owner_id && (
-                <> · Criada por <span className="font-medium text-foreground">{nameFor(task.created_by)}</span></>
+                <>
+                  {" "}
+                  · Criada por{" "}
+                  <span className="font-medium text-foreground">{nameFor(task.created_by)}</span>
+                </>
               )}
             </p>
           </div>
@@ -110,7 +128,9 @@ function TaskDetail() {
         <div />
         <aside>
           <PropertiesPanel
-            entity="activities" table="activities" row={task as unknown as Record<string, unknown> & { id: string }}
+            entity="activities"
+            table="activities"
+            row={task as unknown as Record<string, unknown> & { id: string }}
             props={[
               { key: "subject", label: "Assunto", primary: true },
               { key: "task_status", label: "Status", primary: true },

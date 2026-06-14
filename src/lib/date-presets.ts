@@ -158,20 +158,15 @@ export function getDateRange(
   const dow = (today.getDay() + 6) % 7;
   const weekStart = addDays(today, -dow);
   if (preset === "this_week") return { start: weekStart, end: addDays(weekStart, 7) };
-  if (preset === "last_week")
-    return { start: addDays(weekStart, -7), end: weekStart };
-  if (preset === "next_week")
-    return { start: addDays(weekStart, 7), end: addDays(weekStart, 14) };
+  if (preset === "last_week") return { start: addDays(weekStart, -7), end: weekStart };
+  if (preset === "next_week") return { start: addDays(weekStart, 7), end: addDays(weekStart, 14) };
 
   const y = today.getFullYear();
   const m = today.getMonth();
 
-  if (preset === "this_month")
-    return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
-  if (preset === "last_month")
-    return { start: new Date(y, m - 1, 1), end: new Date(y, m, 1) };
-  if (preset === "next_month")
-    return { start: new Date(y, m + 1, 1), end: new Date(y, m + 2, 1) };
+  if (preset === "this_month") return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+  if (preset === "last_month") return { start: new Date(y, m - 1, 1), end: new Date(y, m, 1) };
+  if (preset === "next_month") return { start: new Date(y, m + 1, 1), end: new Date(y, m + 2, 1) };
 
   const q = Math.floor(m / 3);
   if (preset === "this_quarter")
@@ -182,19 +177,14 @@ export function getDateRange(
     return { start: new Date(y, q * 3 + 3, 1), end: new Date(y, q * 3 + 6, 1) };
 
   const s = m < 6 ? 0 : 6;
-  if (preset === "this_semester")
-    return { start: new Date(y, s, 1), end: new Date(y, s + 6, 1) };
-  if (preset === "last_semester")
-    return { start: new Date(y, s - 6, 1), end: new Date(y, s, 1) };
+  if (preset === "this_semester") return { start: new Date(y, s, 1), end: new Date(y, s + 6, 1) };
+  if (preset === "last_semester") return { start: new Date(y, s - 6, 1), end: new Date(y, s, 1) };
   if (preset === "next_semester")
     return { start: new Date(y, s + 6, 1), end: new Date(y, s + 12, 1) };
 
-  if (preset === "this_year")
-    return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
-  if (preset === "last_year")
-    return { start: new Date(y - 1, 0, 1), end: new Date(y, 0, 1) };
-  if (preset === "next_year")
-    return { start: new Date(y + 1, 0, 1), end: new Date(y + 2, 0, 1) };
+  if (preset === "this_year") return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
+  if (preset === "last_year") return { start: new Date(y - 1, 0, 1), end: new Date(y, 0, 1) };
+  if (preset === "next_year") return { start: new Date(y + 1, 0, 1), end: new Date(y + 2, 0, 1) };
 
   return {};
 }

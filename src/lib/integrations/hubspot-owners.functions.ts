@@ -89,7 +89,7 @@ export const syncHubspotOwners = createServerFn({ method: "POST" })
       .from("hubspot_owners")
       .select("id, email, mapped_user_id")
       .eq("workspace_id", workspaceId);
-    let autoMapped = 0;
+    const autoMapped = 0;
     for (const ow of owners ?? []) {
       if (ow.mapped_user_id || !ow.email) continue;
       // tenta achar profile com o mesmo email

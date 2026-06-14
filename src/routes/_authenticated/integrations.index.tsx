@@ -55,7 +55,8 @@ function IntegrationsCatalog() {
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={search} onChange={(e) => setSearch(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar integração…"
             className="pl-8"
           />
@@ -70,7 +71,8 @@ function IntegrationsCatalog() {
           </Button>
           {categories.map((c) => (
             <Button
-              key={c} size="sm"
+              key={c}
+              size="sm"
               variant={category === c ? "default" : "outline"}
               onClick={() => setCategory(c)}
             >
@@ -82,7 +84,9 @@ function IntegrationsCatalog() {
 
       <div className="space-y-8">
         {Object.entries(groups).length === 0 && (
-          <p className="text-sm text-muted-foreground">Nenhuma integração encontrada para esses filtros.</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhuma integração encontrada para esses filtros.
+          </p>
         )}
         {Object.entries(groups).map(([cat, items]) => (
           <section key={cat}>
@@ -100,7 +104,9 @@ function IntegrationsCatalog() {
                     className="group rounded-lg border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition"
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`h-10 w-10 rounded-md ${p.color} grid place-items-center text-white shrink-0`}>
+                      <div
+                        className={`h-10 w-10 rounded-md ${p.color} grid place-items-center text-white shrink-0`}
+                      >
                         <p.icon className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -112,7 +118,9 @@ function IntegrationsCatalog() {
                           {!status && p.comingSoon && <Badge variant="outline">Em breve</Badge>}
                           {!status && !p.comingSoon && <Badge variant="outline">Disponível</Badge>}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {p.description}
+                        </p>
                       </div>
                     </div>
                   </Link>

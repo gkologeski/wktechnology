@@ -106,11 +106,7 @@ export function StartVideoButton({
                 />
               </div>
               <div className="flex items-start gap-2">
-                <Checkbox
-                  id="consent"
-                  checked={consent}
-                  onCheckedChange={(v) => setConsent(!!v)}
-                />
+                <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(!!v)} />
                 <div className="space-y-1">
                   <Label htmlFor="consent" className="cursor-pointer">
                     Permitir gravação
@@ -125,7 +121,11 @@ export function StartVideoButton({
                   Cancelar
                 </Button>
                 <Button onClick={start} disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Video className="mr-2 h-4 w-4" />}
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Video className="mr-2 h-4 w-4" />
+                  )}
                   Criar e abrir sala
                 </Button>
               </DialogFooter>
@@ -142,7 +142,11 @@ export function StartVideoButton({
                 </Button>
               </div>
               {roomUrl && (
-                <Button variant="outline" className="w-full" onClick={() => window.open(roomUrl, "_blank")}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(roomUrl, "_blank")}
+                >
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Abrir minha sala (anfitrião)
                 </Button>

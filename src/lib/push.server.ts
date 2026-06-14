@@ -30,11 +30,15 @@ export function getVapidPublicKey(): string | null {
   return process.env.VAPID_PUBLIC_KEY ?? null;
 }
 
-async function sendOne(sub: Subscription, payload: PushPayload, vapid: { publicKey: string; privateKey: string; subject: string }) {
+async function sendOne(
+  sub: Subscription,
+  payload: PushPayload,
+  vapid: { publicKey: string; privateKey: string; subject: string },
+) {
   const req = await buildPushPayload(
     { data: JSON.stringify(payload), options: { ttl: 60 } },
     sub,
-    vapid
+    vapid,
   );
   const body = new Uint8Array(req.body).buffer;
   const res = await fetch(sub.endpoint, { method: req.method, headers: req.headers, body });
@@ -45,7 +49,11 @@ async function sendOne(sub: Subscription, payload: PushPayload, vapid: { publicK
  * Envia push para todos os dispositivos do user que aceitam esse tipo de evento.
  * Remove silenciosamente subscriptions inválidas (404/410).
  */
-export async function sendPushToUser(userId: string, eventType: PushEventType, payload: PushPayload) {
+export async function sendPushToUser(
+  userId: string,
+  eventType: PushEventType,
+  payload: PushPayload,
+) {
   const vapid = getVapid();
   if (!vapid) {
     console.warn("[push] VAPID keys missing — skipping notification");
@@ -60,25 +68,30 @@ export async function sendPushToUser(userId: string, eventType: PushEventType, p
 
   let sent = 0;
   const stale: string[] = [];
-  await Promise.all(subs.map(async (s) => {
-    const prefs = (s.preferences ?? {}) as Record<string, boolean>;
-    if (prefs[eventType] === false) return;
-    try {
-      const r = await sendOne(
-        { endpoint: s.endpoint, expirationTime: null, keys: { p256dh: s.p256dh, auth: s.auth } },
-        payload,
-        vapid
-      );
-      if (r.ok) {
-        sent++;
-        await supabaseAdmin.from("push_subscriptions").update({ last_used_at: new Date().toISOString() }).eq("id", s.id);
-      } else if (r.status === 404 || r.status === 410) {
-        stale.push(s.endpoint);
+  await Promise.all(
+    subs.map(async (s) => {
+      const prefs = (s.preferences ?? {}) as Record<string, boolean>;
+      if (prefs[eventType] === false) return;
+      try {
+        const r = await sendOne(
+          { endpoint: s.endpoint, expirationTime: null, keys: { p256dh: s.p256dh, auth: s.auth } },
+          payload,
+          vapid,
+        );
+        if (r.ok) {
+          sent++;
+          await supabaseAdmin
+            .from("push_subscriptions")
+            .update({ last_used_at: new Date().toISOString() })
+            .eq("id", s.id);
+        } else if (r.status === 404 || r.status === 410) {
+          stale.push(s.endpoint);
+        }
+      } catch (err) {
+        console.error("[push] send error", err);
       }
-    } catch (err) {
-      console.error("[push] send error", err);
-    }
-  }));
+    }),
+  );
   if (stale.length > 0) {
     await supabaseAdmin.from("push_subscriptions").delete().in("endpoint", stale);
   }

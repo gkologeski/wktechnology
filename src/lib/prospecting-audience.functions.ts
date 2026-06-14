@@ -24,7 +24,20 @@ export type AudienceRule = {
 const FilterConditionSchema: z.ZodType = z.object({
   type: z.literal("condition"),
   field: z.string(),
-  op: z.enum(["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "in", "is_null", "is_not_null", "contains", "between"]),
+  op: z.enum([
+    "eq",
+    "neq",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "ilike",
+    "in",
+    "is_null",
+    "is_not_null",
+    "contains",
+    "between",
+  ]),
   value: z.unknown().optional(),
 });
 const FilterGroupSchema: z.ZodType = z.lazy(() =>
@@ -54,7 +67,10 @@ export async function resolveAudienceServer(
   workspaceId: string,
   rules: AudienceRule[],
 ): Promise<ResolvedAudience> {
-  const collected = new Map<string, { name: string; phone: string | null; source: AudienceSource }>();
+  const collected = new Map<
+    string,
+    { name: string; phone: string | null; source: AudienceSource }
+  >();
   const perRule: ResolvedAudience["per_rule"] = [];
 
   for (const rule of rules) {
@@ -69,11 +85,20 @@ export async function resolveAudienceServer(
         .select("id, first_name, last_name, company_name, phone")
         .eq("workspace_id", workspaceId)
         .in("id", ids);
-      const arr = (leads ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>;
+      const arr = (leads ?? []) as Array<{
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        company_name: string | null;
+        phone: string | null;
+      }>;
       for (const l of arr) {
         if (!collected.has(l.id)) {
           collected.set(l.id, {
-            name: [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8),
+            name:
+              [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+              l.company_name ||
+              l.id.slice(0, 8),
             phone: l.phone,
             source: "manual",
           });
@@ -91,11 +116,20 @@ export async function resolveAudienceServer(
         .is("deleted_at", null);
       q = applyFilters(q, rule.filter ?? null);
       const { data } = await q.limit(10000);
-      const arr = (data ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>;
+      const arr = (data ?? []) as Array<{
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        company_name: string | null;
+        phone: string | null;
+      }>;
       for (const l of arr) {
         if (!collected.has(l.id)) {
           collected.set(l.id, {
-            name: [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8),
+            name:
+              [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+              l.company_name ||
+              l.id.slice(0, 8),
             phone: l.phone,
             source: "leads",
           });
@@ -113,14 +147,24 @@ export async function resolveAudienceServer(
         .is("deleted_at", null);
       q = applyFilters(q, rule.filter ?? null);
       const { data } = await q.limit(10000);
-      const contacts = (data ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+      const contacts = (data ?? []) as Array<{
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+        phone: string | null;
+      }>;
       const resolved = await resolveContactsToLeads(workspaceId, contacts);
       for (const r of resolved) {
         if (!collected.has(r.lead_id)) {
           collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "contacts" });
         }
       }
-      perRule.push({ source: "contacts", matched: contacts.length, resolved_leads: resolved.length });
+      perRule.push({
+        source: "contacts",
+        matched: contacts.length,
+        resolved_leads: resolved.length,
+      });
       continue;
     }
 
@@ -142,7 +186,13 @@ export async function resolveAudienceServer(
           .is("deleted_at", null)
           .in("company_id", companyIds)
           .limit(10000);
-        const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+        const arr = (contacts ?? []) as Array<{
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+        }>;
         const resolved = await resolveContactsToLeads(workspaceId, arr);
         resolvedCount = resolved.length;
         for (const r of resolved) {
@@ -151,7 +201,11 @@ export async function resolveAudienceServer(
           }
         }
       }
-      perRule.push({ source: "companies", matched: companyIds.length, resolved_leads: resolvedCount });
+      perRule.push({
+        source: "companies",
+        matched: companyIds.length,
+        resolved_leads: resolvedCount,
+      });
       continue;
     }
 
@@ -182,7 +236,13 @@ export async function resolveAudienceServer(
             .is("deleted_at", null)
             .in("id", Array.from(contactIds))
             .limit(10000);
-          const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+          const arr = (contacts ?? []) as Array<{
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            email: string | null;
+            phone: string | null;
+          }>;
           const resolved = await resolveContactsToLeads(workspaceId, arr);
           resolvedCount = resolved.length;
           for (const r of resolved) {
@@ -228,11 +288,20 @@ export async function resolveAudienceServer(
           .select("id, first_name, last_name, company_name, phone")
           .eq("workspace_id", workspaceId)
           .in("id", entityIds);
-        const arr = (leads ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; phone: string | null }>;
+        const arr = (leads ?? []) as Array<{
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          company_name: string | null;
+          phone: string | null;
+        }>;
         for (const l of arr) {
           if (!collected.has(l.id)) {
             collected.set(l.id, {
-              name: [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8),
+              name:
+                [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+                l.company_name ||
+                l.id.slice(0, 8),
               phone: l.phone,
               source: "segment",
             });
@@ -246,7 +315,13 @@ export async function resolveAudienceServer(
           .eq("workspace_id", workspaceId)
           .in("id", entityIds)
           .limit(20000);
-        const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+        const arr = (contacts ?? []) as Array<{
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+        }>;
         const resolved = await resolveContactsToLeads(workspaceId, arr);
         for (const r of resolved) {
           if (!collected.has(r.lead_id)) {
@@ -261,7 +336,13 @@ export async function resolveAudienceServer(
           .eq("workspace_id", workspaceId)
           .in("company_id", entityIds)
           .limit(20000);
-        const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+        const arr = (contacts ?? []) as Array<{
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+        }>;
         const resolved = await resolveContactsToLeads(workspaceId, arr);
         for (const r of resolved) {
           if (!collected.has(r.lead_id)) {
@@ -270,11 +351,18 @@ export async function resolveAudienceServer(
         }
         resolvedCount = resolved.length;
       } else if (seg.entity === "deals") {
-        const { data: dc } = await sb.from("deal_contacts").select("contact_id").in("deal_id", entityIds);
-        const { data: deals } = await sb.from("deals").select("primary_contact_id").in("id", entityIds);
+        const { data: dc } = await sb
+          .from("deal_contacts")
+          .select("contact_id")
+          .in("deal_id", entityIds);
+        const { data: deals } = await sb
+          .from("deals")
+          .select("primary_contact_id")
+          .in("id", entityIds);
         const contactIds = new Set<string>();
         for (const r of (dc ?? []) as Array<{ contact_id: string }>) contactIds.add(r.contact_id);
-        for (const d of (deals ?? []) as Array<{ primary_contact_id: string | null }>) if (d.primary_contact_id) contactIds.add(d.primary_contact_id);
+        for (const d of (deals ?? []) as Array<{ primary_contact_id: string | null }>)
+          if (d.primary_contact_id) contactIds.add(d.primary_contact_id);
         if (contactIds.size > 0) {
           const { data: contacts } = await sb
             .from("contacts")
@@ -282,7 +370,13 @@ export async function resolveAudienceServer(
             .eq("workspace_id", workspaceId)
             .in("id", Array.from(contactIds))
             .limit(20000);
-          const arr = (contacts ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>;
+          const arr = (contacts ?? []) as Array<{
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            email: string | null;
+            phone: string | null;
+          }>;
           const resolved = await resolveContactsToLeads(workspaceId, arr);
           for (const r of resolved) {
             if (!collected.has(r.lead_id)) {
@@ -310,7 +404,13 @@ export async function resolveAudienceServer(
 // Contatos sem lead correspondente são descartados.
 async function resolveContactsToLeads(
   workspaceId: string,
-  contacts: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }>,
+  contacts: Array<{
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
+  }>,
 ): Promise<Array<{ lead_id: string; name: string; phone: string | null }>> {
   const emails = contacts.map((c) => c.email).filter((e): e is string => !!e);
   const phones = contacts.map((c) => c.phone).filter((p): p is string => !!p);
@@ -323,19 +423,31 @@ async function resolveContactsToLeads(
     .is("deleted_at", null);
 
   const ors: string[] = [];
-  if (emails.length) ors.push(`email.in.(${emails.map((e) => `"${e.replace(/"/g, '\\"')}"`).join(",")})`);
-  if (phones.length) ors.push(`phone.in.(${phones.map((p) => `"${p.replace(/"/g, '\\"')}"`).join(",")})`);
+  if (emails.length)
+    ors.push(`email.in.(${emails.map((e) => `"${e.replace(/"/g, '\\"')}"`).join(",")})`);
+  if (phones.length)
+    ors.push(`phone.in.(${phones.map((p) => `"${p.replace(/"/g, '\\"')}"`).join(",")})`);
   if (ors.length) q = q.or(ors.join(","));
 
   const { data } = await q.limit(20000);
-  const leads = (data ?? []) as Array<{ id: string; first_name: string | null; last_name: string | null; company_name: string | null; email: string | null; phone: string | null }>;
+  const leads = (data ?? []) as Array<{
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    company_name: string | null;
+    email: string | null;
+    phone: string | null;
+  }>;
 
   const out = new Map<string, { lead_id: string; name: string; phone: string | null }>();
   for (const l of leads) {
     if (out.has(l.id)) continue;
     out.set(l.id, {
       lead_id: l.id,
-      name: [l.first_name, l.last_name].filter(Boolean).join(" ").trim() || l.company_name || l.id.slice(0, 8),
+      name:
+        [l.first_name, l.last_name].filter(Boolean).join(" ").trim() ||
+        l.company_name ||
+        l.id.slice(0, 8),
       phone: l.phone,
     });
   }

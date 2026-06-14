@@ -120,7 +120,11 @@ function IntegrationDetail() {
 
   const handleConnect = async () => {
     try {
-      const merged: Record<string, unknown> = { ...cfg, ...config, auto_enrich_on_create: autoOnCreate };
+      const merged: Record<string, unknown> = {
+        ...cfg,
+        ...config,
+        auto_enrich_on_create: autoOnCreate,
+      };
       await upsert({ data: { provider: provider.slug, status: "connected", config: merged } });
       toast.success(`${provider.name} conectado`);
       qc.invalidateQueries({ queryKey: ["integrations"] });
@@ -149,7 +153,10 @@ function IntegrationDetail() {
   };
 
   const runEnrichAllAddresses = async () => {
-    if (!confirm("Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?")) return;
+    if (
+      !confirm("Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?")
+    )
+      return;
     const r = await enrichCeps({ data: { all_missing: true } });
     toast.success(`${r.succeeded} atualizada(s) · ${r.failed} falhas · ${r.skipped} sem CEP`);
     qc.invalidateQueries({ queryKey: ["integrations", slug, "jobs"] });
@@ -222,7 +229,8 @@ function IntegrationDetail() {
             <section className="rounded-lg border bg-card p-5">
               <h2 className="font-semibold mb-1">Importar do HubSpot</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Importação respeitando árvore de dependências (empresas → contatos → negócios → atividades).
+                Importação respeitando árvore de dependências (empresas → contatos → negócios →
+                atividades).
               </p>
               <HubspotImportWizard />
             </section>
@@ -233,7 +241,8 @@ function IntegrationDetail() {
               <h2 className="font-semibold mb-1">Sincronização bidirecional</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 Envia alterações locais (contatos, empresas, negócios) de volta para o HubSpot.
-                Conflitos (alterado dos dois lados desde a última sync) ficam listados para revisão manual.
+                Conflitos (alterado dos dois lados desde a última sync) ficam listados para revisão
+                manual.
               </p>
               <HubspotTwoWaySync />
             </section>
@@ -286,15 +295,16 @@ function IntegrationDetail() {
               <ul className="space-y-2">
                 {jobsData!.items.slice(0, 10).map((j) => {
                   const isRunning = j.status === "running";
-                  const canInspect = slug === "hubspot" && ["running", "failed", "done"].includes(j.status);
+                  const canInspect =
+                    slug === "hubspot" && ["running", "failed", "done"].includes(j.status);
                   const stamp = (j.updated_at ?? j.started_at) as string | null;
                   const idleMs = stamp ? Date.now() - new Date(stamp).getTime() : 0;
                   const idleLabel =
                     idleMs < 60_000
                       ? `${Math.max(0, Math.floor(idleMs / 1000))}s`
                       : idleMs < 3_600_000
-                      ? `${Math.floor(idleMs / 60_000)}m`
-                      : `${Math.floor(idleMs / 3_600_000)}h${Math.floor((idleMs % 3_600_000) / 60_000)}m`;
+                        ? `${Math.floor(idleMs / 60_000)}m`
+                        : `${Math.floor(idleMs / 3_600_000)}h${Math.floor((idleMs % 3_600_000) / 60_000)}m`;
                   return (
                     <li
                       key={j.id}
@@ -324,8 +334,8 @@ function IntegrationDetail() {
                             j.status === "done"
                               ? "default"
                               : j.status === "failed"
-                              ? "destructive"
-                              : "secondary"
+                                ? "destructive"
+                                : "secondary"
                           }
                         >
                           {j.status}
@@ -337,7 +347,8 @@ function IntegrationDetail() {
                             onClick={() => setLiveJobId(j.id)}
                             title="Abrir detalhes da execução"
                           >
-                            <Eye className="h-3.5 w-3.5 mr-1" /> {isRunning ? "Acompanhar" : "Detalhes"}
+                            <Eye className="h-3.5 w-3.5 mr-1" />{" "}
+                            {isRunning ? "Acompanhar" : "Detalhes"}
                           </Button>
                         )}
                         {isRunning && (
@@ -365,9 +376,7 @@ function IntegrationDetail() {
               <DialogHeader>
                 <DialogTitle>Acompanhamento em tempo real</DialogTitle>
               </DialogHeader>
-              {liveJobId && (
-                <ImportTimeline jobId={liveJobId} onReset={() => setLiveJobId(null)} />
-              )}
+              {liveJobId && <ImportTimeline jobId={liveJobId} onReset={() => setLiveJobId(null)} />}
             </DialogContent>
           </Dialog>
         </div>
@@ -389,7 +398,14 @@ function IntegrationDetail() {
           <section className="rounded-lg border bg-card p-4 text-sm">
             <h3 className="font-semibold mb-2">Aplicado em</h3>
             <p className="text-muted-foreground">
-              {provider.entities.map((e) => ({ lead: "Leads", contact: "Contatos", company: "Empresas", deal: "Negócios" }[e])).join(", ")}
+              {provider.entities
+                .map(
+                  (e) =>
+                    ({ lead: "Leads", contact: "Contatos", company: "Empresas", deal: "Negócios" })[
+                      e
+                    ],
+                )
+                .join(", ")}
             </p>
           </section>
         </aside>
@@ -428,11 +444,14 @@ function ConnectionForm({
       <div className="space-y-3 text-sm">
         <p className="text-muted-foreground">
           Esta integração usa o conector oficial gerenciado pelo Lovable. Conecte sua conta em{" "}
-          <strong>Connectors</strong> e depois clique em <strong>Conectar</strong> aqui para registrar a conexão no CRM.
+          <strong>Connectors</strong> e depois clique em <strong>Conectar</strong> aqui para
+          registrar a conexão no CRM.
         </p>
         <p className="text-muted-foreground">
           Endpoint usado:{" "}
-          <code className="bg-muted px-1 rounded">connector-gateway.lovable.dev/{provider.slug}</code>
+          <code className="bg-muted px-1 rounded">
+            connector-gateway.lovable.dev/{provider.slug}
+          </code>
         </p>
       </div>
     );
@@ -443,10 +462,15 @@ function ConnectionForm({
     return (
       <div className="space-y-3 text-sm">
         <p className="text-muted-foreground">
-          Adicione a chave <code className="bg-muted px-1 rounded">{keyName}</code> nos Secrets do projeto
-          (Backend → Secrets) e depois clique em <strong>Conectar</strong> para ativar.
+          Adicione a chave <code className="bg-muted px-1 rounded">{keyName}</code> nos Secrets do
+          projeto (Backend → Secrets) e depois clique em <strong>Conectar</strong> para ativar.
         </p>
-        <a href={provider.docs} target="_blank" rel="noreferrer" className="text-primary underline text-xs">
+        <a
+          href={provider.docs}
+          target="_blank"
+          rel="noreferrer"
+          className="text-primary underline text-xs"
+        >
           Onde encontrar a chave →
         </a>
         {provider.supports.autoOnCreate && (
@@ -469,8 +493,9 @@ function ConnectionForm({
     return (
       <div className="space-y-3 text-sm">
         <p className="text-muted-foreground">
-          Adicione seu Personal Token em <code className="bg-muted px-1 rounded">CLICKUP_API_TOKEN</code> nos
-          Secrets e configure abaixo a Lista padrão onde as tarefas serão criadas.
+          Adicione seu Personal Token em{" "}
+          <code className="bg-muted px-1 rounded">CLICKUP_API_TOKEN</code> nos Secrets e configure
+          abaixo a Lista padrão onde as tarefas serão criadas.
         </p>
         <div className="grid grid-cols-1 gap-3">
           <div>
@@ -494,8 +519,8 @@ function ConnectionForm({
       <div className="space-y-2 text-sm">
         <Badge variant="outline">OAuth — em breve</Badge>
         <p className="text-muted-foreground">
-          A autenticação OAuth para {provider.name} ainda não está disponível. Em breve será possível
-          conectar diretamente por aqui.
+          A autenticação OAuth para {provider.name} ainda não está disponível. Em breve será
+          possível conectar diretamente por aqui.
         </p>
       </div>
     );

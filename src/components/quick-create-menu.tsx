@@ -1,6 +1,16 @@
 // Botão "+" no header com atalhos para criar entidades.
 import { Link } from "@tanstack/react-router";
-import { Plus, UserPlus, Users, Building2, Briefcase, ListTodo, Video, StickyNote, LifeBuoy } from "lucide-react";
+import {
+  Plus,
+  UserPlus,
+  Users,
+  Building2,
+  Briefcase,
+  ListTodo,
+  Video,
+  StickyNote,
+  LifeBuoy,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

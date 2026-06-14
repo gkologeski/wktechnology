@@ -2,12 +2,7 @@
 // Roda no servidor (chamado pelo endpoint /api/public/hooks/workflows-tick).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyRotation } from "@/lib/rotation/engine.server";
-import type {
-  WorkflowAction,
-  WorkflowEntity,
-  WorkflowFilter,
-  WorkflowTrigger,
-} from "./types";
+import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } from "./types";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
@@ -34,25 +29,34 @@ function renderTokens(input: unknown, after: AnyRow | null): unknown {
 function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
   const v = getField(after, f.field);
   switch (f.op) {
-    case "eq": return v === f.value;
-    case "neq": return v !== f.value;
+    case "eq":
+      return v === f.value;
+    case "neq":
+      return v !== f.value;
     case "in": {
       const list = Array.isArray(f.value)
         ? f.value
-        : String(f.value ?? "").split(",").map((s) => s.trim());
+        : String(f.value ?? "")
+            .split(",")
+            .map((s) => s.trim());
       return list.includes(v as never);
     }
     case "contains":
       return typeof v === "string" && v.toLowerCase().includes(String(f.value ?? "").toLowerCase());
-    case "gt": return typeof v === "number" && typeof f.value === "number" && v > f.value;
-    case "lt": return typeof v === "number" && typeof f.value === "number" && v < f.value;
+    case "gt":
+      return typeof v === "number" && typeof f.value === "number" && v > f.value;
+    case "lt":
+      return typeof v === "number" && typeof f.value === "number" && v < f.value;
     case "changed_to": {
       const prev = getField(before, f.field);
       return v === f.value && prev !== f.value;
     }
-    case "is_empty": return v == null || v === "";
-    case "is_not_empty": return v != null && v !== "";
-    default: return false;
+    case "is_empty":
+      return v == null || v === "";
+    case "is_not_empty":
+      return v != null && v !== "";
+    default:
+      return false;
   }
 }
 
@@ -66,13 +70,19 @@ async function runAction(
     switch (action.type) {
       case "set_field": {
         const value = renderTokens(action.value, ctx.after);
-        const { error } = await supabase.from(ctx.entity).update({ [action.field]: value }).eq("id", ctx.entityId);
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [action.field]: value })
+          .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
       case "assign_to": {
         const assignField = ctx.entity === "tickets" ? "assignee_id" : "owner_id";
-        const { error } = await supabase.from(ctx.entity).update({ [assignField]: action.user_id }).eq("id", ctx.entityId);
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [assignField]: action.user_id })
+          .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "assign_to", detail: { user_id: action.user_id } };
       }
@@ -81,7 +91,12 @@ async function runAction(
           throw new Error("rotate_assign suporta apenas leads/deals/tickets");
         }
         const r = await applyRotation(supabase, action.rule_id, ctx.entity, ctx.entityId);
-        return { at, ok: true, action: "rotate_assign", detail: { rule_id: action.rule_id, assigned_to: r.user_id } };
+        return {
+          at,
+          ok: true,
+          action: "rotate_assign",
+          detail: { rule_id: action.rule_id, assigned_to: r.user_id },
+        };
       }
       case "create_activity": {
         const subject = renderTokens(action.subject, ctx.after) as string;
@@ -114,12 +129,19 @@ async function runAction(
           next_run_at: new Date().toISOString(),
         });
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "add_to_sequence", detail: { sequence_id: action.sequence_id } };
+        return {
+          at,
+          ok: true,
+          action: "add_to_sequence",
+          detail: { sequence_id: action.sequence_id },
+        };
       }
       case "send_notification": {
         // notifications table not present yet — log only.
         return {
-          at, ok: true, action: "send_notification",
+          at,
+          ok: true,
+          action: "send_notification",
           detail: {
             note: "Tabela 'notifications' não existe ainda; ação apenas registrada.",
             title: renderTokens(action.title, ctx.after),
@@ -141,7 +163,12 @@ async function runAction(
       }
     }
   } catch (e) {
-    return { at, ok: false, action: action.type, error: e instanceof Error ? e.message : String(e) };
+    return {
+      at,
+      ok: false,
+      action: action.type,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
@@ -202,7 +229,10 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
         after: event.after,
       });
       log.push(step);
-      if (!step.ok) { hadError = true; break; }
+      if (!step.ok) {
+        hadError = true;
+        break;
+      }
     }
 
     await supabase
@@ -210,7 +240,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       .update({
         status: hadError ? "error" : "success",
         log,
-        error: hadError ? log[log.length - 1]?.error ?? null : null,
+        error: hadError ? (log[log.length - 1]?.error ?? null) : null,
         finished_at: new Date().toISOString(),
       })
       .eq("id", run.id);

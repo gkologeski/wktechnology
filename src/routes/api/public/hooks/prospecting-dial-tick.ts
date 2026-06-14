@@ -17,11 +17,17 @@ async function pauseCampaignIfIdle(campaignId: string) {
     .eq("campaign_id", campaignId)
     .in("status", ACTIVE_ATTEMPT_STATUSES);
   if ((count ?? 0) === 0) {
-    await sb.from("prospecting_campaigns").update({ status: "paused" }).eq("id", campaignId).eq("status", "running");
+    await sb
+      .from("prospecting_campaigns")
+      .update({ status: "paused" })
+      .eq("id", campaignId)
+      .eq("status", "running");
   }
 }
 
-function isInsideWindow(win: { start: string; end: string; timezone: string; days: number[] } | null): boolean {
+function isInsideWindow(
+  win: { start: string; end: string; timezone: string; days: number[] } | null,
+): boolean {
   if (!win) return true;
   try {
     const fmt = new Intl.DateTimeFormat("en-US", {
@@ -117,8 +123,14 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
             .from("prospecting_campaign_variants")
             .select("id, script_id, weight, segment_id")
             .eq("campaign_id", it.campaign_id);
-          const vs = (variants ?? []) as Array<{ id: string; script_id: string; weight: number; segment_id: string | null }>;
-          const chosen = campaign.assignment_mode === "weighted" ? pickWeighted(vs) : vs[0] ?? null;
+          const vs = (variants ?? []) as Array<{
+            id: string;
+            script_id: string;
+            weight: number;
+            segment_id: string | null;
+          }>;
+          const chosen =
+            campaign.assignment_mode === "weighted" ? pickWeighted(vs) : (vs[0] ?? null);
           if (!chosen) {
             await sb
               .from("prospecting_call_attempts")
@@ -162,7 +174,12 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
           }
         }
 
-        return Response.json({ ok: true, dialed, considered: items.length, skipped: skipped.length });
+        return Response.json({
+          ok: true,
+          dialed,
+          considered: items.length,
+          skipped: skipped.length,
+        });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },

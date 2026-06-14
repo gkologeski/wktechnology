@@ -16,15 +16,11 @@ export type CountDeps = {
   /** IDs das primeiras N empresas (já respeitando `maxCompanies`). */
   getCompanyIds: () => Promise<string[]>;
   /** União de IDs alvo associados ao conjunto de IDs origem. */
-  unionAssocIds: (
-    fromObj: string,
-    fromIds: string[],
-    toObj: string
-  ) => Promise<Set<string>>;
+  unionAssocIds: (fromObj: string, fromIds: string[], toObj: string) => Promise<Set<string>>;
   /** Lê propriedades dos contatos (usado para filtrar leads). */
   readContactProps: (
     ids: string[],
-    properties: string[]
+    properties: string[],
   ) => Promise<{ id: string; properties: Record<string, string | null | undefined> }[]>;
 };
 
@@ -34,7 +30,7 @@ export async function computePlannedCount(
   key: CountObjectKey,
   remote: number,
   maxCompanies: number,
-  deps: CountDeps
+  deps: CountDeps,
 ): Promise<number> {
   if (key === "companies") return Math.min(remote, maxCompanies);
 
@@ -107,7 +103,7 @@ export async function computePlannedCapped(
   key: CountObjectKey,
   remote: number,
   maxCompanies: number,
-  deps: CountDeps
+  deps: CountDeps,
 ): Promise<number> {
   return Math.min(await computePlannedCount(key, remote, maxCompanies, deps), remote);
 }

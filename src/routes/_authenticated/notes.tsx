@@ -20,10 +20,14 @@ function NotesPage() {
       inlineEditable={["subject"]}
       columns={[
         { key: "subject", label: "Assunto", render: (r) => r.subject || "(sem assunto)" },
-        { key: "body", label: "Conteúdo", render: (r) => {
-          const plain = htmlToPlain(r.body ?? "");
-          return plain ? plain.slice(0, 120) + (plain.length > 120 ? "…" : "") : "—";
-        } },
+        {
+          key: "body",
+          label: "Conteúdo",
+          render: (r) => {
+            const plain = htmlToPlain(r.body ?? "");
+            return plain ? plain.slice(0, 120) + (plain.length > 120 ? "…" : "") : "—";
+          },
+        },
         { key: "created_at", label: "Criada em", render: (r) => formatDateTime(r.created_at) },
       ]}
       fields={[

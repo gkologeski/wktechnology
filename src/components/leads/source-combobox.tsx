@@ -3,7 +3,14 @@ import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { listLeadSources, ensureLeadSource, type LeadSource } from "@/lib/lead-sources";
 import { useAuth } from "@/lib/auth";
 import { leadSourceLabel } from "@/lib/lead-source-labels";
@@ -31,7 +38,9 @@ export function SourceCombobox({
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   const createNew = async () => {
     if (!user || !search.trim()) return;
@@ -52,8 +61,15 @@ export function SourceCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
-          <span className={cn(!value && "text-muted-foreground")}>{value ? leadSourceLabel(value) : placeholder}</span>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn(!value && "text-muted-foreground")}>
+            {value ? leadSourceLabel(value) : placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -63,7 +79,10 @@ export function SourceCombobox({
           <CommandList>
             <CommandEmpty>
               {search.trim() ? (
-                <button className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent" onClick={createNew}>
+                <button
+                  className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent"
+                  onClick={createNew}
+                >
                   <Plus className="h-3.5 w-3.5" /> Criar “{search.trim()}”
                 </button>
               ) : (
@@ -72,18 +91,25 @@ export function SourceCombobox({
             </CommandEmpty>
             <CommandGroup>
               {Array.from(
-                sources.reduce((acc, s) => {
-                  const key = leadSourceLabel(s.name).toLowerCase();
-                  if (!acc.has(key)) acc.set(key, s);
-                  return acc;
-                }, new Map<string, typeof sources[number]>()).values(),
+                sources
+                  .reduce((acc, s) => {
+                    const key = leadSourceLabel(s.name).toLowerCase();
+                    if (!acc.has(key)) acc.set(key, s);
+                    return acc;
+                  }, new Map<string, (typeof sources)[number]>())
+                  .values(),
               ).map((s) => (
                 <CommandItem
                   key={s.id}
                   value={s.name}
-                  onSelect={() => { onChange(s.name); setOpen(false); }}
+                  onSelect={() => {
+                    onChange(s.name);
+                    setOpen(false);
+                  }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", value === s.name ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn("mr-2 h-4 w-4", value === s.name ? "opacity-100" : "opacity-0")}
+                  />
                   {leadSourceLabel(s.name)}
                 </CommandItem>
               ))}

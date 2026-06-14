@@ -9,7 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getMyPlan, listPlansWithEntitlements, requestSelfUpgrade } from "@/lib/billing.functions";
 import { PLAN_LABELS, type PlanCode } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/use-entitlements";
@@ -82,7 +89,11 @@ const COMPARE_ROWS: Array<{ key: string; label: string; kind: "limit" | "flag" }
   { key: "feature.white_label", label: "White-label completo", kind: "flag" },
 ];
 
-function formatLimit(limit: number | null, enabled: boolean, kind: "limit" | "flag"): React.ReactNode {
+function formatLimit(
+  limit: number | null,
+  enabled: boolean,
+  kind: "limit" | "flag",
+): React.ReactNode {
   if (!enabled) return <Lock className="inline h-4 w-4 text-muted-foreground" />;
   if (kind === "flag") return <Check className="inline h-4 w-4 text-primary" />;
   if (limit === null) return <span className="text-sm font-medium">Ilimitado</span>;
@@ -133,9 +144,7 @@ function BillingPage() {
                 <Sparkles className="h-5 w-5 text-primary" />
                 Plano atual: {plan?.name ?? "Free"}
               </CardTitle>
-              <CardDescription>
-                Status: {planQuery.data?.status ?? "—"}
-              </CardDescription>
+              <CardDescription>Status: {planQuery.data?.status ?? "—"}</CardDescription>
             </div>
             <Badge variant="secondary" className="text-base">
               R$ {Number(plan?.price_monthly ?? 0).toFixed(2)} / mês
@@ -144,7 +153,9 @@ function BillingPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Limites de entidades</h3>
+            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+              Limites de entidades
+            </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {ENTITY_KEYS.map(({ key, label }) => {
                 const info = ent.info(key);
@@ -156,7 +167,8 @@ function BillingPage() {
                     <div className="mt-1 text-lg font-semibold">
                       {info.used.toLocaleString("pt-BR")}
                       <span className="text-sm font-normal text-muted-foreground">
-                        {" "}/ {limit === null ? "∞" : limit.toLocaleString("pt-BR")}
+                        {" "}
+                        / {limit === null ? "∞" : limit.toLocaleString("pt-BR")}
                       </span>
                     </div>
                     {limit !== null && <Progress className="mt-2 h-1" value={pct} />}
@@ -189,7 +201,8 @@ function BillingPage() {
                     <div className="mt-1 text-sm font-semibold">
                       {info.used.toLocaleString("pt-BR")}
                       <span className="font-normal text-muted-foreground">
-                        {" "}/ {limit === null ? "Ilimitado" : limit.toLocaleString("pt-BR")}
+                        {" "}
+                        / {limit === null ? "Ilimitado" : limit.toLocaleString("pt-BR")}
                       </span>
                     </div>
                     {limit !== null && <Progress className="mt-2 h-1" value={pct} />}
@@ -216,9 +229,7 @@ function BillingPage() {
                 <Card key={p.code as string} className={isCurrent ? "border-primary" : ""}>
                   <CardHeader>
                     <CardTitle className="text-base">{p.name as string}</CardTitle>
-                    <CardDescription>
-                      R$ {Number(p.price_monthly).toFixed(2)} / mês
-                    </CardDescription>
+                    <CardDescription>R$ {Number(p.price_monthly).toFixed(2)} / mês</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
@@ -252,9 +263,7 @@ function BillingPage() {
                   <TableRow key={row.key}>
                     <TableCell className="text-sm">{row.label}</TableCell>
                     {plans.map((p) => {
-                      const e = (entitlements[row.key] ?? []).find(
-                        (x) => x.plan_code === p.code
-                      );
+                      const e = (entitlements[row.key] ?? []).find((x) => x.plan_code === p.code);
                       return (
                         <TableCell key={p.code as string} className="text-center">
                           {e ? formatLimit(e.limit_int, e.enabled, row.kind) : "—"}

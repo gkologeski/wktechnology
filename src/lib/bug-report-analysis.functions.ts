@@ -16,9 +16,7 @@ async function assertPlatformAdmin(userId: string) {
 
 export const analyzeBugReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ bug_report_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ bug_report_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context.userId);
     const { analyzeBugReportById } = await import("./bug-report-analysis.server");

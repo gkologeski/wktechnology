@@ -5,13 +5,15 @@ import { Sparkles, RefreshCw, Trash2, Phone, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import {
-  generateAiSummary,
-  listAiSummaries,
-  deleteAiSummary,
-} from "@/lib/ai-summaries.functions";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { generateAiSummary, listAiSummaries, deleteAiSummary } from "@/lib/ai-summaries.functions";
 
 type Entity = "lead" | "contact" | "deal" | "ticket";
 type Kind = "conversation" | "call";
@@ -50,7 +52,9 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = (await list({ data: { entity, entity_id: entityId, limit: 10 } })) as SummaryRow[];
+      const data = (await list({
+        data: { entity, entity_id: entityId, limit: 10 },
+      })) as SummaryRow[];
       setRows(data);
     } catch (e) {
       toast.error((e as Error).message);
@@ -59,12 +63,16 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
     }
   }, [entity, entityId, list]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const generate = async () => {
     setGenerating(true);
     try {
-      const res = (await gen({ data: { entity, entity_id: entityId, kind, window_days: windowDays } })) as { skipped?: boolean; reason?: string } | undefined;
+      const res = (await gen({
+        data: { entity, entity_id: entityId, kind, window_days: windowDays },
+      })) as { skipped?: boolean; reason?: string } | undefined;
       if (res && res.skipped) {
         toast.info(res.reason ?? "Sem dados suficientes para resumir.");
       } else {
@@ -80,7 +88,12 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este resumo?")) return;
-    try { await del({ data: { id } }); await load(); } catch (e) { toast.error((e as Error).message); }
+    try {
+      await del({ data: { id } });
+      await load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   return (
@@ -91,14 +104,28 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
         </CardTitle>
         <div className="flex items-center gap-2">
           <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
-            <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[140px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="conversation"><span className="flex items-center gap-2"><MessageSquare className="h-3 w-3" />Conversa</span></SelectItem>
-              <SelectItem value="call"><span className="flex items-center gap-2"><Phone className="h-3 w-3" />Calls/Reuniões</span></SelectItem>
+              <SelectItem value="conversation">
+                <span className="flex items-center gap-2">
+                  <MessageSquare className="h-3 w-3" />
+                  Conversa
+                </span>
+              </SelectItem>
+              <SelectItem value="call">
+                <span className="flex items-center gap-2">
+                  <Phone className="h-3 w-3" />
+                  Calls/Reuniões
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select value={String(windowDays)} onValueChange={(v) => setWindowDays(Number(v))}>
-            <SelectTrigger className="h-8 w-[100px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[100px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="7">7 dias</SelectItem>
               <SelectItem value="30">30 dias</SelectItem>
@@ -107,7 +134,11 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             </SelectContent>
           </Select>
           <Button size="sm" onClick={generate} disabled={generating}>
-            {generating ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+            {generating ? (
+              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3 mr-1" />
+            )}
             Gerar
           </Button>
         </div>
@@ -116,16 +147,24 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
         {loading && <p className="text-xs text-muted-foreground">Carregando…</p>}
         {!loading && rows.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Nenhum resumo ainda. Clique em <strong>Gerar</strong> para criar um resumo automático das interações.
+            Nenhum resumo ainda. Clique em <strong>Gerar</strong> para criar um resumo automático
+            das interações.
           </p>
         )}
         {rows.map((r) => (
           <div key={r.id} className="rounded-md border p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-[10px] uppercase">{r.kind === "call" ? "Calls" : "Conversa"}</Badge>
+                <Badge variant="outline" className="text-[10px] uppercase">
+                  {r.kind === "call" ? "Calls" : "Conversa"}
+                </Badge>
                 {r.sentiment && (
-                  <Badge variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"} className="text-[10px]">{r.sentiment}</Badge>
+                  <Badge
+                    variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"}
+                    className="text-[10px]"
+                  >
+                    {r.sentiment}
+                  </Badge>
                 )}
                 <span className="text-[11px] text-muted-foreground">
                   {r.source_count} msg · {formatDateTime(r.created_at)}
@@ -140,15 +179,21 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
               <div>
                 <p className="text-[11px] font-medium text-muted-foreground mb-1">Pontos-chave</p>
                 <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                  {r.key_points.map((k, i) => <li key={i}>{k}</li>)}
+                  {r.key_points.map((k, i) => (
+                    <li key={i}>{k}</li>
+                  ))}
                 </ul>
               </div>
             )}
             {r.next_actions.length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground mb-1">Próximos passos</p>
+                <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                  Próximos passos
+                </p>
                 <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                  {r.next_actions.map((k, i) => <li key={i}>{k}</li>)}
+                  {r.next_actions.map((k, i) => (
+                    <li key={i}>{k}</li>
+                  ))}
                 </ul>
               </div>
             )}

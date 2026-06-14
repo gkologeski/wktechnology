@@ -205,8 +205,8 @@ export function SendWhatsAppDialog({
                 </div>
                 {isOfficialHsm && (
                   <p className="mt-1 text-[10px] text-muted-foreground">
-                    Será enviado via ContentSid {selectedTpl!.contentSid} — Twilio renderiza o
-                    corpo aprovado. Mídia/texto livre são ignorados.
+                    Será enviado via ContentSid {selectedTpl!.contentSid} — Twilio renderiza o corpo
+                    aprovado. Mídia/texto livre são ignorados.
                   </p>
                 )}
               </div>
@@ -215,7 +215,12 @@ export function SendWhatsAppDialog({
             <div>
               <div className="flex items-center justify-between">
                 <Label>Mensagem</Label>
-                <SmartComposeMenu channel="whatsapp" currentText={body} contactName={contactName} onApply={setBody} />
+                <SmartComposeMenu
+                  channel="whatsapp"
+                  currentText={body}
+                  contactName={contactName}
+                  onApply={setBody}
+                />
               </div>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
             </div>

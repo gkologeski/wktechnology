@@ -5,7 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Building2, ChevronRight, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
@@ -76,14 +81,25 @@ export function CompanyHierarchy({
 
       <div className="space-y-3">
         <div>
-          <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Matriz</div>
+          <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Matriz
+          </div>
           {parent ? (
             <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
-              <Link to="/companies/$id" params={{ id: parent.id }} className="flex min-w-0 items-center gap-2 text-sm text-primary hover:underline">
+              <Link
+                to="/companies/$id"
+                params={{ id: parent.id }}
+                className="flex min-w-0 items-center gap-2 text-sm text-primary hover:underline"
+              >
                 <Building2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{parent.name}</span>
               </Link>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setParent(null)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setParent(null)}
+              >
                 <X className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -154,7 +170,8 @@ function PickParentDialog({
         .order("name")
         .limit(20);
       const term = debounced.trim();
-      if (term) query = query.or(`name.ilike.%${term}%,domain.ilike.%${term}%,phone.ilike.%${term}%`);
+      if (term)
+        query = query.or(`name.ilike.%${term}%,domain.ilike.%${term}%,phone.ilike.%${term}%`);
       const { data } = await query;
       return (data ?? []) as MiniCompany[];
     },
@@ -176,7 +193,12 @@ function PickParentDialog({
         <DialogHeader>
           <DialogTitle>Selecionar empresa matriz</DialogTitle>
         </DialogHeader>
-        <Input autoFocus placeholder="Buscar empresa…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Input
+          autoFocus
+          placeholder="Buscar empresa…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
         <div className="max-h-72 overflow-auto rounded-md border">
           {filtered.length === 0 ? (
             <p className="p-4 text-center text-xs text-muted-foreground">Nenhuma empresa</p>
@@ -193,14 +215,18 @@ function PickParentDialog({
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{c.name}</div>
-                  {c.domain && <div className="truncate text-xs text-muted-foreground">{c.domain}</div>}
+                  {c.domain && (
+                    <div className="truncate text-xs text-muted-foreground">{c.domain}</div>
+                  )}
                 </div>
               </button>
             ))
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

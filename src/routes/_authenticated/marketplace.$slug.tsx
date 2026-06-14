@@ -44,15 +44,23 @@ function MarketplaceDetail() {
   const { app, installation } = data;
   const installed = !!installation;
   const settingsLink: string | null =
-    slug === "slack" ? "/settings/notifications/slack"
-    : slug === "zapier" || slug === "make" ? "/settings/zapier"
-    : slug === "whatsapp-cloud" ? "/settings/whatsapp"
-    : slug === "gmail" || slug === "google-calendar" ? "/settings/calendars"
-    : slug === "asaas" ? "/settings/payments"
-    : slug === "nfe-io" ? "/settings/nfse"
-    : slug === "twilio" ? "/settings/voice-agent"
-    : slug === "hubspot" ? "/settings/hubspot-sync"
-    : null;
+    slug === "slack"
+      ? "/settings/notifications/slack"
+      : slug === "zapier" || slug === "make"
+        ? "/settings/zapier"
+        : slug === "whatsapp-cloud"
+          ? "/settings/whatsapp"
+          : slug === "gmail" || slug === "google-calendar"
+            ? "/settings/calendars"
+            : slug === "asaas"
+              ? "/settings/payments"
+              : slug === "nfe-io"
+                ? "/settings/nfse"
+                : slug === "twilio"
+                  ? "/settings/voice-agent"
+                  : slug === "hubspot"
+                    ? "/settings/hubspot-sync"
+                    : null;
 
   async function doInstall() {
     setBusy(true);
@@ -95,7 +103,10 @@ function MarketplaceDetail() {
 
   return (
     <div className="space-y-4 p-6 max-w-3xl">
-      <Link to="/marketplace" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/marketplace"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4 mr-1" /> Marketplace
       </Link>
       <PageHeader title={app.name} description={app.short_description ?? ""} />
@@ -108,15 +119,21 @@ function MarketplaceDetail() {
             </div>
             <div>
               <CardTitle>{app.name}</CardTitle>
-              <div className="text-xs text-muted-foreground">{app.vendor} · {app.category}</div>
+              <div className="text-xs text-muted-foreground">
+                {app.vendor} · {app.category}
+              </div>
             </div>
           </div>
           <div>
             {installed && installation?.status === "active" && (
-              <Badge variant="secondary" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Instalado</Badge>
+              <Badge variant="secondary" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Instalado
+              </Badge>
             )}
             {installed && installation?.status === "error" && (
-              <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" /> Erro</Badge>
+              <Badge variant="destructive" className="gap-1">
+                <AlertCircle className="h-3 w-3" /> Erro
+              </Badge>
             )}
           </div>
         </CardHeader>
@@ -127,7 +144,9 @@ function MarketplaceDetail() {
             <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Escopos</div>
             <div className="flex flex-wrap gap-1.5">
               {(app.scopes ?? []).map((s: string) => (
-                <Badge key={s} variant="outline">{s}</Badge>
+                <Badge key={s} variant="outline">
+                  {s}
+                </Badge>
               ))}
             </div>
           </div>
@@ -148,18 +167,24 @@ function MarketplaceDetail() {
             )}
             {installed && (
               <>
-                <Button variant="outline" onClick={doTest} disabled={busy}>Testar conexão</Button>
+                <Button variant="outline" onClick={doTest} disabled={busy}>
+                  Testar conexão
+                </Button>
                 {settingsLink && (
                   <Button variant="outline" asChild>
                     <Link to={settingsLink}>Abrir configurações</Link>
                   </Button>
                 )}
-                <Button variant="destructive" onClick={doUninstall} disabled={busy}>Remover</Button>
+                <Button variant="destructive" onClick={doUninstall} disabled={busy}>
+                  Remover
+                </Button>
               </>
             )}
             {app.docs_url && (
               <Button variant="ghost" asChild>
-                <a href={app.docs_url} target="_blank" rel="noreferrer">Documentação</a>
+                <a href={app.docs_url} target="_blank" rel="noreferrer">
+                  Documentação
+                </a>
               </Button>
             )}
           </div>

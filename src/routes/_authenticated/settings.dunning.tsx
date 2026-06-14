@@ -10,20 +10,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { listDunningPolicies, upsertDunningPolicy, deleteDunningPolicy } from "@/lib/dunning.functions";
+import {
+  listDunningPolicies,
+  upsertDunningPolicy,
+  deleteDunningPolicy,
+} from "@/lib/dunning.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/dunning")({
   component: DunningPage,
 });
 
-type Step = { offset_days: number; channel: "email" | "whatsapp" | "task" | "escalation"; template?: string; subject?: string; body?: string };
+type Step = {
+  offset_days: number;
+  channel: "email" | "whatsapp" | "task" | "escalation";
+  template?: string;
+  subject?: string;
+  body?: string;
+};
 
 const defaultSteps: Step[] = [
-  { offset_days: 1, channel: "email", subject: "Lembrete amigável de pagamento", body: "Olá, sua fatura {invoice_number} vence hoje." },
-  { offset_days: 5, channel: "whatsapp", body: "Oi! A fatura {invoice_number} venceu há {days_overdue} dias. Posso ajudar?" },
+  {
+    offset_days: 1,
+    channel: "email",
+    subject: "Lembrete amigável de pagamento",
+    body: "Olá, sua fatura {invoice_number} vence hoje.",
+  },
+  {
+    offset_days: 5,
+    channel: "whatsapp",
+    body: "Oi! A fatura {invoice_number} venceu há {days_overdue} dias. Posso ajudar?",
+  },
   { offset_days: 15, channel: "escalation", body: "Escalando para cobrança especializada." },
 ];
 
@@ -53,7 +76,13 @@ function DunningPage() {
     setSteps(defaultSteps);
   }
 
-  function loadPolicy(p: { id: string; name: string; active: boolean; is_default: boolean; steps: Step[] }) {
+  function loadPolicy(p: {
+    id: string;
+    name: string;
+    active: boolean;
+    is_default: boolean;
+    steps: Step[];
+  }) {
     setEditingId(p.id);
     setName(p.name);
     setActive(p.active);
@@ -100,7 +129,10 @@ function DunningPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-4xl">
-      <PageHeader title="Régua de cobrança" description="Sequência automática para faturas em aberto/vencidas." />
+      <PageHeader
+        title="Régua de cobrança"
+        description="Sequência automática para faturas em aberto/vencidas."
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -122,10 +154,27 @@ function DunningPage() {
                     key={p.id}
                     className={`flex items-center justify-between rounded border p-2 ${editingId === p.id ? "bg-muted/50" : ""}`}
                   >
-                    <button className="flex-1 text-left text-sm" onClick={() => loadPolicy(p as unknown as { id: string; name: string; active: boolean; is_default: boolean; steps: Step[] })}>
+                    <button
+                      className="flex-1 text-left text-sm"
+                      onClick={() =>
+                        loadPolicy(
+                          p as unknown as {
+                            id: string;
+                            name: string;
+                            active: boolean;
+                            is_default: boolean;
+                            steps: Step[];
+                          },
+                        )
+                      }
+                    >
                       <span className="font-medium">{p.name}</span>
-                      {p.is_default && <span className="ml-2 text-xs text-muted-foreground">(padrão)</span>}
-                      {!p.active && <span className="ml-2 text-xs text-muted-foreground">(inativa)</span>}
+                      {p.is_default && (
+                        <span className="ml-2 text-xs text-muted-foreground">(padrão)</span>
+                      )}
+                      {!p.active && (
+                        <span className="ml-2 text-xs text-muted-foreground">(inativa)</span>
+                      )}
                     </button>
                     <Button variant="ghost" size="icon" onClick={() => remove(p.id)}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -167,8 +216,13 @@ function DunningPage() {
                       onChange={(e) => updateStep(i, { offset_days: Number(e.target.value) })}
                     />
                     <span className="text-xs text-muted-foreground">dias após vencimento</span>
-                    <Select value={s.channel} onValueChange={(v) => updateStep(i, { channel: v as Step["channel"] })}>
-                      <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={s.channel}
+                      onValueChange={(v) => updateStep(i, { channel: v as Step["channel"] })}
+                    >
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="email">E-mail</SelectItem>
                         <SelectItem value="whatsapp">WhatsApp</SelectItem>
@@ -176,7 +230,11 @@ function DunningPage() {
                         <SelectItem value="escalation">Escalada</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button variant="ghost" size="icon" onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSteps((p) => p.filter((_, idx) => idx !== i))}
+                    >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
@@ -197,7 +255,9 @@ function DunningPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSteps((p) => [...p, { offset_days: 30, channel: "email", body: "" }])}
+                onClick={() =>
+                  setSteps((p) => [...p, { offset_days: 30, channel: "email", body: "" }])
+                }
               >
                 <Plus className="mr-1 h-4 w-4" /> Adicionar passo
               </Button>

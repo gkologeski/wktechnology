@@ -6,7 +6,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EntityEnum = z.enum(["contact", "lead", "deal", "company"]);
 
-const ColByEntity: Record<z.infer<typeof EntityEnum>, "contact_id" | "lead_id" | "deal_id" | "company_id"> = {
+const ColByEntity: Record<
+  z.infer<typeof EntityEnum>,
+  "contact_id" | "lead_id" | "deal_id" | "company_id"
+> = {
   contact: "contact_id",
   lead: "lead_id",
   deal: "deal_id",
@@ -30,11 +33,13 @@ export interface EntityEmailItem {
 export const listEntityEmailEngagement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      entity: EntityEnum,
-      entity_id: z.string().uuid(),
-      limit: z.number().int().min(1).max(100).default(20),
-    }).parse(i),
+    z
+      .object({
+        entity: EntityEnum,
+        entity_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).default(20),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }): Promise<EntityEmailItem[]> => {
     const { supabase } = context;
@@ -69,7 +74,12 @@ export const listEntityEmailEngagement = createServerFn({ method: "POST" })
       .in("message_id", msgIds)
       .order("occurred_at", { ascending: false });
 
-    type EvRow = { message_id: string; event_type: string; url: string | null; occurred_at: string };
+    type EvRow = {
+      message_id: string;
+      event_type: string;
+      url: string | null;
+      occurred_at: string;
+    };
     const lastOpen = new Map<string, string>();
     const lastClick = new Map<string, { at: string; url: string | null }>();
     for (const e of (events ?? []) as EvRow[]) {
@@ -120,10 +130,12 @@ export interface EmailEngagementReport {
 export const getEmailEngagementReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      dateFrom: z.string().optional(),
-      dateTo: z.string().optional(),
-    }).parse(i ?? {}),
+    z
+      .object({
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }): Promise<EmailEngagementReport> => {
     const { supabase } = context;
@@ -140,15 +152,22 @@ export const getEmailEngagementReport = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const list = (msgs ?? []) as Array<{
-      id: string; subject: string | null; to_emails: string[] | null;
-      sent_at: string | null; open_count: number | null; click_count: number | null;
+      id: string;
+      subject: string | null;
+      to_emails: string[] | null;
+      sent_at: string | null;
+      open_count: number | null;
+      click_count: number | null;
       first_opened_at: string | null;
     }>;
 
     let opened = 0;
     let clicked = 0;
     const recipients = new Set<string>();
-    const byDay = new Map<string, { date: string; sent: number; opened: number; clicked: number }>();
+    const byDay = new Map<
+      string,
+      { date: string; sent: number; opened: number; clicked: number }
+    >();
 
     for (const m of list) {
       if ((m.open_count ?? 0) > 0 || m.first_opened_at) opened += 1;
@@ -169,7 +188,10 @@ export const getEmailEngagementReport = createServerFn({ method: "POST" })
     const ctor = opened ? (clicked / opened) * 100 : 0;
 
     const top = [...list]
-      .sort((a, b) => (b.open_count ?? 0) + (b.click_count ?? 0) - ((a.open_count ?? 0) + (a.click_count ?? 0)))
+      .sort(
+        (a, b) =>
+          (b.open_count ?? 0) + (b.click_count ?? 0) - ((a.open_count ?? 0) + (a.click_count ?? 0)),
+      )
       .slice(0, 10)
       .map((m) => ({
         id: m.id,

@@ -13,8 +13,12 @@ interface Props {
 
 /** Badge visual para SLA: verde/âmbar/vermelho conforme prazo. */
 export function SlaBadge({
-  resolutionDueAt, resolutionBreached, resolvedAt,
-  firstResponseDueAt, firstResponseAt, firstResponseBreached,
+  resolutionDueAt,
+  resolutionBreached,
+  resolvedAt,
+  firstResponseDueAt,
+  firstResponseAt,
+  firstResponseBreached,
   compact,
 }: Props) {
   // Resolução tem prioridade visual; se não houver, mostra 1ª resposta.
@@ -29,23 +33,38 @@ export function SlaBadge({
 
   if (!resolvedAt && dueRes != null) {
     const mins = (dueRes - now) / 60000;
-    if (resolutionBreached || mins < 0) { tone = "red"; label = `Resol. ${fmt(-mins)} atraso`; }
-    else if (mins < 60) { tone = "amber"; label = `Resol. ${fmt(mins)}`; }
-    else { tone = "green"; label = `Resol. ${fmt(mins)}`; }
+    if (resolutionBreached || mins < 0) {
+      tone = "red";
+      label = `Resol. ${fmt(-mins)} atraso`;
+    } else if (mins < 60) {
+      tone = "amber";
+      label = `Resol. ${fmt(mins)}`;
+    } else {
+      tone = "green";
+      label = `Resol. ${fmt(mins)}`;
+    }
   } else if (!firstResponseAt && dueFr != null) {
     const mins = (dueFr - now) / 60000;
-    if (firstResponseBreached || mins < 0) { tone = "red"; label = `1ª resp. ${fmt(-mins)} atraso`; }
-    else if (mins < 15) { tone = "amber"; label = `1ª resp. ${fmt(mins)}`; }
-    else { tone = "green"; label = `1ª resp. ${fmt(mins)}`; }
+    if (firstResponseBreached || mins < 0) {
+      tone = "red";
+      label = `1ª resp. ${fmt(-mins)} atraso`;
+    } else if (mins < 15) {
+      tone = "amber";
+      label = `1ª resp. ${fmt(mins)}`;
+    } else {
+      tone = "green";
+      label = `1ª resp. ${fmt(mins)}`;
+    }
   } else {
     return null;
   }
 
-  const cls = tone === "red"
-    ? "bg-destructive/10 text-destructive border-destructive/30"
-    : tone === "amber"
-    ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30"
-    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
+  const cls =
+    tone === "red"
+      ? "bg-destructive/10 text-destructive border-destructive/30"
+      : tone === "amber"
+        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30"
+        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
 
   return (
     <Badge variant="outline" className={`gap-1 font-normal ${cls}`}>

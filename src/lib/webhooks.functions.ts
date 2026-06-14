@@ -6,10 +6,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
 
 export const WEBHOOK_EVENTS = [
-  "lead.created","lead.updated","lead.stage_changed",
-  "contact.created","contact.updated",
-  "deal.created","deal.updated","deal.stage_changed",
-  "ticket.created","ticket.updated",
+  "lead.created",
+  "lead.updated",
+  "lead.stage_changed",
+  "contact.created",
+  "contact.updated",
+  "deal.created",
+  "deal.updated",
+  "deal.stage_changed",
+  "ticket.created",
+  "ticket.updated",
 ] as const;
 
 export const listWebhooks = createServerFn({ method: "GET" })
@@ -26,28 +32,42 @@ export const listWebhooks = createServerFn({ method: "GET" })
 
 export const upsertWebhook = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id?: string; name: string; url: string; events: string[]; active?: boolean }) =>
-    z.object({
-      id: z.string().uuid().optional(),
-      name: z.string().min(1).max(120),
-      url: z.string().url(),
-      events: z.array(z.string()).min(1),
-      active: z.boolean().optional(),
-    }).parse(d)
+  .inputValidator(
+    (d: { id?: string; name: string; url: string; events: string[]; active?: boolean }) =>
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          name: z.string().min(1).max(120),
+          url: z.string().url(),
+          events: z.array(z.string()).min(1),
+          active: z.boolean().optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     if (data.id) {
-      const { error } = await supabase.from("outbound_webhooks")
-        .update({ name: data.name, url: data.url, events: data.events, active: data.active ?? true })
-        .eq("id", data.id).eq("owner_id", userId);
+      const { error } = await supabase
+        .from("outbound_webhooks")
+        .update({
+          name: data.name,
+          url: data.url,
+          events: data.events,
+          active: data.active ?? true,
+        })
+        .eq("id", data.id)
+        .eq("owner_id", userId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
     const secret = `whsec_${randomBytes(24).toString("hex")}`;
     const { error } = await supabase.from("outbound_webhooks").insert({
-      owner_id: userId, name: data.name, url: data.url, events: data.events,
-      active: data.active ?? true, secret,
+      owner_id: userId,
+      name: data.name,
+      url: data.url,
+      events: data.events,
+      active: data.active ?? true,
+      secret,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -65,12 +85,15 @@ export const deleteWebhook = createServerFn({ method: "POST" })
 export const listWebhookDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { webhook_id?: string | null }) =>
-    z.object({ webhook_id: z.string().uuid().nullable().optional() }).parse(d)
+    z.object({ webhook_id: z.string().uuid().nullable().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    let q = supabase.from("webhook_deliveries")
-      .select("id, webhook_id, event_type, status, attempt, response_status, created_at, delivered_at")
+    let q = supabase
+      .from("webhook_deliveries")
+      .select(
+        "id, webhook_id, event_type, status, attempt, response_status, created_at, delivered_at",
+      )
       .eq("owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -86,8 +109,12 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
     const { userId } = context;
     // `secret` is owner-only via RLS; use admin client scoped to owner_id.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("outbound_webhooks")
-      .select("secret").eq("id", data.id).eq("owner_id", userId).maybeSingle();
+    const { data: row } = await supabaseAdmin
+      .from("outbound_webhooks")
+      .select("secret")
+      .eq("id", data.id)
+      .eq("owner_id", userId)
+      .maybeSingle();
     return { secret: row?.secret as string | undefined };
   });
 

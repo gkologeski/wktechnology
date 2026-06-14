@@ -10,7 +10,9 @@ export const listSlaPolicies = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("sla_policies")
-      .select("id, name, pipeline_id, priority, first_response_mins, resolution_mins, active, created_at")
+      .select(
+        "id, name, pipeline_id, priority, first_response_mins, resolution_mins, active, created_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -18,42 +20,57 @@ export const listSlaPolicies = createServerFn({ method: "GET" })
 
 export const upsertSlaPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    id: z.string().uuid().optional(),
-    name: z.string().min(1).max(120),
-    pipeline_id: z.string().uuid().nullable(),
-    priority: PriorityEnum.nullable(),
-    first_response_mins: z.number().int().min(1).max(100000),
-    resolution_mins: z.number().int().min(1).max(1000000),
-    active: z.boolean(),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        name: z.string().min(1).max(120),
+        pipeline_id: z.string().uuid().nullable(),
+        priority: PriorityEnum.nullable(),
+        first_response_mins: z.number().int().min(1).max(100000),
+        resolution_mins: z.number().int().min(1).max(1000000),
+        active: z.boolean(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     if (data.id) {
-      const { error } = await supabase.from("sla_policies").update({
+      const { error } = await supabase
+        .from("sla_policies")
+        .update({
+          name: data.name,
+          pipeline_id: data.pipeline_id,
+          priority: data.priority,
+          first_response_mins: data.first_response_mins,
+          resolution_mins: data.resolution_mins,
+          active: data.active,
+        })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    // owner_id is the workspace owner (current user's workspace).
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("active_workspace_id")
+      .eq("id", userId)
+      .single();
+    const wsId = (prof?.active_workspace_id as string | null) ?? userId;
+    const { data: ins, error } = await supabase
+      .from("sla_policies")
+      .insert({
+        owner_id: wsId,
+        workspace_id: wsId,
         name: data.name,
         pipeline_id: data.pipeline_id,
         priority: data.priority,
         first_response_mins: data.first_response_mins,
         resolution_mins: data.resolution_mins,
         active: data.active,
-      }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { id: data.id };
-    }
-    // owner_id is the workspace owner (current user's workspace).
-    const { data: prof } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).single();
-    const wsId = (prof?.active_workspace_id as string | null) ?? userId;
-    const { data: ins, error } = await supabase.from("sla_policies").insert({
-      owner_id: wsId,
-      workspace_id: wsId,
-      name: data.name,
-      pipeline_id: data.pipeline_id,
-      priority: data.priority,
-      first_response_mins: data.first_response_mins,
-      resolution_mins: data.resolution_mins,
-      active: data.active,
-    }).select("id").single();
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: ins!.id };
   });

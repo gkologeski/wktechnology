@@ -20,16 +20,27 @@ export type ToolKey =
 export function useMyTools() {
   const { user, loading: authLoading } = useAuth();
   const [tools, setTools] = useState<Record<ToolKey, boolean>>({
-    communicate: true, import: true, export: true, bulk_delete: true,
-    manage_workflows: true, manage_properties: true, manage_pipelines: true,
-    access_logs: true, manage_integrations: true, manage_billing: true, manage_users: true,
+    communicate: true,
+    import: true,
+    export: true,
+    bulk_delete: true,
+    manage_workflows: true,
+    manage_properties: true,
+    manage_pipelines: true,
+    access_logs: true,
+    manage_integrations: true,
+    manage_billing: true,
+    manage_users: true,
   });
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       // 1) Workspace ativo
@@ -58,7 +69,10 @@ export function useMyTools() {
       const profileId = (tm?.access_profile_id as string | null) ?? null;
       if (!profileId) {
         if (!cancelled) {
-          setTools((t) => Object.fromEntries(Object.keys(t).map((k) => [k, false])) as Record<ToolKey, boolean>);
+          setTools(
+            (t) =>
+              Object.fromEntries(Object.keys(t).map((k) => [k, false])) as Record<ToolKey, boolean>,
+          );
           setLoading(false);
         }
         return;
@@ -71,11 +85,13 @@ export function useMyTools() {
       const next: Record<string, boolean> = {};
       for (const r of rows ?? []) next[r.tool_key as string] = !!r.enabled;
       if (!cancelled) {
-        setTools((t) => ({ ...t, ...next } as Record<ToolKey, boolean>));
+        setTools((t) => ({ ...t, ...next }) as Record<ToolKey, boolean>);
         setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, authLoading]);
 
   return {

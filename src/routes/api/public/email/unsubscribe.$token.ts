@@ -15,8 +15,13 @@ export const Route = createFileRoute("/api/public/email/unsubscribe/$token")({
     handlers: {
       GET: async ({ params }) => {
         const r = await recordUnsubscribe(params.token).catch(() => null);
-        if (!r) return html(`<h1>Link inválido</h1><p>Este link de cancelamento não é válido ou já expirou.</p>`);
-        return html(`<h1>Inscrição cancelada</h1><p><strong>${r.email}</strong> não receberá mais emails desta lista.</p>`);
+        if (!r)
+          return html(
+            `<h1>Link inválido</h1><p>Este link de cancelamento não é válido ou já expirou.</p>`,
+          );
+        return html(
+          `<h1>Inscrição cancelada</h1><p><strong>${r.email}</strong> não receberá mais emails desta lista.</p>`,
+        );
       },
       POST: async ({ params }) => {
         const r = await recordUnsubscribe(params.token).catch(() => null);

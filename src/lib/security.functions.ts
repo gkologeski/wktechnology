@@ -12,7 +12,11 @@ const SecuritySchema = z.object({
 });
 
 async function activeWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
   if (!data?.active_workspace_id) throw new Error("Workspace ativo não encontrado");
   return data.active_workspace_id as string;
 }
@@ -66,7 +70,7 @@ export const updateWorkspaceSecurity = createServerFn({ method: "POST" })
 export const updateDataRegion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { region: "BR" | "US" | "EU" }) =>
-    z.object({ region: z.enum(["BR", "US", "EU"]) }).parse(d)
+    z.object({ region: z.enum(["BR", "US", "EU"]) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -82,7 +86,10 @@ export const updateDataRegion = createServerFn({ method: "POST" })
  * Verifica se um IP está na allow-list ativa do workspace. Quando a lista
  * está desativada, retorna sempre true.
  */
-export function isIpAllowed(ip: string, settings: { ip_allowlist?: string[]; ip_allowlist_enabled?: boolean }): boolean {
+export function isIpAllowed(
+  ip: string,
+  settings: { ip_allowlist?: string[]; ip_allowlist_enabled?: boolean },
+): boolean {
   if (!settings.ip_allowlist_enabled) return true;
   const list = settings.ip_allowlist ?? [];
   if (list.length === 0) return true;

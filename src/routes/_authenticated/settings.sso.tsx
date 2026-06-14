@@ -16,7 +16,8 @@ function SsoPage() {
           <ShieldCheck className="h-5 w-5" /> SSO — SAML / OIDC
         </h1>
         <p className="text-sm text-muted-foreground">
-          Conecte o login do seu workspace ao seu provedor de identidade corporativo (Okta, Azure AD / Entra ID, Google Workspace).
+          Conecte o login do seu workspace ao seu provedor de identidade corporativo (Okta, Azure AD
+          / Entra ID, Google Workspace).
         </p>
       </div>
 
@@ -24,8 +25,9 @@ function SsoPage() {
         <CardHeader>
           <CardTitle>SAML 2.0</CardTitle>
           <CardDescription>
-            Para configurar SAML, peça ao seu administrador Lovable que acione a configuração de SSO no Lovable Cloud — você
-            receberá a <strong>ACS URL</strong> e o <strong>Entity ID</strong> deste workspace para colar no IdP, e em seguida o
+            Para configurar SAML, peça ao seu administrador Lovable que acione a configuração de SSO
+            no Lovable Cloud — você receberá a <strong>ACS URL</strong> e o{" "}
+            <strong>Entity ID</strong> deste workspace para colar no IdP, e em seguida o
             <strong> metadata URL</strong> do IdP é registrado aqui.
           </CardDescription>
         </CardHeader>
@@ -36,8 +38,10 @@ function SsoPage() {
             <Badge variant="outline">Force-SSO opcional</Badge>
           </div>
           <p className="text-sm">
-            Solicite no chat: <em>"Configurar SAML SSO para os domínios x.com, y.com com metadata https://…"</em>. O assistente
-            usa a ferramenta nativa do Lovable Cloud para registrar o IdP e mostrar os endpoints SP.
+            Solicite no chat:{" "}
+            <em>"Configurar SAML SSO para os domínios x.com, y.com com metadata https://…"</em>. O
+            assistente usa a ferramenta nativa do Lovable Cloud para registrar o IdP e mostrar os
+            endpoints SP.
           </p>
           <Button variant="outline" asChild>
             <a href="https://docs.lovable.dev/features/security" target="_blank" rel="noreferrer">
@@ -50,7 +54,10 @@ function SsoPage() {
       <Card>
         <CardHeader>
           <CardTitle>OIDC</CardTitle>
-          <CardDescription>OIDC pode ser configurado via Google sign-in nativo. Para outros IdPs OIDC genéricos, use SAML.</CardDescription>
+          <CardDescription>
+            OIDC pode ser configurado via Google sign-in nativo. Para outros IdPs OIDC genéricos,
+            use SAML.
+          </CardDescription>
         </CardHeader>
       </Card>
     </div>

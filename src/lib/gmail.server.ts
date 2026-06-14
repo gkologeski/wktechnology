@@ -17,11 +17,7 @@ export type EmailAccountRow = {
 
 function b64url(input: string | Buffer) {
   const buf = typeof input === "string" ? Buffer.from(input, "utf8") : input;
-  return buf
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 async function refreshAccessToken(account: EmailAccountRow): Promise<string> {
@@ -88,13 +84,8 @@ export function buildRawMime(opts: {
   inReplyTo?: string;
   references?: string;
 }): string {
-  const fromHeader = opts.fromName
-    ? `${encodeHeader(opts.fromName)} <${opts.from}>`
-    : opts.from;
-  const headers: string[] = [
-    `From: ${fromHeader}`,
-    `To: ${opts.to.join(", ")}`,
-  ];
+  const fromHeader = opts.fromName ? `${encodeHeader(opts.fromName)} <${opts.from}>` : opts.from;
+  const headers: string[] = [`From: ${fromHeader}`, `To: ${opts.to.join(", ")}`];
   if (opts.cc && opts.cc.length) headers.push(`Cc: ${opts.cc.join(", ")}`);
   if (opts.bcc && opts.bcc.length) headers.push(`Bcc: ${opts.bcc.join(", ")}`);
   headers.push(`Subject: ${encodeHeader(opts.subject)}`);
@@ -130,7 +121,10 @@ export function buildRawMime(opts: {
 }
 
 function stripHtml(s: string) {
-  return s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 function escapeHtml(s: string) {
   return s

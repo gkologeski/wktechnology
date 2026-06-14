@@ -34,29 +34,39 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
 
           // Create notifications for assignees on breaches
           const notifs: Array<{
-            owner_id: string; user_id: string; type: string;
-            title: string; body: string; link: string; entity: string; entity_id: string;
+            owner_id: string;
+            user_id: string;
+            type: string;
+            title: string;
+            body: string;
+            link: string;
+            entity: string;
+            entity_id: string;
           }> = [];
           for (const t of fr ?? []) {
             if (!t.assignee_id) continue;
             notifs.push({
-              owner_id: t.owner_id, user_id: t.assignee_id,
+              owner_id: t.owner_id,
+              user_id: t.assignee_id,
               type: "sla.first_response_breach",
               title: "SLA de 1ª resposta violado",
               body: t.subject,
               link: `/tickets/${t.id}`,
-              entity: "ticket", entity_id: t.id,
+              entity: "ticket",
+              entity_id: t.id,
             });
           }
           for (const t of rs ?? []) {
             if (!t.assignee_id) continue;
             notifs.push({
-              owner_id: t.owner_id, user_id: t.assignee_id,
+              owner_id: t.owner_id,
+              user_id: t.assignee_id,
               type: "sla.resolution_breach",
               title: "SLA de resolução violado",
               body: t.subject,
               link: `/tickets/${t.id}`,
-              entity: "ticket", entity_id: t.id,
+              entity: "ticket",
+              entity_id: t.id,
             });
           }
           if (notifs.length) {
@@ -79,18 +89,23 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
             const ids = risk.map((t) => t.id);
             const cutoff = new Date(Date.now() - 30 * 60_000).toISOString();
             const { data: existing } = await supabaseAdmin
-              .from("notifications").select("entity_id")
-              .in("entity_id", ids).eq("type", "sla.at_risk").gt("created_at", cutoff);
+              .from("notifications")
+              .select("entity_id")
+              .in("entity_id", ids)
+              .eq("type", "sla.at_risk")
+              .gt("created_at", cutoff);
             const sentSet = new Set((existing ?? []).map((n) => n.entity_id));
             const riskNotifs = risk
               .filter((t) => !sentSet.has(t.id))
               .map((t) => ({
-                owner_id: t.owner_id, user_id: t.assignee_id!,
+                owner_id: t.owner_id,
+                user_id: t.assignee_id!,
                 type: "sla.at_risk",
                 title: "SLA prestes a violar",
                 body: t.subject,
                 link: `/tickets/${t.id}`,
-                entity: "ticket", entity_id: t.id,
+                entity: "ticket",
+                entity_id: t.id,
               }));
             if (riskNotifs.length) await supabaseAdmin.from("notifications").insert(riskNotifs);
           }

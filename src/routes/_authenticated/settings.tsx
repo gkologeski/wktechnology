@@ -12,14 +12,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Search, Settings as SettingsIcon, User, Mail, ShieldCheck, Languages,
-  Smartphone, Calendar, CalendarCheck, GitBranch, Tag, Layers, LayoutTemplate, Boxes,
-  Filter, Package, FileText, FileSignature, BookOpen, Repeat, Upload, Workflow,
-  ArrowRightLeft, Route as RouteIcon, Timer, Star, Sparkles, Users, UsersRound,
-  KeyRound, ScrollText, Webhook, Plug, RefreshCw, MessageSquare, MessagesSquare,
-  ShoppingBag, Megaphone, CreditCard, Receipt, Repeat2, FileBarChart2,
-  ClipboardList, Globe, MousePointerClick, PhoneCall, Video as VideoIcon,
-  Lock, Database, Download, Bell, Zap, ListChecks, Briefcase,
+  Search,
+  Settings as SettingsIcon,
+  User,
+  Mail,
+  ShieldCheck,
+  Languages,
+  Smartphone,
+  Calendar,
+  CalendarCheck,
+  GitBranch,
+  Tag,
+  Layers,
+  LayoutTemplate,
+  Boxes,
+  Filter,
+  Package,
+  FileText,
+  FileSignature,
+  BookOpen,
+  Repeat,
+  Upload,
+  Workflow,
+  ArrowRightLeft,
+  Route as RouteIcon,
+  Timer,
+  Star,
+  Sparkles,
+  Users,
+  UsersRound,
+  KeyRound,
+  ScrollText,
+  Webhook,
+  Plug,
+  RefreshCw,
+  MessageSquare,
+  MessagesSquare,
+  ShoppingBag,
+  Megaphone,
+  CreditCard,
+  Receipt,
+  Repeat2,
+  FileBarChart2,
+  ClipboardList,
+  Globe,
+  MousePointerClick,
+  PhoneCall,
+  Video as VideoIcon,
+  Lock,
+  Database,
+  Download,
+  Bell,
+  Zap,
+  ListChecks,
+  Briefcase,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -29,7 +75,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 type Need = "admin" | "manager" | "platform" | undefined;
-type Tab = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; need?: Need };
+type Tab = {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  need?: Need;
+};
 type Section = { label: string; tabs: Tab[] };
 
 const sections: Section[] = [
@@ -50,7 +101,12 @@ const sections: Section[] = [
       { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
       { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck, need: "manager" },
       { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
-      { to: "/settings/data-residency", label: "Residência de dados", icon: Database, need: "admin" },
+      {
+        to: "/settings/data-residency",
+        label: "Residência de dados",
+        icon: Database,
+        need: "admin",
+      },
       { to: "/settings/exports", label: "Exportações", icon: Download, need: "admin" },
     ],
   },
@@ -59,8 +115,18 @@ const sections: Section[] = [
     tabs: [
       { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin" },
       { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin" },
-      { to: "/settings/property-groups", label: "Grupos de propriedades", icon: Layers, need: "admin" },
-      { to: "/settings/record-layouts", label: "Layout do registro", icon: LayoutTemplate, need: "admin" },
+      {
+        to: "/settings/property-groups",
+        label: "Grupos de propriedades",
+        icon: Layers,
+        need: "admin",
+      },
+      {
+        to: "/settings/record-layouts",
+        label: "Layout do registro",
+        icon: LayoutTemplate,
+        need: "admin",
+      },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
       { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager" },
       { to: "/settings/segments", label: "Segmentos", icon: Filter, need: "manager" },
@@ -71,9 +137,24 @@ const sections: Section[] = [
     label: "Vendas & Financeiro",
     tabs: [
       { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager" },
-      { to: "/settings/quote-templates", label: "Modelos de cotação", icon: LayoutTemplate, need: "manager" },
-      { to: "/settings/clauses", label: "Biblioteca de cláusulas", icon: BookOpen, need: "manager" },
-      { to: "/settings/esign", label: "Assinaturas eletrônicas", icon: FileSignature, need: "admin" },
+      {
+        to: "/settings/quote-templates",
+        label: "Modelos de cotação",
+        icon: LayoutTemplate,
+        need: "manager",
+      },
+      {
+        to: "/settings/clauses",
+        label: "Biblioteca de cláusulas",
+        icon: BookOpen,
+        need: "manager",
+      },
+      {
+        to: "/settings/esign",
+        label: "Assinaturas eletrônicas",
+        icon: FileSignature,
+        need: "admin",
+      },
       { to: "/settings/payments", label: "Pagamentos", icon: CreditCard, need: "admin" },
       { to: "/settings/subscriptions", label: "Assinaturas", icon: Repeat2, need: "admin" },
       { to: "/settings/recurring", label: "Recorrência", icon: Repeat, need: "admin" },
@@ -121,7 +202,12 @@ const sections: Section[] = [
       { to: "/settings/surveys", label: "Pesquisas", icon: Star, need: "manager" },
       { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
       { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase, need: "manager" },
-      { to: "/settings/prospecting-scripts", label: "Scripts de prospecção", icon: FileText, need: "manager" },
+      {
+        to: "/settings/prospecting-scripts",
+        label: "Scripts de prospecção",
+        icon: FileText,
+        need: "manager",
+      },
       { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall, need: "admin" },
       { to: "/settings/video", label: "Vídeo / reuniões", icon: VideoIcon, need: "manager" },
     ],
@@ -137,9 +223,24 @@ const sections: Section[] = [
       { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users, need: "admin" },
       { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp (Meta)", icon: MessageSquare, need: "admin" },
-      { to: "/settings/whatsapp-templates", label: "WhatsApp · Templates", icon: MessagesSquare, need: "manager" },
-      { to: "/settings/whatsapp-catalogs", label: "WhatsApp · Catálogos", icon: ShoppingBag, need: "manager" },
-      { to: "/settings/wa-ads", label: "WhatsApp · Anúncios CTWA", icon: Megaphone, need: "manager" },
+      {
+        to: "/settings/whatsapp-templates",
+        label: "WhatsApp · Templates",
+        icon: MessagesSquare,
+        need: "manager",
+      },
+      {
+        to: "/settings/whatsapp-catalogs",
+        label: "WhatsApp · Catálogos",
+        icon: ShoppingBag,
+        need: "manager",
+      },
+      {
+        to: "/settings/wa-ads",
+        label: "WhatsApp · Anúncios CTWA",
+        icon: Megaphone,
+        need: "manager",
+      },
     ],
   },
 ];
@@ -159,9 +260,8 @@ function SettingsLayout() {
   };
 
   const allowedSections = useMemo(
-    () => sections
-      .map((s) => ({ ...s, tabs: s.tabs.filter(canSee) }))
-      .filter((s) => s.tabs.length > 0),
+    () =>
+      sections.map((s) => ({ ...s, tabs: s.tabs.filter(canSee) })).filter((s) => s.tabs.length > 0),
     [isAdmin, isManager, isPlatformAdmin],
   );
 
@@ -214,7 +314,9 @@ function SettingsLayout() {
               <SettingsIcon className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-bold tracking-tight">Configurações</h2>
             </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">Gerencie seu ambiente de trabalho</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Gerencie seu ambiente de trabalho
+            </p>
           </div>
 
           {/* Search */}

@@ -17,9 +17,16 @@ export const Route = createFileRoute("/accept-invite")({
   head: () => ({
     meta: [
       { title: "Aceitar convite — WK Technology CRM" },
-      { name: "description", content: "Confirme seus dados e crie uma senha para acessar o workspace do WK Technology CRM." },
+      {
+        name: "description",
+        content:
+          "Confirme seus dados e crie uma senha para acessar o workspace do WK Technology CRM.",
+      },
       { property: "og:title", content: "Aceitar convite — WK Technology CRM" },
-      { property: "og:description", content: "Conclua seu acesso ao workspace do WK Technology CRM." },
+      {
+        property: "og:description",
+        content: "Conclua seu acesso ao workspace do WK Technology CRM.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -41,7 +48,10 @@ function AcceptInvitePage() {
     if (typeof window === "undefined") return;
 
     const hash = window.location.hash || "";
-    const hasInviteHash = hash.includes("type=invite") || hash.includes("type=signup") || hash.includes("type=recovery");
+    const hasInviteHash =
+      hash.includes("type=invite") ||
+      hash.includes("type=signup") ||
+      hash.includes("type=recovery");
 
     const hydrate = async () => {
       const { data } = await supabase.auth.getUser();
@@ -112,7 +122,9 @@ function AcceptInvitePage() {
               <p className="text-muted-foreground">
                 Convite inválido ou expirado. Peça ao administrador para enviar um novo convite.
               </p>
-              <Link to="/login" className="text-primary hover:underline">Ir para o login</Link>
+              <Link to="/login" className="text-primary hover:underline">
+                Ir para o login
+              </Link>
             </div>
           ) : !ready ? (
             <p className="text-sm text-muted-foreground">Validando convite…</p>
@@ -120,7 +132,12 @@ function AcceptInvitePage() {
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="ai-name">Nome completo</Label>
-                <Input id="ai-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <Input
+                  id="ai-name"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-phone">Telefone celular</Label>
@@ -128,14 +145,27 @@ function AcceptInvitePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass">Nova senha</Label>
-                <PasswordInput id="ai-pass" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <PasswordInput
+                  id="ai-pass"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Use no mínimo 6 caracteres. Recomendamos combinar letras maiúsculas, minúsculas, números e símbolos.
+                  Use no mínimo 6 caracteres. Recomendamos combinar letras maiúsculas, minúsculas,
+                  números e símbolos.
                 </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ai-pass2">Confirme a senha</Label>
-                <PasswordInput id="ai-pass2" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                <PasswordInput
+                  id="ai-pass2"
+                  required
+                  minLength={6}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                />
                 {confirm && password !== confirm && (
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
                 )}

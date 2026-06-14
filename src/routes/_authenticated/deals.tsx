@@ -57,7 +57,9 @@ function DealsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deals")
-        .select("id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at,custom_fields")
+        .select(
+          "id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at,custom_fields",
+        )
         .order("created_at", { ascending: false })
         .range(0, 999);
       if (error) throw error;
@@ -68,19 +70,24 @@ function DealsPage() {
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () =>
-      ((await supabase.from("companies").select("id,name").order("name")).data as Pick<Company, "id" | "name">[]) ?? [],
+      ((await supabase.from("companies").select("id,name").order("name")).data as Pick<
+        Company,
+        "id" | "name"
+      >[]) ?? [],
   });
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts", "select"],
     queryFn: async () =>
-      ((await supabase.from("contacts").select("id,first_name,last_name").order("first_name")).data as Pick<
-        Contact,
-        "id" | "first_name" | "last_name"
-      >[]) ?? [],
+      ((await supabase.from("contacts").select("id,first_name,last_name").order("first_name"))
+        .data as Pick<Contact, "id" | "first_name" | "last_name">[]) ?? [],
   });
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles", "select"],
-    queryFn: async () => ((await supabase.from("profiles").select("id,full_name")).data as { id: string; full_name: string | null }[]) ?? [],
+    queryFn: async () =>
+      ((await supabase.from("profiles").select("id,full_name")).data as {
+        id: string;
+        full_name: string | null;
+      }[]) ?? [],
   });
 
   const lookups: DealLookups = useMemo(() => {
@@ -96,7 +103,9 @@ function DealsPage() {
 
   const ownerOptions = useMemo(() => {
     const ids = new Set<string>(profiles.map((p) => p.id));
-    deals.forEach((d) => { if (d.owner_id) ids.add(d.owner_id); });
+    deals.forEach((d) => {
+      if (d.owner_id) ids.add(d.owner_id);
+    });
     return Array.from(ids).map((id) => ({ id, name: lookups.owners.get(id) ?? id.slice(0, 8) }));
   }, [deals, lookups, profiles]);
 
@@ -155,7 +164,11 @@ function DealsPage() {
         title="Negócios"
         description="Pipeline de vendas estilo HubSpot."
         actions={
-          <Button size="sm" onClick={openNew} className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90">
+          <Button
+            size="sm"
+            onClick={openNew}
+            className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+          >
             <Plus className="h-4 w-4 mr-1" /> Criar negócio
           </Button>
         }
@@ -172,14 +185,27 @@ function DealsPage() {
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">
         <TabsList>
-          <TabsTrigger value="table"><TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela</TabsTrigger>
-          <TabsTrigger value="board"><LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro</TabsTrigger>
-          <TabsTrigger value="list"><ListIcon className="h-3.5 w-3.5 mr-1" /> Lista</TabsTrigger>
-          <TabsTrigger value="forecast"><TrendingUp className="h-3.5 w-3.5 mr-1" /> Previsão</TabsTrigger>
+          <TabsTrigger value="table">
+            <TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela
+          </TabsTrigger>
+          <TabsTrigger value="board">
+            <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro
+          </TabsTrigger>
+          <TabsTrigger value="list">
+            <ListIcon className="h-3.5 w-3.5 mr-1" /> Lista
+          </TabsTrigger>
+          <TabsTrigger value="forecast">
+            <TrendingUp className="h-3.5 w-3.5 mr-1" /> Previsão
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="table" className="mt-4">
-          <DealsHubspotTable deals={filtered} pipeline={selected ?? undefined} lookups={lookups} onOpen={openEdit} />
+          <DealsHubspotTable
+            deals={filtered}
+            pipeline={selected ?? undefined}
+            lookups={lookups}
+            onOpen={openEdit}
+          />
         </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
@@ -189,7 +215,9 @@ function DealsPage() {
           )}
         </TabsContent>
         <TabsContent value="list" className="mt-4">
-          {selected && <DealsList pipeline={selected} deals={filtered} lookups={lookups} onOpen={openEdit} />}
+          {selected && (
+            <DealsList pipeline={selected} deals={filtered} lookups={lookups} onOpen={openEdit} />
+          )}
         </TabsContent>
         <TabsContent value="forecast" className="mt-4">
           {selected && <DealsForecast pipeline={selected} deals={filtered} />}

@@ -76,8 +76,7 @@ async function runReport(
   const cfg = report.config;
   const ent = REPORT_ENTITIES[cfg.entity];
   if (!ent) throw new Error(`Entidade inválida: ${cfg.entity}`);
-  const cols =
-    cfg.metric === "count" ? cfg.groupBy : `${cfg.groupBy},${cfg.metricField}`;
+  const cols = cfg.metric === "count" ? cfg.groupBy : `${cfg.groupBy},${cfg.metricField}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let q = (supabase as any).from(ent.table).select(cols).eq("owner_id", ownerId).limit(5000);
   if (cfg.dateField && (ent.date as readonly string[]).includes(cfg.dateField)) {
@@ -87,7 +86,7 @@ async function runReport(
   const { data: rows, error } = await q;
   if (error) throw new Error(error.message);
   const buckets = new Map<string, { key: string; count: number; sum: number }>();
-  for (const r of ((rows ?? []) as Record<string, unknown>[])) {
+  for (const r of (rows ?? []) as Record<string, unknown>[]) {
     const k = String(r[cfg.groupBy] ?? "—");
     const b = buckets.get(k) ?? { key: k, count: 0, sum: 0 };
     b.count += 1;
@@ -99,16 +98,27 @@ async function runReport(
   }
   const arr = Array.from(buckets.values()).map((b) => ({
     key: b.key,
-    value: cfg.metric === "count" ? b.count : cfg.metric === "sum" ? b.sum : (b.count ? b.sum / b.count : 0),
+    value:
+      cfg.metric === "count"
+        ? b.count
+        : cfg.metric === "sum"
+          ? b.sum
+          : b.count
+            ? b.sum / b.count
+            : 0,
     count: b.count,
   }));
   arr.sort((a, b) => b.value - a.value);
   return arr.slice(0, cfg.limit ?? 50);
 }
 
-function toCsv(report: ReportRow, rows: Array<{ key: string; value: number; count: number }>): string {
+function toCsv(
+  report: ReportRow,
+  rows: Array<{ key: string; value: number; count: number }>,
+): string {
   const cfg = report.config;
-  const metricLabel = cfg.metric === "count" ? "Quantidade" : cfg.metric === "sum" ? "Soma" : "Média";
+  const metricLabel =
+    cfg.metric === "count" ? "Quantidade" : cfg.metric === "sum" ? "Soma" : "Média";
   const lines = [`"${cfg.groupBy}","${metricLabel}","Quantidade"`];
   for (const r of rows) {
     lines.push(`"${String(r.key).replace(/"/g, '""')}",${r.value},${r.count}`);
@@ -144,7 +154,9 @@ function buildMimeWithAttachment(opts: {
     `--${altBoundary}--`,
   ].join("\r\n");
 
-  const csvB64 = Buffer.from(opts.csv, "utf8").toString("base64").replace(/(.{76})/g, "$1\r\n");
+  const csvB64 = Buffer.from(opts.csv, "utf8")
+    .toString("base64")
+    .replace(/(.{76})/g, "$1\r\n");
 
   const headers = [
     `From: ${opts.from}`,
@@ -175,7 +187,10 @@ function buildMimeWithAttachment(opts: {
   return headers.join("\r\n") + "\r\n" + body;
 }
 
-async function getGmailAccount(ownerId: string, accountId: string | null): Promise<EmailAccountRow | null> {
+async function getGmailAccount(
+  ownerId: string,
+  accountId: string | null,
+): Promise<EmailAccountRow | null> {
   let q = supabaseAdmin
     .from("email_accounts")
     .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
@@ -274,7 +289,9 @@ export async function runExportNow(scheduleId: string): Promise<{
 }
 
 /** Processa todos os agendamentos com next_run_at vencido. */
-export async function tickScheduledExports(limit = 25): Promise<{ processed: number; errors: number }> {
+export async function tickScheduledExports(
+  limit = 25,
+): Promise<{ processed: number; errors: number }> {
   const nowIso = new Date().toISOString();
   const { data: due, error } = await supabaseAdmin
     .from("report_schedules")

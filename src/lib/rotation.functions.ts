@@ -9,7 +9,7 @@ const StrategyEnum = z.enum(["round_robin", "weighted"]);
 
 const FilterSchema = z.object({
   field: z.string().min(1).max(100),
-  op: z.enum(["eq","neq","in","contains","gt","lt","changed_to","is_empty","is_not_empty"]),
+  op: z.enum(["eq", "neq", "in", "contains", "gt", "lt", "changed_to", "is_empty", "is_not_empty"]),
   value: z.unknown().optional(),
 });
 
@@ -33,7 +33,9 @@ export const listRotationRules = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("rotation_rules")
-      .select("id, name, entity, enabled, strategy, filters, assignees, last_index, last_assigned_user_id, last_assigned_at, updated_at")
+      .select(
+        "id, name, entity, enabled, strategy, filters, assignees, last_index, last_assigned_user_id, last_assigned_at, updated_at",
+      )
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -58,7 +60,11 @@ export const saveRotationRule = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabase.from("rotation_rules").insert(payload).select("id").single();
+    const { data: row, error } = await supabase
+      .from("rotation_rules")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -127,8 +133,7 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
       .eq("member_user_id", userId)
       .limit(1)
       .maybeSingle();
-    const legacyOwnerId =
-      (legacyMembership?.workspace_owner_id as string | undefined) ?? userId;
+    const legacyOwnerId = (legacyMembership?.workspace_owner_id as string | undefined) ?? userId;
     ids.add(legacyOwnerId);
     const { data: legacyMembers } = await supabaseAdmin
       .from("team_members")
@@ -149,8 +154,7 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
       .map((id) => ({
         user_id: id,
         full_name:
-          nameById.get(id) ||
-          (id === workspaceOwnerId ? "Workspace (admin)" : id.slice(0, 8)),
+          nameById.get(id) || (id === workspaceOwnerId ? "Workspace (admin)" : id.slice(0, 8)),
         is_owner: id === workspaceOwnerId || id === legacyOwnerId,
         is_me: id === userId,
       }))
@@ -164,11 +168,15 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
 /** Aplica rotação manualmente em um registro (debug/uso pontual). */
 export const rotateRecordNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    rule_id: z.string().uuid(),
-    entity: EntityEnum,
-    entity_id: z.string().uuid(),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        rule_id: z.string().uuid(),
+        entity: EntityEnum,
+        entity_id: z.string().uuid(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     return await applyRotation(context.supabase, data.rule_id, data.entity, data.entity_id);
   });

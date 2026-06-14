@@ -9,7 +9,7 @@ const EntityEnum = z.enum(["leads", "contacts", "companies", "deals", "tickets"]
 
 const FilterSchema = z.object({
   field: z.string().min(1).max(100),
-  op: z.enum(["eq","neq","in","contains","gt","lt","changed_to","is_empty","is_not_empty"]),
+  op: z.enum(["eq", "neq", "in", "contains", "gt", "lt", "changed_to", "is_empty", "is_not_empty"]),
   value: z.unknown().optional(),
 });
 
@@ -30,8 +30,16 @@ const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("assign_to"), user_id: z.string().uuid() }),
   z.object({ type: z.literal("rotate_assign"), rule_id: z.string().uuid() }),
   z.object({ type: z.literal("add_to_sequence"), sequence_id: z.string().uuid() }),
-  z.object({ type: z.literal("send_notification"), title: z.string().min(1).max(200), body: z.string().max(2000).optional() }),
-  z.object({ type: z.literal("webhook"), url: z.string().url().max(500), payload: z.record(z.string(), z.unknown()).optional() }),
+  z.object({
+    type: z.literal("send_notification"),
+    title: z.string().min(1).max(200),
+    body: z.string().max(2000).optional(),
+  }),
+  z.object({
+    type: z.literal("webhook"),
+    url: z.string().url().max(500),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  }),
 ]);
 
 const SaveSchema = z.object({
@@ -91,7 +99,11 @@ export const saveWorkflow = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await supabase.from("workflows").insert(payload).select("id").single();
+    const { data: row, error } = await supabase
+      .from("workflows")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
@@ -108,7 +120,14 @@ export const deleteWorkflow = createServerFn({ method: "POST" })
 
 export const listRecentRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ workflowId: z.string().uuid().optional(), limit: z.number().int().min(1).max(100).default(20) }).parse(i ?? {}))
+  .inputValidator((i) =>
+    z
+      .object({
+        workflowId: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(100).default(20),
+      })
+      .parse(i ?? {}),
+  )
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("workflow_runs")

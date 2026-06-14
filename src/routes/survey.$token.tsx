@@ -26,7 +26,10 @@ function SurveyPage() {
   });
 
   async function send() {
-    if (score === null) { toast.error("Selecione uma pontuação."); return; }
+    if (score === null) {
+      toast.error("Selecione uma pontuação.");
+      return;
+    }
     try {
       await submit({ data: { token, score, comment: comment.trim() || undefined } });
       setSent(true);
@@ -36,8 +39,16 @@ function SurveyPage() {
     }
   }
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Carregando…</div>;
-  if (error) return <div className="min-h-screen grid place-items-center text-destructive">{(error as Error).message}</div>;
+  if (isLoading)
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Carregando…</div>
+    );
+  if (error)
+    return (
+      <div className="min-h-screen grid place-items-center text-destructive">
+        {(error as Error).message}
+      </div>
+    );
 
   const s = data!.survey;
   const isNps = s.kind === "nps";
@@ -49,8 +60,12 @@ function SurveyPage() {
     <div className="min-h-screen grid place-items-center bg-muted/30 p-4">
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>{isNps ? "Avalie sua experiência (NPS)" : "Como foi nosso atendimento?"}</CardTitle>
-          {data!.ticketSubject && <p className="text-sm text-muted-foreground mt-1">Ticket: {data!.ticketSubject}</p>}
+          <CardTitle>
+            {isNps ? "Avalie sua experiência (NPS)" : "Como foi nosso atendimento?"}
+          </CardTitle>
+          {data!.ticketSubject && (
+            <p className="text-sm text-muted-foreground mt-1">Ticket: {data!.ticketSubject}</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {alreadyAnswered ? (
@@ -63,7 +78,9 @@ function SurveyPage() {
                     key={n}
                     onClick={() => setScore(n)}
                     className={`h-10 w-10 rounded-md border text-sm font-medium transition-colors ${
-                      score === n ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
+                      score === n
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "hover:bg-accent"
                     }`}
                   >
                     {n}
@@ -80,7 +97,9 @@ function SurveyPage() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
-              <Button className="w-full" onClick={send}>Enviar</Button>
+              <Button className="w-full" onClick={send}>
+                Enviar
+              </Button>
             </>
           )}
         </CardContent>

@@ -5,7 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PageHeader } from "@/components/page-header";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+} from "recharts";
 import { Briefcase, UserPlus, TrendingUp, DollarSign } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -38,8 +48,13 @@ function DashboardPage() {
           .limit(10),
       ]);
       const metrics = (metricsRes.data as DashboardMetrics | null) ?? {
-        open_leads: 0, active_deals: 0, pipeline_value: 0,
-        won: 0, lost: 0, value_by_stage: {}, deals_last_30_days: {},
+        open_leads: 0,
+        active_deals: 0,
+        pipeline_value: 0,
+        won: 0,
+        lost: 0,
+        value_by_stage: {},
+        deals_last_30_days: {},
       };
       return { metrics, tasks: tasksRes.data ?? [] };
     },
@@ -61,7 +76,8 @@ function DashboardPage() {
   // Last 30 days deals
   const days: { day: string; count: number }[] = [];
   for (let i = 29; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+    const d = new Date();
+    d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
     const count = Number(m.deals_last_30_days?.[key] ?? 0);
     days.push({ day: key.slice(5), count });
@@ -75,13 +91,27 @@ function DashboardPage() {
         <OnboardingChecklist />
       </div>
 
-
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard icon={<UserPlus className="h-4 w-4" />} label="Leads abertos" value={String(openLeads)} />
-        <StatCard icon={<Briefcase className="h-4 w-4" />} label="Negócios ativos" value={String(activeDealsCount)} />
-        <StatCard icon={<DollarSign className="h-4 w-4" />} label="Valor do pipeline" value={formatCurrency(pipelineValue)} />
-        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Taxa de conversão" value={`${winRate.toFixed(1)}%`} />
+        <StatCard
+          icon={<UserPlus className="h-4 w-4" />}
+          label="Leads abertos"
+          value={String(openLeads)}
+        />
+        <StatCard
+          icon={<Briefcase className="h-4 w-4" />}
+          label="Negócios ativos"
+          value={String(activeDealsCount)}
+        />
+        <StatCard
+          icon={<DollarSign className="h-4 w-4" />}
+          label="Valor do pipeline"
+          value={formatCurrency(pipelineValue)}
+        />
+        <StatCard
+          icon={<TrendingUp className="h-4 w-4" />}
+          label="Taxa de conversão"
+          value={`${winRate.toFixed(1)}%`}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 mb-6">
@@ -114,7 +144,13 @@ function DashboardPage() {
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={12} allowDecimals={false} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -133,13 +169,17 @@ function DashboardPage() {
               {data.tasks.map((t) => (
                 <li key={t.id} className="py-2 flex justify-between items-center text-sm">
                   <span>{t.subject ?? "(sem assunto)"}</span>
-                  <span className="text-muted-foreground text-xs">{formatDateTime(t.due_date)}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {formatDateTime(t.due_date)}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
           <div className="mt-3 text-sm">
-            <Link to="/deals" className="text-primary hover:underline">Ver pipeline →</Link>
+            <Link to="/deals" className="text-primary hover:underline">
+              Ver pipeline →
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -156,7 +196,9 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
             <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
             <p className="text-2xl font-semibold mt-1">{value}</p>
           </div>
-          <div className="h-10 w-10 rounded-md bg-primary/10 text-primary grid place-items-center">{icon}</div>
+          <div className="h-10 w-10 rounded-md bg-primary/10 text-primary grid place-items-center">
+            {icon}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -8,7 +8,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-
 export const SLACK_EVENT_TYPES = [
   "lead.created",
   "lead.assigned",
@@ -27,7 +26,13 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const [{ data: integ }, { data: routes }] = await Promise.all([
-      context.supabase.from("slack_integrations").select("id, workspace_id, owner_id, team_name, team_id, default_channel_id, default_channel_name, installed_by, created_at, updated_at").eq("workspace_id", workspaceId).maybeSingle(),
+      context.supabase
+        .from("slack_integrations")
+        .select(
+          "id, workspace_id, owner_id, team_name, team_id, default_channel_id, default_channel_name, installed_by, created_at, updated_at",
+        )
+        .eq("workspace_id", workspaceId)
+        .maybeSingle(),
       context.supabase
         .from("slack_event_routes")
         .select("*")
@@ -70,7 +75,10 @@ export const deleteSlackIntegration = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await context.supabase.from("slack_event_routes").delete().eq("workspace_id", workspaceId);
-    const { error } = await context.supabase.from("slack_integrations").delete().eq("workspace_id", workspaceId);
+    const { error } = await context.supabase
+      .from("slack_integrations")
+      .delete()
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

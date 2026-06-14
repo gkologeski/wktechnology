@@ -60,30 +60,41 @@ export function HubspotTwoWaySync() {
     try {
       const res = await pushAllFn({ data: { limit: 50 } });
       const summary = res
-        .map((r) => `${ENTITY_LABELS[r.entity]}: +${r.created}/~${r.updated}/⚠${r.conflicts}/✗${r.failed}`)
+        .map(
+          (r) =>
+            `${ENTITY_LABELS[r.entity]}: +${r.created}/~${r.updated}/⚠${r.conflicts}/✗${r.failed}`,
+        )
         .join(" • ");
       toast.success(`Sincronização concluída — ${summary}`);
       qc.invalidateQueries({ queryKey: ["hubspot", "conflicts"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao sincronizar");
-    } finally { setBusy(null); }
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function runPushOne(entity: "contact" | "company" | "deal") {
     setBusy(entity);
     try {
       const r = await pushOneFn({ data: { entity, limit: 50 } });
-      toast.success(`${ENTITY_LABELS[entity]} — ${r.created} criados, ${r.updated} atualizados, ${r.conflicts} conflitos, ${r.failed} falhas`);
+      toast.success(
+        `${ENTITY_LABELS[entity]} — ${r.created} criados, ${r.updated} atualizados, ${r.conflicts} conflitos, ${r.failed} falhas`,
+      );
       qc.invalidateQueries({ queryKey: ["hubspot", "conflicts"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
-    } finally { setBusy(null); }
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function resolve(id: string, strategy: "local_wins" | "remote_wins") {
     try {
       await resolveFn({ data: { id, strategy } });
-      toast.success(strategy === "local_wins" ? "Local enviado para o HubSpot." : "Versão do HubSpot mantida.");
+      toast.success(
+        strategy === "local_wins" ? "Local enviado para o HubSpot." : "Versão do HubSpot mantida.",
+      );
       refetchConflicts();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao resolver");
@@ -96,23 +107,29 @@ export function HubspotTwoWaySync() {
         <div>
           <p className="font-medium">Auto-push periódico</p>
           <p className="text-xs text-muted-foreground">
-            A cada execução do cron HubSpot (~1 min), envia até 10 registros alterados de cada entidade.
+            A cada execução do cron HubSpot (~1 min), envia até 10 registros alterados de cada
+            entidade.
           </p>
         </div>
-        <Switch
-          checked={!!cfg?.auto_push_enabled}
-          onCheckedChange={(v) => toggleAutoPush(!!v)}
-        />
+        <Switch checked={!!cfg?.auto_push_enabled} onCheckedChange={(v) => toggleAutoPush(!!v)} />
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={runPushAll} disabled={busy !== null}>
-          {busy === "all" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          {busy === "all" ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
           Sincronizar agora (tudo)
         </Button>
         {(["contact", "company", "deal"] as const).map((e) => (
           <Button key={e} variant="outline" onClick={() => runPushOne(e)} disabled={busy !== null}>
-            {busy === e ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpToLine className="h-4 w-4 mr-2" />}
+            {busy === e ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ArrowUpToLine className="h-4 w-4 mr-2" />
+            )}
             {ENTITY_LABELS[e]}
           </Button>
         ))}
@@ -126,7 +143,7 @@ export function HubspotTwoWaySync() {
             <Badge variant="secondary">{conflicts?.length ?? 0}</Badge>
           </h3>
         </div>
-        {(!conflicts || conflicts.length === 0) ? (
+        {!conflicts || conflicts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem conflitos. Tudo em sincronia.</p>
         ) : (
           <div className="rounded-md border divide-y">
@@ -134,19 +151,33 @@ export function HubspotTwoWaySync() {
               <div key={c.id} className="p-3 flex items-start justify-between gap-3">
                 <div className="text-sm space-y-1 min-w-0">
                   <div className="font-medium">
-                    {ENTITY_LABELS[c.entity as string] ?? c.entity} · <span className="font-mono text-xs">{String(c.local_id).slice(0, 8)} ↔ HS {String(c.hubspot_id).slice(0, 8)}</span>
+                    {ENTITY_LABELS[c.entity as string] ?? c.entity} ·{" "}
+                    <span className="font-mono text-xs">
+                      {String(c.local_id).slice(0, 8)} ↔ HS {String(c.hubspot_id).slice(0, 8)}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{c.conflict_reason ?? "Conflito detectado."}</p>
                   <p className="text-xs text-muted-foreground">
-                    Local: {c.local_updated_at ? formatDateTime(c.local_updated_at as string) : "—"} ·
-                    {" "}HubSpot: {c.remote_updated_at ? formatDateTime(c.remote_updated_at as string) : "—"}
+                    {c.conflict_reason ?? "Conflito detectado."}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Local: {c.local_updated_at ? formatDateTime(c.local_updated_at as string) : "—"}{" "}
+                    · HubSpot:{" "}
+                    {c.remote_updated_at ? formatDateTime(c.remote_updated_at as string) : "—"}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button size="sm" variant="outline" onClick={() => resolve(c.id as string, "local_wins")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => resolve(c.id as string, "local_wins")}
+                  >
                     <ArrowUpToLine className="h-3.5 w-3.5 mr-1" /> Manter local
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => resolve(c.id as string, "remote_wins")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => resolve(c.id as string, "remote_wins")}
+                  >
                     <ArrowDownToLine className="h-3.5 w-3.5 mr-1" /> Manter HubSpot
                   </Button>
                 </div>

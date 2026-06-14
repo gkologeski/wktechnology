@@ -43,13 +43,19 @@ export function DealsBoardCard({
   columnId?: string;
   onClick: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: deal.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: deal.id,
+  });
   const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.4 : 1 }
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        opacity: isDragging ? 0.4 : 1,
+      }
     : undefined;
 
   const closeDate = deal.expected_close_date ? new Date(deal.expected_close_date) : null;
-  const overdue = closeDate && closeDate.getTime() < Date.now() && !["won", "lost"].includes(String(deal.stage));
+  const overdue =
+    closeDate && closeDate.getTime() < Date.now() && !["won", "lost"].includes(String(deal.stage));
 
   const f = fields && fields.length > 0 ? fields : DEFAULT_CARD_FIELDS;
   const has = (k: string) => f.includes(k);
@@ -75,7 +81,9 @@ export function DealsBoardCard({
       <div className="flex items-start justify-between gap-2">
         <div className="font-medium leading-tight truncate flex-1">{deal.name}</div>
         {has("priority") && deal.hs_priority && (
-          <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">{deal.hs_priority}</Badge>
+          <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">
+            {deal.hs_priority}
+          </Badge>
         )}
       </div>
 
@@ -101,14 +109,22 @@ export function DealsBoardCard({
       {(has("close_date") || has("owner")) && (
         <div className="mt-2 flex items-center justify-between gap-2">
           {has("close_date") ? (
-            <div className={`flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-[var(--hs-text-muted)]"}`}>
+            <div
+              className={`flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-[var(--hs-text-muted)]"}`}
+            >
               <CalendarDays className="h-3 w-3" />
-              <span>{deal.expected_close_date ? formatDate(deal.expected_close_date) : "Sem data"}</span>
+              <span>
+                {deal.expected_close_date ? formatDate(deal.expected_close_date) : "Sem data"}
+              </span>
             </div>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
           {has("owner") && (
             <Avatar className="h-5 w-5 text-[9px]">
-              <AvatarFallback className="bg-secondary text-secondary-foreground">{initials(ownerName)}</AvatarFallback>
+              <AvatarFallback className="bg-secondary text-secondary-foreground">
+                {initials(ownerName)}
+              </AvatarFallback>
             </Avatar>
           )}
         </div>

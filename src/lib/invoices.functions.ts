@@ -39,7 +39,8 @@ export const listInvoices = createServerFn({ method: "GET" })
       .limit(data.limit);
     if (data.status !== "all") q = q.eq("status", data.status);
     if (data.gateway !== "all") q = q.eq("gateway", data.gateway);
-    if (data.search) q = q.or(`invoice_number.ilike.%${data.search}%,description.ilike.%${data.search}%`);
+    if (data.search)
+      q = q.or(`invoice_number.ilike.%${data.search}%,description.ilike.%${data.search}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return { invoices: rows ?? [] };
@@ -51,7 +52,11 @@ export const getInvoice = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const [{ data: inv, error }, { data: payments }, { data: events }] = await Promise.all([
       context.supabase.from("customer_invoices").select("*").eq("id", data.id).single(),
-      context.supabase.from("customer_payments").select("*").eq("invoice_id", data.id).order("created_at", { ascending: false }),
+      context.supabase
+        .from("customer_payments")
+        .select("*")
+        .eq("invoice_id", data.id)
+        .order("created_at", { ascending: false }),
       context.supabase
         .from("payment_webhook_events")
         .select("id,gateway,event_type,signature_valid,processed,error,created_at")
@@ -117,7 +122,10 @@ export const updateInvoiceStatus = createServerFn({ method: "POST" })
     };
     if (data.status === "paid") patch.paid_at = new Date().toISOString();
     if (data.status === "cancelled") patch.cancelled_at = new Date().toISOString();
-    const { error } = await context.supabase.from("customer_invoices").update(patch).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("customer_invoices")
+      .update(patch)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -176,12 +184,16 @@ export const generateCharge = createServerFn({ method: "POST" })
       payment_method: data.method,
       external_id: externalId,
       payment_url: `${baseUrl}/pay/${inv.id}`,
-      barcode: data.method === "boleto" ? `00190.00009 0${inv.id.slice(0, 5)} 0 ${Math.round(Number(inv.amount) * 100)}` : null,
+      barcode:
+        data.method === "boleto"
+          ? `00190.00009 0${inv.id.slice(0, 5)} 0 ${Math.round(Number(inv.amount) * 100)}`
+          : null,
       pix_qr_code:
         data.method === "pix"
           ? `00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540${Number(inv.amount).toFixed(2)}5802BR5913WK Technology6009Sao Paulo62070503***6304`
           : null,
-      pix_copy_paste: data.method === "pix" ? `PIX_COPY_${inv.id.slice(0, 12).toUpperCase()}` : null,
+      pix_copy_paste:
+        data.method === "pix" ? `PIX_COPY_${inv.id.slice(0, 12).toUpperCase()}` : null,
       status: "open" as const,
     };
     const { data: updated, error: e2 } = await context.supabase

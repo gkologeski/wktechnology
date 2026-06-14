@@ -93,9 +93,7 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
                 label: (s.label as string | undefined) ?? value,
                 color: (s.color as string | undefined) ?? undefined,
                 probability: (s.probability as number | undefined) ?? undefined,
-                type:
-                  (s.type as PipelineStage["type"]) ??
-                  (isClosed ? "won" : "open"),
+                type: (s.type as PipelineStage["type"]) ?? (isClosed ? "won" : "open"),
               } as PipelineStage;
             })
           : [],
@@ -108,10 +106,13 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     if (!user || q.isLoading || q.data === undefined) return;
     if (q.data.length > 0) return;
     (async () => {
-      const seedStages =
-        entity === "ticket" ? defaultTicketStages() : defaultDealStages();
+      const seedStages = entity === "ticket" ? defaultTicketStages() : defaultDealStages();
       const seedName =
-        entity === "deal" ? "Pipeline padrão" : entity === "lead" ? "Funil de Leads" : "Pipeline de Tickets";
+        entity === "deal"
+          ? "Pipeline padrão"
+          : entity === "lead"
+            ? "Funil de Leads"
+            : "Pipeline de Tickets";
       // Resolve workspace ativo p/ não depender da ordem dos triggers de RLS.
       const { data: profile } = await supabase
         .from("profiles")
@@ -171,7 +172,7 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
   const selected =
     selectedId === "__all__"
       ? null
-      : pipelines.find((p) => p.id === selectedId) ?? pipelines[0] ?? null;
+      : (pipelines.find((p) => p.id === selectedId) ?? pipelines[0] ?? null);
 
   return {
     pipelines,

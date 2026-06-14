@@ -22,13 +22,25 @@ type LineItem = {
   position: number;
 };
 
-
-function lineTotal(li: { quantity: number; unit_price: number; discount_pct: number; tax_rate: number }) {
+function lineTotal(li: {
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  tax_rate: number;
+}) {
   const sub = Number(li.quantity) * Number(li.unit_price) * (1 - Number(li.discount_pct) / 100);
   return sub * (1 + Number(li.tax_rate) / 100);
 }
 
-export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; ownerId: string; currency: string }) {
+export function DealLineItems({
+  dealId,
+  ownerId,
+  currency,
+}: {
+  dealId: string;
+  ownerId: string;
+  currency: string;
+}) {
   const qc = useQueryClient();
 
   const { data: items = [], isLoading } = useQuery({
@@ -36,7 +48,10 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
-        .from("deal_line_items").select("*").eq("deal_id", dealId).order("position");
+        .from("deal_line_items")
+        .select("*")
+        .eq("deal_id", dealId)
+        .order("position");
       if (error) throw error;
       return (data ?? []) as LineItem[];
     },
@@ -45,40 +60,69 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
   async function addBlank() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
-      owner_id: ownerId, deal_id: dealId,
-      name: "Novo item", quantity: 1, unit_price: 0, discount_pct: 0, tax_rate: 0,
+      owner_id: ownerId,
+      deal_id: dealId,
+      name: "Novo item",
+      quantity: 1,
+      unit_price: 0,
+      discount_pct: 0,
+      tax_rate: 0,
       position: items.length,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function addFromProduct(pid: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
-      .from("products").select("*").eq("id", pid).maybeSingle();
-    if (perr || !p) { toast.error(perr?.message ?? "Produto não encontrado"); return; }
+      .from("products")
+      .select("*")
+      .eq("id", pid)
+      .maybeSingle();
+    if (perr || !p) {
+      toast.error(perr?.message ?? "Produto não encontrado");
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
-      owner_id: ownerId, deal_id: dealId, product_id: p.id,
-      name: p.name, quantity: 1, unit_price: p.unit_price,
-      discount_pct: 0, tax_rate: p.tax_rate, position: items.length,
+      owner_id: ownerId,
+      deal_id: dealId,
+      product_id: p.id,
+      name: p.name,
+      quantity: 1,
+      unit_price: p.unit_price,
+      discount_pct: 0,
+      tax_rate: p.tax_rate,
+      position: items.length,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function update(id: string, patch: Partial<LineItem>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function remove(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -105,17 +149,23 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
             labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
             hintFrom={(r) => {
               const row = r as { unit_price?: number; currency?: string };
-              return row.unit_price != null ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL") : null;
+              return row.unit_price != null
+                ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL")
+                : null;
             }}
             value={null}
-            onChange={(id) => { if (id) addFromProduct(id); }}
+            onChange={(id) => {
+              if (id) addFromProduct(id);
+            }}
             placeholder="Adicionar do catálogo…"
             emptyLabel="Nenhum produto"
             icon={Package}
             clearable={false}
           />
         </div>
-        <Button size="sm" variant="outline" onClick={addBlank}><Plus className="h-4 w-4 mr-1" /> Item em branco</Button>
+        <Button size="sm" variant="outline" onClick={addBlank}>
+          <Plus className="h-4 w-4 mr-1" /> Item em branco
+        </Button>
       </div>
 
       {isLoading ? (
@@ -130,17 +180,41 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
                 <Input
                   className="flex-1"
                   value={li.name}
-                  onBlur={(e) => e.target.value !== li.name && update(li.id, { name: e.target.value })}
+                  onBlur={(e) =>
+                    e.target.value !== li.name && update(li.id, { name: e.target.value })
+                  }
                   onChange={(e) => (li.name = e.target.value)}
                   defaultValue={li.name}
                 />
-                <Button variant="ghost" size="icon" onClick={() => remove(li.id)}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(li.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <LabeledNumber label="Qtd" value={li.quantity} step="0.01" onCommit={(v) => update(li.id, { quantity: v })} />
-                <LabeledNumber label="Preço" value={li.unit_price} step="0.01" onCommit={(v) => update(li.id, { unit_price: v })} />
-                <LabeledNumber label="Desc %" value={li.discount_pct} step="0.01" onCommit={(v) => update(li.id, { discount_pct: v })} />
-                <LabeledNumber label="Imp %" value={li.tax_rate} step="0.01" onCommit={(v) => update(li.id, { tax_rate: v })} />
+                <LabeledNumber
+                  label="Qtd"
+                  value={li.quantity}
+                  step="0.01"
+                  onCommit={(v) => update(li.id, { quantity: v })}
+                />
+                <LabeledNumber
+                  label="Preço"
+                  value={li.unit_price}
+                  step="0.01"
+                  onCommit={(v) => update(li.id, { unit_price: v })}
+                />
+                <LabeledNumber
+                  label="Desc %"
+                  value={li.discount_pct}
+                  step="0.01"
+                  onCommit={(v) => update(li.id, { discount_pct: v })}
+                />
+                <LabeledNumber
+                  label="Imp %"
+                  value={li.tax_rate}
+                  step="0.01"
+                  onCommit={(v) => update(li.id, { tax_rate: v })}
+                />
               </div>
               <div className="text-right text-sm font-medium tabular-nums">
                 {formatCurrency(lineTotal(li), currency)}
@@ -162,7 +236,17 @@ export function DealLineItems({ dealId, ownerId, currency }: { dealId: string; o
   );
 }
 
-function LabeledNumber({ label, value, step, onCommit }: { label: string; value: number; step?: string; onCommit: (v: number) => void }) {
+function LabeledNumber({
+  label,
+  value,
+  step,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  step?: string;
+  onCommit: (v: number) => void;
+}) {
   const [v, setV] = useState(String(value));
   return (
     <div className="space-y-1">
@@ -183,7 +267,9 @@ function LabeledNumber({ label, value, step, onCommit }: { label: string; value:
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex items-center justify-between ${bold ? "font-semibold" : "text-muted-foreground"}`}>
+    <div
+      className={`flex items-center justify-between ${bold ? "font-semibold" : "text-muted-foreground"}`}
+    >
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>

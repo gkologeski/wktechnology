@@ -18,18 +18,28 @@ function hsHeaders() {
 }
 
 async function hsRequest(path: string, init: RequestInit = {}) {
-  const res = await fetch(`${GATEWAY_URL}${path}`, { ...init, headers: { ...hsHeaders(), ...(init.headers as Record<string, string> ?? {}) } });
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...init,
+    headers: { ...hsHeaders(), ...((init.headers as Record<string, string>) ?? {}) },
+  });
   const txt = await res.text();
   let data: unknown = null;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
-  if (!res.ok) throw new Error(`HubSpot [${res.status}] ${typeof data === "string" ? data : JSON.stringify(data)}`);
+  try {
+    data = txt ? JSON.parse(txt) : null;
+  } catch {
+    data = txt;
+  }
+  if (!res.ok)
+    throw new Error(
+      `HubSpot [${res.status}] ${typeof data === "string" ? data : JSON.stringify(data)}`,
+    );
   return data as Record<string, unknown>;
 }
 
 export const pushContactsToHubspot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { limit?: number }) =>
-    z.object({ limit: z.number().min(1).max(200).default(50) }).parse(d)
+    z.object({ limit: z.number().min(1).max(200).default(50) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -59,25 +69,37 @@ export const pushContactsToHubspot = createServerFn({ method: "POST" })
           company: (c.company_name as string | null) ?? undefined,
         };
         if (mappedIds.has(c.id as string)) {
-          const { data: m } = await supabase.from("hubspot_sync_state")
-            .select("hubspot_id").eq("owner_id", userId).eq("entity", "contact").eq("local_id", c.id as string).maybeSingle();
+          const { data: m } = await supabase
+            .from("hubspot_sync_state")
+            .select("hubspot_id")
+            .eq("owner_id", userId)
+            .eq("entity", "contact")
+            .eq("local_id", c.id as string)
+            .maybeSingle();
           if (m?.hubspot_id) {
             await hsRequest(`/crm/v3/objects/contacts/${m.hubspot_id}`, {
-              method: "PATCH", body: JSON.stringify({ properties: props }),
+              method: "PATCH",
+              body: JSON.stringify({ properties: props }),
             });
             updated++;
           }
         } else {
           const r = await hsRequest(`/crm/v3/objects/contacts`, {
-            method: "POST", body: JSON.stringify({ properties: props }),
+            method: "POST",
+            body: JSON.stringify({ properties: props }),
           });
           await supabase.from("hubspot_sync_state").insert({
-            owner_id: userId, entity: "contact", local_id: c.id as string,
-            hubspot_id: r.id as string, direction: "both",
+            owner_id: userId,
+            entity: "contact",
+            local_id: c.id as string,
+            hubspot_id: r.id as string,
+            direction: "both",
           });
           pushed++;
         }
-      } catch { failed++; }
+      } catch {
+        failed++;
+      }
     }
     return { pushed, updated, failed };
   });

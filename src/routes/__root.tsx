@@ -23,7 +23,10 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-4 text-muted-foreground">Página não encontrada.</p>
-        <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+        <Link
+          to="/"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
           Ir para o início
         </Link>
       </div>
@@ -40,7 +43,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="text-xl font-semibold text-foreground">Algo deu errado</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           Tentar novamente
@@ -56,14 +62,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "WK Technology CRM — Gestão de Leads e Vendas" },
-      { name: "description", content: "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência. Acesso restrito por convite." },
+      {
+        name: "description",
+        content:
+          "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência. Acesso restrito por convite.",
+      },
       { property: "og:title", content: "WK Technology CRM — Gestão de Leads e Vendas" },
       { name: "twitter:title", content: "WK Technology CRM — Gestão de Leads e Vendas" },
-      { property: "og:description", content: "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência." },
-      { name: "twitter:description", content: "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência." },
+      {
+        property: "og:description",
+        content:
+          "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Plataforma de CRM para gerenciar leads, contatos, empresas e pipelines de vendas com eficiência.",
+      },
       { property: "og:site_name", content: "WK Technology CRM" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/PB4PktIUasgn421PW6R6A77d5kJ3/social-images/social-1778901422473-Logo_WK.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/PB4PktIUasgn421PW6R6A77d5kJ3/social-images/social-1778901422473-Logo_WK.webp" },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/PB4PktIUasgn421PW6R6A77d5kJ3/social-images/social-1778901422473-Logo_WK.webp",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/PB4PktIUasgn421PW6R6A77d5kJ3/social-images/social-1778901422473-Logo_WK.webp",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "google-site-verification", content: "eo4O2nHO7ieY5V_2kyIbYY8CAy7TTCNWIrUMu3ADSt4" },
@@ -73,7 +99,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest", crossOrigin: "use-credentials" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap",
+      },
     ],
     scripts: [
       {
@@ -106,7 +135,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -130,7 +161,6 @@ function AuthInvalidator() {
   }, [router, qc]);
   return null;
 }
-
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

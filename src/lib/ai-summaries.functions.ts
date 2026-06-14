@@ -30,21 +30,33 @@ async function resolveContactId(
   if (entity === "contact") return entityId;
   if (entity === "deal") {
     const { data } = await supabase
-      .from("deals").select("primary_contact_id").eq("id", entityId).maybeSingle();
+      .from("deals")
+      .select("primary_contact_id")
+      .eq("id", entityId)
+      .maybeSingle();
     return data?.primary_contact_id ?? null;
   }
   if (entity === "ticket") {
     const { data } = await supabase
-      .from("tickets").select("contact_id").eq("id", entityId).maybeSingle();
+      .from("tickets")
+      .select("contact_id")
+      .eq("id", entityId)
+      .maybeSingle();
     return data?.contact_id ?? null;
   }
   // lead → try matching contact by email
   const { data: lead } = await supabase
-    .from("leads").select("email, converted_contact_id").eq("id", entityId).maybeSingle();
+    .from("leads")
+    .select("email, converted_contact_id")
+    .eq("id", entityId)
+    .maybeSingle();
   if (lead?.converted_contact_id) return lead.converted_contact_id;
   if (lead?.email) {
     const { data: c } = await supabase
-      .from("contacts").select("id").eq("email", lead.email).maybeSingle();
+      .from("contacts")
+      .select("id")
+      .eq("email", lead.email)
+      .maybeSingle();
     return c?.id ?? null;
   }
   return null;
@@ -125,12 +137,14 @@ async function collectMessages(
 }
 
 function buildPrompt(msgs: Msg[], kind: z.infer<typeof KIND>): string {
-  const lines = msgs.map((m) =>
-    `[${new Date(m.at).toLocaleString("pt-BR")}] (${m.channel}/${m.direction}) ${m.who}: ${m.text.slice(0, 800)}`
+  const lines = msgs.map(
+    (m) =>
+      `[${new Date(m.at).toLocaleString("pt-BR")}] (${m.channel}/${m.direction}) ${m.who}: ${m.text.slice(0, 800)}`,
   );
-  const header = kind === "call"
-    ? "Você é um analista de vendas. Resuma as ligações/reuniões abaixo."
-    : "Você é um analista de vendas. Resuma a conversa multi-canal abaixo.";
+  const header =
+    kind === "call"
+      ? "Você é um analista de vendas. Resuma as ligações/reuniões abaixo."
+      : "Você é um analista de vendas. Resuma a conversa multi-canal abaixo.";
   return `${header}
 Responda APENAS em JSON válido com este schema:
 {
@@ -172,15 +186,23 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
   }
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = j.choices?.[0]?.message?.content ?? "";
-  const jsonStr = raw.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim();
+  const jsonStr = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/, "")
+    .replace(/```$/, "")
+    .trim();
   let parsed: any = {};
-  try { parsed = JSON.parse(jsonStr); } catch {
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
     parsed = { summary: raw.slice(0, 600), key_points: [], next_actions: [], sentiment: "neutro" };
   }
   return {
     summary: String(parsed.summary ?? "").slice(0, 4000),
     key_points: Array.isArray(parsed.key_points) ? parsed.key_points.slice(0, 12).map(String) : [],
-    next_actions: Array.isArray(parsed.next_actions) ? parsed.next_actions.slice(0, 12).map(String) : [],
+    next_actions: Array.isArray(parsed.next_actions)
+      ? parsed.next_actions.slice(0, 12).map(String)
+      : [],
     sentiment: String(parsed.sentiment ?? "neutro"),
   };
 }
@@ -188,37 +210,52 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
 export const generateAiSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      entity: ENTITY,
-      entity_id: z.string().uuid(),
-      kind: KIND.default("conversation"),
-      window_days: z.number().int().min(1).max(180).default(60),
-    }).parse(input),
+    z
+      .object({
+        entity: ENTITY,
+        entity_id: z.string().uuid(),
+        kind: KIND.default("conversation"),
+        window_days: z.number().int().min(1).max(180).default(60),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const msgs = await collectMessages(supabase, data.entity, data.entity_id, data.kind, data.window_days);
+    const msgs = await collectMessages(
+      supabase,
+      data.entity,
+      data.entity_id,
+      data.kind,
+      data.window_days,
+    );
     if (msgs.length === 0) {
-      return { skipped: true as const, reason: `Sem mensagens suficientes nos últimos ${data.window_days} dias para resumir.` };
+      return {
+        skipped: true as const,
+        reason: `Sem mensagens suficientes nos últimos ${data.window_days} dias para resumir.`,
+      };
     }
     const prompt = buildPrompt(msgs, data.kind);
     const ai = await callAi(prompt, DEFAULT_MODEL);
     const windowFrom = msgs[0].at;
     const windowTo = msgs[msgs.length - 1].at;
-    const { data: row, error } = await supabase.from("ai_summaries").insert({
-      owner_id: userId,
-      entity: data.entity,
-      entity_id: data.entity_id,
-      kind: data.kind,
-      summary: ai.summary,
-      key_points: ai.key_points,
-      next_actions: ai.next_actions,
-      sentiment: ai.sentiment,
-      model: DEFAULT_MODEL,
-      window_from: windowFrom,
-      window_to: windowTo,
-      source_count: msgs.length,
-    }).select("*").single();
+    const { data: row, error } = await supabase
+      .from("ai_summaries")
+      .insert({
+        owner_id: userId,
+        entity: data.entity,
+        entity_id: data.entity_id,
+        kind: data.kind,
+        summary: ai.summary,
+        key_points: ai.key_points,
+        next_actions: ai.next_actions,
+        sentiment: ai.sentiment,
+        model: DEFAULT_MODEL,
+        window_from: windowFrom,
+        window_to: windowTo,
+        source_count: msgs.length,
+      })
+      .select("*")
+      .single();
     if (error) throw error;
     return row;
   });
@@ -226,11 +263,13 @@ export const generateAiSummary = createServerFn({ method: "POST" })
 export const listAiSummaries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      entity: ENTITY,
-      entity_id: z.string().uuid(),
-      limit: z.number().int().min(1).max(50).default(10),
-    }).parse(input),
+    z
+      .object({
+        entity: ENTITY,
+        entity_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(50).default(10),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;

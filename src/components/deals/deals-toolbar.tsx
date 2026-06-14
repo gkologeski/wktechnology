@@ -1,15 +1,17 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, X, Settings2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
-import {
-  DATE_PRESETS,
-  DATE_PRESET_LABELS,
-  type DatePreset,
-} from "@/lib/date-presets";
+import { DATE_PRESETS, DATE_PRESET_LABELS, type DatePreset } from "@/lib/date-presets";
 
 export type DealPeriod = DatePreset | "overdue" | "no_date";
 
@@ -22,7 +24,6 @@ export type DealFilters = {
   search: string;
 };
 
-
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
   ...DATE_PRESET_LABELS,
   any: "Qualquer data",
@@ -31,11 +32,7 @@ export const PERIOD_LABELS: Record<DealPeriod, string> = {
 };
 
 // Ordem exibida no dropdown.
-const PERIOD_ORDER: DealPeriod[] = [
-  ...DATE_PRESETS,
-  "overdue",
-  "no_date",
-];
+const PERIOD_ORDER: DealPeriod[] = [...DATE_PRESETS, "overdue", "no_date"];
 
 export function DealsToolbar({
   pipelines,
@@ -58,13 +55,25 @@ export function DealsToolbar({
   const chips: { key: keyof DealFilters; label: string; clear: () => void }[] = [];
   if (filters.ownerId) {
     const o = owners.find((x) => x.id === filters.ownerId);
-    chips.push({ key: "ownerId", label: `Responsável: ${o?.name ?? filters.ownerId}`, clear: () => setF("ownerId", "") });
+    chips.push({
+      key: "ownerId",
+      label: `Responsável: ${o?.name ?? filters.ownerId}`,
+      clear: () => setF("ownerId", ""),
+    });
   }
   if (filters.period !== "any") {
-    chips.push({ key: "period", label: PERIOD_LABELS[filters.period], clear: () => setF("period", "any") });
+    chips.push({
+      key: "period",
+      label: PERIOD_LABELS[filters.period],
+      clear: () => setF("period", "any"),
+    });
   }
   if (filters.minValue) {
-    chips.push({ key: "minValue", label: `≥ ${filters.minValue}`, clear: () => setF("minValue", "") });
+    chips.push({
+      key: "minValue",
+      label: `≥ ${filters.minValue}`,
+      clear: () => setF("minValue", ""),
+    });
   }
 
   return (
@@ -102,21 +111,32 @@ export function DealsToolbar({
           />
         </div>
 
-        <Select value={filters.ownerId || "all"} onValueChange={(v) => setF("ownerId", v === "all" ? "" : v)}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Responsável" /></SelectTrigger>
+        <Select
+          value={filters.ownerId || "all"}
+          onValueChange={(v) => setF("ownerId", v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="h-9 w-[160px]">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os responsáveis</SelectItem>
             {owners.map((o) => (
-              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={filters.period} onValueChange={(v) => setF("period", v as DealPeriod)}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {PERIOD_ORDER.map((k) => (
-              <SelectItem key={k} value={k}>{PERIOD_LABELS[k]}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {PERIOD_LABELS[k]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -138,7 +158,6 @@ export function DealsToolbar({
           </>
         )}
 
-
         <Input
           value={filters.minValue}
           onChange={(e) => setF("minValue", e.target.value.replace(/[^0-9.]/g, ""))}
@@ -150,11 +169,7 @@ export function DealsToolbar({
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           {chips.map((c) => (
-            <Badge
-              key={c.key}
-              variant="secondary"
-              className="gap-1 pl-2 pr-1 py-0.5 text-xs"
-            >
+            <Badge key={c.key} variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 text-xs">
               {c.label}
               <button onClick={c.clear} className="rounded hover:bg-muted-foreground/20 p-0.5">
                 <X className="h-3 w-3" />
@@ -165,7 +180,16 @@ export function DealsToolbar({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() => setFilters({ ownerId: "", period: "any", customStart: "", customEnd: "", minValue: "", search: filters.search })}
+            onClick={() =>
+              setFilters({
+                ownerId: "",
+                period: "any",
+                customStart: "",
+                customEnd: "",
+                minValue: "",
+                search: filters.search,
+              })
+            }
           >
             Limpar
           </Button>

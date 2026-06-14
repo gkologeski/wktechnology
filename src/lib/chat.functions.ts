@@ -77,7 +77,10 @@ export const listConversations = createServerFn({ method: "GET" })
       .in("conversation_id", convIdsScoped)
       .order("created_at", { ascending: false });
 
-    const lastByConv = new Map<string, { body: string | null; sender_user_id: string; created_at: string }>();
+    const lastByConv = new Map<
+      string,
+      { body: string | null; sender_user_id: string; created_at: string }
+    >();
     (lastMsgs ?? []).forEach((m) => {
       const cid = m.conversation_id as string;
       if (!lastByConv.has(cid)) {
@@ -90,7 +93,9 @@ export const listConversations = createServerFn({ method: "GET" })
     });
 
     const myReadByConv = new Map(
-      (myMemberships ?? []).map((m) => [m.conversation_id as string, (m.last_read_at as string | null) ?? null] as const),
+      (myMemberships ?? []).map(
+        (m) => [m.conversation_id as string, (m.last_read_at as string | null) ?? null] as const,
+      ),
     );
 
     const unreadByConv = new Map<string, number>();
@@ -148,7 +153,8 @@ export const getOrCreateDM = createServerFn({ method: "POST" })
         .eq("kind", "dm")
         .eq("workspace_owner_id", ws);
       const found = (existing ?? []).find((c) => {
-        const members = (c as unknown as { chat_conversation_members: { user_id: string }[] }).chat_conversation_members;
+        const members = (c as unknown as { chat_conversation_members: { user_id: string }[] })
+          .chat_conversation_members;
         const ids = members.map((m) => m.user_id);
         return ids.length === 2 && ids.includes(userId) && ids.includes(data.other_user_id);
       });
@@ -163,12 +169,10 @@ export const getOrCreateDM = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     const convId = (conv as { id: string }).id;
 
-    const { error: mErr } = await supabaseAdmin
-      .from("chat_conversation_members")
-      .insert([
-        { conversation_id: convId, user_id: userId },
-        { conversation_id: convId, user_id: data.other_user_id },
-      ] as never);
+    const { error: mErr } = await supabaseAdmin.from("chat_conversation_members").insert([
+      { conversation_id: convId, user_id: userId },
+      { conversation_id: convId, user_id: data.other_user_id },
+    ] as never);
     if (mErr) throw new Error(mErr.message);
 
     return { conversation_id: convId };
@@ -176,10 +180,14 @@ export const getOrCreateDM = createServerFn({ method: "POST" })
 
 export const createGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    title: z.string().min(1).max(120),
-    member_user_ids: UuidArr.min(1),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        title: z.string().min(1).max(120),
+        member_user_ids: UuidArr.min(1),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -197,7 +205,12 @@ export const createGroup = createServerFn({ method: "POST" })
 
     const { data: conv, error: cErr } = await supabaseAdmin
       .from("chat_conversations")
-      .insert({ workspace_owner_id: ws, kind: "group", title: data.title, created_by: userId } as never)
+      .insert({
+        workspace_owner_id: ws,
+        kind: "group",
+        title: data.title,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (cErr) throw new Error(cErr.message);
@@ -213,10 +226,14 @@ export const createGroup = createServerFn({ method: "POST" })
 
 export const addGroupMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    conversation_id: z.string().uuid(),
-    user_ids: UuidArr.min(1),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        conversation_id: z.string().uuid(),
+        user_ids: UuidArr.min(1),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -236,7 +253,8 @@ export const addGroupMembers = createServerFn({ method: "POST" })
       .eq("id", data.conversation_id)
       .maybeSingle();
     if (!conv) throw new Error("Conversa não encontrada.");
-    if ((conv as { kind: string }).kind !== "group") throw new Error("Apenas grupos aceitam novos membros.");
+    if ((conv as { kind: string }).kind !== "group")
+      throw new Error("Apenas grupos aceitam novos membros.");
 
     const ws = (conv as { workspace_owner_id: string }).workspace_owner_id;
     const { data: valid } = await supabaseAdmin
@@ -259,11 +277,15 @@ export const addGroupMembers = createServerFn({ method: "POST" })
 
 export const listMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    conversation_id: z.string().uuid(),
-    before: z.string().datetime().optional(),
-    limit: z.number().int().min(1).max(100).default(50),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        conversation_id: z.string().uuid(),
+        before: z.string().datetime().optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -278,7 +300,9 @@ export const listMessages = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("chat_messages")
-      .select("id, sender_user_id, body, created_at, edited_at, deleted_at, attachments:chat_message_attachments(id, storage_path, file_name, mime_type, size_bytes)")
+      .select(
+        "id, sender_user_id, body, created_at, edited_at, deleted_at, attachments:chat_message_attachments(id, storage_path, file_name, mime_type, size_bytes)",
+      )
       .eq("conversation_id", data.conversation_id)
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -291,17 +315,32 @@ export const listMessages = createServerFn({ method: "POST" })
 
 export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    message_id: z.string().uuid(),
-    conversation_id: z.string().uuid(),
-    body: z.string().max(8000).optional().default(""),
-    attachments: z.array(z.object({
-      storage_path: z.string().min(1).max(500),
-      file_name: z.string().min(1).max(255),
-      mime_type: z.string().max(100).optional(),
-      size_bytes: z.number().int().min(0).max(20 * 1024 * 1024).optional(),
-    })).max(10).optional().default([]),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        message_id: z.string().uuid(),
+        conversation_id: z.string().uuid(),
+        body: z.string().max(8000).optional().default(""),
+        attachments: z
+          .array(
+            z.object({
+              storage_path: z.string().min(1).max(500),
+              file_name: z.string().min(1).max(255),
+              mime_type: z.string().max(100).optional(),
+              size_bytes: z
+                .number()
+                .int()
+                .min(0)
+                .max(20 * 1024 * 1024)
+                .optional(),
+            }),
+          )
+          .max(10)
+          .optional()
+          .default([]),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -324,27 +363,25 @@ export const sendMessage = createServerFn({ method: "POST" })
     const body = (data.body ?? "").trim();
     if (!body && data.attachments.length === 0) throw new Error("Mensagem vazia.");
 
-    const { error: msgErr } = await supabaseAdmin
-      .from("chat_messages")
-      .insert({
-        id: data.message_id,
-        conversation_id: data.conversation_id,
-        workspace_owner_id: (conv as { workspace_owner_id: string }).workspace_owner_id,
-        sender_user_id: userId,
-        body: body || null,
-      } as never);
+    const { error: msgErr } = await supabaseAdmin.from("chat_messages").insert({
+      id: data.message_id,
+      conversation_id: data.conversation_id,
+      workspace_owner_id: (conv as { workspace_owner_id: string }).workspace_owner_id,
+      sender_user_id: userId,
+      body: body || null,
+    } as never);
     if (msgErr) throw new Error(msgErr.message);
 
     if (data.attachments.length > 0) {
-      const { error: attErr } = await supabaseAdmin
-        .from("chat_message_attachments")
-        .insert(data.attachments.map((a) => ({
+      const { error: attErr } = await supabaseAdmin.from("chat_message_attachments").insert(
+        data.attachments.map((a) => ({
           message_id: data.message_id,
           storage_path: a.storage_path,
           file_name: a.file_name,
           mime_type: a.mime_type ?? null,
           size_bytes: a.size_bytes ?? null,
-        })) as never);
+        })) as never,
+      );
       if (attErr) throw new Error(attErr.message);
     }
 

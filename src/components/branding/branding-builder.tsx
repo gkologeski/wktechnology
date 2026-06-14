@@ -109,7 +109,9 @@ export function BrandingBuilder() {
           <div>
             <h1 className="text-sm font-bold uppercase tracking-tight">Construtor de marca</h1>
             <p className="text-[11px] text-muted-foreground">
-              {form.brand_name ? `Workspace: ${form.brand_name}` : "Personalize tema, cores e tipografia"}
+              {form.brand_name
+                ? `Workspace: ${form.brand_name}`
+                : "Personalize tema, cores e tipografia"}
             </p>
           </div>
         </div>
@@ -145,7 +147,9 @@ export function BrandingBuilder() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
               </span>
-              <span className="text-[11px] font-bold text-foreground">Alterações não aplicadas</span>
+              <span className="text-[11px] font-bold text-foreground">
+                Alterações não aplicadas
+              </span>
             </div>
           ) : (
             <span className="text-[11px] font-medium text-muted-foreground">Tudo salvo</span>

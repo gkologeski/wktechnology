@@ -29,7 +29,12 @@ function NfseSettingsPage() {
     (async () => {
       try {
         const { nfse } = await get();
-        const n = (nfse ?? {}) as { enabled?: boolean; service_code?: string; municipal_inscription?: string; company_id_nfeio?: string };
+        const n = (nfse ?? {}) as {
+          enabled?: boolean;
+          service_code?: string;
+          municipal_inscription?: string;
+          company_id_nfeio?: string;
+        };
         setEnabled(!!n.enabled);
         setServiceCode(n.service_code ?? "");
         setMunicipalInscription(n.municipal_inscription ?? "");
@@ -70,10 +75,15 @@ function NfseSettingsPage() {
 
   return (
     <div className="space-y-4 p-6 max-w-2xl">
-      <PageHeader title="NFS-e" description="Emissão de notas fiscais de serviço via NFE.io após pagamento." />
+      <PageHeader
+        title="NFS-e"
+        description="Emissão de notas fiscais de serviço via NFE.io após pagamento."
+      />
 
       <Card>
-        <CardHeader><CardTitle>NFE.io</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>NFE.io</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Emissão automática após pagamento</Label>
@@ -81,24 +91,42 @@ function NfseSettingsPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cid">Company ID (NFE.io)</Label>
-            <Input id="cid" value={companyIdNfeio} onChange={(e) => setCompanyIdNfeio(e.target.value)} />
+            <Input
+              id="cid"
+              value={companyIdNfeio}
+              onChange={(e) => setCompanyIdNfeio(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="mi">Inscrição municipal</Label>
-            <Input id="mi" value={municipalInscription} onChange={(e) => setMunicipalInscription(e.target.value)} />
+            <Input
+              id="mi"
+              value={municipalInscription}
+              onChange={(e) => setMunicipalInscription(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sc">Código de serviço municipal</Label>
-            <Input id="sc" value={serviceCode} onChange={(e) => setServiceCode(e.target.value)} placeholder="Ex: 1.05" />
+            <Input
+              id="sc"
+              value={serviceCode}
+              onChange={(e) => setServiceCode(e.target.value)}
+              placeholder="Ex: 1.05"
+            />
           </div>
           <p className="text-xs text-muted-foreground">
-            A API key da NFE.io deve ser configurada como segredo do servidor (<code>NFEIO_API_KEY</code>).
+            A API key da NFE.io deve ser configurada como segredo do servidor (
+            <code>NFEIO_API_KEY</code>).
           </p>
         </CardContent>
       </Card>
 
       <Button onClick={submit} disabled={saving}>
-        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+        {saving ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="mr-2 h-4 w-4" />
+        )}
         Salvar
       </Button>
     </div>

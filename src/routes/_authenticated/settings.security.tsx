@@ -26,10 +26,16 @@ type Factor = {
 function SecurityPage() {
   const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enroll, setEnroll] = useState<{ factorId: string; qr: string; secret: string } | null>(null);
+  const [enroll, setEnroll] = useState<{ factorId: string; qr: string; secret: string } | null>(
+    null,
+  );
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [session, setSession] = useState<{ email?: string; provider?: string; signedInAt?: string } | null>(null);
+  const [session, setSession] = useState<{
+    email?: string;
+    provider?: string;
+    signedInAt?: string;
+  } | null>(null);
 
   const loadFactors = async () => {
     setLoading(true);
@@ -40,7 +46,9 @@ function SecurityPage() {
       setFactors(all);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao listar fatores");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadSession = async () => {
@@ -53,7 +61,10 @@ function SecurityPage() {
     });
   };
 
-  useEffect(() => { loadFactors(); loadSession(); }, []);
+  useEffect(() => {
+    loadFactors();
+    loadSession();
+  }, []);
 
   const startEnroll = async () => {
     setCode("");
@@ -61,7 +72,10 @@ function SecurityPage() {
       factorType: "totp",
       friendlyName: `App ${new Date().toLocaleDateString("pt-BR")}`,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setEnroll({
       factorId: data.id,
       qr: data.totp.qr_code,
@@ -73,7 +87,9 @@ function SecurityPage() {
     if (!enroll || code.length < 6) return;
     setVerifying(true);
     try {
-      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: enroll.factorId });
+      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({
+        factorId: enroll.factorId,
+      });
       if (chErr) throw chErr;
       const { error: vErr } = await supabase.auth.mfa.verify({
         factorId: enroll.factorId,
@@ -87,12 +103,18 @@ function SecurityPage() {
       await loadFactors();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Código inválido");
-    } finally { setVerifying(false); }
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const cancelEnroll = async () => {
     if (!enroll) return;
-    try { await supabase.auth.mfa.unenroll({ factorId: enroll.factorId }); } catch { /* ignore */ }
+    try {
+      await supabase.auth.mfa.unenroll({ factorId: enroll.factorId });
+    } catch {
+      /* ignore */
+    }
     setEnroll(null);
     setCode("");
     await loadFactors();
@@ -101,7 +123,10 @@ function SecurityPage() {
   const removeFactor = async (factorId: string) => {
     if (!confirm("Remover este fator de autenticação?")) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Fator removido");
     await loadFactors();
   };
@@ -109,7 +134,10 @@ function SecurityPage() {
   const signOutAll = async () => {
     if (!confirm("Encerrar a sessão em todos os dispositivos?")) return;
     const { error } = await supabase.auth.signOut({ scope: "global" });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Sessões encerradas. Faça login novamente.");
   };
 
@@ -127,7 +155,11 @@ function SecurityPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            {activeTotp ? <ShieldCheck className="h-4 w-4 text-emerald-600" /> : <ShieldAlert className="h-4 w-4 text-amber-600" />}
+            {activeTotp ? (
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <ShieldAlert className="h-4 w-4 text-amber-600" />
+            )}
             Autenticação em dois fatores (TOTP)
           </CardTitle>
         </CardHeader>
@@ -138,23 +170,34 @@ function SecurityPage() {
             <>
               {factors.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum fator configurado. Recomendamos ativar 2FA usando um app como Google Authenticator, 1Password ou Authy.
+                  Nenhum fator configurado. Recomendamos ativar 2FA usando um app como Google
+                  Authenticator, 1Password ou Authy.
                 </p>
               )}
               {factors.length > 0 && (
                 <div className="space-y-2">
                   {factors.map((f) => (
-                    <div key={f.id} className="flex items-center justify-between border rounded p-2 text-sm">
+                    <div
+                      key={f.id}
+                      className="flex items-center justify-between border rounded p-2 text-sm"
+                    >
                       <div className="flex items-center gap-2">
                         <Badge variant={f.status === "verified" ? "default" : "secondary"}>
                           {f.status === "verified" ? "Ativo" : "Pendente"}
                         </Badge>
-                        <span className="font-medium">{f.friendly_name || f.factor_type.toUpperCase()}</span>
+                        <span className="font-medium">
+                          {f.friendly_name || f.factor_type.toUpperCase()}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDateTime(f.created_at)}
                         </span>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => removeFactor(f.id)} aria-label="Remover">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFactor(f.id)}
+                        aria-label="Remover"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -187,7 +230,9 @@ function SecurityPage() {
                 <div className="space-y-2 flex-1">
                   <div className="space-y-1">
                     <Label className="text-xs">Chave manual</Label>
-                    <code className="block text-xs bg-muted p-2 rounded break-all">{enroll.secret}</code>
+                    <code className="block text-xs bg-muted p-2 rounded break-all">
+                      {enroll.secret}
+                    </code>
                   </div>
                   <div className="space-y-1">
                     <Label>Código de 6 dígitos</Label>
@@ -200,8 +245,12 @@ function SecurityPage() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={verifyEnroll} disabled={verifying || code.length < 6}>Confirmar</Button>
-                    <Button variant="ghost" onClick={cancelEnroll}>Cancelar</Button>
+                    <Button onClick={verifyEnroll} disabled={verifying || code.length < 6}>
+                      Confirmar
+                    </Button>
+                    <Button variant="ghost" onClick={cancelEnroll}>
+                      Cancelar
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -216,8 +265,12 @@ function SecurityPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div><span className="text-muted-foreground">Email:</span> {session?.email ?? "—"}</div>
-            <div><span className="text-muted-foreground">Provedor:</span> {session?.provider ?? "—"}</div>
+            <div>
+              <span className="text-muted-foreground">Email:</span> {session?.email ?? "—"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Provedor:</span> {session?.provider ?? "—"}
+            </div>
             <div className="col-span-2">
               <span className="text-muted-foreground">Último login:</span>{" "}
               {session?.signedInAt ? formatDateTime(session.signedInAt) : "—"}
@@ -225,14 +278,17 @@ function SecurityPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={loadSession}>
-              <RefreshCcw className="h-4 w-4 mr-2" />Atualizar
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Atualizar
             </Button>
             <Button variant="destructive" onClick={signOutAll}>
-              <LogOut className="h-4 w-4 mr-2" />Encerrar sessões em todos os dispositivos
+              <LogOut className="h-4 w-4 mr-2" />
+              Encerrar sessões em todos os dispositivos
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Isso desconecta sua conta em todos os navegadores e celulares. Você precisará entrar novamente.
+            Isso desconecta sua conta em todos os navegadores e celulares. Você precisará entrar
+            novamente.
           </p>
         </CardContent>
       </Card>

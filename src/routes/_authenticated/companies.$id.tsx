@@ -25,7 +25,9 @@ function CompanyDetail() {
     const { data } = await supabase.from("companies").select("*").eq("id", id).single();
     setCompany(data as Company | null);
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line */
+  }, [id]);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -40,7 +42,9 @@ function CompanyDetail() {
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-5 min-w-0">
         <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link to="/companies"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/companies">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         </Button>
         <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
           <Building2 className="h-7 w-7" />
@@ -48,10 +52,24 @@ function CompanyDetail() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
-            {company.industry && <Badge variant="outline" className="rounded-full">{company.industry}</Badge>}
-            {company.city && <span>{company.city}{company.state ? `/${company.state}` : ""}</span>}
+            {company.industry && (
+              <Badge variant="outline" className="rounded-full">
+                {company.industry}
+              </Badge>
+            )}
+            {company.city && (
+              <span>
+                {company.city}
+                {company.state ? `/${company.state}` : ""}
+              </span>
+            )}
             {company.website && (
-              <a href={company.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+              <a
+                href={company.website}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
                 {company.website} <ExternalLink className="h-3 w-3" />
               </a>
             )}
@@ -59,7 +77,12 @@ function CompanyDetail() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={remove}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+          onClick={remove}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -71,7 +94,9 @@ function CompanyDetail() {
       header={header}
       left={
         <PropertiesPanel
-          entity="companies" table="companies" row={company as unknown as Record<string, unknown> & { id: string }}
+          entity="companies"
+          table="companies"
+          row={company as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "name", label: "Nome", primary: true },
             { key: "domain", label: "Domínio", primary: true },
@@ -97,7 +122,9 @@ function CompanyDetail() {
         <div className="space-y-4">
           <CompanyHierarchy
             companyId={company.id}
-            parentId={(company as unknown as { parent_company_id: string | null }).parent_company_id ?? null}
+            parentId={
+              (company as unknown as { parent_company_id: string | null }).parent_company_id ?? null
+            }
             ownerId={company.owner_id}
           />
           <AssociationsPanel entity="company" entityId={company.id} />

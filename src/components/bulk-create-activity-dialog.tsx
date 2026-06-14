@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,9 +26,17 @@ const RELATED_COL: Record<Entity, string> = {
 };
 
 export function BulkCreateActivityDialog({
-  open, setOpen, ids, entity, onDone,
+  open,
+  setOpen,
+  ids,
+  entity,
+  onDone,
 }: {
-  open: boolean; setOpen: (b: boolean) => void; ids: string[]; entity: Entity; onDone?: () => void;
+  open: boolean;
+  setOpen: (b: boolean) => void;
+  ids: string[];
+  entity: Entity;
+  onDone?: () => void;
 }) {
   const { user } = useAuth();
   const { data: members } = useWorkspaceMembers();
@@ -42,15 +56,21 @@ export function BulkCreateActivityDialog({
     const rows = ids.map((id) => ({
       owner_id: ownerId,
       created_by: user.id,
-      type, subject, body: body || null,
-      due_date: due ? new Date(due).toISOString() : null, [col]: id,
+      type,
+      subject,
+      body: body || null,
+      due_date: due ? new Date(due).toISOString() : null,
+      [col]: id,
     }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("activities").insert(rows);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} atividade(s) criada(s)`);
-    setSubject(""); setBody(""); setDue(""); setAssigneeId("");
+    setSubject("");
+    setBody("");
+    setDue("");
+    setAssigneeId("");
     setOpen(false);
     onDone?.();
   };
@@ -64,8 +84,16 @@ export function BulkCreateActivityDialog({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Tipo</Label>
-            <select value={type} onChange={(e) => setType(e.target.value as ActivityType)} className="w-full h-9 rounded-md border bg-background px-3 text-sm">
-              {ACTIVITY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as ActivityType)}
+              className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+            >
+              {ACTIVITY_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-1.5">
@@ -81,7 +109,8 @@ export function BulkCreateActivityDialog({
             >
               {(members ?? []).map((m) => (
                 <option key={m.user_id} value={m.user_id}>
-                  {m.full_name || m.user_id.slice(0, 8)}{m.user_id === user?.id ? " (você)" : ""}
+                  {m.full_name || m.user_id.slice(0, 8)}
+                  {m.user_id === user?.id ? " (você)" : ""}
                 </option>
               ))}
             </select>
@@ -96,8 +125,12 @@ export function BulkCreateActivityDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "Salvando..." : "Criar"}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Salvando..." : "Criar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

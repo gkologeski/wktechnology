@@ -49,7 +49,9 @@ export function DealsBoard({
     if (currentKey === newStage) return;
 
     qc.setQueryData<Deal[]>(["deals", "list"], (old = []) =>
-      old.map((d) => (d.id === id ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d)),
+      old.map((d) =>
+        d.id === id ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d,
+      ),
     );
 
     // Update both stage_id and (when valid) the legacy enum, so existing queries keep working.
@@ -79,14 +81,22 @@ export function DealsBoard({
               0,
             );
             return (
-              <DealsBoardColumn key={s.value} stage={s} total={total} weighted={weighted} count={rows.length}>
+              <DealsBoardColumn
+                key={s.value}
+                stage={s}
+                total={total}
+                weighted={weighted}
+                count={rows.length}
+              >
                 {rows.map((d) => (
                   <DealsBoardCard
                     key={d.id}
                     deal={d}
                     columnId={s.value}
                     companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
-                    contactName={d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined}
+                    contactName={
+                      d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined
+                    }
                     ownerName={lookups.owners.get(d.owner_id) ?? "—"}
                     fields={pipeline.config?.card_fields}
                     onClick={() => onOpen(d)}

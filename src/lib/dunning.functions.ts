@@ -55,7 +55,12 @@ export const upsertDunningPolicy = createServerFn({ method: "POST" })
       steps: data.steps,
     };
     const q = data.id
-      ? context.supabase.from("dunning_policies").update(payload).eq("id", data.id).select("*").single()
+      ? context.supabase
+          .from("dunning_policies")
+          .update(payload)
+          .eq("id", data.id)
+          .select("*")
+          .single()
       : context.supabase.from("dunning_policies").insert(payload).select("*").single();
     const { data: row, error } = await q;
     if (error) throw new Error(error.message);

@@ -42,7 +42,10 @@ export async function apolloMatch(input: {
   const key = process.env.APOLLO_API_KEY;
   if (!key) throw new Error("Apollo não conectado: configure APOLLO_API_KEY em Integrações.");
 
-  const params: Record<string, unknown> = { reveal_personal_emails: true, reveal_phone_number: true };
+  const params: Record<string, unknown> = {
+    reveal_personal_emails: true,
+    reveal_phone_number: true,
+  };
   if (input.linkedin_url) params.linkedin_url = input.linkedin_url;
   else if (input.email) params.email = input.email;
   else if (input.first_name && input.company_name) {
@@ -58,8 +61,9 @@ export async function apolloMatch(input: {
     headers: { "Content-Type": "application/json", "X-Api-Key": key, accept: "application/json" },
     body: JSON.stringify(params),
   });
-  const body = await res.json().catch(() => ({})) as { person?: ApolloPerson };
-  if (!res.ok) throw new Error(`Apollo erro [${res.status}]: ${JSON.stringify(body).slice(0, 300)}`);
+  const body = (await res.json().catch(() => ({}))) as { person?: ApolloPerson };
+  if (!res.ok)
+    throw new Error(`Apollo erro [${res.status}]: ${JSON.stringify(body).slice(0, 300)}`);
   const p = body.person;
   if (!p) return null;
   return {
@@ -108,7 +112,7 @@ export async function lushaMatch(input: {
     return null;
   }
   const res = await fetch(url, { headers: { api_key: key, accept: "application/json" } });
-  const body = await res.json().catch(() => ({})) as LushaResp;
+  const body = (await res.json().catch(() => ({}))) as LushaResp;
   if (!res.ok) throw new Error(`Lusha erro [${res.status}]: ${JSON.stringify(body).slice(0, 300)}`);
   const c = body.data?.contact;
   if (!c) return null;
@@ -181,9 +185,10 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
   const { supabase, ownerId, providers, entity, ids, mode, dryRun } = opts;
   const table = entity === "lead" ? "leads" : "contacts";
 
-  const cols = entity === "lead"
-    ? "id, first_name, last_name, email, phone, company_name"
-    : "id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
+  const cols =
+    entity === "lead"
+      ? "id, first_name, last_name, email, phone, company_name"
+      : "id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows, error } = await (supabase as any).from(table).select(cols).in("id", ids);
   if (error) throw new Error(error.message);
@@ -194,16 +199,20 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
   const jobByProvider: Record<string, string> = {};
   if (!dryRun) {
     for (const p of providers) {
-      const { data: job } = await supabase.from("enrichment_jobs").insert({
-        owner_id: ownerId,
-        provider: p,
-        kind: "enrich",
-        entity,
-        status: "running",
-        total: rowList.length,
-        started_at: new Date().toISOString(),
-        scope: { ids, mode } as never,
-      }).select("id").single();
+      const { data: job } = await supabase
+        .from("enrichment_jobs")
+        .insert({
+          owner_id: ownerId,
+          provider: p,
+          kind: "enrich",
+          entity,
+          status: "running",
+          total: rowList.length,
+          started_at: new Date().toISOString(),
+          scope: { ids, mode } as never,
+        })
+        .select("id")
+        .single();
       if (job) {
         jobIds.push(job.id);
         jobByProvider[p] = job.id;
@@ -211,7 +220,10 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
     }
   }
 
-  let succeeded = 0, failed = 0, unchanged = 0, credits = 0;
+  let succeeded = 0,
+    failed = 0,
+    unchanged = 0,
+    credits = 0;
   const perJobCounts: Record<string, { ok: number; ko: number; cr: number }> = {};
   const preview: RunBatchResult["preview"] = [];
 
@@ -254,8 +266,11 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
         credits++;
         if (!dryRun) {
           await supabase.from("enrichment_job_items").insert({
-            job_id: j, entity_id: row.id, status: "ok",
-            before: row as never, after: { ...row, ...update } as never,
+            job_id: j,
+            entity_id: row.id,
+            status: "ok",
+            before: row as never,
+            after: { ...row, ...update } as never,
           });
         }
       } catch (e) {
@@ -263,7 +278,10 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
         const j = jobByProvider[provider];
         if (j && !dryRun) {
           await supabase.from("enrichment_job_items").insert({
-            job_id: j, entity_id: row.id, status: "error", error: lastError,
+            job_id: j,
+            entity_id: row.id,
+            status: "error",
+            error: lastError,
           });
         }
         perJobCounts[j] ??= { ok: 0, ko: 0, cr: 0 };
@@ -284,25 +302,46 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
     } else {
       failed++;
     }
-    preview.push({ entity_id: row.id, provider: matchedProvider, update: finalUpdate as Record<string, string | number | boolean | null> });
+    preview.push({
+      entity_id: row.id,
+      provider: matchedProvider,
+      update: finalUpdate as Record<string, string | number | boolean | null>,
+    });
   }
 
   if (!dryRun) {
     for (const [provider, jobId] of Object.entries(jobByProvider)) {
       const c = perJobCounts[jobId] ?? { ok: 0, ko: 0, cr: 0 };
-      await supabase.from("enrichment_jobs").update({
-        status: c.ko === 0 ? "done" : (c.ok === 0 ? "failed" : "partial"),
-        processed: c.ok + c.ko, succeeded: c.ok, failed: c.ko, credits_used: c.cr,
-        finished_at: new Date().toISOString(),
-      }).eq("id", jobId);
+      await supabase
+        .from("enrichment_jobs")
+        .update({
+          status: c.ko === 0 ? "done" : c.ok === 0 ? "failed" : "partial",
+          processed: c.ok + c.ko,
+          succeeded: c.ok,
+          failed: c.ko,
+          credits_used: c.cr,
+          finished_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
       if (c.cr > 0) {
         await supabase.from("credit_ledger").insert({
-          owner_id: ownerId, provider, job_id: jobId, delta: c.cr,
+          owner_id: ownerId,
+          provider,
+          job_id: jobId,
+          delta: c.cr,
           reason: `Enriquecimento ${provider} (${c.ok} sucessos)`,
         });
       }
     }
   }
 
-  return { jobIds, succeeded, failed, unchanged, creditsUsed: credits, dryRun, preview: dryRun ? preview : undefined };
+  return {
+    jobIds,
+    succeeded,
+    failed,
+    unchanged,
+    creditsUsed: credits,
+    dryRun,
+    preview: dryRun ? preview : undefined,
+  };
 }

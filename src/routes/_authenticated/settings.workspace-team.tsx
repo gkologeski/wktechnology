@@ -10,8 +10,22 @@ import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
 import { Plus, Trash2, Copy, Link as LinkIcon } from "lucide-react";
 import {
@@ -43,13 +57,14 @@ function WorkspaceTeamPage() {
   const [lastUrl, setLastUrl] = useState<string | null>(null);
 
   const invite = useMutation({
-    mutationFn: () => inviteFn({
-      data: {
-        email: form.email.trim(),
-        role: form.role,
-        redirect_origin: window.location.origin,
-      },
-    }),
+    mutationFn: () =>
+      inviteFn({
+        data: {
+          email: form.email.trim(),
+          role: form.role,
+          redirect_origin: window.location.origin,
+        },
+      }),
     onSuccess: (res) => {
       toast.success("Convite criado.");
       setLastUrl(res.url);
@@ -61,19 +76,29 @@ function WorkspaceTeamPage() {
 
   const revoke = useMutation({
     mutationFn: (id: string) => revokeFn({ data: { invite_id: id } }),
-    onSuccess: () => { toast.success("Convite revogado."); qc.invalidateQueries({ queryKey: ["workspace-team"] }); },
+    onSuccess: () => {
+      toast.success("Convite revogado.");
+      qc.invalidateQueries({ queryKey: ["workspace-team"] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
   const remove = useMutation({
     mutationFn: (uid: string) => removeFn({ data: { user_id: uid } }),
-    onSuccess: () => { toast.success("Membro removido."); qc.invalidateQueries({ queryKey: ["workspace-team"] }); },
+    onSuccess: () => {
+      toast.success("Membro removido.");
+      qc.invalidateQueries({ queryKey: ["workspace-team"] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
   const changeRole = useMutation({
-    mutationFn: (p: { uid: string; role: Role }) => roleFn({ data: { user_id: p.uid, role: p.role } }),
-    onSuccess: () => { toast.success("Papel atualizado."); qc.invalidateQueries({ queryKey: ["workspace-team"] }); },
+    mutationFn: (p: { uid: string; role: Role }) =>
+      roleFn({ data: { user_id: p.uid, role: p.role } }),
+    onSuccess: () => {
+      toast.success("Papel atualizado.");
+      qc.invalidateQueries({ queryKey: ["workspace-team"] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
 
@@ -84,8 +109,12 @@ function WorkspaceTeamPage() {
   };
 
   const copy = async (url: string) => {
-    try { await navigator.clipboard.writeText(url); toast.success("Link copiado."); }
-    catch { toast.error("Não foi possível copiar."); }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado.");
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
   };
 
   return (
@@ -94,9 +123,18 @@ function WorkspaceTeamPage() {
         title="Equipe do workspace"
         description="Gerencie membros e gere convites por link para o workspace ativo."
         actions={
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLastUrl(null); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setLastUrl(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Novo convite</Button>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo convite
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -115,20 +153,36 @@ function WorkspaceTeamPage() {
                     </Button>
                   </div>
                   <DialogFooter>
-                    <Button onClick={() => { setLastUrl(null); setOpen(false); }}>Concluir</Button>
+                    <Button
+                      onClick={() => {
+                        setLastUrl(null);
+                        setOpen(false);
+                      }}
+                    >
+                      Concluir
+                    </Button>
                   </DialogFooter>
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="wi-email">Email do convidado</Label>
-                    <EmailInput id="wi-email" required value={form.email}
-                      onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
+                    <EmailInput
+                      id="wi-email"
+                      required
+                      value={form.email}
+                      onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Papel</Label>
-                    <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as Role }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={form.role}
+                      onValueChange={(v) => setForm((f) => ({ ...f, role: v as Role }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="manager">Gestor</SelectItem>
@@ -137,7 +191,9 @@ function WorkspaceTeamPage() {
                     </Select>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                      Cancelar
+                    </Button>
                     <Button type="submit" disabled={invite.isPending}>
                       {invite.isPending ? "Gerando…" : "Gerar link"}
                     </Button>
@@ -150,7 +206,9 @@ function WorkspaceTeamPage() {
       />
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Membros</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Membros</CardTitle>
+        </CardHeader>
         <CardContent>
           {q.isLoading ? (
             <div className="text-sm text-muted-foreground">Carregando…</div>
@@ -161,20 +219,32 @@ function WorkspaceTeamPage() {
               {q.data!.members.map((m) => (
                 <div key={m.user_id} className="flex items-center justify-between py-3 gap-3">
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{m.full_name || m.email || m.user_id}</div>
+                    <div className="font-medium truncate">
+                      {m.full_name || m.email || m.user_id}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">{m.email}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Select value={m.role} onValueChange={(v) => changeRole.mutate({ uid: m.user_id, role: v as Role })}>
-                      <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={m.role}
+                      onValueChange={(v) => changeRole.mutate({ uid: m.user_id, role: v as Role })}
+                    >
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="manager">Gestor</SelectItem>
                         <SelectItem value="member">Membro</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button size="icon" variant="ghost"
-                      onClick={() => { if (confirm(`Remover ${m.full_name || m.email}?`)) remove.mutate(m.user_id); }}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm(`Remover ${m.full_name || m.email}?`)) remove.mutate(m.user_id);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -186,7 +256,9 @@ function WorkspaceTeamPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Convites pendentes</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Convites pendentes</CardTitle>
+        </CardHeader>
         <CardContent>
           {(q.data?.invites ?? []).length === 0 ? (
             <div className="text-sm text-muted-foreground">Nenhum convite pendente.</div>
@@ -202,15 +274,26 @@ function WorkspaceTeamPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{i.role}</Badge>
-                    <Button size="sm" variant="outline" onClick={() => {
-                      const url = `${window.location.origin}/accept-invite/${""}`; // placeholder, real URL is shown at creation
-                      void url;
-                      toast.info("Reabra o link no momento da criação ou revogue e gere um novo.");
-                    }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const url = `${window.location.origin}/accept-invite/${""}`; // placeholder, real URL is shown at creation
+                        void url;
+                        toast.info(
+                          "Reabra o link no momento da criação ou revogue e gere um novo.",
+                        );
+                      }}
+                    >
                       <LinkIcon className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost"
-                      onClick={() => { if (confirm(`Revogar convite de ${i.email}?`)) revoke.mutate(i.id); }}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm(`Revogar convite de ${i.email}?`)) revoke.mutate(i.id);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>

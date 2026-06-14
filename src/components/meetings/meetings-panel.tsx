@@ -87,11 +87,7 @@ export function MeetingsPanel({ entity, entityId }: Props) {
         )}
       </CardContent>
       {openId && (
-        <MeetingDetailDrawer
-          meetingId={openId}
-          open={!!openId}
-          onClose={() => setOpenId(null)}
-        />
+        <MeetingDetailDrawer meetingId={openId} open={!!openId} onClose={() => setOpenId(null)} />
       )}
     </Card>
   );

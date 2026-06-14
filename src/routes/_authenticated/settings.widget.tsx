@@ -24,28 +24,53 @@ function WidgetSettings() {
   useEffect(() => {
     (async () => {
       if (!user?.id) return;
-      const { data } = await supabase.from("profiles").select("active_workspace_id").eq("id", user.id).maybeSingle();
+      const { data } = await supabase
+        .from("profiles")
+        .select("active_workspace_id")
+        .eq("id", user.id)
+        .maybeSingle();
       const active = (data as { active_workspace_id?: string } | null)?.active_workspace_id;
-      if (active) { setWorkspaceId(active); return; }
-      const { data: m } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", user.id).limit(1).maybeSingle();
+      if (active) {
+        setWorkspaceId(active);
+        return;
+      }
+      const { data: m } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
       if (m?.workspace_id) setWorkspaceId(m.workspace_id);
     })();
   }, [user?.id]);
 
-  const snippet = workspaceId && origin
-    ? `<script src="${origin}/api/public/widget/script" data-workspace="${workspaceId}" defer></script>`
-    : "Carregando…";
+  const snippet =
+    workspaceId && origin
+      ? `<script src="${origin}/api/public/widget/script" data-workspace="${workspaceId}" defer></script>`
+      : "Carregando…";
   const widgetUrl = workspaceId && origin ? `${origin}/widget/${workspaceId}` : "";
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Widget de chat ao vivo" description="Cole este script no seu site para receber conversas dos visitantes." />
+      <PageHeader
+        title="Widget de chat ao vivo"
+        description="Cole este script no seu site para receber conversas dos visitantes."
+      />
       <Card>
-        <CardHeader><CardTitle>Snippet de instalação</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Snippet de instalação</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           <pre className="bg-muted rounded p-3 text-xs overflow-x-auto">{snippet}</pre>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => { navigator.clipboard.writeText(snippet); toast.success("Copiado!"); }} disabled={!workspaceId}>
+            <Button
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(snippet);
+                toast.success("Copiado!");
+              }}
+              disabled={!workspaceId}
+            >
               <Copy className="h-4 w-4 mr-1" /> Copiar snippet
             </Button>
             {widgetUrl && (
@@ -57,7 +82,11 @@ function WidgetSettings() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            As conversas chegam em <a href="/inbox/chat" className="underline">Inbox › Chat ao vivo</a>.
+            As conversas chegam em{" "}
+            <a href="/inbox/chat" className="underline">
+              Inbox › Chat ao vivo
+            </a>
+            .
           </p>
         </CardContent>
       </Card>

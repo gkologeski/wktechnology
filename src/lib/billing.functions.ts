@@ -102,24 +102,38 @@ export const getMyPlan = createServerFn({ method: "GET" })
     ];
     await Promise.all(
       entityCounts.map(async ([table, key]) => {
-        const { count } = await (supabaseAdmin as unknown as {
-          from: (t: string) => {
-            select: (c: string, o: { count: "exact"; head: true }) => {
-              eq: (a: string, b: string) => { is: (a: string, b: null) => Promise<{ count: number | null }> };
+        const { count } = await (
+          supabaseAdmin as unknown as {
+            from: (t: string) => {
+              select: (
+                c: string,
+                o: { count: "exact"; head: true },
+              ) => {
+                eq: (
+                  a: string,
+                  b: string,
+                ) => { is: (a: string, b: null) => Promise<{ count: number | null }> };
+              };
             };
-          };
-        })
+          }
+        )
           .from(table)
           .select("id", { count: "exact", head: true })
           .eq("owner_id", owner)
           .is("deleted_at", null);
         if (entMap[key]) entMap[key].used = count ?? 0;
-      })
+      }),
     );
 
     return {
       workspace_owner_id: owner,
-      plan: planRow ?? { code: "free", name: "Free", tier_rank: 0, price_monthly: 0, price_yearly: 0 },
+      plan: planRow ?? {
+        code: "free",
+        name: "Free",
+        tier_rank: 0,
+        price_monthly: 0,
+        price_yearly: 0,
+      },
       status: sub?.status ?? "active",
       trial_ends_at: sub?.trial_ends_at ?? null,
       entitlements: entMap,
@@ -139,7 +153,10 @@ export const listPlansWithEntitlements = createServerFn({ method: "GET" })
       .from("plan_entitlements")
       .select("plan_code, key, limit_int, enabled");
 
-    const byKey: Record<string, Array<{ plan_code: string; limit_int: number | null; enabled: boolean }>> = {};
+    const byKey: Record<
+      string,
+      Array<{ plan_code: string; limit_int: number | null; enabled: boolean }>
+    > = {};
     for (const e of ents ?? []) {
       const k = e.key as string;
       byKey[k] = byKey[k] ?? [];
@@ -156,10 +173,12 @@ export const listPlansWithEntitlements = createServerFn({ method: "GET" })
 export const setWorkspacePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspace_owner_id: z.string().uuid(),
-      plan_code: PlanCodeZ,
-    }).parse(i)
+    z
+      .object({
+        workspace_owner_id: z.string().uuid(),
+        plan_code: PlanCodeZ,
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: admin } = await supabaseAdmin
@@ -169,17 +188,15 @@ export const setWorkspacePlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!admin) throw new Error("Apenas super-admins podem alterar planos.");
 
-    const { error } = await supabaseAdmin
-      .from("workspace_subscriptions")
-      .upsert(
-        {
-          workspace_owner_id: data.workspace_owner_id,
-          plan_code: data.plan_code,
-          status: "active",
-          current_period_start: new Date().toISOString(),
-        } as never,
-        { onConflict: "workspace_owner_id" }
-      );
+    const { error } = await supabaseAdmin.from("workspace_subscriptions").upsert(
+      {
+        workspace_owner_id: data.workspace_owner_id,
+        plan_code: data.plan_code,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+      } as never,
+      { onConflict: "workspace_owner_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -193,17 +210,15 @@ export const requestSelfUpgrade = createServerFn({ method: "POST" })
     if (owner !== context.userId) {
       throw new Error("Apenas o dono do workspace pode alterar o plano.");
     }
-    const { error } = await supabaseAdmin
-      .from("workspace_subscriptions")
-      .upsert(
-        {
-          workspace_owner_id: owner,
-          plan_code: data.plan_code,
-          status: "active",
-          current_period_start: new Date().toISOString(),
-        } as never,
-        { onConflict: "workspace_owner_id" }
-      );
+    const { error } = await supabaseAdmin.from("workspace_subscriptions").upsert(
+      {
+        workspace_owner_id: owner,
+        plan_code: data.plan_code,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+      } as never,
+      { onConflict: "workspace_owner_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, mock: true };
   });

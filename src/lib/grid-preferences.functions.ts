@@ -3,7 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const gridKeySchema = z.string().min(1).max(64).regex(/^[a-z0-9_-]+$/i);
+const gridKeySchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9_-]+$/i);
 
 export const getGridPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -23,23 +27,23 @@ export const getGridPreference = createServerFn({ method: "POST" })
 export const saveGridPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      gridKey: gridKeySchema,
-      visibleColumns: z.array(z.string().min(1).max(128)).max(200),
-    }).parse(i),
+    z
+      .object({
+        gridKey: gridKeySchema,
+        visibleColumns: z.array(z.string().min(1).max(128)).max(200),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("user_grid_preferences")
-      .upsert(
-        {
-          user_id: userId,
-          grid_key: data.gridKey,
-          visible_columns: data.visibleColumns,
-        } as never,
-        { onConflict: "user_id,grid_key" },
-      );
+    const { error } = await supabase.from("user_grid_preferences").upsert(
+      {
+        user_id: userId,
+        grid_key: data.gridKey,
+        visible_columns: data.visibleColumns,
+      } as never,
+      { onConflict: "user_id,grid_key" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });

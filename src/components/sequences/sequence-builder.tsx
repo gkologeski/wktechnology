@@ -1,14 +1,32 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
-import { ENTITY_LABELS, STEP_LABELS, EMPTY_STEP, type SequenceStep, type SequenceEntity } from "@/lib/sequences/types";
+import {
+  ENTITY_LABELS,
+  STEP_LABELS,
+  EMPTY_STEP,
+  type SequenceStep,
+  type SequenceEntity,
+} from "@/lib/sequences/types";
 
 export interface SequenceDraft {
   id?: string;
@@ -59,7 +77,12 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
   const changeType = (i: number, type: SequenceStep["type"]) => {
     const cur = local.steps[i];
     if (type === "wait") updateStep(i, { type: "wait", wait_days: cur.wait_days } as SequenceStep);
-    else updateStep(i, { type, wait_days: cur.wait_days, subject: "subject" in cur ? cur.subject : "Follow-up" } as SequenceStep);
+    else
+      updateStep(i, {
+        type,
+        wait_days: cur.wait_days,
+        subject: "subject" in cur ? cur.subject : "Follow-up",
+      } as SequenceStep);
   };
 
   return (
@@ -77,11 +100,18 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
             </div>
             <div>
               <Label>Entidade</Label>
-              <Select value={local.entity} onValueChange={(v) => update({ entity: v as SequenceEntity })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={local.entity}
+                onValueChange={(v) => update({ entity: v as SequenceEntity })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(ENTITY_LABELS) as SequenceEntity[]).map((k) => (
-                    <SelectItem key={k} value={k}>{ENTITY_LABELS[k]}</SelectItem>
+                    <SelectItem key={k} value={k}>
+                      {ENTITY_LABELS[k]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -95,7 +125,9 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label>Passos</Label>
-              <Button size="sm" variant="outline" onClick={addStep}><Plus className="h-3 w-3 mr-1" /> Passo</Button>
+              <Button size="sm" variant="outline" onClick={addStep}>
+                <Plus className="h-3 w-3 mr-1" /> Passo
+              </Button>
             </div>
             <div className="space-y-2">
               {local.steps.map((step, i) => (
@@ -103,26 +135,46 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
                   <div className="flex items-center gap-2">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground w-6">#{i + 1}</span>
-                    <Select value={step.type} onValueChange={(v) => changeType(i, v as SequenceStep["type"])}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={step.type}
+                      onValueChange={(v) => changeType(i, v as SequenceStep["type"])}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {(Object.keys(STEP_LABELS) as SequenceStep["type"][]).map((k) => (
-                          <SelectItem key={k} value={k}>{STEP_LABELS[k]}</SelectItem>
+                          <SelectItem key={k} value={k}>
+                            {STEP_LABELS[k]}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-1">
                       <Input
-                        type="number" min={0} className="w-20"
+                        type="number"
+                        min={0}
+                        className="w-20"
                         value={step.wait_days}
-                        onChange={(e) => updateStep(i, { wait_days: Math.max(0, Number(e.target.value) || 0) })}
+                        onChange={(e) =>
+                          updateStep(i, { wait_days: Math.max(0, Number(e.target.value) || 0) })
+                        }
                       />
                       <span className="text-xs text-muted-foreground">dia(s) depois</span>
                     </div>
                     <div className="ml-auto flex items-center gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => moveStep(i, -1)}><ArrowUp className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => moveStep(i, 1)}><ArrowDown className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => removeStep(i)} disabled={local.steps.length <= 1}>
+                      <Button size="icon" variant="ghost" onClick={() => moveStep(i, -1)}>
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => moveStep(i, 1)}>
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeStep(i)}
+                        disabled={local.steps.length <= 1}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -137,7 +189,7 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
                       <Textarea
                         placeholder="Conteúdo (opcional). Use {{first_name}} para tokens."
                         rows={2}
-                        value={"body" in step ? step.body ?? "" : ""}
+                        value={"body" in step ? (step.body ?? "") : ""}
                         onChange={(e) => updateStep(i, { body: e.target.value })}
                       />
                     </div>
@@ -149,7 +201,9 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button onClick={() => onSave(local)}>Salvar</Button>
         </DialogFooter>
       </DialogContent>

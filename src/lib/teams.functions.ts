@@ -21,7 +21,11 @@ function resolveInviteOrigin(origin: string | undefined): string {
   if (!origin) return CANONICAL_APP_URL;
   try {
     const host = new URL(origin).hostname.toLowerCase();
-    if (host.endsWith("lovable.app") || host.endsWith("lovable.dev") || host.endsWith("lovableproject.com")) {
+    if (
+      host.endsWith("lovable.app") ||
+      host.endsWith("lovable.dev") ||
+      host.endsWith("lovableproject.com")
+    ) {
       return CANONICAL_APP_URL;
     }
     return origin.replace(/\/+$/, "");
@@ -54,7 +58,8 @@ async function resolveActiveWorkspace(userId: string): Promise<ActiveWorkspace> 
     .eq("id", userId)
     .maybeSingle();
 
-  const activeId = (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+  const activeId =
+    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
   if (activeId) {
     if (admin) {
       const { data: ws, error } = await supabaseAdmin
@@ -92,7 +97,9 @@ async function resolveActiveWorkspace(userId: string): Promise<ActiveWorkspace> 
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  const workspace = (first as { workspaces?: { id: string; created_by: string | null } | null } | null)?.workspaces;
+  const workspace = (
+    first as { workspaces?: { id: string; created_by: string | null } | null } | null
+  )?.workspaces;
   if (workspace) return { id: workspace.id, created_by: workspace.created_by };
 
   throw new Error("Nenhum workspace ativo encontrado.");
@@ -107,7 +114,8 @@ async function assertCanManageWorkspace(workspaceId: string, userId: string) {
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data || data.role !== "admin") throw new Error("Apenas admins do workspace podem gerenciar usuários.");
+  if (!data || data.role !== "admin")
+    throw new Error("Apenas admins do workspace podem gerenciar usuários.");
 }
 
 async function assertTargetMember(workspaceId: string, userId: string) {
@@ -122,11 +130,14 @@ async function assertTargetMember(workspaceId: string, userId: string) {
 }
 
 async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRole) {
-  await supabaseAdmin.from("team_members").upsert({
-    workspace_owner_id: workspaceId,
-    member_user_id: userId,
-    role,
-  } as never, { onConflict: "workspace_owner_id,member_user_id" });
+  await supabaseAdmin.from("team_members").upsert(
+    {
+      workspace_owner_id: workspaceId,
+      member_user_id: userId,
+      role,
+    } as never,
+    { onConflict: "workspace_owner_id,member_user_id" },
+  );
 }
 
 /** Lista membros + email (do auth.users via admin). */
@@ -152,8 +163,15 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       .from("profiles")
       .select("id, full_name, phone")
       .in("id", ids);
-    const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]));
-    const phoneById = new Map((profiles ?? []).map((p) => [p.id as string, ((p as { phone?: string | null }).phone ?? "") as string]));
+    const nameById = new Map(
+      (profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]),
+    );
+    const phoneById = new Map(
+      (profiles ?? []).map((p) => [
+        p.id as string,
+        ((p as { phone?: string | null }).phone ?? "") as string,
+      ]),
+    );
 
     // Buscar email + status de confirmação via admin (auth.users)
     const emailById = new Map<string, string>();
@@ -163,9 +181,14 @@ export const listTeamMembers = createServerFn({ method: "GET" })
         try {
           const { data } = await supabaseAdmin.auth.admin.getUserById(id);
           if (data.user?.email) emailById.set(id, data.user.email);
-          confirmedById.set(id, Boolean(data.user?.email_confirmed_at || data.user?.last_sign_in_at));
-        } catch { /* ignore */ }
-      })
+          confirmedById.set(
+            id,
+            Boolean(data.user?.email_confirmed_at || data.user?.last_sign_in_at),
+          );
+        } catch {
+          /* ignore */
+        }
+      }),
     );
 
     const memberRows = (members ?? []).map((m) => ({
@@ -183,18 +206,19 @@ export const listTeamMembers = createServerFn({ method: "GET" })
     return memberRows;
   });
 
-
 /** Convida (adiciona) um membro pelo email. Usuário precisa já existir no sistema. */
 export const inviteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      email: z.string().trim().email().max(255),
-      full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
-      phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
-      role: TeamRole,
-      redirect_origin: z.string().trim().url().max(255).optional(),
-    }).parse(i)
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
+        phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
+        role: TeamRole,
+        redirect_origin: z.string().trim().url().max(255).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -209,7 +233,8 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     {
       const [{ data: limitRow }, { count: currentMembers }] = await Promise.all([
         supabaseAdmin.rpc("get_entitlement_limit", {
-          _workspace: workspace.id, _key: "users.max",
+          _workspace: workspace.id,
+          _key: "users.max",
         } as never),
         supabaseAdmin
           .from("workspace_members")
@@ -220,19 +245,20 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       const used = currentMembers ?? 0;
       if (limit !== null && used + 1 > limit) {
         throw new Error(
-          `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`
+          `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`,
         );
       }
     }
-
-
 
     // Achar user_id por email via admin
     let foundId: string | null = null;
     let alreadyConfirmed = false;
     let page = 1;
     while (page <= 20) {
-      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
       if (error) throw new Error(error.message);
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === target);
       if (u) {
@@ -246,10 +272,13 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
 
     // Se não existir OU existir mas ainda não confirmou, envia (re)convite
     if (!foundId || !alreadyConfirmed) {
-      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(target, {
-        data: { full_name: data.full_name, phone: data.phone },
-        redirectTo,
-      });
+      const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        target,
+        {
+          data: { full_name: data.full_name, phone: data.phone },
+          redirectTo,
+        },
+      );
       if (invErr || !invited?.user) {
         throw new Error(invErr?.message ?? "Falha ao enviar convite por email.");
       }
@@ -258,25 +287,36 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     if (foundId === userId) throw new Error("Você já é membro deste workspace.");
 
     // Garante profile com nome e telefone
-    await supabaseAdmin.from("profiles").upsert({
-      id: foundId,
-      full_name: data.full_name,
-      phone: data.phone,
-    } as never, { onConflict: "id" });
+    await supabaseAdmin.from("profiles").upsert(
+      {
+        id: foundId,
+        full_name: data.full_name,
+        phone: data.phone,
+      } as never,
+      { onConflict: "id" },
+    );
 
-    const { error: insErr } = await supabaseAdmin
-      .from("workspace_members")
-      .insert({ workspace_id: workspace.id, user_id: foundId, role: data.role, invited_by: userId } as never);
+    const { error: insErr } = await supabaseAdmin.from("workspace_members").insert({
+      workspace_id: workspace.id,
+      user_id: foundId,
+      role: data.role,
+      invited_by: userId,
+    } as never);
     if (insErr) {
       if (insErr.code === "23505") throw new Error("Esse usuário já é membro do workspace.");
       throw new Error(insErr.message);
     }
 
     // Espelha no user_roles
-    await supabaseAdmin.from("user_roles").delete()
-      .eq("workspace_owner_id", workspace.id).eq("user_id", foundId);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("workspace_owner_id", workspace.id)
+      .eq("user_id", foundId);
     await supabaseAdmin.from("user_roles").insert({
-      workspace_owner_id: workspace.id, user_id: foundId, role: data.role,
+      workspace_owner_id: workspace.id,
+      user_id: foundId,
+      role: data.role,
     } as never);
     await syncLegacyRole(workspace.id, foundId, data.role);
 
@@ -287,10 +327,12 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
 export const resendTeamInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      member_user_id: z.string().uuid(),
-      redirect_origin: z.string().trim().url().max(255).optional(),
-    }).parse(i)
+    z
+      .object({
+        member_user_id: z.string().uuid(),
+        redirect_origin: z.string().trim().url().max(255).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -306,8 +348,11 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
     if (tmErr) throw new Error(tmErr.message);
     if (!tm) throw new Error("Membro não encontrado neste workspace.");
 
-    const { data: u, error: uErr } = await supabaseAdmin.auth.admin.getUserById(data.member_user_id);
-    if (uErr || !u.user?.email) throw new Error(uErr?.message ?? "Email do usuário não encontrado.");
+    const { data: u, error: uErr } = await supabaseAdmin.auth.admin.getUserById(
+      data.member_user_id,
+    );
+    if (uErr || !u.user?.email)
+      throw new Error(uErr?.message ?? "Email do usuário não encontrado.");
 
     const redirectTo = `${resolveInviteOrigin(data.redirect_origin)}/accept-invite`;
     const meta = (u.user.user_metadata ?? {}) as { full_name?: string; phone?: string };
@@ -323,20 +368,25 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
 export const completeInviteProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      full_name: z.string().trim().min(2).max(120),
-      phone: z.string().trim().min(8).max(32),
-    }).parse(i)
+    z
+      .object({
+        full_name: z.string().trim().min(2).max(120),
+        phone: z.string().trim().min(8).max(32),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
     // 1) Garante nome/telefone no profile
-    const { error } = await supabaseAdmin.from("profiles").upsert({
-      id: userId,
-      full_name: data.full_name,
-      phone: data.phone,
-    } as never, { onConflict: "id" });
+    const { error } = await supabaseAdmin.from("profiles").upsert(
+      {
+        id: userId,
+        full_name: data.full_name,
+        phone: data.phone,
+      } as never,
+      { onConflict: "id" },
+    );
     if (error) throw new Error(error.message);
 
     // 2) Recupera email do auth para casar com convites pendentes
@@ -360,21 +410,31 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
           invited_by: null,
         } as never);
         if (mErr && mErr.code !== "23505") continue;
-        await supabaseAdmin.from("workspace_invites")
+        await supabaseAdmin
+          .from("workspace_invites")
           .update({ accepted_at: new Date().toISOString() } as never)
           .eq("id", inv.id as string);
-        await supabaseAdmin.from("user_roles").delete()
-          .eq("workspace_owner_id", inv.workspace_id as string).eq("user_id", userId);
+        await supabaseAdmin
+          .from("user_roles")
+          .delete()
+          .eq("workspace_owner_id", inv.workspace_id as string)
+          .eq("user_id", userId);
         await supabaseAdmin.from("user_roles").insert({
-          workspace_owner_id: inv.workspace_id, user_id: userId, role: inv.role,
+          workspace_owner_id: inv.workspace_id,
+          user_id: userId,
+          role: inv.role,
         } as never);
       }
     }
 
     // 4) Garante active_workspace_id apontando para um workspace do qual é membro
     const { data: prof } = await supabaseAdmin
-      .from("profiles").select("active_workspace_id").eq("id", userId).maybeSingle();
-    const currentActive = (prof as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
+      .from("profiles")
+      .select("active_workspace_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const currentActive =
+      (prof as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
 
     const { data: memberships } = await supabaseAdmin
       .from("workspace_members")
@@ -384,25 +444,25 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
     const memberIds = (memberships ?? []).map((m) => m.workspace_id as string);
 
     if (memberIds.length > 0) {
-      const validActive = currentActive && memberIds.includes(currentActive) ? currentActive : memberIds[0];
+      const validActive =
+        currentActive && memberIds.includes(currentActive) ? currentActive : memberIds[0];
       if (validActive !== currentActive) {
-        await supabaseAdmin.from("profiles").upsert({
-          id: userId, active_workspace_id: validActive,
-        } as never, { onConflict: "id" });
+        await supabaseAdmin.from("profiles").upsert(
+          {
+            id: userId,
+            active_workspace_id: validActive,
+          } as never,
+          { onConflict: "id" },
+        );
       }
     }
 
     return { ok: true };
   });
 
-
-
-
 export const updateTeamMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ member_user_id: z.string().uuid(), role: TeamRole }).parse(i)
-  )
+  .inputValidator((i) => z.object({ member_user_id: z.string().uuid(), role: TeamRole }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
@@ -417,10 +477,15 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
       .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin.from("user_roles").delete()
-      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("workspace_owner_id", workspace.id)
+      .eq("user_id", data.member_user_id);
     await supabaseAdmin.from("user_roles").insert({
-      workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
+      workspace_owner_id: workspace.id,
+      user_id: data.member_user_id,
+      role: data.role,
     } as never);
     await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     return { ok: true };
@@ -430,12 +495,14 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
 export const updateTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      member_user_id: z.string().uuid(),
-      full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
-      phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
-      role: TeamRole,
-    }).parse(i)
+    z
+      .object({
+        member_user_id: z.string().uuid(),
+        full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
+        phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
+        role: TeamRole,
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -444,18 +511,23 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     const isOwner = data.member_user_id === userId;
     await assertTargetMember(workspace.id, data.member_user_id);
 
-    const { error: pErr } = await supabaseAdmin.from("profiles").upsert({
-      id: data.member_user_id,
-      full_name: data.full_name,
-      phone: data.phone,
-    } as never, { onConflict: "id" });
+    const { error: pErr } = await supabaseAdmin.from("profiles").upsert(
+      {
+        id: data.member_user_id,
+        full_name: data.full_name,
+        phone: data.phone,
+      } as never,
+      { onConflict: "id" },
+    );
     if (pErr) throw new Error(pErr.message);
 
     try {
       await supabaseAdmin.auth.admin.updateUserById(data.member_user_id, {
         user_metadata: { full_name: data.full_name, phone: data.phone },
       });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     if (!isOwner) {
       const { error } = await supabaseAdmin
@@ -465,10 +537,15 @@ export const updateTeamMember = createServerFn({ method: "POST" })
         .eq("user_id", data.member_user_id);
       if (error) throw new Error(error.message);
 
-      await supabaseAdmin.from("user_roles").delete()
-        .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
+      await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("workspace_owner_id", workspace.id)
+        .eq("user_id", data.member_user_id);
       await supabaseAdmin.from("user_roles").insert({
-        workspace_owner_id: workspace.id, user_id: data.member_user_id, role: data.role,
+        workspace_owner_id: workspace.id,
+        user_id: data.member_user_id,
+        role: data.role,
       } as never);
       await syncLegacyRole(workspace.id, data.member_user_id, data.role);
     }
@@ -491,9 +568,15 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       .eq("user_id", data.member_user_id);
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin.from("user_roles").delete()
-      .eq("workspace_owner_id", workspace.id).eq("user_id", data.member_user_id);
-    await supabaseAdmin.from("team_members").delete()
-      .eq("workspace_owner_id", workspace.id).eq("member_user_id", data.member_user_id);
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("workspace_owner_id", workspace.id)
+      .eq("user_id", data.member_user_id);
+    await supabaseAdmin
+      .from("team_members")
+      .delete()
+      .eq("workspace_owner_id", workspace.id)
+      .eq("member_user_id", data.member_user_id);
     return { ok: true };
   });

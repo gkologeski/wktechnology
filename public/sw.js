@@ -4,15 +4,22 @@ const RUNTIME = "crm-runtime-v2";
 const SHELL = ["/", "/favicon.ico", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL))
+      .catch(() => {}),
+  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE && k !== RUNTIME).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE && k !== RUNTIME).map((k) => caches.delete(k))),
+      ),
   );
   self.clients.claim();
 });
@@ -29,27 +36,43 @@ self.addEventListener("fetch", (event) => {
   if (isHTML) {
     // NetworkFirst: tenta rede, fallback para cache (offline shell).
     event.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(req).then((c) => c || caches.match("/")))
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches
+            .open(RUNTIME)
+            .then((c) => c.put(req, copy))
+            .catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match("/"))),
     );
     return;
   }
   // Hashed assets: cache first.
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
-      return res;
-    }).catch(() => cached))
+    caches.match(req).then(
+      (cached) =>
+        cached ||
+        fetch(req)
+          .then((res) => {
+            const copy = res.clone();
+            caches
+              .open(RUNTIME)
+              .then((c) => c.put(req, copy))
+              .catch(() => {});
+            return res;
+          })
+          .catch(() => cached),
+    ),
   );
 });
 
 self.addEventListener("push", (event) => {
   let data = { title: "CRM", body: "Nova notificação", url: "/" };
-  try { if (event.data) data = { ...data, ...event.data.json() }; } catch {}
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {}
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -57,20 +80,22 @@ self.addEventListener("push", (event) => {
       badge: "/favicon.ico",
       tag: data.tag,
       data: { url: data.url },
-    })
+    }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil((async () => {
-    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const c of all) {
-      if (c.url.includes(url) && "focus" in c) return c.focus();
-    }
-    return self.clients.openWindow(url);
-  })());
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of all) {
+        if (c.url.includes(url) && "focus" in c) return c.focus();
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
 });
 
 self.addEventListener("message", (event) => {

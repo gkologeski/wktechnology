@@ -31,14 +31,19 @@ export function DealsBoardColumn({
       <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
         <div className="flex items-baseline justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="inline-block h-2 w-2 rounded-sm shrink-0" style={{ background: color }} />
+            <span
+              className="inline-block h-2 w-2 rounded-sm shrink-0"
+              style={{ background: color }}
+            />
             <span className="text-[11px] font-semibold uppercase tracking-wide text-foreground truncate">
               {stage.label}
             </span>
             <span className="text-[11px] text-[var(--hs-text-muted)] tabular-nums">({count})</span>
           </div>
           {typeof stage.probability === "number" && (
-            <span className="text-[10px] text-[var(--hs-text-muted)] tabular-nums">{stage.probability}%</span>
+            <span className="text-[10px] text-[var(--hs-text-muted)] tabular-nums">
+              {stage.probability}%
+            </span>
           )}
         </div>
         <div className="mt-1 flex items-baseline justify-between gap-2">

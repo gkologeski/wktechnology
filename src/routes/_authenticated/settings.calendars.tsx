@@ -3,15 +3,29 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Calendar, CheckCircle2, Plus, RefreshCw, Stethoscope, Trash2, XCircle } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle2,
+  Plus,
+  RefreshCw,
+  Stethoscope,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
-  listCalendarAccounts, startCalendarOAuth, disconnectCalendarAccount,
-  setCalendarSyncEnabled, setCalendarMeetEnabled, syncCalendarNow, listCalendarEvents,
-  testCalendarConnection, type CalendarTestStep,
+  listCalendarAccounts,
+  startCalendarOAuth,
+  disconnectCalendarAccount,
+  setCalendarSyncEnabled,
+  setCalendarMeetEnabled,
+  syncCalendarNow,
+  listCalendarEvents,
+  testCalendarConnection,
+  type CalendarTestStep,
 } from "@/lib/calendar.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/calendars")({
@@ -28,24 +42,42 @@ function CalendarsPage() {
   const syncFn = useServerFn(syncCalendarNow);
   const eventsFn = useServerFn(listCalendarEvents);
   const testFn = useServerFn(testCalendarConnection);
-  const [testResult, setTestResult] = useState<{ accountId: string; ok: boolean; steps: CalendarTestStep[]; calendar_count?: number; primary_email?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    accountId: string;
+    ok: boolean;
+    steps: CalendarTestStep[];
+    calendar_count?: number;
+    primary_email?: string;
+  } | null>(null);
 
   const accounts = useQuery({ queryKey: ["calendar_accounts"], queryFn: () => listFn() });
   const events = useQuery({
     queryKey: ["calendar_events"],
-    queryFn: () => eventsFn({ data: { limit: 50, from: new Date(Date.now() - 7 * 86400000).toISOString() } }),
+    queryFn: () =>
+      eventsFn({ data: { limit: 50, from: new Date(Date.now() - 7 * 86400000).toISOString() } }),
   });
 
   const connect = useMutation({
-    mutationFn: () => startFn({ data: { provider: "google", return_to: "/settings/calendars", origin: window.location.origin } }),
-    onSuccess: (r) => { window.location.href = r.url; },
+    mutationFn: () =>
+      startFn({
+        data: {
+          provider: "google",
+          return_to: "/settings/calendars",
+          origin: window.location.origin,
+        },
+      }),
+    onSuccess: (r) => {
+      window.location.href = r.url;
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const sync = useMutation({
     mutationFn: (id: string) => syncFn({ data: { id } }),
     onSuccess: (r) => {
-      toast.success(`Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`);
+      toast.success(
+        `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
+      );
       qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
       qc.invalidateQueries({ queryKey: ["calendar_events"] });
     },
@@ -53,20 +85,25 @@ function CalendarsPage() {
   });
 
   const toggle = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => toggleFn({ data: { id, enabled } }),
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      toggleFn({ data: { id, enabled } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar_accounts"] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleMeet = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => toggleMeetFn({ data: { id, enabled } }),
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      toggleMeetFn({ data: { id, enabled } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar_accounts"] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => disconnectFn({ data: { id } }),
-    onSuccess: () => { toast.success("Calendário desconectado"); qc.invalidateQueries({ queryKey: ["calendar_accounts"] }); },
+    onSuccess: () => {
+      toast.success("Calendário desconectado");
+      qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -79,7 +116,11 @@ function CalendarsPage() {
       qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
     },
     onError: (e: Error) => {
-      setTestResult({ accountId: "", ok: false, steps: [{ name: "Chamada ao servidor", status: "error", detail: e.message }] });
+      setTestResult({
+        accountId: "",
+        ok: false,
+        steps: [{ name: "Chamada ao servidor", status: "error", detail: e.message }],
+      });
       toast.error(e.message);
     },
   });
@@ -90,7 +131,8 @@ function CalendarsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Calendários</h1>
           <p className="text-sm text-muted-foreground">
-            Conecte seu Google Calendar para sincronizar eventos e enviar reuniões agendadas no CRM automaticamente. Outlook em breve.
+            Conecte seu Google Calendar para sincronizar eventos e enviar reuniões agendadas no CRM
+            automaticamente. Outlook em breve.
           </p>
         </div>
         <Button onClick={() => connect.mutate()} disabled={connect.isPending}>
@@ -106,7 +148,16 @@ function CalendarsPage() {
           )}
           <div className="divide-y">
             {accounts.data?.items.map((a) => {
-              const row = a as { id: string; provider: string; email: string; sync_enabled: boolean; auto_create_meet_link: boolean; last_synced_at: string | null; last_status: string | null; last_error: string | null };
+              const row = a as {
+                id: string;
+                provider: string;
+                email: string;
+                sync_enabled: boolean;
+                auto_create_meet_link: boolean;
+                last_synced_at: string | null;
+                last_status: string | null;
+                last_error: string | null;
+              };
               return (
                 <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                   <div className="min-w-0">
@@ -117,27 +168,57 @@ function CalendarsPage() {
                       {row.last_status === "error" && <Badge variant="destructive">Erro</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {row.last_synced_at ? `Última sync: ${new Date(row.last_synced_at).toLocaleString()}` : "Ainda não sincronizado"}
-                      {row.last_error && <span className="ml-2 text-destructive">{row.last_error}</span>}
+                      {row.last_synced_at
+                        ? `Última sync: ${new Date(row.last_synced_at).toLocaleString()}`
+                        : "Ainda não sincronizado"}
+                      {row.last_error && (
+                        <span className="ml-2 text-destructive">{row.last_error}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="flex items-center gap-1 text-xs">
-                      <Switch checked={row.sync_enabled} onCheckedChange={(v) => toggle.mutate({ id: row.id, enabled: v })} />
+                      <Switch
+                        checked={row.sync_enabled}
+                        onCheckedChange={(v) => toggle.mutate({ id: row.id, enabled: v })}
+                      />
                       Sync
                     </label>
-                    <label className="flex items-center gap-1 text-xs" title="Cria automaticamente um link do Google Meet para reuniões novas enviadas ao Google Calendar">
-                      <Switch checked={row.auto_create_meet_link} onCheckedChange={(v) => toggleMeet.mutate({ id: row.id, enabled: v })} />
+                    <label
+                      className="flex items-center gap-1 text-xs"
+                      title="Cria automaticamente um link do Google Meet para reuniões novas enviadas ao Google Calendar"
+                    >
+                      <Switch
+                        checked={row.auto_create_meet_link}
+                        onCheckedChange={(v) => toggleMeet.mutate({ id: row.id, enabled: v })}
+                      />
                       Meet automático
                     </label>
-                    <Button variant="outline" size="sm" onClick={() => test.mutate(row.id)} disabled={test.isPending}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => test.mutate(row.id)}
+                      disabled={test.isPending}
+                    >
                       <Stethoscope className="mr-1 h-4 w-4" />
                       {test.isPending && test.variables === row.id ? "Testando..." : "Testar"}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => sync.mutate(row.id)} disabled={sync.isPending} title="Sincronizar agora">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => sync.mutate(row.id)}
+                      disabled={sync.isPending}
+                      title="Sincronizar agora"
+                    >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm("Desconectar calendário?")) remove.mutate(row.id); }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Desconectar calendário?")) remove.mutate(row.id);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -163,7 +244,9 @@ function CalendarsPage() {
                   {testResult.primary_email && ` — ${testResult.primary_email}`}
                 </h3>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setTestResult(null)}>Fechar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setTestResult(null)}>
+                Fechar
+              </Button>
             </div>
             {testResult.ok && typeof testResult.calendar_count === "number" && (
               <p className="text-sm text-muted-foreground">
@@ -183,7 +266,13 @@ function CalendarsPage() {
                   <div className="min-w-0">
                     <div className="font-medium">{s.name}</div>
                     {s.detail && (
-                      <div className={s.status === "error" ? "break-words text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                      <div
+                        className={
+                          s.status === "error"
+                            ? "break-words text-xs text-destructive"
+                            : "text-xs text-muted-foreground"
+                        }
+                      >
                         {s.detail}
                       </div>
                     )}
@@ -193,7 +282,10 @@ function CalendarsPage() {
             </ol>
             {!testResult.ok && (
               <p className="text-xs text-muted-foreground">
-                Dica: se o erro mencionar <code>invalid_grant</code> ou <code>refresh_token</code>, desconecte e reconecte concedendo acesso offline. Se mencionar <code>redirect_uri_mismatch</code>, adicione a URL atual aos URIs autorizados no Google Cloud Console.
+                Dica: se o erro mencionar <code>invalid_grant</code> ou <code>refresh_token</code>,
+                desconecte e reconecte concedendo acesso offline. Se mencionar{" "}
+                <code>redirect_uri_mismatch</code>, adicione a URL atual aos URIs autorizados no
+                Google Cloud Console.
               </p>
             )}
           </CardContent>
@@ -205,10 +297,19 @@ function CalendarsPage() {
         <Card>
           <CardContent className="p-0">
             {events.isLoading && <p className="p-4 text-sm text-muted-foreground">Carregando...</p>}
-            {events.data?.items.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nenhum evento.</p>}
+            {events.data?.items.length === 0 && (
+              <p className="p-4 text-sm text-muted-foreground">Nenhum evento.</p>
+            )}
             <div className="divide-y">
               {events.data?.items.map((e) => {
-                const ev = e as { id: string; title: string; start_at: string | null; end_at: string | null; location: string | null; html_link: string | null };
+                const ev = e as {
+                  id: string;
+                  title: string;
+                  start_at: string | null;
+                  end_at: string | null;
+                  location: string | null;
+                  html_link: string | null;
+                };
                 return (
                   <div key={ev.id} className="flex items-center justify-between p-3">
                     <div>
@@ -219,7 +320,14 @@ function CalendarsPage() {
                       </div>
                     </div>
                     {ev.html_link && (
-                      <a href={ev.html_link} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Abrir</a>
+                      <a
+                        href={ev.html_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Abrir
+                      </a>
                     )}
                   </div>
                 );

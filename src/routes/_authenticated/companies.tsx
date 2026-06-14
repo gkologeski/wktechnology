@@ -20,15 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ChevronDown,
-  Download,
-  MapPin,
-  MoreHorizontal,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
+import { ChevronDown, Download, MapPin, MoreHorizontal, Plus, Search, X } from "lucide-react";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
@@ -36,11 +28,7 @@ import { exportRowsToCsv } from "@/lib/csv-export";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
-import {
-  getDateRange,
-  type CustomRange,
-  type DatePreset,
-} from "@/lib/date-presets";
+import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
 
 import {
@@ -93,7 +81,6 @@ const DEFAULT_FILTERS: Filters = {
   ownerIds: [],
   includeUnassigned: false,
 };
-
 
 function CompaniesPage() {
   const location = useLocation();
@@ -154,7 +141,6 @@ function CompaniesHubspotView() {
     },
   });
 
-
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "companies",
@@ -207,11 +193,7 @@ function CompaniesHubspotView() {
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
       if (term) {
         q = q.or(
-          [
-            `name.ilike.%${term}%`,
-            `domain.ilike.%${term}%`,
-            `website.ilike.%${term}%`,
-          ].join(","),
+          [`name.ilike.%${term}%`, `domain.ilike.%${term}%`, `website.ilike.%${term}%`].join(","),
         );
       }
 
@@ -296,12 +278,42 @@ function CompaniesHubspotView() {
           );
         },
       },
-      { key: "domain", label: "Domínio", className: "text-muted-foreground", render: (c) => c.domain ?? "—" },
-      { key: "industry", label: "Setor", className: "text-muted-foreground", render: (c) => c.industry ?? "—" },
-      { key: "size", label: "Porte", className: "text-muted-foreground", render: (c) => c.size ?? "—" },
-      { key: "city", label: "Cidade", className: "text-muted-foreground", render: (c) => c.city ?? "—" },
-      { key: "state", label: "UF", className: "text-muted-foreground", render: (c) => c.state ?? "—" },
-      { key: "country", label: "País", className: "text-muted-foreground", render: (c) => c.country ?? "—" },
+      {
+        key: "domain",
+        label: "Domínio",
+        className: "text-muted-foreground",
+        render: (c) => c.domain ?? "—",
+      },
+      {
+        key: "industry",
+        label: "Setor",
+        className: "text-muted-foreground",
+        render: (c) => c.industry ?? "—",
+      },
+      {
+        key: "size",
+        label: "Porte",
+        className: "text-muted-foreground",
+        render: (c) => c.size ?? "—",
+      },
+      {
+        key: "city",
+        label: "Cidade",
+        className: "text-muted-foreground",
+        render: (c) => c.city ?? "—",
+      },
+      {
+        key: "state",
+        label: "UF",
+        className: "text-muted-foreground",
+        render: (c) => c.state ?? "—",
+      },
+      {
+        key: "country",
+        label: "País",
+        className: "text-muted-foreground",
+        render: (c) => c.country ?? "—",
+      },
       {
         key: "phone",
         label: "Telefone",
@@ -336,7 +348,12 @@ function CompaniesHubspotView() {
         label: "Criada em",
         className: "text-muted-foreground",
         header: (
-          <Th sortable active={sortKey === "created_at"} dir={sortDir} onClick={() => onSort("created_at")}>
+          <Th
+            sortable
+            active={sortKey === "created_at"}
+            dir={sortDir}
+            onClick={() => onSort("created_at")}
+          >
             Criada em
           </Th>
         ),
@@ -352,14 +369,27 @@ function CompaniesHubspotView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortKey, sortDir, nameFor, initialsFor],
   );
-  const DEFAULT_COMPANY_COLS = ["name", "domain", "industry", "size", "city", "state", "abm", "owner", "created_at"];
-  const { columns: visibleColumns, ColumnsButton, ColumnsEditor } = useGridColumns<CompanyRow>({
+  const DEFAULT_COMPANY_COLS = [
+    "name",
+    "domain",
+    "industry",
+    "size",
+    "city",
+    "state",
+    "abm",
+    "owner",
+    "created_at",
+  ];
+  const {
+    columns: visibleColumns,
+    ColumnsButton,
+    ColumnsEditor,
+  } = useGridColumns<CompanyRow>({
     gridKey: "companies",
     columns: companyColumns,
     defaults: DEFAULT_COMPANY_COLS,
     customEntity: "companies",
   });
-
 
   const hasActiveFilters =
     filters.industry.length > 0 ||
@@ -480,9 +510,7 @@ function CompaniesHubspotView() {
                 onChange={(v) =>
                   setFilters((f) => ({
                     ...f,
-                    state: v
-                      ? [...f.state, s.value]
-                      : f.state.filter((x) => x !== s.value),
+                    state: v ? [...f.state, s.value] : f.state.filter((x) => x !== s.value),
                   }))
                 }
               />
@@ -501,7 +529,11 @@ function CompaniesHubspotView() {
             <OwnerFilter
               value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
               onChange={(v: OwnerFilterValue) =>
-                setFilters((f) => ({ ...f, ownerIds: v.ownerIds, includeUnassigned: v.includeUnassigned }))
+                setFilters((f) => ({
+                  ...f,
+                  ownerIds: v.ownerIds,
+                  includeUnassigned: v.includeUnassigned,
+                }))
               }
             />
           </FilterGroup>
@@ -516,7 +548,6 @@ function CompaniesHubspotView() {
               }
             />
           </FilterGroup>
-
         </FiltersSidebar>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -549,12 +580,7 @@ function CompaniesHubspotView() {
                     Excluir
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={clearSelection}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -586,8 +612,13 @@ function CompaniesHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map((col) =>
-                    col.header ?? <Th key={col.key} className={col.headerClassName}>{col.label}</Th>,
+                  {visibleColumns.map(
+                    (col) =>
+                      col.header ?? (
+                        <Th key={col.key} className={col.headerClassName}>
+                          {col.label}
+                        </Th>
+                      ),
                   )}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
@@ -595,13 +626,19 @@ function CompaniesHubspotView() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Carregando empresas…
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm text-muted-foreground"
+                    >
                       Nenhuma empresa encontrada com os filtros atuais.
                     </td>
                   </tr>

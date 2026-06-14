@@ -16,9 +16,10 @@ export function SettingsMenu() {
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
-  const visible = SETTINGS_GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((it) => canSee(it.need, perms)) }))
-    .filter((g) => g.items.length > 0);
+  const visible = SETTINGS_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => canSee(it.need, perms)),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <DropdownMenu>
