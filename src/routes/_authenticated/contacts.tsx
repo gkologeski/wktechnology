@@ -352,7 +352,7 @@ function ContactsHubspotView() {
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
-          ),
+          );
         },
       },
       {
