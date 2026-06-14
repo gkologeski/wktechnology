@@ -110,7 +110,7 @@ function detectFields(text: string): FieldDef[] {
     const key = slugify(raw);
     if (!key || found.has(key)) continue;
     const label = raw
-      .replace(/[_\-\.]+/g, " ")
+      .replace(/[_\-.]+/g, " ")
       .trim()
       .replace(/\b\w/g, (c) => c.toUpperCase());
     found.set(key, { key, label, type: "text", defaultValue: "", required: true });
