@@ -34,6 +34,7 @@ import {
   revokeWorkspaceInvite,
   removeWorkspaceMemberFn,
   updateWorkspaceMemberRole,
+  countAssignedToMember,
 } from "@/lib/workspace-invites.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/workspace-team")({
@@ -48,9 +49,19 @@ function WorkspaceTeamPage() {
   const revokeFn = useServerFn(revokeWorkspaceInvite);
   const removeFn = useServerFn(removeWorkspaceMemberFn);
   const roleFn = useServerFn(updateWorkspaceMemberRole);
+  const countFn = useServerFn(countAssignedToMember);
   const qc = useQueryClient();
 
   const q = useQuery({ queryKey: ["workspace-team"], queryFn: () => listFn() });
+
+  type RemoveTarget = {
+    user_id: string;
+    label: string;
+    counts: Record<string, number>;
+    total: number;
+  };
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [reassignTo, setReassignTo] = useState<string>("__none__");
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{ email: string; role: Role }>({ email: "", role: "member" });
@@ -84,13 +95,31 @@ function WorkspaceTeamPage() {
   });
 
   const remove = useMutation({
-    mutationFn: (uid: string) => removeFn({ data: { user_id: uid } }),
-    onSuccess: () => {
-      toast.success("Membro removido.");
+    mutationFn: (p: { uid: string; reassign_to: string | null }) =>
+      removeFn({ data: { user_id: p.uid, reassign_to: p.reassign_to } }),
+    onSuccess: (res) => {
+      const n = (res as { reassigned?: number })?.reassigned ?? 0;
+      toast.success(
+        n > 0
+          ? `Membro removido. ${n} ${n === 1 ? "registro reatribuído" : "registros reatribuídos"}.`
+          : "Membro removido.",
+      );
+      setRemoveTarget(null);
+      setReassignTo("__none__");
       qc.invalidateQueries({ queryKey: ["workspace-team"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
   });
+
+  const openRemoveDialog = async (uid: string, label: string) => {
+    try {
+      const res = await countFn({ data: { user_id: uid } });
+      setReassignTo("__none__");
+      setRemoveTarget({ user_id: uid, label, counts: res.counts, total: res.total });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao consultar registros");
+    }
+  };
 
   const changeRole = useMutation({
     mutationFn: (p: { uid: string; role: Role }) =>
@@ -241,9 +270,7 @@ function WorkspaceTeamPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover ${m.full_name || m.email}?`)) remove.mutate(m.user_id);
-                      }}
+                      onClick={() => openRemoveDialog(m.user_id, m.full_name || m.email || m.user_id)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -303,6 +330,87 @@ function WorkspaceTeamPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!removeTarget}
+        onOpenChange={(v) => {
+          if (!v) {
+            setRemoveTarget(null);
+            setReassignTo("__none__");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover {removeTarget?.label}?</DialogTitle>
+            <DialogDescription>
+              O membro perderá acesso ao workspace. Os registros não serão excluídos.
+            </DialogDescription>
+          </DialogHeader>
+          {removeTarget && (
+            <div className="space-y-4">
+              {removeTarget.total > 0 ? (
+                <>
+                  <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                    <div className="font-medium mb-1">
+                      Este membro é responsável por {removeTarget.total}{" "}
+                      {removeTarget.total === 1 ? "registro" : "registros"}:
+                    </div>
+                    {Object.entries(removeTarget.counts)
+                      .filter(([, n]) => n > 0)
+                      .map(([t, n]) => (
+                        <div key={t} className="flex justify-between text-muted-foreground">
+                          <span className="capitalize">{t}</span>
+                          <span>{n}</span>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reatribuir para</Label>
+                    <Select value={reassignTo} onValueChange={setReassignTo}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Deixar sem responsável</SelectItem>
+                        {(q.data?.members ?? [])
+                          .filter((m) => m.user_id !== removeTarget.user_id)
+                          .map((m) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                              {m.full_name || m.email || m.user_id}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Este membro não é responsável por nenhum registro.
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRemoveTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() =>
+                removeTarget &&
+                remove.mutate({
+                  uid: removeTarget.user_id,
+                  reassign_to: reassignTo === "__none__" ? null : reassignTo,
+                })
+              }
+            >
+              {remove.isPending ? "Removendo…" : "Remover membro"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
