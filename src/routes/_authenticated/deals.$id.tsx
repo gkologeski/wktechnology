@@ -150,8 +150,20 @@ function DealDetail() {
         <>
           <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Itens de linha</CardTitle>
+            <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-base">
+                Itens de linha (<DealLineItemsCount dealId={deal.id} />)
+              </CardTitle>
+              <DealLineItemsEditor
+                dealId={deal.id}
+                ownerId={deal.owner_id}
+                currency={deal.currency ?? "BRL"}
+                trigger={
+                  <Button variant="link" size="sm" className="h-auto p-0">
+                    Editar
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent>
               <DealLineItems
