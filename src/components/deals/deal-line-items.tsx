@@ -4,9 +4,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { Package, Plus, Trash2 } from "lucide-react";
+import { Package, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type LineItem = {
   id: string;
@@ -32,18 +39,8 @@ function lineTotal(li: {
   return sub * (1 + Number(li.tax_rate) / 100);
 }
 
-export function DealLineItems({
-  dealId,
-  ownerId,
-  currency,
-}: {
-  dealId: string;
-  ownerId: string;
-  currency: string;
-}) {
-  const qc = useQueryClient();
-
-  const { data: items = [], isLoading } = useQuery({
+function useLineItems(dealId: string) {
+  return useQuery({
     queryKey: ["deal_line_items", dealId],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,6 +53,98 @@ export function DealLineItems({
       return (data ?? []) as LineItem[];
     },
   });
+}
+
+export function DealLineItems({
+  dealId,
+  ownerId,
+  currency,
+}: {
+  dealId: string;
+  ownerId: string;
+  currency: string;
+}) {
+  const { data: items = [], isLoading } = useLineItems(dealId);
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  }
+  if (items.length === 0) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">Nenhum item adicionado.</p>
+        <DealLineItemsEditor
+          dealId={dealId}
+          ownerId={ownerId}
+          currency={currency}
+          trigger={
+            <Button size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-1" /> Adicionar item
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ul className="divide-y">
+      {items.map((li) => (
+        <li key={li.id} className="flex items-baseline justify-between gap-3 py-2">
+          <div className="min-w-0 truncate">
+            <span className="text-sm">{li.name}</span>{" "}
+            <span className="text-xs text-muted-foreground">x{Number(li.quantity)}</span>
+          </div>
+          <div className="text-sm tabular-nums shrink-0">
+            {formatCurrency(lineTotal(li), currency)}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function DealLineItemsEditor({
+  dealId,
+  ownerId,
+  currency,
+  trigger,
+}: {
+  dealId: string;
+  ownerId: string;
+  currency: string;
+  trigger: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Itens de linha</DialogTitle>
+        </DialogHeader>
+        <LineItemsEditorBody dealId={dealId} ownerId={ownerId} currency={currency} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function DealLineItemsCount({ dealId }: { dealId: string }) {
+  const { data: items = [] } = useLineItems(dealId);
+  return <>{items.length}</>;
+}
+
+function LineItemsEditorBody({
+  dealId,
+  ownerId,
+  currency,
+}: {
+  dealId: string;
+  ownerId: string;
+  currency: string;
+}) {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useLineItems(dealId);
 
   async function addBlank() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,10 +158,7 @@ export function DealLineItems({
       tax_rate: 0,
       position: items.length,
     });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -83,10 +169,7 @@ export function DealLineItems({
       .select("*")
       .eq("id", pid)
       .maybeSingle();
-    if (perr || !p) {
-      toast.error(perr?.message ?? "Produto não encontrado");
-      return;
-    }
+    if (perr || !p) return toast.error(perr?.message ?? "Produto não encontrado");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
       owner_id: ownerId,
@@ -99,30 +182,21 @@ export function DealLineItems({
       tax_rate: p.tax_rate,
       position: items.length,
     });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function update(id: string, patch: Partial<LineItem>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
   async function remove(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -179,12 +253,10 @@ export function DealLineItems({
               <div className="flex items-center gap-2">
                 <Input
                   className="flex-1"
-                  value={li.name}
+                  defaultValue={li.name}
                   onBlur={(e) =>
                     e.target.value !== li.name && update(li.id, { name: e.target.value })
                   }
-                  onChange={(e) => (li.name = e.target.value)}
-                  defaultValue={li.name}
                 />
                 <Button variant="ghost" size="icon" onClick={() => remove(li.id)}>
                   <Trash2 className="h-4 w-4" />
@@ -275,3 +347,5 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
     </div>
   );
 }
+
+export { Pencil };

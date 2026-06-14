@@ -10,7 +10,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
-import { DealLineItems } from "@/components/deals/deal-line-items";
+import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
@@ -150,8 +150,20 @@ function DealDetail() {
         <>
           <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Itens de linha</CardTitle>
+            <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-base">
+                Itens de linha (<DealLineItemsCount dealId={deal.id} />)
+              </CardTitle>
+              <DealLineItemsEditor
+                dealId={deal.id}
+                ownerId={deal.owner_id}
+                currency={deal.currency ?? "BRL"}
+                trigger={
+                  <Button variant="link" size="sm" className="h-auto p-0">
+                    Editar
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent>
               <DealLineItems
