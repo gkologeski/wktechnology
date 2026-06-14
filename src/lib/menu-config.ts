@@ -51,6 +51,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
       { title: "Reuniões", url: "/meetings", icon: Video },
       { title: "Propostas", url: "/proposals", icon: FileText },
+      { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
       { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
