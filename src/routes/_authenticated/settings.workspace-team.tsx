@@ -34,6 +34,7 @@ import {
   revokeWorkspaceInvite,
   removeWorkspaceMemberFn,
   updateWorkspaceMemberRole,
+  countAssignedToMember,
 } from "@/lib/workspace-invites.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/workspace-team")({
