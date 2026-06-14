@@ -1,94 +1,80 @@
-# Roadmap de Releases — Pronto para Comercializar
+## Problema
 
-Organizei o trabalho em **6 releases sequenciais**. Cada release é fechado, testável e entregável independentemente. Vou executar **um por vez**, aguardando seu OK antes de iniciar o próximo.
+Na sidebar atual, **Inbox unificada**, **Inbox de Email**, **Inbox de WhatsApp** e **Chat ao vivo** aparecem como itens irmãos no mesmo nível visual. Não existe pista de que os 3 últimos são canais que alimentam a Inbox unificada — todos parecem rotas independentes. O destaque vermelho do "ativo" piora a leitura, porque dois itens podem ficar vermelhos ao mesmo tempo (pai + filho) sem relação visível.
 
----
+Mesmo padrão se repete em outros grupos: **Calendários/Agendamentos** sob Reuniões, **Campanhas Email/WhatsApp** soltas em Captar, **Filas de tarefas** sob Tarefas, etc. A solução de hierarquia deve servir para todos.
 
-## Release 1 — Estabilidade Crítica (bloqueadores)
-**Objetivo:** zerar erros runtime visíveis ao usuário.
+## 3 Propostas
 
-- Corrigir hydration mismatch no `__root__` (`<Suspense>` vs `<main>` no SSR).
-- Adicionar `errorComponent` e `notFoundComponent` em todas as rotas com loader que ainda não têm.
-- Garantir `defaultErrorComponent` no router e wrapper SSR (`src/server.ts`) cobrindo erros catastróficos (já parcialmente feito — revisar).
-- Smoke test E2E navegando pelas rotas principais autenticadas e públicas.
+### Proposta A — Submenu recolhível (disclosure clássico)
 
-**Critério de aceite:** sem erros no console em `/dashboard`, `/login`, `/quote/:token`, `/deals`, `/settings`. Suite Playwright `navigation-smoke` verde.
+Item pai ganha um chevron (`›` → `⌄`). Ao clicar, expande os filhos indentados com uma guia vertical fina à esquerda.
 
----
+```text
+📥 Inbox                      ⌄
+ │  ✉  Email
+ │  💬 WhatsApp
+ │  💭 Chat ao vivo
+📅 Reuniões                   ›
+```
 
-## Release 2 — Segurança & Compliance
-**Objetivo:** passar em scan de segurança e atender LGPD básico.
+- Pai vira agrupador (rota = primeiro filho, ou a "unificada").
+- Estado expandido persiste por grupo; abre automaticamente se a rota ativa for filha.
+- Ativo: só **um** item destacado por vez (o filho). Pai recebe marcador discreto ("●" no chevron) quando algum filho está ativo.
+- **Prós:** padrão universal (VSCode, Gmail, Linear), economiza espaço, escala para 5+ filhos.
+- **Contras:** 1 clique a mais para chegar nos canais; precisa lógica de auto-expand.
 
-- Rodar `security--run_security_scan` e fechar todos os findings críticos/altos.
-- Auditar GRANTs e RLS em todas as tabelas `public` (lista de 160+ tabelas).
-- Validar assinatura HMAC em todos `/api/public/hooks/*` (Twilio, pagamentos BR, Meta WhatsApp, Zapier).
-- Habilitar HIBP no Auth + exigir verificação de e-mail.
-- Implementar endpoints LGPD: exportação de dados do titular + exclusão de conta (server functions + UI em Settings).
-- Atualizar `security-memory` com posturas aceitas.
+### Proposta B — Seção indentada sempre visível com guia vertical
 
-**Critério de aceite:** scan sem críticos; checklist LGPD documentado em `/privacy` com link para "Exportar meus dados" e "Excluir minha conta".
+Filhos ficam **sempre** visíveis, indentados sob o pai, conectados por uma linha vertical sutil (`border-l`) — sem clique para expandir.
 
----
+```text
+📥 Inbox unificada
+   │ ✉  Email
+   │ 💬 WhatsApp
+   │ 💭 Chat ao vivo
+📅 Reuniões
+   │ 🗓 Calendários
+   │ 📆 Agendamentos
+```
 
-## Release 3 — Cobertura de Testes
-**Objetivo:** rede de segurança para regressões.
+- Pai é clicável (rota própria, ex: `/inbox`).
+- Indent de ~16px + `border-l border-border/60` + tipografia ligeiramente menor nos filhos (`text-[13px] text-muted-foreground`).
+- Ativo: filho ganha destaque cheio; pai ganha um "tick" no border-left quando um filho está ativo.
+- **Prós:** zero cliques extras, hierarquia óbvia de relance, ótimo para grupos pequenos (2–4 filhos).
+- **Contras:** ocupa mais altura; ruim se um pai tiver 8+ filhos.
 
-- E2E Playwright para: cotações (criar, enviar, aceitar), faturamento, fluxo de convite + aceite, isolamento de workspace em todas as entidades.
-- Testes unitários para `permissions.server.ts`, `menu-config.ts`, helpers de billing.
-- CI roda E2E + unit em cada PR (configurar workflow).
+### Proposta C — Pai como aba/cabeçalho + filhos como chips
 
-**Critério de aceite:** ≥70% das jornadas críticas cobertas; CI verde.
+O pai vira um **cabeçalho de subseção** dentro do grupo (tipografia diferente, sem ícone grande), e os filhos viram **chips/pills horizontais** logo abaixo.
 
----
+```text
+RELACIONAR
+─────────────────────────
+INBOX
+[ Unificada ] [ Email ] [ WhatsApp ] [ Chat ]
 
-## Release 4 — Pagamentos & Billing
-**Objetivo:** clientes conseguem assinar e pagar.
+AGENDA
+[ Reuniões ] [ Calendários ] [ Booking ]
+```
 
-- Stripe go-live: documentar wizard (claim → onboard → install → readiness).
-- Definir planos finais (Free/Pro/Business) com `plan_entitlements` consistentes.
-- Enforcement de quotas (`usage_counters` + `credit_limits`) em pontos de uso.
-- Página `/settings/billing` mostrando plano atual, uso, upgrade/downgrade.
-- Webhook de cobrança BR (Asaas/Pagar.me/MP) testado end-to-end em sandbox.
-- Geração de NFS-e nos pagamentos confirmados (já existe tabela `nfse_invoices` — fechar fluxo).
+- O pai não é mais um item navegável — é um rótulo de família.
+- Filhos viram pílulas compactas que cabem em 1–2 linhas.
+- Ativo: pílula com fundo `primary/10` + borda; outras com `bg-muted`.
+- **Prós:** comunica "estes pertencem juntos" mais forte que indentação; ótimo para filtros/canais; visual moderno (Notion, Linear).
+- **Contras:** quebra o padrão "lista vertical" da sidebar — exige reformatar o componente; ruim se sidebar estiver colapsada (modo ícone).
 
-**Critério de aceite:** assinatura completa do zero ao pagamento em sandbox + emissão de NF.
+## Recomendação
 
----
+**Proposta A (submenu recolhível)** é a mais segura: resolve o problema, mantém o componente Sidebar atual (shadcn já suporta `SidebarMenuSub`), funciona no modo colapsado (ícone), e escala para todos os outros grupos com hierarquia (Reuniões, Tarefas, Campanhas).
 
-## Release 5 — Operação & Observabilidade
-**Objetivo:** rodar em produção com segurança.
+**Proposta B** é boa se quisermos zero atrito — recomendada se a maioria dos pais tem ≤4 filhos (que é o caso atual).
 
-- Alertas: erros 5xx, falhas de cron, queue DLQ, edge function errors → notificação para admin.
-- Painel `/admin/status` mostrando saúde de cron, queues, integrações.
-- Backups documentados + plano de recuperação (RPO/RTO).
-- E-mail transacional com domínio próprio (SPF/DKIM/DMARC) usando Lovable Email.
-- Custom domain `crm.wktechnology.com.br` validado com SSL.
-- Documentação de usuário final (Help Center via `kb_articles`).
+**Proposta C** é a mais expressiva visualmente mas a mais arriscada — vale só se quiser repensar a sidebar inteira.
 
-**Critério de aceite:** alertas chegando, domínio próprio enviando e-mails, KB com ≥10 artigos essenciais.
+## Próximo passo
 
----
-
-## Release 6 — Comercial & Go-to-Market
-**Objetivo:** material legal e comercial para vender.
-
-- Contrato de assinatura (Termos de Uso comerciais separados dos atuais).
-- Política de reembolso e cancelamento.
-- DPA (Data Processing Agreement) para clientes B2B.
-- Landing page de vendas (preços, features, CTA).
-- Onboarding guiado no primeiro login (checklist de setup).
-
-**Critério de aceite:** novo usuário consegue assinar, configurar workspace e usar o produto sem suporte humano.
-
----
-
-## Detalhes Técnicos
-
-- Cada release vira um conjunto de commits agrupados; ao fim, publicação para `wktechnology.lovable.app` e validação no `crm.wktechnology.com.br`.
-- Migrações de DB sempre com GRANT + RLS na mesma migration.
-- Server functions protegidas via `requireSupabaseAuth`; webhooks em `/api/public/*` com verificação de assinatura.
-- Sem mudanças em `src/integrations/supabase/*` auto-gerados.
-
----
-
-**Próximo passo:** confirme que aprova o roadmap (ou peça ajustes). Quando aprovar, começo pelo **Release 1 — Estabilidade Crítica**.
+Me diga qual proposta seguir (A, B ou C). Em seguida eu:
+1. Estendo o tipo `SidebarItem` em `src/lib/menu-config.ts` para aceitar `children?: SidebarItem[]`.
+2. Reagrupo os itens afetados (Inbox + canais, Reuniões + Calendários/Agendamentos, Tarefas + Filas, Campanhas Email/WhatsApp).
+3. Atualizo `AppSidebar` para renderizar o padrão escolhido, com auto-expand quando rota filha estiver ativa e destaque "ativo" único.
