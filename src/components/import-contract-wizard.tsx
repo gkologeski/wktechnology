@@ -52,7 +52,7 @@ type FieldDef = {
 
 // Reconhece {{x}}, {x}, [X], <<x>>
 const PLACEHOLDER_RE =
-  /\{\{\s*([a-zA-Z0-9_\-\.]+)\s*\}\}|\{\s*([a-zA-Z0-9_\-\.]+)\s*\}|\[\s*([A-Z0-9_\-\. ]{2,40})\s*\]|<<\s*([a-zA-Z0-9_\-\.]+)\s*>>/g;
+  /\{\{\s*([a-zA-Z0-9_\-.]+)\s*\}\}|\{\s*([a-zA-Z0-9_\-.]+)\s*\}|\[\s*([A-Z0-9_\-. ]{2,40})\s*\]|<<\s*([a-zA-Z0-9_\-.]+)\s*>>/g;
 
 // Palavras-chave PT-BR que viram sugestões mesmo sem placeholder explícito
 const KEYWORD_HINTS: Array<{ key: string; label: string; type: VarType; rx: RegExp }> = [
