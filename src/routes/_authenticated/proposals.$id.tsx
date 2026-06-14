@@ -69,7 +69,7 @@ function ProposalEditor() {
   });
   const sendM = useMutation({
     mutationFn: () => send({ data: { id } }),
-    onSuccess: (r) => { toast.success(`Proposta enviada. Hash: ${r.contentHash?.slice(0, 12)}…`); qc.invalidateQueries({ queryKey: ["proposal", id] }); },
+    onSuccess: (r) => { toast.success(`Contrato enviada. Hash: ${r.contentHash?.slice(0, 12)}…`); qc.invalidateQueries({ queryKey: ["proposal", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const reqM = useMutation({
@@ -117,7 +117,7 @@ function ProposalEditor() {
   );
   if (!prop) return (
     <div className="p-6 space-y-3">
-      <p className="text-sm text-muted-foreground">Proposta não encontrada.</p>
+      <p className="text-sm text-muted-foreground">Contrato não encontrada.</p>
       <Button variant="outline" asChild><Link to="/proposals"><ArrowLeft className="mr-2 h-4 w-4" />Voltar para propostas</Link></Button>
     </div>
   );
