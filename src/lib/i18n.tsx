@@ -96,7 +96,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLocaleState(l);
     try {
       localStorage.setItem(KEY, l);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   };
   const t = (k: string) => dict[locale][k] ?? dict.pt[k] ?? k;
   return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
