@@ -94,7 +94,7 @@ export function ChatThread({
         size_bytes?: number;
       }[] = [];
       for (const f of files) {
-        const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+        const safeName = f.name.replace(/[^\w.-]+/g, "_");
         const path = `ws/${conversation.id}/${messageId}/${safeName}`;
         const { error } = await supabase.storage.from("chat-attachments").upload(path, f, {
           upsert: false,
