@@ -26,26 +26,66 @@ function ContactDetail() {
   const navigate = useNavigate();
   const [contact, setContact] = useState<Contact | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const { data } = await supabase.from("contacts").select("*").eq("id", id).single();
+    setLoading(true);
+    setLoadError(null);
+    const { data, error } = await supabase
+      .from("contacts")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) {
+      console.error("[contact] load error", error);
+      setLoadError(error.message);
+      setContact(null);
+      setLoading(false);
+      return;
+    }
     setContact(data as Contact | null);
     if (data?.company_id) {
       const { data: c } = await supabase
         .from("companies")
         .select("*")
         .eq("id", data.company_id)
-        .single();
+        .maybeSingle();
       setCompany(c as Company | null);
     } else {
       setCompany(null);
     }
+    setLoading(false);
   };
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
   }, [id]);
 
-  if (!contact) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  if (loading) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
+  if (loadError)
+    return (
+      <div className="p-6 space-y-3">
+        <p className="text-sm text-destructive">Erro ao carregar contato: {loadError}</p>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Link>
+        </Button>
+      </div>
+    );
+  if (!contact)
+    return (
+      <div className="p-6 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Contato não encontrado ou você não tem acesso a ele.
+        </p>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Link>
+        </Button>
+      </div>
+    );
 
   const remove = async () => {
     if (!confirm("Excluir contato?")) return;
