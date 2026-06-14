@@ -57,18 +57,27 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Relacionar", items: [
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
-      { title: "Inbox unificada", url: "/inbox", icon: Inbox },
-      { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
-      { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
-      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+      {
+        title: "Inbox unificada", url: "/inbox", icon: Inbox,
+        children: [
+          { title: "Email", url: "/inbox/email", icon: Mail },
+          { title: "WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
+          { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+        ],
+      },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
-      { title: "Reuniões", url: "/meetings", icon: Video },
-      { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
-      { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+      {
+        title: "Reuniões", url: "/meetings", icon: Video,
+        children: [
+          { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
+          { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+        ],
+      },
       { title: "Conexão de Email", url: "/settings/email", icon: Mail },
     ],
   },
+
   {
     label: "Vender", items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
