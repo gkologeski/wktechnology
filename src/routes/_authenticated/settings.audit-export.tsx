@@ -124,9 +124,11 @@ function AuditExportPage() {
                   size="sm"
                   onClick={async () => {
                     const x = await runNow({ data: { id: r.id } });
-                    x.ok
-                      ? toast.success(`OK (${(x as any).count ?? 0} regs)`)
-                      : toast.error((x as any).error);
+                    if (x.ok) {
+                      toast.success(`OK (${(x as { count?: number }).count ?? 0} regs)`);
+                    } else {
+                      toast.error((x as { error?: string }).error);
+                    }
                     load();
                   }}
                 >
