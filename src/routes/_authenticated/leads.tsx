@@ -1268,4 +1268,3 @@ function ScoreCell({ score }: { score: number }) {
     </div>
   );
 }
-

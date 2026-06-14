@@ -147,10 +147,7 @@ export function applyOwnerFilter<
     is: (...args: unknown[]) => unknown;
     or: (...args: unknown[]) => unknown;
   },
->(
-  query: T,
-  value: OwnerFilterValue,
-): T {
+>(query: T, value: OwnerFilterValue): T {
   const { userIds, hubspotIds } = splitOwnerIds(value.ownerIds);
   const parts: string[] = [];
   if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
