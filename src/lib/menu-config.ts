@@ -43,8 +43,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Leads", url: "/leads", icon: UserPlus },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
-      { title: "Widget do site", url: "/settings/widget", icon: Megaphone, need: "admin" },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
       { title: "Prospecção por voz", url: "/prospecting/campaigns", icon: PlayCircle, need: "manager" },
@@ -167,7 +167,9 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
+      { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin" },
       { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin" },
+
     ],
   },
   {
