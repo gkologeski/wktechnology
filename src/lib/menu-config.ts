@@ -82,7 +82,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Vender", items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Propostas", url: "/proposals", icon: FileText },
+      { title: "Contratos", url: "/proposals", icon: FileText },
       { title: "Produtos", url: "/settings/products", icon: Package, need: "manager" },
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin" },

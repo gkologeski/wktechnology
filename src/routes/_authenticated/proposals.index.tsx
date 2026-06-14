@@ -41,12 +41,12 @@ function ProposalsPage() {
 
   const createM = useMutation({
     mutationFn: () => create({ data: { title, totalAmount: amount ? Number(amount) : null } }),
-    onSuccess: () => { toast.success("Proposta criada"); setOpen(false); setTitle(""); setAmount(""); qc.invalidateQueries({ queryKey: ["proposals"] }); },
+    onSuccess: () => { toast.success("Contrato criada"); setOpen(false); setTitle(""); setAmount(""); qc.invalidateQueries({ queryKey: ["proposals"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const delM = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
-    onSuccess: () => { toast.success("Proposta removida"); qc.invalidateQueries({ queryKey: ["proposals"] }); },
+    onSuccess: () => { toast.success("Contrato removida"); qc.invalidateQueries({ queryKey: ["proposals"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -54,7 +54,7 @@ function ProposalsPage() {
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Propostas</h1>
+          <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground">Gere, aprove e envie propostas comerciais com selo de validade.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -64,7 +64,7 @@ function ProposalsPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Nova proposta</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div className="space-y-1"><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Proposta Acme — Setembro" /></div>
+              <div className="space-y-1"><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contrato Acme — Setembro" /></div>
               <div className="space-y-1"><Label>Valor (BRL)</Label><Input value={amount} type="number" step="0.01" onChange={(e) => setAmount(e.target.value)} /></div>
             </div>
             <DialogFooter>
