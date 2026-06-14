@@ -256,10 +256,13 @@ function LineItemsEditorBody({
             <div key={li.id} className="rounded-md border p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <Input
+                  key={`${li.id}-name`}
                   className="flex-1"
-                  defaultValue={li.name}
+                  defaultValue={li.name ?? ""}
+                  placeholder="Nome do item"
                   onBlur={(e) =>
-                    e.target.value !== li.name && update(li.id, { name: e.target.value })
+                    e.target.value !== (li.name ?? "") &&
+                    update(li.id, { name: e.target.value })
                   }
                 />
                 <Button variant="ghost" size="icon" onClick={() => remove(li.id)}>
@@ -269,25 +272,25 @@ function LineItemsEditorBody({
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
                   label="Qtd"
-                  value={li.quantity}
+                  value={n(li.quantity)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { quantity: v })}
                 />
                 <LabeledNumber
                   label="Preço"
-                  value={li.unit_price}
+                  value={n(li.unit_price)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { unit_price: v })}
                 />
                 <LabeledNumber
                   label="Desc %"
-                  value={li.discount_pct}
+                  value={n(li.discount_pct)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { discount_pct: v })}
                 />
                 <LabeledNumber
                   label="Imp %"
-                  value={li.tax_rate}
+                  value={n(li.tax_rate)}
                   step="0.01"
                   onCommit={(v) => update(li.id, { tax_rate: v })}
                 />
