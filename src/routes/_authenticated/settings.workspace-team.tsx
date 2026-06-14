@@ -49,9 +49,19 @@ function WorkspaceTeamPage() {
   const revokeFn = useServerFn(revokeWorkspaceInvite);
   const removeFn = useServerFn(removeWorkspaceMemberFn);
   const roleFn = useServerFn(updateWorkspaceMemberRole);
+  const countFn = useServerFn(countAssignedToMember);
   const qc = useQueryClient();
 
   const q = useQuery({ queryKey: ["workspace-team"], queryFn: () => listFn() });
+
+  type RemoveTarget = {
+    user_id: string;
+    label: string;
+    counts: Record<string, number>;
+    total: number;
+  };
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [reassignTo, setReassignTo] = useState<string>("__none__");
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{ email: string; role: Role }>({ email: "", role: "member" });
