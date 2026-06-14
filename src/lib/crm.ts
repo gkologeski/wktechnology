@@ -95,6 +95,23 @@ export function formatDate(d?: string | null) {
   return formatDateTime(d);
 }
 
+export function formatDateOnly(d?: string | null) {
+  if (!d) return "—";
+  try {
+    // Para datas no formato YYYY-MM-DD evita shift de timezone
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d).trim());
+    const date = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(d);
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: m ? undefined : BR_TZ,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
+
 export function formatDateTime(d?: string | null) {
   if (!d) return "—";
   try {
@@ -103,3 +120,4 @@ export function formatDateTime(d?: string | null) {
     return "—";
   }
 }
+
