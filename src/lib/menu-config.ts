@@ -91,8 +91,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Atender", items: [
       { title: "Tickets", url: "/tickets", icon: LifeBuoy },
-      { title: "Tarefas", url: "/tasks", icon: ListTodo },
-      { title: "Filas de tarefas", url: "/tasks/queues", icon: ListChecks },
+      {
+        title: "Tarefas", url: "/tasks", icon: ListTodo,
+        children: [
+          { title: "Filas", url: "/tasks/queues", icon: ListChecks },
+        ],
+      },
+
       { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager" },
     ],
   },
