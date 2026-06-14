@@ -29,15 +29,21 @@ export function AppSidebar() {
 
   const visibleGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const matches = (title: string) => !q || title.toLowerCase().includes(q);
     return SIDEBAR_GROUPS
       .map((g) => ({
         ...g,
         items: g.items
           .filter((i) => canSee(i.need, perms))
-          .filter((i) => !q || i.title.toLowerCase().includes(q)),
+          .map((i) => ({
+            ...i,
+            children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
+          }))
+          .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
       }))
       .filter((g) => g.items.length > 0);
   }, [query, isAdmin, isManager, isPlatformAdmin]);
+
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
