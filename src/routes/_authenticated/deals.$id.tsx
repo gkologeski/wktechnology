@@ -128,10 +128,10 @@ function DealDetail() {
           row={deal as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "name", label: "Nome", primary: true },
-            { key: "value", label: "Valor", type: "number", primary: true },
+            { key: "value", label: "Valor", type: "currency", primary: true },
             { key: "currency", label: "Moeda", primary: true },
             { key: "stage", label: "Etapa", primary: true },
-            { key: "expected_close_date", label: "Fechamento previsto", primary: true },
+            { key: "expected_close_date", label: "Fechamento previsto", type: "date", primary: true },
             { key: "dealtype", label: "Tipo" },
             { key: "hs_priority", label: "Prioridade" },
             { key: "description", label: "Descrição" },
