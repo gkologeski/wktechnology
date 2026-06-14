@@ -282,6 +282,70 @@ function LeadsHubspotView() {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyFilters = (q: any) => {
+    // View
+    if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
+    if (activeView === "unassigned") q = q.is("owner_id", null);
+    if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
+    if (activeView === "new_week") {
+      const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      q = q.gte("created_at", since);
+    }
+    if (filters.status.length > 0)
+      q = q.in(
+        "status",
+        filters.status as ("new" | "contacted" | "qualified" | "disqualified")[],
+      );
+    if (filters.source.length > 0) q = q.in("source", filters.source);
+    if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
+    if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
+    if (filters.createdPreset !== "any") {
+      const { start, end } = getDateRange(
+        filters.createdPreset,
+        new Date(),
+        filters.createdCustom,
+      );
+      if (start) q = q.gte("created_at", start.toISOString());
+      if (end) q = q.lt("created_at", end.toISOString());
+    }
+    {
+      const userIds: string[] = [];
+      const hsIds: string[] = [];
+      for (const id of filters.ownerIds) {
+        if (id.startsWith("hs:")) hsIds.push(id.slice(3));
+        else userIds.push(id);
+      }
+      const parts: string[] = [];
+      if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
+      if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
+      if (filters.includeUnassigned) parts.push(`owner_id.is.null`);
+      if (
+        parts.length === 1 &&
+        filters.includeUnassigned &&
+        userIds.length === 0 &&
+        hsIds.length === 0
+      ) {
+        q = q.is("owner_id", null);
+      } else if (parts.length > 0) {
+        q = q.or(parts.join(","));
+      }
+    }
+    const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+    if (term) {
+      q = q.or(
+        [
+          `first_name.ilike.%${term}%`,
+          `last_name.ilike.%${term}%`,
+          `email.ilike.%${term}%`,
+          `company_name.ilike.%${term}%`,
+          `phone.ilike.%${term}%`,
+        ].join(","),
+      );
+    }
+    return q;
+  };
+
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "leads",
@@ -302,82 +366,15 @@ function LeadsHubspotView() {
           "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
-
-      // View
-      if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
-      if (activeView === "unassigned") q = q.is("owner_id", null);
-      if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
-      if (activeView === "new_week") {
-        const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
-        q = q.gte("created_at", since);
-      }
-
-      // Filters
-      if (filters.status.length > 0)
-        q = q.in(
-          "status",
-          filters.status as ("new" | "contacted" | "qualified" | "disqualified")[],
-        );
-      if (filters.source.length > 0) q = q.in("source", filters.source);
-      if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
-      if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
-      if (filters.createdPreset !== "any") {
-        const { start, end } = getDateRange(
-          filters.createdPreset,
-          new Date(),
-          filters.createdCustom,
-        );
-        if (start) q = q.gte("created_at", start.toISOString());
-        if (end) q = q.lt("created_at", end.toISOString());
-      }
-
-      // Responsável (multi-select + sem responsável). Suporta IDs prefixados "hs:<id>"
-      // para filtrar por hubspot_owner_id (responsáveis importados do HubSpot).
-      {
-        const userIds: string[] = [];
-        const hsIds: string[] = [];
-        for (const id of filters.ownerIds) {
-          if (id.startsWith("hs:")) hsIds.push(id.slice(3));
-          else userIds.push(id);
-        }
-        const parts: string[] = [];
-        if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
-        if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
-        if (filters.includeUnassigned) parts.push(`owner_id.is.null`);
-        if (
-          parts.length === 1 &&
-          filters.includeUnassigned &&
-          userIds.length === 0 &&
-          hsIds.length === 0
-        ) {
-          q = q.is("owner_id", null);
-        } else if (parts.length > 0) {
-          q = q.or(parts.join(","));
-        }
-      }
-
-      // Search
-      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
-      if (term) {
-        q = q.or(
-          [
-            `first_name.ilike.%${term}%`,
-            `last_name.ilike.%${term}%`,
-            `email.ilike.%${term}%`,
-            `company_name.ilike.%${term}%`,
-            `phone.ilike.%${term}%`,
-          ].join(","),
-        );
-      }
-
+      q = applyFilters(q);
       q = q.order(sortKey, { ascending: sortDir === "asc" });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
-
       const { data, error, count } = await q;
       if (error) throw error;
       return { rows: (data ?? []) as Lead[], count: count ?? 0 };
     },
   });
+
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
