@@ -87,8 +87,48 @@ export type PropDef = {
   key: string;
   label: string;
   primary?: boolean;
-  type?: "text" | "email" | "tel" | "number" | "url" | "company" | "cep";
+  type?:
+    | "text"
+    | "email"
+    | "tel"
+    | "number"
+    | "url"
+    | "company"
+    | "cep"
+    | "currency"
+    | "date"
+    | "datetime";
 };
+
+// Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
+function inferDisplayType(key: string): PropDef["type"] | undefined {
+  const k = key.toLowerCase();
+  if (k === "value" || k === "amount" || k.endsWith("_amount") || k.endsWith("_value"))
+    return "currency";
+  if (k === "currency" || k === "moeda") return undefined;
+  if (k.endsWith("_at") || k === "created_at" || k === "updated_at" || k.endsWith("_datetime"))
+    return "datetime";
+  if (k.endsWith("_date") || k === "due_date" || k === "expected_close_date") return "date";
+  return undefined;
+}
+
+function formatDisplayValue(
+  type: PropDef["type"] | undefined,
+  raw: unknown,
+  row: Record<string, unknown>,
+): string {
+  if (raw === null || raw === undefined || raw === "") return "—";
+  if (type === "currency") {
+    const n = typeof raw === "number" ? raw : Number(raw);
+    if (!Number.isFinite(n)) return String(raw);
+    const cur = (row.currency as string | undefined) || "BRL";
+    return formatCurrency(n, cur);
+  }
+  if (type === "date") return formatDateOnly(String(raw));
+  if (type === "datetime") return formatDateTime(String(raw));
+  if (type === "number" && typeof raw === "number") return raw.toLocaleString("pt-BR");
+  return String(raw);
+}
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
