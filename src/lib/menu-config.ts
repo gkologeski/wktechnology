@@ -24,8 +24,10 @@ export type SidebarItem = {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  children?: SidebarItem[];
 };
 export type SidebarGroup = { label: string; items: SidebarItem[] };
+
 
 export type SettingsItem = {
   to: string;
