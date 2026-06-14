@@ -31,7 +31,7 @@ import {
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
-import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
+import { OwnerFilter, splitOwnerIds, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
@@ -158,12 +158,14 @@ function ContactsHubspotView() {
       let q = supabase
         .from("contacts")
         .select(
-          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, created_at, updated_at, custom_fields",
+          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
 
-      if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
-      if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "mine" && user?.id) {
+        q = q.or(`assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`);
+      }
+      if (activeView === "unassigned") q = q.is("assigned_user_id", null).is("owner_id", null);
       if (activeView === "new_week") {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
@@ -180,12 +182,16 @@ function ContactsHubspotView() {
         if (end) q = q.lt("created_at", end.toISOString());
       }
 
-      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
-        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
-      } else if (filters.ownerIds.length > 0) {
-        q = q.in("owner_id", filters.ownerIds);
-      } else if (filters.includeUnassigned) {
-        q = q.is("owner_id", null);
+      const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
+      const ownerClauses: string[] = [];
+      if (userIds.length > 0) {
+        ownerClauses.push(`assigned_user_id.in.(${userIds.join(",")})`);
+        ownerClauses.push(`and(assigned_user_id.is.null,owner_id.in.(${userIds.join(",")}))`);
+      }
+      if (hubspotIds.length > 0) ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
+      if (filters.includeUnassigned) ownerClauses.push("assigned_user_id.is.null,owner_id.is.null");
+      if (ownerClauses.length > 0) {
+        q = q.or(ownerClauses.join(","));
       }
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
@@ -337,15 +343,17 @@ function ContactsHubspotView() {
       {
         key: "owner",
         label: "Responsável",
-        render: (c) =>
-          c.owner_id ? (
-            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
-              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+        render: (c) => {
+          const responsibleId = c.assigned_user_id ?? c.owner_id;
+          return responsibleId ? (
+            <div className="flex items-center gap-2" title={nameFor(responsibleId)}>
+              <InitialsAvatar text={initialsFor(responsibleId)} seed={responsibleId} size={6} />
+              <span className="truncate text-sm">{nameFor(responsibleId)}</span>
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
-          ),
+          );
+        },
       },
       {
         key: "updated_at",
