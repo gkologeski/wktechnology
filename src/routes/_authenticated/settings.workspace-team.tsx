@@ -270,9 +270,7 @@ function WorkspaceTeamPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover ${m.full_name || m.email}?`)) remove.mutate(m.user_id);
-                      }}
+                      onClick={() => openRemoveDialog(m.user_id, m.full_name || m.email || m.user_id)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
