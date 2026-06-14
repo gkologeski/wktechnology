@@ -6,17 +6,44 @@ export type BulkActionBarProps = {
   count: number;
   onClear: () => void;
   children: ReactNode;
+  /** Total de registros que atendem aos filtros atuais (em todas as páginas). */
+  totalMatching?: number;
+  /** Acionado para selecionar todos os registros que atendem aos filtros. */
+  onSelectAll?: () => void;
+  isSelectingAll?: boolean;
 };
 
-export function BulkActionBar({ count, onClear, children }: BulkActionBarProps) {
+export function BulkActionBar({
+  count,
+  onClear,
+  children,
+  totalMatching,
+  onSelectAll,
+  isSelectingAll,
+}: BulkActionBarProps) {
+  const showSelectAll =
+    typeof totalMatching === "number" && totalMatching > count && !!onSelectAll;
   return (
     <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
       <Button variant="ghost" size="icon" onClick={onClear} aria-label="Limpar seleção">
         <X className="h-4 w-4" />
       </Button>
       <span className="text-sm font-medium">
-        {count} selecionado{count === 1 ? "" : "s"}
+        {count.toLocaleString("pt-BR")} selecionado{count === 1 ? "" : "s"}
       </span>
+      {showSelectAll && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-7 px-1 text-xs"
+          disabled={isSelectingAll}
+          onClick={onSelectAll}
+        >
+          {isSelectingAll
+            ? "Selecionando…"
+            : `Selecionar todos os ${totalMatching!.toLocaleString("pt-BR")} registros`}
+        </Button>
+      )}
       <div className="ml-auto flex flex-wrap gap-2">{children}</div>
     </div>
   );

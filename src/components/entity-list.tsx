@@ -259,6 +259,36 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     });
   const clearSel = () => setSelectedIds(new Set());
 
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
+  const selectAllMatching = async () => {
+    try {
+      setIsSelectingAll(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (supabase as any).from(table).select("id");
+      q = applyFilters(q, view.filters);
+      if (lockedFilters && lockedFilters.length > 0) {
+        q = applyFilters(q, { type: "group", op: "and", conditions: lockedFilters });
+      }
+      const term = debouncedSearch.trim();
+      if (term && searchKeys && searchKeys.length > 0) {
+        const safe = term.replace(/[,()]/g, " ").trim();
+        if (safe) {
+          const parts = searchKeys.map((k) => `${String(k)}.ilike.%${safe}%`);
+          q = q.or(parts.join(","));
+        }
+      }
+      const { data, error } = await q.limit(100_000);
+      if (error) throw error;
+      const allIds = (data ?? []).map((r: { id: string }) => r.id);
+      setSelectedIds(new Set(allIds));
+      toast.success(`${allIds.length} registros selecionados`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao selecionar todos");
+    } finally {
+      setIsSelectingAll(false);
+    }
+  };
+
   const openNew = () => {
     setEditing(null);
     setOpen(true);
@@ -518,7 +548,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       />
 
       {hasSelection && (
-        <BulkActionBar count={ids.length} onClear={clearSel}>
+        <BulkActionBar
+          count={ids.length}
+          onClear={clearSel}
+          totalMatching={totalCount}
+          onSelectAll={selectAllMatching}
+          isSelectingAll={isSelectingAll}
+        >
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
             Exportar selecionados
           </Button>
