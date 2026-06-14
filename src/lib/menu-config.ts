@@ -167,7 +167,9 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
+      { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin" },
       { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin" },
+
     ],
   },
   {
