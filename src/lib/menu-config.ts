@@ -42,7 +42,12 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Captar", items: [
-      { title: "Leads", url: "/leads", icon: UserPlus },
+      {
+        title: "Leads", url: "/leads", icon: UserPlus,
+        children: [
+          { title: "Importar HubSpot", url: "/leads/import-hubspot", icon: Download, need: "admin" },
+        ],
+      },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
