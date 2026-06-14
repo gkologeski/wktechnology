@@ -44,6 +44,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
       { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
+
 
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
@@ -58,7 +60,6 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Inbox unificada", url: "/inbox", icon: Inbox },
       { title: "Inbox de Email", url: "/inbox/email", icon: Mail },
       { title: "Inbox de WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
-      { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },
       { title: "Notas", url: "/notes", icon: StickyNote },
       { title: "Reuniões", url: "/meetings", icon: Video },
