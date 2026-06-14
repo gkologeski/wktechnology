@@ -312,11 +312,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       ) : (
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-foreground truncate">
-            {p.type === "tel" && row[p.key]
-              ? formatBrPhone(String(row[p.key]))
-              : p.type === "cep" && row[p.key]
-                ? formatCep(String(row[p.key]))
-                : String(row[p.key] ?? "—")}
+            {(() => {
+              const v = row[p.key];
+              if (p.type === "tel" && v) return formatBrPhone(String(v));
+              if (p.type === "cep" && v) return formatCep(String(v));
+              const displayType = p.type ?? inferDisplayType(p.key);
+              return formatDisplayValue(displayType, v, row as Record<string, unknown>);
+            })()}
           </span>
           <Button
             variant="ghost"
