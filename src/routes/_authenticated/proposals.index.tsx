@@ -59,21 +59,25 @@ function ProposalsPage() {
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground">Gere, aprove e envie propostas comerciais com selo de validade.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" />Nova proposta</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Nova proposta</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-1"><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contrato Acme — Setembro" /></div>
-              <div className="space-y-1"><Label>Valor (BRL)</Label><Input value={amount} type="number" step="0.01" onChange={(e) => setAmount(e.target.value)} /></div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => createM.mutate()} disabled={!title || createM.isPending}>Criar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <ImportContractWizard />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" />Novo contrato</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Novo contrato</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1"><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contrato Acme — Setembro" /></div>
+                <div className="space-y-1"><Label>Valor (BRL)</Label><Input value={amount} type="number" step="0.01" onChange={(e) => setAmount(e.target.value)} /></div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => createM.mutate()} disabled={!title || createM.isPending}>Criar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
       </div>
 
       <Card>
