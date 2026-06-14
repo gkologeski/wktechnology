@@ -548,7 +548,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       />
 
       {hasSelection && (
-        <BulkActionBar count={ids.length} onClear={clearSel}>
+        <BulkActionBar
+          count={ids.length}
+          onClear={clearSel}
+          totalMatching={totalCount}
+          onSelectAll={selectAllMatching}
+          isSelectingAll={isSelectingAll}
+        >
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
             Exportar selecionados
           </Button>
