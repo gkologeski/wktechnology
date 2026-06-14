@@ -18,18 +18,19 @@ export function OnboardingChecklist() {
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-checklist"],
     queryFn: async () => {
-      const [contacts, deals, pipelines, members, integrations] = await Promise.all([
+      const [contacts, deals, pipelines, members, invites, integrations] = await Promise.all([
         supabase.from("contacts").select("id", { head: true, count: "exact" }),
         supabase.from("deals").select("id", { head: true, count: "exact" }),
         supabase.from("pipelines").select("id", { head: true, count: "exact" }),
         supabase.from("workspace_members").select("id", { head: true, count: "exact" }),
+        supabase.from("workspace_invites").select("id", { head: true, count: "exact" }),
         supabase.from("integrations").select("id", { head: true, count: "exact" }),
       ]);
       return {
         contacts: (contacts.count ?? 0) > 0,
         deals: (deals.count ?? 0) > 0,
         pipelines: (pipelines.count ?? 0) > 0,
-        team: (members.count ?? 0) > 1,
+        team: (members.count ?? 0) > 1 || (invites.count ?? 0) > 0,
         integrations: (integrations.count ?? 0) > 0,
       };
     },
