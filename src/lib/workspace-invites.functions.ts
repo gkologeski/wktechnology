@@ -170,22 +170,80 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Remove membro do workspace ativo (admin). */
-export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
+const ASSIGNED_TABLES = ["contacts", "companies", "leads", "deals"] as const;
+
+/** Conta registros atribuídos a um membro no workspace ativo. */
+export const countAssignedToMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
+    const counts: Record<string, number> = {};
+    for (const t of ASSIGNED_TABLES) {
+      const { count } = await supabaseAdmin
+        .from(t)
+        .select("id", { head: true, count: "exact" })
+        .eq("workspace_id", workspaceId)
+        .eq("assigned_user_id", data.user_id);
+      counts[t] = count ?? 0;
+    }
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return { counts, total };
+  });
+
+/** Remove membro do workspace ativo (admin). Opcionalmente reatribui registros. */
+export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        reassign_to: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(workspaceId, userId);
     if (data.user_id === userId) throw new Error("Você não pode remover a si mesmo.");
+
+    const reassignTo = data.reassign_to ?? null;
+    if (reassignTo) {
+      if (reassignTo === data.user_id)
+        throw new Error("Reatribua para um membro diferente.");
+      const { data: target } = await supabaseAdmin
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", reassignTo)
+        .maybeSingle();
+      if (!target) throw new Error("Membro de destino não pertence ao workspace.");
+    }
+
+    let reassigned = 0;
+    for (const t of ASSIGNED_TABLES) {
+      const update = reassignTo
+        ? { assigned_user_id: reassignTo }
+        : { assigned_user_id: null };
+      const { count, error: uErr } = await supabaseAdmin
+        .from(t)
+        .update(update as never, { count: "exact" })
+        .eq("workspace_id", workspaceId)
+        .eq("assigned_user_id", data.user_id);
+      if (uErr) throw new Error(uErr.message);
+      reassigned += count ?? 0;
+    }
+
     const { error } = await supabaseAdmin
       .from("workspace_members")
       .delete()
       .eq("workspace_id", workspaceId)
       .eq("user_id", data.user_id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, reassigned };
   });
 
 /** Atualiza papel de um membro (admin). */
