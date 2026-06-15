@@ -1,8 +1,8 @@
-// Barra fixa do modo "fila em foco" — exibida no topo do detalhe quando o
-// usuário iniciou uma fila a partir da listagem (Iniciar fila).
-// Atalhos: N = próximo, P = anterior, S = pular, Esc = sair.
+// Barra fixa do modo "fila em foco" — fica montada no layout autenticado e
+// deriva entidade/registro atual a partir da URL. Assim os atalhos N/S/P/Esc
+// e a navegação Próxima/Anterior não causam unmount/flash entre registros.
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,36 +15,51 @@ import {
   routeForEntity,
 } from "@/lib/focus-queue";
 
-export function FocusQueueBar({ entity, currentId }: { entity: FocusEntity; currentId: string }) {
+// Detecta entidade + id na URL: /companies/<id>, /contacts/<id>, /leads/<id>, /deals/<id>
+const ENTITY_RE = /^\/(companies|contacts|leads|deals)\/([^/?#]+)/;
+
+function parsePath(pathname: string): { entity: FocusEntity; id: string } | null {
+  const m = pathname.match(ENTITY_RE);
+  if (!m) return null;
+  return { entity: m[1] as FocusEntity, id: m[2] };
+}
+
+export function FocusQueueBar() {
   const navigate = useNavigate();
-  const [tick, setTick] = useState(0);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [, setTick] = useState(0);
+
+  const match = parsePath(pathname);
   const queue = getFocusQueue();
+  const active = !!(match && queue && queue.entity === match.entity && queue.ids[queue.index] === match.id);
 
-  const active = queue && queue.entity === entity && queue.ids[queue.index] === currentId;
+  const entity = match?.entity ?? queue?.entity ?? null;
 
-  const goTo = (id: string) => {
-    // Reaproveita as rotas tipadas existentes.
-    if (entity === "companies") navigate({ to: "/companies/$id", params: { id } });
-    else if (entity === "contacts") navigate({ to: "/contacts/$id", params: { id } });
-    else if (entity === "leads") navigate({ to: "/leads/$id", params: { id } });
-    else if (entity === "deals") navigate({ to: "/deals/$id", params: { id } });
+  const goTo = (ent: FocusEntity, id: string) => {
+    if (ent === "companies") navigate({ to: "/companies/$id", params: { id } });
+    else if (ent === "contacts") navigate({ to: "/contacts/$id", params: { id } });
+    else if (ent === "leads") navigate({ to: "/leads/$id", params: { id } });
+    else if (ent === "deals") navigate({ to: "/deals/$id", params: { id } });
   };
 
   const next = () => {
+    const q = getFocusQueue();
+    if (!q) return;
     const n = advanceFocusQueue();
     setTick((t) => t + 1);
-    if (n) goTo(n.ids[n.index]);
-    else navigate({ to: routeForEntity(entity) });
+    if (n) goTo(n.entity, n.ids[n.index]);
+    else navigate({ to: routeForEntity(q.entity) });
   };
   const prev = () => {
     const p = previousFocusQueue();
     setTick((t) => t + 1);
-    if (p) goTo(p.ids[p.index]);
+    if (p) goTo(p.entity, p.ids[p.index]);
   };
   const exit = () => {
+    const q = getFocusQueue();
     clearFocusQueue();
     setTick((t) => t + 1);
-    navigate({ to: routeForEntity(entity) });
+    if (q) navigate({ to: routeForEntity(q.entity) });
   };
 
   useEffect(() => {
@@ -53,15 +68,12 @@ export function FocusQueueBar({ entity, currentId }: { entity: FocusEntity; curr
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable)
         return;
-      if (e.key === "n" || e.key === "N") {
+      if (e.key === "n" || e.key === "N" || e.key === "s" || e.key === "S") {
         e.preventDefault();
         next();
       } else if (e.key === "p" || e.key === "P") {
         e.preventDefault();
         prev();
-      } else if (e.key === "s" || e.key === "S") {
-        e.preventDefault();
-        next();
       } else if (e.key === "Escape") {
         e.preventDefault();
         exit();
@@ -70,7 +82,7 @@ export function FocusQueueBar({ entity, currentId }: { entity: FocusEntity; curr
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, tick]);
+  }, [active, entity]);
 
   if (!active || !queue) return null;
   const pos = queue.index + 1;

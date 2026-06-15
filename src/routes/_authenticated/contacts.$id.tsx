@@ -11,7 +11,7 @@ import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
-import { FocusQueueBar } from "@/components/focus-queue-bar";
+
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
@@ -31,7 +31,8 @@ function ContactDetail() {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    setLoading(true);
+    // Não limpamos contact/company aqui — mantém dados anteriores visíveis
+    // enquanto o novo registro carrega (evita flash branco ao navegar em fila).
     setLoadError(null);
     const { data, error } = await supabase
       .from("contacts")
@@ -62,7 +63,7 @@ function ContactDetail() {
     void load(); /* eslint-disable-next-line */
   }, [id]);
 
-  if (loading) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
+  if (loading && !contact) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
     return (
       <div className="p-6 space-y-3">
@@ -191,7 +192,7 @@ function ContactDetail() {
 
   return (
     <>
-      <FocusQueueBar entity="contacts" currentId={contact.id} />
+      
       <RecordLayout
         header={header}
         left={

@@ -9,7 +9,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
-import { FocusQueueBar } from "@/components/focus-queue-bar";
+
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
 
@@ -92,7 +92,7 @@ function CompanyDetail() {
 
   return (
     <>
-      <FocusQueueBar entity="companies" currentId={company.id} />
+      
       <RecordLayout
         header={header}
         left={
