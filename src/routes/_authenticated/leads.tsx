@@ -381,6 +381,40 @@ function LeadsHubspotView() {
   });
 
 
+  // KPI stats — independent of view/filters, gives a stable hero summary.
+  const { data: stats } = useQuery({
+    queryKey: ["leads", "kpi-stats", user?.id],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const [{ count: total }, { count: openCount }, { count: qualified }, { count: newWeek }] =
+        await Promise.all([
+          supabase.from("leads").select("id", { count: "exact", head: true }),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .not("status", "in", "(qualified,disqualified)"),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "qualified"),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", weekAgo),
+        ]);
+      const t = total ?? 0;
+      const q = qualified ?? 0;
+      return {
+        total: t,
+        open: openCount ?? 0,
+        qualified: q,
+        newWeek: newWeek ?? 0,
+        conversion: t > 0 ? (q / t) * 100 : 0,
+      };
+    },
+  });
+
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
