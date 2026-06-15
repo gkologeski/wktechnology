@@ -20,7 +20,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Download, MapPin, MoreHorizontal, Plus, Search, X } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  MapPin,
+  MoreHorizontal,
+  Play,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
+import { startFocusQueue } from "@/lib/focus-queue";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
