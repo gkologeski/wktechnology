@@ -31,7 +31,8 @@ function ContactDetail() {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    setLoading(true);
+    // Não limpamos contact/company aqui — mantém dados anteriores visíveis
+    // enquanto o novo registro carrega (evita flash branco ao navegar em fila).
     setLoadError(null);
     const { data, error } = await supabase
       .from("contacts")
@@ -62,7 +63,7 @@ function ContactDetail() {
     void load(); /* eslint-disable-next-line */
   }, [id]);
 
-  if (loading) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
+  if (loading && !contact) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
     return (
       <div className="p-6 space-y-3">
