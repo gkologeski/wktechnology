@@ -91,9 +91,11 @@ function CompanyDetail() {
   );
 
   return (
-    <RecordLayout
-      header={header}
-      left={
+    <>
+      <FocusQueueBar entity="companies" currentId={company.id} />
+      <RecordLayout
+        header={header}
+        left={
         <PropertiesPanel
           entity="companies"
           table="companies"
