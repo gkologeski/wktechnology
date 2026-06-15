@@ -14,6 +14,7 @@ import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SettingsMenu } from "@/components/settings-menu";
 import { AccountMenu } from "@/components/account-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
+import { FocusQueueBar } from "@/components/focus-queue-bar";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -110,6 +111,7 @@ function AuthenticatedLayout() {
           </header>
           {!blocked && <RouteBreadcrumbs />}
           <main className="flex-1 p-6 overflow-auto">
+            <FocusQueueBar />
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />

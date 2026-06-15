@@ -9,7 +9,7 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
-import { FocusQueueBar } from "@/components/focus-queue-bar";
+
 import { StageTracker } from "@/components/stage-tracker";
 import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
@@ -121,7 +121,7 @@ function DealDetail() {
 
   return (
     <>
-      <FocusQueueBar entity="deals" currentId={deal.id} />
+      
       <RecordLayout
         header={header}
         left={
