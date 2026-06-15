@@ -57,16 +57,21 @@ import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import {
   ArrowRightLeft,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
   Download,
+  Inbox,
   MoreHorizontal,
   Plus,
   Search,
   Sparkles,
+  TrendingUp,
   Upload,
+  UserCheck,
+  Users,
   X,
 } from "lucide-react";
 
@@ -375,6 +380,40 @@ function LeadsHubspotView() {
     },
   });
 
+
+  // KPI stats — independent of view/filters, gives a stable hero summary.
+  const { data: stats } = useQuery({
+    queryKey: ["leads", "kpi-stats", user?.id],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const [{ count: total }, { count: openCount }, { count: qualified }, { count: newWeek }] =
+        await Promise.all([
+          supabase.from("leads").select("id", { count: "exact", head: true }),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .not("status", "in", "(qualified,disqualified)"),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "qualified"),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", weekAgo),
+        ]);
+      const t = total ?? 0;
+      const q = qualified ?? 0;
+      return {
+        total: t,
+        open: openCount ?? 0,
+        qualified: q,
+        newWeek: newWeek ?? 0,
+        conversion: t > 0 ? (q / t) * 100 : 0,
+      };
+    },
+  });
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
@@ -728,37 +767,91 @@ function LeadsHubspotView() {
     }
   };
 
+  const fmt = (n: number) => n.toLocaleString("pt-BR");
+  const conversion = stats?.conversion ?? 0;
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="-m-4 md:-m-6 min-h-full bg-[#fafbfc] p-6 md:p-8 space-y-6">
+      {/* ─── Breadcrumb ─── */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/dashboard" className="hover:text-primary transition-colors">
+          Início
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="font-medium text-primary">Leads</span>
+      </nav>
+
       {/* ─── Top bar ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isLoading ? "Carregando…" : `${fmt(total)} registros encontrados`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("import") && (
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
               <Link to="/leads/import-hubspot">
                 <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
               </Link>
             </Button>
           )}
           {can("export") && (
-            <Button variant="outline" size="sm" onClick={exportCsv}>
+            <Button variant="outline" size="sm" onClick={exportCsv} className="rounded-lg">
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            className="rounded-lg shadow-sm shadow-primary/20"
+          >
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead
           </Button>
         </div>
       </div>
 
+      {/* ─── KPI Bento Grid (subtle glass) ─── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total leads"
+          value={fmt(stats?.total ?? 0)}
+          icon={<Users className="h-4 w-4" />}
+          iconTone="bg-blue-50 text-blue-600"
+          hint="Base completa"
+        />
+        <KpiCard
+          label="Abertos"
+          value={fmt(stats?.open ?? 0)}
+          icon={<Inbox className="h-4 w-4" />}
+          iconTone="bg-amber-50 text-amber-600"
+          hint={
+            stats && stats.total > 0
+              ? `${Math.round((stats.open / stats.total) * 100)}% da base`
+              : "—"
+          }
+        />
+        <KpiCard
+          label="Qualificados"
+          value={fmt(stats?.qualified ?? 0)}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          iconTone="bg-emerald-50 text-emerald-600"
+          hint="Prontos para vendas"
+        />
+        <KpiCard
+          label="Conversão"
+          value={`${conversion.toFixed(1)}%`}
+          icon={<TrendingUp className="h-4 w-4" />}
+          iconTone="bg-violet-50 text-violet-600"
+          progress={conversion}
+        />
+      </div>
+
+
+
       {/* ─── Views tabs ─── */}
-      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-[#e8ecf1] overflow-x-auto">
         {VIEWS.map((v) => (
           <button
             key={v.id}
@@ -768,7 +861,7 @@ function LeadsHubspotView() {
               setActiveSavedId(null);
             }}
             className={cn(
-              "relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              "relative px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
               activeView === v.id && !activeSavedId
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground",
@@ -786,7 +879,7 @@ function LeadsHubspotView() {
             <div
               key={sv.id}
               className={cn(
-                "group relative flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap",
+                "group relative flex items-center gap-1 px-3 py-2.5 text-sm font-medium whitespace-nowrap",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -820,13 +913,14 @@ function LeadsHubspotView() {
       </div>
 
       {/* ─── Body: sidebar + table ─── */}
-      <div className="flex min-h-0 flex-1">
-        {/* Filters sidebar */}
-        <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
-          <div className="flex items-center justify-between px-4 py-3">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        {/* Filters sidebar card */}
+        <aside className="hidden lg:flex lg:flex-col rounded-2xl border border-[#e8ecf1] bg-white shadow-sm overflow-hidden h-fit sticky top-6">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8ecf1]">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Filtros
             </h2>
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -945,10 +1039,11 @@ function LeadsHubspotView() {
           </div>
         </aside>
 
-        {/* Main panel */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* Main panel card */}
+        <div className="flex min-w-0 flex-col rounded-2xl border border-[#e8ecf1] bg-white shadow-sm overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#e8ecf1] px-4 py-3">
+
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -1300,6 +1395,46 @@ function ScoreCell({ score }: { score: number }) {
         <div className={cn("h-full bg-gradient-to-r", tone)} style={{ width: `${clamped}%` }} />
       </div>
       <span className="w-6 text-right text-xs font-medium tabular-nums">{clamped}</span>
+    </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  icon,
+  iconTone,
+  hint,
+  progress,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  iconTone: string;
+  hint?: string;
+  progress?: number;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-br from-white to-white/70 p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(59,130,246,0.18)]">
+      <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <div className={cn("rounded-lg p-2", iconTone)}>{icon}</div>
+      </div>
+      <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+        {value}
+      </h3>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {typeof progress === "number" && (
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf1]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
