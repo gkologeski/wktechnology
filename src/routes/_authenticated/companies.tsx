@@ -20,7 +20,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Download, MapPin, MoreHorizontal, Plus, Search, X } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  MapPin,
+  MoreHorizontal,
+  Play,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
+import { startFocusQueue } from "@/lib/focus-queue";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
@@ -432,6 +442,73 @@ function CompaniesHubspotView() {
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
 
+  const [startingQueue, setStartingQueue] = useState(false);
+  const startQueueFromFilters = async (opts?: { fromSelection?: boolean }) => {
+    setStartingQueue(true);
+    try {
+      let ids: string[] = [];
+      if (opts?.fromSelection && selectedIds.size > 0) {
+        ids = Array.from(selectedIds);
+      } else {
+        // Refaz a query atual sem paginação (limit defensivo de 5.000).
+        let q = supabase.from("companies").select("id");
+        if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
+        if (activeView === "unassigned") q = q.is("owner_id", null);
+        if (activeView === "new_week") {
+          const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+          q = q.gte("created_at", since);
+        }
+        if (filters.industry.length) q = q.in("industry", filters.industry);
+        if (filters.size.length) q = q.in("size", filters.size);
+        if (filters.state.length) q = q.in("state", filters.state);
+        if (filters.targetOnly) q = q.eq("is_target_account", true);
+        if (filters.createdPreset !== "any") {
+          const { start, end } = getDateRange(
+            filters.createdPreset,
+            new Date(),
+            filters.createdCustom,
+          );
+          if (start) q = q.gte("created_at", start.toISOString());
+          if (end) q = q.lt("created_at", end.toISOString());
+        }
+        if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+          q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+        } else if (filters.ownerIds.length > 0) {
+          q = q.in("owner_id", filters.ownerIds);
+        } else if (filters.includeUnassigned) {
+          q = q.is("owner_id", null);
+        }
+        const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+        if (term) {
+          q = q.or(
+            [`name.ilike.%${term}%`, `domain.ilike.%${term}%`, `website.ilike.%${term}%`].join(
+              ",",
+            ),
+          );
+        }
+        q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);
+        const { data, error } = await q;
+        if (error) throw error;
+        ids = (data ?? []).map((r) => r.id as string);
+      }
+      if (!ids.length) {
+        toast.error("Nenhuma empresa para percorrer.");
+        return;
+      }
+      const label =
+        opts?.fromSelection && selectedIds.size > 0
+          ? `${ids.length} empresa(s) selecionada(s)`
+          : `${VIEWS.find((v) => v.id === activeView)?.label ?? "Empresas"} · ${ids.length.toLocaleString("pt-BR")}`;
+      startFocusQueue("companies", ids, label);
+      toast.success(`Fila iniciada com ${ids.length.toLocaleString("pt-BR")} empresa(s)`);
+      navigate({ to: "/companies/$id", params: { id: ids[0] } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setStartingQueue(false);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
@@ -442,6 +519,15 @@ function CompaniesHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => startQueueFromFilters()}
+            disabled={startingQueue || isLoading || total === 0}
+            title="Percorrer todas as empresas do filtro atual, uma por uma"
+          >
+            <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          </Button>
           {can("export") && (
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
@@ -567,6 +653,15 @@ function CompaniesHubspotView() {
                 <span className="text-xs font-medium text-primary">
                   {selectedIds.size} selecionada(s)
                 </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => startQueueFromFilters({ fromSelection: true })}
+                  disabled={startingQueue}
+                >
+                  <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
+                </Button>
                 <Button variant="ghost" size="sm" className="h-7" onClick={runBulkCep}>
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
