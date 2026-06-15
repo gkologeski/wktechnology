@@ -851,7 +851,7 @@ function LeadsHubspotView() {
 
 
       {/* ─── Views tabs ─── */}
-      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-[#e8ecf1] overflow-x-auto">
         {VIEWS.map((v) => (
           <button
             key={v.id}
@@ -861,7 +861,7 @@ function LeadsHubspotView() {
               setActiveSavedId(null);
             }}
             className={cn(
-              "relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              "relative px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
               activeView === v.id && !activeSavedId
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground",
@@ -879,7 +879,7 @@ function LeadsHubspotView() {
             <div
               key={sv.id}
               className={cn(
-                "group relative flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap",
+                "group relative flex items-center gap-1 px-3 py-2.5 text-sm font-medium whitespace-nowrap",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -913,9 +913,14 @@ function LeadsHubspotView() {
       </div>
 
       {/* ─── Body: sidebar + table ─── */}
-      <div className="flex min-h-0 flex-1">
-        {/* Filters sidebar */}
-        <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        {/* Filters sidebar card */}
+        <aside className="hidden lg:flex lg:flex-col rounded-2xl border border-[#e8ecf1] bg-white shadow-sm overflow-hidden h-fit sticky top-6">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8ecf1]">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Filtros
+            </h2>
+
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Filtros
