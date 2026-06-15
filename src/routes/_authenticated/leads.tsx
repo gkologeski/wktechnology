@@ -1398,3 +1398,43 @@ function ScoreCell({ score }: { score: number }) {
     </div>
   );
 }
+
+function KpiCard({
+  label,
+  value,
+  icon,
+  iconTone,
+  hint,
+  progress,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  iconTone: string;
+  hint?: string;
+  progress?: number;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-br from-white to-white/70 p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(59,130,246,0.18)]">
+      <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <div className={cn("rounded-lg p-2", iconTone)}>{icon}</div>
+      </div>
+      <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+        {value}
+      </h3>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {typeof progress === "number" && (
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#e8ecf1]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-400 transition-all"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
