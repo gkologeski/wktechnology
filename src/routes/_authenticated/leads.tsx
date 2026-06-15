@@ -767,34 +767,88 @@ function LeadsHubspotView() {
     }
   };
 
+  const fmt = (n: number) => n.toLocaleString("pt-BR");
+  const conversion = stats?.conversion ?? 0;
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="-m-4 md:-m-6 min-h-full bg-[#fafbfc] p-6 md:p-8 space-y-6">
+      {/* ─── Breadcrumb ─── */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/dashboard" className="hover:text-primary transition-colors">
+          Início
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="font-medium text-primary">Leads</span>
+      </nav>
+
       {/* ─── Top bar ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Leads</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isLoading ? "Carregando…" : `${fmt(total)} registros encontrados`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("import") && (
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
               <Link to="/leads/import-hubspot">
                 <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
               </Link>
             </Button>
           )}
           {can("export") && (
-            <Button variant="outline" size="sm" onClick={exportCsv}>
+            <Button variant="outline" size="sm" onClick={exportCsv} className="rounded-lg">
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            className="rounded-lg shadow-sm shadow-primary/20"
+          >
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead
           </Button>
         </div>
       </div>
+
+      {/* ─── KPI Bento Grid (subtle glass) ─── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total leads"
+          value={fmt(stats?.total ?? 0)}
+          icon={<Users className="h-4 w-4" />}
+          iconTone="bg-blue-50 text-blue-600"
+          hint="Base completa"
+        />
+        <KpiCard
+          label="Abertos"
+          value={fmt(stats?.open ?? 0)}
+          icon={<Inbox className="h-4 w-4" />}
+          iconTone="bg-amber-50 text-amber-600"
+          hint={
+            stats && stats.total > 0
+              ? `${Math.round((stats.open / stats.total) * 100)}% da base`
+              : "—"
+          }
+        />
+        <KpiCard
+          label="Qualificados"
+          value={fmt(stats?.qualified ?? 0)}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          iconTone="bg-emerald-50 text-emerald-600"
+          hint="Prontos para vendas"
+        />
+        <KpiCard
+          label="Conversão"
+          value={`${conversion.toFixed(1)}%`}
+          icon={<TrendingUp className="h-4 w-4" />}
+          iconTone="bg-violet-50 text-violet-600"
+          progress={conversion}
+        />
+      </div>
+
+
 
       {/* ─── Views tabs ─── */}
       <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
