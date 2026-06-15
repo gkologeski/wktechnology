@@ -519,6 +519,15 @@ function CompaniesHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => startQueueFromFilters()}
+            disabled={startingQueue || isLoading || total === 0}
+            title="Percorrer todas as empresas do filtro atual, uma por uma"
+          >
+            <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          </Button>
           {can("export") && (
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
