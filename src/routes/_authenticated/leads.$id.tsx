@@ -24,6 +24,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { FocusQueueBar } from "@/components/focus-queue-bar";
 
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
