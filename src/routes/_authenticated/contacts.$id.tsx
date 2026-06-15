@@ -11,6 +11,7 @@ import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { FocusQueueBar } from "@/components/focus-queue-bar";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
@@ -189,9 +190,11 @@ function ContactDetail() {
   );
 
   return (
-    <RecordLayout
-      header={header}
-      left={
+    <>
+      <FocusQueueBar entity="contacts" currentId={contact.id} />
+      <RecordLayout
+        header={header}
+        left={
         <PropertiesPanel
           entity="contacts"
           table="contacts"
@@ -219,6 +222,7 @@ function ContactDetail() {
       right={
         <AssociationsPanel entity="contact" entityId={contact.id} companyId={contact.company_id} />
       }
-    />
+      />
+    </>
   );
 }

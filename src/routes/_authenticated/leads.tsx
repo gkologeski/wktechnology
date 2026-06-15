@@ -55,9 +55,11 @@ import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { toE164 } from "@/lib/validators";
 import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
+import { startFocusQueue } from "@/lib/focus-queue";
 import {
   ArrowRightLeft,
   ChevronDown,
+  Play,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
@@ -751,6 +753,30 @@ function LeadsHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                let q = supabase.from("leads").select("id");
+                q = applyFilters(q);
+                q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);
+                const { data, error } = await q;
+                if (error) throw error;
+                const ids = (data ?? []).map((r) => r.id as string);
+                if (!ids.length) return toast.error("Nenhum lead para percorrer.");
+                startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
+                toast.success(`Fila iniciada com ${ids.length} lead(s)`);
+                navigate({ to: "/leads/$id", params: { id: ids[0] } });
+              } catch (e) {
+                toast.error((e as Error).message);
+              }
+            }}
+            disabled={isLoading || total === 0}
+            title="Percorrer todos os leads do filtro atual, um a um"
+          >
+            <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead
           </Button>

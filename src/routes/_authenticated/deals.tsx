@@ -6,7 +6,9 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, LayoutGrid, List as ListIcon, Table as TableIcon, TrendingUp } from "lucide-react";
+import { Plus, Play, LayoutGrid, List as ListIcon, Table as TableIcon, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines } from "@/lib/pipelines";
 import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
@@ -164,13 +166,30 @@ function DealsPage() {
         title="Negócios"
         description="Pipeline de vendas estilo HubSpot."
         actions={
-          <Button
-            size="sm"
-            onClick={openNew}
-            className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
-          >
-            <Plus className="h-4 w-4 mr-1" /> Criar negócio
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const ids = filtered.map((d) => d.id);
+                if (!ids.length) return toast.error("Nenhum negócio para percorrer.");
+                startFocusQueue("deals", ids, `Negócios · ${ids.length.toLocaleString("pt-BR")}`);
+                toast.success(`Fila iniciada com ${ids.length} negócio(s)`);
+                navigate({ to: "/deals/$id", params: { id: ids[0] } });
+              }}
+              disabled={filtered.length === 0}
+              title="Percorrer todos os negócios do filtro atual, um a um"
+            >
+              <Play className="h-4 w-4 mr-1" /> Iniciar fila
+            </Button>
+            <Button
+              size="sm"
+              onClick={openNew}
+              className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Criar negócio
+            </Button>
+          </div>
         }
       />
 

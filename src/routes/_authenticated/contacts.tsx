@@ -23,11 +23,13 @@ import {
   Download,
   Link2,
   MoreHorizontal,
+  Play,
   Plus,
   Search,
   Sparkles,
   X,
 } from "lucide-react";
+import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
@@ -444,6 +446,81 @@ function ContactsHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                let q = supabase.from("contacts").select("id");
+                if (activeView === "mine" && user?.id) {
+                  q = q.or(
+                    `assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`,
+                  );
+                }
+                if (activeView === "unassigned")
+                  q = q.is("assigned_user_id", null).is("owner_id", null);
+                if (activeView === "new_week") {
+                  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+                  q = q.gte("created_at", since);
+                }
+                if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
+                if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
+                if (filters.createdPreset !== "any") {
+                  const { start, end } = getDateRange(
+                    filters.createdPreset,
+                    new Date(),
+                    filters.createdCustom,
+                  );
+                  if (start) q = q.gte("created_at", start.toISOString());
+                  if (end) q = q.lt("created_at", end.toISOString());
+                }
+                const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
+                const ownerClauses: string[] = [];
+                if (userIds.length > 0) {
+                  ownerClauses.push(`assigned_user_id.in.(${userIds.join(",")})`);
+                  ownerClauses.push(
+                    `and(assigned_user_id.is.null,owner_id.in.(${userIds.join(",")}))`,
+                  );
+                }
+                if (hubspotIds.length > 0)
+                  ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
+                if (filters.includeUnassigned)
+                  ownerClauses.push("assigned_user_id.is.null,owner_id.is.null");
+                if (ownerClauses.length > 0) q = q.or(ownerClauses.join(","));
+                const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+                if (term) {
+                  for (const tk of term.split(/\s+/).filter(Boolean)) {
+                    q = q.or(
+                      [
+                        `first_name.ilike.%${tk}%`,
+                        `last_name.ilike.%${tk}%`,
+                        `email.ilike.%${tk}%`,
+                        `phone.ilike.%${tk}%`,
+                      ].join(","),
+                    );
+                  }
+                }
+                q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);
+                const { data, error } = await q;
+                if (error) throw error;
+                const ids = (data ?? []).map((r) => r.id as string);
+                if (!ids.length) return toast.error("Nenhum contato para percorrer.");
+                startFocusQueue(
+                  "contacts",
+                  ids,
+                  `Contatos · ${ids.length.toLocaleString("pt-BR")}`,
+                );
+                toast.success(`Fila iniciada com ${ids.length} contato(s)`);
+                navigate({ to: "/contacts/$id", params: { id: ids[0] } });
+              } catch (e) {
+                toast.error((e as Error).message);
+              }
+            }}
+            disabled={isLoading || total === 0}
+            title="Percorrer todos os contatos do filtro atual, um a um"
+          >
+            <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          </Button>
           {can("export") && (
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
