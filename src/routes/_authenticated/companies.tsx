@@ -653,6 +653,15 @@ function CompaniesHubspotView() {
                 <span className="text-xs font-medium text-primary">
                   {selectedIds.size} selecionada(s)
                 </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => startQueueFromFilters({ fromSelection: true })}
+                  disabled={startingQueue}
+                >
+                  <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
+                </Button>
                 <Button variant="ghost" size="sm" className="h-7" onClick={runBulkCep}>
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
