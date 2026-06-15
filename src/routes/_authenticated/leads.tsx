@@ -1039,10 +1039,11 @@ function LeadsHubspotView() {
           </div>
         </aside>
 
-        {/* Main panel */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* Main panel card */}
+        <div className="flex min-w-0 flex-col rounded-2xl border border-[#e8ecf1] bg-white shadow-sm overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#e8ecf1] px-4 py-3">
+
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
