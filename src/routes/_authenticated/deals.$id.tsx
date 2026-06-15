@@ -186,6 +186,7 @@ function DealDetail() {
           </Card>
         </>
       }
-    />
+      />
+    </>
   );
 }
