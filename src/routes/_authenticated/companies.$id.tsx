@@ -133,6 +133,7 @@ function CompanyDetail() {
           <AssociationsPanel entity="company" entityId={company.id} />
         </div>
       }
-    />
+      />
+    </>
   );
 }
