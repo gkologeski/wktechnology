@@ -57,16 +57,21 @@ import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import {
   ArrowRightLeft,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
   Download,
+  Inbox,
   MoreHorizontal,
   Plus,
   Search,
   Sparkles,
+  TrendingUp,
   Upload,
+  UserCheck,
+  Users,
   X,
 } from "lucide-react";
 
