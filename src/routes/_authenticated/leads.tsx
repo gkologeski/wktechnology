@@ -921,10 +921,6 @@ function LeadsHubspotView() {
               Filtros
             </h2>
 
-          <div className="flex items-center justify-between px-4 py-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Filtros
-            </h2>
             {hasActiveFilters && (
               <Button
                 variant="ghost"
