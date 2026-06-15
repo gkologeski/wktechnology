@@ -140,6 +140,7 @@ function LeadDetail() {
 
   return (
     <>
+      <FocusQueueBar entity="leads" currentId={lead.id} />
       <RecordLayout
         header={header}
         left={
