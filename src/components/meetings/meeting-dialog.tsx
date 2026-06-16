@@ -54,7 +54,9 @@ export function MeetingDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [attendee, setAttendee] = useState(defaultAttendee);
+  const [attendees, setAttendees] = useState<Attendee[]>(
+    defaultAttendee ? [{ email: defaultAttendee }] : [],
+  );
   const start0 = new Date(Date.now() + 60 * 60 * 1000);
   const end0 = new Date(start0.getTime() + 30 * 60 * 1000);
   const [start, setStart] = useState(toLocalInput(start0));
