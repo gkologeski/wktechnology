@@ -29,6 +29,7 @@ import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
+import { useToastCreated } from "@/lib/toast-nav";
 
 type ContactMatch = {
   id: string;
@@ -51,6 +52,7 @@ export function CreateLeadDialog({
   onCreated?: (id: string) => void;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     first_name: "",
@@ -153,7 +155,9 @@ export function CreateLeadDialog({
       if (form.source.trim()) {
         await ensureLeadSource(user.id, form.source.trim());
       }
-      toast.success("Lead criado");
+      toastCreated("Lead criado", "Ir para o lead", (nav) =>
+        nav({ to: "/leads/$id", params: { id: data!.id } }),
+      );
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);

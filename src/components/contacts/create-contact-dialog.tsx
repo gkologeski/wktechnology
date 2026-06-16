@@ -17,6 +17,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { isEmail, toE164 } from "@/lib/validators";
+import { useToastCreated } from "@/lib/toast-nav";
 
 export function CreateContactDialog({
   open,
@@ -28,6 +29,7 @@ export function CreateContactDialog({
   onCreated?: (id: string) => void;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     first_name: "",
@@ -75,7 +77,9 @@ export function CreateContactDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Contato criado");
+      toastCreated("Contato criado", "Ir para o contato", (nav) =>
+        nav({ to: "/contacts/$id", params: { id: data!.id } }),
+      );
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);

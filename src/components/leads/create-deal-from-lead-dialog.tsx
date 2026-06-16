@@ -25,6 +25,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
+import { useToastCreated } from "@/lib/toast-nav";
 
 export function CreateDealFromLeadDialog({
   open,
@@ -38,6 +39,7 @@ export function CreateDealFromLeadDialog({
   onCreated?: (dealId: string) => void;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const { pipelines } = usePipelines("deal");
   const defaultPipeline = useMemo(
     () => pipelines.find((p) => p.is_default) ?? pipelines[0] ?? null,
@@ -224,7 +226,9 @@ export function CreateDealFromLeadDialog({
         })
         .eq("id", lead.id);
 
-      toast.success("Negócio criado e lead qualificado");
+      toastCreated("Negócio criado e lead qualificado", "Ir para o negócio", (nav) =>
+        nav({ to: "/deals/$id", params: { id: deal!.id } }),
+      );
       onCreated?.(deal!.id);
       onOpenChange(false);
     } catch (e) {

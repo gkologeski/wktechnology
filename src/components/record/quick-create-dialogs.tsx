@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { useToastCreated } from "@/lib/toast-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ type BaseProps = {
 /* ───────────── Company ───────────── */
 export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: BaseProps) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [saving, setSaving] = useState(false);
@@ -46,7 +48,9 @@ export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: Base
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Empresa criada");
+      toastCreated("Empresa criada", "Ir para a empresa", (nav) =>
+        nav({ to: "/companies/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setName("");
       setDomain("");
@@ -112,6 +116,7 @@ export function QuickCreateDealDialog({
   defaultContactId,
 }: BaseProps & { defaultCompanyId?: string | null; defaultContactId?: string | null }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [name, setName] = useState("");
   const [value, setValue] = useState("0");
   const [saving, setSaving] = useState(false);
@@ -144,7 +149,9 @@ export function QuickCreateDealDialog({
           .from("deal_contacts")
           .insert({ deal_id: dealId, contact_id: defaultContactId });
       }
-      toast.success("Negócio criado");
+      toastCreated("Negócio criado", "Ir para o negócio", (nav) =>
+        nav({ to: "/deals/$id", params: { id: dealId } }),
+      );
       onOpenChange(false);
       setName("");
       setValue("0");
@@ -216,6 +223,7 @@ export function QuickCreateTicketDialog({
   defaultDealId?: string | null;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("medium");
   const [saving, setSaving] = useState(false);
@@ -240,7 +248,9 @@ export function QuickCreateTicketDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Ticket criado");
+      toastCreated("Ticket criado", "Ir para o ticket", (nav) =>
+        nav({ to: "/tickets/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setSubject("");
       setPriority("medium");
@@ -318,6 +328,7 @@ export function QuickCreateTaskDialog({
   defaultLeadId?: string | null;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
@@ -347,7 +358,9 @@ export function QuickCreateTaskDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Tarefa criada");
+      toastCreated("Tarefa criada", "Ir para a tarefa", (nav) =>
+        nav({ to: "/tasks/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setSubject("");
       setPriority("MEDIUM");
