@@ -356,7 +356,7 @@ function ProposalEditor() {
                 key={t}
                 type="button"
                 disabled={!!locked}
-                onClick={() => setBody((b) => b + " " + t)}
+                onClick={() => insertIntoEditor(" " + t)}
                 className="block w-full rounded px-2 py-1 text-left font-mono hover:bg-muted disabled:opacity-50"
               >
                 {t}
