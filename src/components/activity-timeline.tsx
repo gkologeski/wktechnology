@@ -365,7 +365,14 @@ export function ActivityTimeline({
     if (!user || pendingFiles.length === 0) return [];
     const out: Attachment[] = [];
     for (const file of pendingFiles) {
-      const path = `${user.id}/${crypto.randomUUID()}-${file.name}`;
+      const safeName = file.name
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(-120) || "file";
+      const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
       const { error } = await supabase.storage
         .from("notes-attachments")
         .upload(path, file, { contentType: file.type });
