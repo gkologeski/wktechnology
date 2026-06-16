@@ -100,11 +100,11 @@ export function MeetingDialog({
     }
     setBusy(true);
     try {
-      const attendees = attendee
-        .split(/[,;\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((email) => ({ email }));
+      const attendeesPayload = attendees.map((a) => ({
+        email: a.email,
+        ...(a.name ? { name: a.name } : {}),
+        ...(a.contact_id ? { contact_id: a.contact_id } : {}),
+      }));
 
       // 1) Always create a meeting record (Jitsi room + public token) so a link exists,
       //    regardless of Google Calendar / Meet integration.
