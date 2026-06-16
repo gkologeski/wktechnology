@@ -63,6 +63,7 @@ export function MeetingDialog({
 
   const listAccounts = useServerFn(listCalendarAccounts);
   const pushToCalendar = useServerFn(pushActivityToCalendar);
+  const createMeetingFn = useServerFn(createMeeting);
 
   useEffect(() => {
     if (!open) return;
