@@ -555,18 +555,26 @@ function MyBugReportsPage() {
             </DialogDescription>
           </DialogHeader>
           {reopen && (
-            <div className="space-y-2">
-              <Label>O que está acontecendo?</Label>
-              <Textarea
-                rows={6}
-                maxLength={4000}
-                value={reopen.feedback}
-                onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
-                placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {reopen.feedback.length}/4000
-              </p>
+            <div className="space-y-3">
+              {reopen.previous && reopen.previous.trim().length > 0 && (
+                <div className="rounded-md border bg-muted/40 p-3 text-xs max-h-40 overflow-auto">
+                  <p className="font-medium text-muted-foreground mb-1">Histórico anterior</p>
+                  <p className="whitespace-pre-wrap">{reopen.previous}</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>O que está acontecendo agora?</Label>
+                <Textarea
+                  rows={6}
+                  maxLength={4000}
+                  value={reopen.feedback}
+                  onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                  placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {reopen.feedback.length}/4000
+                </p>
+              </div>
             </div>
           )}
           <DialogFooter>
