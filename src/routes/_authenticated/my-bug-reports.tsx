@@ -164,6 +164,45 @@ function MyBugReportsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao atualizar"),
   });
 
+  const confirmResolvedMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("bug_reports")
+        .update({
+          user_resolution_confirmed: true,
+          user_resolution_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Obrigado pelo retorno!");
+      qc.invalidateQueries({ queryKey: ["my-bug-reports", user?.id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao registrar"),
+  });
+
+  const reopenMut = useMutation({
+    mutationFn: async (payload: { id: string; feedback: string }) => {
+      const { error } = await supabase
+        .from("bug_reports")
+        .update({
+          user_resolution_confirmed: false,
+          user_resolution_feedback: payload.feedback,
+          user_resolution_at: new Date().toISOString(),
+          status: "open",
+        })
+        .eq("id", payload.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Chamado reaberto. Iremos analisar novamente.");
+      setReopen(null);
+      qc.invalidateQueries({ queryKey: ["my-bug-reports", user?.id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao reabrir"),
+  });
+
   const openVideo = async (path: string) => {
     try {
       const { data, error } = await supabase.storage
