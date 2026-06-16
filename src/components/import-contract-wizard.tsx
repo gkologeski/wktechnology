@@ -145,6 +145,62 @@ function normalizePlaceholders(text: string, fields: FieldDef[]): string {
   return out;
 }
 
+// Extrai o alinhamento de cada <w:p> do document.xml original e aplica
+// como `style="text-align: …"` nos blocos correspondentes do HTML gerado
+// pelo mammoth. Mantém a ordem dos parágrafos (mammoth gera um bloco por
+// w:p, incluindo itens de lista).
+async function applyParagraphAlignment(buf: ArrayBuffer, html: string): Promise<string> {
+  try {
+    const { unzipSync, strFromU8 } = await import("fflate");
+    const files = unzipSync(new Uint8Array(buf), {
+      filter: (f) => f.name === "word/document.xml",
+    });
+    const xmlBytes = files["word/document.xml"];
+    if (!xmlBytes) return html;
+    const xml = strFromU8(xmlBytes);
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    const paragraphs = Array.from(doc.getElementsByTagNameNS("*", "p"));
+    const alignments: Array<string | null> = paragraphs.map((p) => {
+      const jc = p.getElementsByTagNameNS("*", "jc")[0];
+      const val = jc?.getAttribute("w:val") ?? jc?.getAttribute("val") ?? null;
+      if (!val) return null;
+      if (val === "both" || val === "distribute") return "justify";
+      if (val === "left" || val === "start") return "left";
+      if (val === "right" || val === "end") return "right";
+      if (val === "center") return "center";
+      return null;
+    });
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    const blocks: HTMLElement[] = [];
+    const walk = (el: Element) => {
+      for (const child of Array.from(el.children)) {
+        const tag = child.tagName.toLowerCase();
+        if (["p", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "li", "pre"].includes(tag)) {
+          blocks.push(child as HTMLElement);
+          if (tag === "li") walk(child); // listas aninhadas
+        } else if (["ul", "ol", "table", "thead", "tbody", "tr", "td", "th"].includes(tag)) {
+          walk(child);
+        }
+      }
+    };
+    walk(container);
+    const n = Math.min(blocks.length, alignments.length);
+    for (let i = 0; i < n; i++) {
+      const align = alignments[i];
+      if (!align || align === "left") continue;
+      const existing = blocks[i].getAttribute("style") ?? "";
+      blocks[i].setAttribute(
+        "style",
+        `${existing}${existing && !existing.trim().endsWith(";") ? ";" : ""}text-align:${align};`,
+      );
+    }
+    return container.innerHTML;
+  } catch {
+    return html;
+  }
+}
+
 export function ImportContractWizard() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -188,11 +244,48 @@ export function ImportContractWizard() {
       try {
         const mammoth = await import("mammoth/mammoth.browser");
         const buf = await file.arrayBuffer();
+        // Style map para preservar mais formatação (cabeçalhos, alinhamento,
+        // citações, código) e converter imagens em data URIs para que
+        // sobrevivam à serialização do HTML no editor WYSIWYG.
+        const styleMap = [
+          "p[style-name='Title'] => h1.doc-title:fresh",
+          "p[style-name='Subtitle'] => h2.doc-subtitle:fresh",
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "p[style-name='Heading 4'] => h4:fresh",
+          "p[style-name='Heading 5'] => h5:fresh",
+          "p[style-name='Heading 6'] => h6:fresh",
+          "p[style-name='Quote'] => blockquote:fresh",
+          "p[style-name='Intense Quote'] => blockquote.intense:fresh",
+          "r[style-name='Strong'] => strong",
+          "r[style-name='Emphasis'] => em",
+          "r[style-name='Code'] => code",
+          "p[style-name='Code'] => pre:fresh",
+          "p[style-name='List Paragraph'] => p.list-paragraph:fresh",
+        ];
+        const convertImage = mammoth.images.imgElement(async (image) => {
+          const base64 = await image.read("base64");
+          return { src: `data:${image.contentType};base64,${base64}` };
+        });
         const [{ value: html }, { value: text }] = await Promise.all([
-          mammoth.convertToHtml({ arrayBuffer: buf }),
+          mammoth.convertToHtml(
+            { arrayBuffer: buf },
+            {
+              styleMap,
+              includeDefaultStyleMap: true,
+              includeEmbeddedStyleMap: true,
+              convertImage,
+              ignoreEmptyParagraphs: false,
+            },
+          ),
           mammoth.extractRawText({ arrayBuffer: buf }),
         ]);
-        setRawHtml(html);
+        // Pós-processamento: extrai alinhamento de parágrafo do document.xml
+        // original e aplica como style="text-align: …" nos elementos
+        // correspondentes (mammoth não preserva alinhamento por padrão).
+        const enriched = await applyParagraphAlignment(buf, html);
+        setRawHtml(enriched);
         setRawText(text);
         setFileName(file.name);
         const detected = detectFields(text);
