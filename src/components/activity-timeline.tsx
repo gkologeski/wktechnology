@@ -1065,7 +1065,7 @@ export function ActivityTimeline({
                       })}
                     </div>
                   )}
-                  {atts.length > 0 && (
+                  {editingId !== a.id && atts.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {atts.map((att, i) => (
                         <button
