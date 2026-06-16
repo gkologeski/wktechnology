@@ -145,6 +145,62 @@ function normalizePlaceholders(text: string, fields: FieldDef[]): string {
   return out;
 }
 
+// Extrai o alinhamento de cada <w:p> do document.xml original e aplica
+// como `style="text-align: …"` nos blocos correspondentes do HTML gerado
+// pelo mammoth. Mantém a ordem dos parágrafos (mammoth gera um bloco por
+// w:p, incluindo itens de lista).
+async function applyParagraphAlignment(buf: ArrayBuffer, html: string): Promise<string> {
+  try {
+    const { unzipSync, strFromU8 } = await import("fflate");
+    const files = unzipSync(new Uint8Array(buf), {
+      filter: (f) => f.name === "word/document.xml",
+    });
+    const xmlBytes = files["word/document.xml"];
+    if (!xmlBytes) return html;
+    const xml = strFromU8(xmlBytes);
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    const paragraphs = Array.from(doc.getElementsByTagNameNS("*", "p"));
+    const alignments: Array<string | null> = paragraphs.map((p) => {
+      const jc = p.getElementsByTagNameNS("*", "jc")[0];
+      const val = jc?.getAttribute("w:val") ?? jc?.getAttribute("val") ?? null;
+      if (!val) return null;
+      if (val === "both" || val === "distribute") return "justify";
+      if (val === "left" || val === "start") return "left";
+      if (val === "right" || val === "end") return "right";
+      if (val === "center") return "center";
+      return null;
+    });
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    const blocks: HTMLElement[] = [];
+    const walk = (el: Element) => {
+      for (const child of Array.from(el.children)) {
+        const tag = child.tagName.toLowerCase();
+        if (["p", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "li", "pre"].includes(tag)) {
+          blocks.push(child as HTMLElement);
+          if (tag === "li") walk(child); // listas aninhadas
+        } else if (["ul", "ol", "table", "thead", "tbody", "tr", "td", "th"].includes(tag)) {
+          walk(child);
+        }
+      }
+    };
+    walk(container);
+    const n = Math.min(blocks.length, alignments.length);
+    for (let i = 0; i < n; i++) {
+      const align = alignments[i];
+      if (!align || align === "left") continue;
+      const existing = blocks[i].getAttribute("style") ?? "";
+      blocks[i].setAttribute(
+        "style",
+        `${existing}${existing && !existing.trim().endsWith(";") ? ";" : ""}text-align:${align};`,
+      );
+    }
+    return container.innerHTML;
+  } catch {
+    return html;
+  }
+}
+
 export function ImportContractWizard() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
