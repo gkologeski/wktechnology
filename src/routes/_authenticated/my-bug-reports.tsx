@@ -81,6 +81,9 @@ type BugRow = {
   recording_path: string | null;
   resolution_text?: string | null;
   image_paths?: string[] | null;
+  user_resolution_confirmed?: boolean | null;
+  user_resolution_feedback?: string | null;
+  user_resolution_at?: string | null;
 };
 
 type EditState = {
@@ -90,6 +93,8 @@ type EditState = {
   subtype: string;
   description: string;
 } | null;
+
+type ReopenState = { id: string; feedback: string } | null;
 
 function MyBugReportsPage() {
   const { user } = useAuth();
