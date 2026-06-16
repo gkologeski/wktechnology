@@ -59,7 +59,7 @@ type RelatedKey =
   | "related_contact_id"
   | "related_company_id"
   | "related_deal_id";
-type Attachment = { path: string; name: string; size: number; type: string };
+type Attachment = { path: string; name: string; size: number; type: string; bucket?: string };
 type TeamMember = { id: string; name: string };
 
 // Ações tipo "Registrar" (composer inline com texto)
