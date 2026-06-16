@@ -153,14 +153,9 @@ export function CreateLeadDialog({
       if (form.source.trim()) {
         await ensureLeadSource(user.id, form.source.trim());
       }
-      toast.success("Lead criado", {
-        action: {
-          label: "Ir para o lead",
-          onClick: () => {
-            window.location.assign(`/leads/${data!.id}`);
-          },
-        },
-      });
+      toastCreated("Lead criado", "Ir para o lead", (nav) =>
+        nav({ to: "/leads/$id", params: { id: data!.id } }),
+      );
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);
