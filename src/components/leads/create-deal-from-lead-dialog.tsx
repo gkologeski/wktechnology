@@ -226,7 +226,9 @@ export function CreateDealFromLeadDialog({
         })
         .eq("id", lead.id);
 
-      toast.success("Negócio criado e lead qualificado");
+      toastCreated("Negócio criado e lead qualificado", "Ir para o negócio", (nav) =>
+        nav({ to: "/deals/$id", params: { id: deal!.id } }),
+      );
       onCreated?.(deal!.id);
       onOpenChange(false);
     } catch (e) {
