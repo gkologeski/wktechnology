@@ -94,7 +94,7 @@ type EditState = {
   description: string;
 } | null;
 
-type ReopenState = { id: string; feedback: string } | null;
+type ReopenState = { id: string; feedback: string; previous: string | null } | null;
 
 function MyBugReportsPage() {
   const { user } = useAuth();
