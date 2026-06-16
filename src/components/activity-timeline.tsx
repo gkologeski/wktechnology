@@ -470,15 +470,47 @@ export function ActivityTimeline({
   const startEdit = (a: Activity) => {
     setEditingId(a.id);
     setEditingBody(a.body ?? "");
+    const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
+    setEditingAttachments(existing);
+    setEditingNewFiles([]);
+  };
+
+  const uploadEditingFiles = async (): Promise<Attachment[]> => {
+    if (!user || editingNewFiles.length === 0) return [];
+    const out: Attachment[] = [];
+    for (const file of editingNewFiles) {
+      const safeName =
+        file.name
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(-120) || "file";
+      const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from("notes-attachments")
+        .upload(path, file, { contentType: file.type });
+      if (error) {
+        toast.error(`Falha em ${file.name}: ${error.message}`);
+        continue;
+      }
+      out.push({ path, name: file.name, size: file.size, type: file.type });
+    }
+    return out;
   };
 
   const saveEdit = async (a: Activity) => {
+    const uploaded = await uploadEditingFiles();
+    const finalAttachments = [...editingAttachments, ...uploaded];
     const { error } = await supabase
       .from("activities")
-      .update({ body: editingBody || null })
+      .update({ body: editingBody || null, attachments: finalAttachments } as never)
       .eq("id", a.id);
     if (error) return toast.error(error.message);
     setEditingId(null);
+    setEditingAttachments([]);
+    setEditingNewFiles([]);
     void load();
   };
 
