@@ -48,7 +48,9 @@ export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: Base
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Empresa criada");
+      toastCreated("Empresa criada", "Ir para a empresa", (nav) =>
+        nav({ to: "/companies/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setName("");
       setDomain("");
