@@ -77,7 +77,9 @@ export function CreateContactDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Contato criado");
+      toastCreated("Contato criado", "Ir para o contato", (nav) =>
+        nav({ to: "/contacts/$id", params: { id: data!.id } }),
+      );
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);
