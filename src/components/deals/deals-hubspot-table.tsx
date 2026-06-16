@@ -16,7 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trophy, X as XIcon } from "lucide-react";
+import { MoreHorizontal, Play, Trophy, X as XIcon } from "lucide-react";
+import { startFocusQueue } from "@/lib/focus-queue";
 import {
   HeaderCheckbox,
   InitialsAvatar,
@@ -339,6 +340,20 @@ export function DealsHubspotTable({
             <span className="text-xs font-medium text-primary">
               {selectedIds.size} selecionado(s)
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => {
+                const ids = Array.from(selectedIds);
+                if (!ids.length) return;
+                startFocusQueue("deals", ids, `Negócios · ${ids.length.toLocaleString("pt-BR")}`);
+                toast.success(`Fila iniciada com ${ids.length} negócio(s)`);
+                navigate({ to: "/deals/$id", params: { id: ids[0] } });
+              }}
+            >
+              <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
+            </Button>
             <Button
               variant="ghost"
               size="sm"
