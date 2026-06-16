@@ -116,6 +116,7 @@ export function QuickCreateDealDialog({
   defaultContactId,
 }: BaseProps & { defaultCompanyId?: string | null; defaultContactId?: string | null }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [name, setName] = useState("");
   const [value, setValue] = useState("0");
   const [saving, setSaving] = useState(false);
