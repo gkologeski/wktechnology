@@ -19,6 +19,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.functions";
 import { createMeeting } from "@/lib/meetings.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
+import { AttendeePicker, type Attendee } from "./attendee-picker";
 
 type Props = {
   trigger?: ReactNode;
@@ -53,7 +54,9 @@ export function MeetingDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [attendee, setAttendee] = useState(defaultAttendee);
+  const [attendees, setAttendees] = useState<Attendee[]>(
+    defaultAttendee ? [{ email: defaultAttendee }] : [],
+  );
   const start0 = new Date(Date.now() + 60 * 60 * 1000);
   const end0 = new Date(start0.getTime() + 30 * 60 * 1000);
   const [start, setStart] = useState(toLocalInput(start0));
@@ -67,7 +70,7 @@ export function MeetingDialog({
 
   useEffect(() => {
     if (!open) return;
-    setAttendee(defaultAttendee);
+    setAttendees(defaultAttendee ? [{ email: defaultAttendee }] : []);
     void (async () => {
       try {
         const { items } = await listAccounts();
@@ -97,11 +100,11 @@ export function MeetingDialog({
     }
     setBusy(true);
     try {
-      const attendees = attendee
-        .split(/[,;\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((email) => ({ email }));
+      const attendeesPayload = attendees.map((a) => ({
+        email: a.email,
+        ...(a.name ? { name: a.name } : {}),
+        ...(a.contact_id ? { contact_id: a.contact_id } : {}),
+      }));
 
       // 1) Always create a meeting record (Jitsi room + public token) so a link exists,
       //    regardless of Google Calendar / Meet integration.
@@ -133,7 +136,7 @@ export function MeetingDialog({
         body: description || null,
         due_date: startIso,
         meeting_location: finalLocation,
-        attachments: { attendees, end_at: endIso, meet_link: publicLink },
+        attachments: { attendees: attendeesPayload, end_at: endIso, meet_link: publicLink },
         external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: meeting.room_name },
         [relatedKey]: relatedId,
       };
@@ -212,12 +215,8 @@ export function MeetingDialog({
             />
           </div>
           <div>
-            <Label>Participantes (e-mails separados por vírgula)</Label>
-            <Input
-              value={attendee}
-              onChange={(e) => setAttendee(e.target.value)}
-              placeholder="cliente@empresa.com"
-            />
+            <Label>Participantes</Label>
+            <AttendeePicker value={attendees} onChange={setAttendees} />
           </div>
           <div>
             <Label>Descrição</Label>
