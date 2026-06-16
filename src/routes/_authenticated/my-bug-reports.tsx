@@ -103,6 +103,7 @@ function MyBugReportsPage() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [edit, setEdit] = useState<EditState>(null);
+  const [reopen, setReopen] = useState<ReopenState>(null);
 
   const list = useQuery({
     queryKey: ["my-bug-reports", user?.id],
