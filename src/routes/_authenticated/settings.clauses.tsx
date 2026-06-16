@@ -114,11 +114,12 @@ function ClausesPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Corpo (HTML)</Label>
-                <Textarea
-                  rows={8}
+                <Label>Corpo</Label>
+                <WordEditor
                   value={form.body}
-                  onChange={(e) => setForm({ ...form, body: e.target.value })}
+                  onChange={(html) => setForm({ ...form, body: html })}
+                  minHeight={280}
+                  placeholder="Escreva o conteúdo da cláusula…"
                 />
               </div>
             </div>
