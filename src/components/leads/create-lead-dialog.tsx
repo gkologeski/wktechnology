@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -13,12 +13,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
+
+type ContactMatch = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  company_id: string | null;
+  company_name: string | null;
+  companies: { id: string; name: string } | null;
+};
 
 export function CreateLeadDialog({
   open,
@@ -40,10 +61,60 @@ export function CreateLeadDialog({
     source: "",
   });
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  const [matchedContact, setMatchedContact] = useState<ContactMatch | null>(null);
+  const [showReuse, setShowReuse] = useState(false);
+  const lastCheckedEmail = useRef<string>("");
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
     setCompany({ id: null, name: "" });
+    setMatchedContact(null);
+    setShowReuse(false);
+    lastCheckedEmail.current = "";
+  };
+
+  // Busca contato existente pelo email (debounced)
+  useEffect(() => {
+    if (!user) return;
+    const email = form.email.trim().toLowerCase();
+    if (!email || !isEmail(email)) return;
+    if (email === lastCheckedEmail.current) return;
+
+    const timer = setTimeout(async () => {
+      lastCheckedEmail.current = email;
+      const { data, error } = await supabase
+        .from("contacts")
+        .select(
+          "id, first_name, last_name, email, phone, company_id, company_name, companies(id, name)",
+        )
+        .ilike("email", email)
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) return;
+      setMatchedContact(data as unknown as ContactMatch);
+      setShowReuse(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [form.email, user]);
+
+  const applyContact = () => {
+    if (!matchedContact) return;
+    setForm((f) => ({
+      ...f,
+      first_name: matchedContact.first_name ?? f.first_name,
+      last_name: matchedContact.last_name ?? f.last_name,
+      email: matchedContact.email ?? f.email,
+      phone: matchedContact.phone ?? f.phone,
+      company_name: matchedContact.companies?.name ?? matchedContact.company_name ?? f.company_name,
+    }));
+    if (matchedContact.companies?.id) {
+      setCompany({ id: matchedContact.companies.id, name: matchedContact.companies.name });
+    } else if (matchedContact.company_name) {
+      setCompany({ id: null, name: matchedContact.company_name });
+    }
+    setShowReuse(false);
+    toast.success("Dados do contato aplicados");
   };
 
   const submit = async () => {
@@ -170,6 +241,37 @@ export function CreateLeadDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={showReuse} onOpenChange={setShowReuse}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Contato existente encontrado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Encontramos um contato com o e-mail{" "}
+              <strong>{matchedContact?.email}</strong>
+              {matchedContact?.first_name || matchedContact?.last_name ? (
+                <>
+                  {" "}
+                  (<strong>
+                    {[matchedContact?.first_name, matchedContact?.last_name]
+                      .filter(Boolean)
+                      .join(" ")}
+                  </strong>
+                  {matchedContact?.companies?.name || matchedContact?.company_name
+                    ? ` — ${matchedContact?.companies?.name ?? matchedContact?.company_name}`
+                    : ""}
+                  )
+                </>
+              ) : null}
+              . Deseja reaproveitar os dados desse contato neste novo lead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter o que digitei</AlertDialogCancel>
+            <AlertDialogAction onClick={applyContact}>Sim, reaproveitar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
