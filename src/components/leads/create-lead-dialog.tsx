@@ -29,6 +29,7 @@ import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
+import { useToastCreated } from "@/lib/toast-nav";
 
 type ContactMatch = {
   id: string;
