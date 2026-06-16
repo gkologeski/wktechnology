@@ -534,6 +534,56 @@ function MyBugReportsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={!!reopen}
+        onOpenChange={(o) => {
+          if (!o) setReopen(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>O problema ainda persiste</DialogTitle>
+            <DialogDescription>
+              Conte com detalhes o que ainda está acontecendo. O chamado será reaberto e nossa
+              equipe analisará novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {reopen && (
+            <div className="space-y-2">
+              <Label>O que está acontecendo?</Label>
+              <Textarea
+                rows={6}
+                maxLength={4000}
+                value={reopen.feedback}
+                onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {reopen.feedback.length}/4000
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReopen(null)} disabled={reopenMut.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!reopen) return;
+                if (reopen.feedback.trim().length < 10) {
+                  toast.error("Descreva com pelo menos 10 caracteres");
+                  return;
+                }
+                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim() });
+              }}
+              disabled={reopenMut.isPending}
+            >
+              Reabrir chamado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
