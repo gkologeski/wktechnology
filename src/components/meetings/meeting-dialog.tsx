@@ -19,6 +19,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.functions";
 import { createMeeting } from "@/lib/meetings.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
+import { AttendeePicker, type Attendee } from "./attendee-picker";
 
 type Props = {
   trigger?: ReactNode;
