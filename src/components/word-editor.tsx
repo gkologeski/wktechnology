@@ -274,9 +274,9 @@ function Toolbar({ editor }: { editor: Editor }) {
       </Select>
 
       <Select
-        value={(editor.getAttributes("textStyle").fontFamily as string) || ""}
+        value={(editor.getAttributes("textStyle").fontFamily as string) || "__default__"}
         onValueChange={(v) => {
-          if (!v) editor.chain().focus().unsetFontFamily().run();
+          if (!v || v === "__default__") editor.chain().focus().unsetFontFamily().run();
           else editor.chain().focus().setFontFamily(v).run();
         }}
       >
