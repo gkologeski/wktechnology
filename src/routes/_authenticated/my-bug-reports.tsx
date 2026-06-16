@@ -371,7 +371,7 @@ function MyBugReportsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setReopen({ id: r.id, feedback: "" })}
+                            onClick={() => setReopen({ id: r.id, feedback: "", previous: r.user_resolution_feedback ?? null })}
                           >
                             <ThumbsDown className="h-4 w-4 mr-2" /> Não, ainda persiste
                           </Button>
