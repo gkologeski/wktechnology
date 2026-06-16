@@ -135,7 +135,7 @@ export const WordEditor = forwardRef<WordEditorHandle, Props>(function WordEdito
         Underline,
         Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
         TextAlign.configure({ types: ["heading", "paragraph"] }),
-        TextStyle,
+        TextStyleWithSize,
         Color,
         Highlight.configure({ multicolor: true }),
         FontFamily,
