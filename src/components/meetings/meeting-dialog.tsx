@@ -215,12 +215,8 @@ export function MeetingDialog({
             />
           </div>
           <div>
-            <Label>Participantes (e-mails separados por vírgula)</Label>
-            <Input
-              value={attendee}
-              onChange={(e) => setAttendee(e.target.value)}
-              placeholder="cliente@empresa.com"
-            />
+            <Label>Participantes</Label>
+            <AttendeePicker value={attendees} onChange={setAttendees} />
           </div>
           <div>
             <Label>Descrição</Label>
