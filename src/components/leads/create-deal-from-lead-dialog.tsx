@@ -25,6 +25,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
+import { useToastCreated } from "@/lib/toast-nav";
 
 export function CreateDealFromLeadDialog({
   open,
