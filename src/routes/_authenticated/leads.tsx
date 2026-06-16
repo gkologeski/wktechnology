@@ -1007,6 +1007,20 @@ function LeadsHubspotView() {
                   variant="ghost"
                   size="sm"
                   className="h-7"
+                  onClick={() => {
+                    const ids = Array.from(selectedIds);
+                    if (!ids.length) return;
+                    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
+                    toast.success(`Fila iniciada com ${ids.length} lead(s)`);
+                    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+                  }}
+                >
+                  <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
                   onClick={() => setEnrichIds(Array.from(selectedIds))}
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
