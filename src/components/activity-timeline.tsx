@@ -9,6 +9,8 @@ import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { signMeetingRecording } from "@/lib/meetings.functions";
 import {
   StickyNote,
   ListTodo,
@@ -59,7 +61,7 @@ type RelatedKey =
   | "related_contact_id"
   | "related_company_id"
   | "related_deal_id";
-type Attachment = { path: string; name: string; size: number; type: string };
+type Attachment = { path: string; name: string; size: number; type: string; bucket?: string };
 type TeamMember = { id: string; name: string };
 
 // Ações tipo "Registrar" (composer inline com texto)
@@ -514,10 +516,21 @@ export function ActivityTimeline({
     void load();
   };
 
+  const signMeetingRec = useServerFn(signMeetingRecording);
   const downloadAttachment = async (att: Attachment) => {
+    const bucket = att.bucket || "notes-attachments";
+    if (bucket === "meeting-recordings") {
+      try {
+        const { url } = await signMeetingRec({ data: { path: att.path } });
+        window.open(url, "_blank");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao abrir gravação");
+      }
+      return;
+    }
     const { data, error } = await supabase.storage
-      .from("notes-attachments")
-      .createSignedUrl(att.path, 60);
+      .from(bucket)
+      .createSignedUrl(att.path, 60 * 60);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };

@@ -41,6 +41,7 @@ export const createMeeting = createServerFn({ method: "POST" })
         entity_id: z.string().uuid().optional(),
         scheduled_at: z.string().optional(),
         recording_consent: z.boolean().default(false),
+        skip_activity: z.boolean().default(false),
       })
       .parse(input),
   )
@@ -72,20 +73,22 @@ export const createMeeting = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Log activity timeline entry
-    const activity: Record<string, unknown> = {
-      owner_id: workspaceId,
-      workspace_id: workspaceId,
-      created_by: userId,
-      type: "meeting",
-      subject: data.title,
-      body: `Sala de vídeo criada (Jitsi). Link público: /meet/${token}`,
-      external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: room },
-    };
-    if (data.entity && data.entity_id) {
-      activity[REL_COL[data.entity]] = data.entity_id;
+    // Log activity timeline entry (skip when the caller will record its own)
+    if (!data.skip_activity) {
+      const activity: Record<string, unknown> = {
+        owner_id: workspaceId,
+        workspace_id: workspaceId,
+        created_by: userId,
+        type: "meeting",
+        subject: data.title,
+        body: `Sala de vídeo criada (Jitsi). Link público: /meet/${token}`,
+        external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: room },
+      };
+      if (data.entity && data.entity_id) {
+        activity[REL_COL[data.entity]] = data.entity_id;
+      }
+      await supabaseAdmin.from("activities").insert(activity);
     }
-    await supabaseAdmin.from("activities").insert(activity);
 
     return { meeting };
   });
@@ -275,7 +278,7 @@ export const attachRecording = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
+    const { data: meeting, error } = await supabaseAdmin
       .from("meetings")
       .update({
         recording_storage_path: data.path,
@@ -285,8 +288,47 @@ export const attachRecording = createServerFn({ method: "POST" })
         ended_at: new Date().toISOString(),
       })
       .eq("id", data.meeting_id)
-      .eq("owner_id", workspaceId);
+      .eq("owner_id", workspaceId)
+      .select(
+        "id, title, related_deal_id, related_contact_id, related_lead_id, related_ticket_id",
+      )
+      .maybeSingle();
     if (error) throw new Error(error.message);
+
+    // Auto-publish the recording on the related entity's timeline.
+    // Preference order: deal > contact > lead > ticket.
+    if (meeting) {
+      const targetCol =
+        (meeting.related_deal_id && "related_deal_id") ||
+        (meeting.related_contact_id && "related_contact_id") ||
+        (meeting.related_lead_id && "related_lead_id") ||
+        (meeting.related_ticket_id && "related_ticket_id") ||
+        null;
+      if (targetCol) {
+        const filename = data.path.split("/").pop() || "gravacao";
+        const attachments = [
+          {
+            path: data.path,
+            name: filename,
+            type: data.mime_type ?? "video/webm",
+            size: 0,
+            bucket: "meeting-recordings",
+          },
+        ];
+        const activity: Record<string, unknown> = {
+          owner_id: workspaceId,
+          workspace_id: workspaceId,
+          created_by: context.userId,
+          type: "meeting",
+          subject: `Gravação disponível: ${meeting.title ?? "Reunião"}`,
+          body: `Gravação anexada automaticamente a partir da reunião.`,
+          attachments,
+          external_ids: { meeting_id: meeting.id, source: "meeting_recording" },
+          [targetCol]: (meeting as any)[targetCol],
+        };
+        await supabaseAdmin.from("activities").insert(activity);
+      }
+    }
     return { ok: true };
   });
 
@@ -462,6 +504,26 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("activities").insert(rows);
     if (error) throw new Error(error.message);
     return { created: rows.length };
+  });
+
+/* ============================================================
+ * Sign a meeting recording URL (workspace-scoped)
+ * ============================================================ */
+export const signMeetingRecording = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(30).max(86400).default(3600) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    // Path format: `${workspaceId}/${meetingId}/...`
+    const firstSeg = data.path.split("/")[0];
+    if (firstSeg !== workspaceId) throw new Error("Gravação não pertence ao workspace ativo");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("meeting-recordings")
+      .createSignedUrl(data.path, data.expires_in);
+    if (error || !signed) throw new Error(error?.message ?? "Falha ao gerar URL");
+    return { url: signed.signedUrl };
   });
 
 /* ============================================================
