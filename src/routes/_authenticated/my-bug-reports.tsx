@@ -183,12 +183,17 @@ function MyBugReportsPage() {
   });
 
   const reopenMut = useMutation({
-    mutationFn: async (payload: { id: string; feedback: string }) => {
+    mutationFn: async (payload: { id: string; feedback: string; previous: string | null }) => {
+      const stamp = format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR });
+      const entry = `[${stamp}] ${payload.feedback}`;
+      const merged = payload.previous && payload.previous.trim().length > 0
+        ? `${entry}\n\n---\n\n${payload.previous}`
+        : entry;
       const { error } = await supabase
         .from("bug_reports")
         .update({
           user_resolution_confirmed: false,
-          user_resolution_feedback: payload.feedback,
+          user_resolution_feedback: merged,
           user_resolution_at: new Date().toISOString(),
           status: "open",
         })
