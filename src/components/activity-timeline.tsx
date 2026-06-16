@@ -200,6 +200,8 @@ export function ActivityTimeline({
   const [mentions, setMentions] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
+  const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
+  const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
@@ -468,15 +470,47 @@ export function ActivityTimeline({
   const startEdit = (a: Activity) => {
     setEditingId(a.id);
     setEditingBody(a.body ?? "");
+    const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
+    setEditingAttachments(existing);
+    setEditingNewFiles([]);
+  };
+
+  const uploadEditingFiles = async (): Promise<Attachment[]> => {
+    if (!user || editingNewFiles.length === 0) return [];
+    const out: Attachment[] = [];
+    for (const file of editingNewFiles) {
+      const safeName =
+        file.name
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(-120) || "file";
+      const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from("notes-attachments")
+        .upload(path, file, { contentType: file.type });
+      if (error) {
+        toast.error(`Falha em ${file.name}: ${error.message}`);
+        continue;
+      }
+      out.push({ path, name: file.name, size: file.size, type: file.type });
+    }
+    return out;
   };
 
   const saveEdit = async (a: Activity) => {
+    const uploaded = await uploadEditingFiles();
+    const finalAttachments = [...editingAttachments, ...uploaded];
     const { error } = await supabase
       .from("activities")
-      .update({ body: editingBody || null })
+      .update({ body: editingBody || null, attachments: finalAttachments } as never)
       .eq("id", a.id);
     if (error) return toast.error(error.message);
     setEditingId(null);
+    setEditingAttachments([]);
+    setEditingNewFiles([]);
     void load();
   };
 
@@ -910,15 +944,56 @@ export function ActivityTimeline({
                       Vence {formatDateTime(a.due_date)}
                     </p>
                   )}
-                  {a.body &&
-                    (editingId === a.id ? (
-                      <div className="mt-2 space-y-2">
-                        <RichHtmlEditor
-                          value={editingBody}
-                          onChange={setEditingBody}
-                          minHeight={120}
-                          mentions={team}
-                        />
+                  {editingId === a.id ? (
+                    <div className="mt-2 space-y-2">
+                      <RichHtmlEditor
+                        value={editingBody}
+                        onChange={setEditingBody}
+                        minHeight={120}
+                        mentions={team}
+                      />
+                      {(editingAttachments.length > 0 || editingNewFiles.length > 0) && (
+                        <div className="flex flex-wrap gap-2">
+                          {editingAttachments.map((att, i) => (
+                            <Badge key={`ex-${i}`} variant="secondary" className="gap-1">
+                              <Paperclip className="h-3 w-3" /> {att.name}
+                              <button
+                                onClick={() =>
+                                  setEditingAttachments((p) => p.filter((_, idx) => idx !== i))
+                                }
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                          {editingNewFiles.map((f, i) => (
+                            <Badge key={`new-${i}`} variant="secondary" className="gap-1">
+                              <Paperclip className="h-3 w-3" /> {f.name}
+                              <button
+                                onClick={() =>
+                                  setEditingNewFiles((p) => p.filter((_, idx) => idx !== i))
+                                }
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files ?? []);
+                              if (files.length) setEditingNewFiles((p) => [...p, ...files]);
+                              e.target.value = "";
+                            }}
+                          />
+                          <Paperclip className="h-3 w-3" /> Anexar
+                        </label>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(a)}>
                             <Check className="h-3 w-3 mr-1" /> Salvar
@@ -928,9 +1003,12 @@ export function ActivityTimeline({
                           </Button>
                         </div>
                       </div>
-                    ) : (
+                    </div>
+                  ) : (
+                    a.body && (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
-                    ))}
+                    )
+                  )}
                   {a.type === "call" && (a.duration_ms || a.disposition) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.disposition && (
@@ -987,7 +1065,7 @@ export function ActivityTimeline({
                       })}
                     </div>
                   )}
-                  {atts.length > 0 && (
+                  {editingId !== a.id && atts.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {atts.map((att, i) => (
                         <button
