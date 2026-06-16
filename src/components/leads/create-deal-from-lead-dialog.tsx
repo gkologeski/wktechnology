@@ -39,6 +39,7 @@ export function CreateDealFromLeadDialog({
   onCreated?: (dealId: string) => void;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const { pipelines } = usePipelines("deal");
   const defaultPipeline = useMemo(
     () => pipelines.find((p) => p.is_default) ?? pipelines[0] ?? null,
