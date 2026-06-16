@@ -17,6 +17,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { isEmail, toE164 } from "@/lib/validators";
+import { useToastCreated } from "@/lib/toast-nav";
 
 export function CreateContactDialog({
   open,
