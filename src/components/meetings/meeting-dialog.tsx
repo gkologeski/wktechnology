@@ -136,7 +136,7 @@ export function MeetingDialog({
         body: description || null,
         due_date: startIso,
         meeting_location: finalLocation,
-        attachments: { attendees, end_at: endIso, meet_link: publicLink },
+        attachments: { attendees: attendeesPayload, end_at: endIso, meet_link: publicLink },
         external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: meeting.room_name },
         [relatedKey]: relatedId,
       };
