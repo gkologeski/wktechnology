@@ -31,6 +31,7 @@ type BaseProps = {
 /* ───────────── Company ───────────── */
 export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: BaseProps) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [saving, setSaving] = useState(false);
