@@ -33,6 +33,9 @@ import {
   MoreHorizontal,
   Lock,
   Sparkles,
+  Link as LinkIcon,
+  Users,
+  User,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
