@@ -16,7 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trophy, X as XIcon } from "lucide-react";
+import { MoreHorizontal, Play, Trophy, X as XIcon } from "lucide-react";
+import { startFocusQueue } from "@/lib/focus-queue";
 import {
   HeaderCheckbox,
   InitialsAvatar,
