@@ -328,6 +328,7 @@ export function QuickCreateTaskDialog({
   defaultLeadId?: string | null;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
