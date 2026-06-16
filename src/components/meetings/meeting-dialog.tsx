@@ -102,14 +102,39 @@ export function MeetingDialog({
         .map((s) => s.trim())
         .filter(Boolean)
         .map((email) => ({ email }));
+
+      // 1) Always create a meeting record (Jitsi room + public token) so a link exists,
+      //    regardless of Google Calendar / Meet integration.
+      const entityMap: Record<string, "contact" | "lead" | "deal" | undefined> = {
+        related_contact_id: "contact",
+        related_lead_id: "lead",
+        related_deal_id: "deal",
+        related_company_id: undefined, // companies have no meeting relation column
+      };
+      const meetingEntity = entityMap[relatedKey];
+      const { meeting } = await createMeetingFn({
+        data: {
+          title: title,
+          scheduled_at: startIso,
+          recording_consent: true,
+          skip_activity: true,
+          ...(meetingEntity ? { entity: meetingEntity, entity_id: relatedId } : {}),
+        },
+      });
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const publicLink = `${origin}/meet/${meeting.public_token}`;
+      const finalLocation = location.trim() || publicLink;
+
       const payload: Record<string, unknown> = {
         owner_id: user.id,
         type: "meeting",
         subject: title,
         body: description || null,
         due_date: startIso,
-        meeting_location: location || null,
-        attachments: { attendees, end_at: endIso },
+        meeting_location: finalLocation,
+        attachments: { attendees, end_at: endIso, meet_link: publicLink },
+        external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: meeting.room_name },
         [relatedKey]: relatedId,
       };
       const { data: inserted, error } = await supabase
@@ -125,14 +150,14 @@ export function MeetingDialog({
             data: { account_id: accountId, activity_id: inserted.id },
           });
           if (r.meet_link) toast.success(`Reunião criada com Google Meet: ${r.meet_link}`);
-          else toast.success("Reunião criada e sincronizada com o Google Calendar.");
+          else toast.success(`Reunião criada. Link da sala: ${publicLink}`);
         } catch (e) {
           toast.warning(
-            `Reunião salva. Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`,
+            `Reunião salva (link: ${publicLink}). Sincronização Google falhou: ${e instanceof Error ? e.message : "erro"}`,
           );
         }
       } else {
-        toast.success("Reunião registrada no CRM.");
+        toast.success(`Reunião registrada. Link da sala: ${publicLink}`);
       }
       setOpen(false);
       setTitle("");
