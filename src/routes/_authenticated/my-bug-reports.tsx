@@ -94,7 +94,7 @@ type EditState = {
   description: string;
 } | null;
 
-type ReopenState = { id: string; feedback: string } | null;
+type ReopenState = { id: string; feedback: string; previous: string | null } | null;
 
 function MyBugReportsPage() {
   const { user } = useAuth();
@@ -183,12 +183,17 @@ function MyBugReportsPage() {
   });
 
   const reopenMut = useMutation({
-    mutationFn: async (payload: { id: string; feedback: string }) => {
+    mutationFn: async (payload: { id: string; feedback: string; previous: string | null }) => {
+      const stamp = format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR });
+      const entry = `[${stamp}] ${payload.feedback}`;
+      const merged = payload.previous && payload.previous.trim().length > 0
+        ? `${entry}\n\n---\n\n${payload.previous}`
+        : entry;
       const { error } = await supabase
         .from("bug_reports")
         .update({
           user_resolution_confirmed: false,
-          user_resolution_feedback: payload.feedback,
+          user_resolution_feedback: merged,
           user_resolution_at: new Date().toISOString(),
           status: "open",
         })
@@ -366,7 +371,7 @@ function MyBugReportsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setReopen({ id: r.id, feedback: "" })}
+                            onClick={() => setReopen({ id: r.id, feedback: "", previous: r.user_resolution_feedback ?? null })}
                           >
                             <ThumbsDown className="h-4 w-4 mr-2" /> Não, ainda persiste
                           </Button>
@@ -550,18 +555,26 @@ function MyBugReportsPage() {
             </DialogDescription>
           </DialogHeader>
           {reopen && (
-            <div className="space-y-2">
-              <Label>O que está acontecendo?</Label>
-              <Textarea
-                rows={6}
-                maxLength={4000}
-                value={reopen.feedback}
-                onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
-                placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {reopen.feedback.length}/4000
-              </p>
+            <div className="space-y-3">
+              {reopen.previous && reopen.previous.trim().length > 0 && (
+                <div className="rounded-md border bg-muted/40 p-3 text-xs max-h-40 overflow-auto">
+                  <p className="font-medium text-muted-foreground mb-1">Histórico anterior</p>
+                  <p className="whitespace-pre-wrap">{reopen.previous}</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>O que está acontecendo agora?</Label>
+                <Textarea
+                  rows={6}
+                  maxLength={4000}
+                  value={reopen.feedback}
+                  onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                  placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {reopen.feedback.length}/4000
+                </p>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -575,7 +588,7 @@ function MyBugReportsPage() {
                   toast.error("Descreva com pelo menos 10 caracteres");
                   return;
                 }
-                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim() });
+                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim(), previous: reopen.previous });
               }}
               disabled={reopenMut.isPending}
             >
