@@ -515,9 +515,10 @@ export function ActivityTimeline({
   };
 
   const downloadAttachment = async (att: Attachment) => {
+    const bucket = att.bucket || "notes-attachments";
     const { data, error } = await supabase.storage
-      .from("notes-attachments")
-      .createSignedUrl(att.path, 60);
+      .from(bucket)
+      .createSignedUrl(att.path, 60 * 60);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };
