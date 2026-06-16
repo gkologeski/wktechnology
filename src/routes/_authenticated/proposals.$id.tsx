@@ -17,7 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { RichHtmlEditor, sanitizeHtml } from "@/components/rich-html-editor";
+import { sanitizeHtml } from "@/components/rich-html-editor";
+import { WordEditor, type WordEditorHandle } from "@/components/word-editor";
+import { useRef } from "react";
 import { renderTokens } from "@/lib/email-tokens";
 import { ArrowLeft, Save, Send, ShieldCheck, Lock, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +62,12 @@ function ProposalEditor() {
   const [body, setBody] = useState("");
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
+  const editorRef = useRef<WordEditorHandle>(null);
+
+  const insertIntoEditor = (html: string) => {
+    if (editorRef.current) editorRef.current.insertHtml(html);
+    else setBody((b) => b + html);
+  };
 
   useEffect(() => {
     if (prop) {
@@ -125,7 +133,7 @@ function ProposalEditor() {
 
   const insertClause = (clauseBody: string) => {
     if (locked) return;
-    setBody((prev) => `${prev}\n<hr/>\n${clauseBody}`);
+    insertIntoEditor(`<hr/>${clauseBody}`);
   };
 
   if (isLoading)
@@ -262,10 +270,11 @@ function ProposalEditor() {
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
               />
             ) : (
-              <RichHtmlEditor
+              <WordEditor
+                ref={editorRef}
                 value={body}
                 onChange={setBody}
-                minHeight={360}
+                minHeight={400}
                 placeholder="Escreva sua proposta… use {{deal.amount}}, {{contact.name}}, etc."
               />
             )}
@@ -347,7 +356,7 @@ function ProposalEditor() {
                 key={t}
                 type="button"
                 disabled={!!locked}
-                onClick={() => setBody((b) => b + " " + t)}
+                onClick={() => insertIntoEditor(" " + t)}
                 className="block w-full rounded px-2 py-1 text-left font-mono hover:bg-muted disabled:opacity-50"
               >
                 {t}
