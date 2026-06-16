@@ -29,6 +29,7 @@ export function CreateContactDialog({
   onCreated?: (id: string) => void;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     first_name: "",
