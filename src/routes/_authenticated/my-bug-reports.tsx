@@ -31,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { BugReportImages } from "@/components/bug-report/bug-report-images";
-import { Bug, Pencil, Video } from "lucide-react";
+import { Bug, Pencil, Video, ThumbsUp, ThumbsDown, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/my-bug-reports")({
   component: MyBugReportsPage,
@@ -81,6 +81,9 @@ type BugRow = {
   recording_path: string | null;
   resolution_text?: string | null;
   image_paths?: string[] | null;
+  user_resolution_confirmed?: boolean | null;
+  user_resolution_feedback?: string | null;
+  user_resolution_at?: string | null;
 };
 
 type EditState = {
@@ -91,6 +94,8 @@ type EditState = {
   description: string;
 } | null;
 
+type ReopenState = { id: string; feedback: string } | null;
+
 function MyBugReportsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -98,6 +103,7 @@ function MyBugReportsPage() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [edit, setEdit] = useState<EditState>(null);
+  const [reopen, setReopen] = useState<ReopenState>(null);
 
   const list = useQuery({
     queryKey: ["my-bug-reports", user?.id],
@@ -156,6 +162,45 @@ function MyBugReportsPage() {
       qc.invalidateQueries({ queryKey: ["my-bug-reports", user?.id] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao atualizar"),
+  });
+
+  const confirmResolvedMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("bug_reports")
+        .update({
+          user_resolution_confirmed: true,
+          user_resolution_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Obrigado pelo retorno!");
+      qc.invalidateQueries({ queryKey: ["my-bug-reports", user?.id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao registrar"),
+  });
+
+  const reopenMut = useMutation({
+    mutationFn: async (payload: { id: string; feedback: string }) => {
+      const { error } = await supabase
+        .from("bug_reports")
+        .update({
+          user_resolution_confirmed: false,
+          user_resolution_feedback: payload.feedback,
+          user_resolution_at: new Date().toISOString(),
+          status: "open",
+        })
+        .eq("id", payload.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Chamado reaberto. Iremos analisar novamente.");
+      setReopen(null);
+      qc.invalidateQueries({ queryKey: ["my-bug-reports", user?.id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao reabrir"),
   });
 
   const openVideo = async (path: string) => {
@@ -293,13 +338,48 @@ function MyBugReportsPage() {
                 <CardContent className="space-y-3">
                   <p className="text-sm whitespace-pre-wrap">{r.description}</p>
                   {r.status === "resolved" && r.resolution_text && (
-                    <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                    <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-3">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          <strong>Resolução:</strong> {r.resolution_text}
+                        </p>
+                      </div>
+                      {r.user_resolution_confirmed === true ? (
+                        <p className="flex items-center gap-2 text-xs text-emerald-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Você confirmou que o chamado foi resolvido.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                          <p className="text-xs font-medium mr-2">O problema foi resolvido?</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={confirmResolvedMut.isPending}
+                            onClick={() => confirmResolvedMut.mutate(r.id)}
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" /> Sim, resolvido
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setReopen({ id: r.id, feedback: "" })}
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-2" /> Não, ainda persiste
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {r.user_resolution_confirmed === false && r.user_resolution_feedback && r.status !== "resolved" && (
+                    <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
+                        Você reabriu este chamado informando:
                       </p>
-                      <p className="whitespace-pre-wrap">
-                        <strong>Resolução:</strong> {r.resolution_text}
-                      </p>
+                      <p className="whitespace-pre-wrap">{r.user_resolution_feedback}</p>
                     </div>
                   )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
@@ -450,6 +530,56 @@ function MyBugReportsPage() {
               disabled={updateMut.isPending}
             >
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!reopen}
+        onOpenChange={(o) => {
+          if (!o) setReopen(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>O problema ainda persiste</DialogTitle>
+            <DialogDescription>
+              Conte com detalhes o que ainda está acontecendo. O chamado será reaberto e nossa
+              equipe analisará novamente.
+            </DialogDescription>
+          </DialogHeader>
+          {reopen && (
+            <div className="space-y-2">
+              <Label>O que está acontecendo?</Label>
+              <Textarea
+                rows={6}
+                maxLength={4000}
+                value={reopen.feedback}
+                onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {reopen.feedback.length}/4000
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReopen(null)} disabled={reopenMut.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!reopen) return;
+                if (reopen.feedback.trim().length < 10) {
+                  toast.error("Descreva com pelo menos 10 caracteres");
+                  return;
+                }
+                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim() });
+              }}
+              disabled={reopenMut.isPending}
+            >
+              Reabrir chamado
             </Button>
           </DialogFooter>
         </DialogContent>

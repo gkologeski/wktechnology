@@ -1130,6 +1130,9 @@ export type Database = {
           subtype: string
           updated_at: string
           user_agent: string | null
+          user_resolution_at: string | null
+          user_resolution_confirmed: boolean | null
+          user_resolution_feedback: string | null
         }
         Insert: {
           category: string
@@ -1148,6 +1151,9 @@ export type Database = {
           subtype: string
           updated_at?: string
           user_agent?: string | null
+          user_resolution_at?: string | null
+          user_resolution_confirmed?: boolean | null
+          user_resolution_feedback?: string | null
         }
         Update: {
           category?: string
@@ -1166,6 +1172,9 @@ export type Database = {
           subtype?: string
           updated_at?: string
           user_agent?: string | null
+          user_resolution_at?: string | null
+          user_resolution_confirmed?: boolean | null
+          user_resolution_feedback?: string | null
         }
         Relationships: []
       }
