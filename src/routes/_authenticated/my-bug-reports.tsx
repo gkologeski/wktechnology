@@ -338,13 +338,48 @@ function MyBugReportsPage() {
                 <CardContent className="space-y-3">
                   <p className="text-sm whitespace-pre-wrap">{r.description}</p>
                   {r.status === "resolved" && r.resolution_text && (
-                    <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                    <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-3">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          <strong>Resolução:</strong> {r.resolution_text}
+                        </p>
+                      </div>
+                      {r.user_resolution_confirmed === true ? (
+                        <p className="flex items-center gap-2 text-xs text-emerald-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Você confirmou que o chamado foi resolvido.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                          <p className="text-xs font-medium mr-2">O problema foi resolvido?</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={confirmResolvedMut.isPending}
+                            onClick={() => confirmResolvedMut.mutate(r.id)}
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" /> Sim, resolvido
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setReopen({ id: r.id, feedback: "" })}
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-2" /> Não, ainda persiste
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {r.user_resolution_confirmed === false && r.user_resolution_feedback && r.status !== "resolved" && (
+                    <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
+                        Você reabriu este chamado informando:
                       </p>
-                      <p className="whitespace-pre-wrap">
-                        <strong>Resolução:</strong> {r.resolution_text}
-                      </p>
+                      <p className="whitespace-pre-wrap">{r.user_resolution_feedback}</p>
                     </div>
                   )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
