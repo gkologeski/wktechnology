@@ -149,7 +149,9 @@ export function QuickCreateDealDialog({
           .from("deal_contacts")
           .insert({ deal_id: dealId, contact_id: defaultContactId });
       }
-      toast.success("Negócio criado");
+      toastCreated("Negócio criado", "Ir para o negócio", (nav) =>
+        nav({ to: "/deals/$id", params: { id: dealId } }),
+      );
       onOpenChange(false);
       setName("");
       setValue("0");
