@@ -208,7 +208,7 @@ export function MeetingDialog({
             <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="https://meet.google.com/..."
+              placeholder="Deixe em branco para gerar link automaticamente"
             />
           </div>
           <div>
