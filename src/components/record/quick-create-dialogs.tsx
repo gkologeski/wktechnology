@@ -223,6 +223,7 @@ export function QuickCreateTicketDialog({
   defaultDealId?: string | null;
 }) {
   const { user } = useAuth();
+  const toastCreated = useToastCreated();
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("medium");
   const [saving, setSaving] = useState(false);
