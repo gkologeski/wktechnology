@@ -944,15 +944,56 @@ export function ActivityTimeline({
                       Vence {formatDateTime(a.due_date)}
                     </p>
                   )}
-                  {a.body &&
-                    (editingId === a.id ? (
-                      <div className="mt-2 space-y-2">
-                        <RichHtmlEditor
-                          value={editingBody}
-                          onChange={setEditingBody}
-                          minHeight={120}
-                          mentions={team}
-                        />
+                  {editingId === a.id ? (
+                    <div className="mt-2 space-y-2">
+                      <RichHtmlEditor
+                        value={editingBody}
+                        onChange={setEditingBody}
+                        minHeight={120}
+                        mentions={team}
+                      />
+                      {(editingAttachments.length > 0 || editingNewFiles.length > 0) && (
+                        <div className="flex flex-wrap gap-2">
+                          {editingAttachments.map((att, i) => (
+                            <Badge key={`ex-${i}`} variant="secondary" className="gap-1">
+                              <Paperclip className="h-3 w-3" /> {att.name}
+                              <button
+                                onClick={() =>
+                                  setEditingAttachments((p) => p.filter((_, idx) => idx !== i))
+                                }
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                          {editingNewFiles.map((f, i) => (
+                            <Badge key={`new-${i}`} variant="secondary" className="gap-1">
+                              <Paperclip className="h-3 w-3" /> {f.name}
+                              <button
+                                onClick={() =>
+                                  setEditingNewFiles((p) => p.filter((_, idx) => idx !== i))
+                                }
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files ?? []);
+                              if (files.length) setEditingNewFiles((p) => [...p, ...files]);
+                              e.target.value = "";
+                            }}
+                          />
+                          <Paperclip className="h-3 w-3" /> Anexar
+                        </label>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(a)}>
                             <Check className="h-3 w-3 mr-1" /> Salvar
@@ -962,9 +1003,12 @@ export function ActivityTimeline({
                           </Button>
                         </div>
                       </div>
-                    ) : (
+                    </div>
+                  ) : (
+                    a.body && (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
-                    ))}
+                    )
+                  )}
                   {a.type === "call" && (a.duration_ms || a.disposition) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.disposition && (
