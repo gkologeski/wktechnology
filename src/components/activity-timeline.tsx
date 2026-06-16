@@ -200,6 +200,8 @@ export function ActivityTimeline({
   const [mentions, setMentions] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
+  const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
+  const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
