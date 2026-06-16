@@ -358,7 +358,9 @@ export function QuickCreateTaskDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Tarefa criada");
+      toastCreated("Tarefa criada", "Ir para a tarefa", (nav) =>
+        nav({ to: "/tasks/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setSubject("");
       setPriority("MEDIUM");
