@@ -70,7 +70,7 @@ export function MeetingDialog({
 
   useEffect(() => {
     if (!open) return;
-    setAttendee(defaultAttendee);
+    setAttendees(defaultAttendee ? [{ email: defaultAttendee }] : []);
     void (async () => {
       try {
         const { items } = await listAccounts();
