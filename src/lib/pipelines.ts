@@ -162,8 +162,10 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     if (pipelines.length === 0) return;
     if (selectedId === "__all__") return;
     if (selectedId && pipelines.some((p) => p.id === selectedId)) return;
-    // Sem seleção persistida (1ª entrada) ou seleção inválida → usa o pipeline padrão
-    const def = pipelines.find((p) => p.is_default) ?? pipelines[0];
+    // Sem seleção persistida (1ª entrada) ou seleção inválida:
+    // preferimos o pipeline "Serviços" (regra de negócio), depois o is_default, depois o primeiro.
+    const servicos = pipelines.find((p) => (p.name ?? "").trim().toLowerCase() === "serviços");
+    const def = servicos ?? pipelines.find((p) => p.is_default) ?? pipelines[0];
     setSelectedIdState(def.id);
     try {
       localStorage.setItem(LS_KEY(entity), def.id);

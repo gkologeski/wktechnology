@@ -45,14 +45,28 @@ function DealsPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
-  const [view, setView] = useState<"table" | "board" | "list" | "forecast">("table");
-
-  useEffect(() => {
-    const dv = selected?.default_view;
-    if (dv && ["table", "board", "list", "forecast"].includes(dv)) {
-      setView(dv as typeof view);
+  const DEALS_VIEW_KEY = "deals:view";
+  const [view, setView] = useState<"table" | "board" | "list" | "forecast">(() => {
+    if (typeof window === "undefined") return "board";
+    try {
+      const saved = localStorage.getItem(DEALS_VIEW_KEY);
+      if (saved && ["table", "board", "list", "forecast"].includes(saved)) {
+        return saved as "table" | "board" | "list" | "forecast";
+      }
+    } catch {
+      // ignore
     }
-  }, [selected?.id, selected?.default_view]);
+    return "board";
+  });
+
+  // Persiste a última visualização escolhida pelo usuário.
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEALS_VIEW_KEY, view);
+    } catch {
+      // ignore
+    }
+  }, [view]);
 
   const { data: deals = [] } = useQuery({
     queryKey: ["deals", "list"],
