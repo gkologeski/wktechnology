@@ -278,7 +278,7 @@ export const attachRecording = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
+    const { data: meeting, error } = await supabaseAdmin
       .from("meetings")
       .update({
         recording_storage_path: data.path,
@@ -288,8 +288,47 @@ export const attachRecording = createServerFn({ method: "POST" })
         ended_at: new Date().toISOString(),
       })
       .eq("id", data.meeting_id)
-      .eq("owner_id", workspaceId);
+      .eq("owner_id", workspaceId)
+      .select(
+        "id, title, related_deal_id, related_contact_id, related_lead_id, related_ticket_id",
+      )
+      .maybeSingle();
     if (error) throw new Error(error.message);
+
+    // Auto-publish the recording on the related entity's timeline.
+    // Preference order: deal > contact > lead > ticket.
+    if (meeting) {
+      const targetCol =
+        (meeting.related_deal_id && "related_deal_id") ||
+        (meeting.related_contact_id && "related_contact_id") ||
+        (meeting.related_lead_id && "related_lead_id") ||
+        (meeting.related_ticket_id && "related_ticket_id") ||
+        null;
+      if (targetCol) {
+        const filename = data.path.split("/").pop() || "gravacao";
+        const attachments = [
+          {
+            path: data.path,
+            name: filename,
+            type: data.mime_type ?? "video/webm",
+            size: 0,
+            bucket: "meeting-recordings",
+          },
+        ];
+        const activity: Record<string, unknown> = {
+          owner_id: workspaceId,
+          workspace_id: workspaceId,
+          created_by: context.userId,
+          type: "meeting",
+          subject: `Gravação disponível: ${meeting.title ?? "Reunião"}`,
+          body: `Gravação anexada automaticamente a partir da reunião.`,
+          attachments,
+          external_ids: { meeting_id: meeting.id, source: "meeting_recording" },
+          [targetCol]: (meeting as any)[targetCol],
+        };
+        await supabaseAdmin.from("activities").insert(activity);
+      }
+    }
     return { ok: true };
   });
 
