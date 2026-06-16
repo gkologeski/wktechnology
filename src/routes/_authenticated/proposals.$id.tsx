@@ -133,7 +133,7 @@ function ProposalEditor() {
 
   const insertClause = (clauseBody: string) => {
     if (locked) return;
-    setBody((prev) => `${prev}\n<hr/>\n${clauseBody}`);
+    insertIntoEditor(`<hr/>${clauseBody}`);
   };
 
   if (isLoading)
