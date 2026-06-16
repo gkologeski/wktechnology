@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.functions";
+import { createMeeting } from "@/lib/meetings.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
 
 type Props = {
