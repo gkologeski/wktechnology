@@ -41,6 +41,7 @@ export const createMeeting = createServerFn({ method: "POST" })
         entity_id: z.string().uuid().optional(),
         scheduled_at: z.string().optional(),
         recording_consent: z.boolean().default(false),
+        skip_activity: z.boolean().default(false),
       })
       .parse(input),
   )
@@ -72,20 +73,22 @@ export const createMeeting = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Log activity timeline entry
-    const activity: Record<string, unknown> = {
-      owner_id: workspaceId,
-      workspace_id: workspaceId,
-      created_by: userId,
-      type: "meeting",
-      subject: data.title,
-      body: `Sala de vídeo criada (Jitsi). Link público: /meet/${token}`,
-      external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: room },
-    };
-    if (data.entity && data.entity_id) {
-      activity[REL_COL[data.entity]] = data.entity_id;
+    // Log activity timeline entry (skip when the caller will record its own)
+    if (!data.skip_activity) {
+      const activity: Record<string, unknown> = {
+        owner_id: workspaceId,
+        workspace_id: workspaceId,
+        created_by: userId,
+        type: "meeting",
+        subject: data.title,
+        body: `Sala de vídeo criada (Jitsi). Link público: /meet/${token}`,
+        external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: room },
+      };
+      if (data.entity && data.entity_id) {
+        activity[REL_COL[data.entity]] = data.entity_id;
+      }
+      await supabaseAdmin.from("activities").insert(activity);
     }
-    await supabaseAdmin.from("activities").insert(activity);
 
     return { meeting };
   });
