@@ -507,6 +507,26 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
   });
 
 /* ============================================================
+ * Sign a meeting recording URL (workspace-scoped)
+ * ============================================================ */
+export const signMeetingRecording = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(30).max(86400).default(3600) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    // Path format: `${workspaceId}/${meetingId}/...`
+    const firstSeg = data.path.split("/")[0];
+    if (firstSeg !== workspaceId) throw new Error("Gravação não pertence ao workspace ativo");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("meeting-recordings")
+      .createSignedUrl(data.path, data.expires_in);
+    if (error || !signed) throw new Error(error?.message ?? "Falha ao gerar URL");
+    return { url: signed.signedUrl };
+  });
+
+/* ============================================================
  * Workspace meeting settings
  * ============================================================ */
 export const getMeetingSettings = createServerFn({ method: "POST" })
