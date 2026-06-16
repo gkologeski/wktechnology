@@ -81,6 +81,43 @@ export function CreateDealFromLeadDialog({
     setCompanyId(null);
     setCompanyName(lead.company_name ?? "");
     setContactId(null);
+
+    // Tenta localizar contato existente pelo e-mail/telefone do lead e pré-selecioná-lo,
+    // assim como já fazemos com a empresa.
+    const email = (lead.email ?? "").trim().toLowerCase();
+    const phone = (lead.phone ?? "").trim();
+    if (!email && !phone) return;
+    let cancelled = false;
+    (async () => {
+      let query = supabase
+        .from("contacts")
+        .select("id, company_id, company_name, companies(id, name)")
+        .eq("workspace_id", lead.workspace_id)
+        .limit(1);
+      if (email) {
+        query = query.ilike("email", email);
+      } else {
+        query = query.eq("phone", phone);
+      }
+      const { data } = await query.maybeSingle();
+      if (cancelled || !data) return;
+      const row = data as {
+        id: string;
+        company_id: string | null;
+        company_name: string | null;
+        companies: { id: string; name: string } | null;
+      };
+      setContactId(row.id);
+      if (row.companies?.id) {
+        setCompanyId(row.companies.id);
+        setCompanyName(row.companies.name);
+      } else if (row.company_name) {
+        setCompanyName(row.company_name);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [open, lead, defaultPipeline, pipelines]);
 
   // ensure stage matches selected pipeline
