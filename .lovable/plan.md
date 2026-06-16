@@ -1,80 +1,54 @@
-## Problema
+## Objetivo
 
-Na sidebar atual, **Inbox unificada**, **Inbox de Email**, **Inbox de WhatsApp** e **Chat ao vivo** aparecem como itens irmãos no mesmo nível visual. Não existe pista de que os 3 últimos são canais que alimentam a Inbox unificada — todos parecem rotas independentes. O destaque vermelho do "ativo" piora a leitura, porque dois itens podem ficar vermelhos ao mesmo tempo (pai + filho) sem relação visível.
+Em `/proposals/$id`, hoje o corpo é editado com um `RichHtmlEditor` minimalista (negrito, itálico, lista, link, código). Vou substituir por um editor WYSIWYG completo, parecido com o Microsoft Word, mantendo o restante da página intacto (variáveis, cláusulas, aprovações, envio, selo de imutabilidade, pré‑visualização).
 
-Mesmo padrão se repete em outros grupos: **Calendários/Agendamentos** sob Reuniões, **Campanhas Email/WhatsApp** soltas em Captar, **Filas de tarefas** sob Tarefas, etc. A solução de hierarquia deve servir para todos.
+## Stack escolhida
 
-## 3 Propostas
+**TipTap v2** (headless, baseado em ProseMirror) — padrão moderno de mercado para editores WYSIWYG em React. Vantagens: extensível, sanitização confiável, ótima UX, suporte nativo a tabelas/imagens/colaboração futura.
 
-### Proposta A — Submenu recolhível (disclosure clássico)
+Pacotes a instalar:
+- `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`
+- `@tiptap/extension-underline`, `@tiptap/extension-link`, `@tiptap/extension-text-align`
+- `@tiptap/extension-text-style`, `@tiptap/extension-color`, `@tiptap/extension-highlight`
+- `@tiptap/extension-font-family`, `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-cell`, `@tiptap/extension-table-header`
+- `@tiptap/extension-image`, `@tiptap/extension-task-list`, `@tiptap/extension-task-item`, `@tiptap/extension-placeholder`, `@tiptap/extension-subscript`, `@tiptap/extension-superscript`
 
-Item pai ganha um chevron (`›` → `⌄`). Ao clicar, expande os filhos indentados com uma guia vertical fina à esquerda.
+## O que será feito
 
-```text
-📥 Inbox                      ⌄
- │  ✉  Email
- │  💬 WhatsApp
- │  💭 Chat ao vivo
-📅 Reuniões                   ›
-```
+1. **Novo componente** `src/components/word-editor.tsx`:
+   - Editor TipTap com toolbar estilo Word organizada em grupos:
+     - Família de fonte + tamanho (presets) + cor de texto + cor de destaque
+     - Negrito / Itálico / Sublinhado / Tachado / Sub / Sobrescrito
+     - Títulos H1–H4 + parágrafo + bloco de citação + código
+     - Listas: marcadores, numerada, tarefas, recuar/diminuir recuo
+     - Alinhamento: esquerda / centro / direita / justificar
+     - Inserir: link, imagem (por URL), tabela (com adicionar/remover linha/coluna), linha horizontal, quebra de página
+     - Desfazer / Refazer / Limpar formatação
+   - Saída em HTML sanitizada com `DOMPurify` (reaproveitando `sanitizeHtml` existente, expandindo a allowlist para incluir `table`, `thead`, `tbody`, `tr`, `th`, `td`, `img`, `hr`, `mark`, `sub`, `sup`, atributos `colspan`/`rowspan`/`align`/`src`/`alt`/`width`).
+   - Suporte a inserção de texto externo via prop `insertHtml` (usado pelas variáveis `{{...}}` e pela biblioteca de cláusulas).
+   - Estilo CSS dedicado (paleta semântica do design system) — sem cores cruas.
 
-- Pai vira agrupador (rota = primeiro filho, ou a "unificada").
-- Estado expandido persiste por grupo; abre automaticamente se a rota ativa for filha.
-- Ativo: só **um** item destacado por vez (o filho). Pai recebe marcador discreto ("●" no chevron) quando algum filho está ativo.
-- **Prós:** padrão universal (VSCode, Gmail, Linear), economiza espaço, escala para 5+ filhos.
-- **Contras:** 1 clique a mais para chegar nos canais; precisa lógica de auto-expand.
+2. **Atualizar `src/routes/_authenticated/proposals.$id.tsx`**:
+   - Trocar `RichHtmlEditor` por `WordEditor` no corpo da proposta.
+   - Botões de variáveis e cláusulas passam a chamar `editorRef.current?.insertHtml(...)` em vez de concatenar string em `setBody`.
+   - Manter `sanitizeHtml` na renderização travada (`locked`) e na pré‑visualização.
 
-### Proposta B — Seção indentada sempre visível com guia vertical
+3. **Atualizar `src/components/rich-html-editor.tsx`**:
+   - Apenas estender `SANITIZE_CONFIG` para aceitar as tags/atributos novos (tabela, imagem, hr, mark, sub, sup, colspan, rowspan, align, src, alt, width, height, style restrita).
+   - Não altero o `RichHtmlEditor` em si — outros lugares continuam usando.
 
-Filhos ficam **sempre** visíveis, indentados sob o pai, conectados por uma linha vertical sutil (`border-l`) — sem clique para expandir.
+4. **Sem mudanças** em rotas, server functions, schema do banco ou na coluna `body` (continua HTML string).
 
-```text
-📥 Inbox unificada
-   │ ✉  Email
-   │ 💬 WhatsApp
-   │ 💭 Chat ao vivo
-📅 Reuniões
-   │ 🗓 Calendários
-   │ 📆 Agendamentos
-```
+## Detalhes técnicos
 
-- Pai é clicável (rota própria, ex: `/inbox`).
-- Indent de ~16px + `border-l border-border/60` + tipografia ligeiramente menor nos filhos (`text-[13px] text-muted-foreground`).
-- Ativo: filho ganha destaque cheio; pai ganha um "tick" no border-left quando um filho está ativo.
-- **Prós:** zero cliques extras, hierarquia óbvia de relance, ótimo para grupos pequenos (2–4 filhos).
-- **Contras:** ocupa mais altura; ruim se um pai tiver 8+ filhos.
+- SSR: TipTap é client-only; usarei `useEditor` dentro do componente, que já é renderizado dentro de um route component cliente — sem `useEffect` para hidratação extra. Caso surja qualquer aviso de mismatch, envolvo o editor em um `Suspense`/render condicional após `useState(true)` no `useEffect`.
+- Acessibilidade: toolbar com `aria-label`, atalhos padrão (Ctrl+B/I/U, Ctrl+Z, Ctrl+Shift+7/8 etc. já vêm do StarterKit).
+- Sanitização defensiva: sempre passar `editor.getHTML()` por `sanitizeHtml` antes de salvar.
+- Tema: o conteúdo herda o CSS prose já existente; adiciono uma folha de estilos local para tabelas (bordas) e foco do editor.
 
-### Proposta C — Pai como aba/cabeçalho + filhos como chips
+## Fora do escopo (posso fazer depois se quiser)
 
-O pai vira um **cabeçalho de subseção** dentro do grupo (tipografia diferente, sem ícone grande), e os filhos viram **chips/pills horizontais** logo abaixo.
-
-```text
-RELACIONAR
-─────────────────────────
-INBOX
-[ Unificada ] [ Email ] [ WhatsApp ] [ Chat ]
-
-AGENDA
-[ Reuniões ] [ Calendários ] [ Booking ]
-```
-
-- O pai não é mais um item navegável — é um rótulo de família.
-- Filhos viram pílulas compactas que cabem em 1–2 linhas.
-- Ativo: pílula com fundo `primary/10` + borda; outras com `bg-muted`.
-- **Prós:** comunica "estes pertencem juntos" mais forte que indentação; ótimo para filtros/canais; visual moderno (Notion, Linear).
-- **Contras:** quebra o padrão "lista vertical" da sidebar — exige reformatar o componente; ruim se sidebar estiver colapsada (modo ícone).
-
-## Recomendação
-
-**Proposta A (submenu recolhível)** é a mais segura: resolve o problema, mantém o componente Sidebar atual (shadcn já suporta `SidebarMenuSub`), funciona no modo colapsado (ícone), e escala para todos os outros grupos com hierarquia (Reuniões, Tarefas, Campanhas).
-
-**Proposta B** é boa se quisermos zero atrito — recomendada se a maioria dos pais tem ≤4 filhos (que é o caso atual).
-
-**Proposta C** é a mais expressiva visualmente mas a mais arriscada — vale só se quiser repensar a sidebar inteira.
-
-## Próximo passo
-
-Me diga qual proposta seguir (A, B ou C). Em seguida eu:
-1. Estendo o tipo `SidebarItem` em `src/lib/menu-config.ts` para aceitar `children?: SidebarItem[]`.
-2. Reagrupo os itens afetados (Inbox + canais, Reuniões + Calendários/Agendamentos, Tarefas + Filas, Campanhas Email/WhatsApp).
-3. Atualizo `AppSidebar` para renderizar o padrão escolhido, com auto-expand quando rota filha estiver ativa e destaque "ativo" único.
+- Upload real de imagens para storage (por enquanto, imagem por URL ou base64 colada).
+- Comentários/colaboração em tempo real (TipTap Collab).
+- Exportar `.docx` da proposta (precisaria de conversor HTML→DOCX no servidor).
+- Substituir o `RichHtmlEditor` em outros lugares (notas, e-mails, comentários) — só troco em /proposals.
