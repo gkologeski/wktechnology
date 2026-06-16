@@ -188,11 +188,48 @@ export function ImportContractWizard() {
       try {
         const mammoth = await import("mammoth/mammoth.browser");
         const buf = await file.arrayBuffer();
+        // Style map para preservar mais formatação (cabeçalhos, alinhamento,
+        // citações, código) e converter imagens em data URIs para que
+        // sobrevivam à serialização do HTML no editor WYSIWYG.
+        const styleMap = [
+          "p[style-name='Title'] => h1.doc-title:fresh",
+          "p[style-name='Subtitle'] => h2.doc-subtitle:fresh",
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "p[style-name='Heading 4'] => h4:fresh",
+          "p[style-name='Heading 5'] => h5:fresh",
+          "p[style-name='Heading 6'] => h6:fresh",
+          "p[style-name='Quote'] => blockquote:fresh",
+          "p[style-name='Intense Quote'] => blockquote.intense:fresh",
+          "r[style-name='Strong'] => strong",
+          "r[style-name='Emphasis'] => em",
+          "r[style-name='Code'] => code",
+          "p[style-name='Code'] => pre:fresh",
+          "p[style-name='List Paragraph'] => p.list-paragraph:fresh",
+        ];
+        const convertImage = mammoth.images.imgElement(async (image) => {
+          const base64 = await image.read("base64");
+          return { src: `data:${image.contentType};base64,${base64}` };
+        });
         const [{ value: html }, { value: text }] = await Promise.all([
-          mammoth.convertToHtml({ arrayBuffer: buf }),
+          mammoth.convertToHtml(
+            { arrayBuffer: buf },
+            {
+              styleMap,
+              includeDefaultStyleMap: true,
+              includeEmbeddedStyleMap: true,
+              convertImage,
+              ignoreEmptyParagraphs: false,
+            },
+          ),
           mammoth.extractRawText({ arrayBuffer: buf }),
         ]);
-        setRawHtml(html);
+        // Pós-processamento: extrai alinhamento de parágrafo do document.xml
+        // original e aplica como style="text-align: …" nos elementos
+        // correspondentes (mammoth não preserva alinhamento por padrão).
+        const enriched = await applyParagraphAlignment(buf, html);
+        setRawHtml(enriched);
         setRawText(text);
         setFileName(file.name);
         const detected = detectFields(text);
