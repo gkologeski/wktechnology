@@ -580,7 +580,7 @@ function MyBugReportsPage() {
                   toast.error("Descreva com pelo menos 10 caracteres");
                   return;
                 }
-                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim() });
+                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim(), previous: reopen.previous });
               }}
               disabled={reopenMut.isPending}
             >
