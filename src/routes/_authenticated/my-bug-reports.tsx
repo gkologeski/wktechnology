@@ -31,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { BugReportImages } from "@/components/bug-report/bug-report-images";
-import { Bug, Pencil, Video } from "lucide-react";
+import { Bug, Pencil, Video, ThumbsUp, ThumbsDown, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/my-bug-reports")({
   component: MyBugReportsPage,
