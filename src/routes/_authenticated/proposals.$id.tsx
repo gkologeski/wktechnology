@@ -264,10 +264,11 @@ function ProposalEditor() {
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
               />
             ) : (
-              <RichHtmlEditor
+              <WordEditor
+                ref={editorRef}
                 value={body}
                 onChange={setBody}
-                minHeight={360}
+                minHeight={400}
                 placeholder="Escreva sua proposta… use {{deal.amount}}, {{contact.name}}, etc."
               />
             )}
