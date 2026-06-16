@@ -248,7 +248,9 @@ export function QuickCreateTicketDialog({
         .select("id")
         .single();
       if (error) throw error;
-      toast.success("Ticket criado");
+      toastCreated("Ticket criado", "Ir para o ticket", (nav) =>
+        nav({ to: "/tickets/$id", params: { id: data.id } }),
+      );
       onOpenChange(false);
       setSubject("");
       setPriority("medium");
