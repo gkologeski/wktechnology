@@ -62,6 +62,12 @@ function ProposalEditor() {
   const [body, setBody] = useState("");
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
+  const editorRef = useRef<WordEditorHandle>(null);
+
+  const insertIntoEditor = (html: string) => {
+    if (editorRef.current) editorRef.current.insertHtml(html);
+    else setBody((b) => b + html);
+  };
 
   useEffect(() => {
     if (prop) {
