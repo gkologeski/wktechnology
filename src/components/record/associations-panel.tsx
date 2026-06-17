@@ -116,6 +116,58 @@ const relCol = (entity: AssociationEntity) =>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
 
+/**
+ * Hook que adiciona o diálogo "vincular com janela de histórico" (estilo HubSpot)
+ * em torno de uma operação de associação. Após o vínculo, propaga retroativamente
+ * as FKs `related_*` nas atividades existentes nas duas pontas, dentro da janela.
+ */
+function useAssociateWithPeriod(opts: {
+  sourceKind: AssociationKind;
+  sourceId: string;
+  targetKind: AssociationKind;
+  doAssociate: (targetId: string) => Promise<void>;
+  title?: string;
+}) {
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const propagate = useServerFn(propagateAssociationHistory);
+
+  const onConfirm = async (period: AssociationPeriod) => {
+    const targetId = pendingId;
+    if (!targetId) return;
+    await opts.doAssociate(targetId);
+    try {
+      const r = await propagate({
+        data: {
+          sourceKind: opts.sourceKind,
+          sourceId: opts.sourceId,
+          targetKind: opts.targetKind,
+          targetId,
+          windowDays: periodToDays(period),
+        },
+      });
+      const total = (r?.propagatedFromSource ?? 0) + (r?.propagatedFromTarget ?? 0);
+      if (total > 0) toast.success(`${total} atividade(s) trazidas para a timeline`);
+    } catch (e) {
+      toast.error("Falha ao propagar histórico: " + (e as Error).message);
+    }
+    setPendingId(null);
+  };
+
+  const dialog = (
+    <AssociatePeriodDialog
+      open={!!pendingId}
+      onOpenChange={(o) => {
+        if (!o) setPendingId(null);
+      }}
+      title={opts.title}
+      onConfirm={onConfirm}
+    />
+  );
+
+  return { request: (id: string) => setPendingId(id), dialog };
+}
+
+
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
 function CompanyCard({
