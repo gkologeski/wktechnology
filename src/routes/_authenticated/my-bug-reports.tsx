@@ -342,7 +342,7 @@ function MyBugReportsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm whitespace-pre-wrap">{r.description}</p>
+                  <HtmlContent html={r.description} className="text-sm" />
                   {r.status === "resolved" && r.resolution_text && (
                     <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-3">
                       <div>
