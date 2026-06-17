@@ -125,7 +125,7 @@ function useAssociateWithPeriod(opts: {
   sourceKind: AssociationKind;
   sourceId: string;
   targetKind: AssociationKind;
-  doAssociate: (targetId: string) => Promise<void>;
+  doAssociate: (targetId: string) => Promise<unknown> | unknown;
   title?: string;
 }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
