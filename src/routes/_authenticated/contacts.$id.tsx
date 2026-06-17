@@ -127,51 +127,6 @@ function ContactDetail() {
       </div>
 
       <div className="flex items-center gap-2">
-        {contact.email && (
-          <SendEmailDialog
-            defaultTo={contact.email}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button variant="outline" className="rounded-xl gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" /> Email
-              </Button>
-            }
-          />
-        )}
-        {phone && (
-          <CallDialer
-            defaultTo={phone}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button variant="outline" className="rounded-xl gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" /> Ligar
-              </Button>
-            }
-          />
-        )}
-        {phone && (
-          <SendWhatsAppDialog
-            defaultTo={phone}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button className="rounded-xl gap-2 shadow-md shadow-primary/20">
-                <MessageCircle className="h-4 w-4" /> WhatsApp
-              </Button>
-            }
-          />
-        )}
-        <StartVideoButton
-          entity="contact"
-          entityId={contact.id}
-          defaultTitle={`Reunião com ${fullName}`}
-          variant="outline"
-          size="default"
-          className="rounded-xl"
-        />
-        <div className="h-8 w-px bg-border mx-1" />
         <Button
           variant="ghost"
           size="icon"
