@@ -6,7 +6,7 @@ import { syncAccount, type SyncResult } from "@/lib/gmail-sync.server";
 import type { EmailAccountRow } from "@/lib/gmail.server";
 
 const ACCOUNT_COLUMNS =
-  "id, owner_id, email, access_token, refresh_token, expires_at, status, history_id";
+  "id, owner_id, email, access_token, refresh_token, expires_at, status, history_id, last_error";
 
 // Manual "sync now" trigger from /settings/email.
 export const syncMyEmailAccounts = createServerFn({ method: "POST" })
