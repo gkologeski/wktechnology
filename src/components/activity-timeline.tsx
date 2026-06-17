@@ -10,7 +10,7 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { signMeetingRecording, generateMeetingSummary } from "@/lib/meetings.functions";
+import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
 import {
   StickyNote,
   ListTodo,
