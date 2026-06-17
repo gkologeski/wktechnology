@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { toast } from "sonner";
 import { getVoiceAccessToken, logCallActivity } from "@/lib/twilio-voice.functions";
 import type { Device as DeviceType, Call as CallType } from "@twilio/voice-sdk";
