@@ -58,12 +58,10 @@ export function BugReportResolutionDialog({
         </DialogHeader>
         <div className="space-y-1.5 py-2">
           <Label htmlFor="br-resolution-text">Texto de resolução *</Label>
-          <Textarea
-            id="br-resolution-text"
-            rows={5}
-            autoFocus
+          <RichHtmlEditor
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={setText}
+            minHeight={140}
             placeholder="Ex.: Corrigimos o erro X e validamos com o usuário."
           />
         </div>
@@ -71,7 +69,7 @@ export function BugReportResolutionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={confirm} disabled={saving || !text.trim()}>
+          <Button onClick={confirm} disabled={saving || !htmlToPlain(text).trim()}>
             {saving ? "Salvando…" : "Marcar como resolvido"}
           </Button>
         </DialogFooter>
