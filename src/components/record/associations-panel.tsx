@@ -218,6 +218,14 @@ function CompanyCard({
     setCurrentId(id);
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "company",
+    doAssociate: associate,
+    title: "Vincular empresa",
+  });
+
   const unlink = async () => {
     const { error } = await sb
       .from(tableFor(entity))
