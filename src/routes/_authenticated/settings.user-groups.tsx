@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -257,11 +257,9 @@ function UserGroupsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="g-desc">Descrição (opcional)</Label>
-              <Textarea
-                id="g-desc"
-                rows={2}
+              <RichHtmlEditor
                 value={draft.description}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, description: html })}
               />
             </div>
             <div className="space-y-1.5">

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -355,7 +355,7 @@ function DashboardsPage() {
             </div>
             <div>
               <Label>Descrição</Label>
-              <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={2} />
+              <RichHtmlEditor value={newDesc} onChange={setNewDesc} />
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -388,7 +388,7 @@ function DashboardsPage() {
             </div>
             <div>
               <Label>Descrição</Label>
-              <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={2} />
+              <RichHtmlEditor value={editDesc} onChange={setEditDesc} />
             </div>
           </div>
           <DialogFooter>
