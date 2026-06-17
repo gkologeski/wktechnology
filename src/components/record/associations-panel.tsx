@@ -448,6 +448,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         onOpenChange={setCreateOpen}
         onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
@@ -635,6 +636,7 @@ function DealsCard({
         defaultContactId={entity === "contact" ? entityId : null}
         onCreated={() => refresh()}
       />
+      {dialog}
     </>
   );
 }
@@ -767,6 +769,7 @@ function TicketsCard({
         defaultDealId={entity === "deal" ? entityId : null}
         onCreated={() => refresh()}
       />
+      {dialog}
     </>
   );
 }
@@ -884,6 +887,7 @@ function SingleContactCard({
         onOpenChange={setCreateOpen}
         onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
@@ -1000,6 +1004,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
         onOpenChange={setCreateOpen}
         onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
