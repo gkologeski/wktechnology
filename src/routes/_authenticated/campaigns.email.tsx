@@ -267,7 +267,15 @@ function EmailBroadcastsPage() {
               </div>
               <div>
                 <Label>Corpo HTML</Label>
-                <Textarea rows={6} value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} />
+                <RichHtmlEditor
+                  value={bodyHtml}
+                  onChange={(html) => {
+                    setBodyHtml(html);
+                    if (!bodyText.trim()) setBodyText(htmlToPlain(html));
+                  }}
+                  minHeight={220}
+                  placeholder="Conteúdo do email…"
+                />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>
