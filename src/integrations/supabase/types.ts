@@ -1276,7 +1276,12 @@ export type Database = {
           related_contact_id: string | null
           start_at: string | null
           status: string | null
+          summary_error: string | null
+          summary_generated_at: string | null
+          summary_status: string | null
+          summary_text: string | null
           title: string | null
+          transcript: string | null
           updated_at: string
           workspace_id: string
         }
@@ -1306,7 +1311,12 @@ export type Database = {
           related_contact_id?: string | null
           start_at?: string | null
           status?: string | null
+          summary_error?: string | null
+          summary_generated_at?: string | null
+          summary_status?: string | null
+          summary_text?: string | null
           title?: string | null
+          transcript?: string | null
           updated_at?: string
           workspace_id?: string
         }
@@ -1336,7 +1346,12 @@ export type Database = {
           related_contact_id?: string | null
           start_at?: string | null
           status?: string | null
+          summary_error?: string | null
+          summary_generated_at?: string | null
+          summary_status?: string | null
+          summary_text?: string | null
           title?: string | null
+          transcript?: string | null
           updated_at?: string
           workspace_id?: string
         }
