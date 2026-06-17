@@ -578,18 +578,27 @@ export function ActivityTimeline({
 
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
+  const summarizeCalEventFn = useServerFn(summarizeCalendarEventRecording);
   const onSummarizeMeeting = async (activityId: string) => {
     const a = items.find((i) => i.id === activityId);
     const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
     const meetingId = typeof ext.meeting_id === "string" ? (ext.meeting_id as string) : null;
-    if (!meetingId) {
-      toast.error("Esta reunião não tem uma sala vinculada para resumir.");
-      return;
-    }
+    const calendarEventId = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
     try {
-      toast.message("Gerando resumo com IA…");
-      await summarizeMeetingFn({ data: { meeting_id: meetingId } });
-      toast.success("Resumo gerado. Veja em Reuniões.");
+      if (meetingId) {
+        toast.message("Gerando resumo com IA…");
+        await summarizeMeetingFn({ data: { meeting_id: meetingId } });
+        toast.success("Resumo gerado. Veja em Reuniões.");
+        return;
+      }
+      if (calendarEventId) {
+        toast.message("Baixando gravação do Drive e gerando resumo com IA…");
+        await summarizeCalEventFn({ data: { calendar_event_id: calendarEventId } });
+        toast.success("Resumo gerado a partir da gravação do Drive.");
+        void load();
+        return;
+      }
+      toast.error("Esta reunião não tem gravação vinculada para resumir.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao resumir reunião");
     }
