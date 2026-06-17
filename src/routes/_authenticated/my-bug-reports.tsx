@@ -386,7 +386,7 @@ function MyBugReportsPage() {
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         Você reabriu este chamado informando:
                       </p>
-                      <p className="whitespace-pre-wrap">{r.user_resolution_feedback}</p>
+                      <HtmlContent html={r.user_resolution_feedback} />
                     </div>
                   )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
