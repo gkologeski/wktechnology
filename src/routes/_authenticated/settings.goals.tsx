@@ -371,10 +371,10 @@ function GoalsPage() {
             </div>
             <div>
               <Label>Observações</Label>
-              <Textarea
-                rows={2}
+              <RichHtmlEditor
                 value={form.notes ?? ""}
-                onChange={(e) => setForm({ ...form, notes: e.target.value || null })}
+                onChange={(html) => setForm({ ...form, notes: html || null })}
+                minHeight={120}
               />
             </div>
             <p className="text-xs text-muted-foreground">
