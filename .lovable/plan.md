@@ -1,54 +1,62 @@
 ## Objetivo
 
-Em `/proposals/$id`, hoje o corpo é editado com um `RichHtmlEditor` minimalista (negrito, itálico, lista, link, código). Vou substituir por um editor WYSIWYG completo, parecido com o Microsoft Word, mantendo o restante da página intacto (variáveis, cláusulas, aprovações, envio, selo de imutabilidade, pré‑visualização).
+Quando o usuário cria uma associação entre duas entidades (Contato, Empresa, Deal, Lead, Ticket), exibir um seletor de período (**30 / 60 / 90 / 180 dias / Desde sempre**) e propagar retroativamente as atividades da entidade vinculada dentro daquela janela, para que apareçam na timeline da outra entidade — igual ao HubSpot.
 
-## Stack escolhida
+## Comportamento
 
-**TipTap v2** (headless, baseado em ProseMirror) — padrão moderno de mercado para editores WYSIWYG em React. Vantagens: extensível, sanitização confiável, ótima UX, suporte nativo a tabelas/imagens/colaboração futura.
+- Seletor aparece em **toda** UI de associação: Contato↔Deal, Contato↔Empresa, Empresa↔Deal, Lead↔(Contato/Empresa/Deal), Ticket↔(Contato/Empresa/Deal).
+- Opções: `30d`, `60d`, `90d`, `180d`, `Desde sempre`. Padrão: **Desde sempre** (igual HubSpot).
+- Aplica a **todos os tipos** de atividade (`note, task, call, email, meeting, whatsapp, sms, postal_mail, linkedin_message`).
+- Ao **desvincular**, atividades retro-propagadas **permanecem** (HubSpot-like) — sem rollback.
 
-Pacotes a instalar:
-- `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`
-- `@tiptap/extension-underline`, `@tiptap/extension-link`, `@tiptap/extension-text-align`
-- `@tiptap/extension-text-style`, `@tiptap/extension-color`, `@tiptap/extension-highlight`
-- `@tiptap/extension-font-family`, `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-cell`, `@tiptap/extension-table-header`
-- `@tiptap/extension-image`, `@tiptap/extension-task-list`, `@tiptap/extension-task-item`, `@tiptap/extension-placeholder`, `@tiptap/extension-subscript`, `@tiptap/extension-superscript`
+## Como funciona tecnicamente
 
-## O que será feito
+O modelo atual já usa FKs diretas em `activities` (`related_contact_id`, `related_company_id`, `related_deal_id`, `related_lead_id`, `related_ticket_id`) — não há tabela de join. "Trazer histórico" = preencher essas FKs nas atividades existentes da entidade de origem que ainda não as têm.
 
-1. **Novo componente** `src/components/word-editor.tsx`:
-   - Editor TipTap com toolbar estilo Word organizada em grupos:
-     - Família de fonte + tamanho (presets) + cor de texto + cor de destaque
-     - Negrito / Itálico / Sublinhado / Tachado / Sub / Sobrescrito
-     - Títulos H1–H4 + parágrafo + bloco de citação + código
-     - Listas: marcadores, numerada, tarefas, recuar/diminuir recuo
-     - Alinhamento: esquerda / centro / direita / justificar
-     - Inserir: link, imagem (por URL), tabela (com adicionar/remover linha/coluna), linha horizontal, quebra de página
-     - Desfazer / Refazer / Limpar formatação
-   - Saída em HTML sanitizada com `DOMPurify` (reaproveitando `sanitizeHtml` existente, expandindo a allowlist para incluir `table`, `thead`, `tbody`, `tr`, `th`, `td`, `img`, `hr`, `mark`, `sub`, `sup`, atributos `colspan`/`rowspan`/`align`/`src`/`alt`/`width`).
-   - Suporte a inserção de texto externo via prop `insertHtml` (usado pelas variáveis `{{...}}` e pela biblioteca de cláusulas).
-   - Estilo CSS dedicado (paleta semântica do design system) — sem cores cruas.
+### 1. Server function: `propagateHistoryOnLink`
 
-2. **Atualizar `src/routes/_authenticated/proposals.$id.tsx`**:
-   - Trocar `RichHtmlEditor` por `WordEditor` no corpo da proposta.
-   - Botões de variáveis e cláusulas passam a chamar `editorRef.current?.insertHtml(...)` em vez de concatenar string em `setBody`.
-   - Manter `sanitizeHtml` na renderização travada (`locked`) e na pré‑visualização.
+Novo arquivo `src/lib/associations.functions.ts`:
 
-3. **Atualizar `src/components/rich-html-editor.tsx`**:
-   - Apenas estender `SANITIZE_CONFIG` para aceitar as tags/atributos novos (tabela, imagem, hr, mark, sub, sup, colspan, rowspan, align, src, alt, width, height, style restrita).
-   - Não altero o `RichHtmlEditor` em si — outros lugares continuam usando.
+```ts
+propagateAssociationHistory({
+  sourceEntity: { kind: 'contact'|'company'|'deal'|'lead'|'ticket', id: string },
+  targetEntity: { kind: ..., id: string },
+  windowDays: number | null,   // null = desde sempre
+})
+```
 
-4. **Sem mudanças** em rotas, server functions, schema do banco ou na coluna `body` (continua HTML string).
+- `requireSupabaseAuth`, RLS como usuário.
+- Resolve a coluna alvo (`related_<targetKind>_id`).
+- `UPDATE activities SET related_<target>_id = $targetId WHERE related_<source>_id = $sourceId AND related_<target>_id IS NULL AND ($window IS NULL OR coalesce(activity_date, created_at) >= now() - interval '$window days')`.
+- Bidirecional: roda nos dois sentidos (atividades do contato ganham `related_deal_id`, atividades do deal ganham `related_contact_id`) — assim a timeline de ambos os lados é coerente.
+- Retorna `{ propagatedFromSource, propagatedFromTarget }` para feedback ("23 atividades vinculadas").
 
-## Detalhes técnicos
+### 2. Componente compartilhado `<AssociationPeriodSelect />`
 
-- SSR: TipTap é client-only; usarei `useEditor` dentro do componente, que já é renderizado dentro de um route component cliente — sem `useEffect` para hidratação extra. Caso surja qualquer aviso de mismatch, envolvo o editor em um `Suspense`/render condicional após `useState(true)` no `useEffect`.
-- Acessibilidade: toolbar com `aria-label`, atalhos padrão (Ctrl+B/I/U, Ctrl+Z, Ctrl+Shift+7/8 etc. já vêm do StarterKit).
-- Sanitização defensiva: sempre passar `editor.getHTML()` por `sanitizeHtml` antes de salvar.
-- Tema: o conteúdo herda o CSS prose já existente; adiciono uma folha de estilos local para tabelas (bordas) e foco do editor.
+`src/components/associations/association-period-select.tsx` — `RadioGroup` com as 5 opções, padrão "Desde sempre". Reutilizado em todos os diálogos.
 
-## Fora do escopo (posso fazer depois se quiser)
+### 3. Pontos de integração (UI)
 
-- Upload real de imagens para storage (por enquanto, imagem por URL ou base64 colada).
-- Comentários/colaboração em tempo real (TipTap Collab).
-- Exportar `.docx` da proposta (precisaria de conversor HTML→DOCX no servidor).
-- Substituir o `RichHtmlEditor` em outros lugares (notas, e-mails, comentários) — só troco em /proposals.
+Em cada diálogo/comando de vínculo, adicionar o seletor e chamar `propagateAssociationHistory` após o insert/update do vínculo:
+
+- **Contato ↔ Deal**: diálogo "Adicionar contato" no Deal (insert em `deal_contacts`) e ao setar `deals.primary_contact_id`.
+- **Contato ↔ Empresa**: ao setar `contacts.company_id` (form de contato + ação rápida).
+- **Empresa ↔ Deal**: ao setar `deals.company_id` no form/sidebar do Deal.
+- **Lead ↔ \***: ao preencher `leads.related_*_id`.
+- **Ticket ↔ \***: ao preencher `tickets.related_contact_id / related_company_id / related_deal_id`.
+
+Toast de confirmação: "X atividades trazidas para a timeline".
+
+### 4. Auto-link já existente (`resolveAutoLinks`)
+
+`activity-timeline.tsx` já propaga FKs em **novas** atividades (Deal → Company/Contact primário). Mantém-se inalterado. O novo fluxo cobre **atividades passadas**, que `resolveAutoLinks` não toca.
+
+### 5. Sem migration
+
+Nenhuma mudança de schema. Apenas updates em `activities` via RLS. O seletor é estado local do diálogo — não persistimos a escolha.
+
+## Fora de escopo
+
+- Não cria tabela de join nem rastreia "origem" da propagação.
+- Não há undo / rollback ao desvincular (decisão confirmada).
+- Não toca em `calendar_events` (Google Calendar resolve guest→contact por outro caminho).
