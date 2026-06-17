@@ -142,10 +142,10 @@ function PlayQueue() {
 
             <div>
               <label className="text-sm font-medium">Anotações</label>
-              <Textarea
-                rows={4}
+              <RichHtmlEditor
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={setNotes}
+                minHeight={140}
                 placeholder="O que aconteceu nesse contato?"
               />
             </div>
