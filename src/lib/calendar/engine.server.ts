@@ -398,6 +398,12 @@ export async function syncCalendarAccount(
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     const push = await pushPendingMeetings(account as CalendarAccountRow);
+    // Best-effort: fetch recent Meet recordings from Drive (silently skips if no drive scope)
+    try {
+      await syncPastRecordings(account as CalendarAccountRow);
+    } catch (e) {
+      console.error("[recordings] sync error", e);
+    }
     return {
       imported: pull.imported,
       deleted: pull.deleted,
