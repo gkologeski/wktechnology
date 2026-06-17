@@ -47,6 +47,7 @@ import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
+import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { EmailEngagementCard } from "@/components/email/email-engagement-card";
 
