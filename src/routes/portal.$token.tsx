@@ -203,7 +203,7 @@ function PortalPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {t.description && <p className="text-sm whitespace-pre-wrap">{t.description}</p>}
+                  {t.description && <HtmlContent html={t.description} className="text-sm" />}
                   <p className="text-xs text-muted-foreground">
                     Aberto em {formatDateTime(t.created_at)}
                     {t.resolved_at && ` • Resolvido em ${formatDateTime(t.resolved_at)}`}
