@@ -76,7 +76,26 @@ type GCalEvent = {
     conferenceId?: string;
     entryPoints?: { entryPointType?: string; uri?: string }[];
   };
+  attachments?: { fileUrl?: string; title?: string; mimeType?: string; fileId?: string }[];
 };
+
+function pickRecordingFromAttachments(
+  attachments: GCalEvent["attachments"],
+): { file_id: string; url: string; mime_type: string } | null {
+  if (!attachments) return null;
+  // Meet drops the recording as a video/mp4 attachment whose title ends with "- Recording"
+  const rec = attachments.find(
+    (a) =>
+      a.fileId &&
+      (a.mimeType === "video/mp4" || /recording/i.test(a.title ?? "")),
+  );
+  if (!rec?.fileId) return null;
+  return {
+    file_id: rec.fileId,
+    url: rec.fileUrl ?? `https://drive.google.com/file/d/${rec.fileId}/view`,
+    mime_type: rec.mimeType ?? "video/mp4",
+  };
+}
 
 // Free email domains that should never be used to auto-link a contact
 const FREE_EMAIL_DOMAINS = new Set([
@@ -277,27 +296,35 @@ async function pullGoogleEvents(
         ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
         null;
       const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
-      const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert(
-        {
-          owner_id: account.owner_id,
-          calendar_account_id: account.id,
-          provider_event_id: ev.id,
-          title: ev.summary ?? "(sem título)",
-          description: ev.description ?? null,
-          location: ev.location ?? null,
-          start_at: startAt,
-          end_at: endAt,
-          all_day: allDay,
-          attendees: ev.attendees ?? [],
-          html_link: ev.htmlLink ?? null,
-          hangout_link: hangoutLink,
-          conference_id: conferenceId,
-          related_contact_id: relatedContactId,
-          status: ev.status ?? "confirmed",
-          last_synced_at: new Date().toISOString(),
-        },
-        { onConflict: "calendar_account_id,provider_event_id" },
-      );
+      const attachRec = pickRecordingFromAttachments(ev.attachments);
+      const upsertRow: Record<string, unknown> = {
+        owner_id: account.owner_id,
+        calendar_account_id: account.id,
+        provider_event_id: ev.id,
+        title: ev.summary ?? "(sem título)",
+        description: ev.description ?? null,
+        location: ev.location ?? null,
+        start_at: startAt,
+        end_at: endAt,
+        all_day: allDay,
+        attendees: ev.attendees ?? [],
+        html_link: ev.htmlLink ?? null,
+        hangout_link: hangoutLink,
+        conference_id: conferenceId,
+        related_contact_id: relatedContactId,
+        status: ev.status ?? "confirmed",
+        last_synced_at: new Date().toISOString(),
+      };
+      if (attachRec) {
+        upsertRow.recording_drive_file_id = attachRec.file_id;
+        upsertRow.recording_url = attachRec.url;
+        upsertRow.recording_mime_type = attachRec.mime_type;
+        upsertRow.recording_status = "available";
+        upsertRow.recording_synced_at = new Date().toISOString();
+      }
+      const { error: upErr } = await supabaseAdmin
+        .from("calendar_events")
+        .upsert(upsertRow as never, { onConflict: "calendar_account_id,provider_event_id" });
       if (!upErr) imported++;
     }
 
