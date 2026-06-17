@@ -965,9 +965,18 @@ export function ActivityTimeline({
                       attendees?: Array<{ email: string; name?: string; contact_id?: string }>;
                       end_at?: string;
                       meet_link?: string;
+                      calendar_html_link?: string;
+                      recording_url?: string;
                     };
+                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
                     const loc = (a as unknown as { meeting_location?: string }).meeting_location;
-                    const link = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
+                    // Prefer Google Calendar event link (htmlLink). Fall back to meet/Jitsi link.
+                    const calendarLink =
+                      meta.calendar_html_link ||
+                      (typeof ext.gcal_html_link === "string" ? (ext.gcal_html_link as string) : null);
+                    const joinLink = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
+                    const accessLink = calendarLink || joinLink;
+                    const recordingUrl = meta.recording_url || (typeof ext.recording_url === "string" ? (ext.recording_url as string) : null);
                     const startD = a.due_date ? new Date(a.due_date) : null;
                     const endD = meta.end_at ? new Date(meta.end_at) : null;
                     const sameDay =
@@ -1003,35 +1012,21 @@ export function ActivityTimeline({
                             </div>
                           </div>
                         )}
-                        {(link || loc) && (
+                        {(joinLink || loc) && (
                           <div className="flex items-start gap-2">
                             <LinkIcon className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
                             <div className="min-w-0 flex-1">
-                              {link ? (
+                              {joinLink ? (
                                 <a
-                                  href={link}
+                                  href={joinLink}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-primary hover:underline break-all"
                                 >
-                                  {link}
+                                  {joinLink}
                                 </a>
                               ) : (
                                 <span className="break-all">{loc}</span>
-                              )}
-                              {link && (
-                                <div className="mt-1">
-                                  <Button
-                                    asChild
-                                    size="sm"
-                                    variant="default"
-                                    className="h-7 text-xs"
-                                  >
-                                    <a href={link} target="_blank" rel="noreferrer">
-                                      Entrar na reunião
-                                    </a>
-                                  </Button>
-                                </div>
                               )}
                             </div>
                           </div>
@@ -1051,6 +1046,44 @@ export function ActivityTimeline({
                                 </Badge>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {(accessLink || recordingUrl) && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {accessLink && (
+                              <Button
+                                asChild
+                                size="sm"
+                                variant="default"
+                                className="h-7 text-xs"
+                              >
+                                <a href={accessLink} target="_blank" rel="noreferrer">
+                                  Acessar reunião
+                                </a>
+                              </Button>
+                            )}
+                            {recordingUrl && (
+                              <>
+                                <Button
+                                  asChild
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                >
+                                  <a href={recordingUrl} target="_blank" rel="noreferrer">
+                                    Ver gravação
+                                  </a>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 text-xs"
+                                  onClick={() => onSummarizeMeeting?.(a.id)}
+                                >
+                                  Resumir reunião
+                                </Button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
