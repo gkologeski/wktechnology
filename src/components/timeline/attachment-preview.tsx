@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, FileText, ExternalLink } from "lucide-react";
+import { Download, FileText, ExternalLink, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type TimelineAttachment = {
@@ -15,13 +15,21 @@ type Props = {
   signRecording?: (path: string) => Promise<string>;
 };
 
-function kindOf(att: TimelineAttachment): "image" | "audio" | "video" | "pdf" | "other" {
+type Kind = "image" | "audio" | "video" | "pdf" | "office" | "text" | "other";
+
+function kindOf(att: TimelineAttachment): Kind {
   const t = (att.type || "").toLowerCase();
   const n = (att.name || "").toLowerCase();
   if (t.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(n)) return "image";
   if (t.startsWith("audio/") || /\.(mp3|wav|m4a|ogg|oga|aac|flac)$/i.test(n)) return "audio";
   if (t.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogv)$/i.test(n)) return "video";
   if (t === "application/pdf" || /\.pdf$/i.test(n)) return "pdf";
+  if (/\.(docx?|xlsx?|pptx?|odt|ods|odp|rtf)$/i.test(n)) return "office";
+  if (
+    t.startsWith("text/") ||
+    /\.(txt|md|csv|tsv|log|json|xml|yaml|yml|html?|css|js|ts|tsx|jsx|sql|sh)$/i.test(n)
+  )
+    return "text";
   return "other";
 }
 
@@ -34,7 +42,9 @@ function formatSize(bytes: number) {
 
 export function AttachmentPreview({ attachment, signRecording }: Props) {
   const [url, setUrl] = useState<string | null>(null);
+  const [textPreview, setTextPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const kind = kindOf(attachment);
   const bucket = attachment.bucket || "notes-attachments";
 
@@ -61,6 +71,26 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
     };
   }, [attachment.path, bucket, signRecording]);
 
+  // Pré-visualização de texto: baixa e exibe o conteúdo inline (limitado).
+  useEffect(() => {
+    if (!url || kind !== "text") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(url);
+        const txt = await r.text();
+        if (!cancelled) setTextPreview(txt.slice(0, 20000));
+      } catch {
+        /* mantém botão de download como fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url, kind]);
+
+  const canExpand = kind === "pdf" || kind === "office" || kind === "image" || kind === "text";
+
   const header = (
     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border/60 bg-muted/30">
       <div className="flex items-center gap-2 min-w-0 text-xs">
@@ -70,17 +100,30 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
           <span className="text-muted-foreground">· {formatSize(attachment.size)}</span>
         )}
       </div>
-      {url && (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          download={attachment.name}
-          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          <Download className="h-3 w-3" /> Baixar
-        </a>
-      )}
+      <div className="flex items-center gap-2">
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            aria-label={expanded ? "Reduzir" : "Expandir"}
+          >
+            {expanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            {expanded ? "Reduzir" : "Expandir"}
+          </button>
+        )}
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            download={attachment.name}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <Download className="h-3 w-3" /> Baixar
+          </a>
+        )}
+      </div>
     </div>
   );
 
@@ -100,16 +143,19 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
     );
   }
 
+  const wrapMax = expanded ? "max-w-3xl" : "max-w-md";
+  const frameH = expanded ? "h-[80vh]" : "h-96";
+
   if (kind === "image") {
     return (
-      <div className="rounded-lg border border-border/60 overflow-hidden bg-card max-w-md">
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <a href={url} target="_blank" rel="noreferrer">
           <img
             src={url}
             alt={attachment.name}
             loading="lazy"
-            className="block max-h-80 w-full object-contain bg-muted/20"
+            className={`block w-full object-contain bg-muted/20 ${expanded ? "max-h-[80vh]" : "max-h-80"}`}
           />
         </a>
       </div>
@@ -142,13 +188,42 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
 
   if (kind === "pdf") {
     return (
-      <div className="rounded-lg border border-border/60 overflow-hidden bg-card max-w-md">
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <iframe
-          src={url}
+          src={`${url}#toolbar=1&navpanes=0`}
           title={attachment.name}
-          className="block w-full h-80 bg-muted/20"
+          className={`block w-full bg-muted/20 ${frameH}`}
         />
+      </div>
+    );
+  }
+
+  if (kind === "office") {
+    // Visualizador embedado do Office Online (renderiza .docx/.xlsx/.pptx).
+    // Requer URL pública acessível — signed URL do Supabase atende.
+    const officeSrc = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+    return (
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
+        {header}
+        <iframe
+          src={officeSrc}
+          title={attachment.name}
+          className={`block w-full bg-muted/20 ${frameH}`}
+        />
+      </div>
+    );
+  }
+
+  if (kind === "text") {
+    return (
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
+        {header}
+        <pre
+          className={`m-0 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words overflow-auto bg-muted/10 ${expanded ? "max-h-[80vh]" : "max-h-80"}`}
+        >
+          {textPreview ?? "Carregando…"}
+        </pre>
       </div>
     );
   }
