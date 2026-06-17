@@ -148,8 +148,11 @@ async function listHistoryMessageIds(
       pageToken = j.nextPageToken;
     } catch (e) {
       const status = (e as { status?: number }).status;
-      if (status === 404 || status === 410) {
-        // history expired — caller should fall back to a fresh seed
+      const msg = (e as Error).message || "";
+      // 404/410 = histórico apagado; 400 com failedPrecondition = startHistoryId
+      // fora da janela de retenção (~7 dias) ou inválido. Em ambos os casos
+      // o caller faz fallback para um seed fresco via /profile + /messages.
+      if (status === 404 || status === 410 || (status === 400 && /failedPrecondition/i.test(msg))) {
         return { messageIds: [], newHistoryId: null, expired: true };
       }
       throw e;
