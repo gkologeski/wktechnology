@@ -304,11 +304,10 @@ export function CallDialer({
             </div>
             <div>
               <Label htmlFor="call-notes">Notas</Label>
-              <Textarea
-                id="call-notes"
+              <RichHtmlEditor
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
+                onChange={setNotes}
+                minHeight={140}
                 placeholder="Resumo da conversa…"
               />
             </div>
