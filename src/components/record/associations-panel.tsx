@@ -357,6 +357,14 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "contact",
+    doAssociate: associate,
+    title: "Vincular contato",
+  });
+
   const unlink = async (contactId: string) => {
     if (entity === "company") {
       const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
