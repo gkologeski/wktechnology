@@ -42,7 +42,9 @@ function formatSize(bytes: number) {
 
 export function AttachmentPreview({ attachment, signRecording }: Props) {
   const [url, setUrl] = useState<string | null>(null);
+  const [textPreview, setTextPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const kind = kindOf(attachment);
   const bucket = attachment.bucket || "notes-attachments";
 
