@@ -1,62 +1,68 @@
-## Objetivo
+# Conversão para WYSIWYG (RichHtmlEditor) — todos os 36 itens
 
-Quando o usuário cria uma associação entre duas entidades (Contato, Empresa, Deal, Lead, Ticket), exibir um seletor de período (**30 / 60 / 90 / 180 dias / Desde sempre**) e propagar retroativamente as atividades da entidade vinculada dentro daquela janela, para que apareçam na timeline da outra entidade — igual ao HubSpot.
+Vamos padronizar todos os textareas de redação listados anteriormente para o mesmo `RichHtmlEditor` já usado em Notas, Propostas e Timeline. Os dados continuam salvos no mesmo campo (em HTML), e a listagem usa `htmlToPlain()` para preview, como já fazemos em Notas.
 
-## Comportamento
+Como o escopo é grande (36 telas), proponho executar em **4 lotes** para manter qualidade, revisar a cada lote e evitar regressões.
 
-- Seletor aparece em **toda** UI de associação: Contato↔Deal, Contato↔Empresa, Empresa↔Deal, Lead↔(Contato/Empresa/Deal), Ticket↔(Contato/Empresa/Deal).
-- Opções: `30d`, `60d`, `90d`, `180d`, `Desde sempre`. Padrão: **Desde sempre** (igual HubSpot).
-- Aplica a **todos os tipos** de atividade (`note, task, call, email, meeting, whatsapp, sms, postal_mail, linkedin_message`).
-- Ao **desvincular**, atividades retro-propagadas **permanecem** (HubSpot-like) — sem rollback.
+## Padrão técnico aplicado em todos os itens
 
-## Como funciona tecnicamente
+- Substituir `<Textarea>` por `<RichHtmlEditor value={html} onChange={setHtml} />`.
+- Persistência: continua no mesmo campo (string HTML).
+- Exibição em listas/cards: `htmlToPlain(value).slice(0,N)`.
+- Envio de e-mail: o `body_html` já é HTML — sem migração de dados.
+- Em telas que usam `EntityList`/`CrudSettings`, trocar `type: "text"` por `type: "html"` (já suportado).
+- Tokens/variáveis (`{{first_name}}`, etc.) continuam funcionando — o editor permite digitar texto livre.
 
-O modelo atual já usa FKs diretas em `activities` (`related_contact_id`, `related_company_id`, `related_deal_id`, `related_lead_id`, `related_ticket_id`) — não há tabela de join. "Trazer histórico" = preencher essas FKs nas atividades existentes da entidade de origem que ainda não as têm.
+## Lote 1 — Comunicação (alto impacto)
 
-### 1. Server function: `propagateHistoryOnLink`
+1. E-mail Compor/Responder (`send-email-dialog.tsx`)
+2. Templates de e-mail (`settings.email-templates.tsx`)
+3. Sequências — passo de e-mail (`sequence-builder.tsx`)
+4. Campanhas E-mail (`campaigns.email.tsx`)
+5. Inbox — composição de resposta (já cobre via SendEmailDialog do item 1)
 
-Novo arquivo `src/lib/associations.functions.ts`:
+## Lote 2 — Suporte/Atendimento
 
-```ts
-propagateAssociationHistory({
-  sourceEntity: { kind: 'contact'|'company'|'deal'|'lead'|'ticket', id: string },
-  targetEntity: { kind: ..., id: string },
-  windowDays: number | null,   // null = desde sempre
-})
-```
+6. Tickets — descrição e respostas (`tickets.tsx`, `tickets.$id.tsx`)
+7. Abrir chamado interno (`bug-report-dialog.tsx`)
+8. Resolver chamado (`resolution-dialog.tsx`)
+9. Meus chamados — comentários (`my-bug-reports.tsx`)
+10. Macros (`settings.macros.tsx`)
+11. Base de Conhecimento (`settings.kb.tsx`)
 
-- `requireSupabaseAuth`, RLS como usuário.
-- Resolve a coluna alvo (`related_<targetKind>_id`).
-- `UPDATE activities SET related_<target>_id = $targetId WHERE related_<source>_id = $sourceId AND related_<target>_id IS NULL AND ($window IS NULL OR coalesce(activity_date, created_at) >= now() - interval '$window days')`.
-- Bidirecional: roda nos dois sentidos (atividades do contato ganham `related_deal_id`, atividades do deal ganham `related_contact_id`) — assim a timeline de ambos os lados é coerente.
-- Retorna `{ propagatedFromSource, propagatedFromTarget }` para feedback ("23 atividades vinculadas").
+## Lote 3 — CRM/Vendas
 
-### 2. Componente compartilhado `<AssociationPeriodSelect />`
+12. Detalhes do Negócio — descrição (`deal-detail-drawer.tsx`)
+13. Cotações — observações (`deal-quotes.tsx`)
+14. Converter lead em negócio (`create-deal-from-lead-dialog.tsx`)
+15. Atividades em lote (`bulk-create-activity-dialog.tsx`)
+16. Reuniões — agenda/notas (`meeting-dialog.tsx`)
+17. Templates de cotação/proposta (`template-editor.tsx`)
+18. Scripts de prospecção (`settings.prospecting-scripts.tsx`)
+19. Campanha de prospecção (`prospecting.campaigns.$id.tsx`)
+20. Construtor de listas — descrição (`list-builder.tsx`)
+21. Fila de tarefas — notas (`tasks.queues.$queueId.play.tsx`)
+22. Discador — notas pós-ligação (`call-dialer.tsx`)
 
-`src/components/associations/association-period-select.tsx` — `RadioGroup` com as 5 opções, padrão "Desde sempre". Reutilizado em todos os diálogos.
+## Lote 4 — Portais e Configurações de conteúdo
 
-### 3. Pontos de integração (UI)
+23. Portal do cliente — mensagens (`portal.$token.tsx`)
+24. Booking — descrição (`book.$slug.tsx`)
+25. Configurações de Booking (`settings.booking.tsx`)
+26. Formulários — descrições/agradecimento (`settings.forms.tsx`)
+27. Pesquisas — perguntas long text
+28. Produtos — descrição (`settings.products.tsx`)
+29. Metas — descrição (`settings.goals.tsx`)
+30. Recorrências — observação (`settings.recurring.tsx`)
+31. Grupos de usuários — descrição (`settings.user-groups.tsx`)
+32. Papéis/Roles — descrição (`settings.roles.*`)
+33. Propriedades customizadas — help text (`settings.custom-properties.tsx`)
+34. Dashboards — descrição (`dashboards.tsx`)
+35. Relatórios — descrição (`reports.tsx`)
+36. Branding — textos longos (`branding/controls-panel.tsx`)
 
-Em cada diálogo/comando de vínculo, adicionar o seletor e chamar `propagateAssociationHistory` após o insert/update do vínculo:
+## Como vou proceder
 
-- **Contato ↔ Deal**: diálogo "Adicionar contato" no Deal (insert em `deal_contacts`) e ao setar `deals.primary_contact_id`.
-- **Contato ↔ Empresa**: ao setar `contacts.company_id` (form de contato + ação rápida).
-- **Empresa ↔ Deal**: ao setar `deals.company_id` no form/sidebar do Deal.
-- **Lead ↔ \***: ao preencher `leads.related_*_id`.
-- **Ticket ↔ \***: ao preencher `tickets.related_contact_id / related_company_id / related_deal_id`.
+Posso começar imediatamente pelo **Lote 1 (Comunicação)** nesta mesma resposta e seguir lote a lote nas próximas mensagens (você revisa, eu avanço). Se preferir, posso reordenar/priorizar diferente — me diga.
 
-Toast de confirmação: "X atividades trazidas para a timeline".
-
-### 4. Auto-link já existente (`resolveAutoLinks`)
-
-`activity-timeline.tsx` já propaga FKs em **novas** atividades (Deal → Company/Contact primário). Mantém-se inalterado. O novo fluxo cobre **atividades passadas**, que `resolveAutoLinks` não toca.
-
-### 5. Sem migration
-
-Nenhuma mudança de schema. Apenas updates em `activities` via RLS. O seletor é estado local do diálogo — não persistimos a escolha.
-
-## Fora de escopo
-
-- Não cria tabela de join nem rastreia "origem" da propagação.
-- Não há undo / rollback ao desvincular (decisão confirmada).
-- Não toca em `calendar_events` (Google Calendar resolve guest→contact por outro caminho).
+**Confirmar para começar pelo Lote 1?**
