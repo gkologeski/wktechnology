@@ -124,7 +124,10 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3";
 async function driveSearch(
   token: string,
   q: string,
-): Promise<{ id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[]> {
+): Promise<{
+  files: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[];
+  error?: string;
+}> {
   const params = new URLSearchParams({
     q,
     fields: "files(id,name,mimeType,webViewLink,createdTime)",
@@ -137,9 +140,12 @@ async function driveSearch(
   const res = await fetch(`${DRIVE_API}/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    return { files: [], error: `drive ${res.status}: ${txt.slice(0, 200)}` };
+  }
   const json = (await res.json()) as { files?: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[] };
-  return json.files ?? [];
+  return { files: json.files ?? [] };
 }
 
 /**
@@ -152,12 +158,13 @@ async function driveSearch(
 async function findDriveRecording(
   token: string,
   ev: { title: string | null; end_at: string | null; start_at?: string | null },
-): Promise<{ file_id: string; url: string; mime_type: string } | null> {
-  if (!ev.end_at) return null;
+): Promise<
+  | { ok: true; file_id: string; url: string; mime_type: string; matched_by: string }
+  | { ok: false; reason: string }
+> {
+  if (!ev.end_at) return { ok: false, reason: "evento sem horário de término" };
   const endMs = new Date(ev.end_at).getTime();
-  if (!Number.isFinite(endMs)) return null;
-  // Meet typically uploads the recording within minutes; allow a wide window
-  // (1h before end → 7 days after) to catch delayed uploads and shared copies.
+  if (!Number.isFinite(endMs)) return { ok: false, reason: "horário de término inválido" };
   const after = new Date(endMs - 1 * 3600_000).toISOString();
   const before = new Date(endMs + 7 * 86400_000).toISOString();
   const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
@@ -166,23 +173,41 @@ async function findDriveRecording(
   const rawTitle = (ev.title ?? "").trim();
   const titleFragment = rawTitle.slice(0, 40).replace(/'/g, "\\'");
 
-  const candidates: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[] = [];
-
-  // 1) Title match within the time window (most precise)
+  type DriveFile = { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string };
+  const strategies: { label: string; q: string }[] = [];
   if (titleFragment) {
-    candidates.push(...(await driveSearch(token, `name contains '${titleFragment}' and ${videoMime} and ${baseTime}`)));
+    strategies.push({
+      label: "título",
+      q: `name contains '${titleFragment}' and ${videoMime} and ${baseTime}`,
+    });
   }
-  // 2) Any video shared with me in the time window (covers shared-from-organizer)
-  if (candidates.length === 0) {
-    candidates.push(...(await driveSearch(token, `${videoMime} and sharedWithMe = true and ${baseTime}`)));
-  }
-  // 3) Any video in the user's drives in the time window (organizer case)
-  if (candidates.length === 0) {
-    candidates.push(...(await driveSearch(token, `${videoMime} and ${baseTime}`)));
+  strategies.push({ label: "compartilhado comigo", q: `${videoMime} and sharedWithMe = true and ${baseTime}` });
+  strategies.push({ label: "meu drive", q: `${videoMime} and ${baseTime}` });
+
+  const errors: string[] = [];
+  let candidates: DriveFile[] = [];
+  let matchedBy = "";
+  for (const s of strategies) {
+    const r = await driveSearch(token, s.q);
+    if (r.error) {
+      errors.push(`${s.label}: ${r.error}`);
+      // 403/401 → escopo do Drive ausente, não adianta tentar próximas
+      if (/^drive 40[13]/.test(r.error)) break;
+      continue;
+    }
+    if (r.files.length > 0) {
+      candidates = r.files;
+      matchedBy = s.label;
+      break;
+    }
   }
 
-  if (candidates.length === 0) return null;
-  // Prefer the closest createdTime to the event end
+  if (candidates.length === 0) {
+    const reason = errors.length
+      ? `nenhuma gravação encontrada (${errors.join(" | ")})`
+      : "nenhuma gravação correspondente no Drive na janela de busca";
+    return { ok: false, reason };
+  }
   candidates.sort((a, b) => {
     const da = Math.abs(new Date(a.createdTime ?? 0).getTime() - endMs);
     const db = Math.abs(new Date(b.createdTime ?? 0).getTime() - endMs);
@@ -190,19 +215,23 @@ async function findDriveRecording(
   });
   const file = candidates[0];
   return {
+    ok: true,
     file_id: file.id,
     url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
     mime_type: file.mimeType,
+    matched_by: matchedBy,
   };
 }
 
-async function syncPastRecordings(account: CalendarAccountRow): Promise<{ found: number }> {
+async function syncPastRecordings(
+  account: CalendarAccountRow,
+): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
   const token = await ensureAccessToken(account);
   const since = new Date(Date.now() - 14 * 86400_000).toISOString();
   const until = new Date(Date.now() - 5 * 60_000).toISOString();
   const { data: events } = await supabaseAdmin
     .from("calendar_events")
-    .select("id, title, end_at, conference_id")
+    .select("id, title, end_at, conference_id, recording_attempts")
     .eq("owner_id", account.owner_id)
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
@@ -211,11 +240,14 @@ async function syncPastRecordings(account: CalendarAccountRow): Promise<{ found:
     .lte("end_at", until)
     .limit(20);
   let found = 0;
+  let missing = 0;
+  let errors = 0;
   for (const ev of events ?? []) {
+    const attempts = ((ev as { recording_attempts?: number }).recording_attempts ?? 0) + 1;
     try {
       const rec = await findDriveRecording(token, { title: ev.title, end_at: ev.end_at });
-      if (rec) {
-        await supabaseAdmin
+      if (rec.ok) {
+        const { error: upErr } = await supabaseAdmin
           .from("calendar_events")
           .update({
             recording_drive_file_id: rec.file_id,
@@ -223,20 +255,46 @@ async function syncPastRecordings(account: CalendarAccountRow): Promise<{ found:
             recording_mime_type: rec.mime_type,
             recording_synced_at: new Date().toISOString(),
             recording_status: "available",
-          })
+            recording_last_error: null,
+            recording_attempts: attempts,
+          } as never)
           .eq("id", ev.id);
-        found++;
+        if (upErr) {
+          errors++;
+          console.error("[drive recording] vínculo falhou", { event_id: ev.id, error: upErr.message });
+        } else {
+          found++;
+          console.log("[drive recording] vinculada", { event_id: ev.id, file_id: rec.file_id, matched_by: rec.matched_by });
+        }
       } else {
+        missing++;
+        console.warn("[drive recording] não encontrada", { event_id: ev.id, title: ev.title, reason: rec.reason });
         await supabaseAdmin
           .from("calendar_events")
-          .update({ recording_synced_at: new Date().toISOString(), recording_status: "not_found" })
+          .update({
+            recording_synced_at: new Date().toISOString(),
+            recording_status: "not_found",
+            recording_last_error: rec.reason.slice(0, 500),
+            recording_attempts: attempts,
+          } as never)
           .eq("id", ev.id);
       }
     } catch (e) {
-      console.error("[drive recording] error", e);
+      errors++;
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[drive recording] erro", { event_id: ev.id, error: msg });
+      await supabaseAdmin
+        .from("calendar_events")
+        .update({
+          recording_synced_at: new Date().toISOString(),
+          recording_status: "error",
+          recording_last_error: msg.slice(0, 500),
+          recording_attempts: attempts,
+        } as never)
+        .eq("id", ev.id);
     }
   }
-  return { found };
+  return { scanned: events?.length ?? 0, found, missing, errors };
 }
 
 async function gcalFetch(token: string, path: string, init?: RequestInit) {
@@ -422,7 +480,13 @@ async function pushPendingMeetings(
 
 export async function syncCalendarAccount(
   accountId: string,
-): Promise<{ imported: number; deleted: number; pushed_created: number; pushed_updated: number }> {
+): Promise<{
+  imported: number;
+  deleted: number;
+  pushed_created: number;
+  pushed_updated: number;
+  recordings: { scanned: number; found: number; missing: number; errors: number };
+}> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
@@ -431,26 +495,29 @@ export async function syncCalendarAccount(
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
+  const emptyRec = { scanned: 0, found: 0, missing: 0, errors: 0 };
   if (!account.sync_enabled)
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
   if (account.provider !== "google") {
-    // Microsoft not yet wired
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
   }
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     const push = await pushPendingMeetings(account as CalendarAccountRow);
-    // Best-effort: fetch recent Meet recordings from Drive (silently skips if no drive scope)
+    let recordings = emptyRec;
     try {
-      await syncPastRecordings(account as CalendarAccountRow);
+      recordings = await syncPastRecordings(account as CalendarAccountRow);
+      console.log("[recordings] resumo", { account_id: accountId, ...recordings });
     } catch (e) {
-      console.error("[recordings] sync error", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[recordings] sync error", msg);
     }
     return {
       imported: pull.imported,
       deleted: pull.deleted,
       pushed_created: push.created,
       pushed_updated: push.updated,
+      recordings,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -461,6 +528,7 @@ export async function syncCalendarAccount(
     throw e;
   }
 }
+
 
 export async function pushSingleActivity(
   accountId: string,
