@@ -188,6 +188,12 @@ async function pullGoogleEvents(
       const startAt = ev.start?.dateTime ?? (ev.start?.date ? `${ev.start.date}T00:00:00Z` : null);
       const endAt = ev.end?.dateTime ?? (ev.end?.date ? `${ev.end.date}T00:00:00Z` : null);
       const allDay = !!(ev.start?.date && !ev.start?.dateTime);
+      const conferenceId = ev.conferenceData?.conferenceId ?? null;
+      const hangoutLink =
+        ev.hangoutLink ??
+        ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
+        null;
+      const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
       const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert(
         {
           owner_id: account.owner_id,
@@ -201,6 +207,9 @@ async function pullGoogleEvents(
           all_day: allDay,
           attendees: ev.attendees ?? [],
           html_link: ev.htmlLink ?? null,
+          hangout_link: hangoutLink,
+          conference_id: conferenceId,
+          related_contact_id: relatedContactId,
           status: ev.status ?? "confirmed",
           last_synced_at: new Date().toISOString(),
         },
