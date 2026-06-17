@@ -234,10 +234,10 @@ function PublicBookingPage() {
               </div>
               <div className="space-y-2">
                 <Label>Observações</Label>
-                <Textarea
-                  rows={3}
+                <RichHtmlEditor
                   value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  onChange={(html) => setForm({ ...form, notes: html })}
+                  minHeight={120}
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
