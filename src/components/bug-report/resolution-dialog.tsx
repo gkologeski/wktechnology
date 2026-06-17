@@ -31,10 +31,10 @@ export function BugReportResolutionDialog({
   }, [open]);
 
   const confirm = async () => {
-    if (!text.trim()) return;
+    if (!htmlToPlain(text).trim()) return;
     setSaving(true);
     try {
-      await onConfirm(text.trim());
+      await onConfirm(text);
       onOpenChange(false);
     } finally {
       setSaving(false);
