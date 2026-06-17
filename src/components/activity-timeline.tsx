@@ -37,6 +37,8 @@ import {
   Link as LinkIcon,
   Users,
   User,
+  Video,
+  Zap,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -45,6 +47,7 @@ import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { CallDialer } from "@/components/voice/call-dialer";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
+import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { EmailEngagementCard } from "@/components/email/email-engagement-card";
 
@@ -787,6 +790,42 @@ export function ActivityTimeline({
               </div>
             </PopoverContent>
           </Popover>
+          {(() => {
+            const videoEntity =
+              relatedKey === "related_contact_id"
+                ? ("contact" as const)
+                : relatedKey === "related_lead_id"
+                  ? ("lead" as const)
+                  : relatedKey === "related_deal_id"
+                    ? ("deal" as const)
+                    : undefined;
+            return (
+              <StartVideoButton
+                entity={videoEntity}
+                entityId={videoEntity ? relatedId : undefined}
+                defaultTitle={target.name ? `Reunião com ${target.name}` : "Reunião por vídeo"}
+                onCreated={() => void load()}
+                renderTrigger={(openDialog) => (
+                  <button
+                    type="button"
+                    title="Criar sala de reunião por vídeo"
+                    onClick={openDialog}
+                    className="flex flex-col items-center gap-1.5 w-16 shrink-0 group"
+                  >
+                    <span className="relative flex items-center justify-center h-12 w-12 rounded-full border border-primary/40 bg-gradient-to-br from-primary to-purple-500 text-primary-foreground shadow-md shadow-primary/30 transition-transform group-hover:scale-105">
+                      <Video className="h-5 w-5" />
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-amber-400 text-amber-950 border-2 border-card">
+                        <Zap className="h-2.5 w-2.5" fill="currentColor" />
+                      </span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-primary text-center leading-tight">
+                      Sala agora
+                    </span>
+                  </button>
+                )}
+              />
+            );
+          })()}
         </div>
 
         {/* Inline composer (only when a "log" action is selected) */}

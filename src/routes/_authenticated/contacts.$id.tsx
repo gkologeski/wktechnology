@@ -1,22 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Mail, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { CallHistoryPanel } from "@/components/voice/call-history-panel";
-import { MeetingsPanel } from "@/components/meetings/meetings-panel";
-import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
-import { CallDialer } from "@/components/voice/call-dialer";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -97,7 +91,7 @@ function ContactDetail() {
   };
 
   const fullName = `${contact.first_name} ${contact.last_name ?? ""}`.trim() || "Sem nome";
-  const phone = (contact.phone || contact.mobile_phone) as string | undefined;
+  
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
@@ -133,51 +127,6 @@ function ContactDetail() {
       </div>
 
       <div className="flex items-center gap-2">
-        {contact.email && (
-          <SendEmailDialog
-            defaultTo={contact.email}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button variant="outline" className="rounded-xl gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" /> Email
-              </Button>
-            }
-          />
-        )}
-        {phone && (
-          <CallDialer
-            defaultTo={phone}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button variant="outline" className="rounded-xl gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" /> Ligar
-              </Button>
-            }
-          />
-        )}
-        {phone && (
-          <SendWhatsAppDialog
-            defaultTo={phone}
-            contactId={contact.id}
-            contactName={fullName}
-            trigger={
-              <Button className="rounded-xl gap-2 shadow-md shadow-primary/20">
-                <MessageCircle className="h-4 w-4" /> WhatsApp
-              </Button>
-            }
-          />
-        )}
-        <StartVideoButton
-          entity="contact"
-          entityId={contact.id}
-          defaultTitle={`Reunião com ${fullName}`}
-          variant="outline"
-          size="default"
-          className="rounded-xl"
-        />
-        <div className="h-8 w-px bg-border mx-1" />
         <Button
           variant="ghost"
           size="icon"
@@ -215,8 +164,6 @@ function ContactDetail() {
       center={
         <>
           <AiSummaryPanel entity="contact" entityId={contact.id} />
-          <CallHistoryPanel entity="contact" entityId={contact.id} />
-          <MeetingsPanel entity="contact" entityId={contact.id} />
           <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
         </>
       }
