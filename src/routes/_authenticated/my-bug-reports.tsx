@@ -349,9 +349,10 @@ function MyBugReportsPage() {
                         <p className="text-xs font-medium text-muted-foreground mb-1">
                           O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
                         </p>
-                        <p className="whitespace-pre-wrap">
-                          <strong>Resolução:</strong> {r.resolution_text}
-                        </p>
+                        <div>
+                          <strong>Resolução:</strong>
+                          <HtmlContent html={r.resolution_text} />
+                        </div>
                       </div>
                       {r.user_resolution_confirmed === true ? (
                         <p className="flex items-center gap-2 text-xs text-emerald-600">
