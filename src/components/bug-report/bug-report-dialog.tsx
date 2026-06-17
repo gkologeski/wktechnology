@@ -246,14 +246,13 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
 
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea
-                rows={5}
+              <RichHtmlEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
+                minHeight={160}
                 placeholder="O que você esperava? O que aconteceu? Em qual tela?"
-                maxLength={4000}
               />
-              <p className="text-xs text-muted-foreground text-right">{description.length}/4000</p>
+              <p className="text-xs text-muted-foreground text-right">{htmlToPlain(description).length}/4000</p>
             </div>
 
             <div className="rounded-lg border p-3 space-y-3">
