@@ -523,7 +523,7 @@ function MyBugReportsPage() {
             <Button
               onClick={() => {
                 if (!edit) return;
-                if (edit.description.trim().length < 10) {
+                if (htmlToPlain(edit.description).trim().length < 10) {
                   toast.error("Descreva com pelo menos 10 caracteres");
                   return;
                 }
