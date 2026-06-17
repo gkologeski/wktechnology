@@ -230,7 +230,7 @@ export function SendEmailDialog({
                   onApply={setBody}
                 />
               </div>
-              <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} />
+              <RichHtmlEditor value={body} onChange={setBody} minHeight={220} placeholder="Escreva sua mensagem…" />
             </div>
           </div>
         )}
