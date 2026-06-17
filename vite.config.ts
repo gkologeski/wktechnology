@@ -15,6 +15,14 @@ const eventsPolyfillPath = require.resolve("events/events.js");
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+    router: {
+      codeSplittingOptions: {
+        // Evita chunks lazy de rota (`?tsr-split=component`) carregarem
+        // dependências do Router/React com hashes Vite diferentes durante
+        // cold start ou re-otimização. Este app prioriza estabilidade do CRM.
+        defaultBehavior: [],
+      },
+    },
   },
   vite: {
     plugins: [
