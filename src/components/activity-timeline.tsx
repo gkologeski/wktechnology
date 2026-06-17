@@ -1298,22 +1298,30 @@ export function ActivityTimeline({
                     </div>
                   )}
                   <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground"
-                      onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" /> Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                      onClick={() => remove(a.id)}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" /> Excluir
-                    </Button>
+                    {a.id.startsWith("cal_") ? (
+                      <span className="text-[11px] text-muted-foreground italic px-2 py-1">
+                        Evento sincronizado do Google Calendar — edite no Google.
+                      </span>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground"
+                          onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={() => remove(a.id)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Excluir
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </li>
