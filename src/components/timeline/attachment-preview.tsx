@@ -71,6 +71,24 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
     };
   }, [attachment.path, bucket, signRecording]);
 
+  // Pré-visualização de texto: baixa e exibe o conteúdo inline (limitado).
+  useEffect(() => {
+    if (!url || kind !== "text") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(url);
+        const txt = await r.text();
+        if (!cancelled) setTextPreview(txt.slice(0, 20000));
+      } catch {
+        /* mantém botão de download como fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url, kind]);
+
   const header = (
     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border/60 bg-muted/30">
       <div className="flex items-center gap-2 min-w-0 text-xs">
