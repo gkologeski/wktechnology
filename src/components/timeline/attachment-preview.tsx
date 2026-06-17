@@ -143,7 +143,7 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
     );
   }
 
-  const wrapMax = expanded ? "max-w-3xl" : "max-w-md";
+  const wrapMax = expanded ? "max-w-3xl" : "w-full";
   const frameH = expanded ? "h-[80vh]" : "h-96";
 
   if (kind === "image") {
