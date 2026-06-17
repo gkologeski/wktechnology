@@ -259,7 +259,7 @@ export function SendEmailDialog({
               sendMut.mutate();
             }}
             disabled={
-              !account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending
+              !account || !to || !finalSubject.trim() || !finalBodyText.trim() || sendMut.isPending
             }
           >
             <Send className="mr-2 h-4 w-4" />
