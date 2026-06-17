@@ -296,27 +296,35 @@ async function pullGoogleEvents(
         ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
         null;
       const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
-      const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert(
-        {
-          owner_id: account.owner_id,
-          calendar_account_id: account.id,
-          provider_event_id: ev.id,
-          title: ev.summary ?? "(sem título)",
-          description: ev.description ?? null,
-          location: ev.location ?? null,
-          start_at: startAt,
-          end_at: endAt,
-          all_day: allDay,
-          attendees: ev.attendees ?? [],
-          html_link: ev.htmlLink ?? null,
-          hangout_link: hangoutLink,
-          conference_id: conferenceId,
-          related_contact_id: relatedContactId,
-          status: ev.status ?? "confirmed",
-          last_synced_at: new Date().toISOString(),
-        },
-        { onConflict: "calendar_account_id,provider_event_id" },
-      );
+      const attachRec = pickRecordingFromAttachments(ev.attachments);
+      const upsertRow: Record<string, unknown> = {
+        owner_id: account.owner_id,
+        calendar_account_id: account.id,
+        provider_event_id: ev.id,
+        title: ev.summary ?? "(sem título)",
+        description: ev.description ?? null,
+        location: ev.location ?? null,
+        start_at: startAt,
+        end_at: endAt,
+        all_day: allDay,
+        attendees: ev.attendees ?? [],
+        html_link: ev.htmlLink ?? null,
+        hangout_link: hangoutLink,
+        conference_id: conferenceId,
+        related_contact_id: relatedContactId,
+        status: ev.status ?? "confirmed",
+        last_synced_at: new Date().toISOString(),
+      };
+      if (attachRec) {
+        upsertRow.recording_drive_file_id = attachRec.file_id;
+        upsertRow.recording_url = attachRec.url;
+        upsertRow.recording_mime_type = attachRec.mime_type;
+        upsertRow.recording_status = "available";
+        upsertRow.recording_synced_at = new Date().toISOString();
+      }
+      const { error: upErr } = await supabaseAdmin
+        .from("calendar_events")
+        .upsert(upsertRow, { onConflict: "calendar_account_id,provider_event_id" });
       if (!upErr) imported++;
     }
 
