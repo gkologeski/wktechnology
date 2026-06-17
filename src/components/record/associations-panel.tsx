@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Building2,
@@ -21,6 +22,13 @@ import {
   QuickCreateDealDialog,
   QuickCreateTicketDialog,
 } from "@/components/record/quick-create-dialogs";
+import {
+  AssociatePeriodDialog,
+  periodToDays,
+  type AssociationPeriod,
+} from "@/components/associations/associate-period-dialog";
+import { propagateAssociationHistory } from "@/lib/associations.functions";
+import type { AssociationKind } from "@/lib/associations.functions";
 
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
@@ -108,6 +116,58 @@ const relCol = (entity: AssociationEntity) =>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
 
+/**
+ * Hook que adiciona o diálogo "vincular com janela de histórico" (estilo HubSpot)
+ * em torno de uma operação de associação. Após o vínculo, propaga retroativamente
+ * as FKs `related_*` nas atividades existentes nas duas pontas, dentro da janela.
+ */
+function useAssociateWithPeriod(opts: {
+  sourceKind: AssociationKind;
+  sourceId: string;
+  targetKind: AssociationKind;
+  doAssociate: (targetId: string) => Promise<unknown> | unknown;
+  title?: string;
+}) {
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const propagate = useServerFn(propagateAssociationHistory);
+
+  const onConfirm = async (period: AssociationPeriod) => {
+    const targetId = pendingId;
+    if (!targetId) return;
+    await opts.doAssociate(targetId);
+    try {
+      const r = await propagate({
+        data: {
+          sourceKind: opts.sourceKind,
+          sourceId: opts.sourceId,
+          targetKind: opts.targetKind,
+          targetId,
+          windowDays: periodToDays(period),
+        },
+      });
+      const total = (r?.propagatedFromSource ?? 0) + (r?.propagatedFromTarget ?? 0);
+      if (total > 0) toast.success(`${total} atividade(s) trazidas para a timeline`);
+    } catch (e) {
+      toast.error("Falha ao propagar histórico: " + (e as Error).message);
+    }
+    setPendingId(null);
+  };
+
+  const dialog = (
+    <AssociatePeriodDialog
+      open={!!pendingId}
+      onOpenChange={(o) => {
+        if (!o) setPendingId(null);
+      }}
+      title={opts.title}
+      onConfirm={onConfirm}
+    />
+  );
+
+  return { request: (id: string) => setPendingId(id), dialog };
+}
+
+
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
 function CompanyCard({
@@ -158,6 +218,14 @@ function CompanyCard({
     setCurrentId(id);
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "company",
+    doAssociate: associate,
+    title: "Vincular empresa",
+  });
+
   const unlink = async () => {
     const { error } = await sb
       .from(tableFor(entity))
@@ -183,7 +251,7 @@ function CompanyCard({
             labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
             hintFrom={(r) => (r as { domain?: string }).domain ?? null}
             placeholder="Buscar empresa…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
@@ -223,8 +291,9 @@ function CompanyCard({
       <QuickCreateCompanyDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
@@ -288,6 +357,14 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "contact",
+    doAssociate: associate,
+    title: "Vincular contato",
+  });
+
   const unlink = async (contactId: string) => {
     if (entity === "company") {
       const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
@@ -325,7 +402,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
         }
@@ -369,8 +446,9 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       <CreateContactDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
@@ -460,6 +538,14 @@ function DealsCard({
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "deal",
+    doAssociate: associate,
+    title: "Vincular negócio",
+  });
+
   const unlink = async (dealId: string) => {
     if (entity === "company") {
       const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
@@ -505,7 +591,7 @@ function DealsCard({
               return x.value != null ? formatCurrency(x.value, x.currency ?? "BRL") : null;
             }}
             placeholder="Buscar negócio…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
         }
@@ -550,6 +636,7 @@ function DealsCard({
         defaultContactId={entity === "contact" ? entityId : null}
         onCreated={() => refresh()}
       />
+      {dialog}
     </>
   );
 }
@@ -608,6 +695,14 @@ function TicketsCard({
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity === "lead" ? "contact" : entity,
+    sourceId: entityId,
+    targetKind: "ticket",
+    doAssociate: associate,
+    title: "Vincular ticket",
+  });
+
   const unlink = async (ticketId: string) => {
     const { error } = await sb
       .from("tickets")
@@ -636,7 +731,7 @@ function TicketsCard({
                 return [x.status, x.priority].filter(Boolean).join(" · ") || null;
               }}
               placeholder="Buscar ticket…"
-              onPick={associate}
+              onPick={request}
               onCreateNew={() => setCreateOpen(true)}
             />
           )
@@ -674,6 +769,7 @@ function TicketsCard({
         defaultDealId={entity === "deal" ? entityId : null}
         onCreated={() => refresh()}
       />
+      {dialog}
     </>
   );
 }
@@ -724,6 +820,14 @@ function SingleContactCard({
     setCurrentId(id);
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: "ticket",
+    sourceId: entityId,
+    targetKind: "contact",
+    doAssociate: associate,
+    title: "Vincular contato",
+  });
+
   const unlink = async () => {
     const { error } = await sb.from("tickets").update({ contact_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
@@ -740,7 +844,7 @@ function SingleContactCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
@@ -781,8 +885,9 @@ function SingleContactCard({
       <CreateContactDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
@@ -825,6 +930,14 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
     setCurrentId(id);
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: "ticket",
+    sourceId: entityId,
+    targetKind: "deal",
+    doAssociate: associate,
+    title: "Vincular negócio",
+  });
+
   const unlink = async () => {
     const { error } = await sb.from("tickets").update({ deal_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
@@ -849,7 +962,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
               return x.value != null ? formatCurrency(x.value, x.currency ?? "BRL") : null;
             }}
             placeholder="Buscar negócio…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={d ? "Trocar" : "Adicionar"}
           />
@@ -889,8 +1002,9 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
       <QuickCreateDealDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
