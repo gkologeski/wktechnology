@@ -91,7 +91,7 @@ function ContactDetail() {
   };
 
   const fullName = `${contact.first_name} ${contact.last_name ?? ""}`.trim() || "Sem nome";
-  const phone = (contact.phone || contact.mobile_phone) as string | undefined;
+  
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
