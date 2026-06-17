@@ -79,23 +79,9 @@ type GCalEvent = {
   attachments?: { fileUrl?: string; title?: string; mimeType?: string; fileId?: string }[];
 };
 
-function pickRecordingFromAttachments(
-  attachments: GCalEvent["attachments"],
-): { file_id: string; url: string; mime_type: string } | null {
-  if (!attachments) return null;
-  // Meet drops the recording as a video/mp4 attachment whose title ends with "- Recording"
-  const rec = attachments.find(
-    (a) =>
-      a.fileId &&
-      (a.mimeType === "video/mp4" || /recording/i.test(a.title ?? "")),
-  );
-  if (!rec?.fileId) return null;
-  return {
-    file_id: rec.fileId,
-    url: rec.fileUrl ?? `https://drive.google.com/file/d/${rec.fileId}/view`,
-    mime_type: rec.mimeType ?? "video/mp4",
-  };
-}
+// Recording lookup is done via Drive search (see findDriveRecording) so that
+// it works for non-organizers too — Meet only attaches the recording file to
+// the organizer's copy of the event, but shares the Drive file with attendees.
 
 // Free email domains that should never be used to auto-link a contact
 const FREE_EMAIL_DOMAINS = new Set([
@@ -135,37 +121,74 @@ async function matchContactForAttendees(
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
+async function driveSearch(
+  token: string,
+  q: string,
+): Promise<{ id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[]> {
+  const params = new URLSearchParams({
+    q,
+    fields: "files(id,name,mimeType,webViewLink,createdTime)",
+    pageSize: "10",
+    orderBy: "createdTime desc",
+    includeItemsFromAllDrives: "true",
+    supportsAllDrives: "true",
+    corpora: "allDrives",
+  });
+  const res = await fetch(`${DRIVE_API}/files?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return [];
+  const json = (await res.json()) as { files?: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[] };
+  return json.files ?? [];
+}
+
+/**
+ * Look up a Meet recording in Drive for the given event.
+ * Meet stores recordings in the organizer's "Meet Recordings" folder and shares
+ * them with attendees. We search across all drives the authenticated user can
+ * see (own + shared) so non-organizers also find their recordings, then we
+ * match on the event title and time window.
+ */
 async function findDriveRecording(
   token: string,
-  ev: { title: string | null; end_at: string | null },
+  ev: { title: string | null; end_at: string | null; start_at?: string | null },
 ): Promise<{ file_id: string; url: string; mime_type: string } | null> {
   if (!ev.end_at) return null;
-  // Search a window of 2h before end → 48h after end
   const endMs = new Date(ev.end_at).getTime();
   if (!Number.isFinite(endMs)) return null;
-  const after = new Date(endMs - 2 * 3600_000).toISOString();
-  const before = new Date(endMs + 48 * 3600_000).toISOString();
-  const titleFragment = (ev.title ?? "").trim().slice(0, 40).replace(/'/g, "\\'");
-  // Meet recordings are mp4 created in the organizer's "Meet Recordings" folder.
-  const qParts = [
-    "mimeType='video/mp4'",
-    `createdTime > '${after}'`,
-    `createdTime < '${before}'`,
-    "trashed = false",
-  ];
-  if (titleFragment) qParts.push(`name contains '${titleFragment}'`);
-  const q = qParts.join(" and ");
-  const url = `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,webViewLink,createdTime)&pageSize=5`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) {
-    // 403 likely = missing drive scope; treat as not found
-    return null;
+  // Meet typically uploads the recording within minutes; allow a wide window
+  // (1h before end → 7 days after) to catch delayed uploads and shared copies.
+  const after = new Date(endMs - 1 * 3600_000).toISOString();
+  const before = new Date(endMs + 7 * 86400_000).toISOString();
+  const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
+  const videoMime = "(mimeType='video/mp4' or mimeType contains 'video/')";
+
+  const rawTitle = (ev.title ?? "").trim();
+  const titleFragment = rawTitle.slice(0, 40).replace(/'/g, "\\'");
+
+  const candidates: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[] = [];
+
+  // 1) Title match within the time window (most precise)
+  if (titleFragment) {
+    candidates.push(...(await driveSearch(token, `name contains '${titleFragment}' and ${videoMime} and ${baseTime}`)));
   }
-  const json = (await res.json()) as {
-    files?: { id: string; name: string; mimeType: string; webViewLink?: string }[];
-  };
-  const file = json.files?.[0];
-  if (!file) return null;
+  // 2) Any video shared with me in the time window (covers shared-from-organizer)
+  if (candidates.length === 0) {
+    candidates.push(...(await driveSearch(token, `${videoMime} and sharedWithMe = true and ${baseTime}`)));
+  }
+  // 3) Any video in the user's drives in the time window (organizer case)
+  if (candidates.length === 0) {
+    candidates.push(...(await driveSearch(token, `${videoMime} and ${baseTime}`)));
+  }
+
+  if (candidates.length === 0) return null;
+  // Prefer the closest createdTime to the event end
+  candidates.sort((a, b) => {
+    const da = Math.abs(new Date(a.createdTime ?? 0).getTime() - endMs);
+    const db = Math.abs(new Date(b.createdTime ?? 0).getTime() - endMs);
+    return da - db;
+  });
+  const file = candidates[0];
   return {
     file_id: file.id,
     url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
@@ -296,7 +319,6 @@ async function pullGoogleEvents(
         ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
         null;
       const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
-      const attachRec = pickRecordingFromAttachments(ev.attachments);
       const upsertRow: Record<string, unknown> = {
         owner_id: account.owner_id,
         calendar_account_id: account.id,
@@ -315,13 +337,6 @@ async function pullGoogleEvents(
         status: ev.status ?? "confirmed",
         last_synced_at: new Date().toISOString(),
       };
-      if (attachRec) {
-        upsertRow.recording_drive_file_id = attachRec.file_id;
-        upsertRow.recording_url = attachRec.url;
-        upsertRow.recording_mime_type = attachRec.mime_type;
-        upsertRow.recording_status = "available";
-        upsertRow.recording_synced_at = new Date().toISOString();
-      }
       const { error: upErr } = await supabaseAdmin
         .from("calendar_events")
         .upsert(upsertRow as never, { onConflict: "calendar_account_id,provider_event_id" });
