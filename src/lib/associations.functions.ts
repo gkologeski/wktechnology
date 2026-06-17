@@ -50,13 +50,13 @@ export const propagateAssociationHistory = createServerFn({ method: "POST" })
     const runOne = async (filterCol: string, filterId: string, setCol: string, setId: string) => {
       let q = supabase
         .from("activities")
-        .update({ [setCol]: setId } as never, { count: "exact" })
+        .update({ [setCol]: setId } as never)
         .eq(filterCol, filterId)
         .is(setCol, null);
       if (sinceIso) q = q.gte("created_at", sinceIso);
-      const { count, error } = await q.select("id", { count: "exact", head: true });
+      const { data: updated, error } = await q.select("id");
       if (error) throw new Error(error.message);
-      return count ?? 0;
+      return updated?.length ?? 0;
     };
 
     const [propagatedFromSource, propagatedFromTarget] = await Promise.all([
