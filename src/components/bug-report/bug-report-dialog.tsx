@@ -109,7 +109,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
       toast.error("Você precisa estar autenticado.");
       return;
     }
-    const parsed = schema.safeParse({ kind, category, subtype, description });
+    const parsed = schema.safeParse({ kind, category, subtype, description: htmlToPlain(description) });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Preencha todos os campos");
       return;
