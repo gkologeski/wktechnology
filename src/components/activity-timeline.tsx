@@ -1137,7 +1137,7 @@ export function ActivityTimeline({
                               <Button
                                 asChild
                                 size="sm"
-                                variant="default"
+                                variant="outline"
                                 className="h-7 text-xs"
                               >
                                 <a href={accessLink} target="_blank" rel="noreferrer">
