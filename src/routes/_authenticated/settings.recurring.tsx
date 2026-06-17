@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -223,10 +223,11 @@ function PlansTab() {
                     {INTERVALS.find((i) => i.value === p.interval)?.label.toLowerCase()}
                     {p.trial_days > 0 && ` · ${p.trial_days}d trial`}
                   </div>
-                  {p.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {p.description}
-                    </p>
+                  {p.description && htmlToPlain(p.description) && (
+                    <HtmlContent
+                      html={p.description}
+                      className="text-xs text-muted-foreground mt-1 line-clamp-2"
+                    />
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -750,8 +751,8 @@ function SubscriptionDrawer({ id, onClose }: { id: string | null; onClose: () =>
               {data.subscription.next_billing_at && (
                 <div>Próx. cobrança: {formatDate(data.subscription.next_billing_at)}</div>
               )}
-              {data.subscription.notes && (
-                <div className="text-muted-foreground">{data.subscription.notes}</div>
+              {data.subscription.notes && htmlToPlain(data.subscription.notes) && (
+                <HtmlContent html={data.subscription.notes} className="text-muted-foreground" />
               )}
             </div>
             <div>

@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -126,7 +126,7 @@ function EditRolePage() {
         data: {
           id: roleId,
           name: isSystem ? undefined : name.trim(),
-          description: description.trim() || null,
+          description: htmlToPlain(description).trim() ? description : null,
           base_role: isSystem ? undefined : baseRole,
           permissions: Object.values(perms),
           tools: Object.values(tools),

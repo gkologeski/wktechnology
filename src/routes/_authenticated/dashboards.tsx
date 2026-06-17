@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -135,7 +135,7 @@ function DashboardsPage() {
   async function handleCreateDash() {
     if (!newName.trim()) return toast.error("Informe um nome");
     await createDash({
-      data: { name: newName.trim(), description: newDesc.trim() || null, is_default: newDefault },
+      data: { name: newName.trim(), description: htmlToPlain(newDesc).trim() ? newDesc : null, is_default: newDefault },
     });
     setNewDashOpen(false);
     setNewName("");
@@ -148,7 +148,7 @@ function DashboardsPage() {
   async function handleEditDash() {
     if (!active || !editName.trim()) return;
     await updateDash({
-      data: { id: active.id, name: editName.trim(), description: editDesc.trim() || null },
+      data: { id: active.id, name: editName.trim(), description: htmlToPlain(editDesc).trim() ? editDesc : null },
     });
     setEditDashOpen(false);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
@@ -290,8 +290,8 @@ function DashboardsPage() {
                         </Badge>
                       )}
                     </div>
-                    {active.description && (
-                      <p className="text-xs text-muted-foreground">{active.description}</p>
+                    {active.description && htmlToPlain(active.description) && (
+                      <HtmlContent html={active.description} className="text-xs text-muted-foreground" />
                     )}
                   </div>
                   {!active.is_default && (
