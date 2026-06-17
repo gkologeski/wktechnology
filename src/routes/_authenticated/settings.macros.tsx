@@ -148,8 +148,8 @@ function MacrosPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 mt-1">
-                    {m.body}
+                  <p className="text-xs text-muted-foreground line-clamp-3 mt-1">
+                    {htmlToPlain(m.body)}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
