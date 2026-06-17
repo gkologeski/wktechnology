@@ -15,15 +15,31 @@ export const syncMyEmailAccounts = createServerFn({ method: "POST" })
     z.object({ account_id: z.string().uuid().optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    // Inclui contas em "error" para permitir auto-recuperação manual
+    // (ex.: historyId expirado → FAILED_PRECONDITION). syncAccount restaura
+    // status="connected" ao concluir com sucesso.
     let q = supabaseAdmin
       .from("email_accounts")
       .select(ACCOUNT_COLUMNS)
       .eq("owner_id", context.userId)
       .eq("provider", "gmail")
-      .eq("status", "connected");
+      .in("status", ["connected", "error"]);
     if (data.account_id) q = q.eq("id", data.account_id);
-    const { data: rows, error } = await q;
+    const { data: rowsRaw, error } = await q;
     if (error) throw new Error(error.message);
+
+    // Se a conta está em erro por history expirado, zera o history_id
+    // para forçar um seed fresco via /profile + /messages.
+    const rows = (rowsRaw ?? []).map((r) => {
+      const acc = r as EmailAccountRow & { last_error?: string | null };
+      const expired =
+        acc.history_id &&
+        (acc as unknown as { last_error?: string | null }).last_error &&
+        /failedPrecondition|FAILED_PRECONDITION|historyId|history.*not.*found/i.test(
+          String((acc as unknown as { last_error?: string | null }).last_error ?? ""),
+        );
+      return expired ? { ...acc, history_id: null } : acc;
+    });
 
     const results: SyncResult[] = [];
     for (const acc of (rows ?? []) as EmailAccountRow[]) {
