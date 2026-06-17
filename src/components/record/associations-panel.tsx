@@ -537,6 +537,14 @@ function DealsCard({
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity,
+    sourceId: entityId,
+    targetKind: "deal",
+    doAssociate: associate,
+    title: "Vincular negócio",
+  });
+
   const unlink = async (dealId: string) => {
     if (entity === "company") {
       const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
@@ -685,6 +693,14 @@ function TicketsCard({
     refresh();
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: entity === "lead" ? "contact" : entity,
+    sourceId: entityId,
+    targetKind: "ticket",
+    doAssociate: associate,
+    title: "Vincular ticket",
+  });
+
   const unlink = async (ticketId: string) => {
     const { error } = await sb
       .from("tickets")
@@ -801,6 +817,14 @@ function SingleContactCard({
     setCurrentId(id);
   };
 
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: "ticket",
+    sourceId: entityId,
+    targetKind: "contact",
+    doAssociate: associate,
+    title: "Vincular contato",
+  });
+
   const unlink = async () => {
     const { error } = await sb.from("tickets").update({ contact_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
@@ -901,6 +925,14 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
     toast.success("Negócio vinculado");
     setCurrentId(id);
   };
+
+  const { request, dialog } = useAssociateWithPeriod({
+    sourceKind: "ticket",
+    sourceId: entityId,
+    targetKind: "deal",
+    doAssociate: associate,
+    title: "Vincular negócio",
+  });
 
   const unlink = async () => {
     const { error } = await sb.from("tickets").update({ deal_id: null }).eq("id", entityId);
