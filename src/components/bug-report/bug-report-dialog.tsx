@@ -153,7 +153,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         kind: parsed.data.kind,
         category: parsed.data.category,
         subtype: parsed.data.subtype,
-        description: parsed.data.description,
+        description: description,
         recording_path: recordingPath,
         recording_has_audio: hasAudio,
         image_paths: imagePaths,
