@@ -23,6 +23,7 @@ interface StartVideoButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
   onCreated?: () => void;
+  renderTrigger?: (open: () => void) => React.ReactNode;
 }
 
 export function StartVideoButton({
@@ -33,6 +34,7 @@ export function StartVideoButton({
   size = "sm",
   className,
   onCreated,
+  renderTrigger,
 }: StartVideoButtonProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle);
