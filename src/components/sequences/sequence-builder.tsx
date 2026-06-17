@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import {
