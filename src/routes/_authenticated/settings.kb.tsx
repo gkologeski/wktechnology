@@ -391,11 +391,12 @@ function ArticlesTab() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Conteúdo (Markdown/texto)</label>
-                <Textarea
-                  rows={12}
+                <label className="text-sm font-medium">Conteúdo</label>
+                <RichHtmlEditor
                   value={edit.body}
-                  onChange={(e) => setEdit({ ...edit, body: e.target.value })}
+                  onChange={(html) => setEdit({ ...edit, body: html })}
+                  minHeight={320}
+                  placeholder="Escreva o conteúdo do artigo…"
                 />
               </div>
               <div className="flex items-center gap-2">
