@@ -324,7 +324,7 @@ async function pullGoogleEvents(
       }
       const { error: upErr } = await supabaseAdmin
         .from("calendar_events")
-        .upsert(upsertRow, { onConflict: "calendar_account_id,provider_event_id" });
+        .upsert(upsertRow as never, { onConflict: "calendar_account_id,provider_event_id" });
       if (!upErr) imported++;
     }
 
