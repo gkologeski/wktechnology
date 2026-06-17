@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, FileText, ExternalLink } from "lucide-react";
+import { Download, FileText, ExternalLink, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type TimelineAttachment = {
