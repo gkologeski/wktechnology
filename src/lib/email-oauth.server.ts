@@ -17,6 +17,8 @@ export const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/calendar.events",
+  // Needed to fetch Google Meet recordings stored in the organizer's Drive
+  "https://www.googleapis.com/auth/drive.readonly",
 ];
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
