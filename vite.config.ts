@@ -33,16 +33,41 @@ export default defineConfig({
         },
       },
     ],
+    // Garante uma única cópia de React/JSX-runtime no bundle do cliente.
+    // Sem dedupe explícito, dependências aninhadas (radix, tiptap, etc.)
+    // podem puxar instâncias paralelas e o Vite gera dois prebundles com
+    // hashes "?v=" diferentes, derrubando o contexto de Router/Query com
+    // "Cannot read properties of null (reading 'useContext')".
+    resolve: {
+      dedupe: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "scheduler",
+        "@tanstack/react-router",
+        "@tanstack/react-start",
+        "@tanstack/react-query",
+      ],
+    },
     optimizeDeps: {
       // The preview dev server can briefly serve stale optimized dependency
       // URLs while Vite is re-crawling lazy route chunks. Treat those as
       // recoverable so dynamic route imports do not fail with 502/504.
       ignoreOutdatedRequests: true,
-      // Do not force TanStack Router/Start into optimizeDeps. The Start plugin
-      // intentionally excludes them; pre-bundling them can create a second
-      // React/router context during dev hydration, which surfaces as
-      // "Cannot read properties of null (reading 'useContext')".
-      include: ["events"],
+      // Força React e runtimes a entrarem num único chunk pré-bundlado
+      // logo no cold start, evitando que o Vite gere um segundo bundle
+      // com outro hash "?v=" quando uma rota lazy (ex.: /admin) é
+      // carregada depois.
+      include: [
+        "events",
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "scheduler",
+      ],
       // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
       // resolves its `node:events` imports through our `polyfill-node-events`
       // plugin (esbuild's prebundler does not run that plugin). Re-state the
