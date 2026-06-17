@@ -117,7 +117,7 @@ export function BulkCreateActivityDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Descrição</Label>
-            <Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
+            <RichHtmlEditor value={body} onChange={setBody} minHeight={120} />
           </div>
           <div className="space-y-1.5">
             <Label>Data limite</Label>
