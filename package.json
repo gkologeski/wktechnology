@@ -139,9 +139,21 @@
     "vitest": "^4.1.6"
   },
   "overrides": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@tanstack/react-router": "1.168.25",
+    "@tanstack/react-start": "1.167.50",
+    "@tanstack/router-core": "1.168.17",
+    "@tanstack/history": "1.161.6"
   },
   "resolutions": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@tanstack/react-router": "1.168.25",
+    "@tanstack/react-start": "1.167.50",
+    "@tanstack/router-core": "1.168.17",
+    "@tanstack/history": "1.161.6"
   }
 }
