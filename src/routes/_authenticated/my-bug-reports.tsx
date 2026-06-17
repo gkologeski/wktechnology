@@ -565,15 +565,14 @@ function MyBugReportsPage() {
               )}
               <div className="space-y-2">
                 <Label>O que está acontecendo agora?</Label>
-                <Textarea
-                  rows={6}
-                  maxLength={4000}
+                <RichHtmlEditor
                   value={reopen.feedback}
-                  onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                  onChange={(html) => setReopen({ ...reopen, feedback: html })}
+                  minHeight={160}
                   placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {reopen.feedback.length}/4000
+                  {htmlToPlain(reopen.feedback).length}/4000
                 </p>
               </div>
             </div>
