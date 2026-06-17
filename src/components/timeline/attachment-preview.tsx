@@ -89,6 +89,8 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
     };
   }, [url, kind]);
 
+  const canExpand = kind === "pdf" || kind === "office" || kind === "image" || kind === "text";
+
   const header = (
     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border/60 bg-muted/30">
       <div className="flex items-center gap-2 min-w-0 text-xs">
@@ -98,19 +100,50 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
           <span className="text-muted-foreground">· {formatSize(attachment.size)}</span>
         )}
       </div>
-      {url && (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          download={attachment.name}
-          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          <Download className="h-3 w-3" /> Baixar
-        </a>
-      )}
+      <div className="flex items-center gap-2">
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            aria-label={expanded ? "Reduzir" : "Expandir"}
+          >
+            {expanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            {expanded ? "Reduzir" : "Expandir"}
+          </button>
+        )}
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            download={attachment.name}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <Download className="h-3 w-3" /> Baixar
+          </a>
+        )}
+      </div>
     </div>
   );
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+        {attachment.name}: {error}
+      </div>
+    );
+  }
+
+  if (!url) {
+    return (
+      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground animate-pulse">
+        Carregando {attachment.name}…
+      </div>
+    );
+  }
+
+  const wrapMax = expanded ? "max-w-3xl" : "max-w-md";
 
   if (error) {
     return (
