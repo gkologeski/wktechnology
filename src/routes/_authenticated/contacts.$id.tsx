@@ -1,22 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Mail, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { CallHistoryPanel } from "@/components/voice/call-history-panel";
-import { MeetingsPanel } from "@/components/meetings/meetings-panel";
-import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
-import { CallDialer } from "@/components/voice/call-dialer";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
