@@ -390,17 +390,17 @@ function BugReportsAdminPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm whitespace-pre-wrap">{r.description as string}</p>
+                  <HtmlContent html={r.description as string} className="text-sm" />
                   {r.status === "resolved" &&
                     (r as { resolution_text?: string }).resolution_text && (
                       <div className="rounded-md border bg-muted/40 p-3 text-sm">
                         <p className="text-xs font-medium text-muted-foreground mb-1">
                           O status deste chamado foi atualizado para <strong>Resolvido</strong>.
                         </p>
-                        <p className="whitespace-pre-wrap">
-                          <strong>Resolução:</strong>{" "}
-                          {(r as { resolution_text?: string }).resolution_text}
-                        </p>
+                        <div>
+                          <strong>Resolução:</strong>
+                          <HtmlContent html={(r as { resolution_text?: string }).resolution_text} />
+                        </div>
                       </div>
                     )}
                   {Array.isArray((r as { image_paths?: string[] }).image_paths) &&
