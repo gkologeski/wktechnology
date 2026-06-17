@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import {
   Select,
   SelectContent,
@@ -191,11 +191,10 @@ function RolesPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium">Descrição</label>
-                  <Textarea
+                  <RichHtmlEditor
                     value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
+                    onChange={setNewDesc}
                     placeholder="Para que serve este perfil…"
-                    rows={2}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">

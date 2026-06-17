@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -466,10 +466,9 @@ function ReportsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea
-                rows={2}
+              <RichHtmlEditor
                 value={meta.description}
-                onChange={(e) => setMeta({ ...meta, description: e.target.value })}
+                onChange={(html) => setMeta({ ...meta, description: html })}
               />
             </div>
           </div>

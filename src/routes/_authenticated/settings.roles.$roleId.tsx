@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -192,10 +192,9 @@ function EditRolePage() {
           </div>
           <div className="md:col-span-1">
             <label className="text-xs font-medium">Descrição</label>
-            <Textarea
+            <RichHtmlEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={1}
+              onChange={setDescription}
             />
           </div>
         </CardContent>
