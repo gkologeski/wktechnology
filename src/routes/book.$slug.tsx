@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
 import { CalendarDays, Clock, MapPin, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/book/$slug")({
