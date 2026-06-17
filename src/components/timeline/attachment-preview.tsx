@@ -144,33 +144,18 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
   }
 
   const wrapMax = expanded ? "max-w-3xl" : "max-w-md";
-
-  if (error) {
-    return (
-      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
-        {attachment.name}: {error}
-      </div>
-    );
-  }
-
-  if (!url) {
-    return (
-      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground animate-pulse">
-        Carregando {attachment.name}…
-      </div>
-    );
-  }
+  const frameH = expanded ? "h-[80vh]" : "h-96";
 
   if (kind === "image") {
     return (
-      <div className="rounded-lg border border-border/60 overflow-hidden bg-card max-w-md">
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <a href={url} target="_blank" rel="noreferrer">
           <img
             src={url}
             alt={attachment.name}
             loading="lazy"
-            className="block max-h-80 w-full object-contain bg-muted/20"
+            className={`block w-full object-contain bg-muted/20 ${expanded ? "max-h-[80vh]" : "max-h-80"}`}
           />
         </a>
       </div>
@@ -203,13 +188,42 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
 
   if (kind === "pdf") {
     return (
-      <div className="rounded-lg border border-border/60 overflow-hidden bg-card max-w-md">
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <iframe
-          src={url}
+          src={`${url}#toolbar=1&navpanes=0`}
           title={attachment.name}
-          className="block w-full h-80 bg-muted/20"
+          className={`block w-full bg-muted/20 ${frameH}`}
         />
+      </div>
+    );
+  }
+
+  if (kind === "office") {
+    // Visualizador embedado do Office Online (renderiza .docx/.xlsx/.pptx).
+    // Requer URL pública acessível — signed URL do Supabase atende.
+    const officeSrc = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+    return (
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
+        {header}
+        <iframe
+          src={officeSrc}
+          title={attachment.name}
+          className={`block w-full bg-muted/20 ${frameH}`}
+        />
+      </div>
+    );
+  }
+
+  if (kind === "text") {
+    return (
+      <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
+        {header}
+        <pre
+          className={`m-0 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words overflow-auto bg-muted/10 ${expanded ? "max-h-[80vh]" : "max-h-80"}`}
+        >
+          {textPreview ?? "Carregando…"}
+        </pre>
       </div>
     );
   }
@@ -228,5 +242,6 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
         <span className="text-muted-foreground">· {formatSize(attachment.size)}</span>
       )}
     </a>
+  );
   );
 }
