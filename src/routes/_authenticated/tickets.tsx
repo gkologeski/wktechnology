@@ -674,10 +674,11 @@ function TicketsIndex() {
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea
-                rows={4}
+              <RichHtmlEditor
                 value={draft.description ?? ""}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, description: html })}
+                minHeight={140}
+                placeholder="Descreva o ticket…"
               />
             </div>
             <div className="space-y-1.5">
