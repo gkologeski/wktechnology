@@ -56,9 +56,11 @@
     "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
-    "@tanstack/react-router": "^1.168.25",
-    "@tanstack/react-start": "^1.167.50",
-    "@tanstack/router-plugin": "^1.167.28",
+    "@tanstack/react-router": "1.168.25",
+    "@tanstack/react-start": "1.167.50",
+    "@tanstack/router-plugin": "1.167.28",
+    "@tanstack/router-core": "1.168.17",
+    "@tanstack/history": "1.161.6",
     "@tiptap/extension-color": "^3.26.1",
     "@tiptap/extension-font-family": "^3.26.1",
     "@tiptap/extension-highlight": "^3.26.1",
@@ -96,9 +98,9 @@
     "mammoth": "^1.12.0",
     "nitro": "3.0.260603-beta",
     "papaparse": "^5.5.3",
-    "react": "^19.2.0",
+    "react": "19.2.5",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "19.2.5",
     "react-email": "^6.3.2",
     "react-hook-form": "^7.71.2",
     "react-phone-number-input": "^3.4.16",
@@ -137,9 +139,21 @@
     "vitest": "^4.1.6"
   },
   "overrides": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@tanstack/react-router": "1.168.25",
+    "@tanstack/react-start": "1.167.50",
+    "@tanstack/router-core": "1.168.17",
+    "@tanstack/history": "1.161.6"
   },
   "resolutions": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@tanstack/react-router": "1.168.25",
+    "@tanstack/react-start": "1.167.50",
+    "@tanstack/router-core": "1.168.17",
+    "@tanstack/history": "1.161.6"
   }
 }
