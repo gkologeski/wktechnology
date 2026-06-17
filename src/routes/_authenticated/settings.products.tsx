@@ -242,10 +242,10 @@ function ProductsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea
-                rows={3}
+              <RichHtmlEditor
                 value={draft.description ?? ""}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, description: html })}
+                minHeight={140}
               />
             </div>
             <div className="flex items-center gap-2">
