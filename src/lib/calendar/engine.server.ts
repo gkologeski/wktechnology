@@ -480,7 +480,13 @@ async function pushPendingMeetings(
 
 export async function syncCalendarAccount(
   accountId: string,
-): Promise<{ imported: number; deleted: number; pushed_created: number; pushed_updated: number }> {
+): Promise<{
+  imported: number;
+  deleted: number;
+  pushed_created: number;
+  pushed_updated: number;
+  recordings: { scanned: number; found: number; missing: number; errors: number };
+}> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
@@ -489,26 +495,29 @@ export async function syncCalendarAccount(
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
+  const emptyRec = { scanned: 0, found: 0, missing: 0, errors: 0 };
   if (!account.sync_enabled)
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
   if (account.provider !== "google") {
-    // Microsoft not yet wired
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0 };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
   }
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     const push = await pushPendingMeetings(account as CalendarAccountRow);
-    // Best-effort: fetch recent Meet recordings from Drive (silently skips if no drive scope)
+    let recordings = emptyRec;
     try {
-      await syncPastRecordings(account as CalendarAccountRow);
+      recordings = await syncPastRecordings(account as CalendarAccountRow);
+      console.log("[recordings] resumo", { account_id: accountId, ...recordings });
     } catch (e) {
-      console.error("[recordings] sync error", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[recordings] sync error", msg);
     }
     return {
       imported: pull.imported,
       deleted: pull.deleted,
       pushed_created: push.created,
       pushed_updated: push.updated,
+      recordings,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -519,6 +528,7 @@ export async function syncCalendarAccount(
     throw e;
   }
 }
+
 
 export async function pushSingleActivity(
   accountId: string,
