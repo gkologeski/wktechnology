@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import {
   Select,
   SelectContent,
@@ -94,7 +94,7 @@ function RolesPage() {
       const res = await createFn({
         data: {
           name: newName.trim(),
-          description: newDesc.trim() || undefined,
+          description: htmlToPlain(newDesc).trim() ? newDesc : undefined,
           base_role: newRole,
           copy_from: copyFrom !== "none" ? copyFrom : undefined,
         },
@@ -267,8 +267,8 @@ function RolesPage() {
                       </Badge>
                     )}
                   </div>
-                  {p.description && (
-                    <p className="text-xs text-muted-foreground truncate">{p.description}</p>
+                  {p.description && htmlToPlain(p.description) && (
+                    <HtmlContent html={p.description} className="text-xs text-muted-foreground truncate" />
                   )}
                 </div>
                 <Badge variant="outline" className="text-[10px]">

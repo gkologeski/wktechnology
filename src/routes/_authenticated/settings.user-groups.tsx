@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RichHtmlEditor } from "@/components/rich-html-editor";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -97,13 +97,13 @@ function UserGroupsPage() {
             id: editing.id,
             name: draft.name,
             color: draft.color,
-            description: draft.description || null,
+            description: htmlToPlain(draft.description).trim() ? draft.description : null,
           },
         });
         await membersFn({ data: { group_id: editing.id, user_ids: memberDraft } });
       } else {
         const res = await createFn({
-          data: { name: draft.name, color: draft.color, description: draft.description || null },
+          data: { name: draft.name, color: draft.color, description: htmlToPlain(draft.description).trim() ? draft.description : null },
         });
         if (memberDraft.length)
           await membersFn({ data: { group_id: res.id, user_ids: memberDraft } });
@@ -178,10 +178,11 @@ function UserGroupsPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-medium">{g.name}</div>
-                      {g.description && (
-                        <div className="text-xs text-muted-foreground line-clamp-2">
-                          {g.description}
-                        </div>
+                      {g.description && htmlToPlain(g.description) && (
+                        <HtmlContent
+                          html={g.description}
+                          className="text-xs text-muted-foreground line-clamp-2"
+                        />
                       )}
                       <div className="mt-1 flex flex-wrap gap-1">
                         {g.member_ids.length === 0 ? (
