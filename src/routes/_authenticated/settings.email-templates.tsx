@@ -147,10 +147,11 @@ function TemplatesSection() {
             </div>
             <div>
               <Label>Mensagem</Label>
-              <Textarea
-                value={editing.body_text ?? ""}
-                onChange={(e) => setEditing({ ...editing, body_text: e.target.value })}
-                rows={12}
+              <RichHtmlEditor
+                value={editing.body_html ?? editing.body_text ?? ""}
+                onChange={(html) => setEditing({ ...editing, body_html: html })}
+                minHeight={260}
+                placeholder="Escreva a mensagem do template…"
               />
             </div>
             <div className="flex justify-between gap-2">
