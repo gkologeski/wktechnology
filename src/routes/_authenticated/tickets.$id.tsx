@@ -25,6 +25,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { TicketMacrosButton } from "@/components/tickets/ticket-macros-button";
 import { KbSuggestions } from "@/components/tickets/kb-suggestions";
+import { HtmlContent } from "@/components/rich-html-editor";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
