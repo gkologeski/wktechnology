@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Building2,
@@ -21,6 +22,13 @@ import {
   QuickCreateDealDialog,
   QuickCreateTicketDialog,
 } from "@/components/record/quick-create-dialogs";
+import {
+  AssociatePeriodDialog,
+  periodToDays,
+  type AssociationPeriod,
+} from "@/components/associations/associate-period-dialog";
+import { propagateAssociationHistory } from "@/lib/associations.functions";
+import type { AssociationKind } from "@/lib/associations.functions";
 
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
