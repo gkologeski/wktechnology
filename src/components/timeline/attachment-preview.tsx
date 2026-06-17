@@ -243,5 +243,4 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
       )}
     </a>
   );
-  );
 }
