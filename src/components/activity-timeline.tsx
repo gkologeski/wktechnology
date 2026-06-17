@@ -520,6 +520,23 @@ export function ActivityTimeline({
   };
 
   const signMeetingRec = useServerFn(signMeetingRecording);
+  const summarizeMeetingFn = useServerFn(generateMeetingSummary);
+  const onSummarizeMeeting = async (activityId: string) => {
+    const a = items.find((i) => i.id === activityId);
+    const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
+    const meetingId = typeof ext.meeting_id === "string" ? (ext.meeting_id as string) : null;
+    if (!meetingId) {
+      toast.error("Esta reunião não tem uma sala vinculada para resumir.");
+      return;
+    }
+    try {
+      toast.message("Gerando resumo com IA…");
+      await summarizeMeetingFn({ data: { meeting_id: meetingId } });
+      toast.success("Resumo gerado. Veja em Reuniões.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao resumir reunião");
+    }
+  };
   const downloadAttachment = async (att: Attachment) => {
     const bucket = att.bucket || "notes-attachments";
     if (bucket === "meeting-recordings") {
