@@ -31,7 +31,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Placeholder from "@tiptap/extension-placeholder";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
-import DOMPurify from "isomorphic-dompurify";
+import createDOMPurify from "dompurify";
 import { useEffect, useImperativeHandle, forwardRef, useState } from "react";
 import {
   Bold,
@@ -92,8 +92,55 @@ const SANITIZE_CONFIG = {
   ],
 };
 
+const ALLOWED_TAG_SET = new Set(SANITIZE_CONFIG.ALLOWED_TAGS);
+const ALLOWED_ATTR_SET = new Set(SANITIZE_CONFIG.ALLOWED_ATTR);
+
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function isSafeUrl(value: string): boolean {
+  const trimmed = value.trim().replace(/[\u0000-\u001F\u007F\s]+/g, "");
+  return /^(https?:|mailto:|tel:|data:image\/(?:png|gif|jpe?g|webp);base64,|\/|#)/i.test(trimmed);
+}
+
+function sanitizeStyle(value: string): string | null {
+  if (/expression\s*\(|javascript\s*:|url\s*\(/i.test(value)) return null;
+  return value;
+}
+
+function sanitizeRichHtmlWithoutDom(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*\/?\s*([a-zA-Z0-9-]+)([^>]*)>/g, (full, rawTag: string, rawAttrs: string) => {
+      const tag = rawTag.toLowerCase();
+      if (!ALLOWED_TAG_SET.has(tag)) return "";
+      if (/^<\s*\//.test(full)) return `</${tag}>`;
+      if (tag === "br" || tag === "hr") return `<${tag}>`;
+
+      const attrs: string[] = [];
+      const attrRe = /([^\s"'=<>`]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+      let match: RegExpExecArray | null;
+      while ((match = attrRe.exec(rawAttrs)) !== null) {
+        const name = match[1].toLowerCase();
+        const value = match[2] ?? match[3] ?? match[4] ?? "";
+        if (!ALLOWED_ATTR_SET.has(name)) continue;
+        if ((name === "href" || name === "src") && !isSafeUrl(value)) continue;
+        if (name === "style" && sanitizeStyle(value) === null) continue;
+        attrs.push(`${name}="${escapeAttr(value)}"`);
+      }
+      return `<${tag}${attrs.length ? ` ${attrs.join(" ")}` : ""}>`;
+    });
+}
+
 export function sanitizeRichHtml(html: string): string {
-  return DOMPurify.sanitize(html ?? "", SANITIZE_CONFIG);
+  if (!html) return "";
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return sanitizeRichHtmlWithoutDom(html);
+  }
+  const purify = createDOMPurify(window);
+  return purify.sanitize(html, SANITIZE_CONFIG);
 }
 
 export type WordEditorHandle = {
