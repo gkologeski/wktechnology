@@ -68,10 +68,51 @@ type GCalEvent = {
   description?: string;
   location?: string;
   htmlLink?: string;
+  hangoutLink?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
-  attendees?: { email: string; displayName?: string; responseStatus?: string }[];
+  attendees?: { email: string; displayName?: string; responseStatus?: string; organizer?: boolean; self?: boolean }[];
+  conferenceData?: {
+    conferenceId?: string;
+    entryPoints?: { entryPointType?: string; uri?: string }[];
+  };
 };
+
+// Free email domains that should never be used to auto-link a contact
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com", "hotmail.com", "outlook.com", "outlook.com.br", "live.com", "msn.com",
+  "yahoo.com", "yahoo.com.br", "icloud.com", "me.com", "aol.com",
+  "proton.me", "protonmail.com", "uol.com.br", "bol.com.br", "terra.com.br",
+]);
+
+async function matchContactForAttendees(
+  ownerId: string,
+  attendees: GCalEvent["attendees"],
+): Promise<string | null> {
+  if (!attendees || attendees.length === 0) return null;
+  const emails = attendees
+    .filter((a) => a.email && !a.organizer && !a.self)
+    .map((a) => a.email.toLowerCase());
+  if (emails.length === 0) return null;
+  const { data } = await supabaseAdmin
+    .from("contacts")
+    .select("id, email, created_at")
+    .eq("owner_id", ownerId)
+    .is("deleted_at", null)
+    .in("email", emails)
+    .order("created_at", { ascending: true })
+    .limit(5);
+  if (!data || data.length === 0) return null;
+  // Prefer non-free-email-domain matches first
+  const ranked = [...data].sort((a, b) => {
+    const da = (a.email ?? "").split("@")[1]?.toLowerCase() ?? "";
+    const db = (b.email ?? "").split("@")[1]?.toLowerCase() ?? "";
+    const aFree = FREE_EMAIL_DOMAINS.has(da) ? 1 : 0;
+    const bFree = FREE_EMAIL_DOMAINS.has(db) ? 1 : 0;
+    return aFree - bFree;
+  });
+  return ranked[0]?.id ?? null;
+}
 
 async function gcalFetch(token: string, path: string, init?: RequestInit) {
   const res = await fetch(`${CAL_API}${path}`, {
