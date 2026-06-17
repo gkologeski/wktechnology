@@ -348,18 +348,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
             </div>
             <div className="space-y-1.5">
               <Label>Observações</Label>
-              <Textarea
-                rows={3}
+              <RichHtmlEditor
                 value={draft.notes}
-                onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, notes: html })}
+                minHeight={140}
               />
             </div>
             <div className="space-y-1.5">
               <Label>Termos e condições</Label>
-              <Textarea
-                rows={4}
+              <RichHtmlEditor
                 value={draft.terms}
-                onChange={(e) => setDraft({ ...draft, terms: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, terms: html })}
+                minHeight={180}
               />
             </div>
           </div>
