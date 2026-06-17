@@ -79,6 +79,17 @@ export default defineConfig({
         "@tanstack/react-router",
         "@tanstack/react-router-devtools",
         "@tanstack/start-static-server-functions",
+        // Crítico: subpaths do router-core são descobertos tarde (quando
+        // uma rota lazy hidrata) e disparam "new dependencies optimized
+        // → reloading", criando um segundo prebundle do React com outro
+        // hash "?v=". Excluindo-os, o Vite serve o ESM original sem
+        // re-otimizar e o React permanece único.
+        "@tanstack/router-core",
+        "@tanstack/router-core/ssr/client",
+        "@tanstack/router-core/ssr/server",
+        "@tanstack/history",
+        "seroval",
+        "h3-v2",
       ],
     },
   },
