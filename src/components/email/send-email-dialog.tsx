@@ -109,7 +109,8 @@ export function SendEmailDialog({
     const t = templatesQ.data?.items.find((x) => x.id === id);
     if (!t) return;
     setSubject(renderTokens(t.subject ?? "", ctx));
-    setBody(renderTokens(t.body_text ?? "", ctx));
+    const tplBody = (t.body_html && t.body_html.trim()) ? t.body_html : (t.body_text ?? "");
+    setBody(renderTokens(tplBody, ctx));
     toast.success(`Template "${t.name}" aplicado`);
   };
 
@@ -119,6 +120,7 @@ export function SendEmailDialog({
   }, [body, ctx, snippetsQ.data]);
 
   const finalSubject = useMemo(() => renderTokens(subject, ctx), [subject, ctx]);
+  const finalBodyText = useMemo(() => htmlToPlain(finalBody), [finalBody]);
 
   const sendMut = useMutation({
     mutationFn: () =>
@@ -127,8 +129,8 @@ export function SendEmailDialog({
           to,
           cc: cc.trim() ? cc : undefined,
           subject: finalSubject,
-          body_text: finalBody,
-          body_html: `<div style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escape(finalBody)}</div>`,
+          body_text: finalBodyText,
+          body_html: finalBody,
           contact_id: contactId,
           lead_id: leadId,
           deal_id: dealId,
