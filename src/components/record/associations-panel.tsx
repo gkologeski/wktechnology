@@ -293,6 +293,7 @@ function CompanyCard({
         onOpenChange={setCreateOpen}
         onCreated={(id) => request(id)}
       />
+      {dialog}
     </>
   );
 }
