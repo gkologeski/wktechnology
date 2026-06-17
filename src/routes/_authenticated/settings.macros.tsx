@@ -200,10 +200,10 @@ function MacrosPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Corpo *</Label>
-              <Textarea
-                rows={8}
+              <RichHtmlEditor
                 value={draft.body ?? ""}
-                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, body: html })}
+                minHeight={200}
                 placeholder="Olá {{contact_first_name}}, recebemos seu chamado…"
               />
             </div>
