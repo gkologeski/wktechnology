@@ -248,7 +248,64 @@ export function ActivityTimeline({
     setLoading(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
     if (error) toast.error(error.message);
-    const rows = ((data as Activity[]) ?? []).slice().sort((a, b) => {
+    const baseRows = ((data as Activity[]) ?? []).slice();
+
+    // Also pull synced Google Calendar events for contact/deal-via-contact
+    let calendarVirtuals: Activity[] = [];
+    try {
+      let contactIds: string[] = [];
+      if (relatedKey === "related_contact_id") {
+        contactIds = [relatedId];
+      } else if (relatedKey === "related_deal_id") {
+        const { data: dc } = await supabase
+          .from("deal_contacts")
+          .select("contact_id")
+          .eq("deal_id", relatedId);
+        contactIds = (dc ?? []).map((r) => (r as { contact_id: string }).contact_id);
+      }
+      if (contactIds.length > 0) {
+        const { data: cev } = await supabase
+          .from("calendar_events")
+          .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
+          .in("related_contact_id", contactIds);
+        calendarVirtuals = ((cev ?? []) as Array<Record<string, unknown>>).map((e) => {
+          const atts = (e.attendees as Array<{ email: string; displayName?: string; organizer?: boolean; self?: boolean }> | null) ?? [];
+          return {
+            id: `cal_${e.id as string}`,
+            type: "meeting",
+            subject: (e.title as string) ?? "Reunião (Google Calendar)",
+            body: (e.description as string) ?? "",
+            due_date: (e.start_at as string) ?? null,
+            created_at: (e.start_at as string) ?? (e.created_at as string),
+            hs_createdate: (e.start_at as string) ?? (e.created_at as string),
+            meeting_location: (e.location as string) ?? (e.hangout_link as string) ?? null,
+            external_ids: {
+              source: "google_calendar",
+              calendar_event_id: e.id,
+              gcal_html_link: e.html_link ?? null,
+              recording_url: e.recording_url ?? null,
+            },
+            attachments: {
+              end_at: e.end_at ?? null,
+              meet_link: e.hangout_link ?? null,
+              calendar_html_link: e.html_link ?? null,
+              recording_url: e.recording_url ?? null,
+              attendees: atts
+                .filter((a) => a.email)
+                .map((a) => ({ email: a.email, name: a.displayName })),
+            },
+            // mark read-only for edit/delete
+            completed: false,
+            owner_id: null,
+            [relatedKey]: relatedId,
+          } as unknown as Activity;
+        });
+      }
+    } catch (e) {
+      console.error("[timeline] calendar events load", e);
+    }
+
+    const rows = [...baseRows, ...calendarVirtuals].sort((a, b) => {
       const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
       const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
       return tb - ta;
