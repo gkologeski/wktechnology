@@ -604,23 +604,6 @@ export function ActivityTimeline({
       toast.error(e instanceof Error ? e.message : "Falha ao resumir reunião");
     }
   };
-  const downloadAttachment = async (att: Attachment) => {
-    const bucket = att.bucket || "notes-attachments";
-    if (bucket === "meeting-recordings") {
-      try {
-        const { url } = await signMeetingRec({ data: { path: att.path } });
-        window.open(url, "_blank");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao abrir gravação");
-      }
-      return;
-    }
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(att.path, 60 * 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
-  };
 
   const pickLog = (kind: LogKind) => {
     setType(kind);
