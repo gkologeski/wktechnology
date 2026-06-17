@@ -356,10 +356,10 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5 col-span-2">
             <Label>Descrição</Label>
-            <Textarea
-              rows={3}
+            <RichHtmlEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
+              minHeight={140}
             />
           </div>
         </div>
