@@ -7,6 +7,7 @@ import { Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,16 +68,18 @@ function TemplatesSection() {
   const [editing, setEditing] = useState<Partial<Template> | null>(null);
 
   const save = useMutation({
-    mutationFn: () =>
-      upsertFn({
+    mutationFn: () => {
+      const html = editing?.body_html ?? "";
+      return upsertFn({
         data: {
           id: editing?.id,
           name: editing?.name ?? "",
           subject: editing?.subject ?? "",
-          body_html: editing?.body_html ?? "",
-          body_text: editing?.body_text ?? "",
+          body_html: html,
+          body_text: htmlToPlain(html),
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Template salvo");
       setEditing(null);
@@ -145,10 +148,11 @@ function TemplatesSection() {
             </div>
             <div>
               <Label>Mensagem</Label>
-              <Textarea
-                value={editing.body_text ?? ""}
-                onChange={(e) => setEditing({ ...editing, body_text: e.target.value })}
-                rows={12}
+              <RichHtmlEditor
+                value={editing.body_html ?? editing.body_text ?? ""}
+                onChange={(html) => setEditing({ ...editing, body_html: html })}
+                minHeight={260}
+                placeholder="Escreva a mensagem do template…"
               />
             </div>
             <div className="flex justify-between gap-2">

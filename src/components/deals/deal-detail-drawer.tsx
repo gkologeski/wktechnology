@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -258,17 +258,17 @@ export function DealDetailDrawer({
                 </Field>
               </div>
               <Field label="Descrição">
-                <Textarea
-                  rows={2}
+                <RichHtmlEditor
                   value={String(v.description ?? "")}
-                  onChange={(e) => set("description", e.target.value)}
+                  onChange={(html) => set("description", html)}
+                  minHeight={100}
                 />
               </Field>
               <Field label="Notas">
-                <Textarea
-                  rows={3}
+                <RichHtmlEditor
                   value={String(v.notes ?? "")}
-                  onChange={(e) => set("notes", e.target.value)}
+                  onChange={(html) => set("notes", html)}
+                  minHeight={140}
                 />
               </Field>
             </TabsContent>

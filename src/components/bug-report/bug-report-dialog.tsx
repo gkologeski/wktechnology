@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -109,7 +109,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
       toast.error("Você precisa estar autenticado.");
       return;
     }
-    const parsed = schema.safeParse({ kind, category, subtype, description });
+    const parsed = schema.safeParse({ kind, category, subtype, description: htmlToPlain(description) });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Preencha todos os campos");
       return;
@@ -153,7 +153,7 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         kind: parsed.data.kind,
         category: parsed.data.category,
         subtype: parsed.data.subtype,
-        description: parsed.data.description,
+        description: description,
         recording_path: recordingPath,
         recording_has_audio: hasAudio,
         image_paths: imagePaths,
@@ -246,14 +246,13 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
 
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea
-                rows={5}
+              <RichHtmlEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
+                minHeight={160}
                 placeholder="O que você esperava? O que aconteceu? Em qual tela?"
-                maxLength={4000}
               />
-              <p className="text-xs text-muted-foreground text-right">{description.length}/4000</p>
+              <p className="text-xs text-muted-foreground text-right">{htmlToPlain(description).length}/4000</p>
             </div>
 
             <div className="rounded-lg border p-3 space-y-3">

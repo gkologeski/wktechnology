@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -164,7 +164,7 @@ function ProductsPage() {
                   </div>
                   {p.description && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {p.description}
+                      {htmlToPlain(p.description)}
                     </p>
                   )}
                 </div>
@@ -242,10 +242,10 @@ function ProductsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea
-                rows={3}
+              <RichHtmlEditor
                 value={draft.description ?? ""}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, description: html })}
+                minHeight={140}
               />
             </div>
             <div className="flex items-center gap-2">

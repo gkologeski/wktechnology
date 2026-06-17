@@ -25,6 +25,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { TicketMacrosButton } from "@/components/tickets/ticket-macros-button";
 import { KbSuggestions } from "@/components/tickets/kb-suggestions";
+import { HtmlContent } from "@/components/rich-html-editor";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -209,9 +210,7 @@ function TicketDetail() {
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
               <h3 className="text-sm font-bold mb-3">Descrição</h3>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                {ticket.description}
-              </p>
+              <HtmlContent html={ticket.description} className="text-sm text-muted-foreground" />
             </div>
           )}
           {(() => {

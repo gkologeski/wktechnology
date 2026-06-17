@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -240,10 +240,10 @@ function EditorDialog({
           </div>
           <div className="space-y-1">
             <Label>Descrição</Label>
-            <Textarea
-              rows={2}
+            <RichHtmlEditor
               value={form.description ?? ""}
-              onChange={(e) => upd({ description: e.target.value })}
+              onChange={(html) => upd({ description: html })}
+              minHeight={120}
             />
           </div>
           <div className="grid grid-cols-3 gap-3">

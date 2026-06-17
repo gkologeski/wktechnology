@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, HtmlContent, htmlToPlain } from "@/components/rich-html-editor";
 import {
   Select,
   SelectContent,
@@ -341,16 +341,17 @@ function MyBugReportsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm whitespace-pre-wrap">{r.description}</p>
+                  <HtmlContent html={r.description} className="text-sm" />
                   {r.status === "resolved" && r.resolution_text && (
                     <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-3">
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1">
                           O status do seu chamado foi atualizado para <strong>Resolvido</strong>.
                         </p>
-                        <p className="whitespace-pre-wrap">
-                          <strong>Resolução:</strong> {r.resolution_text}
-                        </p>
+                        <div>
+                          <strong>Resolução:</strong>
+                          <HtmlContent html={r.resolution_text} />
+                        </div>
                       </div>
                       {r.user_resolution_confirmed === true ? (
                         <p className="flex items-center gap-2 text-xs text-emerald-600">
@@ -384,7 +385,7 @@ function MyBugReportsPage() {
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         Você reabriu este chamado informando:
                       </p>
-                      <p className="whitespace-pre-wrap">{r.user_resolution_feedback}</p>
+                      <HtmlContent html={r.user_resolution_feedback} />
                     </div>
                   )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
@@ -503,14 +504,13 @@ function MyBugReportsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Descrição</Label>
-                <Textarea
-                  rows={5}
+                <RichHtmlEditor
                   value={edit.description}
-                  maxLength={4000}
-                  onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+                  onChange={(html) => setEdit({ ...edit, description: html })}
+                  minHeight={160}
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {edit.description.length}/4000
+                  {htmlToPlain(edit.description).length}/4000
                 </p>
               </div>
             </div>
@@ -522,7 +522,7 @@ function MyBugReportsPage() {
             <Button
               onClick={() => {
                 if (!edit) return;
-                if (edit.description.trim().length < 10) {
+                if (htmlToPlain(edit.description).trim().length < 10) {
                   toast.error("Descreva com pelo menos 10 caracteres");
                   return;
                 }
@@ -564,15 +564,14 @@ function MyBugReportsPage() {
               )}
               <div className="space-y-2">
                 <Label>O que está acontecendo agora?</Label>
-                <Textarea
-                  rows={6}
-                  maxLength={4000}
+                <RichHtmlEditor
                   value={reopen.feedback}
-                  onChange={(e) => setReopen({ ...reopen, feedback: e.target.value })}
+                  onChange={(html) => setReopen({ ...reopen, feedback: html })}
+                  minHeight={160}
                   placeholder="Descreva o passo a passo, o que esperava e o que aconteceu…"
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {reopen.feedback.length}/4000
+                  {htmlToPlain(reopen.feedback).length}/4000
                 </p>
               </div>
             </div>

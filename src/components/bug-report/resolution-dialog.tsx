@@ -8,8 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 
 export function BugReportResolutionDialog({
   open,
@@ -31,10 +31,10 @@ export function BugReportResolutionDialog({
   }, [open]);
 
   const confirm = async () => {
-    if (!text.trim()) return;
+    if (!htmlToPlain(text).trim()) return;
     setSaving(true);
     try {
-      await onConfirm(text.trim());
+      await onConfirm(text);
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -58,12 +58,10 @@ export function BugReportResolutionDialog({
         </DialogHeader>
         <div className="space-y-1.5 py-2">
           <Label htmlFor="br-resolution-text">Texto de resolução *</Label>
-          <Textarea
-            id="br-resolution-text"
-            rows={5}
-            autoFocus
+          <RichHtmlEditor
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={setText}
+            minHeight={140}
             placeholder="Ex.: Corrigimos o erro X e validamos com o usuário."
           />
         </div>
@@ -71,7 +69,7 @@ export function BugReportResolutionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={confirm} disabled={saving || !text.trim()}>
+          <Button onClick={confirm} disabled={saving || !htmlToPlain(text).trim()}>
             {saving ? "Salvando…" : "Marcar como resolvido"}
           </Button>
         </DialogFooter>

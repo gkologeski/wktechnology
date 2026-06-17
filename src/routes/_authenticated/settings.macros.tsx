@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,7 +64,7 @@ function MacrosPage() {
   }
   async function save() {
     if (!user) return;
-    if (!draft.name?.trim() || !draft.body?.trim()) {
+    if (!draft.name?.trim() || !htmlToPlain(draft.body ?? "").trim()) {
       toast.error("Informe nome e corpo.");
       return;
     }
@@ -148,8 +148,8 @@ function MacrosPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 mt-1">
-                    {m.body}
+                  <p className="text-xs text-muted-foreground line-clamp-3 mt-1">
+                    {htmlToPlain(m.body)}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -200,10 +200,10 @@ function MacrosPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Corpo *</Label>
-              <Textarea
-                rows={8}
+              <RichHtmlEditor
                 value={draft.body ?? ""}
-                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                onChange={(html) => setDraft({ ...draft, body: html })}
+                minHeight={200}
                 placeholder="Olá {{contact_first_name}}, recebemos seu chamado…"
               />
             </div>

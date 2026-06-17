@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Check, SkipForward, ArrowLeft, Phone, Mail, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { getQueueWithItems, updateQueueItem } from "@/lib/task-queues.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
@@ -142,10 +142,10 @@ function PlayQueue() {
 
             <div>
               <label className="text-sm font-medium">Anotações</label>
-              <Textarea
-                rows={4}
+              <RichHtmlEditor
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={setNotes}
+                minHeight={140}
                 placeholder="O que aconteceu nesse contato?"
               />
             </div>

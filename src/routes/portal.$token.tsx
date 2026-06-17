@@ -6,7 +6,7 @@ import { useState } from "react";
 import { getPortalSession, listPortalTickets, createPortalTicket } from "@/lib/portal.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -140,10 +140,10 @@ function PortalPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Descrição</label>
-                  <Textarea
-                    rows={5}
+                  <RichHtmlEditor
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={setDescription}
+                    minHeight={160}
                     placeholder="Detalhe o que aconteceu"
                   />
                 </div>
@@ -203,7 +203,7 @@ function PortalPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {t.description && <p className="text-sm whitespace-pre-wrap">{t.description}</p>}
+                  {t.description && <HtmlContent html={t.description} className="text-sm" />}
                   <p className="text-xs text-muted-foreground">
                     Aberto em {formatDateTime(t.created_at)}
                     {t.resolved_at && ` • Resolvido em ${formatDateTime(t.resolved_at)}`}

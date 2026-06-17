@@ -11,7 +11,7 @@ import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tok
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isEmail } from "@/lib/validators";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import {
   Dialog,
   DialogContent,
@@ -109,7 +109,8 @@ export function SendEmailDialog({
     const t = templatesQ.data?.items.find((x) => x.id === id);
     if (!t) return;
     setSubject(renderTokens(t.subject ?? "", ctx));
-    setBody(renderTokens(t.body_text ?? "", ctx));
+    const tplBody = (t.body_html && t.body_html.trim()) ? t.body_html : (t.body_text ?? "");
+    setBody(renderTokens(tplBody, ctx));
     toast.success(`Template "${t.name}" aplicado`);
   };
 
@@ -119,6 +120,7 @@ export function SendEmailDialog({
   }, [body, ctx, snippetsQ.data]);
 
   const finalSubject = useMemo(() => renderTokens(subject, ctx), [subject, ctx]);
+  const finalBodyText = useMemo(() => htmlToPlain(finalBody), [finalBody]);
 
   const sendMut = useMutation({
     mutationFn: () =>
@@ -127,8 +129,8 @@ export function SendEmailDialog({
           to,
           cc: cc.trim() ? cc : undefined,
           subject: finalSubject,
-          body_text: finalBody,
-          body_html: `<div style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escape(finalBody)}</div>`,
+          body_text: finalBodyText,
+          body_html: finalBody,
           contact_id: contactId,
           lead_id: leadId,
           deal_id: dealId,
@@ -230,7 +232,7 @@ export function SendEmailDialog({
                   onApply={setBody}
                 />
               </div>
-              <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} />
+              <RichHtmlEditor value={body} onChange={setBody} minHeight={220} placeholder="Escreva sua mensagem…" />
             </div>
           </div>
         )}
@@ -257,7 +259,7 @@ export function SendEmailDialog({
               sendMut.mutate();
             }}
             disabled={
-              !account || !to || !finalSubject.trim() || !finalBody.trim() || sendMut.isPending
+              !account || !to || !finalSubject.trim() || !finalBodyText.trim() || sendMut.isPending
             }
           >
             <Send className="mr-2 h-4 w-4" />
@@ -269,10 +271,3 @@ export function SendEmailDialog({
   );
 }
 
-function escape(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}

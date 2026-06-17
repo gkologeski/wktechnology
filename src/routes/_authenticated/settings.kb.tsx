@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -390,11 +391,12 @@ function ArticlesTab() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Conteúdo (Markdown/texto)</label>
-                <Textarea
-                  rows={12}
+                <label className="text-sm font-medium">Conteúdo</label>
+                <RichHtmlEditor
                   value={edit.body}
-                  onChange={(e) => setEdit({ ...edit, body: e.target.value })}
+                  onChange={(html) => setEdit({ ...edit, body: html })}
+                  minHeight={320}
+                  placeholder="Escreva o conteúdo do artigo…"
                 />
               </div>
               <div className="flex items-center gap-2">

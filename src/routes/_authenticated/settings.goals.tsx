@@ -18,7 +18,7 @@ import { listTeamMembers } from "@/lib/teams.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -371,10 +371,10 @@ function GoalsPage() {
             </div>
             <div>
               <Label>Observações</Label>
-              <Textarea
-                rows={2}
+              <RichHtmlEditor
                 value={form.notes ?? ""}
-                onChange={(e) => setForm({ ...form, notes: e.target.value || null })}
+                onChange={(html) => setForm({ ...form, notes: html || null })}
+                minHeight={120}
               />
             </div>
             <p className="text-xs text-muted-foreground">

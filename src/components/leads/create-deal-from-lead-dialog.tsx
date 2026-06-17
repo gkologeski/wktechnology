@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
@@ -356,10 +356,10 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5 col-span-2">
             <Label>Descrição</Label>
-            <Textarea
-              rows={3}
+            <RichHtmlEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
+              minHeight={140}
             />
           </div>
         </div>

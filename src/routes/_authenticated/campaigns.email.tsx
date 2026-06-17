@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -266,7 +267,15 @@ function EmailBroadcastsPage() {
               </div>
               <div>
                 <Label>Corpo HTML</Label>
-                <Textarea rows={6} value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} />
+                <RichHtmlEditor
+                  value={bodyHtml}
+                  onChange={(html) => {
+                    setBodyHtml(html);
+                    if (!bodyText.trim()) setBodyText(htmlToPlain(html));
+                  }}
+                  minHeight={220}
+                  placeholder="Conteúdo do email…"
+                />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { toast } from "sonner";
 import { getVoiceAccessToken, logCallActivity } from "@/lib/twilio-voice.functions";
 import type { Device as DeviceType, Call as CallType } from "@twilio/voice-sdk";
@@ -304,11 +304,10 @@ export function CallDialer({
             </div>
             <div>
               <Label htmlFor="call-notes">Notas</Label>
-              <Textarea
-                id="call-notes"
+              <RichHtmlEditor
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
+                onChange={setNotes}
+                minHeight={140}
                 placeholder="Resumo da conversa…"
               />
             </div>

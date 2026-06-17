@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -117,7 +117,7 @@ export function BulkCreateActivityDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Descrição</Label>
-            <Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
+            <RichHtmlEditor value={body} onChange={setBody} minHeight={120} />
           </div>
           <div className="space-y-1.5">
             <Label>Data limite</Label>

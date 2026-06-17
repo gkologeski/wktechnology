@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
 import { CalendarDays, Clock, MapPin, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/book/$slug")({
@@ -147,9 +147,7 @@ function PublicBookingPage() {
           <div className="h-2 rounded mb-4" style={{ background: info.color }} />
           <h1 className="text-xl font-semibold">{info.title}</h1>
           {info.description && (
-            <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">
-              {info.description}
-            </p>
+            <HtmlContent html={info.description} className="text-sm text-muted-foreground mt-2" />
           )}
           <div className="mt-4 space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -236,10 +234,10 @@ function PublicBookingPage() {
               </div>
               <div className="space-y-2">
                 <Label>Observações</Label>
-                <Textarea
-                  rows={3}
+                <RichHtmlEditor
                   value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  onChange={(html) => setForm({ ...form, notes: html })}
+                  minHeight={120}
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}

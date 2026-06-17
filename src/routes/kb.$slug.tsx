@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getKbArticlePublic } from "@/lib/kb.functions";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen } from "lucide-react";
+import { HtmlContent } from "@/components/rich-html-editor";
 
 export const Route = createFileRoute("/kb/$slug")({
   loader: async ({ params }) => {
@@ -91,7 +92,7 @@ function KbArticle() {
         <article className="prose prose-sm dark:prose-invert max-w-none">
           <h1>{data.title}</h1>
           {data.excerpt && <p className="lead text-muted-foreground">{data.excerpt}</p>}
-          <div className="whitespace-pre-wrap text-foreground">{data.body}</div>
+          <HtmlContent html={data.body} className="text-foreground" />
         </article>
       </main>
     </div>
