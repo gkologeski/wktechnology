@@ -164,7 +164,7 @@ function ProductsPage() {
                   </div>
                   {p.description && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {p.description}
+                      {htmlToPlain(p.description)}
                     </p>
                   )}
                 </div>
