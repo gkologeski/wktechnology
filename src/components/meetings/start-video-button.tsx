@@ -74,21 +74,22 @@ export function StartVideoButton({
     toast.success("Link copiado");
   }
 
+  const openDialog = () => {
+    setCreatedLink(null);
+    setRoomUrl(null);
+    setOpen(true);
+  };
+
   return (
     <>
-      <Button
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={() => {
-          setCreatedLink(null);
-          setRoomUrl(null);
-          setOpen(true);
-        }}
-      >
-        <Video className="mr-2 h-4 w-4" />
-        Vídeo
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(openDialog)
+      ) : (
+        <Button variant={variant} size={size} className={className} onClick={openDialog}>
+          <Video className="mr-2 h-4 w-4" />
+          Vídeo
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
