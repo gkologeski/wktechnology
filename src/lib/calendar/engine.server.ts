@@ -76,7 +76,26 @@ type GCalEvent = {
     conferenceId?: string;
     entryPoints?: { entryPointType?: string; uri?: string }[];
   };
+  attachments?: { fileUrl?: string; title?: string; mimeType?: string; fileId?: string }[];
 };
+
+function pickRecordingFromAttachments(
+  attachments: GCalEvent["attachments"],
+): { file_id: string; url: string; mime_type: string } | null {
+  if (!attachments) return null;
+  // Meet drops the recording as a video/mp4 attachment whose title ends with "- Recording"
+  const rec = attachments.find(
+    (a) =>
+      a.fileId &&
+      (a.mimeType === "video/mp4" || /recording/i.test(a.title ?? "")),
+  );
+  if (!rec?.fileId) return null;
+  return {
+    file_id: rec.fileId,
+    url: rec.fileUrl ?? `https://drive.google.com/file/d/${rec.fileId}/view`,
+    mime_type: rec.mimeType ?? "video/mp4",
+  };
+}
 
 // Free email domains that should never be used to auto-link a contact
 const FREE_EMAIL_DOMAINS = new Set([
