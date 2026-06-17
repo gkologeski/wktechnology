@@ -64,7 +64,7 @@ function MacrosPage() {
   }
   async function save() {
     if (!user) return;
-    if (!draft.name?.trim() || !draft.body?.trim()) {
+    if (!draft.name?.trim() || !htmlToPlain(draft.body ?? "").trim()) {
       toast.error("Informe nome e corpo.");
       return;
     }
