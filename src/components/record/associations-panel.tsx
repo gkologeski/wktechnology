@@ -251,7 +251,7 @@ function CompanyCard({
             labelFrom={(r) => String((r as { name?: string }).name ?? "—")}
             hintFrom={(r) => (r as { domain?: string }).domain ?? null}
             placeholder="Buscar empresa…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
@@ -291,7 +291,7 @@ function CompanyCard({
       <QuickCreateCompanyDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
     </>
   );
@@ -393,7 +393,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
         }
@@ -437,7 +437,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       <CreateContactDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
     </>
   );
@@ -573,7 +573,7 @@ function DealsCard({
               return x.value != null ? formatCurrency(x.value, x.currency ?? "BRL") : null;
             }}
             placeholder="Buscar negócio…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
         }
@@ -704,7 +704,7 @@ function TicketsCard({
                 return [x.status, x.priority].filter(Boolean).join(" · ") || null;
               }}
               placeholder="Buscar ticket…"
-              onPick={associate}
+              onPick={request}
               onCreateNew={() => setCreateOpen(true)}
             />
           )
@@ -808,7 +808,7 @@ function SingleContactCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
@@ -849,7 +849,7 @@ function SingleContactCard({
       <CreateContactDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
     </>
   );
@@ -917,7 +917,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
               return x.value != null ? formatCurrency(x.value, x.currency ?? "BRL") : null;
             }}
             placeholder="Buscar negócio…"
-            onPick={associate}
+            onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={d ? "Trocar" : "Adicionar"}
           />
@@ -957,7 +957,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
       <QuickCreateDealDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(id) => void associate(id)}
+        onCreated={(id) => request(id)}
       />
     </>
   );
