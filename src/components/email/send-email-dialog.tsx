@@ -11,7 +11,7 @@ import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tok
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isEmail } from "@/lib/validators";
-import { Textarea } from "@/components/ui/textarea";
+import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import {
   Dialog,
   DialogContent,
