@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getKbArticlePublic } from "@/lib/kb.functions";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen } from "lucide-react";
+import { HtmlContent } from "@/components/rich-html-editor";
 
 export const Route = createFileRoute("/kb/$slug")({
   loader: async ({ params }) => {
