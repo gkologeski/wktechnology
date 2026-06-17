@@ -458,6 +458,173 @@ Responda APENAS com JSON válido.`;
   });
 
 /* ============================================================
+ * AI: summarize a Google Calendar event's Drive recording
+ * ============================================================ */
+async function refreshGoogleAccessToken(account: any): Promise<string> {
+  if (!account.refresh_token) throw new Error("Conta de calendário sem refresh_token — reconecte o Google");
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("Credenciais OAuth do Google ausentes no servidor");
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: account.refresh_token,
+      grant_type: "refresh_token",
+    }).toString(),
+  });
+  if (!res.ok) throw new Error(`Falha ao renovar token Google: ${res.status}`);
+  const j = (await res.json()) as { access_token: string; expires_in: number };
+  const expiresAt = new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString();
+  await supabaseAdmin
+    .from("calendar_accounts")
+    .update({ access_token: j.access_token, expires_at: expiresAt, last_status: "connected", last_error: null })
+    .eq("id", account.id);
+  return j.access_token;
+}
+
+async function getGoogleAccessTokenForEvent(event: any): Promise<string> {
+  const { data: account } = await supabaseAdmin
+    .from("calendar_accounts")
+    .select("*")
+    .eq("id", event.calendar_account_id)
+    .maybeSingle();
+  if (!account) throw new Error("Conta de calendário não encontrada");
+  const exp = account.expires_at ? new Date(account.expires_at).getTime() : 0;
+  if (!account.access_token || Date.now() >= exp - 30_000) return refreshGoogleAccessToken(account);
+  return account.access_token;
+}
+
+const MAX_RECORDING_BYTES = 50 * 1024 * 1024; // 50MB
+
+export const summarizeCalendarEventRecording = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+
+    const { data: event, error: evErr } = await supabaseAdmin
+      .from("calendar_events")
+      .select("*")
+      .eq("id", data.calendar_event_id)
+      .eq("owner_id", workspaceId)
+      .maybeSingle();
+    if (evErr || !event) throw new Error("Evento de calendário não encontrado");
+    if (!event.recording_drive_file_id) throw new Error("Este evento ainda não tem gravação vinculada no Drive");
+
+    await supabaseAdmin
+      .from("calendar_events")
+      .update({ summary_status: "processing", summary_error: null })
+      .eq("id", event.id);
+
+    try {
+      const token = await getGoogleAccessTokenForEvent(event);
+      const fileId = event.recording_drive_file_id as string;
+      const dres = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!dres.ok) {
+        const t = await dres.text();
+        throw new Error(`Falha ao baixar gravação do Drive (${dres.status}): ${t.slice(0, 200)}`);
+      }
+      const sizeHeader = Number(dres.headers.get("content-length") ?? "0");
+      if (sizeHeader && sizeHeader > MAX_RECORDING_BYTES) {
+        throw new Error(`Gravação maior que ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB — não suportado para resumo automático`);
+      }
+      const arrayBuf = await dres.arrayBuffer();
+      if (arrayBuf.byteLength > MAX_RECORDING_BYTES) {
+        throw new Error(`Gravação maior que ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB — não suportado para resumo automático`);
+      }
+      const b64 = Buffer.from(arrayBuf).toString("base64");
+      const mime = (event.recording_mime_type as string | null) ?? dres.headers.get("content-type") ?? "video/mp4";
+      const audioFormat = mime.includes("mp4")
+        ? "mp4"
+        : mime.includes("wav")
+          ? "wav"
+          : mime.includes("webm")
+            ? "webm"
+            : "mp3";
+
+      const systemPrompt = `Você é um assistente que processa gravações de reuniões em português brasileiro.
+Gere:
+- transcript: transcrição literal completa (com timestamps aproximados quando possível, formato [mm:ss])
+- summary: resumo executivo de até 6 linhas
+- decisions: array de decisões tomadas (strings curtas)
+- action_items: array de objetos { task: string, assignee: string|null, due_hint: string|null }
+Responda APENAS com JSON válido.`;
+
+      const aiRes = await fetch(AI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: `Processe esta gravação da reunião "${event.title ?? ""}".` },
+                { type: "input_audio", input_audio: { data: b64, format: audioFormat } },
+              ],
+            },
+          ],
+        }),
+      });
+      if (!aiRes.ok) {
+        const txt = await aiRes.text();
+        throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 400)}`);
+      }
+      const json: any = await aiRes.json();
+      const content = json.choices?.[0]?.message?.content ?? "";
+      let parsed: any = {};
+      try { parsed = JSON.parse(content); } catch { parsed = { summary: content, transcript: content }; }
+
+      const decisions: any[] = Array.isArray(parsed.decisions) ? parsed.decisions : [];
+      const actionItems: any[] = Array.isArray(parsed.action_items) ? parsed.action_items : [];
+      let summaryText: string = parsed.summary ?? "";
+      if (decisions.length) {
+        summaryText += "\n\n**Decisões:**\n" + decisions.map((d) => `- ${typeof d === "string" ? d : JSON.stringify(d)}`).join("\n");
+      }
+      if (actionItems.length) {
+        summaryText += "\n\n**Próximos passos:**\n" + actionItems.map((it) => {
+          const parts = [it?.task ?? ""];
+          if (it?.assignee) parts.push(`(${it.assignee})`);
+          if (it?.due_hint) parts.push(`— ${it.due_hint}`);
+          return `- ${parts.join(" ")}`;
+        }).join("\n");
+      }
+
+      await supabaseAdmin
+        .from("calendar_events")
+        .update({
+          summary_status: "completed",
+          summary_text: summaryText || null,
+          transcript: parsed.transcript ?? null,
+          summary_error: null,
+          summary_generated_at: new Date().toISOString(),
+        })
+        .eq("id", event.id);
+
+      return { ok: true, summary: summaryText, action_items: actionItems };
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      await supabaseAdmin
+        .from("calendar_events")
+        .update({ summary_status: "failed", summary_error: msg.slice(0, 500) })
+        .eq("id", event.id);
+      throw e;
+    }
+  });
+
+
+
+/* ============================================================
  * Create tasks (activities type=task) from action items
  * ============================================================ */
 export const createTasksFromActionItems = createServerFn({ method: "POST" })
