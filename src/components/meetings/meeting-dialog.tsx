@@ -220,10 +220,10 @@ export function MeetingDialog({
           </div>
           <div>
             <Label>Descrição</Label>
-            <Textarea
+            <RichHtmlEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+              onChange={setDescription}
+              minHeight={120}
             />
           </div>
           {!accountId && (
