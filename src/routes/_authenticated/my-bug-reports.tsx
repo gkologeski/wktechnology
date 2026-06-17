@@ -505,14 +505,13 @@ function MyBugReportsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Descrição</Label>
-                <Textarea
-                  rows={5}
+                <RichHtmlEditor
                   value={edit.description}
-                  maxLength={4000}
-                  onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+                  onChange={(html) => setEdit({ ...edit, description: html })}
+                  minHeight={160}
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {edit.description.length}/4000
+                  {htmlToPlain(edit.description).length}/4000
                 </p>
               </div>
             </div>
