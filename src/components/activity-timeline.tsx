@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
+import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import {
   StickyNote,
   ListTodo,
@@ -602,23 +603,6 @@ export function ActivityTimeline({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao resumir reunião");
     }
-  };
-  const downloadAttachment = async (att: Attachment) => {
-    const bucket = att.bucket || "notes-attachments";
-    if (bucket === "meeting-recordings") {
-      try {
-        const { url } = await signMeetingRec({ data: { path: att.path } });
-        window.open(url, "_blank");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao abrir gravação");
-      }
-      return;
-    }
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(att.path, 60 * 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
   };
 
   const pickLog = (kind: LogKind) => {
@@ -1294,15 +1278,16 @@ export function ActivityTimeline({
                     </div>
                   )}
                   {editingId !== a.id && atts.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex flex-col gap-2">
                       {atts.map((att, i) => (
-                        <button
+                        <AttachmentPreview
                           key={i}
-                          onClick={() => downloadAttachment(att)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs hover:bg-muted"
-                        >
-                          <Download className="h-3 w-3" /> {att.name}
-                        </button>
+                          attachment={att}
+                          signRecording={async (path) => {
+                            const { url } = await signMeetingRec({ data: { path } });
+                            return url;
+                          }}
+                        />
                       ))}
                     </div>
                   )}
