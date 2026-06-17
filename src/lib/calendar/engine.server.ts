@@ -124,7 +124,10 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3";
 async function driveSearch(
   token: string,
   q: string,
-): Promise<{ id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[]> {
+): Promise<{
+  files: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[];
+  error?: string;
+}> {
   const params = new URLSearchParams({
     q,
     fields: "files(id,name,mimeType,webViewLink,createdTime)",
@@ -137,9 +140,12 @@ async function driveSearch(
   const res = await fetch(`${DRIVE_API}/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    return { files: [], error: `drive ${res.status}: ${txt.slice(0, 200)}` };
+  }
   const json = (await res.json()) as { files?: { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string }[] };
-  return json.files ?? [];
+  return { files: json.files ?? [] };
 }
 
 /**
