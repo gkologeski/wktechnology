@@ -68,10 +68,134 @@ type GCalEvent = {
   description?: string;
   location?: string;
   htmlLink?: string;
+  hangoutLink?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
-  attendees?: { email: string; displayName?: string; responseStatus?: string }[];
+  attendees?: { email: string; displayName?: string; responseStatus?: string; organizer?: boolean; self?: boolean }[];
+  conferenceData?: {
+    conferenceId?: string;
+    entryPoints?: { entryPointType?: string; uri?: string }[];
+  };
 };
+
+// Free email domains that should never be used to auto-link a contact
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com", "hotmail.com", "outlook.com", "outlook.com.br", "live.com", "msn.com",
+  "yahoo.com", "yahoo.com.br", "icloud.com", "me.com", "aol.com",
+  "proton.me", "protonmail.com", "uol.com.br", "bol.com.br", "terra.com.br",
+]);
+
+async function matchContactForAttendees(
+  ownerId: string,
+  attendees: GCalEvent["attendees"],
+): Promise<string | null> {
+  if (!attendees || attendees.length === 0) return null;
+  const emails = attendees
+    .filter((a) => a.email && !a.organizer && !a.self)
+    .map((a) => a.email.toLowerCase());
+  if (emails.length === 0) return null;
+  const { data } = await supabaseAdmin
+    .from("contacts")
+    .select("id, email, created_at")
+    .eq("owner_id", ownerId)
+    .is("deleted_at", null)
+    .in("email", emails)
+    .order("created_at", { ascending: true })
+    .limit(5);
+  if (!data || data.length === 0) return null;
+  // Prefer non-free-email-domain matches first
+  const ranked = [...data].sort((a, b) => {
+    const da = (a.email ?? "").split("@")[1]?.toLowerCase() ?? "";
+    const db = (b.email ?? "").split("@")[1]?.toLowerCase() ?? "";
+    const aFree = FREE_EMAIL_DOMAINS.has(da) ? 1 : 0;
+    const bFree = FREE_EMAIL_DOMAINS.has(db) ? 1 : 0;
+    return aFree - bFree;
+  });
+  return ranked[0]?.id ?? null;
+}
+
+const DRIVE_API = "https://www.googleapis.com/drive/v3";
+
+async function findDriveRecording(
+  token: string,
+  ev: { title: string | null; end_at: string | null },
+): Promise<{ file_id: string; url: string; mime_type: string } | null> {
+  if (!ev.end_at) return null;
+  // Search a window of 2h before end → 48h after end
+  const endMs = new Date(ev.end_at).getTime();
+  if (!Number.isFinite(endMs)) return null;
+  const after = new Date(endMs - 2 * 3600_000).toISOString();
+  const before = new Date(endMs + 48 * 3600_000).toISOString();
+  const titleFragment = (ev.title ?? "").trim().slice(0, 40).replace(/'/g, "\\'");
+  // Meet recordings are mp4 created in the organizer's "Meet Recordings" folder.
+  const qParts = [
+    "mimeType='video/mp4'",
+    `createdTime > '${after}'`,
+    `createdTime < '${before}'`,
+    "trashed = false",
+  ];
+  if (titleFragment) qParts.push(`name contains '${titleFragment}'`);
+  const q = qParts.join(" and ");
+  const url = `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,webViewLink,createdTime)&pageSize=5`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    // 403 likely = missing drive scope; treat as not found
+    return null;
+  }
+  const json = (await res.json()) as {
+    files?: { id: string; name: string; mimeType: string; webViewLink?: string }[];
+  };
+  const file = json.files?.[0];
+  if (!file) return null;
+  return {
+    file_id: file.id,
+    url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
+    mime_type: file.mimeType,
+  };
+}
+
+async function syncPastRecordings(account: CalendarAccountRow): Promise<{ found: number }> {
+  const token = await ensureAccessToken(account);
+  const since = new Date(Date.now() - 14 * 86400_000).toISOString();
+  const until = new Date(Date.now() - 5 * 60_000).toISOString();
+  const { data: events } = await supabaseAdmin
+    .from("calendar_events")
+    .select("id, title, end_at, conference_id")
+    .eq("owner_id", account.owner_id)
+    .eq("calendar_account_id", account.id)
+    .not("conference_id", "is", null)
+    .is("recording_drive_file_id", null)
+    .gte("end_at", since)
+    .lte("end_at", until)
+    .limit(20);
+  let found = 0;
+  for (const ev of events ?? []) {
+    try {
+      const rec = await findDriveRecording(token, { title: ev.title, end_at: ev.end_at });
+      if (rec) {
+        await supabaseAdmin
+          .from("calendar_events")
+          .update({
+            recording_drive_file_id: rec.file_id,
+            recording_url: rec.url,
+            recording_mime_type: rec.mime_type,
+            recording_synced_at: new Date().toISOString(),
+            recording_status: "available",
+          })
+          .eq("id", ev.id);
+        found++;
+      } else {
+        await supabaseAdmin
+          .from("calendar_events")
+          .update({ recording_synced_at: new Date().toISOString(), recording_status: "not_found" })
+          .eq("id", ev.id);
+      }
+    } catch (e) {
+      console.error("[drive recording] error", e);
+    }
+  }
+  return { found };
+}
 
 async function gcalFetch(token: string, path: string, init?: RequestInit) {
   const res = await fetch(`${CAL_API}${path}`, {
@@ -147,6 +271,12 @@ async function pullGoogleEvents(
       const startAt = ev.start?.dateTime ?? (ev.start?.date ? `${ev.start.date}T00:00:00Z` : null);
       const endAt = ev.end?.dateTime ?? (ev.end?.date ? `${ev.end.date}T00:00:00Z` : null);
       const allDay = !!(ev.start?.date && !ev.start?.dateTime);
+      const conferenceId = ev.conferenceData?.conferenceId ?? null;
+      const hangoutLink =
+        ev.hangoutLink ??
+        ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
+        null;
+      const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
       const { error: upErr } = await supabaseAdmin.from("calendar_events").upsert(
         {
           owner_id: account.owner_id,
@@ -160,6 +290,9 @@ async function pullGoogleEvents(
           all_day: allDay,
           attendees: ev.attendees ?? [],
           html_link: ev.htmlLink ?? null,
+          hangout_link: hangoutLink,
+          conference_id: conferenceId,
+          related_contact_id: relatedContactId,
           status: ev.status ?? "confirmed",
           last_synced_at: new Date().toISOString(),
         },
@@ -265,6 +398,12 @@ export async function syncCalendarAccount(
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     const push = await pushPendingMeetings(account as CalendarAccountRow);
+    // Best-effort: fetch recent Meet recordings from Drive (silently skips if no drive scope)
+    try {
+      await syncPastRecordings(account as CalendarAccountRow);
+    } catch (e) {
+      console.error("[recordings] sync error", e);
+    }
     return {
       imported: pull.imported,
       deleted: pull.deleted,

@@ -10,7 +10,7 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { signMeetingRecording } from "@/lib/meetings.functions";
+import { signMeetingRecording, generateMeetingSummary } from "@/lib/meetings.functions";
 import {
   StickyNote,
   ListTodo,
@@ -248,7 +248,64 @@ export function ActivityTimeline({
     setLoading(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
     if (error) toast.error(error.message);
-    const rows = ((data as Activity[]) ?? []).slice().sort((a, b) => {
+    const baseRows = ((data as Activity[]) ?? []).slice();
+
+    // Also pull synced Google Calendar events for contact/deal-via-contact
+    let calendarVirtuals: Activity[] = [];
+    try {
+      let contactIds: string[] = [];
+      if (relatedKey === "related_contact_id") {
+        contactIds = [relatedId];
+      } else if (relatedKey === "related_deal_id") {
+        const { data: dc } = await supabase
+          .from("deal_contacts")
+          .select("contact_id")
+          .eq("deal_id", relatedId);
+        contactIds = (dc ?? []).map((r) => (r as { contact_id: string }).contact_id);
+      }
+      if (contactIds.length > 0) {
+        const { data: cev } = await supabase
+          .from("calendar_events")
+          .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
+          .in("related_contact_id", contactIds);
+        calendarVirtuals = ((cev ?? []) as Array<Record<string, unknown>>).map((e) => {
+          const atts = (e.attendees as Array<{ email: string; displayName?: string; organizer?: boolean; self?: boolean }> | null) ?? [];
+          return {
+            id: `cal_${e.id as string}`,
+            type: "meeting",
+            subject: (e.title as string) ?? "Reunião (Google Calendar)",
+            body: (e.description as string) ?? "",
+            due_date: (e.start_at as string) ?? null,
+            created_at: (e.start_at as string) ?? (e.created_at as string),
+            hs_createdate: (e.start_at as string) ?? (e.created_at as string),
+            meeting_location: (e.location as string) ?? (e.hangout_link as string) ?? null,
+            external_ids: {
+              source: "google_calendar",
+              calendar_event_id: e.id,
+              gcal_html_link: e.html_link ?? null,
+              recording_url: e.recording_url ?? null,
+            },
+            attachments: {
+              end_at: e.end_at ?? null,
+              meet_link: e.hangout_link ?? null,
+              calendar_html_link: e.html_link ?? null,
+              recording_url: e.recording_url ?? null,
+              attendees: atts
+                .filter((a) => a.email)
+                .map((a) => ({ email: a.email, name: a.displayName })),
+            },
+            // mark read-only for edit/delete
+            completed: false,
+            owner_id: null,
+            [relatedKey]: relatedId,
+          } as unknown as Activity;
+        });
+      }
+    } catch (e) {
+      console.error("[timeline] calendar events load", e);
+    }
+
+    const rows = [...baseRows, ...calendarVirtuals].sort((a, b) => {
       const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
       const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
       return tb - ta;
@@ -520,6 +577,23 @@ export function ActivityTimeline({
   };
 
   const signMeetingRec = useServerFn(signMeetingRecording);
+  const summarizeMeetingFn = useServerFn(generateMeetingSummary);
+  const onSummarizeMeeting = async (activityId: string) => {
+    const a = items.find((i) => i.id === activityId);
+    const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
+    const meetingId = typeof ext.meeting_id === "string" ? (ext.meeting_id as string) : null;
+    if (!meetingId) {
+      toast.error("Esta reunião não tem uma sala vinculada para resumir.");
+      return;
+    }
+    try {
+      toast.message("Gerando resumo com IA…");
+      await summarizeMeetingFn({ data: { meeting_id: meetingId } });
+      toast.success("Resumo gerado. Veja em Reuniões.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao resumir reunião");
+    }
+  };
   const downloadAttachment = async (att: Attachment) => {
     const bucket = att.bucket || "notes-attachments";
     if (bucket === "meeting-recordings") {
@@ -965,9 +1039,18 @@ export function ActivityTimeline({
                       attendees?: Array<{ email: string; name?: string; contact_id?: string }>;
                       end_at?: string;
                       meet_link?: string;
+                      calendar_html_link?: string;
+                      recording_url?: string;
                     };
+                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
                     const loc = (a as unknown as { meeting_location?: string }).meeting_location;
-                    const link = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
+                    // Prefer Google Calendar event link (htmlLink). Fall back to meet/Jitsi link.
+                    const calendarLink =
+                      meta.calendar_html_link ||
+                      (typeof ext.gcal_html_link === "string" ? (ext.gcal_html_link as string) : null);
+                    const joinLink = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
+                    const accessLink = calendarLink || joinLink;
+                    const recordingUrl = meta.recording_url || (typeof ext.recording_url === "string" ? (ext.recording_url as string) : null);
                     const startD = a.due_date ? new Date(a.due_date) : null;
                     const endD = meta.end_at ? new Date(meta.end_at) : null;
                     const sameDay =
@@ -1003,35 +1086,21 @@ export function ActivityTimeline({
                             </div>
                           </div>
                         )}
-                        {(link || loc) && (
+                        {(joinLink || loc) && (
                           <div className="flex items-start gap-2">
                             <LinkIcon className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
                             <div className="min-w-0 flex-1">
-                              {link ? (
+                              {joinLink ? (
                                 <a
-                                  href={link}
+                                  href={joinLink}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-primary hover:underline break-all"
                                 >
-                                  {link}
+                                  {joinLink}
                                 </a>
                               ) : (
                                 <span className="break-all">{loc}</span>
-                              )}
-                              {link && (
-                                <div className="mt-1">
-                                  <Button
-                                    asChild
-                                    size="sm"
-                                    variant="default"
-                                    className="h-7 text-xs"
-                                  >
-                                    <a href={link} target="_blank" rel="noreferrer">
-                                      Entrar na reunião
-                                    </a>
-                                  </Button>
-                                </div>
                               )}
                             </div>
                           </div>
@@ -1051,6 +1120,44 @@ export function ActivityTimeline({
                                 </Badge>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {(accessLink || recordingUrl) && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {accessLink && (
+                              <Button
+                                asChild
+                                size="sm"
+                                variant="default"
+                                className="h-7 text-xs"
+                              >
+                                <a href={accessLink} target="_blank" rel="noreferrer">
+                                  Acessar reunião
+                                </a>
+                              </Button>
+                            )}
+                            {recordingUrl && (
+                              <>
+                                <Button
+                                  asChild
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                >
+                                  <a href={recordingUrl} target="_blank" rel="noreferrer">
+                                    Ver gravação
+                                  </a>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 text-xs"
+                                  onClick={() => onSummarizeMeeting?.(a.id)}
+                                >
+                                  Resumir reunião
+                                </Button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1191,22 +1298,30 @@ export function ActivityTimeline({
                     </div>
                   )}
                   <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground"
-                      onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" /> Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                      onClick={() => remove(a.id)}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" /> Excluir
-                    </Button>
+                    {a.id.startsWith("cal_") ? (
+                      <span className="text-[11px] text-muted-foreground italic px-2 py-1">
+                        Evento sincronizado do Google Calendar — edite no Google.
+                      </span>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground"
+                          onClick={() => (editingId === a.id ? setEditingId(null) : startEdit(a))}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={() => remove(a.id)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Excluir
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </li>

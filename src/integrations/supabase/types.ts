@@ -1254,16 +1254,24 @@ export type Database = {
           all_day: boolean
           attendees: Json
           calendar_account_id: string
+          conference_id: string | null
           created_at: string
           description: string | null
           end_at: string | null
+          hangout_link: string | null
           html_link: string | null
           id: string
           last_synced_at: string
           location: string | null
           owner_id: string
           provider_event_id: string
+          recording_drive_file_id: string | null
+          recording_mime_type: string | null
+          recording_status: string | null
+          recording_synced_at: string | null
+          recording_url: string | null
           related_activity_id: string | null
+          related_contact_id: string | null
           start_at: string | null
           status: string | null
           title: string | null
@@ -1274,16 +1282,24 @@ export type Database = {
           all_day?: boolean
           attendees?: Json
           calendar_account_id: string
+          conference_id?: string | null
           created_at?: string
           description?: string | null
           end_at?: string | null
+          hangout_link?: string | null
           html_link?: string | null
           id?: string
           last_synced_at?: string
           location?: string | null
           owner_id: string
           provider_event_id: string
+          recording_drive_file_id?: string | null
+          recording_mime_type?: string | null
+          recording_status?: string | null
+          recording_synced_at?: string | null
+          recording_url?: string | null
           related_activity_id?: string | null
+          related_contact_id?: string | null
           start_at?: string | null
           status?: string | null
           title?: string | null
@@ -1294,16 +1310,24 @@ export type Database = {
           all_day?: boolean
           attendees?: Json
           calendar_account_id?: string
+          conference_id?: string | null
           created_at?: string
           description?: string | null
           end_at?: string | null
+          hangout_link?: string | null
           html_link?: string | null
           id?: string
           last_synced_at?: string
           location?: string | null
           owner_id?: string
           provider_event_id?: string
+          recording_drive_file_id?: string | null
+          recording_mime_type?: string | null
+          recording_status?: string | null
+          recording_synced_at?: string | null
+          recording_url?: string | null
           related_activity_id?: string | null
+          related_contact_id?: string | null
           start_at?: string | null
           status?: string | null
           title?: string | null
@@ -1316,6 +1340,13 @@ export type Database = {
             columns: ["calendar_account_id"]
             isOneToOne: false
             referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_related_contact_id_fkey"
+            columns: ["related_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {
