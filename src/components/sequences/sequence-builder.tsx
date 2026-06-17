@@ -187,11 +187,11 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
                         value={"subject" in step ? step.subject : ""}
                         onChange={(e) => updateStep(i, { subject: e.target.value })}
                       />
-                      <Textarea
-                        placeholder="Conteúdo (opcional). Use {{first_name}} para tokens."
-                        rows={2}
+                      <RichHtmlEditor
                         value={"body" in step ? (step.body ?? "") : ""}
-                        onChange={(e) => updateStep(i, { body: e.target.value })}
+                        onChange={(html) => updateStep(i, { body: html })}
+                        minHeight={140}
+                        placeholder="Conteúdo (opcional). Use {{first_name}} para tokens."
                       />
                     </div>
                   )}
