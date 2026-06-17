@@ -210,9 +210,7 @@ function TicketDetail() {
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
               <h3 className="text-sm font-bold mb-3">Descrição</h3>
-              <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                {ticket.description}
-              </p>
+              <HtmlContent html={ticket.description} className="text-sm text-muted-foreground" />
             </div>
           )}
           {(() => {
