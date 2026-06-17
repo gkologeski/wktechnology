@@ -15,13 +15,21 @@ type Props = {
   signRecording?: (path: string) => Promise<string>;
 };
 
-function kindOf(att: TimelineAttachment): "image" | "audio" | "video" | "pdf" | "other" {
+type Kind = "image" | "audio" | "video" | "pdf" | "office" | "text" | "other";
+
+function kindOf(att: TimelineAttachment): Kind {
   const t = (att.type || "").toLowerCase();
   const n = (att.name || "").toLowerCase();
   if (t.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(n)) return "image";
   if (t.startsWith("audio/") || /\.(mp3|wav|m4a|ogg|oga|aac|flac)$/i.test(n)) return "audio";
   if (t.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogv)$/i.test(n)) return "video";
   if (t === "application/pdf" || /\.pdf$/i.test(n)) return "pdf";
+  if (/\.(docx?|xlsx?|pptx?|odt|ods|odp|rtf)$/i.test(n)) return "office";
+  if (
+    t.startsWith("text/") ||
+    /\.(txt|md|csv|tsv|log|json|xml|yaml|yml|html?|css|js|ts|tsx|jsx|sql|sh)$/i.test(n)
+  )
+    return "text";
   return "other";
 }
 
