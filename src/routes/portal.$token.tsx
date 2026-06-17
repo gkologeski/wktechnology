@@ -140,10 +140,10 @@ function PortalPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Descrição</label>
-                  <Textarea
-                    rows={5}
+                  <RichHtmlEditor
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={setDescription}
+                    minHeight={160}
                     placeholder="Detalhe o que aconteceu"
                   />
                 </div>
