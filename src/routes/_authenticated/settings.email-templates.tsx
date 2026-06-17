@@ -67,16 +67,18 @@ function TemplatesSection() {
   const [editing, setEditing] = useState<Partial<Template> | null>(null);
 
   const save = useMutation({
-    mutationFn: () =>
-      upsertFn({
+    mutationFn: () => {
+      const html = editing?.body_html ?? "";
+      return upsertFn({
         data: {
           id: editing?.id,
           name: editing?.name ?? "",
           subject: editing?.subject ?? "",
-          body_html: editing?.body_html ?? "",
-          body_text: editing?.body_text ?? "",
+          body_html: html,
+          body_text: htmlToPlain(html),
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Template salvo");
       setEditing(null);
