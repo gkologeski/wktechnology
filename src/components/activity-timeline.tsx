@@ -1295,15 +1295,16 @@ export function ActivityTimeline({
                     </div>
                   )}
                   {editingId !== a.id && atts.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex flex-col gap-2">
                       {atts.map((att, i) => (
-                        <button
+                        <AttachmentPreview
                           key={i}
-                          onClick={() => downloadAttachment(att)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs hover:bg-muted"
-                        >
-                          <Download className="h-3 w-3" /> {att.name}
-                        </button>
+                          attachment={att}
+                          signRecording={async (path) => {
+                            const { url } = await signMeetingRec({ data: { path } });
+                            return url;
+                          }}
+                        />
                       ))}
                     </div>
                   )}
