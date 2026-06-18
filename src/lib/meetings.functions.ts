@@ -498,6 +498,7 @@ async function refreshGoogleAccessToken(account: any): Promise<string> {
 }
 
 async function getGoogleAccessTokenForEvent(event: any): Promise<string> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data: account } = await supabaseAdmin
     .from("calendar_accounts")
     .select("*")
@@ -515,6 +516,7 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
@@ -643,6 +645,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: meeting } = await supabaseAdmin
       .from("meetings")
