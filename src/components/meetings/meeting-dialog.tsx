@@ -26,7 +26,12 @@ type Props = {
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
   defaultAttendee?: string;
-  relatedKey: "related_lead_id" | "related_contact_id" | "related_company_id" | "related_deal_id" | "related_ticket_id";
+  relatedKey:
+    | "related_lead_id"
+    | "related_contact_id"
+    | "related_company_id"
+    | "related_deal_id"
+    | "related_ticket_id";
   relatedId: string;
   onCreated?: () => void;
 };
