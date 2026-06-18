@@ -697,6 +697,7 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
     z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(30).max(86400).default(3600) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // Path format: `${workspaceId}/${meetingId}/...`
     const firstSeg = data.path.split("/")[0];
@@ -714,6 +715,7 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
 export const getMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data } = await supabaseAdmin
       .from("workspaces")
@@ -736,6 +738,7 @@ export const saveMeetingSettings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
       .from("workspaces")
