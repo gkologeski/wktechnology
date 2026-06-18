@@ -123,15 +123,23 @@ function AdminStatusPage() {
               <TableBody>
                 {(data?.cronJobs ?? []).map((c) => {
                   const late = (c.late_minutes ?? 0) > 60;
-                  const failed = c.status && c.status !== "succeeded";
+                  const failed = !!(c.status && c.status !== "succeeded");
+                  const rowClass = failed
+                    ? "bg-destructive/10 hover:bg-destructive/15"
+                    : late
+                      ? "bg-warning/10 hover:bg-warning/15"
+                      : "bg-success/5 hover:bg-success/10";
+                  const badgeClass = failed
+                    ? "bg-destructive text-destructive-foreground hover:bg-destructive"
+                    : late
+                      ? "bg-warning text-warning-foreground hover:bg-warning"
+                      : "bg-success text-success-foreground hover:bg-success";
                   return (
-                    <TableRow key={c.jobname}>
+                    <TableRow key={c.jobname} className={rowClass}>
                       <TableCell className="font-mono text-xs">{c.jobname}</TableCell>
                       <TableCell className="font-mono text-xs">{c.schedule}</TableCell>
                       <TableCell>
-                        <Badge variant={failed ? "destructive" : late ? "secondary" : "default"}>
-                          {c.status ?? "—"}
-                        </Badge>
+                        <Badge className={badgeClass}>{c.status ?? "—"}</Badge>
                       </TableCell>
                       <TableCell>
                         {c.last_start
@@ -160,19 +168,33 @@ function AdminStatusPage() {
             <p className="text-sm text-muted-foreground">Sem alertas recentes.</p>
           ) : (
             <ul className="space-y-2">
-              {(data?.recentEvents ?? []).map((e) => (
-                <li key={e.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span>
-                    <Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>
-                      {e.severity}
-                    </Badge>{" "}
-                    {e.message}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}
-                  </span>
-                </li>
-              ))}
+              {(data?.recentEvents ?? []).map((e) => {
+                const isCritical = e.severity === "critical";
+                const isWarning = e.severity === "warning" || e.severity === "warn";
+                const rowClass = isCritical
+                  ? "bg-destructive/10 border-destructive/30"
+                  : isWarning
+                    ? "bg-warning/10 border-warning/30"
+                    : "bg-muted/40 border-border";
+                const badgeClass = isCritical
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive"
+                  : isWarning
+                    ? "bg-warning text-warning-foreground hover:bg-warning"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary";
+                return (
+                  <li
+                    key={e.id}
+                    className={`flex items-center justify-between text-sm rounded-md border px-3 py-2 ${rowClass}`}
+                  >
+                    <span>
+                      <Badge className={badgeClass}>{e.severity}</Badge> {e.message}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      {formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
