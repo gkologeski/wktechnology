@@ -440,6 +440,10 @@ async function pushPendingMeetings(
   for (const a of activities ?? []) {
     const ext = (a.external_ids ?? {}) as Record<string, string>;
     const existingEventId = ext[`gcal_${account.id}`];
+    // Skip activities already linked to a Google event — updates happen via
+    // the explicit pushActivityToCalendar flow. Pushing every meeting on every
+    // tick generates 100+ subrequests and trips the Worker limit.
+    if (existingEventId) continue;
     const start = a.due_date as string;
     const end = new Date(new Date(start).getTime() + 30 * 60000).toISOString();
     const body = {
@@ -450,33 +454,22 @@ async function pushPendingMeetings(
       end: { dateTime: end },
     };
     try {
-      if (existingEventId) {
-        await gcalFetch(
-          token,
-          `/calendars/${calId}/events/${encodeURIComponent(existingEventId)}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(body),
-          },
-        );
-        updated++;
-      } else {
-        const ev = (await gcalFetch(token, `/calendars/${calId}/events`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        })) as { id: string };
-        await supabaseAdmin
-          .from("activities")
-          .update({ external_ids: { ...ext, [`gcal_${account.id}`]: ev.id } })
-          .eq("id", a.id);
-        created++;
-      }
+      const ev = (await gcalFetch(token, `/calendars/${calId}/events`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      })) as { id: string };
+      await supabaseAdmin
+        .from("activities")
+        .update({ external_ids: { ...ext, [`gcal_${account.id}`]: ev.id } })
+        .eq("id", a.id);
+      created++;
     } catch (e) {
       console.error("[calendar push] error", e);
     }
   }
   return { created, updated };
 }
+
 
 export async function syncCalendarAccount(
   accountId: string,
