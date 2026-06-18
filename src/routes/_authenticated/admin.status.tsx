@@ -168,19 +168,33 @@ function AdminStatusPage() {
             <p className="text-sm text-muted-foreground">Sem alertas recentes.</p>
           ) : (
             <ul className="space-y-2">
-              {(data?.recentEvents ?? []).map((e) => (
-                <li key={e.id} className="flex items-center justify-between text-sm border-b pb-2">
-                  <span>
-                    <Badge variant={e.severity === "critical" ? "destructive" : "secondary"}>
-                      {e.severity}
-                    </Badge>{" "}
-                    {e.message}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}
-                  </span>
-                </li>
-              ))}
+              {(data?.recentEvents ?? []).map((e) => {
+                const isCritical = e.severity === "critical";
+                const isWarning = e.severity === "warning" || e.severity === "warn";
+                const rowClass = isCritical
+                  ? "bg-destructive/10 border-destructive/30"
+                  : isWarning
+                    ? "bg-warning/10 border-warning/30"
+                    : "bg-muted/40 border-border";
+                const badgeClass = isCritical
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive"
+                  : isWarning
+                    ? "bg-warning text-warning-foreground hover:bg-warning"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary";
+                return (
+                  <li
+                    key={e.id}
+                    className={`flex items-center justify-between text-sm rounded-md border px-3 py-2 ${rowClass}`}
+                  >
+                    <span>
+                      <Badge className={badgeClass}>{e.severity}</Badge> {e.message}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      {formatDistanceToNow(new Date(e.fired_at), { addSuffix: true, locale: ptBR })}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
