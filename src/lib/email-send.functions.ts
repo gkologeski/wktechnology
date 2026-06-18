@@ -2,7 +2,6 @@ import { randomUUID } from "crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   buildRawMime,
   ensureAccessToken,
@@ -35,6 +34,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
       .from("email_accounts")
@@ -150,7 +150,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
 
     // Create activity entry so the sent email shows up in the timeline
     if (data.contact_id || data.lead_id || data.deal_id || data.company_id) {
-      const plain = (
+      const fallbackPlain = (
         data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
       ).slice(0, 4000);
       const { error: actErr } = await supabaseAdmin.from("activities").insert({
@@ -158,7 +158,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
         created_by: context.userId,
         type: "email",
         subject: data.subject,
-        body: plain,
+        body: tracked.html || fallbackPlain,
         email_direction: "outbound",
         email_status: "sent",
         related_contact_id: data.contact_id ?? null,

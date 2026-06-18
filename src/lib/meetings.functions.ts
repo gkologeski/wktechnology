@@ -1,9 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin as _supabaseAdmin } from "@/integrations/supabase/client.server";
-const supabaseAdmin = _supabaseAdmin as any;
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
+}
 
 const ENTITY = z.enum(["contact", "lead", "deal", "ticket"]);
 type Entity = z.infer<typeof ENTITY>;
@@ -46,6 +49,7 @@ export const createMeeting = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const room = roomName(workspaceId);
@@ -110,6 +114,7 @@ export const listMeetings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
@@ -153,6 +158,7 @@ export const getMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: meeting, error } = await supabaseAdmin
@@ -192,6 +198,7 @@ export const endMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
       .from("meetings")
@@ -209,6 +216,7 @@ export const deleteMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // delete recording from storage if present
     const { data: m } = await supabaseAdmin
@@ -243,6 +251,7 @@ export const createRecordingUploadUrl = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: m, error: mErr } = await supabaseAdmin
       .from("meetings")
@@ -277,6 +286,7 @@ export const attachRecording = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: meeting, error } = await supabaseAdmin
       .from("meetings")
@@ -342,6 +352,7 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
@@ -461,6 +472,7 @@ Responda APENAS com JSON válido.`;
  * AI: summarize a Google Calendar event's Drive recording
  * ============================================================ */
 async function refreshGoogleAccessToken(account: any): Promise<string> {
+  const supabaseAdmin = await getSupabaseAdmin();
   if (!account.refresh_token) throw new Error("Conta de calendário sem refresh_token — reconecte o Google");
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -486,6 +498,7 @@ async function refreshGoogleAccessToken(account: any): Promise<string> {
 }
 
 async function getGoogleAccessTokenForEvent(event: any): Promise<string> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data: account } = await supabaseAdmin
     .from("calendar_accounts")
     .select("*")
@@ -503,6 +516,7 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
@@ -631,6 +645,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: meeting } = await supabaseAdmin
       .from("meetings")
@@ -682,6 +697,7 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
     z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(30).max(86400).default(3600) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // Path format: `${workspaceId}/${meetingId}/...`
     const firstSeg = data.path.split("/")[0];
@@ -699,6 +715,7 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
 export const getMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data } = await supabaseAdmin
       .from("workspaces")
@@ -721,6 +738,7 @@ export const saveMeetingSettings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
       .from("workspaces")

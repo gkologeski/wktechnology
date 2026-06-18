@@ -252,7 +252,36 @@ export function ActivityTimeline({
     setLoading(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
     if (error) toast.error(error.message);
-    const baseRows = ((data as Activity[]) ?? []).slice();
+    let baseRows = ((data as Activity[]) ?? []).slice();
+    const emailMessageIds = [
+      ...new Set(
+        baseRows
+          .map((row) => {
+            const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+            return typeof ext.email_message_id === "string" ? ext.email_message_id : null;
+          })
+          .filter(Boolean) as string[],
+      ),
+    ];
+    if (emailMessageIds.length > 0) {
+      const { data: messages } = await supabase
+        .from("email_messages")
+        .select("id, body_html, body_text")
+        .in("id", emailMessageIds);
+      const messageById = new Map(
+        ((messages ?? []) as Array<{ id: string; body_html: string | null; body_text: string | null }>).map(
+          (message) => [message.id, message],
+        ),
+      );
+      baseRows = baseRows.map((row) => {
+        if (row.type !== "email") return row;
+        const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+        const messageId = typeof ext.email_message_id === "string" ? ext.email_message_id : null;
+        const message = messageId ? messageById.get(messageId) : null;
+        const html = message?.body_html?.trim() ? message.body_html : message?.body_text;
+        return html ? ({ ...row, body: html } as Activity) : row;
+      });
+    }
 
     // Also pull synced Google Calendar events for contact/deal-via-contact
     let calendarVirtuals: Activity[] = [];
