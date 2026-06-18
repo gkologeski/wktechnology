@@ -345,7 +345,9 @@ async function persistInboundMessage(
     threadDbId = ins.id;
   }
 
+  const messageDbId = crypto.randomUUID();
   const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
+    id: messageDbId,
     owner_id: account.owner_id,
     account_id: account.id,
     thread_id: threadDbId,
@@ -399,6 +401,7 @@ async function persistInboundMessage(
       related_contact_id: contactId,
       completed: true,
       external_ids: {
+        email_message_id: messageDbId,
         email_thread_id: threadDbId,
         gmail_message_id: msg.id,
         gmail_thread_id: msg.threadId,
