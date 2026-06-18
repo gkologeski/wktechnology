@@ -148,5 +148,32 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       .update({ message_count: count ?? 1 })
       .eq("id", threadDbId);
 
+    // Create activity entry so the sent email shows up in the timeline
+    if (data.contact_id || data.lead_id || data.deal_id || data.company_id) {
+      const plain = (
+        data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
+      ).slice(0, 4000);
+      const { error: actErr } = await supabaseAdmin.from("activities").insert({
+        owner_id: context.userId,
+        created_by: context.userId,
+        type: "email",
+        subject: data.subject,
+        body: plain,
+        email_direction: "outbound",
+        email_status: "sent",
+        related_contact_id: data.contact_id ?? null,
+        related_lead_id: data.lead_id ?? null,
+        related_deal_id: data.deal_id ?? null,
+        related_company_id: data.company_id ?? null,
+        external_ids: {
+          email_message_id: messageDbId,
+          email_thread_id: threadDbId,
+          gmail_message_id: sent.id,
+          gmail_thread_id: sent.threadId,
+        },
+      } as never);
+      if (actErr) console.error("[sendGmailEmail] activity insert failed", actErr.message);
+    }
+
     return { ok: true, thread_id: threadDbId, message_id: messageDbId, gmail_message_id: sent.id };
   });
