@@ -95,9 +95,22 @@ async function matchContactForAttendees(
   attendees: GCalEvent["attendees"],
 ): Promise<string | null> {
   if (!attendees || attendees.length === 0) return null;
+  // Determine internal domain(s) from self/organizer attendees — these are
+  // colleagues and must NEVER be picked as the "external client" contact.
+  const internalDomains = new Set<string>();
+  for (const a of attendees) {
+    if ((a.self || a.organizer) && a.email) {
+      const d = a.email.split("@")[1]?.toLowerCase();
+      if (d) internalDomains.add(d);
+    }
+  }
   const emails = attendees
     .filter((a) => a.email && !a.organizer && !a.self)
-    .map((a) => a.email.toLowerCase());
+    .map((a) => a.email.toLowerCase())
+    .filter((em) => {
+      const d = em.split("@")[1] ?? "";
+      return !internalDomains.has(d);
+    });
   if (emails.length === 0) return null;
   const { data } = await supabaseAdmin
     .from("contacts")
