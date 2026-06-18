@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
+import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
 import {
   StickyNote,
   ListTodo,
@@ -525,14 +526,16 @@ export function ActivityTimeline({
     }
     const attachments = await uploadFiles();
     const autoLinks = await resolveAutoLinks();
+    const waHtml = body ? maybeConvertWhatsAppPaste(body) : null;
+    const finalBody = waHtml ?? (body || null);
     const payload: Record<string, unknown> = {
       owner_id: type === "task" && assigneeId ? assigneeId : user.id,
       created_by: user.id,
       type,
-      subject: subject || null,
-      body: body || null,
+      subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
+      body: finalBody,
       due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
-      mentions: extractMentionIds(body),
+      mentions: waHtml ? [] : extractMentionIds(body),
       attachments,
       ...autoLinks,
     };
