@@ -93,11 +93,14 @@ const FREE_EMAIL_DOMAINS = new Set([
 async function matchContactForAttendees(
   ownerId: string,
   attendees: GCalEvent["attendees"],
+  accountEmail?: string | null,
 ): Promise<string | null> {
   if (!attendees || attendees.length === 0) return null;
   // Determine internal domain(s) from self/organizer attendees — these are
   // colleagues and must NEVER be picked as the "external client" contact.
   const internalDomains = new Set<string>();
+  const accountDomain = accountEmail?.split("@")[1]?.toLowerCase();
+  if (accountDomain) internalDomains.add(accountDomain);
   for (const a of attendees) {
     if ((a.self || a.organizer) && a.email) {
       const d = a.email.split("@")[1]?.toLowerCase();
@@ -105,7 +108,7 @@ async function matchContactForAttendees(
     }
   }
   const emails = attendees
-    .filter((a) => a.email && !a.organizer && !a.self)
+    .filter((a) => a.email)
     .map((a) => a.email.toLowerCase())
     .filter((em) => {
       const d = em.split("@")[1] ?? "";
@@ -389,7 +392,7 @@ async function pullGoogleEvents(
         ev.hangoutLink ??
         ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
         null;
-      const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees);
+      const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees, account.email);
       const upsertRow: Record<string, unknown> = {
         owner_id: account.owner_id,
         calendar_account_id: account.id,

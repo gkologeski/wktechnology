@@ -213,19 +213,7 @@ function TicketDetail() {
               <HtmlContent html={ticket.description} className="text-sm text-muted-foreground" />
             </div>
           )}
-          {(() => {
-            const timelineKey = ticket.deal_id
-              ? "related_deal_id"
-              : ticket.contact_id
-                ? "related_contact_id"
-                : ticket.company_id
-                  ? "related_company_id"
-                  : null;
-            const timelineId = ticket.deal_id ?? ticket.contact_id ?? ticket.company_id ?? null;
-            return timelineKey && timelineId ? (
-              <ActivityTimeline relatedKey={timelineKey} relatedId={timelineId} />
-            ) : null;
-          })()}
+          <ActivityTimeline relatedKey="related_ticket_id" relatedId={ticket.id} />
         </>
       }
       right={
