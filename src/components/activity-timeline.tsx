@@ -284,7 +284,9 @@ export function ActivityTimeline({
       });
     }
 
-    // Also pull synced Google Calendar events for contact/deal-via-contact
+    // Also pull synced Google Calendar events for contact/deal-via-contact.
+    // Match by related_contact_id OR by contact email present in attendees JSON,
+    // since the Calendar sync only links one primary contact per event.
     let calendarVirtuals: Activity[] = [];
     try {
       let contactIds: string[] = [];
@@ -298,11 +300,36 @@ export function ActivityTimeline({
         contactIds = (dc ?? []).map((r) => (r as { contact_id: string }).contact_id);
       }
       if (contactIds.length > 0) {
-        const { data: cev } = await supabase
+        const { data: cs } = await supabase
+          .from("contacts")
+          .select("email")
+          .in("id", contactIds);
+        const emails = ((cs ?? []) as Array<{ email: string | null }>)
+          .map((c) => (c.email ?? "").trim().toLowerCase())
+          .filter(Boolean);
+
+        const byContact = await supabase
           .from("calendar_events")
           .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
           .in("related_contact_id", contactIds);
-        calendarVirtuals = ((cev ?? []) as Array<Record<string, unknown>>).map((e) => {
+        let byAttendee: { data: Array<Record<string, unknown>> | null } = { data: [] };
+        if (emails.length > 0) {
+          const ors = emails
+            .map((em) => `attendees.cs.[{"email":"${em.replace(/"/g, "")}"}]`)
+            .join(",");
+          byAttendee = await supabase
+            .from("calendar_events")
+            .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
+            .or(ors);
+        }
+        const merged = new Map<string, Record<string, unknown>>();
+        for (const row of [
+          ...((byContact.data ?? []) as Array<Record<string, unknown>>),
+          ...((byAttendee.data ?? []) as Array<Record<string, unknown>>),
+        ]) {
+          merged.set(row.id as string, row);
+        }
+        calendarVirtuals = Array.from(merged.values()).map((e) => {
           const atts = (e.attendees as Array<{ email: string; displayName?: string; organizer?: boolean; self?: boolean }> | null) ?? [];
           return {
             id: `cal_${e.id as string}`,
@@ -338,6 +365,7 @@ export function ActivityTimeline({
     } catch (e) {
       console.error("[timeline] calendar events load", e);
     }
+
 
     const rows = [...baseRows, ...calendarVirtuals].sort((a, b) => {
       const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
