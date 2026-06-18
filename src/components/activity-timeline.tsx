@@ -293,11 +293,19 @@ export function ActivityTimeline({
       if (relatedKey === "related_contact_id") {
         contactIds = [relatedId];
       } else if (relatedKey === "related_deal_id") {
+        const ids = new Set<string>();
+        const { data: deal } = await supabase
+          .from("deals")
+          .select("primary_contact_id")
+          .eq("id", relatedId)
+          .maybeSingle();
+        if (deal?.primary_contact_id) ids.add(deal.primary_contact_id);
         const { data: dc } = await supabase
           .from("deal_contacts")
           .select("contact_id")
           .eq("deal_id", relatedId);
-        contactIds = (dc ?? []).map((r) => (r as { contact_id: string }).contact_id);
+        for (const r of (dc ?? []) as Array<{ contact_id: string }>) ids.add(r.contact_id);
+        contactIds = Array.from(ids);
       }
       if (contactIds.length > 0) {
         const { data: cs } = await supabase
