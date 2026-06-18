@@ -1398,16 +1398,7 @@ export function ActivityTimeline({
                     const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
                     const src = typeof ext.source === "string" ? (ext.source as string) : null;
                     const isCalSynced = a.id.startsWith("cal_");
-                    const externalKeys = [
-                      "gmail_message_id",
-                      "gmail_thread_id",
-                      "twilio_call_sid",
-                      "vapi_call_id",
-                      "twilio_sid",
-                      "hubspot",
-                      "hubspot_lead",
-                      "conversation_id",
-                    ];
+                    const callKeys = ["twilio_call_sid", "vapi_call_id", "twilio_sid"];
                     const hasGcal = Object.keys(ext).some((k) => k.startsWith("gcal_"));
                     const isExternal =
                       isCalSynced ||
@@ -1415,7 +1406,8 @@ export function ActivityTimeline({
                       src === "google_calendar" ||
                       src === "meeting_recording" ||
                       src === "meeting_action_item" ||
-                      externalKeys.some((k) => ext[k]);
+                      src === "call" ||
+                      callKeys.some((k) => ext[k]);
                     if (isExternal) {
                       return (
                         <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
