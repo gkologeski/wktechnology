@@ -1,9 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin as _supabaseAdmin } from "@/integrations/supabase/client.server";
-const supabaseAdmin = _supabaseAdmin as any;
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as any;
+}
 
 const ENTITY = z.enum(["contact", "lead", "deal", "ticket"]);
 type Entity = z.infer<typeof ENTITY>;
@@ -46,6 +49,7 @@ export const createMeeting = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const room = roomName(workspaceId);
@@ -110,6 +114,7 @@ export const listMeetings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
@@ -153,6 +158,7 @@ export const getMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: meeting, error } = await supabaseAdmin
