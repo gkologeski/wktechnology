@@ -393,11 +393,16 @@ async function persistInboundMessage(
       owner_id: account.owner_id,
       type: "email",
       subject,
-      body: snippet,
+      body: parsed.html ?? parsed.text ?? snippet,
       email_direction: "inbound",
       email_status: "received",
       related_contact_id: contactId,
       completed: true,
+      external_ids: {
+        email_thread_id: threadDbId,
+        gmail_message_id: msg.id,
+        gmail_thread_id: msg.threadId,
+      },
     });
   }
 

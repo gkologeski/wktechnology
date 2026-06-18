@@ -30,6 +30,15 @@ const SANITIZE_CONFIG = {
     "blockquote",
     "code",
     "pre",
+    "table",
+    "thead",
+    "tbody",
+    "tfoot",
+    "tr",
+    "th",
+    "td",
+    "img",
+    "font",
     "h1",
     "h2",
     "h3",
@@ -46,6 +55,22 @@ const SANITIZE_CONFIG = {
     "data-user-id",
     "data-mention",
     "contenteditable",
+    "src",
+    "alt",
+    "title",
+    "width",
+    "height",
+    "align",
+    "valign",
+    "colspan",
+    "rowspan",
+    "cellpadding",
+    "cellspacing",
+    "border",
+    "bgcolor",
+    "color",
+    "face",
+    "size",
   ],
 };
 
@@ -83,7 +108,7 @@ function sanitizeHtmlWithoutDom(html: string): string {
         const name = match[1].toLowerCase();
         const value = match[2] ?? match[3] ?? match[4] ?? "";
         if (!ALLOWED_ATTR_SET.has(name)) continue;
-        if (name === "href" && !isSafeUrl(value)) continue;
+        if ((name === "href" || name === "src") && !isSafeUrl(value)) continue;
         if (name === "style" && sanitizeStyle(value) === null) continue;
         attrs.push(`${name}="${escapeAttr(value)}"`);
       }
