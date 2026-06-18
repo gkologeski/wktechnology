@@ -1,0 +1,1 @@
+UPDATE public.calendar_events SET related_contact_id = '459b8a28-647d-47ed-8b79-2bbd05de95ff' WHERE id = '189ed10a-1063-4385-a6f7-73351a5fe6ed';
