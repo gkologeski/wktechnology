@@ -646,3 +646,38 @@ export async function tickAllCalendars(): Promise<{ processed: number }> {
   }
   return { processed };
 }
+
+/**
+ * Recording-only tick. Skips the heavy pullGoogleEvents/pushPendingMeetings
+ * steps and only scans Drive for Meet recordings on events already in DB.
+ * Keeps subrequest count low enough to fit Cloudflare Worker limits even
+ * when the main calendar tick is overrunning.
+ */
+export async function tickAllRecordings(): Promise<{
+  processed: number;
+  totals: { scanned: number; found: number; missing: number; errors: number };
+}> {
+  const { data: accounts } = await supabaseAdmin
+    .from("calendar_accounts")
+    .select(
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+    )
+    .eq("sync_enabled", true)
+    .eq("provider", "google")
+    .limit(50);
+  let processed = 0;
+  const totals = { scanned: 0, found: 0, missing: 0, errors: 0 };
+  for (const a of accounts ?? []) {
+    try {
+      const r = await syncPastRecordings(a as CalendarAccountRow);
+      totals.scanned += r.scanned;
+      totals.found += r.found;
+      totals.missing += r.missing;
+      totals.errors += r.errors;
+      processed++;
+    } catch (e) {
+      console.error("[recordings tick] failed for", a.id, e);
+    }
+  }
+  return { processed, totals };
+}
