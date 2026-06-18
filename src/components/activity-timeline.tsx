@@ -68,9 +68,56 @@ type RelatedKey =
   | "related_lead_id"
   | "related_contact_id"
   | "related_company_id"
-  | "related_deal_id";
+  | "related_deal_id"
+  | "related_ticket_id";
 type Attachment = { path: string; name: string; size: number; type: string; bucket?: string };
 type TeamMember = { id: string; name: string };
+type CalendarAttendee = { email?: string; displayName?: string; organizer?: boolean; self?: boolean };
+
+function normalizeTimelineEmail(email: string | null | undefined) {
+  return (email ?? "").trim().toLowerCase();
+}
+
+function emailDomain(email: string | null | undefined) {
+  return normalizeTimelineEmail(email).split("@")[1] ?? "";
+}
+
+function calendarAttendees(value: unknown): CalendarAttendee[] {
+  return Array.isArray(value) ? (value as CalendarAttendee[]) : [];
+}
+
+function calendarInternalDomains(attendees: CalendarAttendee[]) {
+  const domains = new Set<string>();
+  for (const attendee of attendees) {
+    if (!attendee.email || (!attendee.self && !attendee.organizer)) continue;
+    const domain = emailDomain(attendee.email);
+    if (domain) domains.add(domain);
+  }
+  return domains;
+}
+
+function calendarEventTargetsEmails(
+  event: Record<string, unknown>,
+  targetEmails: Set<string>,
+  targetContactIds: Set<string>,
+  contactEmailById: Map<string, string>,
+) {
+  const attendees = calendarAttendees(event.attendees);
+  const attendeeEmails = new Set(attendees.map((a) => normalizeTimelineEmail(a.email)).filter(Boolean));
+  const internalDomains = calendarInternalDomains(attendees);
+  const isExternalTarget = (email: string) => {
+    const domain = emailDomain(email);
+    return !!domain && !internalDomains.has(domain);
+  };
+
+  for (const email of targetEmails) {
+    if (attendeeEmails.has(email) && isExternalTarget(email)) return true;
+  }
+
+  const relatedContactId = typeof event.related_contact_id === "string" ? event.related_contact_id : null;
+  const relatedEmail = relatedContactId ? contactEmailById.get(relatedContactId) : null;
+  return !!relatedContactId && targetContactIds.has(relatedContactId) && !!relatedEmail && isExternalTarget(relatedEmail);
+}
 
 // Ações tipo "Registrar" (composer inline com texto)
 type LogKind = ActivityType;
