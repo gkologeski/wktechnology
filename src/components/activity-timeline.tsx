@@ -308,27 +308,27 @@ export function ActivityTimeline({
           .map((c) => (c.email ?? "").trim().toLowerCase())
           .filter(Boolean);
 
+        const selectCols = "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
         const byContact = await supabase
           .from("calendar_events")
-          .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
+          .select(selectCols)
           .in("related_contact_id", contactIds);
-        let byAttendee: { data: Array<Record<string, unknown>> | null } = { data: [] };
-        if (emails.length > 0) {
-          const ors = emails
-            .map((em) => `attendees.cs.[{"email":"${em.replace(/"/g, "")}"}]`)
-            .join(",");
-          byAttendee = await supabase
-            .from("calendar_events")
-            .select("id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at")
-            .or(ors);
-        }
         const merged = new Map<string, Record<string, unknown>>();
-        for (const row of [
-          ...((byContact.data ?? []) as Array<Record<string, unknown>>),
-          ...((byAttendee.data ?? []) as Array<Record<string, unknown>>),
-        ]) {
+        for (const row of (byContact.data ?? []) as Array<Record<string, unknown>>) {
           merged.set(row.id as string, row);
         }
+        // Match by attendee email (one query per email — PostgREST `or` with jsonb cs is fragile)
+        await Promise.all(
+          emails.map(async (em) => {
+            const { data } = await supabase
+              .from("calendar_events")
+              .select(selectCols)
+              .contains("attendees", [{ email: em }]);
+            for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+              merged.set(row.id as string, row);
+            }
+          }),
+        );
         calendarVirtuals = Array.from(merged.values()).map((e) => {
           const atts = (e.attendees as Array<{ email: string; displayName?: string; organizer?: boolean; self?: boolean }> | null) ?? [];
           return {
