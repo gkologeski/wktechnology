@@ -286,6 +286,7 @@ export const attachRecording = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: meeting, error } = await supabaseAdmin
       .from("meetings")
@@ -351,6 +352,7 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
@@ -470,6 +472,7 @@ Responda APENAS com JSON válido.`;
  * AI: summarize a Google Calendar event's Drive recording
  * ============================================================ */
 async function refreshGoogleAccessToken(account: any): Promise<string> {
+  const supabaseAdmin = await getSupabaseAdmin();
   if (!account.refresh_token) throw new Error("Conta de calendário sem refresh_token — reconecte o Google");
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
