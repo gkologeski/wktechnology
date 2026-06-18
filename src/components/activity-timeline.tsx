@@ -1394,13 +1394,41 @@ export function ActivityTimeline({
                       ))}
                     </div>
                   )}
-                  <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
-                    {a.id.startsWith("cal_") ? (
-                      <span className="text-[11px] text-muted-foreground italic px-2 py-1">
-                        Evento sincronizado do Google Calendar — edite no Google.
-                      </span>
-                    ) : (
-                      <>
+                  {(() => {
+                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+                    const src = typeof ext.source === "string" ? (ext.source as string) : null;
+                    const isCalSynced = a.id.startsWith("cal_");
+                    const externalKeys = [
+                      "gmail_message_id",
+                      "gmail_thread_id",
+                      "twilio_call_sid",
+                      "vapi_call_id",
+                      "twilio_sid",
+                      "hubspot",
+                      "hubspot_lead",
+                      "conversation_id",
+                    ];
+                    const hasGcal = Object.keys(ext).some((k) => k.startsWith("gcal_"));
+                    const isExternal =
+                      isCalSynced ||
+                      hasGcal ||
+                      src === "google_calendar" ||
+                      src === "meeting_recording" ||
+                      src === "meeting_action_item" ||
+                      externalKeys.some((k) => ext[k]);
+                    if (isExternal) {
+                      return (
+                        <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
+                          <span className="text-[11px] text-muted-foreground italic px-2 py-1">
+                            {isCalSynced || hasGcal || src === "google_calendar"
+                              ? "Evento sincronizado do Google Calendar — edite na origem."
+                              : "Atividade sincronizada — edite na origem."}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1417,9 +1445,10 @@ export function ActivityTimeline({
                         >
                           <Trash2 className="h-3 w-3 mr-1" /> Excluir
                         </Button>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    );
+                  })()}
+
                 </div>
               </li>
             );
