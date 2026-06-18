@@ -26,7 +26,7 @@ type Props = {
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
   defaultAttendee?: string;
-  relatedKey: "related_lead_id" | "related_contact_id" | "related_company_id" | "related_deal_id";
+  relatedKey: "related_lead_id" | "related_contact_id" | "related_company_id" | "related_deal_id" | "related_ticket_id";
   relatedId: string;
   onCreated?: () => void;
 };
@@ -108,10 +108,11 @@ export function MeetingDialog({
 
       // 1) Always create a meeting record (Jitsi room + public token) so a link exists,
       //    regardless of Google Calendar / Meet integration.
-      const entityMap: Record<string, "contact" | "lead" | "deal" | undefined> = {
+      const entityMap: Record<string, "contact" | "lead" | "deal" | "ticket" | undefined> = {
         related_contact_id: "contact",
         related_lead_id: "lead",
         related_deal_id: "deal",
+        related_ticket_id: "ticket",
         related_company_id: undefined, // companies have no meeting relation column
       };
       const meetingEntity = entityMap[relatedKey];
