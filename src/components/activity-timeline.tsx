@@ -952,7 +952,11 @@ export function ActivityTimeline({
         onOpenChange={(v) => !v && setOpenAction(null)}
         defaultTo={target.email ?? ""}
         contactId={target.contactId}
+        leadId={relatedKey === "related_lead_id" ? relatedId : undefined}
+        dealId={relatedKey === "related_deal_id" ? relatedId : undefined}
+        companyId={relatedKey === "related_company_id" ? relatedId : undefined}
         contactName={target.name}
+        onSent={() => void load()}
       />
       {openAction === "call" &&
         !target.phone &&
