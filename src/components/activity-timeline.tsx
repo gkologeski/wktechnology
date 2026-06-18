@@ -331,50 +331,104 @@ export function ActivityTimeline({
       });
     }
 
-    // Also pull synced Google Calendar events for contact/deal-via-contact.
-    // Match by related_contact_id OR by contact email present in attendees JSON,
-    // since the Calendar sync only links one primary contact per event.
+    // Also pull synced Google Calendar events by the entity's contact e-mails.
+    // The contact e-mail is the source of truth; matching events are mirrored
+    // to related deals, companies and tickets through their associated contacts.
     let calendarVirtuals: Activity[] = [];
     try {
-      let contactIds: string[] = [];
-      if (relatedKey === "related_contact_id") {
-        contactIds = [relatedId];
-      } else if (relatedKey === "related_deal_id") {
-        const ids = new Set<string>();
+      const contactIdsSet = new Set<string>();
+      const targetEmailsSet = new Set<string>();
+      const addContactIds = (ids: Array<string | null | undefined>) => {
+        ids.filter(Boolean).forEach((id) => contactIdsSet.add(id as string));
+      };
+      const addCompanyContacts = async (companyId: string | null | undefined) => {
+        if (!companyId) return;
+        const { data: contacts } = await supabase
+          .from("contacts")
+          .select("id")
+          .eq("company_id", companyId)
+          .is("deleted_at", null);
+        addContactIds(((contacts ?? []) as Array<{ id: string }>).map((c) => c.id));
+      };
+      const addDealContacts = async (dealId: string | null | undefined) => {
+        if (!dealId) return;
         const { data: deal } = await supabase
           .from("deals")
           .select("primary_contact_id")
-          .eq("id", relatedId)
+          .eq("id", dealId)
           .maybeSingle();
-        if (deal?.primary_contact_id) ids.add(deal.primary_contact_id);
+        addContactIds([deal?.primary_contact_id]);
         const { data: dc } = await supabase
           .from("deal_contacts")
           .select("contact_id")
-          .eq("deal_id", relatedId);
-        for (const r of (dc ?? []) as Array<{ contact_id: string }>) ids.add(r.contact_id);
-        contactIds = Array.from(ids);
+          .eq("deal_id", dealId);
+        addContactIds(((dc ?? []) as Array<{ contact_id: string }>).map((r) => r.contact_id));
+      };
+
+      if (relatedKey === "related_contact_id") {
+        contactIdsSet.add(relatedId);
+      } else if (relatedKey === "related_deal_id") {
+        await addDealContacts(relatedId);
+      } else if (relatedKey === "related_company_id") {
+        await addCompanyContacts(relatedId);
+      } else if (relatedKey === "related_ticket_id") {
+        const { data: ticket } = await supabase
+          .from("tickets")
+          .select("contact_id, company_id, deal_id")
+          .eq("id", relatedId)
+          .maybeSingle();
+        addContactIds([ticket?.contact_id]);
+        await addDealContacts(ticket?.deal_id);
+        if (!ticket?.contact_id && !ticket?.deal_id) await addCompanyContacts(ticket?.company_id);
+      } else if (relatedKey === "related_lead_id") {
+        const { data: lead } = await supabase
+          .from("leads")
+          .select("email")
+          .eq("id", relatedId)
+          .maybeSingle();
+        const email = normalizeTimelineEmail(lead?.email);
+        if (email) targetEmailsSet.add(email);
       }
+      const contactIds = Array.from(contactIdsSet);
       if (contactIds.length > 0) {
         const { data: cs } = await supabase
           .from("contacts")
-          .select("email")
+          .select("id, email")
           .in("id", contactIds);
-        const emails = ((cs ?? []) as Array<{ email: string | null }>)
-          .map((c) => (c.email ?? "").trim().toLowerCase())
-          .filter(Boolean);
+        for (const contact of (cs ?? []) as Array<{ id: string; email: string | null }>) {
+          const email = normalizeTimelineEmail(contact.email);
+          if (email) targetEmailsSet.add(email);
+        }
+      }
+
+      const targetEmails = Array.from(targetEmailsSet);
+      if (contactIds.length > 0 || targetEmails.length > 0) {
+        const contactEmailById = new Map<string, string>();
+        if (contactIds.length > 0) {
+          const { data: cs } = await supabase
+            .from("contacts")
+            .select("id, email")
+            .in("id", contactIds);
+          for (const contact of (cs ?? []) as Array<{ id: string; email: string | null }>) {
+            const email = normalizeTimelineEmail(contact.email);
+            if (email) contactEmailById.set(contact.id, email);
+          }
+        }
 
         const selectCols = "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
-        const byContact = await supabase
-          .from("calendar_events")
-          .select(selectCols)
-          .in("related_contact_id", contactIds);
         const merged = new Map<string, Record<string, unknown>>();
-        for (const row of (byContact.data ?? []) as Array<Record<string, unknown>>) {
-          merged.set(row.id as string, row);
+        if (contactIds.length > 0) {
+          const byContact = await supabase
+            .from("calendar_events")
+            .select(selectCols)
+            .in("related_contact_id", contactIds);
+          for (const row of (byContact.data ?? []) as Array<Record<string, unknown>>) {
+            merged.set(row.id as string, row);
+          }
         }
         // Match by attendee email (one query per email — PostgREST `or` with jsonb cs is fragile)
         await Promise.all(
-          emails.map(async (em) => {
+          targetEmails.map(async (em) => {
             const { data } = await supabase
               .from("calendar_events")
               .select(selectCols)
@@ -384,8 +438,12 @@ export function ActivityTimeline({
             }
           }),
         );
-        calendarVirtuals = Array.from(merged.values()).map((e) => {
-          const atts = (e.attendees as Array<{ email: string; displayName?: string; organizer?: boolean; self?: boolean }> | null) ?? [];
+        const targetContactIds = new Set(contactIds);
+        const finalEvents = Array.from(merged.values()).filter((event) =>
+          calendarEventTargetsEmails(event, targetEmailsSet, targetContactIds, contactEmailById),
+        );
+        calendarVirtuals = finalEvents.map((e) => {
+          const atts = calendarAttendees(e.attendees);
           return {
             id: `cal_${e.id as string}`,
             type: "meeting",
