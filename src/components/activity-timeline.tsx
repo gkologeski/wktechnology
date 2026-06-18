@@ -103,7 +103,9 @@ function calendarEventTargetsEmails(
   contactEmailById: Map<string, string>,
 ) {
   const attendees = calendarAttendees(event.attendees);
-  const attendeeEmails = new Set(attendees.map((a) => normalizeTimelineEmail(a.email)).filter(Boolean));
+  const attendeeEmails = new Set(
+    attendees.map((a) => normalizeTimelineEmail(a.email)).filter(Boolean),
+  );
   const internalDomains = calendarInternalDomains(attendees);
   const isExternalTarget = (email: string) => {
     const domain = emailDomain(email);
@@ -116,7 +118,12 @@ function calendarEventTargetsEmails(
 
   const relatedContactId = typeof event.related_contact_id === "string" ? event.related_contact_id : null;
   const relatedEmail = relatedContactId ? contactEmailById.get(relatedContactId) : null;
-  return !!relatedContactId && targetContactIds.has(relatedContactId) && !!relatedEmail && isExternalTarget(relatedEmail);
+  return (
+    !!relatedContactId &&
+    targetContactIds.has(relatedContactId) &&
+    !!relatedEmail &&
+    isExternalTarget(relatedEmail)
+  );
 }
 
 // Ações tipo "Registrar" (composer inline com texto)
