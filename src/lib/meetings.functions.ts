@@ -510,7 +510,63 @@ async function getGoogleAccessTokenForEvent(event: any): Promise<string> {
   return account.access_token;
 }
 
-const MAX_RECORDING_BYTES = 50 * 1024 * 1024; // 50MB
+const MAX_RECORDING_BYTES = 80 * 1024 * 1024; // 80MB — limite ampliado p/ vídeo (worker tem ~128MB de memória)
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+/**
+ * Procura no Google Drive um arquivo de TRANSCRIÇÃO do Meet relacionado ao evento.
+ * Meet gera Google Doc (application/vnd.google-apps.document) ou .txt na mesma
+ * pasta "Meet Recordings", com nome contendo o título da reunião + "Transcrição"/"Transcript".
+ */
+async function findDriveTranscript(
+  token: string,
+  ev: { title: string | null; end_at: string | null },
+): Promise<{ file_id: string; mime_type: string } | null> {
+  if (!ev.end_at) return null;
+  const endMs = new Date(ev.end_at).getTime();
+  if (!Number.isFinite(endMs)) return null;
+  const after = new Date(endMs - 1 * 3600_000).toISOString();
+  const before = new Date(endMs + 7 * 86400_000).toISOString();
+  const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
+  const titleFragment = (ev.title ?? "").trim().slice(0, 40).replace(/'/g, "\\'");
+
+  // Meet transcript files: Google Doc or text/plain, com "Transcript"/"Transcrição" no nome
+  const docMime = "(mimeType='application/vnd.google-apps.document' or mimeType='text/plain')";
+  const nameMatches = titleFragment
+    ? `(name contains '${titleFragment}' or name contains 'Transcrição' or name contains 'Transcript')`
+    : `(name contains 'Transcrição' or name contains 'Transcript')`;
+  const q = `${docMime} and ${nameMatches} and ${baseTime}`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,createdTime)&pageSize=20&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    files?: { id: string; name: string; mimeType: string; createdTime?: string }[];
+  };
+  const files = json.files ?? [];
+  // Priorizar arquivos cujo nome cite "Transcrição"/"Transcript"
+  const ranked = files.sort((a, b) => {
+    const score = (n: string) => (/transcri/i.test(n) ? 0 : 1);
+    const sa = score(a.name);
+    const sb = score(b.name);
+    if (sa !== sb) return sa - sb;
+    const da = Math.abs(new Date(a.createdTime ?? 0).getTime() - endMs);
+    const db = Math.abs(new Date(b.createdTime ?? 0).getTime() - endMs);
+    return da - db;
+  });
+  const pick = ranked[0];
+  if (!pick) return null;
+  return { file_id: pick.id, mime_type: pick.mimeType };
+}
+
+async function downloadDriveTextFile(token: string, fileId: string, mime: string): Promise<string> {
+  const url =
+    mime === "application/vnd.google-apps.document"
+      ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/export?mimeType=text/plain`
+      : `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`Falha ao baixar transcrição (${res.status})`);
+  return await res.text();
+}
 
 export const summarizeCalendarEventRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -534,42 +590,63 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
       .update({ summary_status: "processing", summary_error: null })
       .eq("id", event.id);
 
-    try {
-      const token = await getGoogleAccessTokenForEvent(event);
-      const fileId = event.recording_drive_file_id as string;
-      const dres = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (!dres.ok) {
-        const t = await dres.text();
-        throw new Error(`Falha ao baixar gravação do Drive (${dres.status}): ${t.slice(0, 200)}`);
-      }
-      const sizeHeader = Number(dres.headers.get("content-length") ?? "0");
-      if (sizeHeader && sizeHeader > MAX_RECORDING_BYTES) {
-        throw new Error(`Gravação maior que ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB — não suportado para resumo automático`);
-      }
-      const arrayBuf = await dres.arrayBuffer();
-      if (arrayBuf.byteLength > MAX_RECORDING_BYTES) {
-        throw new Error(`Gravação maior que ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB — não suportado para resumo automático`);
-      }
-      const b64 = Buffer.from(arrayBuf).toString("base64");
-      const mime = (event.recording_mime_type as string | null) ?? dres.headers.get("content-type") ?? "video/mp4";
-      const audioFormat = mime.includes("mp4")
-        ? "mp4"
-        : mime.includes("wav")
-          ? "wav"
-          : mime.includes("webm")
-            ? "webm"
-            : "mp3";
-
-      const systemPrompt = `Você é um assistente que processa gravações de reuniões em português brasileiro.
+    const systemPrompt = `Você é um assistente que processa reuniões em português brasileiro.
 Gere:
-- transcript: transcrição literal completa (com timestamps aproximados quando possível, formato [mm:ss])
+- transcript: transcrição literal completa quando fornecida (caso contrário, derive do áudio com timestamps aproximados [mm:ss])
 - summary: resumo executivo de até 6 linhas
 - decisions: array de decisões tomadas (strings curtas)
 - action_items: array de objetos { task: string, assignee: string|null, due_hint: string|null }
 Responda APENAS com JSON válido.`;
+
+    try {
+      const token = await getGoogleAccessTokenForEvent(event);
+
+      // 1) Tentar transcrição primeiro (texto, sem limite de tamanho prático)
+      let userContent: any;
+      let usedTranscript = false;
+      const transcript = await findDriveTranscript(token, { title: event.title, end_at: event.end_at });
+      if (transcript) {
+        const text = await downloadDriveTextFile(token, transcript.file_id, transcript.mime_type);
+        const clipped = text.length > 200_000 ? text.slice(0, 200_000) : text;
+        userContent = `Processe esta transcrição da reunião "${event.title ?? ""}".\n\n=== TRANSCRIÇÃO ===\n${clipped}`;
+        usedTranscript = true;
+      } else {
+        // 2) Fallback: baixar o vídeo (com limite de 80MB)
+        const fileId = event.recording_drive_file_id as string;
+        const dres = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!dres.ok) {
+          const t = await dres.text();
+          throw new Error(`Falha ao baixar gravação do Drive (${dres.status}): ${t.slice(0, 200)}`);
+        }
+        const sizeHeader = Number(dres.headers.get("content-length") ?? "0");
+        if (sizeHeader && sizeHeader > MAX_RECORDING_BYTES) {
+          throw new Error(
+            `Gravação tem ${(sizeHeader / 1024 / 1024).toFixed(0)}MB e excede o limite de ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB para resumo automático a partir do vídeo. Ative a "Transcrição" no Google Meet durante a próxima reunião — assim conseguimos resumir reuniões de qualquer duração a partir do texto.`,
+          );
+        }
+        const arrayBuf = await dres.arrayBuffer();
+        if (arrayBuf.byteLength > MAX_RECORDING_BYTES) {
+          throw new Error(
+            `Gravação tem ${(arrayBuf.byteLength / 1024 / 1024).toFixed(0)}MB e excede o limite de ${Math.round(MAX_RECORDING_BYTES / 1024 / 1024)}MB. Ative a transcrição do Meet para reuniões longas.`,
+          );
+        }
+        const b64 = Buffer.from(arrayBuf).toString("base64");
+        const mime = (event.recording_mime_type as string | null) ?? dres.headers.get("content-type") ?? "video/mp4";
+        const audioFormat = mime.includes("mp4")
+          ? "mp4"
+          : mime.includes("wav")
+            ? "wav"
+            : mime.includes("webm")
+              ? "webm"
+              : "mp3";
+        userContent = [
+          { type: "text", text: `Processe esta gravação da reunião "${event.title ?? ""}".` },
+          { type: "input_audio", input_audio: { data: b64, format: audioFormat } },
+        ];
+      }
 
       const aiRes = await fetch(AI_URL, {
         method: "POST",
@@ -579,13 +656,7 @@ Responda APENAS com JSON válido.`;
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: `Processe esta gravação da reunião "${event.title ?? ""}".` },
-                { type: "input_audio", input_audio: { data: b64, format: audioFormat } },
-              ],
-            },
+            { role: "user", content: userContent },
           ],
         }),
       });
@@ -601,6 +672,7 @@ Responda APENAS com JSON válido.`;
       const decisions: any[] = Array.isArray(parsed.decisions) ? parsed.decisions : [];
       const actionItems: any[] = Array.isArray(parsed.action_items) ? parsed.action_items : [];
       let summaryText: string = parsed.summary ?? "";
+      if (usedTranscript) summaryText = `_Resumo gerado a partir da transcrição do Meet._\n\n${summaryText}`;
       if (decisions.length) {
         summaryText += "\n\n**Decisões:**\n" + decisions.map((d) => `- ${typeof d === "string" ? d : JSON.stringify(d)}`).join("\n");
       }
@@ -624,7 +696,7 @@ Responda APENAS com JSON válido.`;
         })
         .eq("id", event.id);
 
-      return { ok: true, summary: summaryText, action_items: actionItems };
+      return { ok: true, summary: summaryText, action_items: actionItems, source: usedTranscript ? "transcript" : "video" };
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       await supabaseAdmin
