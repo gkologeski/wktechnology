@@ -935,12 +935,13 @@ function TasksHubspotView() {
             </table>
           </div>
 
-          <Pagination
+          <TablePagination
             page={page}
             pageSize={pageSize}
             total={total}
-            setPage={setPage}
-            setPageSize={setPageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            entityLabel="tarefas"
           />
         </div>
       </div>
