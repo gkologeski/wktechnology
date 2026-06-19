@@ -1496,16 +1496,27 @@ export function ActivityTimeline({
                       )}
                     </div>
                   )}
-                  {a.type === "call" && a.recording_url && (
-                    <div className="mt-3">
-                      <audio
-                        controls
-                        preload="none"
-                        src={a.recording_url}
-                        className="w-full h-10"
-                      />
-                    </div>
-                  )}
+                  {a.type === "call" && (() => {
+                    const url =
+                      a.recording_url ||
+                      (a.body?.match(/https?:\/\/[^\s<"']+\.(?:mp3|wav|ogg|m4a)/i)?.[0] ?? null) ||
+                      (a.body?.match(/https?:\/\/api\.twilio\.com\/[^\s<"']+/i)?.[0] ?? null);
+                    if (!url) return null;
+                    return (
+                      <div className="mt-3 space-y-1">
+                        <audio controls preload="none" src={url} className="w-full h-10" />
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          <LinkIcon className="h-3 w-3" /> Abrir gravação
+                        </a>
+                      </div>
+                    );
+                  })()}
+
 
                   {a.type === "email" && (a.email_direction || a.email_status) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
