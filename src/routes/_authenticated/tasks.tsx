@@ -615,6 +615,7 @@ function TasksHubspotView() {
     gridKey: "tasks",
     columns: taskColumns,
     defaults: DEFAULT_TASK_COLS,
+    customEntity: "activities",
   });
 
   return (
