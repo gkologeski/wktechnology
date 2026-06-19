@@ -511,7 +511,6 @@ async function getGoogleAccessTokenForEvent(event: any): Promise<string> {
 }
 
 const MAX_RECORDING_BYTES = 80 * 1024 * 1024; // 80MB — limite ampliado p/ vídeo (worker tem ~128MB de memória)
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 /**
  * Procura no Google Drive um arquivo de TRANSCRIÇÃO do Meet relacionado ao evento.
