@@ -17,6 +17,7 @@ import {
 import { listTeamMembers } from "@/lib/teams.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -339,12 +340,10 @@ function GoalsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Meta (valor alvo)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
+                <CurrencyInput
+                  currency="BRL"
                   value={form.target_value}
-                  onChange={(e) => setForm({ ...form, target_value: Number(e.target.value) })}
+                  onValueChange={(n) => setForm({ ...form, target_value: n ?? 0 })}
                 />
               </div>
               <div>

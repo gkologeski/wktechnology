@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useToastCreated } from "@/lib/toast-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -187,12 +188,11 @@ export function QuickCreateDealDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="qc-d-value">Valor (BRL)</Label>
-            <Input
+            <CurrencyInput
               id="qc-d-value"
-              type="number"
-              step="0.01"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+              currency="BRL"
+              value={value === "" ? null : Number(value)}
+              onValueChange={(n) => setValue(n === null ? "" : String(n))}
             />
           </div>
         </div>

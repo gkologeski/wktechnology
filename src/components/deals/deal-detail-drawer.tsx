@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Button } from "@/components/ui/button";
@@ -205,11 +206,10 @@ export function DealDetailDrawer({
               </Field>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Valor">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={String(v.value ?? "")}
-                    onChange={(e) => set("value", e.target.value)}
+                  <CurrencyInput
+                    currency={String(v.currency ?? "BRL")}
+                    value={v.value as number | null | undefined}
+                    onValueChange={(n) => set("value", n ?? "")}
                   />
                 </Field>
                 <Field label="Moeda">

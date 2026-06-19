@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { Package, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -276,12 +277,14 @@ function LineItemsEditorBody({
                   step="0.01"
                   onCommit={(v) => update(li.id, { quantity: v })}
                 />
-                <LabeledNumber
-                  label="Preço"
-                  value={n(li.unit_price)}
-                  step="0.01"
-                  onCommit={(v) => update(li.id, { unit_price: v })}
-                />
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Preço</div>
+                  <CurrencyInput
+                    currency={currency}
+                    value={n(li.unit_price)}
+                    onValueChange={(v) => update(li.id, { unit_price: v ?? 0 })}
+                  />
+                </div>
                 <LabeledNumber
                   label="Desc %"
                   value={n(li.discount_pct)}

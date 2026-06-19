@@ -5,6 +5,7 @@ import { useState } from "react";
 import { listProposals, createProposal, deleteProposal } from "@/lib/proposals.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,11 +109,10 @@ function ProposalsPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Valor (BRL)</Label>
-                  <Input
-                    value={amount}
-                    type="number"
-                    step="0.01"
-                    onChange={(e) => setAmount(e.target.value)}
+                  <CurrencyInput
+                    currency="BRL"
+                    value={amount === "" ? null : Number(amount)}
+                    onValueChange={(n) => setAmount(n === null ? "" : String(n))}
                   />
                 </div>
               </div>
