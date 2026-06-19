@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { usePipelines, defaultTicketStages, type Pipeline } from "@/lib/pipelines";
 import { useMyTools } from "@/lib/use-my-tools";
 import { PageHeader } from "@/components/page-header";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
