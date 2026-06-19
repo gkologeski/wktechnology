@@ -195,6 +195,7 @@ function LeadsHubspotView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
   const [pendingAction, setPendingAction] = useState<{
     title: string;
     description: string;
