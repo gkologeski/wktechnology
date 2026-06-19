@@ -140,7 +140,7 @@ function TasksHubspotView() {
         .from("activities")
         .select(
           "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at",
-          { count: "planned" },
+          { count: "exact" },
         )
         .eq("type", "task")
         .is("deleted_at", null);
