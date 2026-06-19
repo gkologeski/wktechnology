@@ -33,6 +33,7 @@ import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { OwnerFilter, splitOwnerIds, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
@@ -125,6 +126,7 @@ function ContactsHubspotView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);

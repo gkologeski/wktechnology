@@ -36,6 +36,7 @@ import {
 } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -98,6 +99,7 @@ function TasksHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
 
   const exportCsv = () => {
     if (!rows.length) return toast.error("Nenhum registro para exportar");

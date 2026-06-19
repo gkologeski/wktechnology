@@ -1,5 +1,7 @@
 // Botão "+" no header com atalhos para criar entidades.
-import { Link } from "@tanstack/react-router";
+// Navega para a rota da entidade adicionando ?create=1 — a página detecta o
+// parâmetro (useAutoCreateParam) e abre automaticamente o modal de cadastro.
+import { useNavigate } from "@tanstack/react-router";
 import {
   Plus,
   UserPlus,
@@ -21,18 +23,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const items = [
-  { to: "/leads", label: "Lead", icon: UserPlus },
-  { to: "/contacts", label: "Contato", icon: Users },
-  { to: "/companies", label: "Empresa", icon: Building2 },
-  { to: "/deals", label: "Negócio", icon: Briefcase },
-  { to: "/tickets", label: "Ticket", icon: LifeBuoy },
-  { to: "/tasks", label: "Tarefa", icon: ListTodo },
-  { to: "/meetings", label: "Reunião", icon: Video },
-  { to: "/notes", label: "Nota", icon: StickyNote },
+type QuickItem = {
+  to: "/leads" | "/contacts" | "/companies" | "/deals" | "/tickets" | "/tasks" | "/meetings" | "/notes";
+  label: string;
+  icon: typeof Plus;
+  /** false para rotas que ainda não têm modal de cadastro (apenas navega). */
+  hasCreateModal: boolean;
+};
+
+const items: readonly QuickItem[] = [
+  { to: "/leads", label: "Lead", icon: UserPlus, hasCreateModal: true },
+  { to: "/contacts", label: "Contato", icon: Users, hasCreateModal: true },
+  { to: "/companies", label: "Empresa", icon: Building2, hasCreateModal: true },
+  { to: "/deals", label: "Negócio", icon: Briefcase, hasCreateModal: true },
+  { to: "/tickets", label: "Ticket", icon: LifeBuoy, hasCreateModal: true },
+  { to: "/tasks", label: "Tarefa", icon: ListTodo, hasCreateModal: true },
+  { to: "/meetings", label: "Reunião", icon: Video, hasCreateModal: false },
+  { to: "/notes", label: "Nota", icon: StickyNote, hasCreateModal: false },
 ] as const;
 
 export function QuickCreateMenu() {
+  const navigate = useNavigate();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -44,11 +55,18 @@ export function QuickCreateMenu() {
         <DropdownMenuLabel>Criar</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.map((it) => (
-          <DropdownMenuItem key={it.to} asChild>
-            <Link to={it.to}>
-              <it.icon className="h-4 w-4 mr-2" />
-              {it.label}
-            </Link>
+          <DropdownMenuItem
+            key={it.to}
+            onSelect={(e) => {
+              e.preventDefault();
+              navigate({
+                to: it.to,
+                search: it.hasCreateModal ? ({ create: 1 } as never) : undefined,
+              });
+            }}
+          >
+            <it.icon className="h-4 w-4 mr-2" />
+            {it.label}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
