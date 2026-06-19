@@ -135,17 +135,33 @@ function TicketsIndex() {
     },
   });
 
+  const contactIds = useMemo(
+    () => Array.from(new Set(tickets.map((t) => t.contact_id).filter(Boolean) as string[])),
+    [tickets],
+  );
+  const companyIds = useMemo(
+    () => Array.from(new Set(tickets.map((t) => t.company_id).filter(Boolean) as string[])),
+    [tickets],
+  );
+
   const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts", "select"],
+    queryKey: ["tickets", "contact-lookups", contactIds.join(",")],
+    enabled: contactIds.length > 0,
     queryFn: async () =>
-      (await supabase.from("contacts").select("id,first_name,last_name").order("first_name"))
-        .data ?? [],
+      (
+        await supabase
+          .from("contacts")
+          .select("id,first_name,last_name")
+          .in("id", contactIds)
+      ).data ?? [],
   });
   const { data: companies = [] } = useQuery({
-    queryKey: ["companies", "select"],
+    queryKey: ["tickets", "company-lookups", companyIds.join(",")],
+    enabled: companyIds.length > 0,
     queryFn: async () =>
-      (await supabase.from("companies").select("id,name").order("name")).data ?? [],
+      (await supabase.from("companies").select("id,name").in("id", companyIds)).data ?? [],
   });
+
   const { data: sourceOptions = [] } = useQuery({
     queryKey: ["tickets", "distinct-sources"],
     queryFn: async () => {
