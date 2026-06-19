@@ -1446,10 +1446,41 @@ export function ActivityTimeline({
                       </div>
                     </div>
                   ) : (
-                    a.body && (
+                    a.body &&
+                    !(a.type === "call" && /Tipo de Chamada\s*:/i.test(a.body)) && (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
                     )
                   )}
+                  {a.type === "call" && a.body && /Tipo de Chamada\s*:/i.test(a.body) && (() => {
+                    const text = a.body.replace(/<[^>]+>/g, "\n");
+                    const pick = (re: RegExp) => {
+                      const m = text.match(re);
+                      return m?.[1]?.trim() ?? null;
+                    };
+                    const direction = pick(/Tipo de Chamada\s*:\s*([A-Z]+)/i);
+                    const from = pick(/De\s*:\s*([+\d\s()-]+?)(?:\s+para|$)/i);
+                    const to = pick(/para\s+([+\d\s()-]+)/i);
+                    const status = pick(/Status\s*:\s*([A-Z_]+)/i);
+                    return (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                        {direction && (
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {direction.toLowerCase() === "outbound" ? "Saída" : direction.toLowerCase() === "inbound" ? "Entrada" : direction.toLowerCase()}
+                          </Badge>
+                        )}
+                        {from && to && (
+                          <span className="text-muted-foreground tabular-nums">
+                            {from} → {to}
+                          </span>
+                        )}
+                        {status && (
+                          <Badge variant="secondary" className="text-[10px] capitalize">
+                            {status.toLowerCase().replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {a.type === "call" && (a.duration_ms || a.disposition) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.disposition && (
@@ -1475,6 +1506,7 @@ export function ActivityTimeline({
                       />
                     </div>
                   )}
+
                   {a.type === "email" && (a.email_direction || a.email_status) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.email_direction && (
