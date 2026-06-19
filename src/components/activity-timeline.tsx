@@ -696,6 +696,7 @@ export function ActivityTimeline({
     setPendingFiles([]);
     setMentions([]);
     void load();
+    window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
   const toggleDone = async (a: Activity) => {
@@ -705,12 +706,14 @@ export function ActivityTimeline({
       .eq("id", a.id);
     if (error) return toast.error(error.message);
     void load();
+    window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("activities").delete().eq("id", id);
     if (error) return toast.error(error.message);
     void load();
+    window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
   const startEdit = (a: Activity) => {
