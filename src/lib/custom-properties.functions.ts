@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const CUSTOM_ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
+export const CUSTOM_ENTITIES = ["leads", "contacts", "companies", "deals", "activities"] as const;
 export type CustomEntity = (typeof CUSTOM_ENTITIES)[number];
 
 export const CUSTOM_TYPES = [
@@ -38,6 +38,7 @@ export const CUSTOM_ENTITY_LABELS: Record<CustomEntity, string> = {
   contacts: "Contatos",
   companies: "Empresas",
   deals: "Negócios",
+  activities: "Tarefas",
 };
 
 const upsertSchema = z.object({
