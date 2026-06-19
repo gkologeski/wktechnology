@@ -171,6 +171,8 @@ function DealsPage() {
     setEditing(null);
     setDrawerOpen(true);
   };
+  useAutoCreateParam(openNew);
+
   const openEdit = (d: Deal) => {
     navigate({ to: "/deals/$id", params: { id: d.id } });
   };
