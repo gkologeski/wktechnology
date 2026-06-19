@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
+import { usePipelines } from "@/lib/pipelines";
+
 
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
