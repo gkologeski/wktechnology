@@ -58,11 +58,11 @@ export function renderWhatsAppHtml(messages: WhatsAppMessage[]): string {
       const align = mine ? "right" : "left";
       const bg = mine ? "#075E54" : "#202C33";
       const text = esc(m.text).replace(/\n/g, "<br/>");
-      return `<tr><td align="${align}" style="padding:2px 0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;max-width:78%;background:${bg};color:#ffffff;border-radius:10px;">
-          <tr><td style="padding:8px 12px 6px 12px;font:14px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;white-space:pre-wrap;word-break:break-word;">
+      return `<tr><td align="${align}" style="padding:1px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;max-width:78%;background:${bg};color:#ffffff;border-radius:8px;">
+          <tr><td style="padding:2px 8px;font:13px/1.2 -apple-system,Segoe UI,Roboto,sans-serif;white-space:pre-wrap;word-break:break-word;">
             ${text}
-            <span style="display:inline-block;margin-left:10px;font-size:10px;color:#b9c7ce;vertical-align:bottom;">${esc(m.time)}${mine ? ' <span style="color:#53bdeb;">✓✓</span>' : ""}</span>
+            <span style="display:inline-block;margin-left:8px;font-size:9px;color:#b9c7ce;vertical-align:bottom;">${esc(m.time)}${mine ? ' <span style="color:#53bdeb;">✓✓</span>' : ""}</span>
           </td></tr>
         </table>
       </td></tr>`;
