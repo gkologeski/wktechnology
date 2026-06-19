@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -143,19 +143,30 @@ export function useGridColumns<T extends object>({
     [openEditor],
   );
 
+  // Keep latest values in refs so ColumnsEditor has a STABLE component identity.
+  // If ColumnsEditor's identity changed across renders (e.g. due to mutation state
+  // changes), React would unmount and remount <Dialog>, causing the modal to
+  // visibly "reload" twice after actions like "Restaurar padrão".
+  const latest = useRef({ allColumns, prefData: prefQuery.data, defaults, saveMut, resetMut });
+  latest.current = { allColumns, prefData: prefQuery.data, defaults, saveMut, resetMut };
+
   const ColumnsEditor = useCallback(
     () => (
       <ColumnEditorDialog
         open={open}
         setOpen={setOpen}
-        allColumns={allColumns.map(({ key, label, group }) => ({ key, label, group }))}
-        value={prefQuery.data?.visibleColumns ?? null}
-        defaults={defaults}
-        onApply={(order) => saveMut.mutate(order)}
-        onReset={() => resetMut.mutate()}
+        allColumns={latest.current.allColumns.map(({ key, label, group }) => ({
+          key,
+          label,
+          group,
+        }))}
+        value={latest.current.prefData?.visibleColumns ?? null}
+        defaults={latest.current.defaults}
+        onApply={(order) => latest.current.saveMut.mutate(order)}
+        onReset={() => latest.current.resetMut.mutate()}
       />
     ),
-    [open, allColumns, prefQuery.data, defaults, saveMut, resetMut],
+    [open],
   );
 
   return {
