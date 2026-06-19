@@ -12,7 +12,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, normalizeSearch } from "@/lib/utils";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
