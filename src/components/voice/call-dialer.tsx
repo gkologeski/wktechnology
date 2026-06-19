@@ -221,13 +221,16 @@ export function CallDialer({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
+      {trigger !== undefined ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : openProp === undefined ? (
+        <DialogTrigger asChild>
           <Button size="sm" variant="outline">
             <Phone className="h-4 w-4 mr-1" /> Ligar
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      ) : null}
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{contactName ? `Ligar para ${contactName}` : "Ligação"}</DialogTitle>
