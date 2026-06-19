@@ -196,6 +196,8 @@ function TicketsIndex() {
     setDraft({ status: "new", priority: "medium", assignee_id: user?.id });
     setOpen(true);
   }
+  useAutoCreateParam(openNew);
+
   function openEdit(t: TicketRow) {
     navigate({ to: "/tickets/$id", params: { id: t.id } });
   }
