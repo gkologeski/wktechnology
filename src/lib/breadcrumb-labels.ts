@@ -5,7 +5,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   companies: "Empresas",
   deals: "Negócios",
   tasks: "Tarefas",
-  tickets: "Chamados",
+  tickets: "Tickets",
   proposals: "Propostas",
   invoices: "Faturas",
   meetings: "Reuniões",
