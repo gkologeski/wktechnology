@@ -695,6 +695,12 @@ function LeadsHubspotView() {
       run: async () => {
         await deleteLeadsByIds(supabase, [id]);
         toast.success("Removido");
+        setSelectedIds((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
         removeDeletedFromCache([id]);
         await refreshLeads();
       },
