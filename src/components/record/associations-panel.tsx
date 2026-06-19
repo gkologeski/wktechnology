@@ -1015,7 +1015,7 @@ function TasksCard({ entity, entityId }: { entity: AssociationEntity; entityId: 
   const [rows, setRows] = useState<
     { id: string; subject: string | null; due_date: string | null }[]
   >([]);
-  useEffect(() => {
+  const fetchRows = useCallback(() => {
     supabase
       .from("activities")
       .select("id, subject, due_date")
@@ -1026,6 +1026,12 @@ function TasksCard({ entity, entityId }: { entity: AssociationEntity; entityId: 
       .limit(10)
       .then(({ data }) => setRows((data ?? []) as never));
   }, [entity, entityId]);
+  useEffect(() => {
+    fetchRows();
+    const handler = () => fetchRows();
+    window.addEventListener("activities:changed", handler);
+    return () => window.removeEventListener("activities:changed", handler);
+  }, [fetchRows]);
   return (
     <AssocCard icon={<ListTodo className="w-4 h-4" />} title="Tarefas abertas" count={rows.length}>
       {rows.length === 0 ? (
@@ -1056,7 +1062,7 @@ function EmailsCard({ entity, entityId }: { entity: AssociationEntity; entityId:
   const [rows, setRows] = useState<
     { id: string; subject: string | null; created_at: string; hs_createdate: string | null }[]
   >([]);
-  useEffect(() => {
+  const fetchRows = useCallback(() => {
     supabase
       .from("activities")
       .select("id, subject, created_at, hs_createdate")
@@ -1067,6 +1073,12 @@ function EmailsCard({ entity, entityId }: { entity: AssociationEntity; entityId:
       .limit(5)
       .then(({ data }) => setRows((data ?? []) as never));
   }, [entity, entityId]);
+  useEffect(() => {
+    fetchRows();
+    const handler = () => fetchRows();
+    window.addEventListener("activities:changed", handler);
+    return () => window.removeEventListener("activities:changed", handler);
+  }, [fetchRows]);
   return (
     <AssocCard icon={<Mail className="w-4 h-4" />} title="Emails recentes" count={rows.length}>
       {rows.length === 0 ? (
@@ -1091,7 +1103,7 @@ function EmailsCard({ entity, entityId }: { entity: AssociationEntity; entityId:
 
 function AttachmentsCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
   const [rows, setRows] = useState<{ name: string; path: string; type?: string }[]>([]);
-  useEffect(() => {
+  const fetchRows = useCallback(() => {
     supabase
       .from("activities")
       .select("attachments")
@@ -1101,14 +1113,23 @@ function AttachmentsCard({ entity, entityId }: { entity: AssociationEntity; enti
       .then(({ data }) => {
         const flat: { name: string; path: string; type?: string }[] = [];
         for (const r of data ?? []) {
-          const atts =
-            (r as { attachments?: { name: string; path: string; type?: string }[] }).attachments ??
-            [];
-          for (const a of atts) flat.push(a);
+          const raw = (r as { attachments?: unknown }).attachments;
+          const atts = Array.isArray(raw)
+            ? (raw as { name: string; path: string; type?: string }[])
+            : [];
+          for (const a of atts) {
+            if (a && typeof a === "object" && "path" in a && "name" in a) flat.push(a);
+          }
         }
         setRows(flat.slice(0, 10));
       });
   }, [entity, entityId]);
+  useEffect(() => {
+    fetchRows();
+    const handler = () => fetchRows();
+    window.addEventListener("activities:changed", handler);
+    return () => window.removeEventListener("activities:changed", handler);
+  }, [fetchRows]);
   const open = async (path: string) => {
     const { data } = await supabase.storage.from("notes-attachments").createSignedUrl(path, 60);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
@@ -1138,3 +1159,4 @@ function AttachmentsCard({ entity, entityId }: { entity: AssociationEntity; enti
     </AssocCard>
   );
 }
+
