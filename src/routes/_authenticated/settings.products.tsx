@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -208,11 +209,10 @@ function ProductsPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Preço unitário</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={String(draft.unit_price ?? 0)}
-                  onChange={(e) => setDraft({ ...draft, unit_price: Number(e.target.value) })}
+                <CurrencyInput
+                  currency="BRL"
+                  value={draft.unit_price ?? 0}
+                  onValueChange={(n) => setDraft({ ...draft, unit_price: n ?? 0 })}
                 />
               </div>
               <div className="space-y-1.5">
