@@ -24,13 +24,11 @@ import {
   FiltersSidebar,
   HeaderCheckbox,
   InitialsAvatar,
-  Pagination,
   Pill,
   RadioFilter,
   Td,
   Th,
   TONES,
-  ViewsTabs,
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
@@ -38,6 +36,8 @@ import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
+import { useSavedViews } from "@/lib/saved-views";
+import { TablePagination } from "@/components/table-pagination";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
