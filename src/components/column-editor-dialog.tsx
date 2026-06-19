@@ -119,7 +119,7 @@ export function ColumnEditorDialog({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar campo…"
-              className="pl-9 h-9"
+              className="pl-9 h-9 [[data-dialog-content]_&]:pl-10"
             />
           </div>
 
