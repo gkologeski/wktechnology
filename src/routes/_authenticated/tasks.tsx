@@ -176,6 +176,49 @@ function TasksHubspotView() {
     setPage(0);
   }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyTaskFilters = (q: any) => {
+    q = q.eq("type", "task").is("deleted_at", null);
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
+
+    if (activeView === "mine_open" && user?.id) {
+      q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
+    } else if (activeView === "due_today") {
+      q = q
+        .eq("completed", false)
+        .neq("task_status", "COMPLETED")
+        .gte("due_date", startOfDay.toISOString())
+        .lt("due_date", endOfDay.toISOString());
+    } else if (activeView === "overdue") {
+      q = q
+        .eq("completed", false)
+        .neq("task_status", "COMPLETED")
+        .lt("due_date", startOfDay.toISOString());
+    } else if (activeView === "completed") {
+      q = q.or("completed.eq.true,task_status.eq.COMPLETED");
+    }
+
+    if (filters.statuses.length) q = q.in("task_status", filters.statuses);
+    if (filters.priorities.length) q = q.in("task_priority", filters.priorities);
+    if (filters.duePreset === "today") {
+      q = q.gte("due_date", startOfDay.toISOString()).lt("due_date", endOfDay.toISOString());
+    } else if (filters.duePreset === "overdue") {
+      q = q.lt("due_date", startOfDay.toISOString()).eq("completed", false);
+    } else if (filters.duePreset === "next_7d") {
+      q = q
+        .gte("due_date", startOfDay.toISOString())
+        .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
+    }
+
+    const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+    if (term) {
+      q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
+    }
+    return q;
+  };
+
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "tasks",
@@ -193,50 +236,10 @@ function TasksHubspotView() {
       let q = supabase
         .from("activities")
         .select(
-          "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at",
+          "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at, custom_fields",
           { count: "exact" },
-        )
-        .eq("type", "task")
-        .is("deleted_at", null);
-
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
-
-      if (activeView === "mine_open" && user?.id) {
-        q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
-      } else if (activeView === "due_today") {
-        q = q
-          .eq("completed", false)
-          .neq("task_status", "COMPLETED")
-          .gte("due_date", startOfDay.toISOString())
-          .lt("due_date", endOfDay.toISOString());
-      } else if (activeView === "overdue") {
-        q = q
-          .eq("completed", false)
-          .neq("task_status", "COMPLETED")
-          .lt("due_date", startOfDay.toISOString());
-      } else if (activeView === "completed") {
-        q = q.or("completed.eq.true,task_status.eq.COMPLETED");
-      }
-
-      if (filters.statuses.length) q = q.in("task_status", filters.statuses);
-      if (filters.priorities.length) q = q.in("task_priority", filters.priorities);
-      if (filters.duePreset === "today") {
-        q = q.gte("due_date", startOfDay.toISOString()).lt("due_date", endOfDay.toISOString());
-      } else if (filters.duePreset === "overdue") {
-        q = q.lt("due_date", startOfDay.toISOString()).eq("completed", false);
-      } else if (filters.duePreset === "next_7d") {
-        q = q
-          .gte("due_date", startOfDay.toISOString())
-          .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
-      }
-
-      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
-      if (term) {
-        q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
-      }
-
+        );
+      q = applyTaskFilters(q);
       q =
         sortKey === "created_at"
           ? q.order(sortKey, { ascending: sortDir === "asc" })
