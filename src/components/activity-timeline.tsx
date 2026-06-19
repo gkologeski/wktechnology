@@ -761,6 +761,7 @@ export function ActivityTimeline({
     setEditingAttachments([]);
     setEditingNewFiles([]);
     void load();
+    window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
   const signMeetingRec = useServerFn(signMeetingRecording);
