@@ -123,7 +123,7 @@ export function DealDetailDrawer({
     onOpenChange(false);
   };
 
-  const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue);
+  const currentStage = activePipeline?.stages.find((s) => s.value === currentStageValue);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hsRaw = (deal as any)?.hs_raw as { properties?: Record<string, unknown> } | undefined;
   const knownKeys = new Set([
