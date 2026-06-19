@@ -165,7 +165,6 @@ function PickParentDialog({
       let query = supabase
         .from("companies")
         .select("id, name, domain")
-        .eq("owner_id", ownerId)
         .is("deleted_at", null)
         .order("name")
         .limit(20);
@@ -176,6 +175,7 @@ function PickParentDialog({
       return (data ?? []) as MiniCompany[];
     },
   });
+
 
   const filtered = useMemo(
     () => results.filter((r) => !excludeIds.includes(r.id)),
