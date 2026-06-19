@@ -304,8 +304,8 @@ export function ActivityTimeline({
   };
 
   const load = async () => {
-    setLoading(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
+
     if (error) toast.error(error.message);
     let baseRows = ((data as Activity[]) ?? []).slice();
     const emailMessageIds = [
