@@ -29,16 +29,21 @@ export function CompanyHierarchy({
   const qc = useQueryClient();
 
   const { data: parent } = useQuery({
-    queryKey: ["company-parent", parentId],
-    enabled: !!parentId,
+    queryKey: ["company-parent", companyId],
     queryFn: async () => {
-      if (!parentId) return null;
+      const { data: self } = await supabase
+        .from("companies")
+        .select("parent_company_id")
+        .eq("id", companyId)
+        .maybeSingle();
+      const pid = self?.parent_company_id ?? parentId;
+      if (!pid) return null;
       const { data } = await supabase
         .from("companies")
         .select("id, name, domain")
-        .eq("id", parentId)
+        .eq("id", pid)
         .maybeSingle();
-      return data as MiniCompany | null;
+      return (data as MiniCompany | null) ?? null;
     },
   });
 
@@ -62,9 +67,11 @@ export function CompanyHierarchy({
       .eq("id", companyId);
     if (error) return toast.error(error.message);
     toast.success(newParent ? "Matriz vinculada" : "Vínculo removido");
-    qc.invalidateQueries({ queryKey: ["company-parent"] });
-    qc.invalidateQueries({ queryKey: ["company-children"] });
-    qc.invalidateQueries({ queryKey: ["companies"] });
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["company-parent", companyId] }),
+      qc.invalidateQueries({ queryKey: ["company-children"] }),
+      qc.invalidateQueries({ queryKey: ["companies"] }),
+    ]);
   };
 
   return (
