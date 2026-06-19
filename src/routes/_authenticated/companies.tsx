@@ -119,6 +119,7 @@ function CompaniesHubspotView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
