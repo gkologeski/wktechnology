@@ -140,9 +140,10 @@ function TasksHubspotView() {
         .from("activities")
         .select(
           "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at",
-          { count: "exact" },
+          { count: "planned" },
         )
-        .eq("type", "task");
+        .eq("type", "task")
+        .is("deleted_at", null);
 
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -182,7 +183,10 @@ function TasksHubspotView() {
         q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
       }
 
-      q = q.order(sortKey, { ascending: sortDir === "asc", nullsFirst: false });
+      q =
+        sortKey === "created_at"
+          ? q.order(sortKey, { ascending: sortDir === "asc" })
+          : q.order(sortKey, { ascending: sortDir === "asc", nullsFirst: false });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
 
       const { data, error, count } = await q;
