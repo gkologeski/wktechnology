@@ -36,7 +36,7 @@ export function CompanyHierarchy({
         .select("parent_company_id")
         .eq("id", companyId)
         .maybeSingle();
-      const pid = self?.parent_company_id ?? parentId;
+      const pid = self?.parent_company_id ?? null;
       if (!pid) return null;
       const { data } = await supabase
         .from("companies")
