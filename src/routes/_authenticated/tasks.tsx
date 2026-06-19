@@ -24,13 +24,11 @@ import {
   FiltersSidebar,
   HeaderCheckbox,
   InitialsAvatar,
-  Pagination,
   Pill,
   RadioFilter,
   Td,
   Th,
   TONES,
-  ViewsTabs,
   timeAgo,
   type SortDir,
 } from "@/components/crm/hubspot-shell";
@@ -38,6 +36,8 @@ import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
+import { useSavedViews } from "@/lib/saved-views";
+import { TablePagination } from "@/components/table-pagination";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -99,7 +99,61 @@ function TasksHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
+
+  const savedViews = useSavedViews("tasks");
+  const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
+
+  const applySavedView = (sv: { id: string; filters: unknown }) => {
+    const f = sv.filters as {
+      kind?: string;
+      activeView?: ViewId;
+      filters?: Filters;
+      sortKey?: SortKey;
+      sortDir?: SortDir;
+    } | null;
+    if (f?.activeView) setActiveView(f.activeView);
+    if (f?.filters) setFilters({ ...DEFAULT_FILTERS, ...f.filters });
+    if (f?.sortKey) setSortKey(f.sortKey);
+    if (f?.sortDir) setSortDir(f.sortDir);
+    setActiveSavedId(sv.id);
+  };
+
+  const saveCurrentView = () => {
+    const name = window.prompt("Nome da nova visualização");
+    if (!name || !name.trim()) return;
+    savedViews.create.mutate(
+      {
+        name: name.trim(),
+        is_shared: false,
+        is_default: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        filters: { kind: "tasks-v1", activeView, filters, sortKey, sortDir } as any,
+        quick_filters: [],
+        column_order: null,
+        sort_by: sortKey,
+        sort_dir: sortDir,
+      },
+      {
+        onSuccess: (sv) => {
+          setActiveSavedId(sv.id);
+          toast.success("Visualização salva");
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+      },
+    );
+  };
+
+  const deleteSavedView = (id: string) => {
+    if (!window.confirm("Excluir esta visualização?")) return;
+    savedViews.remove.mutate(id, {
+      onSuccess: () => {
+        if (activeSavedId === id) setActiveSavedId(null);
+        toast.success("Visualização excluída");
+      },
+    });
+  };
 
   const exportCsv = () => {
     if (!rows.length) return toast.error("Nenhum registro para exportar");
@@ -122,6 +176,49 @@ function TasksHubspotView() {
     setPage(0);
   }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyTaskFilters = (q: any) => {
+    q = q.eq("type", "task").is("deleted_at", null);
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
+
+    if (activeView === "mine_open" && user?.id) {
+      q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
+    } else if (activeView === "due_today") {
+      q = q
+        .eq("completed", false)
+        .neq("task_status", "COMPLETED")
+        .gte("due_date", startOfDay.toISOString())
+        .lt("due_date", endOfDay.toISOString());
+    } else if (activeView === "overdue") {
+      q = q
+        .eq("completed", false)
+        .neq("task_status", "COMPLETED")
+        .lt("due_date", startOfDay.toISOString());
+    } else if (activeView === "completed") {
+      q = q.or("completed.eq.true,task_status.eq.COMPLETED");
+    }
+
+    if (filters.statuses.length) q = q.in("task_status", filters.statuses);
+    if (filters.priorities.length) q = q.in("task_priority", filters.priorities);
+    if (filters.duePreset === "today") {
+      q = q.gte("due_date", startOfDay.toISOString()).lt("due_date", endOfDay.toISOString());
+    } else if (filters.duePreset === "overdue") {
+      q = q.lt("due_date", startOfDay.toISOString()).eq("completed", false);
+    } else if (filters.duePreset === "next_7d") {
+      q = q
+        .gte("due_date", startOfDay.toISOString())
+        .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
+    }
+
+    const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+    if (term) {
+      q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
+    }
+    return q;
+  };
+
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "tasks",
@@ -139,50 +236,10 @@ function TasksHubspotView() {
       let q = supabase
         .from("activities")
         .select(
-          "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at",
+          "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at, custom_fields",
           { count: "exact" },
-        )
-        .eq("type", "task")
-        .is("deleted_at", null);
-
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
-
-      if (activeView === "mine_open" && user?.id) {
-        q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
-      } else if (activeView === "due_today") {
-        q = q
-          .eq("completed", false)
-          .neq("task_status", "COMPLETED")
-          .gte("due_date", startOfDay.toISOString())
-          .lt("due_date", endOfDay.toISOString());
-      } else if (activeView === "overdue") {
-        q = q
-          .eq("completed", false)
-          .neq("task_status", "COMPLETED")
-          .lt("due_date", startOfDay.toISOString());
-      } else if (activeView === "completed") {
-        q = q.or("completed.eq.true,task_status.eq.COMPLETED");
-      }
-
-      if (filters.statuses.length) q = q.in("task_status", filters.statuses);
-      if (filters.priorities.length) q = q.in("task_priority", filters.priorities);
-      if (filters.duePreset === "today") {
-        q = q.gte("due_date", startOfDay.toISOString()).lt("due_date", endOfDay.toISOString());
-      } else if (filters.duePreset === "overdue") {
-        q = q.lt("due_date", startOfDay.toISOString()).eq("completed", false);
-      } else if (filters.duePreset === "next_7d") {
-        q = q
-          .gte("due_date", startOfDay.toISOString())
-          .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
-      }
-
-      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
-      if (term) {
-        q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
-      }
-
+        );
+      q = applyTaskFilters(q);
       q =
         sortKey === "created_at"
           ? q.order(sortKey, { ascending: sortDir === "asc" })
@@ -284,6 +341,30 @@ function TasksHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+
+  const selectAllMatching = async () => {
+    try {
+      setIsSelectingAll(true);
+      const ids: string[] = [];
+      const CHUNK = 1000;
+      for (let offset = 0; ; offset += CHUNK) {
+        let q = supabase.from("activities").select("id");
+        q = applyTaskFilters(q);
+        const { data, error } = await q.range(offset, offset + CHUNK - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as { id: string }[];
+        for (const r of batch) ids.push(r.id);
+        if (batch.length < CHUNK) break;
+        if (ids.length >= 100_000) break;
+      }
+      setSelectedIds(new Set(ids));
+      toast.success(`${ids.length} registros selecionados`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao selecionar todos");
+    } finally {
+      setIsSelectingAll(false);
+    }
+  };
 
   const onSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -534,6 +615,7 @@ function TasksHubspotView() {
     gridKey: "tasks",
     columns: taskColumns,
     defaults: DEFAULT_TASK_COLS,
+    customEntity: "activities",
   });
 
   return (
@@ -558,7 +640,66 @@ function TasksHubspotView() {
         </div>
       </div>
 
-      <ViewsTabs views={VIEWS} active={activeView} onChange={setActiveView} />
+      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => {
+              setActiveView(v.id);
+              setActiveSavedId(null);
+            }}
+            className={cn(
+              "relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              activeView === v.id && !activeSavedId
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {v.label}
+            {activeView === v.id && !activeSavedId && (
+              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
+        {(savedViews.data ?? []).map((sv) => {
+          const isActive = activeSavedId === sv.id;
+          return (
+            <div
+              key={sv.id}
+              className={cn(
+                "group relative flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <button type="button" onClick={() => applySavedView(sv)}>
+                {sv.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteSavedView(sv.id)}
+                className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-muted"
+                aria-label="Excluir visualização"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              {isActive && (
+                <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+              )}
+            </div>
+          );
+        })}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2 text-muted-foreground"
+          onClick={saveCurrentView}
+          disabled={savedViews.create.isPending}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {savedViews.create.isPending ? "Salvando…" : "Adicionar visualização"}
+        </Button>
+      </div>
 
       <div className="flex min-h-0 flex-1">
         <FiltersSidebar
@@ -635,8 +776,21 @@ function TasksHubspotView() {
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
                 <span className="text-xs font-medium text-primary">
-                  {selectedIds.size} selecionada(s)
+                  {selectedIds.size.toLocaleString("pt-BR")} selecionada(s)
                 </span>
+                {selectedIds.size < total && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-7 px-1 text-xs"
+                    disabled={isSelectingAll}
+                    onClick={selectAllMatching}
+                  >
+                    {isSelectingAll
+                      ? "Selecionando…"
+                      : `Selecionar todas as ${total.toLocaleString("pt-BR")} tarefas`}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" className="h-7" onClick={bulkComplete}>
                   <Check className="mr-1 h-3.5 w-3.5" /> Concluir
                 </Button>
@@ -781,12 +935,13 @@ function TasksHubspotView() {
             </table>
           </div>
 
-          <Pagination
+          <TablePagination
             page={page}
             pageSize={pageSize}
             total={total}
-            setPage={setPage}
-            setPageSize={setPageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            entityLabel="tarefas"
           />
         </div>
       </div>

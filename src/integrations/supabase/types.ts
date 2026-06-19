@@ -207,6 +207,7 @@ export type Database = {
           completed: boolean
           created_at: string
           created_by: string | null
+          custom_fields: Json
           deleted_at: string | null
           disposition: string | null
           due_date: string | null
@@ -252,6 +253,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           created_by?: string | null
+          custom_fields?: Json
           deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
@@ -297,6 +299,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           created_by?: string | null
+          custom_fields?: Json
           deleted_at?: string | null
           disposition?: string | null
           due_date?: string | null
