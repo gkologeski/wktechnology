@@ -36,6 +36,7 @@ import {
 } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
