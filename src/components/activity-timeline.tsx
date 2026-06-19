@@ -877,8 +877,16 @@ export function ActivityTimeline({
     );
   };
 
-  const pinnedActions = order.pinned.map((k) => ACTIONS_BY_KEY[k]).filter(Boolean);
-  const moreActions = order.more.map((k) => ACTIONS_BY_KEY[k]).filter(Boolean);
+  // Em empresas, o envio de "e-mail avulso" não é suportado — oculta a ação de criação de e-mail.
+  const isCompanyContext = relatedKey === "related_company_id";
+  const hideAction = (a: BarAction) =>
+    isCompanyContext && a.kind === "create" && a.value === "email";
+  const pinnedActions = order.pinned
+    .map((k) => ACTIONS_BY_KEY[k])
+    .filter((a): a is BarAction => Boolean(a) && !hideAction(a));
+  const moreActions = order.more
+    .map((k) => ACTIONS_BY_KEY[k])
+    .filter((a): a is BarAction => Boolean(a) && !hideAction(a));
   const moreFiltered = moreActions
     .map((a, i) => ({ a, i }))
     .filter(({ a }) => a.label.toLowerCase().includes(moreQuery.toLowerCase()));
