@@ -18,6 +18,7 @@ import { DealsList } from "@/components/deals/deals-list";
 import { DealsForecast } from "@/components/deals/deals-forecast";
 import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsRoute,
