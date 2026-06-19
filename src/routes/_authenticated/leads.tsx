@@ -786,7 +786,7 @@ function LeadsHubspotView() {
       </div>
 
       {/* ─── Views tabs ─── */}
-      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
+      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {VIEWS.map((v) => (
           <button
             key={v.id}
