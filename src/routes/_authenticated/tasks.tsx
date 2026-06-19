@@ -342,6 +342,30 @@ function TasksHubspotView() {
     });
   const clearSelection = () => setSelectedIds(new Set());
 
+  const selectAllMatching = async () => {
+    try {
+      setIsSelectingAll(true);
+      const ids: string[] = [];
+      const CHUNK = 1000;
+      for (let offset = 0; ; offset += CHUNK) {
+        let q = supabase.from("activities").select("id");
+        q = applyTaskFilters(q);
+        const { data, error } = await q.range(offset, offset + CHUNK - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as { id: string }[];
+        for (const r of batch) ids.push(r.id);
+        if (batch.length < CHUNK) break;
+        if (ids.length >= 100_000) break;
+      }
+      setSelectedIds(new Set(ids));
+      toast.success(`${ids.length} registros selecionados`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao selecionar todos");
+    } finally {
+      setIsSelectingAll(false);
+    }
+  };
+
   const onSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else {
