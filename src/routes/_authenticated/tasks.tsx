@@ -640,7 +640,66 @@ function TasksHubspotView() {
         </div>
       </div>
 
-      <ViewsTabs views={VIEWS} active={activeView} onChange={setActiveView} />
+      <div className="flex items-center gap-1 border-b px-1 overflow-x-auto">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => {
+              setActiveView(v.id);
+              setActiveSavedId(null);
+            }}
+            className={cn(
+              "relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              activeView === v.id && !activeSavedId
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {v.label}
+            {activeView === v.id && !activeSavedId && (
+              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
+        {(savedViews.data ?? []).map((sv) => {
+          const isActive = activeSavedId === sv.id;
+          return (
+            <div
+              key={sv.id}
+              className={cn(
+                "group relative flex items-center gap-1 px-3 py-2 text-sm font-medium whitespace-nowrap",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <button type="button" onClick={() => applySavedView(sv)}>
+                {sv.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteSavedView(sv.id)}
+                className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-muted"
+                aria-label="Excluir visualização"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              {isActive && (
+                <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+              )}
+            </div>
+          );
+        })}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2 text-muted-foreground"
+          onClick={saveCurrentView}
+          disabled={savedViews.create.isPending}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {savedViews.create.isPending ? "Salvando…" : "Adicionar visualização"}
+        </Button>
+      </div>
 
       <div className="flex min-h-0 flex-1">
         <FiltersSidebar
@@ -717,8 +776,21 @@ function TasksHubspotView() {
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
                 <span className="text-xs font-medium text-primary">
-                  {selectedIds.size} selecionada(s)
+                  {selectedIds.size.toLocaleString("pt-BR")} selecionada(s)
                 </span>
+                {selectedIds.size < total && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-7 px-1 text-xs"
+                    disabled={isSelectingAll}
+                    onClick={selectAllMatching}
+                  >
+                    {isSelectingAll
+                      ? "Selecionando…"
+                      : `Selecionar todas as ${total.toLocaleString("pt-BR")} tarefas`}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" className="h-7" onClick={bulkComplete}>
                   <Check className="mr-1 h-3.5 w-3.5" /> Concluir
                 </Button>
