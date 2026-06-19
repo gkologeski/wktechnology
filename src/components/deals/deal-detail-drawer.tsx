@@ -55,6 +55,12 @@ export function DealDetailDrawer({
   const isNew = !deal;
   const [v, setV] = useState<Record<string, unknown>>({});
   const [showHs, setShowHs] = useState(false);
+  const { pipelines } = usePipelines("deal");
+
+  const activePipeline: Pipeline | null =
+    (isNew
+      ? (pipelines.find((p) => p.id === (v.pipeline_id as string)) ?? pipeline)
+      : pipeline) ?? pipeline;
 
   useEffect(() => {
     setV(
@@ -71,6 +77,7 @@ export function DealDetailDrawer({
   const set = (k: string, val: unknown) => setV((s) => ({ ...s, [k]: val }));
 
   const currentStageValue = String(v.stage_id ?? v.stage ?? "");
+
 
   const save = async () => {
     if (!ownerId) return;
