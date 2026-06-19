@@ -126,6 +126,7 @@ function ContactsHubspotView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
