@@ -80,15 +80,19 @@ export function renderWhatsAppHtml(messages: WhatsAppMessage[]): string {
 }
 
 export function maybeConvertWhatsAppPaste(input: string): string | null {
-  // Aceita input já com tags simples (<br>, <p>) — desfaz para texto puro antes.
+  // Aceita input já com tags HTML — converte qualquer bloco em quebra de linha
+  // antes de remover as demais tags.
+  const BLOCK_CLOSE =
+    /<\/(p|div|li|ul|ol|h[1-6]|tr|table|section|article|blockquote|pre)>/gi;
   const text = (input || "")
     .replace(/<br\s*\/?\s*>/gi, "\n")
-    .replace(/<\/p>/gi, "\n")
+    .replace(BLOCK_CLOSE, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
   const parsed = parseWhatsAppPaste(text);
   if (!parsed) return null;
   return renderWhatsAppHtml(parsed);
