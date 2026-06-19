@@ -517,7 +517,6 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
   .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
-    const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -525,7 +524,7 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
       .from("calendar_events")
       .select("*")
       .eq("id", data.calendar_event_id)
-      .eq("owner_id", workspaceId)
+      .eq("owner_id", context.userId)
       .maybeSingle();
     if (evErr || !event) throw new Error("Evento de calendário não encontrado");
     if (!event.recording_drive_file_id) throw new Error("Este evento ainda não tem gravação vinculada no Drive");
