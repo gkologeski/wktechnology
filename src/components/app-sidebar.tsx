@@ -12,7 +12,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, normalizeSearch } from "@/lib/utils";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -31,8 +31,8 @@ export function AppSidebar() {
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
   const visibleGroups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matches = (title: string) => !q || title.toLowerCase().includes(q);
+    const q = normalizeSearch(query);
+    const matches = (title: string) => !q || normalizeSearch(title).includes(q);
     return SIDEBAR_GROUPS.map((g) => ({
       ...g,
       items: g.items
