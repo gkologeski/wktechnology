@@ -323,12 +323,10 @@ export function CreateDealFromLeadDialog({
 
           <div className="space-y-1.5">
             <Label>Valor</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+            <CurrencyInput
+              currency={currency}
+              value={value === "" ? null : Number(value)}
+              onValueChange={(n) => setValue(n === null ? "" : String(n))}
             />
           </div>
           <div className="space-y-1.5">
