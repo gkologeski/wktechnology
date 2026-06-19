@@ -219,6 +219,34 @@ export function DealDetailDrawer({
                   />
                 </Field>
               </div>
+              {isNew && pipelines.length > 0 && (
+                <Field label="Funil">
+                  <Select
+                    value={String(v.pipeline_id ?? activePipeline?.id ?? "")}
+                    onValueChange={(val) => {
+                      const next = pipelines.find((p) => p.id === val);
+                      const firstStage = next?.stages[0]?.value ?? "new";
+                      setV((s) => ({
+                        ...s,
+                        pipeline_id: val,
+                        stage_id: firstStage,
+                        stage: firstStage,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pipelines.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
               <Field label="Estágio">
                 <Select
                   value={currentStageValue}
@@ -231,7 +259,7 @@ export function DealDetailDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(pipeline?.stages ?? []).map((s) => (
+                    {(activePipeline?.stages ?? []).map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
                         {typeof s.probability === "number" ? ` · ${s.probability}%` : ""}
@@ -240,6 +268,7 @@ export function DealDetailDrawer({
                   </SelectContent>
                 </Select>
               </Field>
+
               <DealRelatedFields v={v} set={set} />
 
               <div className="grid grid-cols-2 gap-2">
