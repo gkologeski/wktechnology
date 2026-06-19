@@ -81,17 +81,18 @@ export function DealDetailDrawer({
 
   const save = async () => {
     if (!ownerId) return;
-    const stageKey = String(v.stage_id ?? v.stage ?? pipeline?.stages[0]?.value ?? "new");
+    const stageKey = String(v.stage_id ?? v.stage ?? activePipeline?.stages[0]?.value ?? "new");
     const payload: Record<string, unknown> = {
       owner_id: ownerId,
       name: String(v.name ?? ""),
       value: Number(v.value || 0),
       currency: String(v.currency || "BRL"),
       stage_id: stageKey,
-      pipeline_id: pipeline?.id ?? null,
+      pipeline_id: activePipeline?.id ?? pipeline?.id ?? null,
       company_id: (v.company_id as string) || null,
       primary_contact_id: (v.primary_contact_id as string) || null,
       expected_close_date: (v.expected_close_date as string) || null,
+
       notes: (v.notes as string) || null,
       description: (v.description as string) || null,
       hs_priority: (v.hs_priority as string) || null,
