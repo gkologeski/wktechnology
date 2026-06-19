@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useRelatedIds } from "@/hooks/use-related-ids";
+import { usePipelines } from "@/lib/pipelines";
+
 
 import { formatCurrency } from "@/lib/crm";
 import type { Deal, Company, Contact } from "@/lib/db-types";
@@ -53,6 +55,12 @@ export function DealDetailDrawer({
   const isNew = !deal;
   const [v, setV] = useState<Record<string, unknown>>({});
   const [showHs, setShowHs] = useState(false);
+  const { pipelines } = usePipelines("deal");
+
+  const activePipeline: Pipeline | null =
+    (isNew
+      ? (pipelines.find((p) => p.id === (v.pipeline_id as string)) ?? pipeline)
+      : pipeline) ?? pipeline;
 
   useEffect(() => {
     setV(
@@ -70,19 +78,21 @@ export function DealDetailDrawer({
 
   const currentStageValue = String(v.stage_id ?? v.stage ?? "");
 
+
   const save = async () => {
     if (!ownerId) return;
-    const stageKey = String(v.stage_id ?? v.stage ?? pipeline?.stages[0]?.value ?? "new");
+    const stageKey = String(v.stage_id ?? v.stage ?? activePipeline?.stages[0]?.value ?? "new");
     const payload: Record<string, unknown> = {
       owner_id: ownerId,
       name: String(v.name ?? ""),
       value: Number(v.value || 0),
       currency: String(v.currency || "BRL"),
       stage_id: stageKey,
-      pipeline_id: pipeline?.id ?? null,
+      pipeline_id: activePipeline?.id ?? pipeline?.id ?? null,
       company_id: (v.company_id as string) || null,
       primary_contact_id: (v.primary_contact_id as string) || null,
       expected_close_date: (v.expected_close_date as string) || null,
+
       notes: (v.notes as string) || null,
       description: (v.description as string) || null,
       hs_priority: (v.hs_priority as string) || null,
@@ -113,7 +123,7 @@ export function DealDetailDrawer({
     onOpenChange(false);
   };
 
-  const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue);
+  const currentStage = activePipeline?.stages.find((s) => s.value === currentStageValue);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hsRaw = (deal as any)?.hs_raw as { properties?: Record<string, unknown> } | undefined;
   const knownKeys = new Set([
@@ -209,6 +219,34 @@ export function DealDetailDrawer({
                   />
                 </Field>
               </div>
+              {isNew && pipelines.length > 0 && (
+                <Field label="Funil">
+                  <Select
+                    value={String(v.pipeline_id ?? activePipeline?.id ?? "")}
+                    onValueChange={(val) => {
+                      const next = pipelines.find((p) => p.id === val);
+                      const firstStage = next?.stages[0]?.value ?? "new";
+                      setV((s) => ({
+                        ...s,
+                        pipeline_id: val,
+                        stage_id: firstStage,
+                        stage: firstStage,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pipelines.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
               <Field label="Estágio">
                 <Select
                   value={currentStageValue}
@@ -221,7 +259,7 @@ export function DealDetailDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(pipeline?.stages ?? []).map((s) => (
+                    {(activePipeline?.stages ?? []).map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
                         {typeof s.probability === "number" ? ` · ${s.probability}%` : ""}
@@ -230,6 +268,7 @@ export function DealDetailDrawer({
                   </SelectContent>
                 </Select>
               </Field>
+
               <DealRelatedFields v={v} set={set} />
 
               <div className="grid grid-cols-2 gap-2">
