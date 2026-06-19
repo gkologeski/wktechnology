@@ -99,6 +99,7 @@ function TasksHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  useAutoCreateParam(() => setCreateOpen(true));
 
   const exportCsv = () => {
     if (!rows.length) return toast.error("Nenhum registro para exportar");
