@@ -132,13 +132,16 @@ export function SendWhatsAppDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
+      {trigger !== undefined ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : openProp === undefined ? (
+        <DialogTrigger asChild>
           <Button size="sm" variant="outline">
             <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      ) : null}
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Enviar WhatsApp</DialogTitle>

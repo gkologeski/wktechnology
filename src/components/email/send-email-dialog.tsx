@@ -151,13 +151,16 @@ export function SendEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
+      {trigger !== undefined ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : openProp === undefined ? (
+        <DialogTrigger asChild>
           <Button size="sm" variant="outline">
             <Mail className="mr-2 h-4 w-4" /> Email
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      ) : null}
+
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Novo email</DialogTitle>
