@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.activities_workspace_type_created_at_idx;
