@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Megaphone, Play, Pause, X, Plus } from "lucide-react";
+import { Megaphone, Play, Pause, X, Plus, Pencil } from "lucide-react";
 import {
   createWhatsAppCampaign,
   listWhatsAppCampaigns,
   setWhatsAppCampaignStatus,
+  updateWhatsAppCampaign,
 } from "@/lib/whatsapp-campaigns.functions";
 import { listWhatsAppTemplates } from "@/lib/whatsapp.functions";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ function CampaignsPage() {
   const listFn = useServerFn(listWhatsAppCampaigns);
   const tmplFn = useServerFn(listWhatsAppTemplates);
   const createFn = useServerFn(createWhatsAppCampaign);
+  const updateFn = useServerFn(updateWhatsAppCampaign);
   const statusFn = useServerFn(setWhatsAppCampaignStatus);
 
   const { data: items = [] } = useQuery({
@@ -70,6 +72,7 @@ function CampaignsPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [body, setBody] = useState("");
   const [templateName, setTemplateName] = useState<string>("__none__");
@@ -79,9 +82,57 @@ function CampaignsPage() {
 
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl?.contentSid;
+  const isEditing = editingId !== null;
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setBody("");
+    setTemplateName("__none__");
+    setRate(10);
+    setRecipientsRaw("");
+    setMediaUrl("");
+  }
+
+  function openEdit(c: (typeof items)[number]) {
+    // Fetch existing fields for editing. The list query already gives basic
+    // fields; for body/template/media we lazily prefill from what the list has
+    // and read the rest only when needed. For simplicity we accept that body
+    // and template_name are not in the list payload — user can re-pick them.
+    setEditingId(c.id);
+    setName(c.name);
+    setRate(c.rate_per_minute);
+    setBody("");
+    setTemplateName("__none__");
+    setMediaUrl("");
+    setRecipientsRaw("");
+    setOpen(true);
+  }
 
   const create = useMutation({
     mutationFn: async () => {
+      if (isEditing && editingId) {
+        // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
+        let content_variables_template: Record<string, string> | undefined;
+        if (isHsm && selectedTpl?.variableCount) {
+          content_variables_template = {};
+          for (let i = 1; i <= selectedTpl.variableCount; i++) {
+            content_variables_template[String(i)] = `{{${i}}}`;
+          }
+        }
+        return updateFn({
+          data: {
+            id: editingId,
+            name,
+            body_template: selectedTpl?.body ?? body,
+            template_name: templateName !== "__none__" ? templateName : null,
+            content_sid: selectedTpl?.contentSid || null,
+            content_variables_template,
+            media_url: mediaUrl || null,
+            rate_per_minute: rate,
+          },
+        });
+      }
       const recipients = parseRecipients(recipientsRaw);
       if (recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
 
@@ -108,12 +159,9 @@ function CampaignsPage() {
       });
     },
     onSuccess: () => {
-      toast.success("Campanha criada como rascunho");
+      toast.success(isEditing ? "Campanha atualizada" : "Campanha criada como rascunho");
       setOpen(false);
-      setName("");
-      setBody("");
-      setRecipientsRaw("");
-      setMediaUrl("");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["wa-campaigns"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -137,15 +185,21 @@ function CampaignsPage() {
             Disparos em massa com fila e limite de mensagens por minuto.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => resetForm()}>
               <Plus className="h-4 w-4 mr-2" /> Nova campanha
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Nova campanha</DialogTitle>
+              <DialogTitle>{isEditing ? "Editar campanha" : "Nova campanha"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div>
@@ -211,27 +265,35 @@ function CampaignsPage() {
                   placeholder="https://..."
                 />
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">
-                  Destinatários (um por linha: telefone,var1,var2…)
-                </label>
-                <Textarea
-                  rows={8}
-                  value={recipientsRaw}
-                  onChange={(e) => setRecipientsRaw(e.target.value)}
-                  placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {parseRecipients(recipientsRaw).length} destinatário(s)
+              {!isEditing && (
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Destinatários (um por linha: telefone,var1,var2…)
+                  </label>
+                  <Textarea
+                    rows={8}
+                    value={recipientsRaw}
+                    onChange={(e) => setRecipientsRaw(e.target.value)}
+                    placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {parseRecipients(recipientsRaw).length} destinatário(s)
+                  </p>
+                </div>
+              )}
+              {isEditing && (
+                <p className="text-xs text-muted-foreground">
+                  A lista de destinatários não pode ser alterada após a criação. Cancele e crie uma
+                  nova campanha caso precise mudar os destinatários.
                 </p>
-              </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
               <Button onClick={() => create.mutate()} disabled={create.isPending || !name}>
-                Criar rascunho
+                {isEditing ? "Salvar alterações" : "Criar rascunho"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -260,6 +322,11 @@ function CampaignsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              {(c.status === "draft" || c.status === "paused") && (
+                <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Editar
+                </Button>
+              )}
               {c.status !== "running" && c.status !== "completed" && c.status !== "canceled" && (
                 <Button
                   size="sm"

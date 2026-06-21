@@ -126,3 +126,57 @@ export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+const UpdateInput = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(120).optional(),
+  body_template: z.string().max(1600).nullable().optional(),
+  template_name: z.string().max(60).nullable().optional(),
+  content_sid: z
+    .string()
+    .regex(/^HX[0-9a-fA-F]{32}$/, "ContentSid inválido")
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+  content_variables_template: z.record(z.string(), z.string()).optional(),
+  media_url: z.string().url().nullable().optional().or(z.literal("")),
+  media_content_type: z.string().max(120).nullable().optional(),
+  rate_per_minute: z.number().int().min(1).max(120).optional(),
+  scheduled_at: z.string().datetime().nullable().optional(),
+});
+
+export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => UpdateInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: existing, error: getErr } = await supabase
+      .from("whatsapp_campaigns")
+      .select("id, status")
+      .eq("id", data.id)
+      .single();
+    if (getErr) throw getErr;
+    if (existing.status !== "draft" && existing.status !== "paused") {
+      throw new Error("Apenas campanhas em rascunho ou pausadas podem ser editadas");
+    }
+    const patch: Record<string, unknown> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.body_template !== undefined) patch.body_template = data.body_template || null;
+    if (data.template_name !== undefined) patch.template_name = data.template_name || null;
+    if (data.content_sid !== undefined) patch.content_sid = data.content_sid || null;
+    if (data.content_variables_template !== undefined)
+      patch.content_variables_template = data.content_variables_template;
+    if (data.media_url !== undefined) patch.media_url = data.media_url || null;
+    if (data.media_content_type !== undefined)
+      patch.media_content_type = data.media_content_type || null;
+    if (data.rate_per_minute !== undefined) patch.rate_per_minute = data.rate_per_minute;
+    if (data.scheduled_at !== undefined) patch.scheduled_at = data.scheduled_at;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await supabase
+      .from("whatsapp_campaigns")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(patch as any)
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
