@@ -295,41 +295,30 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select
+                <SearchableSelect
                   value={category}
-                  onValueChange={(v) => {
+                  onChange={(v) => {
                     setCategory(v);
                     setSubtype("");
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUG_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={BUG_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+                  placeholder="Selecione"
+                  emptyLabel="Nenhuma categoria encontrada"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Subtipo</Label>
-                <Select value={subtype} onValueChange={setSubtype} disabled={!category}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subtypes.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={subtype}
+                  onChange={setSubtype}
+                  options={subtypes.map((s) => ({ value: s.value, label: s.label }))}
+                  placeholder={category ? "Selecione" : "Escolha a categoria"}
+                  emptyLabel="Nenhum subtipo encontrado"
+                  disabled={!category}
+                />
               </div>
             </div>
+
 
             <div className="space-y-2">
               <Label>Descrição</Label>
