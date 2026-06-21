@@ -1,3 +1,4 @@
+import type { ReactNode, ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,8 +38,8 @@ type BlockDef = {
   label: string;
   icon: LucideIcon;
   defaults: Block;
-  Render: (p: RenderProps) => JSX.Element;
-  Properties: (p: PropsProps) => JSX.Element;
+  Render: (p: RenderProps) => ReactNode;
+  Properties: (p: PropsProps) => ReactNode;
 };
 
 // Inline editable text helper — contentEditable
@@ -52,7 +53,7 @@ function Editable({
 }: {
   value: string;
   editable?: boolean;
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
   className?: string;
   onChange?: (v: string) => void;
   placeholder?: string;
@@ -66,7 +67,9 @@ function Editable({
       contentEditable
       suppressContentEditableWarning
       data-placeholder={placeholder}
-      onBlur={(e) => onChange?.((e.target as HTMLElement).innerText)}
+      onBlur={(e: React.FocusEvent<HTMLElement>) =>
+        onChange?.((e.target as HTMLElement).innerText)
+      }
     >
       {value}
     </As>
