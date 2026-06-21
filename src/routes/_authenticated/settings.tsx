@@ -187,7 +187,7 @@ const sections: Section[] = [
       { to: "/settings/user-groups", label: "Equipes (grupos)", icon: UsersRound, need: "manager" },
       { to: "/settings/roles", label: "Permissões", icon: KeyRound, need: "admin" },
       { to: "/settings/access-policy", label: "Política de acesso", icon: Lock, need: "admin" },
-      { to: "/settings/sso", label: "SSO", icon: KeyRound, need: "admin" },
+      
       { to: "/settings/scim", label: "SCIM", icon: Users, need: "admin" },
       { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText, need: "admin" },
       { to: "/settings/audit-export", label: "Exportar auditoria", icon: Download, need: "admin" },
