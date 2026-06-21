@@ -1,68 +1,78 @@
-# Conversão para WYSIWYG (RichHtmlEditor) — todos os 36 itens
 
-Vamos padronizar todos os textareas de redação listados anteriormente para o mesmo `RichHtmlEditor` já usado em Notas, Propostas e Timeline. Os dados continuam salvos no mesmo campo (em HTML), e a listagem usa `htmlToPlain()` para preview, como já fazemos em Notas.
+## Diagnóstico
 
-Como o escopo é grande (36 telas), proponho executar em **4 lotes** para manter qualidade, revisar a cada lote e evitar regressões.
+O editor atual (`src/routes/_authenticated/landing-pages.$id.tsx`) é um formulário linear: lista de blocos com JSON cru, sem preview, sem drag-and-drop, sem edição inline. Para um usuário comum é incompreensível.
 
-## Padrão técnico aplicado em todos os itens
+O HubSpot Landing Page Editor tem uma estrutura clara e replicável:
 
-- Substituir `<Textarea>` por `<RichHtmlEditor value={html} onChange={setHtml} />`.
-- Persistência: continua no mesmo campo (string HTML).
-- Exibição em listas/cards: `htmlToPlain(value).slice(0,N)`.
-- Envio de e-mail: o `body_html` já é HTML — sem migração de dados.
-- Em telas que usam `EntityList`/`CrudSettings`, trocar `type: "text"` por `type: "html"` (já suportado).
-- Tokens/variáveis (`{{first_name}}`, etc.) continuam funcionando — o editor permite digitar texto livre.
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ← Voltar  | Nome da página     [Desktop|Tablet|Mobile]  ⤺ ⤻  │  TOPBAR
+│                                       Preview  Configurações  Publicar │
+├──────────┬──────────────────────────────────────┬────────────┤
+│          │                                      │            │
+│ Módulos  │         CANVAS (WYSIWYG)             │  Painel    │
+│ ──────   │   ┌────────────────────────────┐    │  de Edição │
+│ ▣ Hero   │   │  Hero — clique para editar │    │            │
+│ ¶ Texto  │   ├────────────────────────────┤    │  (campos   │
+│ 🖼 Imagem│   │  Features 3 colunas        │    │  do bloco  │
+│ ▭ Botão  │   ├────────────────────────────┤    │  selecio-  │
+│ ☐ Form   │   │  Formulário                │    │  nado:     │
+│ ⫶⫶ Colunas│  │  ...                       │    │  textos,   │
+│ ─ Divisor│   └────────────────────────────┘    │  cores,    │
+│ ⬚ Espaço │   [+ Adicionar seção]               │  imagens)  │
+│ 💬 Depo. │                                      │            │
+│ ❓ FAQ    │                                      │            │
+│ 🎬 Vídeo │                                      │            │
+└──────────┴──────────────────────────────────────┴────────────┘
+```
 
-## Lote 1 — Comunicação (alto impacto)
+## Plano de execução (fases)
 
-1. E-mail Compor/Responder (`send-email-dialog.tsx`)
-2. Templates de e-mail (`settings.email-templates.tsx`)
-3. Sequências — passo de e-mail (`sequence-builder.tsx`)
-4. Campanhas E-mail (`campaigns.email.tsx`)
-5. Inbox — composição de resposta (já cobre via SendEmailDialog do item 1)
+### Fase 1 — Estrutura do editor (shell + canvas + sidebars)
+- Substituir `landing-pages.$id.tsx` por um shell em 3 colunas (módulos | canvas | propriedades) ocupando tela cheia, sem `PageHeader`.
+- Topbar com: voltar, nome editável inline, seletor de dispositivo (desktop 100% / tablet 768px / mobile 375px aplicado via largura do canvas), undo/redo (histórico em memória), botão Preview (abre `/lp/$slug` em nova aba), botão Configurações (abre drawer com SEO/slug/status), botão Publicar (muda status + salva).
+- Auto-save com debounce (2s) + indicador "Salvando…/Salvo".
 
-## Lote 2 — Suporte/Atendimento
+### Fase 2 — Sistema de módulos (paridade com HubSpot)
+Cada módulo = um bloco no array `blocks` já persistido. Adicionar tipos novos preservando os existentes (hero/features/form/testimonial/cta) e introduzindo:
+- `richtext` (texto formatado), `image`, `button`, `divider`, `spacer`, `columns` (2/3 colunas com blocos aninhados), `video` (URL YouTube/Vimeo), `faq`, `logos` (faixa de logos), `stats`.
+- Cada módulo tem: schema de campos, componente de render no canvas, componente de propriedades, valores default, ícone na sidebar.
+- Sidebar esquerda: lista de módulos arrastáveis + clicáveis. Click no canvas em "+ Adicionar seção" abre seletor.
 
-6. Tickets — descrição e respostas (`tickets.tsx`, `tickets.$id.tsx`)
-7. Abrir chamado interno (`bug-report-dialog.tsx`)
-8. Resolver chamado (`resolution-dialog.tsx`)
-9. Meus chamados — comentários (`my-bug-reports.tsx`)
-10. Macros (`settings.macros.tsx`)
-11. Base de Conhecimento (`settings.kb.tsx`)
+### Fase 3 — Interações WYSIWYG
+- Hover em qualquer bloco no canvas mostra toolbar flutuante: mover ↑↓, duplicar, deletar, drag handle.
+- Click no bloco → seleciona (borda azul) e abre o painel direito com os campos daquele bloco.
+- Edição inline de textos (headline, subheadline, parágrafos) com `contentEditable` — alteração reflete imediatamente no estado.
+- Drag-and-drop para reordenar usando `@dnd-kit/core` + `@dnd-kit/sortable` (já é o padrão moderno e acessível).
+- Drag de módulo da sidebar para posição no canvas.
 
-## Lote 3 — CRM/Vendas
+### Fase 4 — Configurações da página (drawer)
+- Aba SEO: título, descrição, slug, imagem OG.
+- Aba Tema: cor primária, fonte (presets), cor de fundo — gravadas em `theme` JSON, aplicadas como CSS vars no canvas e no `/lp/$slug`.
+- Aba Avançado: status (rascunho/publicada/arquivada), domínio, scripts de tracking.
 
-12. Detalhes do Negócio — descrição (`deal-detail-drawer.tsx`)
-13. Cotações — observações (`deal-quotes.tsx`)
-14. Converter lead em negócio (`create-deal-from-lead-dialog.tsx`)
-15. Atividades em lote (`bulk-create-activity-dialog.tsx`)
-16. Reuniões — agenda/notas (`meeting-dialog.tsx`)
-17. Templates de cotação/proposta (`template-editor.tsx`)
-18. Scripts de prospecção (`settings.prospecting-scripts.tsx`)
-19. Campanha de prospecção (`prospecting.campaigns.$id.tsx`)
-20. Construtor de listas — descrição (`list-builder.tsx`)
-21. Fila de tarefas — notas (`tasks.queues.$queueId.play.tsx`)
-22. Discador — notas pós-ligação (`call-dialer.tsx`)
+### Fase 5 — Renderer público alinhado
+- Refatorar `src/routes/lp.$slug.tsx` para compartilhar os mesmos componentes de render do canvas (extrair `src/components/landing-pages/blocks/*`), garantindo paridade visual editor ↔ página publicada.
+- Aplicar `theme` (cor/fonte) via CSS vars no `<section>` raiz.
 
-## Lote 4 — Portais e Configurações de conteúdo
+## Detalhes técnicos
 
-23. Portal do cliente — mensagens (`portal.$token.tsx`)
-24. Booking — descrição (`book.$slug.tsx`)
-25. Configurações de Booking (`settings.booking.tsx`)
-26. Formulários — descrições/agradecimento (`settings.forms.tsx`)
-27. Pesquisas — perguntas long text
-28. Produtos — descrição (`settings.products.tsx`)
-29. Metas — descrição (`settings.goals.tsx`)
-30. Recorrências — observação (`settings.recurring.tsx`)
-31. Grupos de usuários — descrição (`settings.user-groups.tsx`)
-32. Papéis/Roles — descrição (`settings.roles.*`)
-33. Propriedades customizadas — help text (`settings.custom-properties.tsx`)
-34. Dashboards — descrição (`dashboards.tsx`)
-35. Relatórios — descrição (`reports.tsx`)
-36. Branding — textos longos (`branding/controls-panel.tsx`)
+- **Pasta nova**: `src/components/landing-pages/` com:
+  - `editor-shell.tsx`, `topbar.tsx`, `module-sidebar.tsx`, `properties-panel.tsx`, `canvas.tsx`, `block-toolbar.tsx`, `settings-drawer.tsx`.
+  - `blocks/registry.ts` — registro central `{ type, label, icon, defaults, RenderComponent, PropertiesComponent }`.
+  - `blocks/hero.tsx`, `features.tsx`, `form.tsx`, `richtext.tsx`, `image.tsx`, `button.tsx`, `columns.tsx`, `divider.tsx`, `spacer.tsx`, `video.tsx`, `faq.tsx`, `logos.tsx`, `testimonial.tsx`, `cta.tsx`, `stats.tsx`.
+- **Estado**: hook `useEditorState` com histórico (stack de até 50 estados para undo/redo).
+- **Dependência nova**: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (instalar via `bun add`).
+- **Schema do banco**: nenhuma migração necessária — `blocks`, `theme`, `seo` já são `jsonb` flexíveis. Blocos antigos continuam renderizando.
+- **Tokens**: usar `bg-background`, `border-border`, `text-foreground`, `primary` — nada de cores hardcoded.
+- **Mobile**: editor é desktop-only (HubSpot também é); preview mobile é só largura do canvas.
 
-## Como vou proceder
+## Fora de escopo (não nesta entrega)
+- Smart content / personalização por persona.
+- A/B testing UI (campo `variant_id` já existe no tracking; pode vir depois).
+- Editor visual de tema com seletor de fonte do Google Fonts em runtime — usaremos 4 presets.
+- Templates pré-prontos de página (pode ser fase 6).
 
-Posso começar imediatamente pelo **Lote 1 (Comunicação)** nesta mesma resposta e seguir lote a lote nas próximas mensagens (você revisa, eu avanço). Se preferir, posso reordenar/priorizar diferente — me diga.
-
-**Confirmar para começar pelo Lote 1?**
+## Resultado esperado
+Um editor que um usuário comum entende em segundos: arrasta módulos da esquerda, vê o resultado no centro, clica para editar à direita, escolhe dispositivo no topo, publica em um botão. Visual e fluxo idênticos ao HubSpot.
