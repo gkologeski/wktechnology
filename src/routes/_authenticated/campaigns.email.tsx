@@ -206,25 +206,35 @@ function EmailBroadcastsPage() {
               </div>
               <div>
                 <Label>Lista (segmento)</Label>
-                <Select value={segmentId} onValueChange={setSegmentId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um segmento de leads/contatos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(
-                      segments as Array<{
-                        id: string;
-                        name: string;
-                        entity: string;
-                        member_count: number;
-                      }>
-                    ).map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name} — {s.entity} ({s.member_count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {(segments as Array<{ id: string }>).length === 0 ? (
+                  <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                    Nenhum segmento de leads ou contatos encontrado. Crie uma lista em{" "}
+                    <Link to="/settings/segments" className="text-primary underline">
+                      Configurações &gt; Listas
+                    </Link>{" "}
+                    com entidade <strong>Leads</strong> ou <strong>Contatos</strong>.
+                  </div>
+                ) : (
+                  <Select value={segmentId} onValueChange={setSegmentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um segmento de leads/contatos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(
+                        segments as Array<{
+                          id: string;
+                          name: string;
+                          entity: string;
+                          member_count: number;
+                        }>
+                      ).map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name} — {s.entity} ({s.member_count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label>Template (opcional)</Label>
