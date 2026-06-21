@@ -75,6 +75,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ImageInput } from "@/components/ui/image-input";
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
