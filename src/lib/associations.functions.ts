@@ -53,7 +53,7 @@ export const propagateAssociationHistory = createServerFn({ method: "POST" })
         p_filter_id: filterId,
         p_set_col: setCol,
         p_set_id: setId,
-        p_since: sinceIso,
+        p_since: sinceIso ?? undefined,
       });
       if (error) throw new Error(error.message);
       return (count as number) ?? 0;
