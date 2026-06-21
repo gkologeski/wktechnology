@@ -58,6 +58,7 @@ function CampaignsPage() {
   const listFn = useServerFn(listWhatsAppCampaigns);
   const tmplFn = useServerFn(listWhatsAppTemplates);
   const createFn = useServerFn(createWhatsAppCampaign);
+  const updateFn = useServerFn(updateWhatsAppCampaign);
   const statusFn = useServerFn(setWhatsAppCampaignStatus);
 
   const { data: items = [] } = useQuery({
@@ -71,6 +72,7 @@ function CampaignsPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [body, setBody] = useState("");
   const [templateName, setTemplateName] = useState<string>("__none__");
@@ -80,9 +82,57 @@ function CampaignsPage() {
 
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl?.contentSid;
+  const isEditing = editingId !== null;
+
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setBody("");
+    setTemplateName("__none__");
+    setRate(10);
+    setRecipientsRaw("");
+    setMediaUrl("");
+  }
+
+  function openEdit(c: (typeof items)[number]) {
+    // Fetch existing fields for editing. The list query already gives basic
+    // fields; for body/template/media we lazily prefill from what the list has
+    // and read the rest only when needed. For simplicity we accept that body
+    // and template_name are not in the list payload — user can re-pick them.
+    setEditingId(c.id);
+    setName(c.name);
+    setRate(c.rate_per_minute);
+    setBody("");
+    setTemplateName("__none__");
+    setMediaUrl("");
+    setRecipientsRaw("");
+    setOpen(true);
+  }
 
   const create = useMutation({
     mutationFn: async () => {
+      if (isEditing && editingId) {
+        // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
+        let content_variables_template: Record<string, string> | undefined;
+        if (isHsm && selectedTpl?.variableCount) {
+          content_variables_template = {};
+          for (let i = 1; i <= selectedTpl.variableCount; i++) {
+            content_variables_template[String(i)] = `{{${i}}}`;
+          }
+        }
+        return updateFn({
+          data: {
+            id: editingId,
+            name,
+            body_template: selectedTpl?.body ?? body,
+            template_name: templateName !== "__none__" ? templateName : null,
+            content_sid: selectedTpl?.contentSid || null,
+            content_variables_template,
+            media_url: mediaUrl || null,
+            rate_per_minute: rate,
+          },
+        });
+      }
       const recipients = parseRecipients(recipientsRaw);
       if (recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
 
@@ -109,12 +159,9 @@ function CampaignsPage() {
       });
     },
     onSuccess: () => {
-      toast.success("Campanha criada como rascunho");
+      toast.success(isEditing ? "Campanha atualizada" : "Campanha criada como rascunho");
       setOpen(false);
-      setName("");
-      setBody("");
-      setRecipientsRaw("");
-      setMediaUrl("");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["wa-campaigns"] });
     },
     onError: (e: Error) => toast.error(e.message),
