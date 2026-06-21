@@ -324,12 +324,16 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <span className="text-sm text-foreground truncate">
             {(() => {
               const v = row[p.key];
+              if (p.options && v != null && v !== "") {
+                return p.options.find((o) => o.value === String(v))?.label ?? String(v);
+              }
               if (p.type === "tel" && v) return formatBrPhone(String(v));
               if (p.type === "cep" && v) return formatCep(String(v));
               const displayType = p.type ?? inferDisplayType(p.key);
               return formatDisplayValue(displayType, v, row as Record<string, unknown>);
             })()}
           </span>
+
           <Button
             variant="ghost"
             size="icon"
