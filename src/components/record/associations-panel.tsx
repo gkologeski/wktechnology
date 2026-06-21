@@ -686,11 +686,15 @@ function TicketsCard({
   const fkCol = entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
 
   const associate = async (ticketId: string) => {
-    const { error } = await sb
+    const { data, error } = await sb
       .from("tickets")
       .update({ [fkCol]: entityId })
-      .eq("id", ticketId);
+      .eq("id", ticketId)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (!data || data.length === 0) {
+      return toast.error("Sem permissão para vincular este ticket.");
+    }
     toast.success("Ticket vinculado");
     refresh();
   };
