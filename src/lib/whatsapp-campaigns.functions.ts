@@ -174,7 +174,8 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabase
       .from("whatsapp_campaigns")
-      .update(patch)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
