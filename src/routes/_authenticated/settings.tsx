@@ -284,6 +284,19 @@ function SettingsLayout() {
       .filter((s) => s.tabs.length > 0);
   }, [query, allowedSections]);
 
+  // Páginas que devem ocupar a largura inteira (sem o menu lateral de configurações),
+  // mantendo apenas o sidebar global do app.
+  const FULL_WIDTH_ROUTES = ["/settings/forms"];
+  const fullWidth = FULL_WIDTH_ROUTES.some((r) => path === r || path.startsWith(r + "/"));
+
+  if (fullWidth) {
+    return (
+      <div className="min-w-0">
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
       {/* Mobile: select */}
@@ -391,3 +404,4 @@ function SettingsLayout() {
     </div>
   );
 }
+
