@@ -33,6 +33,7 @@ import {
 import { renderQuoteTemplate, sampleQuoteContext } from "@/lib/quote-template-renderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImageInput } from "@/components/ui/image-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
