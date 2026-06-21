@@ -10,9 +10,10 @@ import { useRouterState } from "@tanstack/react-router";
  * não remonta, mas o search muda. Usamos `useRouterState` para observar.
  */
 export function useAutoCreateParam(open: () => void) {
-  const search = useRouterState({ select: (s) => s.location.search }) as
+  const search = useRouterState({ select: (s) => s.location.search }) as unknown as
     | Record<string, unknown>
     | undefined;
+
   const openRef = useRef(open);
   openRef.current = open;
   const handledRef = useRef(false);
