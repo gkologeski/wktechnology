@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getPublishedBySlug, trackLpEvent } from "@/lib/landing-pages.functions";
 import { useEffect, useState } from "react";
+import { REGISTRY, type Block } from "@/components/landing-pages/blocks";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/lp/$slug")({
   loader: async ({ params }) => getPublishedBySlug({ data: { slug: params.slug } }),
@@ -41,11 +45,16 @@ export const Route = createFileRoute("/lp/$slug")({
   },
 });
 
-type Block = Record<string, unknown> & { type: string };
+type Theme = { primaryColor?: string; bgColor?: string; font?: string };
 
 function PublicLandingPage() {
   const { page } = Route.useLoaderData() as {
-    page: { id: string; title: string; blocks: Block[] } | null;
+    page: {
+      id: string;
+      title: string;
+      blocks: Block[];
+      theme?: Theme;
+    } | null;
   };
   const [submitted, setSubmitted] = useState(false);
 
@@ -62,7 +71,15 @@ function PublicLandingPage() {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const theme = page.theme ?? {};
+  const fontFamily =
+    theme.font === "serif"
+      ? "ui-serif, Georgia, serif"
+      : theme.font === "mono"
+        ? "ui-monospace, monospace"
+        : undefined;
+
+  async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!page) return;
     await trackLpEvent({ data: { landing_page_id: page.id, event_type: "conversion" } });
@@ -70,78 +87,64 @@ function PublicLandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {page.blocks.map((b, i) => {
-        if (b.type === "hero") {
-          return (
-            <section
-              key={i}
-              className="py-24 px-6 text-center bg-gradient-to-b from-primary/5 to-transparent"
-            >
-              <h1 className="text-5xl font-bold mb-4">{String(b.headline ?? "")}</h1>
-              <p className="text-xl text-muted-foreground mb-8">{String(b.subheadline ?? "")}</p>
-              {b.cta ? <Button size="lg">{String(b.cta)}</Button> : null}
-            </section>
-          );
-        }
-        if (b.type === "features") {
-          const items = (b.items as Array<{ title: string; description: string }>) ?? [];
-          return (
-            <section key={i} className="py-16 px-6 max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
-              {items.map((it, j) => (
-                <div key={j}>
-                  <h3 className="font-semibold mb-2">{it.title}</h3>
-                  <p className="text-muted-foreground">{it.description}</p>
-                </div>
-              ))}
-            </section>
-          );
-        }
-        if (b.type === "form") {
+    <div
+      className="min-h-screen"
+      style={{
+        background: theme.bgColor || undefined,
+        fontFamily,
+        // expose primary as CSS var so blocks pick it up via tailwind primary if desired
+        ...(theme.primaryColor ? ({ ["--primary" as never]: theme.primaryColor } as React.CSSProperties) : {}),
+      }}
+    >
+      {page.blocks.map((block, i) => {
+        // Form is special: needs working submit + state, render custom
+        if (block.type === "form") {
+          const fields = ((block as { fields?: string[] }).fields ?? ["name", "email"]) as string[];
+          const labels: Record<string, string> = {
+            name: "Nome",
+            email: "Email",
+            phone: "Telefone",
+            company: "Empresa",
+            message: "Mensagem",
+          };
           return (
             <section key={i} className="py-16 px-6 max-w-md mx-auto">
+              {(block as { title?: string }).title ? (
+                <h3 className="text-2xl font-bold text-center mb-6">
+                  {String((block as { title?: string }).title)}
+                </h3>
+              ) : null}
               {submitted ? (
                 <p className="text-center text-lg">Obrigado! Em breve entraremos em contato.</p>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <input
-                    required
-                    name="name"
-                    placeholder="Nome"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <input
-                    required
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    className="w-full border rounded px-3 py-2"
-                  />
+                <form onSubmit={handleFormSubmit} className="space-y-3">
+                  {fields.map((f) => (
+                    <div key={f}>
+                      <Label>{labels[f] ?? f}</Label>
+                      {f === "message" ? (
+                        <Textarea required name={f} placeholder={labels[f] ?? f} />
+                      ) : (
+                        <Input
+                          required
+                          type={f === "email" ? "email" : "text"}
+                          name={f}
+                          placeholder={labels[f] ?? f}
+                        />
+                      )}
+                    </div>
+                  ))}
                   <Button type="submit" className="w-full">
-                    {String(b.submitLabel ?? "Enviar")}
+                    {String((block as { submitLabel?: string }).submitLabel ?? "Enviar")}
                   </Button>
                 </form>
               )}
             </section>
           );
         }
-        if (b.type === "testimonial") {
-          return (
-            <section key={i} className="py-16 px-6 max-w-2xl mx-auto text-center">
-              <blockquote className="text-xl italic mb-3">"{String(b.quote ?? "")}"</blockquote>
-              <cite className="text-muted-foreground">— {String(b.author ?? "")}</cite>
-            </section>
-          );
-        }
-        if (b.type === "cta") {
-          return (
-            <section key={i} className="py-16 px-6 text-center">
-              <p className="text-2xl mb-4">{String(b.text ?? "")}</p>
-              <Button size="lg">{String(b.button ?? "")}</Button>
-            </section>
-          );
-        }
-        return null;
+        const def = REGISTRY[block.type];
+        if (!def) return null;
+        const Render = def.Render;
+        return <Render key={i} block={block} />;
       })}
     </div>
   );
