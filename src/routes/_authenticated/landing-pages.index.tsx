@@ -13,7 +13,7 @@ import { Plus, Eye, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-export const Route = createFileRoute("/_authenticated/landing-pages")({
+export const Route = createFileRoute("/_authenticated/landing-pages/")({
   component: LandingPagesPage,
 });
 

@@ -45,7 +45,6 @@ import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
-import { Route as AuthenticatedLandingPagesRouteImport } from './routes/_authenticated/landing-pages'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -57,6 +56,7 @@ import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
@@ -393,12 +393,6 @@ const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedLandingPagesRoute =
-  AuthenticatedLandingPagesRouteImport.update({
-    id: '/landing-pages',
-    path: '/landing-pages',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -457,6 +451,12 @@ const AuthenticatedProposalsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedProposalsRoute,
+  } as any)
+const AuthenticatedLandingPagesIndexRoute =
+  AuthenticatedLandingPagesIndexRouteImport.update({
+    id: '/landing-pages/',
+    path: '/landing-pages/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIntegrationsIndexRoute =
   AuthenticatedIntegrationsIndexRouteImport.update({
@@ -911,9 +911,9 @@ const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
 } as any)
 const AuthenticatedLandingPagesIdRoute =
   AuthenticatedLandingPagesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedLandingPagesRoute,
+    id: '/landing-pages/$id',
+    path: '/landing-pages/$id',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIntegrationsSlugRoute =
   AuthenticatedIntegrationsSlugRouteImport.update({
@@ -1373,7 +1373,6 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
@@ -1492,6 +1491,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1574,7 +1574,6 @@ export interface FileRoutesByTo {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/meetings': typeof AuthenticatedMeetingsRoute
@@ -1690,6 +1689,7 @@ export interface FileRoutesByTo {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
+  '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1775,7 +1775,6 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
-  '/_authenticated/landing-pages': typeof AuthenticatedLandingPagesRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
@@ -1894,6 +1893,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
+  '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
@@ -1979,7 +1979,6 @@ export interface FileRouteTypes {
     | '/deals'
     | '/integrations'
     | '/invoices'
-    | '/landing-pages'
     | '/leads'
     | '/marketplace'
     | '/meetings'
@@ -2098,6 +2097,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/inbox/'
     | '/integrations/'
+    | '/landing-pages/'
     | '/proposals/'
     | '/settings/'
     | '/admin/workspaces/$id'
@@ -2180,7 +2180,6 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/invoices'
-    | '/landing-pages'
     | '/leads'
     | '/marketplace'
     | '/meetings'
@@ -2296,6 +2295,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/inbox'
     | '/integrations'
+    | '/landing-pages'
     | '/proposals'
     | '/settings'
     | '/admin/workspaces/$id'
@@ -2380,7 +2380,6 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
-    | '/_authenticated/landing-pages'
     | '/_authenticated/leads'
     | '/_authenticated/marketplace'
     | '/_authenticated/meetings'
@@ -2499,6 +2498,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$id'
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
+    | '/_authenticated/landing-pages/'
     | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/workspaces/$id'
@@ -2891,13 +2891,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/landing-pages': {
-      id: '/_authenticated/landing-pages'
-      path: '/landing-pages'
-      fullPath: '/landing-pages'
-      preLoaderRoute: typeof AuthenticatedLandingPagesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/invoices': {
       id: '/_authenticated/invoices'
       path: '/invoices'
@@ -2974,6 +2967,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/proposals/'
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
+    }
+    '/_authenticated/landing-pages/': {
+      id: '/_authenticated/landing-pages/'
+      path: '/landing-pages'
+      fullPath: '/landing-pages/'
+      preLoaderRoute: typeof AuthenticatedLandingPagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/integrations/': {
       id: '/_authenticated/integrations/'
@@ -3509,10 +3509,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/landing-pages/$id': {
       id: '/_authenticated/landing-pages/$id'
-      path: '/$id'
+      path: '/landing-pages/$id'
       fullPath: '/landing-pages/$id'
       preLoaderRoute: typeof AuthenticatedLandingPagesIdRouteImport
-      parentRoute: typeof AuthenticatedLandingPagesRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/integrations/$slug': {
       id: '/_authenticated/integrations/$slug'
@@ -4103,20 +4103,6 @@ const AuthenticatedIntegrationsRouteWithChildren =
     AuthenticatedIntegrationsRouteChildren,
   )
 
-interface AuthenticatedLandingPagesRouteChildren {
-  AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
-}
-
-const AuthenticatedLandingPagesRouteChildren: AuthenticatedLandingPagesRouteChildren =
-  {
-    AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
-  }
-
-const AuthenticatedLandingPagesRouteWithChildren =
-  AuthenticatedLandingPagesRoute._addFileChildren(
-    AuthenticatedLandingPagesRouteChildren,
-  )
-
 interface AuthenticatedLeadsRouteChildren {
   AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
   AuthenticatedLeadsImportHubspotRoute: typeof AuthenticatedLeadsImportHubspotRoute
@@ -4425,7 +4411,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
-  AuthenticatedLandingPagesRoute: typeof AuthenticatedLandingPagesRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRouteWithChildren
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
@@ -4450,7 +4435,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
+  AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
+  AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -4463,7 +4450,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
-  AuthenticatedLandingPagesRoute: AuthenticatedLandingPagesRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRouteWithChildren,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
@@ -4489,7 +4475,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
+  AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
+  AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
