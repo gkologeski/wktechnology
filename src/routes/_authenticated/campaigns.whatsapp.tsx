@@ -265,27 +265,35 @@ function CampaignsPage() {
                   placeholder="https://..."
                 />
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">
-                  Destinatários (um por linha: telefone,var1,var2…)
-                </label>
-                <Textarea
-                  rows={8}
-                  value={recipientsRaw}
-                  onChange={(e) => setRecipientsRaw(e.target.value)}
-                  placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {parseRecipients(recipientsRaw).length} destinatário(s)
+              {!isEditing && (
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Destinatários (um por linha: telefone,var1,var2…)
+                  </label>
+                  <Textarea
+                    rows={8}
+                    value={recipientsRaw}
+                    onChange={(e) => setRecipientsRaw(e.target.value)}
+                    placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {parseRecipients(recipientsRaw).length} destinatário(s)
+                  </p>
+                </div>
+              )}
+              {isEditing && (
+                <p className="text-xs text-muted-foreground">
+                  A lista de destinatários não pode ser alterada após a criação. Cancele e crie uma
+                  nova campanha caso precise mudar os destinatários.
                 </p>
-              </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
               <Button onClick={() => create.mutate()} disabled={create.isPending || !name}>
-                Criar rascunho
+                {isEditing ? "Salvar alterações" : "Criar rascunho"}
               </Button>
             </DialogFooter>
           </DialogContent>
