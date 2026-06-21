@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   listLandingPages,
   saveLandingPage,
@@ -12,6 +13,16 @@ import { PageHeader } from "@/components/page-header";
 import { Plus, Eye, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/landing-pages/")({
   component: LandingPagesPage,
@@ -21,6 +32,8 @@ function LandingPagesPage() {
   const fetchList = useServerFn(listLandingPages);
   const save = useServerFn(saveLandingPage);
   const del = useServerFn(deleteLandingPage);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["landing-pages"],
     queryFn: () => fetchList(),
@@ -49,11 +62,19 @@ function LandingPagesPage() {
     refetch();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Excluir esta landing page?")) return;
-    await del({ data: { id } });
-    toast.success("Excluída");
-    refetch();
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success("Excluída");
+      setPendingDelete(null);
+      refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -103,7 +124,11 @@ function LandingPagesPage() {
                     </a>
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setPendingDelete({ id: p.id, title: p.title })}
+                >
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
@@ -114,6 +139,34 @@ function LandingPagesPage() {
           )}
         </div>
       )}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir landing page?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A landing page
+              {pendingDelete ? ` "${pendingDelete.title}"` : ""} será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleting}
+            >
+              {deleting ? "Excluindo…" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
