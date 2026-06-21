@@ -149,7 +149,14 @@ export function DealDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[560px] p-0 flex flex-col">
+      <SheetContent
+        className={
+          isNew
+            ? "!inset-0 !right-auto !top-auto !bottom-auto !left-1/2 !-translate-x-1/2 !top-[50%] !-translate-y-1/2 !h-auto !max-h-[90vh] !w-[min(640px,95vw)] !sm:max-w-[640px] !border !rounded-lg !p-0 flex flex-col data-[state=open]:!slide-in-from-bottom-2 data-[state=closed]:!slide-out-to-bottom-2 overflow-y-auto"
+            : "w-full sm:max-w-[560px] p-0 flex flex-col"
+        }
+      >
+
         <SheetHeader className="px-5 pt-5 pb-3 border-b sticky top-0 bg-background z-10">
           <SheetTitle className="text-lg">{isNew ? "Novo negócio" : deal?.name}</SheetTitle>
           {!isNew && (
