@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import { Check, ChevronsUpDown, ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { toast } from "sonner";
@@ -25,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { useScreenRecorder } from "./use-screen-recorder";
+
 
 type Props = {
   open: boolean;
@@ -44,6 +55,82 @@ function fmtTime(ms: number) {
   const ss = String(s % 60).padStart(2, "0");
   return `${mm}:${ss}`;
 }
+
+type ComboOption = { value: string; label: string };
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  emptyLabel,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: ComboOption[];
+  placeholder: string;
+  emptyLabel: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between font-normal",
+            !current && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">{current?.label ?? placeholder}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const opt = options.find((o) => o.value === itemValue);
+            const hay = `${opt?.label ?? itemValue}`.toLowerCase();
+            return hay.includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar..." />
+          <CommandList>
+            <CommandEmpty>{emptyLabel}</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => (
+                <CommandItem
+                  key={o.value}
+                  value={o.value}
+                  onSelect={(v) => {
+                    onChange(v);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === o.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {o.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 export function BugReportDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
@@ -208,41 +295,30 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select
+                <SearchableSelect
                   value={category}
-                  onValueChange={(v) => {
+                  onChange={(v) => {
                     setCategory(v);
                     setSubtype("");
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUG_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={BUG_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+                  placeholder="Selecione"
+                  emptyLabel="Nenhuma categoria encontrada"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Subtipo</Label>
-                <Select value={subtype} onValueChange={setSubtype} disabled={!category}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={category ? "Selecione" : "Escolha a categoria"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subtypes.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={subtype}
+                  onChange={setSubtype}
+                  options={subtypes.map((s) => ({ value: s.value, label: s.label }))}
+                  placeholder={category ? "Selecione" : "Escolha a categoria"}
+                  emptyLabel="Nenhum subtipo encontrado"
+                  disabled={!category}
+                />
               </div>
             </div>
+
 
             <div className="space-y-2">
               <Label>Descrição</Label>
