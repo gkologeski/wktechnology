@@ -232,7 +232,11 @@ const image: BlockDef = {
   ),
   Properties: ({ block, onChange }) => (
     <>
-      <TextField label="URL da imagem" value={String(block.src ?? "")} onChange={(v) => onChange({ src: v })} placeholder="https://..." />
+      <ImageInput
+        label="Imagem"
+        value={String(block.src ?? "")}
+        onChange={(v) => onChange({ src: v ?? "" })}
+      />
       <TextField label="Texto alternativo (alt)" value={String(block.alt ?? "")} onChange={(v) => onChange({ alt: v })} />
       <TextField label="Legenda" value={String(block.caption ?? "")} onChange={(v) => onChange({ caption: v })} />
     </>
