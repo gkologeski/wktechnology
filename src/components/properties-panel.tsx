@@ -88,6 +88,7 @@ export type PropDef = {
   key: string;
   label: string;
   primary?: boolean;
+  options?: ReadonlyArray<{ value: string; label: string }>;
   type?:
     | "text"
     | "email"
@@ -100,6 +101,7 @@ export type PropDef = {
     | "date"
     | "datetime";
 };
+
 
 // Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
 function inferDisplayType(key: string): PropDef["type"] | undefined {
@@ -264,7 +266,42 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         {p.label}
       </label>
       {editing === p.key ? (
-        p.type === "company" ? (
+        p.options ? (
+          <div className="flex gap-1">
+            <Select
+              value={value}
+              onValueChange={async (v) => {
+                setValue(v);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any)
+                  .from(table)
+                  .update({ [p.key]: v })
+                  .eq("id", row.id);
+                if (error) toast.error(error.message);
+                else {
+                  toast.success("Atualizado");
+                  setEditing(null);
+                  onSaved?.();
+                }
+              }}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {p.options.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+          </div>
+        ) : p.type === "company" ? (
+
           <div className="space-y-2">
             <CompanyPicker
               value={{ id: null, name: value }}
@@ -322,12 +359,16 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <span className="text-sm text-foreground truncate">
             {(() => {
               const v = row[p.key];
+              if (p.options && v != null && v !== "") {
+                return p.options.find((o) => o.value === String(v))?.label ?? String(v);
+              }
               if (p.type === "tel" && v) return formatBrPhone(String(v));
               if (p.type === "cep" && v) return formatCep(String(v));
               const displayType = p.type ?? inferDisplayType(p.key);
               return formatDisplayValue(displayType, v, row as Record<string, unknown>);
             })()}
           </span>
+
           <Button
             variant="ghost"
             size="icon"

@@ -16,9 +16,11 @@ import { StageTracker } from "@/components/stage-tracker";
 import {
   PRIORITIES,
   PRIORITY_COLOR_VAR,
+  STATUSES,
   type TicketRow,
   type TicketStatus,
 } from "@/components/tickets/types";
+
 import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -192,11 +194,22 @@ function TicketDetail() {
           row={ticket as unknown as Record<string, unknown> & { id: string }}
           props={[
             { key: "subject", label: "Assunto", primary: true },
-            { key: "status", label: "Status", primary: true },
-            { key: "priority", label: "Prioridade", primary: true },
+            {
+              key: "status",
+              label: "Status",
+              primary: true,
+              options: STATUSES.map((s) => ({ value: s.value, label: s.label })),
+            },
+            {
+              key: "priority",
+              label: "Prioridade",
+              primary: true,
+              options: PRIORITIES.map((p) => ({ value: p.value, label: p.label })),
+            },
             { key: "source", label: "Origem", primary: true },
             { key: "due_at", label: "Vencimento", type: "datetime", primary: true },
             { key: "description", label: "Descrição" },
+
           ]}
           onSaved={load}
         />
