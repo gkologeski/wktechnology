@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import { Check, ChevronsUpDown, ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { toast } from "sonner";
@@ -25,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { useScreenRecorder } from "./use-screen-recorder";
+
 
 type Props = {
   open: boolean;
