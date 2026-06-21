@@ -88,6 +88,7 @@ export type PropDef = {
   key: string;
   label: string;
   primary?: boolean;
+  options?: ReadonlyArray<{ value: string; label: string }>;
   type?:
     | "text"
     | "email"
@@ -100,6 +101,7 @@ export type PropDef = {
     | "date"
     | "datetime";
 };
+
 
 // Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
 function inferDisplayType(key: string): PropDef["type"] | undefined {
