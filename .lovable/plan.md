@@ -1,78 +1,74 @@
+# Image Input unificado (URL + Upload) — estilo HubSpot
 
-## Diagnóstico
+## Objetivo
+Substituir os campos "somente URL" de imagem por um controle único com duas abas: **Upload** (arquivo local) e **URL** (link externo), além de um botão "Escolher da biblioteca" que abre a Media Library compartilhada do workspace.
 
-O editor atual (`src/routes/_authenticated/landing-pages.$id.tsx`) é um formulário linear: lista de blocos com JSON cru, sem preview, sem drag-and-drop, sem edição inline. Para um usuário comum é incompreensível.
+## 1. Storage: bucket `media`
 
-O HubSpot Landing Page Editor tem uma estrutura clara e replicável:
+Criar novo bucket **público** `media` (compatível com logos/favicons/OG images que precisam ser servidos por URL pública para terceiros — e-mails, navegador, redes sociais).
+- Caminho: `media/{workspace_id}/{yyyy}/{mm}/{uuid}-{filename}`
+- Tipos aceitos: imagens (png, jpg, jpeg, webp, gif, svg, ico), PDF, e documentos comuns (docx, xlsx, pptx, txt, csv).
+- Limite por arquivo: 10 MB (validado no cliente + no server fn).
+- Políticas RLS em `storage.objects`:
+  - SELECT público (`anon` + `authenticated`) no bucket `media` — necessário para servir logos em e-mails/landing pages.
+  - INSERT/UPDATE/DELETE: `authenticated` apenas quando o primeiro segmento do path == workspace do usuário (via `has_workspace_access`/owner check do projeto).
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ ← Voltar  | Nome da página     [Desktop|Tablet|Mobile]  ⤺ ⤻  │  TOPBAR
-│                                       Preview  Configurações  Publicar │
-├──────────┬──────────────────────────────────────┬────────────┤
-│          │                                      │            │
-│ Módulos  │         CANVAS (WYSIWYG)             │  Painel    │
-│ ──────   │   ┌────────────────────────────┐    │  de Edição │
-│ ▣ Hero   │   │  Hero — clique para editar │    │            │
-│ ¶ Texto  │   ├────────────────────────────┤    │  (campos   │
-│ 🖼 Imagem│   │  Features 3 colunas        │    │  do bloco  │
-│ ▭ Botão  │   ├────────────────────────────┤    │  selecio-  │
-│ ☐ Form   │   │  Formulário                │    │  nado:     │
-│ ⫶⫶ Colunas│  │  ...                       │    │  textos,   │
-│ ─ Divisor│   └────────────────────────────┘    │  cores,    │
-│ ⬚ Espaço │   [+ Adicionar seção]               │  imagens)  │
-│ 💬 Depo. │                                      │            │
-│ ❓ FAQ    │                                      │            │
-│ 🎬 Vídeo │                                      │            │
-└──────────┴──────────────────────────────────────┴────────────┘
+Tabela auxiliar `public.media_assets` (opcional, mas recomendada para a biblioteca):
 ```
+id uuid pk, workspace_id uuid, owner_id uuid,
+bucket text default 'media', path text,
+filename text, mime text, size_bytes int,
+public_url text, width int, height int,
+created_at timestamptz default now()
+```
++ GRANT padrão (`authenticated` CRUD, `service_role` ALL), RLS por workspace, índice em `(workspace_id, created_at desc)`.
 
-## Plano de execução (fases)
+## 2. Server functions (`src/lib/media.functions.ts`)
+- `uploadMedia({ filename, mime, base64 | signed-upload })` → grava no bucket, insere em `media_assets`, retorna `{ id, public_url }`.
+  - Preferir fluxo de **signed upload URL** (`createSignedUploadUrl`) para evitar trafegar bytes pelo server fn.
+- `listMedia({ q?, type?, limit, cursor })` — paginado por workspace.
+- `deleteMedia({ id })` — remove do storage + tabela.
 
-### Fase 1 — Estrutura do editor (shell + canvas + sidebars)
-- Substituir `landing-pages.$id.tsx` por um shell em 3 colunas (módulos | canvas | propriedades) ocupando tela cheia, sem `PageHeader`.
-- Topbar com: voltar, nome editável inline, seletor de dispositivo (desktop 100% / tablet 768px / mobile 375px aplicado via largura do canvas), undo/redo (histórico em memória), botão Preview (abre `/lp/$slug` em nova aba), botão Configurações (abre drawer com SEO/slug/status), botão Publicar (muda status + salva).
-- Auto-save com debounce (2s) + indicador "Salvando…/Salvo".
+## 3. Componente `<ImageInput>` (`src/components/ui/image-input.tsx`)
+Props: `value: string | null`, `onChange(url)`, `accept?`, `aspect?`, `label?`, `recommendedSize?`.
 
-### Fase 2 — Sistema de módulos (paridade com HubSpot)
-Cada módulo = um bloco no array `blocks` já persistido. Adicionar tipos novos preservando os existentes (hero/features/form/testimonial/cta) e introduzindo:
-- `richtext` (texto formatado), `image`, `button`, `divider`, `spacer`, `columns` (2/3 colunas com blocos aninhados), `video` (URL YouTube/Vimeo), `faq`, `logos` (faixa de logos), `stats`.
-- Cada módulo tem: schema de campos, componente de render no canvas, componente de propriedades, valores default, ícone na sidebar.
-- Sidebar esquerda: lista de módulos arrastáveis + clicáveis. Click no canvas em "+ Adicionar seção" abre seletor.
+UI (estilo HubSpot):
+- Preview à esquerda (thumb 96×96) + botões "Substituir" / "Remover".
+- Popover/Dialog com 3 abas: **Upload** (drag-and-drop + click), **URL** (input + validação), **Biblioteca** (grid de `listMedia`).
+- Aba Upload: progress bar, validação de mime/tamanho, após sucesso preenche `onChange(publicUrl)`.
+- Aba URL: textbox + "Aplicar".
+- Aba Biblioteca: busca + grid clicável.
 
-### Fase 3 — Interações WYSIWYG
-- Hover em qualquer bloco no canvas mostra toolbar flutuante: mover ↑↓, duplicar, deletar, drag handle.
-- Click no bloco → seleciona (borda azul) e abre o painel direito com os campos daquele bloco.
-- Edição inline de textos (headline, subheadline, parágrafos) com `contentEditable` — alteração reflete imediatamente no estado.
-- Drag-and-drop para reordenar usando `@dnd-kit/core` + `@dnd-kit/sortable` (já é o padrão moderno e acessível).
-- Drag de módulo da sidebar para posição no canvas.
+Variante `<FileInput>` (mesmo controle, sem restrição a imagem) para PDFs/anexos.
 
-### Fase 4 — Configurações da página (drawer)
-- Aba SEO: título, descrição, slug, imagem OG.
-- Aba Tema: cor primária, fonte (presets), cor de fundo — gravadas em `theme` JSON, aplicadas como CSS vars no canvas e no `/lp/$slug`.
-- Aba Avançado: status (rascunho/publicada/arquivada), domínio, scripts de tracking.
+## 4. Página Media Library (`/settings/media`)
+- Lista grid de `media_assets`, filtros por tipo, busca, ações copiar URL/excluir, upload em massa.
+- Item no menu Settings.
 
-### Fase 5 — Renderer público alinhado
-- Refatorar `src/routes/lp.$slug.tsx` para compartilhar os mesmos componentes de render do canvas (extrair `src/components/landing-pages/blocks/*`), garantindo paridade visual editor ↔ página publicada.
-- Aplicar `theme` (cor/fonte) via CSS vars no `<section>` raiz.
+## 5. Pontos de substituição (varredura concluída)
+Trocar `<Input>` URL atual por `<ImageInput>`:
+- `src/components/branding/controls-panel.tsx` — `logo_url`, `favicon_url`.
+- `src/components/branding/branding-builder.tsx` — mesmo state.
+- `src/lib/platform-admin.functions.ts` consumers — workspace `logo_url` (admin workspaces form).
+- `src/components/landing-pages/blocks.tsx` (linha 235) — bloco Image `src` + também blocos Hero/Logos/Testimonial que tenham imagem.
+- Landing page Settings → OG image.
+- `src/components/quote-templates/visual-editor.tsx` (linha 694) — bloco imagem.
+- `src/components/word-editor.tsx` (linha 270) — substituir `window.prompt` por abrir o ImageInput.
+- Avatares/upload de perfil se existirem URLs manuais (verificar `profiles`).
+
+Manter inalterado: `whatsapp-catalogs` (imagens vêm sincronizadas da Meta), webhooks e mídia recebida via Twilio/WhatsApp (já têm fluxo próprio).
+
+## 6. Telemetria/segurança
+- Sanitizar filename (slug + uuid).
+- Rejeitar SVG com `<script>` (regex no server fn) ou servir SVG com `Content-Disposition: attachment`.
+- Bucket público → não armazenar nada sensível; documento privado continua em `notes-attachments` (já existente).
+
+## Fora de escopo
+- Edição de imagem (crop/resize) — pode entrar em fase 2.
+- CDN/transformações on-the-fly.
+- Migração retroativa de URLs existentes (continuam funcionando).
 
 ## Detalhes técnicos
-
-- **Pasta nova**: `src/components/landing-pages/` com:
-  - `editor-shell.tsx`, `topbar.tsx`, `module-sidebar.tsx`, `properties-panel.tsx`, `canvas.tsx`, `block-toolbar.tsx`, `settings-drawer.tsx`.
-  - `blocks/registry.ts` — registro central `{ type, label, icon, defaults, RenderComponent, PropertiesComponent }`.
-  - `blocks/hero.tsx`, `features.tsx`, `form.tsx`, `richtext.tsx`, `image.tsx`, `button.tsx`, `columns.tsx`, `divider.tsx`, `spacer.tsx`, `video.tsx`, `faq.tsx`, `logos.tsx`, `testimonial.tsx`, `cta.tsx`, `stats.tsx`.
-- **Estado**: hook `useEditorState` com histórico (stack de até 50 estados para undo/redo).
-- **Dependência nova**: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (instalar via `bun add`).
-- **Schema do banco**: nenhuma migração necessária — `blocks`, `theme`, `seo` já são `jsonb` flexíveis. Blocos antigos continuam renderizando.
-- **Tokens**: usar `bg-background`, `border-border`, `text-foreground`, `primary` — nada de cores hardcoded.
-- **Mobile**: editor é desktop-only (HubSpot também é); preview mobile é só largura do canvas.
-
-## Fora de escopo (não nesta entrega)
-- Smart content / personalização por persona.
-- A/B testing UI (campo `variant_id` já existe no tracking; pode vir depois).
-- Editor visual de tema com seletor de fonte do Google Fonts em runtime — usaremos 4 presets.
-- Templates pré-prontos de página (pode ser fase 6).
-
-## Resultado esperado
-Um editor que um usuário comum entende em segundos: arrasta módulos da esquerda, vê o resultado no centro, clica para editar à direita, escolhe dispositivo no topo, publica em um botão. Visual e fluxo idênticos ao HubSpot.
+- Bucket criado via `supabase--storage_create_bucket` (não SQL).
+- Políticas e tabela `media_assets` via migration única com GRANTs.
+- Upload usa `supabase.storage.from('media').uploadToSignedUrl(...)` no cliente após server fn devolver token, evitando passar bytes pelo TanStack server fn (limite de payload).
