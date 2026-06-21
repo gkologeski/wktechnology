@@ -56,6 +56,82 @@ function fmtTime(ms: number) {
   return `${mm}:${ss}`;
 }
 
+type ComboOption = { value: string; label: string };
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  emptyLabel,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: ComboOption[];
+  placeholder: string;
+  emptyLabel: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between font-normal",
+            !current && "text-muted-foreground",
+          )}
+        >
+          <span className="truncate">{current?.label ?? placeholder}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const opt = options.find((o) => o.value === itemValue);
+            const hay = `${opt?.label ?? itemValue}`.toLowerCase();
+            return hay.includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar..." />
+          <CommandList>
+            <CommandEmpty>{emptyLabel}</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => (
+                <CommandItem
+                  key={o.value}
+                  value={o.value}
+                  onSelect={(v) => {
+                    onChange(v);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === o.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {o.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 export function BugReportDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const [kind, setKind] = useState<"new_feature" | "existing_broken">("existing_broken");
