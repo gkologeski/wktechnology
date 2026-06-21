@@ -130,6 +130,7 @@ import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
+import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -893,6 +894,12 @@ const AuthenticatedSettingsAccessPolicyRoute =
     path: '/access-policy',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedQaTestCasesRoute =
+  AuthenticatedQaTestCasesRouteImport.update({
+    id: '/qa/test-cases',
+    path: '/qa/test-cases',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProposalsIdRoute =
   AuthenticatedProposalsIdRouteImport.update({
     id: '/$id',
@@ -1426,6 +1433,7 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -1626,6 +1634,7 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -1830,6 +1839,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
+  '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2035,6 +2045,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
+    | '/qa/test-cases'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -2235,6 +2246,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/proposals/$id'
+    | '/qa/test-cases'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -2438,6 +2450,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/proposals/$id'
+    | '/_authenticated/qa/test-cases'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
     | '/_authenticated/settings/api-keys'
@@ -3499,6 +3512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccessPolicyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/qa/test-cases': {
+      id: '/_authenticated/qa/test-cases'
+      path: '/qa/test-cases'
+      fullPath: '/qa/test-cases'
+      preLoaderRoute: typeof AuthenticatedQaTestCasesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/proposals/$id': {
       id: '/_authenticated/proposals/$id'
       path: '/$id'
@@ -4458,6 +4478,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
+  AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
 }
@@ -4498,6 +4519,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
+  AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
 }
