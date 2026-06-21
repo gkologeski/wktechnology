@@ -46,17 +46,17 @@ export const propagateAssociationHistory = createServerFn({ method: "POST" })
     const sourceCol = KIND_TO_COL[sourceKind];
     const targetCol = KIND_TO_COL[targetKind];
 
-    // Side A: atividades da entidade A ganham o FK da entidade B
+    // Side A: atividades da entidade A ganham o FK da entidade B (em lotes, via RPC)
     const runOne = async (filterCol: string, filterId: string, setCol: string, setId: string) => {
-      let q = supabase
-        .from("activities")
-        .update({ [setCol]: setId } as never)
-        .eq(filterCol, filterId)
-        .is(setCol, null);
-      if (sinceIso) q = q.gte("created_at", sinceIso);
-      const { data: updated, error } = await q.select("id");
+      const { data: count, error } = await supabase.rpc("propagate_activity_assoc", {
+        p_filter_col: filterCol,
+        p_filter_id: filterId,
+        p_set_col: setCol,
+        p_set_id: setId,
+        p_since: sinceIso,
+      });
       if (error) throw new Error(error.message);
-      return updated?.length ?? 0;
+      return (count as number) ?? 0;
     };
 
     const [propagatedFromSource, propagatedFromTarget] = await Promise.all([
