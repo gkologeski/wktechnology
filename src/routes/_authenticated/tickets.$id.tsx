@@ -16,9 +16,11 @@ import { StageTracker } from "@/components/stage-tracker";
 import {
   PRIORITIES,
   PRIORITY_COLOR_VAR,
+  STATUSES,
   type TicketRow,
   type TicketStatus,
 } from "@/components/tickets/types";
+
 import { usePipelines } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
