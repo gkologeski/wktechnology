@@ -46,22 +46,30 @@ export const propagateAssociationHistory = createServerFn({ method: "POST" })
     const sourceCol = KIND_TO_COL[sourceKind];
     const targetCol = KIND_TO_COL[targetKind];
 
-    // Side A: atividades da entidade A ganham o FK da entidade B (em lotes, via RPC)
-    const runOne = async (filterCol: string, filterId: string, setCol: string, setId: string) => {
-      const { data: count, error } = await supabase.rpc("propagate_activity_assoc", {
-        p_filter_col: filterCol,
-        p_filter_id: filterId,
-        p_set_col: setCol,
-        p_set_id: setId,
-        p_since: sinceIso ?? undefined,
-      });
-      if (error) throw new Error(error.message);
-      return (count as number) ?? 0;
+    // Cada chamada à RPC processa 1 lote (500 linhas). Repetimos até esgotar
+    // (ou atingir um teto de segurança) para evitar statement_timeout.
+    const MAX_BATCHES = 200; // até ~100k linhas por lado
+    const runAll = async (filterCol: string, filterId: string, setCol: string, setId: string) => {
+      let total = 0;
+      for (let i = 0; i < MAX_BATCHES; i++) {
+        const { data: count, error } = await supabase.rpc("propagate_activity_assoc", {
+          p_filter_col: filterCol,
+          p_filter_id: filterId,
+          p_set_col: setCol,
+          p_set_id: setId,
+          p_since: sinceIso ?? undefined,
+        });
+        if (error) throw new Error(error.message);
+        const n = (count as number) ?? 0;
+        total += n;
+        if (n === 0) break;
+      }
+      return total;
     };
 
     const [propagatedFromSource, propagatedFromTarget] = await Promise.all([
-      runOne(sourceCol, sourceId, targetCol, targetId),
-      runOne(targetCol, targetId, sourceCol, sourceId),
+      runAll(sourceCol, sourceId, targetCol, targetId),
+      runAll(targetCol, targetId, sourceCol, sourceId),
     ]);
 
     return { propagatedFromSource, propagatedFromTarget };
