@@ -266,7 +266,42 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         {p.label}
       </label>
       {editing === p.key ? (
-        p.type === "company" ? (
+        p.options ? (
+          <div className="flex gap-1">
+            <Select
+              value={value}
+              onValueChange={async (v) => {
+                setValue(v);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { error } = await (supabase as any)
+                  .from(table)
+                  .update({ [p.key]: v })
+                  .eq("id", row.id);
+                if (error) toast.error(error.message);
+                else {
+                  toast.success("Atualizado");
+                  setEditing(null);
+                  onSaved?.();
+                }
+              }}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {p.options.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+          </div>
+        ) : p.type === "company" ? (
+
           <div className="space-y-2">
             <CompanyPicker
               value={{ id: null, name: value }}
