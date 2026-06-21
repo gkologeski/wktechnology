@@ -66,6 +66,7 @@ import {
   Zap,
   ListChecks,
   Briefcase,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
