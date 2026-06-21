@@ -59,7 +59,9 @@ export function ContactPicker({
   className,
 }: ContactPickerProps) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(false);
   const lastSearchedRef = useRef<string>("");
+  const reqIdRef = useRef(0);
 
   // Hidrata nome quando recebemos só o id.
   useEffect(() => {
@@ -81,35 +83,76 @@ export function ContactPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.id, hydrateById]);
 
-  // Busca a partir de 3 caracteres por nome, email, telefone ou celular.
+  // Busca a partir de 2 caracteres em nome, email, telefone ou celular.
+  // Faz um único round-trip com OR amplo (rápido, usa índices trigram)
+  // e refina em memória para exigir todos os tokens (AND).
   useEffect(() => {
     const q = value.name.trim();
-    if (q.length < 3) {
-      setMatches([]);
-      return;
-    }
     if (value.id) {
       setMatches([]);
+      setLoading(false);
       return;
     }
+    if (q.length < 2) {
+      setMatches([]);
+      setLoading(false);
+      return;
+    }
+    const reqId = ++reqIdRef.current;
+    setLoading(true);
     const t = setTimeout(async () => {
       const term = sanitizeOrTerm(q);
-      if (term.length < 3) {
+      if (term.length < 2) {
+        if (reqId === reqIdRef.current) {
+          setMatches([]);
+          setLoading(false);
+        }
+        return;
+      }
+      const tokens = term.split(/\s+/).filter(Boolean);
+      const cols = ["first_name", "last_name", "email", "phone", "mobile_phone"];
+      const ors: string[] = [];
+      ors.push(...cols.map((c) => `${c}.ilike.%${term}%`));
+      for (const tok of tokens) {
+        for (const c of cols) ors.push(`${c}.ilike.%${tok}%`);
+      }
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email, phone, mobile_phone")
+        .or(ors.join(","))
+        .limit(50);
+      if (reqId !== reqIdRef.current) return;
+      setLoading(false);
+      if (error) {
         setMatches([]);
         return;
       }
-      const tokens = term.split(/\s+/).filter((t) => t.length >= 2);
-      const cols = ["first_name", "last_name", "email", "phone", "mobile_phone"];
-      let query = supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email, phone, mobile_phone");
-      for (const tok of tokens) {
-        const like = `%${tok}%`;
-        query = query.or(cols.map((c) => `${c}.ilike.${like}`).join(","));
-      }
-      const { data, error } = await query.order("first_name", { ascending: true }).limit(500);
-      if (error) return;
-      const rows = (data ?? []) as Match[];
+      let rows = (data ?? []) as Match[];
+      const lowerTokens = tokens.map((t) => t.toLowerCase());
+      rows = rows.filter((r) => {
+        const hay = [r.first_name, r.last_name, r.email, r.phone, r.mobile_phone]
+          .filter(Boolean)
+          .map((s) => String(s).toLowerCase())
+          .join(" ");
+        return lowerTokens.every((tok) => hay.includes(tok));
+      });
+      const lowerTerm = term.toLowerCase();
+      const score = (r: Match) => {
+        const name = fullName(r).toLowerCase();
+        const email = (r.email ?? "").toLowerCase();
+        if (name.startsWith(lowerTerm)) return 0;
+        if (name.includes(lowerTerm)) return 1;
+        if (email.startsWith(lowerTerm)) return 2;
+        if (email.includes(lowerTerm)) return 3;
+        return 4;
+      };
+      rows.sort((a, b) => {
+        const sa = score(a);
+        const sb = score(b);
+        if (sa !== sb) return sa - sb;
+        return fullName(a).localeCompare(fullName(b));
+      });
+      rows = rows.slice(0, 20);
       setMatches(rows);
       if (toastOnMatches && rows.length > 0 && lastSearchedRef.current !== q) {
         lastSearchedRef.current = q;
@@ -122,7 +165,7 @@ export function ContactPicker({
       } else if (rows.length === 0) {
         lastSearchedRef.current = q;
       }
-    }, 350);
+    }, 180);
     return () => clearTimeout(t);
   }, [value.name, value.id, toastOnMatches]);
 
@@ -209,7 +252,11 @@ export function ContactPicker({
         </div>
       )}
 
-      {mode === "pick" && !value.id && value.name.trim().length >= 3 && matches.length === 0 && (
+      {loading && value.name.trim().length >= 2 && !value.id && (
+        <p className="text-[11px] text-muted-foreground">Buscando…</p>
+      )}
+
+      {mode === "pick" && !value.id && value.name.trim().length >= 2 && !loading && matches.length === 0 && (
         <p className="text-[11px] text-muted-foreground">
           Nenhum contato encontrado. Selecione um existente.
         </p>

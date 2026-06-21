@@ -10219,6 +10219,8 @@ export type Database = {
         Returns: undefined
       }
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       user_can_act: {
         Args: {
           _action: string
