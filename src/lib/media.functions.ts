@@ -208,26 +208,39 @@ export const listMediaAssets = createServerFn({ method: "POST" })
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
 
-    // refresh near-expiry signed URLs
-    const refreshed = await Promise.all(
-      (rows ?? []).map(async (r: Record<string, unknown>) => {
-        const exp = r.url_expires_at ? new Date(String(r.url_expires_at)).getTime() : 0;
+    type Row = {
+      id: string;
+      url: string;
+      url_expires_at: string | null;
+      path: string;
+      filename: string;
+      mime: string | null;
+      size_bytes: number | null;
+      width: number | null;
+      height: number | null;
+      created_at: string;
+    };
+    const list = (rows ?? []) as unknown as Row[];
+    const refreshed: Row[] = await Promise.all(
+      list.map(async (r) => {
+        const exp = r.url_expires_at ? new Date(r.url_expires_at).getTime() : 0;
         if (exp - Date.now() < 60 * 60 * 24 * 30 * 1000) {
           const { data: s } = await supabaseAdmin.storage
             .from(BUCKET)
-            .createSignedUrl(String(r.path), SIGNED_TTL);
+            .createSignedUrl(r.path, SIGNED_TTL);
           if (s?.signedUrl) {
             const newExp = new Date(Date.now() + SIGNED_TTL * 1000).toISOString();
             await supabaseAdmin
               .from("media_assets")
               .update({ url: s.signedUrl, url_expires_at: newExp } as never)
-              .eq("id", String(r.id));
+              .eq("id", r.id);
             return { ...r, url: s.signedUrl, url_expires_at: newExp };
           }
         }
         return r;
       }),
     );
+
 
     return { rows: refreshed, total: count ?? refreshed.length };
   });
