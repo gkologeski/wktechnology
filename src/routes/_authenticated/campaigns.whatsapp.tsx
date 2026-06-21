@@ -322,6 +322,11 @@ function CampaignsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              {(c.status === "draft" || c.status === "paused") && (
+                <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Editar
+                </Button>
+              )}
               {c.status !== "running" && c.status !== "completed" && c.status !== "canceled" && (
                 <Button
                   size="sm"
