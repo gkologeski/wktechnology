@@ -252,7 +252,11 @@ export function ContactPicker({
         </div>
       )}
 
-      {mode === "pick" && !value.id && value.name.trim().length >= 3 && matches.length === 0 && (
+      {loading && value.name.trim().length >= 2 && !value.id && (
+        <p className="text-[11px] text-muted-foreground">Buscando…</p>
+      )}
+
+      {mode === "pick" && !value.id && value.name.trim().length >= 2 && !loading && matches.length === 0 && (
         <p className="text-[11px] text-muted-foreground">
           Nenhum contato encontrado. Selecione um existente.
         </p>
