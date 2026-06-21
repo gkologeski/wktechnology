@@ -10191,6 +10191,17 @@ export type Database = {
           status: string
         }[]
       }
+      propagate_activity_assoc: {
+        Args: {
+          p_batch?: number
+          p_filter_col: string
+          p_filter_id: string
+          p_set_col: string
+          p_set_id: string
+          p_since?: string
+        }
+        Returns: number
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
