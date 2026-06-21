@@ -185,15 +185,21 @@ function CampaignsPage() {
             Disparos em massa com fila e limite de mensagens por minuto.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => resetForm()}>
               <Plus className="h-4 w-4 mr-2" /> Nova campanha
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Nova campanha</DialogTitle>
+              <DialogTitle>{isEditing ? "Editar campanha" : "Nova campanha"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div>
