@@ -4917,6 +4917,57 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          bucket: string
+          created_at: string
+          filename: string
+          height: number | null
+          id: string
+          mime: string | null
+          owner_user_id: string
+          path: string
+          size_bytes: number | null
+          updated_at: string
+          url: string
+          url_expires_at: string | null
+          width: number | null
+          workspace_id: string
+        }
+        Insert: {
+          bucket?: string
+          created_at?: string
+          filename: string
+          height?: number | null
+          id?: string
+          mime?: string | null
+          owner_user_id: string
+          path: string
+          size_bytes?: number | null
+          updated_at?: string
+          url: string
+          url_expires_at?: string | null
+          width?: number | null
+          workspace_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          filename?: string
+          height?: number | null
+          id?: string
+          mime?: string | null
+          owner_user_id?: string
+          path?: string
+          size_bytes?: number | null
+          updated_at?: string
+          url?: string
+          url_expires_at?: string | null
+          width?: number | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       meeting_participants: {
         Row: {
           created_at: string

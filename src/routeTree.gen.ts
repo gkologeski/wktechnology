@@ -101,6 +101,7 @@ import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
+import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
@@ -717,6 +718,12 @@ const AuthenticatedSettingsMobileRoute =
   AuthenticatedSettingsMobileRouteImport.update({
     id: '/mobile',
     path: '/mobile',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMediaRoute =
+  AuthenticatedSettingsMediaRouteImport.update({
+    id: '/media',
+    path: '/media',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsMacrosRoute =
@@ -1447,6 +1454,7 @@ export interface FileRoutesByFullPath {
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -1646,6 +1654,7 @@ export interface FileRoutesByTo {
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -1849,6 +1858,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
+  '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -2053,6 +2063,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
+    | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
     | '/settings/payments'
@@ -2252,6 +2263,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/macros'
+    | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
     | '/settings/payments'
@@ -2454,6 +2466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/macros'
+    | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/nfse'
     | '/_authenticated/settings/payments'
@@ -3281,6 +3294,13 @@ declare module '@tanstack/react-router' {
       path: '/mobile'
       fullPath: '/settings/mobile'
       preLoaderRoute: typeof AuthenticatedSettingsMobileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/media': {
+      id: '/_authenticated/settings/media'
+      path: '/media'
+      fullPath: '/settings/media'
+      preLoaderRoute: typeof AuthenticatedSettingsMediaRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/macros': {
@@ -4213,6 +4233,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
+  AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
@@ -4291,6 +4312,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
+  AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,

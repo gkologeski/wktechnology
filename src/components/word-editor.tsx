@@ -75,6 +75,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ImageInput } from "@/components/ui/image-input";
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -266,11 +268,8 @@ function Toolbar({ editor }: { editor: Editor }) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
-  const addImage = () => {
-    const url = window.prompt("URL da imagem:");
-    if (!url) return;
-    editor.chain().focus().setImage({ src: url }).run();
-  };
+  const [imgOpen, setImgOpen] = useState(false);
+  const addImage = () => setImgOpen(true);
 
   const insertTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
@@ -447,6 +446,20 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Btn onClick={addImage} title="Inserir imagem">
         <ImageIcon className="h-3.5 w-3.5" />
       </Btn>
+      <Dialog open={imgOpen} onOpenChange={setImgOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Inserir imagem</DialogTitle>
+          </DialogHeader>
+          <ImageInput
+            value={null}
+            onChange={(url) => {
+              if (url) editor.chain().focus().setImage({ src: url }).run();
+              setImgOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
       <Btn onClick={insertTable} title="Inserir tabela">
         <TableIcon className="h-3.5 w-3.5" />
       </Btn>

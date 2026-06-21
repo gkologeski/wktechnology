@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageInput } from "@/components/ui/image-input";
 import { ColorControl } from "./color-control";
 import { PalettePresets } from "./palette-presets";
 
@@ -59,22 +60,19 @@ export function ControlsPanel({ form, set }: Props) {
           <Label className="text-[11px] font-bold uppercase tracking-wide">Nome da marca</Label>
           <Input value={form.brand_name} onChange={(e) => set("brand_name", e.target.value)} />
         </div>
-        <div className="space-y-2">
-          <Label className="text-[11px] font-bold uppercase tracking-wide">Logo (URL)</Label>
-          <Input
-            value={form.logo_url}
-            onChange={(e) => set("logo_url", e.target.value)}
-            placeholder="https://"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-[11px] font-bold uppercase tracking-wide">Favicon (URL)</Label>
-          <Input
-            value={form.favicon_url}
-            onChange={(e) => set("favicon_url", e.target.value)}
-            placeholder="https://"
-          />
-        </div>
+        <ImageInput
+          label="Logo"
+          value={form.logo_url}
+          onChange={(v) => set("logo_url", v ?? "")}
+          helperText="PNG ou SVG, máx. 20 MB."
+        />
+        <ImageInput
+          label="Favicon"
+          value={form.favicon_url}
+          onChange={(v) => set("favicon_url", v ?? "")}
+          accept="image/png,image/x-icon,image/svg+xml,image/vnd.microsoft.icon"
+          helperText="ICO, PNG ou SVG (32x32 recomendado)."
+        />
       </Section>
 
       <Section title="Sistema de cores">

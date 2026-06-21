@@ -66,6 +66,7 @@ import {
   Zap,
   ListChecks,
   Briefcase,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -201,6 +202,7 @@ const sections: Section[] = [
       { to: "/settings/portal", label: "Portal do cliente", icon: Globe, need: "admin" },
       { to: "/settings/surveys", label: "Pesquisas", icon: Star, need: "manager" },
       { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
+      { to: "/settings/media", label: "Biblioteca de mídia", icon: ImageIcon, need: "manager" },
       { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase, need: "manager" },
       {
         to: "/settings/prospecting-scripts",
