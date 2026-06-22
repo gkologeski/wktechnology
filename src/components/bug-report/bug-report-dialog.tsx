@@ -175,12 +175,20 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
     setKind("existing_broken");
     setCategory("");
     setSubtype("");
-    setDescription("");
+    setDescription(qaContext?.prefillDescriptionHtml ?? "");
     setIncludeMic(true);
     setMinimized(false);
     clearImages();
     recorder.reset();
   };
+
+  // When opening with a QA context, prefill the description once
+  useEffect(() => {
+    if (open && qaContext?.prefillDescriptionHtml) {
+      setDescription(qaContext.prefillDescriptionHtml);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, qaContext?.testCaseId]);
 
   const handleClose = (next: boolean) => {
     // Ignore close attempts triggered when we minimize the dialog during recording
