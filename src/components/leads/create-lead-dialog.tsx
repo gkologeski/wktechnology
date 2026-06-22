@@ -172,6 +172,7 @@ export function CreateLeadDialog({
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(v) => {
