@@ -594,6 +594,31 @@ export function HubspotMaintenancePanel() {
           {entityProgress && <p className="text-xs text-muted-foreground">{entityProgress}</p>}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Mapeamentos ativos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum mapeamento ainda.</p>
+          ) : (
+            <div className="space-y-1 max-h-96 overflow-auto">
+              {rows.map((r) => (
+                <div key={r.id} className="text-xs border-b py-2 flex justify-between gap-2">
+                  <span>
+                    <Badge variant="outline">{r.entity}</Badge>{" "}
+                    <code className="ml-2">
+                      {r.local_id.slice(0, 8)} ↔ {r.hubspot_id}
+                    </code>
+                  </span>
+                  <span className="text-muted-foreground">{formatDateTime(r.last_synced_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
