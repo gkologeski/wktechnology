@@ -28,6 +28,8 @@ import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 import { ImportTimeline } from "@/components/hubspot/import-timeline";
 import { HubspotTwoWaySync } from "@/components/hubspot/two-way-sync";
 import { HubspotLossReasonsSync } from "@/components/hubspot/loss-reasons-sync";
+import { HubspotMaintenancePanel } from "@/components/hubspot/maintenance-panel";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
