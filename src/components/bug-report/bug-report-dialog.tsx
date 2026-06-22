@@ -258,21 +258,28 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
         imagePaths.push(path);
       }
 
-      const { error: insErr } = await supabase.from("bug_reports").insert({
-        owner_id: user.id,
-        kind: parsed.data.kind,
-        category: parsed.data.category,
-        subtype: parsed.data.subtype,
-        description: description,
-        recording_path: recordingPath,
-        recording_has_audio: hasAudio,
-        image_paths: imagePaths,
-        page_url: typeof window !== "undefined" ? window.location.href : null,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("bug_reports")
+        .insert({
+          owner_id: user.id,
+          kind: parsed.data.kind,
+          category: parsed.data.category,
+          subtype: parsed.data.subtype,
+          description: description,
+          recording_path: recordingPath,
+          recording_has_audio: hasAudio,
+          image_paths: imagePaths,
+          page_url: typeof window !== "undefined" ? window.location.href : null,
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          qa_test_case_id: qaContext?.testCaseId ?? null,
+          qa_test_case_title: qaContext?.testCaseTitle ?? null,
+        })
+        .select("id")
+        .maybeSingle();
       if (insErr) throw insErr;
 
       toast.success("Chamado enviado. Obrigado pelo feedback!");
+      onSubmitted?.({ bugReportId: inserted?.id ?? null, qaContext });
       resetAll();
       onOpenChange(false);
     } catch (e) {
