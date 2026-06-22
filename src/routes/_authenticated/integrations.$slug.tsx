@@ -28,6 +28,8 @@ import { HubspotImportWizard } from "@/components/hubspot/import-wizard";
 import { ImportTimeline } from "@/components/hubspot/import-timeline";
 import { HubspotTwoWaySync } from "@/components/hubspot/two-way-sync";
 import { HubspotLossReasonsSync } from "@/components/hubspot/loss-reasons-sync";
+import { HubspotMaintenancePanel } from "@/components/hubspot/maintenance-panel";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
@@ -227,39 +229,47 @@ function IntegrationDetail() {
           )}
 
           {isConnected && provider.slug === "hubspot" && (
-            <section className="rounded-lg border bg-card p-5">
-              <h2 className="font-semibold mb-1">Importar do HubSpot</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Importação respeitando árvore de dependências (empresas → contatos → negócios →
-                atividades).
-              </p>
-              <HubspotImportWizard />
-            </section>
+            <Tabs defaultValue="connect" className="w-full">
+              <TabsList>
+                <TabsTrigger value="connect">Conectar e Integrar</TabsTrigger>
+                <TabsTrigger value="operate">Operar e Manter</TabsTrigger>
+              </TabsList>
+              <TabsContent value="connect" className="space-y-6 mt-4">
+                <section className="rounded-lg border bg-card p-5">
+                  <h2 className="font-semibold mb-1">Importar do HubSpot</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Importação respeitando árvore de dependências (empresas → contatos → negócios →
+                    atividades).
+                  </p>
+                  <HubspotImportWizard />
+                </section>
+
+                <section className="rounded-lg border bg-card p-5">
+                  <h2 className="font-semibold mb-1">Sincronização bidirecional</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Envia alterações locais (contatos, empresas, negócios) de volta para o HubSpot.
+                    Conflitos (alterado dos dois lados desde a última sync) ficam listados para
+                    revisão manual.
+                  </p>
+                  <HubspotTwoWaySync />
+                </section>
+
+                <section className="rounded-lg border bg-card p-5">
+                  <h2 className="font-semibold mb-1">Motivos de negócio perdido</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Importa as opções da propriedade <code>closed_lost_reason</code> do HubSpot
+                    para a base local e preenche o motivo dos negócios marcados como perdidos que
+                    ainda não o tenham registrado.
+                  </p>
+                  <HubspotLossReasonsSync />
+                </section>
+              </TabsContent>
+              <TabsContent value="operate" className="space-y-6 mt-4">
+                <HubspotMaintenancePanel />
+              </TabsContent>
+            </Tabs>
           )}
 
-          {isConnected && provider.slug === "hubspot" && (
-            <section className="rounded-lg border bg-card p-5">
-              <h2 className="font-semibold mb-1">Sincronização bidirecional</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Envia alterações locais (contatos, empresas, negócios) de volta para o HubSpot.
-                Conflitos (alterado dos dois lados desde a última sync) ficam listados para revisão
-                manual.
-              </p>
-              <HubspotTwoWaySync />
-            </section>
-          )}
-
-          {isConnected && provider.slug === "hubspot" && (
-            <section className="rounded-lg border bg-card p-5">
-              <h2 className="font-semibold mb-1">Motivos de negócio perdido</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Importa as opções da propriedade <code>closed_lost_reason</code> do HubSpot para a
-                base local e preenche o motivo dos negócios marcados como perdidos que ainda não o
-                tenham registrado.
-              </p>
-              <HubspotLossReasonsSync />
-            </section>
-          )}
 
           {isConnected && provider.authMode === "api_key" && (
             <section className="rounded-lg border bg-card p-5">
