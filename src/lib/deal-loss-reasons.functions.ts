@@ -99,6 +99,7 @@ async function seedFromExistingDeals(
 async function syncReasonsFromHubspot(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   workspaceId: string,
+  propertyName: string = "closed_lost_reason",
 ): Promise<{ upserted: number; deactivated: number }> {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY;
@@ -106,7 +107,7 @@ async function syncReasonsFromHubspot(
     throw new Error("Conecte o HubSpot para sincronizar os motivos.");
   }
 
-  const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/closed_lost_reason`, {
+  const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/${encodeURIComponent(propertyName)}`, {
     headers: {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "X-Connection-Api-Key": HUBSPOT_API_KEY,
@@ -166,22 +167,39 @@ async function syncReasonsFromHubspot(
 
 export const syncHubspotLossReasons = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { propertyName?: string } | undefined) =>
+    z
+      .object({ propertyName: z.string().trim().min(1).optional() })
+      .optional()
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    return await syncReasonsFromHubspot(context.supabase, workspaceId);
+    return await syncReasonsFromHubspot(
+      context.supabase,
+      workspaceId,
+      data?.propertyName || "closed_lost_reason",
+    );
   });
 
-// Busca no HubSpot o `closed_lost_reason` dos deals locais marcados como
+// Busca no HubSpot o motivo de perda dos deals locais marcados como
 // perdidos que estejam sem motivo registrado e atualiza no banco.
 export const backfillLostDealReasons = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { propertyName?: string } | undefined) =>
+    z
+      .object({ propertyName: z.string().trim().min(1).optional() })
+      .optional()
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
     const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY;
     if (!LOVABLE_API_KEY || !HUBSPOT_API_KEY) {
       throw new Error("Conecte o HubSpot para sincronizar os negócios.");
     }
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const propertyName = data?.propertyName || "closed_lost_reason";
 
     const { data: rows, error } = await context.supabase
       .from("deals")
@@ -208,7 +226,7 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          properties: ["closed_lost_reason"],
+          properties: [propertyName, "closed_lost_reason"],
           inputs: chunk.map((c) => ({ id: String(c.hs_object_id) })),
         }),
       });
@@ -217,11 +235,12 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
         throw new Error(`HubSpot [${res.status}]: ${body.slice(0, 200)}`);
       }
       const payload = (await res.json()) as {
-        results?: Array<{ id: string; properties?: { closed_lost_reason?: string | null } }>;
+        results?: Array<{ id: string; properties?: Record<string, string | null> }>;
       };
       const byHsId = new Map<string, string>();
       for (const r of payload.results ?? []) {
-        const v = r.properties?.closed_lost_reason;
+        const v =
+          r.properties?.[propertyName] ?? r.properties?.closed_lost_reason ?? null;
         if (v && String(v).trim()) byHsId.set(String(r.id), String(v));
       }
       for (const c of chunk) {
@@ -241,3 +260,4 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
 
     return { checked: candidates.length, updated, skipped };
   });
+
