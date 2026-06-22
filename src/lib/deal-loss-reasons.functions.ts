@@ -63,6 +63,38 @@ export const getDealLossReasons = createServerFn({ method: "GET" })
     return { options };
   });
 
+async function seedFromExistingDeals(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  workspaceId: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("deals")
+    .select("closed_lost_reason")
+    .eq("owner_id", workspaceId)
+    .not("closed_lost_reason", "is", null);
+  if (error) throw new Error(error.message);
+  const set = new Set<string>();
+  for (const r of (data ?? []) as Array<{ closed_lost_reason: string | null }>) {
+    const v = (r.closed_lost_reason ?? "").trim();
+    if (v) set.add(v);
+  }
+  if (!set.size) return 0;
+  const rows = Array.from(set).map((v, i) => ({
+    owner_id: workspaceId,
+    value: v,
+    label: v,
+    source: "hubspot",
+    hubspot_synced_at: new Date().toISOString(),
+    is_active: true,
+    sort_order: i,
+  }));
+  const { error: upErr } = await supabase
+    .from("deal_loss_reasons")
+    .upsert(rows, { onConflict: "owner_id,value" });
+  if (upErr) throw new Error(upErr.message);
+  return rows.length;
+}
+
 async function syncReasonsFromHubspot(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   workspaceId: string,
@@ -99,7 +131,11 @@ async function syncReasonsFromHubspot(
       sort_order: typeof o.displayOrder === "number" ? o.displayOrder : i,
     }));
 
-  if (!incoming.length) return { upserted: 0, deactivated: 0 };
+  if (!incoming.length) {
+    // HubSpot property has no visible options — seed from existing lost deals.
+    const seeded = await seedFromExistingDeals(supabase, workspaceId);
+    return { upserted: seeded, deactivated: 0 };
+  }
 
   const { error: upsertErr } = await supabase
     .from("deal_loss_reasons")
