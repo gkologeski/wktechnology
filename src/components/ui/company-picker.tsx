@@ -32,6 +32,8 @@ export interface CompanyPickerProps {
   hydrateById?: boolean;
   id?: string;
   className?: string;
+  /** Callback para abrir o diálogo de criação de empresa. Recebe o nome atualmente digitado. */
+  onCreateNew?: (name: string) => void;
 }
 
 export function CompanyPicker({
