@@ -43,11 +43,23 @@ export const getDealLossReasons = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const options = await listFromDb(
+    let options = await listFromDb(
       context.supabase,
       workspaceId,
       data?.includeInactive ?? false,
     );
+    if (options.length === 0 && process.env.LOVABLE_API_KEY && process.env.HUBSPOT_API_KEY) {
+      try {
+        await syncReasonsFromHubspot(context.supabase, workspaceId);
+        options = await listFromDb(
+          context.supabase,
+          workspaceId,
+          data?.includeInactive ?? false,
+        );
+      } catch {
+        // silent fail; user can trigger manually
+      }
+    }
     return { options };
   });
 
