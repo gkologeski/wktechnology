@@ -306,6 +306,16 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
           </DialogHeader>
 
           <div className="space-y-4">
+            {qaContext && (
+              <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 p-3 text-sm">
+                <div className="font-medium text-amber-900 dark:text-amber-200">
+                  Vinculando ao caso de teste {qaContext.testCaseId}
+                </div>
+                <div className="text-amber-800/90 dark:text-amber-200/80 line-clamp-2">
+                  {qaContext.testCaseTitle}
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
