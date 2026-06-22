@@ -37,9 +37,18 @@ import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { useScreenRecorder } from "./use-screen-recorder";
 
 
+export type BugReportQaContext = {
+  testCaseId: string;
+  testCaseTitle: string;
+  /** Optional pre-filled HTML description (will replace empty description on open). */
+  prefillDescriptionHtml?: string;
+};
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  qaContext?: BugReportQaContext | null;
+  onSubmitted?: (info: { bugReportId: string | null; qaContext?: BugReportQaContext | null }) => void;
 };
 
 const schema = z.object({
@@ -138,7 +147,7 @@ function SearchableSelect({
 }
 
 
-export function BugReportDialog({ open, onOpenChange }: Props) {
+export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: Props) {
   const { user } = useAuth();
   const [kind, setKind] = useState<"new_feature" | "existing_broken">("existing_broken");
   const [category, setCategory] = useState<string>("");
@@ -166,12 +175,20 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
     setKind("existing_broken");
     setCategory("");
     setSubtype("");
-    setDescription("");
+    setDescription(qaContext?.prefillDescriptionHtml ?? "");
     setIncludeMic(true);
     setMinimized(false);
     clearImages();
     recorder.reset();
   };
+
+  // When opening with a QA context, prefill the description once
+  useEffect(() => {
+    if (open && qaContext?.prefillDescriptionHtml) {
+      setDescription(qaContext.prefillDescriptionHtml);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, qaContext?.testCaseId]);
 
   const handleClose = (next: boolean) => {
     // Ignore close attempts triggered when we minimize the dialog during recording
@@ -241,21 +258,28 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
         imagePaths.push(path);
       }
 
-      const { error: insErr } = await supabase.from("bug_reports").insert({
-        owner_id: user.id,
-        kind: parsed.data.kind,
-        category: parsed.data.category,
-        subtype: parsed.data.subtype,
-        description: description,
-        recording_path: recordingPath,
-        recording_has_audio: hasAudio,
-        image_paths: imagePaths,
-        page_url: typeof window !== "undefined" ? window.location.href : null,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("bug_reports")
+        .insert({
+          owner_id: user.id,
+          kind: parsed.data.kind,
+          category: parsed.data.category,
+          subtype: parsed.data.subtype,
+          description: description,
+          recording_path: recordingPath,
+          recording_has_audio: hasAudio,
+          image_paths: imagePaths,
+          page_url: typeof window !== "undefined" ? window.location.href : null,
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          qa_test_case_id: qaContext?.testCaseId ?? null,
+          qa_test_case_title: qaContext?.testCaseTitle ?? null,
+        })
+        .select("id")
+        .maybeSingle();
       if (insErr) throw insErr;
 
       toast.success("Chamado enviado. Obrigado pelo feedback!");
+      onSubmitted?.({ bugReportId: inserted?.id ?? null, qaContext });
       resetAll();
       onOpenChange(false);
     } catch (e) {
@@ -282,6 +306,16 @@ export function BugReportDialog({ open, onOpenChange }: Props) {
           </DialogHeader>
 
           <div className="space-y-4">
+            {qaContext && (
+              <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 p-3 text-sm">
+                <div className="font-medium text-amber-900 dark:text-amber-200">
+                  Vinculando ao caso de teste {qaContext.testCaseId}
+                </div>
+                <div className="text-amber-800/90 dark:text-amber-200/80 line-clamp-2">
+                  {qaContext.testCaseTitle}
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
