@@ -223,7 +223,16 @@ export function CreateLeadDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
+            <CompanyPicker
+              id="company_name"
+              value={company}
+              onChange={setCompany}
+              toastOnMatches
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
+            />
           </div>
 
           <div className="space-y-1.5">
