@@ -32,6 +32,7 @@ import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
 import { Database, Trash2, Package, FileText } from "lucide-react";
+import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
