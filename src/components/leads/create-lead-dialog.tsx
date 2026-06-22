@@ -288,6 +288,16 @@ export function CreateLeadDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompany({ id, name: pendingCompanyName });
+          setForm((f) => ({ ...f, company_name: pendingCompanyName }));
+        }}
+      />
     </Dialog>
   );
 }
