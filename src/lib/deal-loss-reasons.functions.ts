@@ -99,6 +99,7 @@ async function seedFromExistingDeals(
 async function syncReasonsFromHubspot(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   workspaceId: string,
+  propertyName: string = "closed_lost_reason",
 ): Promise<{ upserted: number; deactivated: number }> {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY;
@@ -106,7 +107,7 @@ async function syncReasonsFromHubspot(
     throw new Error("Conecte o HubSpot para sincronizar os motivos.");
   }
 
-  const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/closed_lost_reason`, {
+  const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/${encodeURIComponent(propertyName)}`, {
     headers: {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "X-Connection-Api-Key": HUBSPOT_API_KEY,
