@@ -40,6 +40,26 @@ export function DealsBoard({
     return map;
   }, [deals, pipeline]);
 
+  const [lostTarget, setLostTarget] = useState<
+    { id: string; name: string | null; stageId: string } | null
+  >(null);
+
+  const applyStageUpdate = async (id: string, newStage: string, extra?: Record<string, unknown>) => {
+    const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
+    const stageType = pipeline.stages.find((s) => s.value === newStage)?.type;
+    const payload: Record<string, unknown> = { stage_id: newStage, ...(extra ?? {}) };
+    if (legacyEnum.includes(newStage)) payload.stage = newStage;
+    else if (stageType === "lost") payload.stage = "lost";
+    else if (stageType === "won") payload.stage = "won";
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("deals").update(payload).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      qc.invalidateQueries({ queryKey: ["deals"] });
+    }
+  };
+
   const onDragEnd = async (e: DragEndEvent) => {
     const id = String(e.active.id);
     const newStage = e.over?.id as string | undefined;
@@ -49,23 +69,34 @@ export function DealsBoard({
     const currentKey = deal.stage_id || (deal.stage as string);
     if (currentKey === newStage) return;
 
+    const stageType = pipeline.stages.find((s) => s.value === newStage)?.type;
+    if (stageType === "lost") {
+      setLostTarget({ id, name: deal.name ?? null, stageId: newStage });
+      return;
+    }
+
     qc.setQueryData<Deal[]>(["deals", "list"], (old = []) =>
       old.map((d) =>
         d.id === id ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d,
       ),
     );
 
-    // Update both stage_id and (when valid) the legacy enum, so existing queries keep working.
-    const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
-    const payload: Record<string, unknown> = { stage_id: newStage };
-    if (legacyEnum.includes(newStage)) payload.stage = newStage;
+    await applyStageUpdate(id, newStage);
+  };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("deals").update(payload).eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      qc.invalidateQueries({ queryKey: ["deals"] });
-    }
+  const confirmLost = async (result: LostReasonResult) => {
+    if (!lostTarget) return;
+    const notes = result.notes ? `${result.reasonLabel} — ${result.notes}` : result.reasonLabel;
+    qc.setQueryData<Deal[]>(["deals", "list"], (old = []) =>
+      old.map((d) =>
+        d.id === lostTarget.id
+          ? { ...d, stage: "lost" as Deal["stage"], stage_id: lostTarget.stageId }
+          : d,
+      ),
+    );
+    await applyStageUpdate(lostTarget.id, lostTarget.stageId, { closed_lost_reason: notes });
+    toast.success("Marcado como perdido");
+    qc.invalidateQueries({ queryKey: ["deals"] });
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
