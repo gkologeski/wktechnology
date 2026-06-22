@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw } from "lucide-react";
-import {
-  getDealLossReasons,
-  syncHubspotLossReasons,
-  backfillLostDealReasons,
-} from "@/lib/deal-loss-reasons.functions";
+import { getDealLossReasons } from "@/lib/deal-loss-reasons.functions";
 
 export type LostReasonResult = {
   reasonValue: string;
@@ -44,32 +38,13 @@ export function LostReasonDialog({
   dealName?: string | null;
   onConfirm: (result: LostReasonResult) => Promise<void> | void;
 }) {
-  const qc = useQueryClient();
   const fetchReasons = useServerFn(getDealLossReasons);
-  const syncFn = useServerFn(syncHubspotLossReasons);
-  const backfillFn = useServerFn(backfillLostDealReasons);
 
   const { data, isLoading } = useQuery({
     queryKey: ["deal-loss-reasons"],
     queryFn: () => fetchReasons({ data: {} }),
     staleTime: 5 * 60_000,
     enabled: open,
-  });
-
-  const sync = useMutation({
-    mutationFn: async () => {
-      const r = await syncFn();
-      const b = await backfillFn();
-      return { ...r, ...b };
-    },
-    onSuccess: (r) => {
-      toast.success(
-        `Sincronizado: ${r.upserted} motivo(s), ${r.updated} negócio(s) atualizados`,
-      );
-      qc.invalidateQueries({ queryKey: ["deal-loss-reasons"] });
-      qc.invalidateQueries({ queryKey: ["deals"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const [value, setValue] = useState<string>("");
@@ -82,6 +57,7 @@ export function LostReasonDialog({
       setNotes("");
     }
   }, [open]);
+
 
   const options = data?.options ?? [];
 
