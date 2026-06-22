@@ -47,6 +47,7 @@ export function LostReasonDialog({
   const qc = useQueryClient();
   const fetchReasons = useServerFn(getDealLossReasons);
   const syncFn = useServerFn(syncHubspotLossReasons);
+  const backfillFn = useServerFn(backfillLostDealReasons);
 
   const { data, isLoading } = useQuery({
     queryKey: ["deal-loss-reasons"],
@@ -56,10 +57,17 @@ export function LostReasonDialog({
   });
 
   const sync = useMutation({
-    mutationFn: () => syncFn(),
+    mutationFn: async () => {
+      const r = await syncFn();
+      const b = await backfillFn();
+      return { ...r, ...b };
+    },
     onSuccess: (r) => {
-      toast.success(`Sincronizado: ${r.upserted} motivo(s) atualizados`);
+      toast.success(
+        `Sincronizado: ${r.upserted} motivo(s), ${r.updated} negócio(s) atualizados`,
+      );
       qc.invalidateQueries({ queryKey: ["deal-loss-reasons"] });
+      qc.invalidateQueries({ queryKey: ["deals"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
