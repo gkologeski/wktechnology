@@ -1,13 +1,3 @@
-
-# Gravar backlog consolidado em documento
-
-Criar `docs/backlog-pendencias.md` com o conteúdo abaixo, para avaliação futura. Nenhum código de aplicação será alterado.
-
----
-
-## Conteúdo do arquivo `docs/backlog-pendencias.md`
-
-```markdown
 # Backlog de Pendências — Consolidado
 
 > Documento de referência para avaliação futura. Fontes auditadas:
@@ -103,11 +93,3 @@ Após triagem, agrupar ✅ em Releases 22+ por tema, com esforço alvo de ~2 sem
 - HubSpot parciais 🟡: **4**
 - HubSpot ❌ não cobertos: **32**
 - **Total para avaliar: 49 itens**
-```
-
----
-
-## Ações
-
-1. Criar `docs/backlog-pendencias.md` com o conteúdo acima.
-2. Sem mudanças em código, banco ou UI.
