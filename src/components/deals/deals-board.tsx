@@ -1,5 +1,5 @@
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import type { Pipeline } from "@/lib/pipelines";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
+import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 
 export type DealLookups = {
   companies: Map<string, string>;
