@@ -180,6 +180,7 @@ export function DealDetailDrawer({
     : [];
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         className={
