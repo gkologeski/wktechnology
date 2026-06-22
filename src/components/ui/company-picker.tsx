@@ -73,22 +73,25 @@ export function CompanyPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.id, hydrateById]);
 
-  // Busca de empresas a partir de 3 caracteres.
+  // Busca de empresas a partir de 2 caracteres.
   useEffect(() => {
     const q = value.name.trim();
-    if (q.length < 3) {
+    if (q.length < 2) {
       setMatches([]);
+      setSearched(false);
       return;
     }
     if (value.id) {
       // Já está vinculado a uma empresa específica: não polui com sugestões.
       setMatches([]);
+      setSearched(false);
       return;
     }
     const t = setTimeout(async () => {
       const term = sanitizeOrTerm(q);
-      if (term.length < 3) {
+      if (term.length < 2) {
         setMatches([]);
+        setSearched(false);
         return;
       }
       const like = `%${term}%`;
@@ -98,9 +101,13 @@ export function CompanyPicker({
         .or(`name.ilike.${like},domain.ilike.${like},phone.ilike.${like}`)
         .order("name", { ascending: true })
         .limit(500);
-      if (error) return;
+      if (error) {
+        setSearched(true);
+        return;
+      }
       const rows = (data ?? []) as Match[];
       setMatches(rows);
+      setSearched(true);
       if (toastOnMatches && rows.length > 0 && lastSearchedRef.current !== q) {
         lastSearchedRef.current = q;
         toast.info(
@@ -112,7 +119,7 @@ export function CompanyPicker({
       } else if (rows.length === 0) {
         lastSearchedRef.current = q;
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(t);
   }, [value.name, value.id, toastOnMatches]);
 
