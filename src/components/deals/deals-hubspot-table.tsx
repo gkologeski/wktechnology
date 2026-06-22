@@ -511,6 +511,13 @@ export function DealsHubspotTable({
       />
 
       <ColumnsEditor />
+
+      <LostReasonDialog
+        open={!!lostTarget}
+        onOpenChange={(b) => !b && setLostTarget(null)}
+        dealName={lostTarget?.name ?? null}
+        onConfirm={confirmLost}
+      />
     </div>
   );
 }
