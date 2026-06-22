@@ -32,6 +32,7 @@ import { DealLineItems } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
 import { Database, Trash2, Package, FileText } from "lucide-react";
+import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -80,7 +81,9 @@ export function DealDetailDrawer({
   const currentStageValue = String(v.stage_id ?? v.stage ?? "");
 
 
-  const save = async () => {
+  const [lostOpen, setLostOpen] = useState(false);
+
+  const persist = async (extra?: Record<string, unknown>) => {
     if (!ownerId) return;
     const stageKey = String(v.stage_id ?? v.stage ?? activePipeline?.stages[0]?.value ?? "new");
     const payload: Record<string, unknown> = {
@@ -97,21 +100,50 @@ export function DealDetailDrawer({
       notes: (v.notes as string) || null,
       description: (v.description as string) || null,
       hs_priority: (v.hs_priority as string) || null,
+      ...(extra ?? {}),
     };
+    const stageType = activePipeline?.stages.find((s) => s.value === stageKey)?.type;
     if (LEGACY_ENUM.includes(stageKey)) payload.stage = stageKey;
+    else if (stageType === "lost") payload.stage = "lost";
+    else if (stageType === "won") payload.stage = "won";
     else payload.stage = "new";
 
-    if (!payload.name) return toast.error("Nome obrigatório");
+    if (!payload.name) {
+      toast.error("Nome obrigatório");
+      return;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
     const { error } = deal
       ? await sb.from("deals").update(payload).eq("id", deal.id)
       : await sb.from("deals").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Salvo");
     qc.invalidateQueries({ queryKey: ["deals"] });
     onOpenChange(false);
+  };
+
+  const save = async () => {
+    const stageKey = String(v.stage_id ?? v.stage ?? activePipeline?.stages[0]?.value ?? "new");
+    const stageType = activePipeline?.stages.find((s) => s.value === stageKey)?.type;
+    const becameLost =
+      (stageType === "lost" || stageKey === "lost") &&
+      deal?.stage !== "lost" &&
+      !(v.closed_lost_reason as string | null);
+    if (becameLost) {
+      setLostOpen(true);
+      return;
+    }
+    await persist();
+  };
+
+  const confirmLost = async (result: LostReasonResult) => {
+    const notes = result.notes ? `${result.reasonLabel} — ${result.notes}` : result.reasonLabel;
+    await persist({ closed_lost_reason: notes });
   };
 
   const remove = async () => {
@@ -148,6 +180,7 @@ export function DealDetailDrawer({
     : [];
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         className={
@@ -400,6 +433,13 @@ export function DealDetailDrawer({
         </div>
       </SheetContent>
     </Sheet>
+    <LostReasonDialog
+      open={lostOpen}
+      onOpenChange={setLostOpen}
+      dealName={(v.name as string) ?? deal?.name ?? null}
+      onConfirm={confirmLost}
+    />
+    </>
   );
 }
 
