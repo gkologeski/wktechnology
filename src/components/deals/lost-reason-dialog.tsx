@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getHubspotLossReasons } from "@/lib/hubspot-loss-reasons.functions";
+import { RefreshCw } from "lucide-react";
+import {
+  getDealLossReasons,
+  syncHubspotLossReasons,
+} from "@/lib/deal-loss-reasons.functions";
 
 export type LostReasonResult = {
   reasonValue: string;
@@ -38,12 +43,24 @@ export function LostReasonDialog({
   dealName?: string | null;
   onConfirm: (result: LostReasonResult) => Promise<void> | void;
 }) {
-  const fetchReasons = useServerFn(getHubspotLossReasons);
+  const qc = useQueryClient();
+  const fetchReasons = useServerFn(getDealLossReasons);
+  const syncFn = useServerFn(syncHubspotLossReasons);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["hubspot", "loss-reasons"],
-    queryFn: () => fetchReasons(),
-    staleTime: 10 * 60_000,
+    queryKey: ["deal-loss-reasons"],
+    queryFn: () => fetchReasons({ data: {} }),
+    staleTime: 5 * 60_000,
     enabled: open,
+  });
+
+  const sync = useMutation({
+    mutationFn: () => syncFn(),
+    onSuccess: (r) => {
+      toast.success(`Sincronizado: ${r.upserted} motivo(s) atualizados`);
+      qc.invalidateQueries({ queryKey: ["deal-loss-reasons"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [value, setValue] = useState<string>("");
@@ -81,28 +98,51 @@ export function LostReasonDialog({
         <DialogHeader>
           <DialogTitle>Marcar como perdido</DialogTitle>
           <DialogDescription>
-            {dealName ? `Selecione o motivo da perda de "${dealName}".` : "Selecione o motivo da perda."}
+            {dealName
+              ? `Selecione o motivo da perda de "${dealName}".`
+              : "Selecione o motivo da perda."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="loss-reason">Motivo da perda</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="loss-reason">Motivo da perda</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => sync.mutate()}
+                disabled={sync.isPending}
+              >
+                <RefreshCw className={`mr-1 h-3 w-3 ${sync.isPending ? "animate-spin" : ""}`} />
+                Sincronizar HubSpot
+              </Button>
+            </div>
             <Select value={value} onValueChange={setValue} disabled={isLoading}>
               <SelectTrigger id="loss-reason">
-                <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione um motivo"} />
+                <SelectValue
+                  placeholder={
+                    isLoading
+                      ? "Carregando..."
+                      : options.length
+                        ? "Selecione um motivo"
+                        : "Nenhum motivo cadastrado"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {options.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
+                  <SelectItem key={o.id} value={o.value}>
                     {o.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {data?.source === "fallback" && !isLoading && (
+            {!isLoading && !options.length && (
               <p className="text-xs text-muted-foreground">
-                Lista padrão exibida — conecte o HubSpot para sincronizar os motivos.
+                Cadastre motivos em Configurações ou sincronize com o HubSpot.
               </p>
             )}
           </div>
