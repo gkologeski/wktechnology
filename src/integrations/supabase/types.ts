@@ -2640,6 +2640,51 @@ export type Database = {
           },
         ]
       }
+      deal_loss_reasons: {
+        Row: {
+          created_at: string
+          description: string | null
+          hubspot_synced_at: string | null
+          id: string
+          is_active: boolean
+          label: string
+          owner_id: string
+          sort_order: number
+          source: string
+          updated_at: string
+          value: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hubspot_synced_at?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          owner_id: string
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          value: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hubspot_synced_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          owner_id?: string
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          value?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           assigned_user_id: string | null
