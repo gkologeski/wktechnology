@@ -37,9 +37,18 @@ import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { useScreenRecorder } from "./use-screen-recorder";
 
 
+export type BugReportQaContext = {
+  testCaseId: string;
+  testCaseTitle: string;
+  /** Optional pre-filled HTML description (will replace empty description on open). */
+  prefillDescriptionHtml?: string;
+};
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  qaContext?: BugReportQaContext | null;
+  onSubmitted?: (info: { bugReportId: string | null; qaContext?: BugReportQaContext | null }) => void;
 };
 
 const schema = z.object({
