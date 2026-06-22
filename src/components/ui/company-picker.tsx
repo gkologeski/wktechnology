@@ -204,10 +204,22 @@ export function CompanyPicker({
         </div>
       )}
 
-      {mode === "pick" && !value.id && value.name.trim().length >= 3 && matches.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">
-          Nenhuma empresa encontrada. Selecione uma existente.
-        </p>
+      {searched && !value.id && value.name.trim().length >= 2 && matches.length === 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
+          <span className="truncate">Nenhuma empresa encontrada.</span>
+          {mode === "pick_or_create" && onCreateNew && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1"
+              onClick={() => onCreateNew(value.name.trim())}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Criar “{value.name.trim()}”
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
