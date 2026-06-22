@@ -30,12 +30,22 @@ type BaseProps = {
 };
 
 /* ───────────── Company ───────────── */
-export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: BaseProps) {
+export function QuickCreateCompanyDialog({
+  open,
+  onOpenChange,
+  onCreated,
+  initialName,
+}: BaseProps & { initialName?: string }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [domain, setDomain] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sincroniza quando o diálogo abre com um nome inicial novo
+  useEffect(() => {
+    if (open) setName(initialName ?? "");
+  }, [open, initialName]);
 
   const submit = async () => {
     if (!user) return;
