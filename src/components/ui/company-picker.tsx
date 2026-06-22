@@ -47,8 +47,10 @@ export function CompanyPicker({
   hydrateById = true,
   id,
   className,
+  onCreateNew,
 }: CompanyPickerProps) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [searched, setSearched] = useState(false);
   const lastSearchedRef = useRef<string>("");
 
   // Hidrata nome quando recebemos só o id.
