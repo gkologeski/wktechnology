@@ -1,31 +1,34 @@
-## Redesign /landing-pages — Magazine clássico
+## Situação atual
 
-Reescrever `src/routes/_authenticated/landing-pages.index.tsx` aplicando o layout magazine selecionado, mantendo TODA a lógica atual (queries, mutations, dialog de confirmação, criação de nova landing page) e usando exclusivamente tokens semânticos do sistema.
+- O dialog de "motivo de perdido" **já lê da nossa base** (`deal_loss_reasons`), não do HubSpot em runtime.
+- Porém a tabela está **vazia** (0 motivos cadastrados) — só popula quando alguém clica em "Sincronizar HubSpot".
+- Temos **1.334 negócios perdidos**, sendo **167 sem motivo registrado** localmente. Todos os 167 têm `hs_object_id`, então conseguimos buscar o motivo direto no HubSpot.
+- O `hs_raw` salvo no banco não trouxe `closed_lost_reason` para esses 167 — precisamos fazer uma leitura nova via API.
 
-### Estrutura visual
-- **Header editorial**: título serif/itálico "Landing pages" + subtítulo + botão "Nova landing page" à direita, separador `border-b border-border`.
-- **Grid magazine** (`grid-cols-1 md:grid-cols-3 gap-6`):
-  - **Featured card** (`md:col-span-2`): primeira landing page da lista. Hero com banner `bg-muted` (placeholder com ícone) + badge "Destaque" no canto. Bloco inferior: título + slug (`font-mono`), status à direita, métricas Views/Conversions em destaque, rodapé com "Atualizado há …" + botões "Ver pública" e "Editar".
-  - **Cards secundários**: demais landing pages em cards uniformes com banner topo, badge de status (dot + label), título, slug, métricas pequenas e ações ícone (editar, deletar).
-- **Estado vazio**: mantém card centralizado convidando criar a primeira.
-- **Loading**: skeleton magazine (1 grande + 3 pequenos).
+## O que vou fazer
 
-### Comportamento preservado
-- `useQuery(listLandingPages)` e `useMutation(deleteLandingPage)`.
-- `createNew()` continua igual (cria slug+template default e navega).
-- Confirm dialog de delete intacto.
-- Links de edição via `<Link to="/landing-pages/$id" params={{ id }}>` e "Ver pública" via `<a href="/lp/{slug}" target="_blank">`.
-- Status derivado de `published_at` (se `null` → Rascunho, senão Publicado).
-- Métricas: usar `views_count` / `conversions_count` se existirem em `LandingPage`; caso ausentes, exibir `—`.
+### 1. Auto-sync inicial dos motivos
+Estender `syncHubspotLossReasons` (já existe) e disparar automaticamente quando:
+- A tabela `deal_loss_reasons` estiver vazia para o workspace (no `getDealLossReasons`, se vier `[]` e o HubSpot estiver conectado, executa o sync e relê).
+- Adicionar também um botão na tela de configurações já existente (mantém comportamento manual).
 
-### Tokens (sem hardcode)
-- Cores: `bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, `text-primary`, `bg-accent`, `text-destructive`.
-- Status "Publicado": dot e label com `text-primary` (em vez do `text-green-600` do protótipo, para respeitar o design system).
-- Sem novas fontes; o "italic font-serif" do título usa a serif já disponível no Tailwind (`font-serif` é fallback nativo, aceitável; se preferir manter consistência total, posso usar `font-semibold tracking-tight` sem serif — confirmar se preferir).
+### 2. Nova server function: `backfillLostDealReasons`
+- Busca todos os deals com `stage='lost'` e `closed_lost_reason` vazio que tenham `hs_object_id`.
+- Chama `POST /crm/v3/objects/deals/batch/read` no gateway HubSpot em lotes de 100, pedindo a propriedade `closed_lost_reason`.
+- Atualiza `deals.closed_lost_reason` para cada um que retornar valor não-vazio.
+- Retorna `{ checked, updated, skipped }` para feedback.
 
-### Arquivos
-- Editar apenas `src/routes/_authenticated/landing-pages.index.tsx`.
-- Nenhuma mudança em server functions, types, rotas ou banco.
+### 3. Disparar o backfill automaticamente
+- Adicionar um botão "Sincronizar motivos de perdido com HubSpot" no `LostReasonDialog` (já existe) e/ou na tela de Configurações, que executa em sequência: `syncHubspotLossReasons` → `backfillLostDealReasons`.
+- Mostrar toast com o resumo (`X motivos sincronizados, Y negócios atualizados`).
 
-### Verificação
-- Playwright em `/landing-pages` (autenticado) → screenshot do estado com lista e do estado vazio.
+### 4. Executar agora, uma vez
+Após implementar, rodar o sync + backfill imediatamente para popular os 167 negócios e a tabela de motivos no workspace ativo.
+
+## Arquivos afetados
+
+- `src/lib/deal-loss-reasons.functions.ts` — adicionar `backfillLostDealReasons` e auto-sync no `getDealLossReasons`.
+- `src/components/deals/lost-reason-dialog.tsx` — botão único que dispara sync + backfill.
+- (opcional) tela de Configurações de pipelines/deals: botão equivalente.
+
+Sem mudança de schema — a tabela `deal_loss_reasons` já existe.
