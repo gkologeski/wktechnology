@@ -31,6 +31,7 @@ import {
 } from "@/components/crm/hubspot-shell";
 import type { DealLookups } from "@/components/deals/deals-board";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
