@@ -91,20 +91,7 @@ export function LostReasonDialog({
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="loss-reason">Motivo da perda</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => sync.mutate()}
-                disabled={sync.isPending}
-              >
-                <RefreshCw className={`mr-1 h-3 w-3 ${sync.isPending ? "animate-spin" : ""}`} />
-                Sincronizar HubSpot
-              </Button>
-            </div>
+            <Label htmlFor="loss-reason">Motivo da perda</Label>
             <Select value={value} onValueChange={setValue} disabled={isLoading}>
               <SelectTrigger id="loss-reason">
                 <SelectValue
@@ -127,7 +114,7 @@ export function LostReasonDialog({
             </Select>
             {!isLoading && !options.length && (
               <p className="text-xs text-muted-foreground">
-                Cadastre motivos em Configurações ou sincronize com o HubSpot.
+                Sincronize os motivos em Integrações &rsaquo; HubSpot.
               </p>
             )}
           </div>
