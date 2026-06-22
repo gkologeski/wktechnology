@@ -149,11 +149,24 @@ export function DealDetailDrawer({
   const remove = async () => {
     if (!deal) return;
     if (!confirm("Excluir este negócio?")) return;
-    const { error } = await supabase.from("deals").delete().eq("id", deal.id);
-    if (error) return toast.error(error.message);
+    const id = deal.id;
+    // Optimistic: remover de todas as queries de deals em cache imediatamente
+    const snapshots = qc.getQueriesData<Deal[]>({ queryKey: ["deals"] });
+    for (const [key, data] of snapshots) {
+      if (Array.isArray(data)) {
+        qc.setQueryData<Deal[]>(key, data.filter((d) => d.id !== id));
+      }
+    }
+    onOpenChange(false);
+    const { error } = await supabase.from("deals").delete().eq("id", id);
+    if (error) {
+      // Reverter cache em caso de erro
+      for (const [key, data] of snapshots) qc.setQueryData(key, data);
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluído");
     qc.invalidateQueries({ queryKey: ["deals"] });
-    onOpenChange(false);
   };
 
   const currentStage = activePipeline?.stages.find((s) => s.value === currentStageValue);
