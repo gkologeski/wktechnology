@@ -70,7 +70,7 @@ async function seedFromExistingDeals(
   const { data, error } = await supabase
     .from("deals")
     .select("closed_lost_reason")
-    .eq("owner_id", workspaceId)
+    .eq("workspace_id", workspaceId)
     .not("closed_lost_reason", "is", null);
   if (error) throw new Error(error.message);
   const set = new Set<string>();
@@ -81,6 +81,7 @@ async function seedFromExistingDeals(
   if (!set.size) return 0;
   const rows = Array.from(set).map((v, i) => ({
     owner_id: workspaceId,
+    workspace_id: workspaceId,
     value: v,
     label: v,
     source: "hubspot",
@@ -123,6 +124,7 @@ async function syncReasonsFromHubspot(
     .filter((o) => o.value && !o.hidden)
     .map((o, i) => ({
       owner_id: workspaceId,
+      workspace_id: workspaceId,
       value: String(o.value),
       label: o.label || String(o.value),
       source: "hubspot",
@@ -184,7 +186,7 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("deals")
       .select("id, hs_object_id")
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("stage", "lost")
       .or("closed_lost_reason.is.null,closed_lost_reason.eq.")
       .not("hs_object_id", "is", null);
