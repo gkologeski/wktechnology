@@ -147,7 +147,7 @@ function SearchableSelect({
 }
 
 
-export function BugReportDialog({ open, onOpenChange }: Props) {
+export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: Props) {
   const { user } = useAuth();
   const [kind, setKind] = useState<"new_feature" | "existing_broken">("existing_broken");
   const [category, setCategory] = useState<string>("");
