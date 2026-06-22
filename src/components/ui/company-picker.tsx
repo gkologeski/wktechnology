@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, X } from "lucide-react";
+import { Building2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,8 @@ export interface CompanyPickerProps {
   hydrateById?: boolean;
   id?: string;
   className?: string;
+  /** Callback para abrir o diálogo de criação de empresa. Recebe o nome atualmente digitado. */
+  onCreateNew?: (name: string) => void;
 }
 
 export function CompanyPicker({
@@ -45,8 +47,10 @@ export function CompanyPicker({
   hydrateById = true,
   id,
   className,
+  onCreateNew,
 }: CompanyPickerProps) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [searched, setSearched] = useState(false);
   const lastSearchedRef = useRef<string>("");
 
   // Hidrata nome quando recebemos só o id.
@@ -69,22 +73,25 @@ export function CompanyPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.id, hydrateById]);
 
-  // Busca de empresas a partir de 3 caracteres.
+  // Busca de empresas a partir de 2 caracteres.
   useEffect(() => {
     const q = value.name.trim();
-    if (q.length < 3) {
+    if (q.length < 2) {
       setMatches([]);
+      setSearched(false);
       return;
     }
     if (value.id) {
       // Já está vinculado a uma empresa específica: não polui com sugestões.
       setMatches([]);
+      setSearched(false);
       return;
     }
     const t = setTimeout(async () => {
       const term = sanitizeOrTerm(q);
-      if (term.length < 3) {
+      if (term.length < 2) {
         setMatches([]);
+        setSearched(false);
         return;
       }
       const like = `%${term}%`;
@@ -94,9 +101,13 @@ export function CompanyPicker({
         .or(`name.ilike.${like},domain.ilike.${like},phone.ilike.${like}`)
         .order("name", { ascending: true })
         .limit(500);
-      if (error) return;
+      if (error) {
+        setSearched(true);
+        return;
+      }
       const rows = (data ?? []) as Match[];
       setMatches(rows);
+      setSearched(true);
       if (toastOnMatches && rows.length > 0 && lastSearchedRef.current !== q) {
         lastSearchedRef.current = q;
         toast.info(
@@ -108,7 +119,7 @@ export function CompanyPicker({
       } else if (rows.length === 0) {
         lastSearchedRef.current = q;
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(t);
   }, [value.name, value.id, toastOnMatches]);
 
@@ -193,10 +204,22 @@ export function CompanyPicker({
         </div>
       )}
 
-      {mode === "pick" && !value.id && value.name.trim().length >= 3 && matches.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">
-          Nenhuma empresa encontrada. Selecione uma existente.
-        </p>
+      {searched && !value.id && value.name.trim().length >= 2 && matches.length === 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
+          <span className="truncate">Nenhuma empresa encontrada.</span>
+          {mode === "pick_or_create" && onCreateNew && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1"
+              onClick={() => onCreateNew(value.name.trim())}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Criar “{value.name.trim()}”
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

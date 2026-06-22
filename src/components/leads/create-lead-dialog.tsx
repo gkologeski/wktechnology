@@ -27,6 +27,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { SourceCombobox } from "@/components/leads/source-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
@@ -65,6 +66,8 @@ export function CreateLeadDialog({
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
   const [matchedContact, setMatchedContact] = useState<ContactMatch | null>(null);
   const [showReuse, setShowReuse] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
   const lastCheckedEmail = useRef<string>("");
 
   const reset = () => {
@@ -220,7 +223,16 @@ export function CreateLeadDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
+            <CompanyPicker
+              id="company_name"
+              value={company}
+              onChange={setCompany}
+              toastOnMatches
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -276,6 +288,16 @@ export function CreateLeadDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompany({ id, name: pendingCompanyName });
+          setForm((f) => ({ ...f, company_name: pendingCompanyName }));
+        }}
+      />
     </Dialog>
   );
 }

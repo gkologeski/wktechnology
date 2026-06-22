@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -30,12 +30,22 @@ type BaseProps = {
 };
 
 /* ───────────── Company ───────────── */
-export function QuickCreateCompanyDialog({ open, onOpenChange, onCreated }: BaseProps) {
+export function QuickCreateCompanyDialog({
+  open,
+  onOpenChange,
+  onCreated,
+  initialName,
+}: BaseProps & { initialName?: string }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [domain, setDomain] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sincroniza quando o diálogo abre com um nome inicial novo
+  useEffect(() => {
+    if (open) setName(initialName ?? "");
+  }, [open, initialName]);
 
   const submit = async () => {
     if (!user) return;
