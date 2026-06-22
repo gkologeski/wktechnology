@@ -36,7 +36,7 @@ export function HubspotMaintenancePanel() {
   const countRelink = useServerFn(countActivitiesToRelink);
   const reconcile = useServerFn(reconcileHubspotActivities);
   const reconcileEntity = useServerFn(reconcileHubspotEntities);
-  const [, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [relinkBusy, setRelinkBusy] = useState<ActType | "all" | null>(null);
   const [reconcileBusy, setReconcileBusy] = useState<ActType | "all" | null>(null);
