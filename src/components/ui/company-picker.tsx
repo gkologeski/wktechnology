@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, X } from "lucide-react";
+import { Building2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
