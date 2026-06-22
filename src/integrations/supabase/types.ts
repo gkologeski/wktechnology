@@ -1125,6 +1125,8 @@ export type Database = {
           kind: string
           owner_id: string
           page_url: string | null
+          qa_test_case_id: string | null
+          qa_test_case_title: string | null
           recording_has_audio: boolean
           recording_path: string | null
           resolution_text: string | null
@@ -1146,6 +1148,8 @@ export type Database = {
           kind: string
           owner_id: string
           page_url?: string | null
+          qa_test_case_id?: string | null
+          qa_test_case_title?: string | null
           recording_has_audio?: boolean
           recording_path?: string | null
           resolution_text?: string | null
@@ -1167,6 +1171,8 @@ export type Database = {
           kind?: string
           owner_id?: string
           page_url?: string | null
+          qa_test_case_id?: string | null
+          qa_test_case_title?: string | null
           recording_has_audio?: boolean
           recording_path?: string | null
           resolution_text?: string | null

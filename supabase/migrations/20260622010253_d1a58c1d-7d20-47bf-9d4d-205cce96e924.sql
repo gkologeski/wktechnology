@@ -1,0 +1,2 @@
+ALTER TABLE public.bug_reports ADD COLUMN IF NOT EXISTS qa_test_case_id text, ADD COLUMN IF NOT EXISTS qa_test_case_title text;
+CREATE INDEX IF NOT EXISTS idx_bug_reports_qa_test_case ON public.bug_reports (qa_test_case_id) WHERE qa_test_case_id IS NOT NULL;
