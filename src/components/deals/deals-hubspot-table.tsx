@@ -123,10 +123,30 @@ export function DealsHubspotTable({
     }
   };
 
+  const [lostTarget, setLostTarget] = useState<{ id: string; name: string | null } | null>(null);
+
   const setStage = async (id: string, stage: "won" | "lost") => {
+    if (stage === "lost") {
+      const d = deals.find((x) => x.id === id) ?? null;
+      setLostTarget({ id, name: d?.name ?? null });
+      return;
+    }
     const { error } = await supabase.from("deals").update({ stage }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success(stage === "won" ? "Marcado como ganho" : "Marcado como perdido");
+    toast.success("Marcado como ganho");
+    qc.invalidateQueries({ queryKey: ["deals"] });
+  };
+
+  const confirmLost = async (result: LostReasonResult) => {
+    if (!lostTarget) return;
+    const notes = result.notes ? `${result.reasonLabel} — ${result.notes}` : result.reasonLabel;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("deals")
+      .update({ stage: "lost", closed_lost_reason: notes })
+      .eq("id", lostTarget.id);
+    if (error) return toast.error(error.message);
+    toast.success("Marcado como perdido");
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
   const removeOne = async (id: string) => {
