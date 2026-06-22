@@ -24,6 +24,7 @@ import { RefreshCw } from "lucide-react";
 import {
   getDealLossReasons,
   syncHubspotLossReasons,
+  backfillLostDealReasons,
 } from "@/lib/deal-loss-reasons.functions";
 
 export type LostReasonResult = {
