@@ -433,6 +433,13 @@ export function DealDetailDrawer({
         </div>
       </SheetContent>
     </Sheet>
+    <LostReasonDialog
+      open={lostOpen}
+      onOpenChange={setLostOpen}
+      dealName={(v.name as string) ?? deal?.name ?? null}
+      onConfirm={confirmLost}
+    />
+    </>
   );
 }
 
