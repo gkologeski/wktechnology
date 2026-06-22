@@ -66,6 +66,8 @@ export function CreateLeadDialog({
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
   const [matchedContact, setMatchedContact] = useState<ContactMatch | null>(null);
   const [showReuse, setShowReuse] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
   const lastCheckedEmail = useRef<string>("");
 
   const reset = () => {
