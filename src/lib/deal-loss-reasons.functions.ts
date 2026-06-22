@@ -42,7 +42,7 @@ export const getDealLossReasons = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const workspaceId = await resolveActiveWorkspace(context.supabase, context.userId);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const options = await listFromDb(
       context.supabase,
       workspaceId,
@@ -59,7 +59,7 @@ export const syncHubspotLossReasons = createServerFn({ method: "POST" })
     if (!LOVABLE_API_KEY || !HUBSPOT_API_KEY) {
       throw new Error("Conecte o HubSpot para sincronizar os motivos.");
     }
-    const workspaceId = await resolveActiveWorkspace(context.supabase, context.userId);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
 
     const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/closed_lost_reason`, {
       headers: {
