@@ -1,34 +1,22 @@
-## Por que a reunião não aparece
+## Entendido — não precisa conectar `domine.automacoes@gmail.com`
 
-A reunião do print foi criada no Google Calendar de **`domine.automacoes@gmail.com`** (organizador) com **`comercial@z3ttagroup.com.br`** convidado — esse contato é o `primary_contact_id` do deal "Negócio - Leandro Borges".
+Se a IA marca os eventos **na sua agenda Google** (`guilherme@wktechnology.com.br`), eles aparecem no `events.list` da sua conta primária — independente de quem criou. O sync atual (`pullGoogleEvents` em `src/lib/calendar/engine.server.ts:332`) já puxa tudo do seu `primary` na janela -30/+365 dias. Conectar a conta da IA seria redundante (e até problemático, porque o matching de contato iria casar pelo lado errado).
 
-A timeline do deal já sabe puxar `calendar_events` casados pelo e-mail do contato (`src/components/activity-timeline.tsx` linhas 341-451). O motivo de não aparecer **não é o deal**, é a sincronização: o workspace tem **0 eventos** em `calendar_events` porque nenhuma das contas Google conectadas está sincronizando.
+## O que falta para essas reuniões aparecerem
 
-Estado atual das contas (`calendar_accounts` do workspace `184b9435…`):
+Sua conta `guilherme@wktechnology.com.br` está em `calendar_accounts` com `sync_enabled=true` mas **sem `refresh_token`** (NULL) — ou seja, o consentimento OAuth original não emitiu o token offline e a sincronização nunca rodou (`last_synced_at` é NULL). O fluxo OAuth atual já força `access_type=offline` + `prompt=consent` (`src/lib/email-oauth.server.ts:84-85, 100-101`), então uma reconexão agora vai persistir o refresh_token corretamente.
 
-| E-mail | sync_enabled | refresh_token | last_synced_at | last_error |
-|---|---|---|---|---|
-| `grasiele.magalhaes@wktechnology.com.br` | **false** | presente, mas inválido | 03/06/2026 | `refresh_token invalido (400) - reconecte` |
-| `guilherme@wktechnology.com.br` | true | **ausente** (NULL) | **nunca** | — |
-| `domine.automacoes@gmail.com` (organizador do print) | — | — | — | **não está conectado no CRM** |
+## Plano de execução (operacional, sem código)
 
-Resultado: `pullGoogleEvents` (`src/lib/calendar/engine.server.ts:332`) cai em `refreshAccessToken` que aborta com "Conta sem refresh_token — reconecte" para o Guilherme e devolve 400 para a Grasiele. Nada chega no `calendar_events`, então a timeline (deal, contato, empresa, ticket) fica vazia para qualquer reunião do Google Calendar.
+1. Em `/settings/calendars`, na linha do `guilherme@wktechnology.com.br`: **Desconectar** → **Conectar** de novo, aceitando todas as permissões na tela do Google.
+2. Clicar **"Sincronizar agora"** na mesma linha. Primeira execução vai trazer ~30 dias passados + 365 dias futuros do seu calendário.
+3. Abrir `/deals/7c1a5ca9-3f0d-4887-b4fa-965084f52cef` — a reunião "WK Technology <> LRB SOLUTIONS LTDA" deve aparecer na timeline, casada via e-mail `comercial@z3ttagroup.com.br` (que é o `primary_contact_id` do deal). O mesmo vale para qualquer outra reunião que a IA marcou na sua agenda.
+4. Opcional: também reconectar `grasiele.magalhaes@wktechnology.com.br` (refresh_token revogado, mesmo procedimento).
 
-## Outros casos como esse
+## Verificação que faço depois que você confirmar que reconectou
 
-Sim — **todos**. Com `calendar_events = 0` no workspace inteiro, **100% das reuniões do Google Calendar de qualquer usuário WK estão ausentes** das timelines, não só essa do Leandro. Não há nada específico ao deal `7c1a5ca9…`.
+Vou rodar um SELECT em `calendar_events` filtrando por `calendar_account_id` da sua conta e contar quantos eventos entraram — se vier 0, sigo o `last_error` para diagnosticar. Se vier >0 mas a reunião do Leandro não aparecer no deal, confiro se o e-mail `comercial@z3ttagroup.com.br` está mesmo na lista de `attendees` do evento que o Google retorna (a IA pode estar omitindo convidados).
 
-## Como corrigir
+## Nada para o build mode agora
 
-1. **Tela `/settings/calendars` — reconectar as duas contas existentes**
-   - Botão "Desconectar" + "Conectar" em `grasiele.magalhaes@wktechnology.com.br` (refresh_token foi revogado no Google).
-   - Idem em `guilherme@wktechnology.com.br` (consentimento original não emitiu refresh_token — o fluxo OAuth atual já força `access_type=offline` + `prompt=consent`, então a reconexão vai persistir o refresh_token corretamente).
-   - Após reconectar, clicar em "Sincronizar agora". O `pullGoogleEvents` puxa janela de -30 dias / +365 dias na primeira execução.
-
-2. **Conectar a conta `domine.automacoes@gmail.com`** (ou qualquer outra conta operacional que agende reuniões em nome da WK) no mesmo `/settings/calendars`. Sem isso, reuniões criadas só nessa caixa (como a do print) continuarão invisíveis mesmo com as outras duas funcionando, pois nenhum usuário WK aparece como atendente da reunião dela.
-
-3. **Validar** que a reunião do Leandro aparece na timeline do deal `/deals/7c1a5ca9…` depois do primeiro sync da conta que organizou o evento. O matching é pelo e-mail `comercial@z3ttagroup.com.br` (igual ao do contato primário do deal), então deve casar automaticamente.
-
-## Nada de código a alterar agora
-
-A lógica de sync, de matching de contato e de merge na timeline já estão corretas. O problema é 100% de credenciais OAuth/conta faltando. Confirme que pode (a) reconectar as duas contas existentes e (b) se a conta `domine.automacoes@gmail.com` também deve ser conectada — então eu te oriento o passo a passo na tela ou, se quiser, posso adicionar um **aviso visível em `/settings/calendars`** destacando contas com `last_status=error` ou `refresh_token` nulo para evitar que isso passe despercebido de novo. Me diga se quer esse aviso e eu incluo na fase de implementação.
+Como combinado antes, nenhuma alteração de código é necessária — o problema é 100% credencial OAuth ausente. Aprove esse plano só para registrar a decisão; depois que você reconectar e me avisar, eu valido os dados via SQL.
