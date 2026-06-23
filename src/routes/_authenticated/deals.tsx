@@ -83,8 +83,8 @@ function DealsPage() {
       return (data ?? []) as Deal[];
     },
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
   });
+
 
 
   const { data: companies = [] } = useQuery({
