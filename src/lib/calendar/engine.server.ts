@@ -503,7 +503,7 @@ export async function syncCalendarAccount(
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
     )
     .eq("id", accountId)
     .maybeSingle();
@@ -547,7 +547,7 @@ export async function pushSingleActivity(
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at, auto_create_meet_link",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at, auto_create_meet_link",
     )
     .eq("id", accountId)
     .maybeSingle();
@@ -659,7 +659,7 @@ export async function tickAllRecordings(): Promise<{
   const { data: accounts } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
     )
     .eq("sync_enabled", true)
     .eq("provider", "google")
