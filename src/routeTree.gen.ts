@@ -101,6 +101,7 @@ import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
@@ -723,6 +724,12 @@ const AuthenticatedSettingsPaymentsRoute =
     path: '/payments',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsNfseRoute =
   AuthenticatedSettingsNfseRouteImport.update({
     id: '/nfse',
@@ -1306,9 +1313,9 @@ const AuthenticatedSettingsRolesRoleIdRoute =
   } as any)
 const AuthenticatedSettingsNotificationsSlackRoute =
   AuthenticatedSettingsNotificationsSlackRouteImport.update({
-    id: '/notifications/slack',
-    path: '/notifications/slack',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+    id: '/slack',
+    path: '/slack',
+    getParentRoute: () => AuthenticatedSettingsNotificationsRoute,
   } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
   AuthenticatedProspectingCampaignsIdRouteImport.update({
@@ -1492,6 +1499,7 @@ export interface FileRoutesByFullPath {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -1697,6 +1705,7 @@ export interface FileRoutesByTo {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -1906,6 +1915,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -2116,6 +2126,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
+    | '/settings/notifications'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -2321,6 +2332,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
+    | '/settings/notifications'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -2529,6 +2541,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/nfse'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payments'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
@@ -3363,6 +3376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPaymentsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/nfse': {
       id: '/_authenticated/settings/nfse'
       path: '/nfse'
@@ -4065,10 +4085,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/settings/notifications/slack': {
       id: '/_authenticated/settings/notifications/slack'
-      path: '/notifications/slack'
+      path: '/slack'
       fullPath: '/settings/notifications/slack'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsSlackRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+      parentRoute: typeof AuthenticatedSettingsNotificationsRoute
     }
     '/_authenticated/prospecting/campaigns/$id': {
       id: '/_authenticated/prospecting/campaigns/$id'
@@ -4286,6 +4306,21 @@ const AuthenticatedProspectingRouteWithChildren =
     AuthenticatedProspectingRouteChildren,
   )
 
+interface AuthenticatedSettingsNotificationsRouteChildren {
+  AuthenticatedSettingsNotificationsSlackRoute: typeof AuthenticatedSettingsNotificationsSlackRoute
+}
+
+const AuthenticatedSettingsNotificationsRouteChildren: AuthenticatedSettingsNotificationsRouteChildren =
+  {
+    AuthenticatedSettingsNotificationsSlackRoute:
+      AuthenticatedSettingsNotificationsSlackRoute,
+  }
+
+const AuthenticatedSettingsNotificationsRouteWithChildren =
+  AuthenticatedSettingsNotificationsRoute._addFileChildren(
+    AuthenticatedSettingsNotificationsRouteChildren,
+  )
+
 interface AuthenticatedSettingsRolesRouteChildren {
   AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
   AuthenticatedSettingsRolesMatrixRoute: typeof AuthenticatedSettingsRolesMatrixRoute
@@ -4338,6 +4373,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
@@ -4376,7 +4412,6 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
-  AuthenticatedSettingsNotificationsSlackRoute: typeof AuthenticatedSettingsNotificationsSlackRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -4417,6 +4452,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRouteWithChildren,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
@@ -4463,8 +4500,6 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsZapierRoute: AuthenticatedSettingsZapierRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-  AuthenticatedSettingsNotificationsSlackRoute:
-    AuthenticatedSettingsNotificationsSlackRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
