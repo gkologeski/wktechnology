@@ -1546,19 +1546,7 @@ export function ActivityTimeline({
                       )}
                     </div>
                   )}
-                  {mens.length > 0 && (
-                    <div className="mt-2 flex gap-1 flex-wrap">
-                      {mens.map((id) => {
-                        const tm = team.find((t) => t.id === id);
-                        return (
-                          <Badge key={id} variant="outline" className="text-xs">
-                            <AtSign className="h-3 w-3 mr-0.5" />
-                            {tm?.name ?? id.slice(0, 8)}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* Mentions render inline within the body HTML; no duplicate chip below. */}
                   {editingId !== a.id && atts.length > 0 && (
                     <div className="mt-3 flex flex-col gap-2">
                       {atts.map((att, i) => (
