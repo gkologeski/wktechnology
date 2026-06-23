@@ -422,32 +422,39 @@ function CompanyCard({
         {!c ? (
           <Empty label="Nenhuma empresa vinculada." />
         ) : (
-          <div className="flex items-center gap-3 group">
-            <Link
-              to="/companies/$id"
-              params={{ id: c.id }}
-              className="flex items-center gap-3 min-w-0 flex-1"
-            >
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-muted-foreground shrink-0">
-                {c.name?.[0]?.toUpperCase() ?? "?"}
+          <>
+            <div className="rounded-xl border border-border/60 p-3">
+              <div className="flex items-start gap-3">
+                <EntityAvatar initials={(c.name?.[0] ?? "?").toUpperCase()} tone="primary" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      to="/companies/$id"
+                      params={{ id: c.id }}
+                      className="text-sm font-semibold text-primary hover:underline truncate"
+                    >
+                      {c.name}
+                    </Link>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                      Principal
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <DetailRow
+                      label="Nome de domínio da empresa"
+                      value={c.domain}
+                      href={c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined}
+                      copyable
+                    />
+                    <DetailRow label="Telefone" value={c.phone} copyable />
+                  </div>
+                  <AssocLabelAdder />
+                </div>
+                <AssocItemActions href={`/companies/${c.id}`} onUnlink={unlink} />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary truncate">
-                  {c.name}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {c.domain || c.industry || "—"}
-                </p>
-              </div>
-            </Link>
-            <button
-              onClick={unlink}
-              className="p-1 text-muted-foreground hover:text-destructive rounded"
-              aria-label="Remover"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+            </div>
+            <ViewAllFooter href="/companies" label="Exibir todas as Empresas associadas" />
+          </>
         )}
       </AssocCard>
       <QuickCreateCompanyDialog
