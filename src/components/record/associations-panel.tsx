@@ -41,6 +41,7 @@ import {
   type AssociationPeriod,
 } from "@/components/associations/associate-period-dialog";
 import { propagateAssociationHistory } from "@/lib/associations.functions";
+import { usePipelines, type PipelineStage } from "@/lib/pipelines";
 import type { AssociationKind } from "@/lib/associations.functions";
 
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
