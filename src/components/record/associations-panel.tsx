@@ -423,7 +423,7 @@ function CompanyCard({
           <Empty label="Nenhuma empresa vinculada." />
         ) : (
           <>
-            <div className="rounded-xl border border-border/60 p-3">
+            <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
               <div className="flex items-start gap-3">
                 <EntityAvatar initials={(c.name?.[0] ?? "?").toUpperCase()} tone="primary" />
                 <div className="min-w-0 flex-1">
@@ -441,7 +441,7 @@ function CompanyCard({
                   </div>
                   <div className="mt-2 space-y-1">
                     <DetailRow
-                      label="Nome de domínio da empresa"
+                      label="Domínio"
                       value={c.domain}
                       href={c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined}
                       copyable
@@ -609,7 +609,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                 const phone = c.phone || c.mobile_phone || null;
                 const isPrimary = entity === "deal" && primaryId === c.id;
                 return (
-                  <li key={c.id} className="rounded-xl border border-border/60 p-3">
+                  <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
                     <div className="flex items-start gap-3">
                       <EntityAvatar initials={initials} tone="primary" />
                       <div className="min-w-0 flex-1">
@@ -640,7 +640,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                             copyable
                           />
                           <DetailRow
-                            label="Número de telefone"
+                            label="Telefone"
                             value={phone}
                             href={phone ? `tel:${phone}` : undefined}
                             copyable
@@ -1091,7 +1091,7 @@ function SingleContactCard({
           const phone = c.phone || c.mobile_phone || null;
           return (
             <>
-              <div className="rounded-xl border border-border/60 p-3">
+              <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
                 <div className="flex items-start gap-3">
                   <EntityAvatar initials={initials} tone="primary" />
                   <div className="min-w-0 flex-1">
@@ -1118,7 +1118,7 @@ function SingleContactCard({
                         copyable
                       />
                       <DetailRow
-                        label="Número de telefone"
+                        label="Telefone"
                         value={phone}
                         href={phone ? `tel:${phone}` : undefined}
                         copyable
