@@ -526,6 +526,7 @@ export async function syncCalendarAccount(
   deleted: number;
   pushed_created: number;
   pushed_updated: number;
+  partial: boolean;
   recordings: { scanned: number; found: number; missing: number; errors: number };
 }> {
   const { data: account, error } = await supabaseAdmin
@@ -538,23 +539,28 @@ export async function syncCalendarAccount(
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
   const emptyRec = { scanned: 0, found: 0, missing: 0, errors: 0 };
   if (!account.sync_enabled)
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, partial: false, recordings: emptyRec };
   if (account.provider !== "google") {
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, partial: false, recordings: emptyRec };
   }
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     // syncPastRecordings é pesado (varre Drive) e estoura subrequest limit do Worker.
     // Mantido só no cron dedicado tickAllRecordings.
     const recordings = emptyRec;
-    const push = await pushPendingMeetings(account as CalendarAccountRow);
+    // Só faz o push quando a importação terminou — push é menos urgente que o catch-up.
+    const push = pull.partial
+      ? { created: 0, updated: 0 }
+      : await pushPendingMeetings(account as CalendarAccountRow);
     return {
       imported: pull.imported,
       deleted: pull.deleted,
       pushed_created: push.created,
       pushed_updated: push.updated,
+      partial: pull.partial,
       recordings,
     };
+
 
 
   } catch (e) {
