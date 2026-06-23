@@ -172,27 +172,36 @@ function DetailRow({
   );
 }
 
+type AssocLinkTarget =
+  | { to: "/companies/$id"; params: { id: string } }
+  | { to: "/contacts/$id"; params: { id: string } }
+  | { to: "/deals/$id"; params: { id: string } };
+
 function AssocItemActions({
-  href,
+  link,
   onUnlink,
 }: {
-  href?: string;
+  link?: AssocLinkTarget;
   onUnlink?: () => void;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-      {href && (
-        <a
-          href={href}
+    <div
+      data-state={open ? "open" : "closed"}
+      className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+    >
+      {link && (
+        <Link
+          {...(link as { to: "/companies/$id"; params: { id: string } })}
           onClick={(e) => e.stopPropagation()}
           className="p-1 text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
           aria-label="Abrir"
           title="Abrir registro"
         >
           <Eye className="h-3.5 w-3.5" />
-        </a>
+        </Link>
       )}
-      <DropdownMenu>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -204,9 +213,11 @@ function AssocItemActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {href && (
+          {link && (
             <DropdownMenuItem asChild>
-              <a href={href}>Abrir registro</a>
+              <Link {...(link as { to: "/companies/$id"; params: { id: string } })}>
+                Abrir registro
+              </Link>
             </DropdownMenuItem>
           )}
           {onUnlink && (
@@ -222,6 +233,7 @@ function AssocItemActions({
     </div>
   );
 }
+
 
 function AssocLabelAdder() {
   return (
