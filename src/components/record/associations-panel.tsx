@@ -766,7 +766,7 @@ function DealsCard({
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
-  const { data: pipelines = [] } = usePipelines("deal");
+  const { pipelines } = usePipelines("deal");
 
   useEffect(() => {
     (async () => {
