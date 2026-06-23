@@ -687,6 +687,72 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
 
 /* ───────────── Deals card (entity = contact|company) ───────────── */
 
+type DealRow = {
+  id: string;
+  name: string;
+  value: number | null;
+  stage: string;
+  currency: string;
+  expected_close_date: string | null;
+  pipeline_id: string | null;
+};
+
+const DEAL_SELECT = "id, name, value, stage, currency, expected_close_date, pipeline_id";
+
+function formatDealDateLong(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(d);
+}
+
+function StagePicker({
+  dealId,
+  stage,
+  stages,
+  onChange,
+}: {
+  dealId: string;
+  stage: string;
+  stages: PipelineStage[];
+  onChange: (value: string) => void;
+}) {
+  const current = stages.find((s) => s.value === stage);
+  const label = current?.label ?? stage;
+  if (!stages.length) {
+    return <span className="text-xs text-foreground">{label}</span>;
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-foreground hover:text-primary transition-colors"
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDown className="h-3 w-3 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-72 overflow-auto">
+        {stages.map((s) => (
+          <DropdownMenuItem
+            key={s.value}
+            onClick={() => onChange(s.value)}
+            className={s.value === stage ? "font-semibold" : undefined}
+          >
+            {s.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function DealsCard({
   entity,
   entityId,
@@ -696,44 +762,31 @@ function DealsCard({
   entityId: string;
   companyId?: string | null;
 }) {
-  const [rows, setRows] = useState<
-    { id: string; name: string; value: number; stage: string; currency: string }[]
-  >([]);
+  const [rows, setRows] = useState<DealRow[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  const { data: pipelines = [] } = usePipelines("deal");
 
   useEffect(() => {
     (async () => {
       if (entity === "company") {
         const { data } = await supabase
           .from("deals")
-          .select("id, name, value, stage, currency")
+          .select(DEAL_SELECT)
           .eq("company_id", entityId)
           .limit(50);
-        setRows((data ?? []) as never);
+        setRows(((data ?? []) as never) as DealRow[]);
         return;
       }
       const primaryP = supabase
         .from("deals")
-        .select("id, name, value, stage, currency")
+        .select(DEAL_SELECT)
         .eq("primary_contact_id", entityId)
         .limit(50);
       const companyP = companyId
-        ? supabase
-            .from("deals")
-            .select("id, name, value, stage, currency")
-            .eq("company_id", companyId)
-            .limit(50)
-        : Promise.resolve({
-            data: [] as {
-              id: string;
-              name: string;
-              value: number;
-              stage: string;
-              currency: string;
-            }[],
-          });
+        ? supabase.from("deals").select(DEAL_SELECT).eq("company_id", companyId).limit(50)
+        : Promise.resolve({ data: [] as DealRow[] });
       const linkedP = supabase
         .from("deal_contacts")
         .select("deal_id")
@@ -741,16 +794,17 @@ function DealsCard({
         .limit(100);
       const [primaryRes, companyRes, linkedRes] = await Promise.all([primaryP, companyP, linkedP]);
       const linkedIds = (linkedRes.data ?? []).map((r) => r.deal_id).filter(Boolean);
-      let extra: typeof rows = [];
+      let extra: DealRow[] = [];
       if (linkedIds.length) {
-        const { data } = await supabase
-          .from("deals")
-          .select("id, name, value, stage, currency")
-          .in("id", linkedIds);
-        extra = (data ?? []) as typeof extra;
+        const { data } = await supabase.from("deals").select(DEAL_SELECT).in("id", linkedIds);
+        extra = ((data ?? []) as never) as DealRow[];
       }
-      const map = new Map<string, (typeof rows)[number]>();
-      for (const d of [...(primaryRes.data ?? []), ...(companyRes.data ?? []), ...extra])
+      const map = new Map<string, DealRow>();
+      for (const d of [
+        ...((primaryRes.data ?? []) as DealRow[]),
+        ...((companyRes.data ?? []) as DealRow[]),
+        ...extra,
+      ])
         map.set(d.id, d);
       setRows(Array.from(map.values()).slice(0, 50));
     })();
@@ -783,14 +837,12 @@ function DealsCard({
       const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
       if (error) return toast.error(error.message);
     } else {
-      // remove many-to-many
       const { error } = await sb
         .from("deal_contacts")
         .delete()
         .eq("deal_id", dealId)
         .eq("contact_id", entityId);
       if (error) return toast.error(error.message);
-      // se o contato é primário do negócio, limpa
       const { data: deal } = await supabase
         .from("deals")
         .select("primary_contact_id")
@@ -804,6 +856,18 @@ function DealsCard({
     }
     toast.success("Negócio desvinculado");
     refresh();
+  };
+
+  const changeStage = async (dealId: string, value: string) => {
+    const prev = rows;
+    setRows((rs) => rs.map((r) => (r.id === dealId ? { ...r, stage: value } : r)));
+    const { error } = await sb.from("deals").update({ stage: value }).eq("id", dealId);
+    if (error) {
+      setRows(prev);
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Etapa atualizada");
   };
 
   return (
@@ -831,34 +895,68 @@ function DealsCard({
         {rows.length === 0 ? (
           <Empty label="Nenhum negócio." />
         ) : (
-          <ul className="space-y-2">
-            {rows.map((d) => (
-              <li key={d.id} className="flex items-stretch gap-2 group">
-                <Link
-                  to="/deals/$id"
-                  params={{ id: d.id }}
-                  className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors flex-1 min-w-0"
-                >
-                  <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {formatCurrency(d.value, d.currency)}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-md font-medium capitalize">
-                      {d.stage}
-                    </span>
-                  </div>
-                </Link>
-                <button
-                  onClick={() => unlink(d.id)}
-                  className="p-1 text-muted-foreground hover:text-destructive rounded self-center"
-                  aria-label="Remover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {rows.map((d) => {
+                const pipeline = pipelines.find((p) => p.id === d.pipeline_id);
+                const stages = pipeline?.stages ?? [];
+                return (
+                  <li
+                    key={d.id}
+                    className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <EntityAvatar initials="" tone="primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/deals/$id"
+                            params={{ id: d.id }}
+                            className="text-sm font-semibold text-primary hover:underline truncate"
+                          >
+                            {d.name}
+                          </Link>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          <DetailRow
+                            label="Valor"
+                            value={
+                              d.value != null
+                                ? formatCurrency(d.value, d.currency ?? "BRL")
+                                : null
+                            }
+                          />
+                          <DetailRow
+                            label="Data de fechamento"
+                            value={formatDealDateLong(d.expected_close_date)}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                              Etapa do negócio
+                            </div>
+                            <div className="mt-0.5">
+                              <StagePicker
+                                dealId={d.id}
+                                stage={d.stage}
+                                stages={stages}
+                                onChange={(v) => changeStage(d.id, v)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <AssocLabelAdder />
+                      </div>
+                      <AssocItemActions
+                        link={{ to: "/deals/$id", params: { id: d.id } }}
+                        onUnlink={() => unlink(d.id)}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <ViewAllFooter href="/deals" label="Exibir todos os Negócios associados" />
+          </>
         )}
       </AssocCard>
       <QuickCreateDealDialog
@@ -872,6 +970,7 @@ function DealsCard({
     </>
   );
 }
+
 
 /* ───────────── Tickets card ───────────── */
 
