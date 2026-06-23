@@ -1010,7 +1010,10 @@ function SingleContactCard({
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
     job_title: string | null;
+    company: { name: string | null } | null;
   } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(contactId);
@@ -1022,7 +1025,7 @@ function SingleContactCard({
     }
     const { data } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, email, job_title")
+      .select("id, first_name, last_name, email, phone, mobile_phone, job_title, company:companies(name)")
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
