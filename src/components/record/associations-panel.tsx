@@ -462,7 +462,7 @@ function CompanyCard({
                   </div>
                   <AssocLabelAdder />
                 </div>
-                <AssocItemActions href={`/companies/${c.id}`} onUnlink={unlink} />
+                <AssocItemActions link={{ to: "/companies/$id", params: { id: c.id } }} onUnlink={unlink} />
               </div>
             </div>
             <ViewAllFooter href="/companies" label="Exibir todas as Empresas associadas" />
