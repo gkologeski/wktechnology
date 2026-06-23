@@ -14,7 +14,8 @@ import {
   Eye,
   MoreHorizontal,
   Copy,
-  ExternalLink,
+  ArrowRight,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
