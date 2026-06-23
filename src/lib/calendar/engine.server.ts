@@ -14,9 +14,13 @@ type CalendarAccountRow = {
   refresh_token: string | null;
   expires_at: string | null;
   sync_token: string | null;
+  sync_page_token: string | null;
   sync_enabled: boolean;
   last_synced_at: string | null;
 };
+
+// Limites por execução para não estourar CPU/subrequests do Cloudflare Worker.
+const MAX_PAGES_PER_RUN = 6;
 
 async function refreshAccessToken(account: CalendarAccountRow): Promise<string> {
   if (!account.refresh_token) throw new Error("Conta sem refresh_token — reconecte o calendário");
@@ -331,21 +335,24 @@ async function gcalFetch(token: string, path: string, init?: RequestInit) {
 
 async function pullGoogleEvents(
   account: CalendarAccountRow,
-): Promise<{ imported: number; deleted: number }> {
+): Promise<{ imported: number; deleted: number; partial: boolean }> {
   const token = await ensureAccessToken(account);
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
-  let pageToken: string | undefined;
+  // Retoma do ponto onde parou na execução anterior, se houver.
+  let pageToken: string | undefined = account.sync_page_token ?? undefined;
   let nextSyncToken: string | undefined;
   let imported = 0;
   let deleted = 0;
+  let pagesProcessed = 0;
+  let partial = false;
   const usingSyncToken = !!account.sync_token;
 
   do {
     const params = new URLSearchParams();
-    if (account.sync_token) {
+    if (account.sync_token && !pageToken) {
       params.set("syncToken", account.sync_token);
-    } else {
-      // initial: last 30 days + next 365 days
+    } else if (!pageToken) {
+      // initial: a partir dos últimos 30 dias, sem limite superior
       const past = new Date(Date.now() - 30 * 86400000).toISOString();
       params.set("timeMin", past);
       params.set("singleEvents", "true");
@@ -362,26 +369,24 @@ async function pullGoogleEvents(
       )) as typeof json;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      // 410 GONE → sync token invalid, do a full re-sync
+      // 410 GONE → sync token invalido, faz full re-sync
       if (msg.includes("410") && usingSyncToken) {
         await supabaseAdmin
           .from("calendar_accounts")
-          .update({ sync_token: null })
+          .update({ sync_token: null, sync_page_token: null })
           .eq("id", account.id);
-        return { imported, deleted };
+        return { imported, deleted, partial: false };
       }
       throw e;
     }
 
     const items = json.items ?? [];
+    const cancelledIds: string[] = [];
+    const upsertRows: Record<string, unknown>[] = [];
+
     for (const ev of items) {
       if (ev.status === "cancelled") {
-        const { error: delErr } = await supabaseAdmin
-          .from("calendar_events")
-          .delete()
-          .eq("calendar_account_id", account.id)
-          .eq("provider_event_id", ev.id);
-        if (!delErr) deleted++;
+        cancelledIds.push(ev.id);
         continue;
       }
       const startAt = ev.start?.dateTime ?? (ev.start?.date ? `${ev.start.date}T00:00:00Z` : null);
@@ -393,7 +398,7 @@ async function pullGoogleEvents(
         ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
         null;
       const relatedContactId = await matchContactForAttendees(account.owner_id, ev.attendees, account.email);
-      const upsertRow: Record<string, unknown> = {
+      upsertRows.push({
         owner_id: account.owner_id,
         calendar_account_id: account.id,
         provider_event_id: ev.id,
@@ -410,29 +415,56 @@ async function pullGoogleEvents(
         related_contact_id: relatedContactId,
         status: ev.status ?? "confirmed",
         last_synced_at: new Date().toISOString(),
-      };
+      });
+    }
+
+    // Upsert em lote (1 subrequest por página, em vez de 250).
+    if (upsertRows.length > 0) {
       const { error: upErr } = await supabaseAdmin
         .from("calendar_events")
-        .upsert(upsertRow as never, { onConflict: "calendar_account_id,provider_event_id" });
-      if (!upErr) imported++;
+        .upsert(upsertRows as never, { onConflict: "calendar_account_id,provider_event_id" });
+      if (!upErr) imported += upsertRows.length;
+    }
+    // Deleções em lote.
+    if (cancelledIds.length > 0) {
+      const { error: delErr } = await supabaseAdmin
+        .from("calendar_events")
+        .delete()
+        .eq("calendar_account_id", account.id)
+        .in("provider_event_id", cancelledIds);
+      if (!delErr) deleted += cancelledIds.length;
     }
 
     pageToken = json.nextPageToken;
     if (!pageToken && json.nextSyncToken) nextSyncToken = json.nextSyncToken;
+    pagesProcessed++;
+
+    // Persiste o ponto onde paramos para retomar na próxima execução.
+    if (pageToken && pagesProcessed >= MAX_PAGES_PER_RUN) {
+      await supabaseAdmin
+        .from("calendar_accounts")
+        .update({ sync_page_token: pageToken })
+        .eq("id", account.id);
+      partial = true;
+      return { imported, deleted, partial };
+    }
   } while (pageToken);
 
+  // Acabou a paginação — limpa o page token e grava sync_token + last_synced_at.
   await supabaseAdmin
     .from("calendar_accounts")
     .update({
       sync_token: nextSyncToken ?? account.sync_token,
+      sync_page_token: null,
       last_synced_at: new Date().toISOString(),
       last_status: "ok",
       last_error: null,
     })
     .eq("id", account.id);
 
-  return { imported, deleted };
+  return { imported, deleted, partial: false };
 }
+
 
 async function pushPendingMeetings(
   account: CalendarAccountRow,
@@ -494,35 +526,41 @@ export async function syncCalendarAccount(
   deleted: number;
   pushed_created: number;
   pushed_updated: number;
+  partial: boolean;
   recordings: { scanned: number; found: number; missing: number; errors: number };
 }> {
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
     )
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
   const emptyRec = { scanned: 0, found: 0, missing: 0, errors: 0 };
   if (!account.sync_enabled)
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, partial: false, recordings: emptyRec };
   if (account.provider !== "google") {
-    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, recordings: emptyRec };
+    return { imported: 0, deleted: 0, pushed_created: 0, pushed_updated: 0, partial: false, recordings: emptyRec };
   }
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
     // syncPastRecordings é pesado (varre Drive) e estoura subrequest limit do Worker.
     // Mantido só no cron dedicado tickAllRecordings.
     const recordings = emptyRec;
-    const push = await pushPendingMeetings(account as CalendarAccountRow);
+    // Só faz o push quando a importação terminou — push é menos urgente que o catch-up.
+    const push = pull.partial
+      ? { created: 0, updated: 0 }
+      : await pushPendingMeetings(account as CalendarAccountRow);
     return {
       imported: pull.imported,
       deleted: pull.deleted,
       pushed_created: push.created,
       pushed_updated: push.updated,
+      partial: pull.partial,
       recordings,
     };
+
 
 
   } catch (e) {
@@ -543,7 +581,7 @@ export async function pushSingleActivity(
   const { data: account, error } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at, auto_create_meet_link",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at, auto_create_meet_link",
     )
     .eq("id", accountId)
     .maybeSingle();
@@ -655,7 +693,7 @@ export async function tickAllRecordings(): Promise<{
   const { data: accounts } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
     )
     .eq("sync_enabled", true)
     .eq("provider", "google")

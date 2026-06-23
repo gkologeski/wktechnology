@@ -118,20 +118,47 @@ function CalendarsPage() {
   });
 
   const sync = useMutation({
-    mutationFn: (id: string) => syncFn({ data: { id } }),
-    onSuccess: (r) => {
-      if (r && typeof r === "object" && "imported" in r) {
-        toast.success(
-          `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
-        );
-      } else {
-        toast.success("Sincronização iniciada. Atualizando dados...");
+    mutationFn: async (id: string) => {
+      // Loop até a sincronização não vir mais como parcial (com cap de segurança).
+      const MAX_BATCHES = 20;
+      let totalImported = 0;
+      let totalCreated = 0;
+      let totalUpdated = 0;
+      for (let batch = 1; batch <= MAX_BATCHES; batch++) {
+        const r = (await syncFn({ data: { id } })) as
+          | {
+              imported: number;
+              pushed_created: number;
+              pushed_updated: number;
+              partial?: boolean;
+            }
+          | undefined;
+        if (!r) {
+          // Resposta vazia (Worker timeout) — tenta mais um lote.
+          if (batch < MAX_BATCHES) {
+            toast.info(`Lote ${batch} interrompido. Retomando...`);
+            continue;
+          }
+          break;
+        }
+        totalImported += r.imported ?? 0;
+        totalCreated += r.pushed_created ?? 0;
+        totalUpdated += r.pushed_updated ?? 0;
+        if (!r.partial) break;
+        toast.info(`Lote ${batch} concluído (${totalImported} importados). Continuando...`);
       }
+      return { imported: totalImported, pushed_created: totalCreated, pushed_updated: totalUpdated };
+    },
+    onSuccess: (r) => {
+      toast.success(
+        `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
+      );
       qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
       qc.invalidateQueries({ queryKey: ["calendar_events"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>

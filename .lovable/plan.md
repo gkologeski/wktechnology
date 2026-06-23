@@ -1,22 +1,50 @@
-## Entendido — não precisa conectar `domine.automacoes@gmail.com`
+# Corrigir sync incompleto do Google Calendar
 
-Se a IA marca os eventos **na sua agenda Google** (`guilherme@wktechnology.com.br`), eles aparecem no `events.list` da sua conta primária — independente de quem criou. O sync atual (`pullGoogleEvents` em `src/lib/calendar/engine.server.ts:332`) já puxa tudo do seu `primary` na janela -30/+365 dias. Conectar a conta da IA seria redundante (e até problemático, porque o matching de contato iria casar pelo lado errado).
+## Problema
 
-## O que falta para essas reuniões aparecerem
+O `pullGoogleEvents` está sendo morto pelo limite de tempo/subrequests do Cloudflare Worker antes de paginar todos os eventos do calendário. Hoje a paginação só persiste o `sync_token` no **fim** do loop — se o Worker morre no meio, na próxima execução tudo recomeça do zero e nunca chega nos eventos mais antigos/recentes. Resultado: 6.343 eventos importados, `last_synced_at = NULL`, e a reunião "WK Technology <> LRB SOLUTIONS LTDA" continua invisível.
 
-Sua conta `guilherme@wktechnology.com.br` está em `calendar_accounts` com `sync_enabled=true` mas **sem `refresh_token`** (NULL) — ou seja, o consentimento OAuth original não emitiu o token offline e a sincronização nunca rodou (`last_synced_at` é NULL). O fluxo OAuth atual já força `access_type=offline` + `prompt=consent` (`src/lib/email-oauth.server.ts:84-85, 100-101`), então uma reconexão agora vai persistir o refresh_token corretamente.
+## Solução: paginação retomável + acabar com upserts um-a-um
 
-## Plano de execução (operacional, sem código)
+Três mudanças em `src/lib/calendar/engine.server.ts → pullGoogleEvents`:
 
-1. Em `/settings/calendars`, na linha do `guilherme@wktechnology.com.br`: **Desconectar** → **Conectar** de novo, aceitando todas as permissões na tela do Google.
-2. Clicar **"Sincronizar agora"** na mesma linha. Primeira execução vai trazer ~30 dias passados + 365 dias futuros do seu calendário.
-3. Abrir `/deals/7c1a5ca9-3f0d-4887-b4fa-965084f52cef` — a reunião "WK Technology <> LRB SOLUTIONS LTDA" deve aparecer na timeline, casada via e-mail `comercial@z3ttagroup.com.br` (que é o `primary_contact_id` do deal). O mesmo vale para qualquer outra reunião que a IA marcou na sua agenda.
-4. Opcional: também reconectar `grasiele.magalhaes@wktechnology.com.br` (refresh_token revogado, mesmo procedimento).
+### 1. Persistir `pageToken` a cada página
 
-## Verificação que faço depois que você confirmar que reconectou
+Adicionar coluna `sync_page_token text` em `calendar_accounts`. No início do pull, se já houver `sync_page_token` salvo, retomar de onde parou. Salvar o `pageToken` no banco depois de cada página processada. Limpar ao final.
 
-Vou rodar um SELECT em `calendar_events` filtrando por `calendar_account_id` da sua conta e contar quantos eventos entraram — se vier 0, sigo o `last_error` para diagnosticar. Se vier >0 mas a reunião do Leandro não aparecer no deal, confiro se o e-mail `comercial@z3ttagroup.com.br` está mesmo na lista de `attendees` do evento que o Google retorna (a IA pode estar omitindo convidados).
+### 2. Limitar páginas por execução + agendar continuação
 
-## Nada para o build mode agora
+Processar no máximo **N páginas por chamada** (ex.: 8 páginas = ~2000 eventos). Se ainda houver `nextPageToken`, salvar e retornar `{ imported, deleted, partial: true }`. O cron de 15min retoma. Para o usuário não esperar, o botão "Sincronizar agora" reagenda automaticamente (loop client-side) enquanto `partial: true` até virar `partial: false`.
 
-Como combinado antes, nenhuma alteração de código é necessária — o problema é 100% credencial OAuth ausente. Aprove esse plano só para registrar a decisão; depois que você reconectar e me avisar, eu valido os dados via SQL.
+### 3. Upsert em lote
+
+Hoje cada evento é um `upsert` separado (250 subrequests por página!). Acumular o array da página e fazer **um único `upsert`** com todos os 250 — corta drasticamente o consumo do limite de 1.000 subrequests do Worker.
+
+## UI
+
+Em `src/routes/_authenticated/settings.calendars.tsx`:
+
+- `useMutation` do sync: se a resposta vier com `partial: true`, mostrar toast "Sincronizando lote N… continuando…" e reexecutar a mutation automaticamente até completar (com cap de segurança, ex.: máx. 20 lotes).
+- Toast final: "Sincronizado: X importados no total".
+
+## Migração SQL
+
+```sql
+ALTER TABLE public.calendar_accounts
+  ADD COLUMN IF NOT EXISTS sync_page_token text,
+  ADD COLUMN IF NOT EXISTS sync_in_progress boolean NOT NULL DEFAULT false;
+```
+
+(`sync_in_progress` evita o cron e o botão manual rodarem em paralelo no mesmo account.)
+
+## Validação
+
+Após implementar:
+1. Clicar em ⟳ no calendário do guilherme → ver toasts de progresso até "Sincronizado".
+2. Query: `SELECT COUNT(*) FROM calendar_events WHERE attendees::text ILIKE '%z3ttagroup%';` deve retornar ≥ 1.
+3. Abrir `/deals/7c1a5ca9-3f0d-4887-b4fa-965084f52cef` → reunião na timeline.
+
+## Fora do escopo
+
+- Não vamos reativar `syncPastRecordings` no sync interativo (continua só no cron `tickAllRecordings`).
+- Não vamos conectar a conta `domine.automacoes@gmail.com` — os eventos da agenda do guilherme contemplam tudo o que precisa.

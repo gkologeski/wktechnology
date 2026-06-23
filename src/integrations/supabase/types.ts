@@ -1204,6 +1204,8 @@ export type Database = {
           refresh_token: string | null
           scopes: string[] | null
           sync_enabled: boolean
+          sync_in_progress: boolean
+          sync_page_token: string | null
           sync_token: string | null
           updated_at: string
           workspace_id: string
@@ -1224,6 +1226,8 @@ export type Database = {
           refresh_token?: string | null
           scopes?: string[] | null
           sync_enabled?: boolean
+          sync_in_progress?: boolean
+          sync_page_token?: string | null
           sync_token?: string | null
           updated_at?: string
           workspace_id?: string
@@ -1244,6 +1248,8 @@ export type Database = {
           refresh_token?: string | null
           scopes?: string[] | null
           sync_enabled?: boolean
+          sync_in_progress?: boolean
+          sync_page_token?: string | null
           sync_token?: string | null
           updated_at?: string
           workspace_id?: string
