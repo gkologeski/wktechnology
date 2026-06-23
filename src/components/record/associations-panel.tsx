@@ -115,6 +115,156 @@ const Empty = ({ label }: { label: string }) => (
   <p className="text-xs text-muted-foreground">{label}</p>
 );
 
+function CopyButton({ value, label }: { value: string; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard.writeText(value).then(
+          () => toast.success(`${label ?? "Valor"} copiado`),
+          () => toast.error("Falha ao copiar"),
+        );
+      }}
+      className="inline-flex items-center justify-center p-1 text-muted-foreground hover:text-primary rounded transition-colors"
+      aria-label={`Copiar ${label ?? "valor"}`}
+    >
+      <Copy className="h-3 w-3" />
+    </button>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  href,
+  copyable,
+}: {
+  label: string;
+  value: string | null | undefined;
+  href?: string;
+  copyable?: boolean;
+}) {
+  const v = value && String(value).trim() ? String(value).trim() : null;
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] min-w-0">
+      <span className="text-muted-foreground shrink-0">{label}:</span>
+      {v ? (
+        <>
+          {href ? (
+            <a
+              href={href}
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary font-semibold hover:underline truncate min-w-0"
+            >
+              {v}
+            </a>
+          ) : (
+            <span className="text-foreground font-medium truncate min-w-0">{v}</span>
+          )}
+          {copyable && <CopyButton value={v} label={label} />}
+        </>
+      ) : (
+        <span className="text-muted-foreground">--</span>
+      )}
+    </div>
+  );
+}
+
+function AssocItemActions({
+  href,
+  onUnlink,
+}: {
+  href?: string;
+  onUnlink?: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {href && (
+        <a
+          href={href}
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 text-muted-foreground hover:text-primary rounded border border-border/60"
+          aria-label="Abrir"
+          title="Abrir registro"
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </a>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1 text-muted-foreground hover:text-foreground rounded border border-border/60"
+            aria-label="Mais ações"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {href && (
+            <DropdownMenuItem asChild>
+              <a href={href}>Abrir registro</a>
+            </DropdownMenuItem>
+          )}
+          {onUnlink && (
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onUnlink}
+            >
+              Remover associação
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function AssocLabelAdder() {
+  return (
+    <button
+      type="button"
+      onClick={() => toast.message("Rótulos de associação em breve")}
+      className="text-[11px] font-semibold text-primary hover:underline mt-2"
+    >
+      Adicionar rótulo de associação
+    </button>
+  );
+}
+
+function ViewAllFooter({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <Button asChild variant="outline" size="sm" className="w-full justify-center gap-1.5 text-xs">
+        <a href={href}>
+          {label}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </Button>
+    </div>
+  );
+}
+
+function EntityAvatar({ initials, tone = "muted" }: { initials: string; tone?: "muted" | "primary" }) {
+  return (
+    <div
+      className={
+        "w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 " +
+        (tone === "primary"
+          ? "bg-primary/10 text-primary"
+          : "bg-muted text-muted-foreground")
+      }
+    >
+      {initials}
+    </div>
+  );
+}
+
+
+
 const relCol = (entity: AssociationEntity) =>
   entity === "deal"
     ? "related_deal_id"
