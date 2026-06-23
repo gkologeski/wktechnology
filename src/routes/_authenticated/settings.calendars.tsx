@@ -70,6 +70,20 @@ function CalendarsPage() {
     }
   }, [search.calendar, qc]);
 
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; integration?: string };
+      if (data.type !== "google-oauth-connected" || data.integration !== "calendar") return;
+      toast.success("Google Calendar conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+      qc.invalidateQueries({ queryKey: ["calendar_events"] });
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [qc]);
+
   const connect = useMutation({
     mutationFn: async () => {
       const oauthWindow = window.open("about:blank", "google-calendar-oauth");

@@ -59,6 +59,19 @@ function EmailSettings() {
     }
   }, [search.gmail, qc]);
 
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; integration?: string };
+      if (data.type !== "google-oauth-connected" || data.integration !== "gmail") return;
+      toast.success("Gmail conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [qc]);
+
   const connect = async () => {
     const oauthWindow = window.open("about:blank", "google-gmail-oauth");
     try {
