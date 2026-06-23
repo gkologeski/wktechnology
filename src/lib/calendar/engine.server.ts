@@ -14,9 +14,13 @@ type CalendarAccountRow = {
   refresh_token: string | null;
   expires_at: string | null;
   sync_token: string | null;
+  sync_page_token: string | null;
   sync_enabled: boolean;
   last_synced_at: string | null;
 };
+
+// Limites por execução para não estourar CPU/subrequests do Cloudflare Worker.
+const MAX_PAGES_PER_RUN = 6;
 
 async function refreshAccessToken(account: CalendarAccountRow): Promise<string> {
   if (!account.refresh_token) throw new Error("Conta sem refresh_token — reconecte o calendário");
