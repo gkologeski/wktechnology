@@ -11,7 +11,18 @@ import {
   Mail,
   Paperclip,
   X,
+  Eye,
+  MoreHorizontal,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
@@ -104,6 +115,156 @@ const Empty = ({ label }: { label: string }) => (
   <p className="text-xs text-muted-foreground">{label}</p>
 );
 
+function CopyButton({ value, label }: { value: string; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard.writeText(value).then(
+          () => toast.success(`${label ?? "Valor"} copiado`),
+          () => toast.error("Falha ao copiar"),
+        );
+      }}
+      className="inline-flex items-center justify-center p-1 text-muted-foreground hover:text-primary rounded transition-colors"
+      aria-label={`Copiar ${label ?? "valor"}`}
+    >
+      <Copy className="h-3 w-3" />
+    </button>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  href,
+  copyable,
+}: {
+  label: string;
+  value: string | null | undefined;
+  href?: string;
+  copyable?: boolean;
+}) {
+  const v = value && String(value).trim() ? String(value).trim() : null;
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] min-w-0">
+      <span className="text-muted-foreground shrink-0">{label}:</span>
+      {v ? (
+        <>
+          {href ? (
+            <a
+              href={href}
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary font-semibold hover:underline truncate min-w-0"
+            >
+              {v}
+            </a>
+          ) : (
+            <span className="text-foreground font-medium truncate min-w-0">{v}</span>
+          )}
+          {copyable && <CopyButton value={v} label={label} />}
+        </>
+      ) : (
+        <span className="text-muted-foreground">--</span>
+      )}
+    </div>
+  );
+}
+
+function AssocItemActions({
+  href,
+  onUnlink,
+}: {
+  href?: string;
+  onUnlink?: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {href && (
+        <a
+          href={href}
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 text-muted-foreground hover:text-primary rounded border border-border/60"
+          aria-label="Abrir"
+          title="Abrir registro"
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </a>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1 text-muted-foreground hover:text-foreground rounded border border-border/60"
+            aria-label="Mais ações"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {href && (
+            <DropdownMenuItem asChild>
+              <a href={href}>Abrir registro</a>
+            </DropdownMenuItem>
+          )}
+          {onUnlink && (
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onUnlink}
+            >
+              Remover associação
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function AssocLabelAdder() {
+  return (
+    <button
+      type="button"
+      onClick={() => toast.message("Rótulos de associação em breve")}
+      className="text-[11px] font-semibold text-primary hover:underline mt-2"
+    >
+      Adicionar rótulo de associação
+    </button>
+  );
+}
+
+function ViewAllFooter({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <Button asChild variant="outline" size="sm" className="w-full justify-center gap-1.5 text-xs">
+        <a href={href}>
+          {label}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </Button>
+    </div>
+  );
+}
+
+function EntityAvatar({ initials, tone = "muted" }: { initials: string; tone?: "muted" | "primary" }) {
+  return (
+    <div
+      className={
+        "w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 " +
+        (tone === "primary"
+          ? "bg-primary/10 text-primary"
+          : "bg-muted text-muted-foreground")
+      }
+    >
+      {initials}
+    </div>
+  );
+}
+
+
+
 const relCol = (entity: AssociationEntity) =>
   entity === "deal"
     ? "related_deal_id"
@@ -184,6 +345,7 @@ function CompanyCard({
     name: string;
     industry: string | null;
     domain: string | null;
+    phone: string | null;
   } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(companyId);
@@ -195,7 +357,7 @@ function CompanyCard({
     }
     const { data } = await supabase
       .from("companies")
-      .select("id, name, industry, domain")
+      .select("id, name, industry, domain, phone")
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
@@ -260,32 +422,39 @@ function CompanyCard({
         {!c ? (
           <Empty label="Nenhuma empresa vinculada." />
         ) : (
-          <div className="flex items-center gap-3 group">
-            <Link
-              to="/companies/$id"
-              params={{ id: c.id }}
-              className="flex items-center gap-3 min-w-0 flex-1"
-            >
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-muted-foreground shrink-0">
-                {c.name?.[0]?.toUpperCase() ?? "?"}
+          <>
+            <div className="rounded-xl border border-border/60 p-3">
+              <div className="flex items-start gap-3">
+                <EntityAvatar initials={(c.name?.[0] ?? "?").toUpperCase()} tone="primary" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      to="/companies/$id"
+                      params={{ id: c.id }}
+                      className="text-sm font-semibold text-primary hover:underline truncate"
+                    >
+                      {c.name}
+                    </Link>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                      Principal
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <DetailRow
+                      label="Nome de domínio da empresa"
+                      value={c.domain}
+                      href={c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined}
+                      copyable
+                    />
+                    <DetailRow label="Telefone" value={c.phone} copyable />
+                  </div>
+                  <AssocLabelAdder />
+                </div>
+                <AssocItemActions href={`/companies/${c.id}`} onUnlink={unlink} />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary truncate">
-                  {c.name}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {c.domain || c.industry || "—"}
-                </p>
-              </div>
-            </Link>
-            <button
-              onClick={unlink}
-              className="p-1 text-muted-foreground hover:text-destructive rounded"
-              aria-label="Remover"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+            </div>
+            <ViewAllFooter href="/companies" label="Exibir todas as Empresas associadas" />
+          </>
         )}
       </AssocCard>
       <QuickCreateCompanyDialog
@@ -301,9 +470,19 @@ function CompanyCard({
 /* ───────────── Contacts card (entity = company|deal) ───────────── */
 
 function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entityId: string }) {
-  const [rows, setRows] = useState<
-    { id: string; first_name: string; last_name: string | null; job_title: string | null }[]
-  >([]);
+  type ContactRow = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    job_title: string | null;
+    email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
+    company: { name: string | null } | null;
+  };
+  const SELECT = "id, first_name, last_name, job_title, email, phone, mobile_phone, company:companies(name)";
+  const [rows, setRows] = useState<ContactRow[]>([]);
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
@@ -313,10 +492,11 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       if (entity === "company") {
         const { data } = await supabase
           .from("contacts")
-          .select("id, first_name, last_name, job_title")
+          .select(SELECT)
           .eq("company_id", entityId)
           .limit(50);
-        setRows((data ?? []) as never);
+        setRows(((data ?? []) as never) as ContactRow[]);
+        setPrimaryId(null);
       } else {
         const [dcRes, dealRes] = await Promise.all([
           supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(50),
@@ -325,14 +505,15 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         const ids = new Set<string>();
         for (const r of dcRes.data ?? []) if (r.contact_id) ids.add(r.contact_id as string);
         const primary = (dealRes.data as { primary_contact_id?: string | null } | null)
-          ?.primary_contact_id;
+          ?.primary_contact_id ?? null;
         if (primary) ids.add(primary);
+        setPrimaryId(primary);
         if (ids.size) {
           const { data } = await supabase
             .from("contacts")
-            .select("id, first_name, last_name, job_title")
+            .select(SELECT)
             .in("id", Array.from(ids));
-          setRows((data ?? []) as never);
+          setRows(((data ?? []) as never) as ContactRow[]);
         } else {
           setRows([]);
         }
@@ -410,37 +591,74 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         {rows.length === 0 ? (
           <Empty label="Nenhum contato vinculado." />
         ) : (
-          <ul className="space-y-2">
-            {rows.map((c) => (
-              <li key={c.id} className="flex items-center gap-2.5 group">
-                <Link
-                  to="/contacts/$id"
-                  params={{ id: c.id }}
-                  className="flex items-center gap-2.5 min-w-0 flex-1"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                    {(c.first_name?.[0] ?? "?").toUpperCase()}
-                    {(c.last_name?.[0] ?? "").toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">
-                      {`${c.first_name} ${c.last_name ?? ""}`.trim() || "Sem nome"}
-                    </p>
-                    {c.job_title && (
-                      <p className="text-[10px] text-muted-foreground truncate">{c.job_title}</p>
-                    )}
-                  </div>
-                </Link>
-                <button
-                  onClick={() => unlink(c.id)}
-                  className="p-1 text-muted-foreground hover:text-destructive rounded"
-                  aria-label="Remover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {rows.map((c) => {
+                const fullName =
+                  `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+                const initials =
+                  ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+                const companyName = c.company?.name ?? null;
+                const role = c.job_title
+                  ? companyName
+                    ? `${c.job_title} na ${companyName}`
+                    : c.job_title
+                  : companyName
+                    ? `Contato de ${companyName}`
+                    : null;
+                const phone = c.phone || c.mobile_phone || null;
+                const isPrimary = entity === "deal" && primaryId === c.id;
+                return (
+                  <li key={c.id} className="rounded-xl border border-border/60 p-3">
+                    <div className="flex items-start gap-3">
+                      <EntityAvatar initials={initials} tone="primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/contacts/$id"
+                            params={{ id: c.id }}
+                            className="text-sm font-semibold text-primary hover:underline truncate"
+                          >
+                            {fullName}
+                          </Link>
+                          {isPrimary && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        {role && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                            {role}
+                          </p>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          <DetailRow
+                            label="E-mail"
+                            value={c.email}
+                            href={c.email ? `mailto:${c.email}` : undefined}
+                            copyable
+                          />
+                          <DetailRow
+                            label="Número de telefone"
+                            value={phone}
+                            href={phone ? `tel:${phone}` : undefined}
+                            copyable
+                          />
+                        </div>
+                        <AssocLabelAdder />
+                      </div>
+                      <AssocItemActions
+                        href={`/contacts/${c.id}`}
+                        onUnlink={() => unlink(c.id)}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
+          </>
         )}
       </AssocCard>
       <CreateContactDialog
@@ -792,7 +1010,10 @@ function SingleContactCard({
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
     job_title: string | null;
+    company: { name: string | null } | null;
   } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(contactId);
@@ -804,7 +1025,7 @@ function SingleContactCard({
     }
     const { data } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, email, job_title")
+      .select("id, first_name, last_name, email, phone, mobile_phone, job_title, company:companies(name)")
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
@@ -856,35 +1077,62 @@ function SingleContactCard({
       >
         {!c ? (
           <Empty label="Nenhum contato vinculado." />
-        ) : (
-          <div className="flex items-center gap-3 group">
-            <Link
-              to="/contacts/$id"
-              params={{ id: c.id }}
-              className="flex items-center gap-3 min-w-0 flex-1"
-            >
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-muted-foreground shrink-0">
-                {(c.first_name?.[0] ?? "?").toUpperCase()}
-                {(c.last_name?.[0] ?? "").toUpperCase()}
+        ) : (() => {
+          const fullName =
+            `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+          const initials =
+            ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+          const companyName = c.company?.name ?? null;
+          const role = c.job_title
+            ? companyName
+              ? `${c.job_title} na ${companyName}`
+              : c.job_title
+            : companyName;
+          const phone = c.phone || c.mobile_phone || null;
+          return (
+            <>
+              <div className="rounded-xl border border-border/60 p-3">
+                <div className="flex items-start gap-3">
+                  <EntityAvatar initials={initials} tone="primary" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        to="/contacts/$id"
+                        params={{ id: c.id }}
+                        className="text-sm font-semibold text-primary hover:underline truncate"
+                      >
+                        {fullName}
+                      </Link>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                        Principal
+                      </span>
+                    </div>
+                    {role && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{role}</p>
+                    )}
+                    <div className="mt-2 space-y-1">
+                      <DetailRow
+                        label="E-mail"
+                        value={c.email}
+                        href={c.email ? `mailto:${c.email}` : undefined}
+                        copyable
+                      />
+                      <DetailRow
+                        label="Número de telefone"
+                        value={phone}
+                        href={phone ? `tel:${phone}` : undefined}
+                        copyable
+                      />
+                    </div>
+                    <AssocLabelAdder />
+                  </div>
+                  <AssocItemActions href={`/contacts/${c.id}`} onUnlink={unlink} />
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary truncate">
-                  {`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome"}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {c.email || c.job_title || "—"}
-                </p>
-              </div>
-            </Link>
-            <button
-              onClick={unlink}
-              className="p-1 text-muted-foreground hover:text-destructive rounded"
-              aria-label="Remover"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+              <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
+            </>
+          );
+        })()}
       </AssocCard>
       <CreateContactDialog
         open={createOpen}
