@@ -591,37 +591,74 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         {rows.length === 0 ? (
           <Empty label="Nenhum contato vinculado." />
         ) : (
-          <ul className="space-y-2">
-            {rows.map((c) => (
-              <li key={c.id} className="flex items-center gap-2.5 group">
-                <Link
-                  to="/contacts/$id"
-                  params={{ id: c.id }}
-                  className="flex items-center gap-2.5 min-w-0 flex-1"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                    {(c.first_name?.[0] ?? "?").toUpperCase()}
-                    {(c.last_name?.[0] ?? "").toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">
-                      {`${c.first_name} ${c.last_name ?? ""}`.trim() || "Sem nome"}
-                    </p>
-                    {c.job_title && (
-                      <p className="text-[10px] text-muted-foreground truncate">{c.job_title}</p>
-                    )}
-                  </div>
-                </Link>
-                <button
-                  onClick={() => unlink(c.id)}
-                  className="p-1 text-muted-foreground hover:text-destructive rounded"
-                  aria-label="Remover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {rows.map((c) => {
+                const fullName =
+                  `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+                const initials =
+                  ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+                const companyName = c.company?.name ?? null;
+                const role = c.job_title
+                  ? companyName
+                    ? `${c.job_title} na ${companyName}`
+                    : c.job_title
+                  : companyName
+                    ? `Contato de ${companyName}`
+                    : null;
+                const phone = c.phone || c.mobile_phone || null;
+                const isPrimary = entity === "deal" && primaryId === c.id;
+                return (
+                  <li key={c.id} className="rounded-xl border border-border/60 p-3">
+                    <div className="flex items-start gap-3">
+                      <EntityAvatar initials={initials} tone="primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/contacts/$id"
+                            params={{ id: c.id }}
+                            className="text-sm font-semibold text-primary hover:underline truncate"
+                          >
+                            {fullName}
+                          </Link>
+                          {isPrimary && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        {role && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                            {role}
+                          </p>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          <DetailRow
+                            label="E-mail"
+                            value={c.email}
+                            href={c.email ? `mailto:${c.email}` : undefined}
+                            copyable
+                          />
+                          <DetailRow
+                            label="Número de telefone"
+                            value={phone}
+                            href={phone ? `tel:${phone}` : undefined}
+                            copyable
+                          />
+                        </div>
+                        <AssocLabelAdder />
+                      </div>
+                      <AssocItemActions
+                        href={`/contacts/${c.id}`}
+                        onUnlink={() => unlink(c.id)}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
+          </>
         )}
       </AssocCard>
       <CreateContactDialog
