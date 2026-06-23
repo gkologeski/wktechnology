@@ -661,7 +661,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                         <AssocLabelAdder />
                       </div>
                       <AssocItemActions
-                        href={`/contacts/${c.id}`}
+                        link={{ to: "/contacts/$id", params: { id: c.id } }}
                         onUnlink={() => unlink(c.id)}
                       />
                     </div>
