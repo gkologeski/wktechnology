@@ -14,7 +14,8 @@ import {
   Eye,
   MoreHorizontal,
   Copy,
-  ExternalLink,
+  ArrowRight,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -147,27 +148,26 @@ function DetailRow({
   copyable?: boolean;
 }) {
   const v = value && String(value).trim() ? String(value).trim() : null;
+  if (!v) return null;
   return (
-    <div className="flex items-center gap-1.5 text-[11px] min-w-0">
-      <span className="text-muted-foreground shrink-0">{label}:</span>
-      {v ? (
-        <>
-          {href ? (
-            <a
-              href={href}
-              onClick={(e) => e.stopPropagation()}
-              className="text-primary font-semibold hover:underline truncate min-w-0"
-            >
-              {v}
-            </a>
-          ) : (
-            <span className="text-foreground font-medium truncate min-w-0">{v}</span>
-          )}
-          {copyable && <CopyButton value={v} label={label} />}
-        </>
-      ) : (
-        <span className="text-muted-foreground">--</span>
-      )}
+    <div className="min-w-0">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+        {label}
+      </div>
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        {href ? (
+          <a
+            href={href}
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs text-foreground hover:text-primary hover:underline truncate min-w-0 flex-1"
+          >
+            {v}
+          </a>
+        ) : (
+          <span className="text-xs text-foreground truncate min-w-0 flex-1">{v}</span>
+        )}
+        {copyable && <CopyButton value={v} label={label} />}
+      </div>
     </div>
   );
 }
@@ -180,12 +180,12 @@ function AssocItemActions({
   onUnlink?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-1 shrink-0">
+    <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
       {href && (
         <a
           href={href}
           onClick={(e) => e.stopPropagation()}
-          className="p-1 text-muted-foreground hover:text-primary rounded border border-border/60"
+          className="p-1 text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
           aria-label="Abrir"
           title="Abrir registro"
         >
@@ -197,7 +197,7 @@ function AssocItemActions({
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="p-1 text-muted-foreground hover:text-foreground rounded border border-border/60"
+            className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
             aria-label="Mais ações"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
@@ -228,23 +228,23 @@ function AssocLabelAdder() {
     <button
       type="button"
       onClick={() => toast.message("Rótulos de associação em breve")}
-      className="text-[11px] font-semibold text-primary hover:underline mt-2"
+      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-2"
     >
-      Adicionar rótulo de associação
+      <Tag className="h-3 w-3" />
+      Adicionar rótulo
     </button>
   );
 }
 
 function ViewAllFooter({ href, label }: { href: string; label: string }) {
   return (
-    <div className="mt-3 pt-3 border-t border-border/60">
-      <Button asChild variant="outline" size="sm" className="w-full justify-center gap-1.5 text-xs">
-        <a href={href}>
-          {label}
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      </Button>
-    </div>
+    <a
+      href={href}
+      className="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+    >
+      {label}
+      <ArrowRight className="h-3 w-3" />
+    </a>
   );
 }
 
@@ -423,7 +423,7 @@ function CompanyCard({
           <Empty label="Nenhuma empresa vinculada." />
         ) : (
           <>
-            <div className="rounded-xl border border-border/60 p-3">
+            <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
               <div className="flex items-start gap-3">
                 <EntityAvatar initials={(c.name?.[0] ?? "?").toUpperCase()} tone="primary" />
                 <div className="min-w-0 flex-1">
@@ -441,7 +441,7 @@ function CompanyCard({
                   </div>
                   <div className="mt-2 space-y-1">
                     <DetailRow
-                      label="Nome de domínio da empresa"
+                      label="Domínio"
                       value={c.domain}
                       href={c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined}
                       copyable
@@ -609,7 +609,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                 const phone = c.phone || c.mobile_phone || null;
                 const isPrimary = entity === "deal" && primaryId === c.id;
                 return (
-                  <li key={c.id} className="rounded-xl border border-border/60 p-3">
+                  <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
                     <div className="flex items-start gap-3">
                       <EntityAvatar initials={initials} tone="primary" />
                       <div className="min-w-0 flex-1">
@@ -640,7 +640,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                             copyable
                           />
                           <DetailRow
-                            label="Número de telefone"
+                            label="Telefone"
                             value={phone}
                             href={phone ? `tel:${phone}` : undefined}
                             copyable
@@ -1091,7 +1091,7 @@ function SingleContactCard({
           const phone = c.phone || c.mobile_phone || null;
           return (
             <>
-              <div className="rounded-xl border border-border/60 p-3">
+              <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
                 <div className="flex items-start gap-3">
                   <EntityAvatar initials={initials} tone="primary" />
                   <div className="min-w-0 flex-1">
@@ -1118,7 +1118,7 @@ function SingleContactCard({
                         copyable
                       />
                       <DetailRow
-                        label="Número de telefone"
+                        label="Telefone"
                         value={phone}
                         href={phone ? `tel:${phone}` : undefined}
                         copyable
