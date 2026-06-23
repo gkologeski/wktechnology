@@ -470,9 +470,19 @@ function CompanyCard({
 /* ───────────── Contacts card (entity = company|deal) ───────────── */
 
 function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entityId: string }) {
-  const [rows, setRows] = useState<
-    { id: string; first_name: string; last_name: string | null; job_title: string | null }[]
-  >([]);
+  type ContactRow = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    job_title: string | null;
+    email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
+    company: { name: string | null } | null;
+  };
+  const SELECT = "id, first_name, last_name, job_title, email, phone, mobile_phone, company:companies(name)";
+  const [rows, setRows] = useState<ContactRow[]>([]);
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
@@ -482,10 +492,11 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       if (entity === "company") {
         const { data } = await supabase
           .from("contacts")
-          .select("id, first_name, last_name, job_title")
+          .select(SELECT)
           .eq("company_id", entityId)
           .limit(50);
-        setRows((data ?? []) as never);
+        setRows(((data ?? []) as never) as ContactRow[]);
+        setPrimaryId(null);
       } else {
         const [dcRes, dealRes] = await Promise.all([
           supabase.from("deal_contacts").select("contact_id").eq("deal_id", entityId).limit(50),
@@ -494,14 +505,15 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
         const ids = new Set<string>();
         for (const r of dcRes.data ?? []) if (r.contact_id) ids.add(r.contact_id as string);
         const primary = (dealRes.data as { primary_contact_id?: string | null } | null)
-          ?.primary_contact_id;
+          ?.primary_contact_id ?? null;
         if (primary) ids.add(primary);
+        setPrimaryId(primary);
         if (ids.size) {
           const { data } = await supabase
             .from("contacts")
-            .select("id, first_name, last_name, job_title")
+            .select(SELECT)
             .in("id", Array.from(ids));
-          setRows((data ?? []) as never);
+          setRows(((data ?? []) as never) as ContactRow[]);
         } else {
           setRows([]);
         }
