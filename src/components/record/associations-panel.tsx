@@ -692,12 +692,15 @@ type DealRow = {
   name: string;
   value: number | null;
   stage: string;
+  stage_id: string | null;
   currency: string;
   expected_close_date: string | null;
   pipeline_id: string | null;
 };
 
-const DEAL_SELECT = "id, name, value, stage, currency, expected_close_date, pipeline_id";
+const DEAL_SELECT =
+  "id, name, value, stage, stage_id, currency, expected_close_date, pipeline_id";
+
 
 function formatDealDateLong(iso: string | null): string | null {
   if (!iso) return null;
