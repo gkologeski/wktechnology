@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   callbackRedirectUri,
   exchangeCodeForTokens,
@@ -23,6 +22,32 @@ function htmlResponse(title: string, body: string, status = 200) {
 <style>body{font-family:system-ui;background:#0b0b0c;color:#e7e7ea;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}main{max-width:480px;padding:32px;border:1px solid #2a2a2e;border-radius:12px;background:#141416}h1{margin:0 0 8px;font-size:18px}p{margin:6px 0;color:#a1a1aa;font-size:14px}a{color:#60a5fa}</style>
 </head><body><main>${body}</main></body></html>`,
     { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
+}
+
+function connectedResponse(opts: { returnTo: string; integration: "calendar" | "gmail" }) {
+  const queryKey = opts.integration === "calendar" ? "calendar" : "gmail";
+  const connectedUrl = `${opts.returnTo}${opts.returnTo.includes("?") ? "&" : "?"}${queryKey}=connected`;
+  const payload = JSON.stringify({
+    type: "google-oauth-connected",
+    integration: opts.integration,
+    url: connectedUrl,
+  });
+
+  return htmlResponse(
+    "Google conectado",
+    `<h1>Google conectado com sucesso</h1><p>Você já pode voltar ao CRM.</p><p><a href="${esc(connectedUrl)}">Voltar agora</a></p><script>
+(function () {
+  var payload = ${payload};
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage(payload, window.location.origin);
+    window.close();
+    setTimeout(function () { window.location.replace(payload.url); }, 800);
+    return;
+  }
+  window.location.replace(payload.url);
+})();
+</script>`,
   );
 }
 
@@ -61,6 +86,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
         const mode = parsed.mode === "calendar" ? "calendar" : "gmail";
 
         try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const tokens = await exchangeCodeForTokens({ code, redirectUri });
           const info = await fetchGoogleUserInfo(tokens.access_token);
           const scopes = tokens.scope ? tokens.scope.split(" ") : [];
@@ -102,10 +128,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
               parsed.return_to && parsed.return_to.startsWith("/")
                 ? parsed.return_to
                 : "/settings/calendars";
-            return new Response(null, {
-              status: 302,
-              headers: { Location: `${returnTo}?calendar=connected` },
-            });
+            return connectedResponse({ returnTo, integration: "calendar" });
           }
 
           // Default: gmail
@@ -146,10 +169,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             parsed.return_to && parsed.return_to.startsWith("/")
               ? parsed.return_to
               : "/settings/email";
-          return new Response(null, {
-            status: 302,
-            headers: { Location: `${returnTo}?gmail=connected` },
-          });
+          return connectedResponse({ returnTo, integration: "gmail" });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(

@@ -59,13 +59,39 @@ function EmailSettings() {
     }
   }, [search.gmail, qc]);
 
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; integration?: string };
+      if (data.type !== "google-oauth-connected" || data.integration !== "gmail") return;
+      toast.success("Gmail conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [qc]);
+
   const connect = async () => {
+    const oauthWindow = window.open("about:blank", "google-gmail-oauth");
     try {
       const r = await start({
         data: { return_to: "/settings/email", origin: window.location.origin },
       });
-      window.location.href = r.url;
+      if (oauthWindow) {
+        oauthWindow.location.href = r.url;
+        oauthWindow.focus();
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      const fallback = window.open(r.url, "_blank", "noopener,noreferrer");
+      if (fallback) {
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      window.location.assign(r.url);
     } catch (e) {
+      oauthWindow?.close();
       toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
     }
   };
