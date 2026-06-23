@@ -75,11 +75,11 @@ function CalendarsPage() {
       const oauthWindow = window.open("about:blank", "google-calendar-oauth");
       try {
         const r = await startFn({
-        data: {
-          provider: "google",
-          return_to: "/settings/calendars",
-          origin: window.location.origin,
-        },
+          data: {
+            provider: "google",
+            return_to: "/settings/calendars",
+            origin: window.location.origin,
+          },
         });
         if (oauthWindow) {
           oauthWindow.location.href = r.url;
