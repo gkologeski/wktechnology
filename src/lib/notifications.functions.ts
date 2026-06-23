@@ -269,7 +269,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
           : `${authorName} mencionou você`;
       if (channel.inapp) {
         inappRows.push({
-          owner_id: a.owner_id,
+          owner_id: a.workspace_id,
           user_id: t.userId,
           type: t.category,
           title,
