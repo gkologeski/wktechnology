@@ -228,6 +228,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     if (a.type === "task" && a.owner_id && a.owner_id !== author) {
       targets.push({ userId: a.owner_id, category: "assignment" });
     }
+
     if (targets.length === 0) return { ok: true, sent: 0 };
 
     // Fetch preferences for all targets
