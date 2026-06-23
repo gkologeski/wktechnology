@@ -512,15 +512,9 @@ export async function syncCalendarAccount(
   }
   try {
     const pull = await pullGoogleEvents(account as CalendarAccountRow);
-    // Recordings before push: user-visible value, and push can be heavy.
-    let recordings = emptyRec;
-    try {
-      recordings = await syncPastRecordings(account as CalendarAccountRow);
-      console.log("[recordings] resumo", { account_id: accountId, ...recordings });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("[recordings] sync error", msg);
-    }
+    // syncPastRecordings é pesado (varre Drive) e estoura subrequest limit do Worker.
+    // Mantido só no cron dedicado tickAllRecordings.
+    const recordings = emptyRec;
     const push = await pushPendingMeetings(account as CalendarAccountRow);
     return {
       imported: pull.imported,
@@ -529,6 +523,7 @@ export async function syncCalendarAccount(
       pushed_updated: push.updated,
       recordings,
     };
+
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
