@@ -177,7 +177,9 @@ function DetailRow({
 type AssocLinkTarget =
   | { to: "/companies/$id"; params: { id: string } }
   | { to: "/contacts/$id"; params: { id: string } }
-  | { to: "/deals/$id"; params: { id: string } };
+  | { to: "/deals/$id"; params: { id: string } }
+  | { to: "/tickets/$id"; params: { id: string } };
+
 
 function AssocItemActions({
   link,
