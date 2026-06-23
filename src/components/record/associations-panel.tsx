@@ -993,12 +993,20 @@ function TicketsCard({
   entityId: string;
   companyId?: string | null;
 }) {
-  const [rows, setRows] = useState<
-    { id: string; subject: string; status: string; priority: string }[]
-  >([]);
+  type TicketRow = {
+    id: string;
+    subject: string;
+    status: string;
+    priority: string;
+    due_at: string | null;
+    pipeline_id: string | null;
+  };
+  const TICKET_SELECT = "id, subject, status, priority, due_at, pipeline_id";
+  const [rows, setRows] = useState<TicketRow[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  const { pipelines } = usePipelines("ticket");
 
   useEffect(() => {
     (async () => {
@@ -1006,21 +1014,22 @@ function TicketsCard({
         entity === "deal" ? "deal_id" : entity === "company" ? "company_id" : "contact_id";
       const { data: direct } = await supabase
         .from("tickets")
-        .select("id, subject, status, priority")
+        .select(TICKET_SELECT)
         .eq(col, entityId)
         .limit(50);
-      let companyRows: typeof direct = [];
+      let companyRows: TicketRow[] = [];
       if (entity === "contact" && companyId) {
         const { data } = await supabase
           .from("tickets")
-          .select("id, subject, status, priority")
+          .select(TICKET_SELECT)
           .eq("company_id", companyId)
           .limit(50);
-        companyRows = data ?? [];
+        companyRows = ((data ?? []) as never) as TicketRow[];
       }
-      const map = new Map<string, NonNullable<typeof direct>[number]>();
-      for (const t of [...(direct ?? []), ...(companyRows ?? [])]) map.set(t.id, t);
-      setRows(Array.from(map.values()).slice(0, 50) as never);
+      const map = new Map<string, TicketRow>();
+      for (const t of [...(((direct ?? []) as never) as TicketRow[]), ...companyRows])
+        map.set(t.id, t);
+      setRows(Array.from(map.values()).slice(0, 50));
     })();
   }, [entity, entityId, companyId, tick]);
 
@@ -1054,7 +1063,23 @@ function TicketsCard({
       .update({ [fkCol]: null })
       .eq("id", ticketId);
     if (error) return toast.error(error.message);
+    toast.success("Ticket desvinculado");
     refresh();
+  };
+
+  const changeStatus = async (ticketId: string, value: string) => {
+    const prev = rows;
+    setRows((rs) => rs.map((r) => (r.id === ticketId ? { ...r, status: value } : r)));
+    const { error } = await sb
+      .from("tickets")
+      .update({ status: value as never })
+      .eq("id", ticketId);
+    if (error) {
+      setRows(prev);
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Status atualizado");
   };
 
   return (
@@ -1085,25 +1110,62 @@ function TicketsCard({
         {rows.length === 0 ? (
           <Empty label="Nenhum ticket." />
         ) : (
-          <ul className="space-y-2">
-            {rows.map((t) => (
-              <li key={t.id} className="text-xs flex items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground truncate">{t.subject}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {t.status} · {t.priority}
-                  </p>
-                </div>
-                <button
-                  onClick={() => unlink(t.id)}
-                  className="p-1 text-muted-foreground hover:text-destructive rounded"
-                  aria-label="Remover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">
+              {rows.map((t) => {
+                const pipeline = pipelines.find((p) => p.id === t.pipeline_id);
+                const stages = pipeline?.stages ?? [];
+                return (
+                  <li
+                    key={t.id}
+                    className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <EntityAvatar initials="" tone="primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/tickets/$id"
+                            params={{ id: t.id }}
+                            className="text-sm font-semibold text-primary hover:underline truncate"
+                          >
+                            {t.subject}
+                          </Link>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          <DetailRow label="Prioridade" value={t.priority ?? null} />
+                          <DetailRow
+                            label="Data de vencimento"
+                            value={formatDealDateLong(t.due_at)}
+                          />
+                          <DetailRow label="Pipeline" value={pipeline?.name ?? "—"} />
+                          <div className="min-w-0">
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                              Fase
+                            </div>
+                            <div className="mt-0.5">
+                              <StagePicker
+                                dealId={t.id}
+                                stage={t.status}
+                                stages={stages}
+                                onChange={(v) => changeStatus(t.id, v)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <AssocLabelAdder />
+                      </div>
+                      <AssocItemActions
+                        link={{ to: "/tickets/$id", params: { id: t.id } }}
+                        onUnlink={() => unlink(t.id)}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <ViewAllFooter href="/tickets" label="Exibir todos os Tickets associados" />
+          </>
         )}
       </AssocCard>
       <QuickCreateTicketDialog
@@ -1118,6 +1180,7 @@ function TicketsCard({
     </>
   );
 }
+
 
 /* ───────────── Single Contact / Deal cards (entity = ticket) ───────────── */
 
