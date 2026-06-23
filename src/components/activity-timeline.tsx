@@ -687,8 +687,15 @@ export function ActivityTimeline({
       attachments,
       ...autoLinks,
     };
-    const { error } = await supabase.from("activities").insert(payload as never);
+    const { data: inserted, error } = await supabase
+      .from("activities")
+      .insert(payload as never)
+      .select("id")
+      .single();
     if (error) return toast.error(error.message);
+    if (inserted?.id) {
+      void notifyActivityEventFn({ data: { activityId: inserted.id } }).catch(() => {});
+    }
     setSubject("");
     setBody("");
     setDueDate("");
