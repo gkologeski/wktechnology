@@ -1138,7 +1138,7 @@ function SingleContactCard({
                     </div>
                     <AssocLabelAdder />
                   </div>
-                  <AssocItemActions href={`/contacts/${c.id}`} onUnlink={unlink} />
+                  <AssocItemActions link={{ to: "/contacts/$id", params: { id: c.id } }} onUnlink={unlink} />
                 </div>
               </div>
               <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
