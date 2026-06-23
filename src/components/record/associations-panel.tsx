@@ -945,10 +945,11 @@ function DealsCard({
                             <div className="mt-0.5">
                               <StagePicker
                                 dealId={d.id}
-                                stage={d.stage}
+                                stage={d.stage_id ?? d.stage}
                                 stages={stages}
                                 onChange={(v) => changeStage(d.id, v)}
                               />
+
                             </div>
                           </div>
 
