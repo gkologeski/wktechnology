@@ -345,6 +345,7 @@ function CompanyCard({
     name: string;
     industry: string | null;
     domain: string | null;
+    phone: string | null;
   } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(companyId);
@@ -356,7 +357,7 @@ function CompanyCard({
     }
     const { data } = await supabase
       .from("companies")
-      .select("id, name, industry, domain")
+      .select("id, name, industry, domain, phone")
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
