@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
+import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
 import {
