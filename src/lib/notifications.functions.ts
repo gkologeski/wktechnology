@@ -186,7 +186,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     const { data: activity, error: aerr } = await supabase
       .from("activities")
       .select(
-        "id, owner_id, created_by, type, subject, body, mentions, related_deal_id, related_contact_id, related_company_id, related_lead_id, related_ticket_id",
+        "id, owner_id, workspace_id, created_by, type, subject, body, mentions, related_deal_id, related_contact_id, related_company_id, related_lead_id, related_ticket_id",
       )
       .eq("id", data.activityId)
       .maybeSingle();
@@ -195,6 +195,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     const a = activity as unknown as {
       id: string;
       owner_id: string;
+      workspace_id: string;
       created_by: string;
       type: string;
       subject: string | null;
@@ -206,6 +207,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       related_lead_id: string | null;
       related_ticket_id: string | null;
     };
+
 
     const author = a.created_by ?? userId;
     // Author display name
