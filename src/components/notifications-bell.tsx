@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/lib/crm";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -12,10 +12,38 @@ import {
   listMyNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  getMyNotificationPrefs,
+  type NotificationCategory,
+  type NotificationPrefs,
 } from "@/lib/notifications.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+
+function playBeep() {
+  try {
+    const AudioCtx =
+      (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+        .AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.27);
+    setTimeout(() => ctx.close().catch(() => {}), 400);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function NotificationsBell() {
   const qc = useQueryClient();
@@ -23,6 +51,9 @@ export function NotificationsBell() {
   const listFn = useServerFn(listMyNotifications);
   const readFn = useServerFn(markNotificationRead);
   const readAllFn = useServerFn(markAllNotificationsRead);
+  const prefsFn = useServerFn(getMyNotificationPrefs);
+  const [shaking, setShaking] = useState(false);
+  const prefsRef = useRef<NotificationPrefs | null>(null);
 
   const q = useQuery({
     queryKey: ["notifications"],
@@ -30,7 +61,17 @@ export function NotificationsBell() {
     refetchInterval: 60_000,
   });
 
-  // Realtime: refresh + toast on new notification
+  const prefsQ = useQuery({
+    queryKey: ["notification-prefs"],
+    queryFn: () => prefsFn(),
+    staleTime: 5 * 60_000,
+  });
+
+  useEffect(() => {
+    if (prefsQ.data?.prefs) prefsRef.current = prefsQ.data.prefs;
+  }, [prefsQ.data]);
+
+  // Realtime: refresh + toast + shake/sound on new notification
   useEffect(() => {
     if (!user?.id) return;
     const ch = supabase
@@ -44,8 +85,15 @@ export function NotificationsBell() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const n = payload.new as { title?: string; body?: string };
+          const n = payload.new as { title?: string; body?: string; type?: string };
+          const cat = (n.type ?? "") as NotificationCategory;
+          const channel = prefsRef.current?.[cat];
           toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
+          if (channel?.sound !== false) playBeep();
+          if (channel?.shake !== false) {
+            setShaking(true);
+            setTimeout(() => setShaking(false), 850);
+          }
           qc.invalidateQueries({ queryKey: ["notifications"] });
         },
       )
@@ -71,7 +119,7 @@ export function NotificationsBell() {
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
-          <Bell className="h-5 w-5" />
+          <Bell className={`h-5 w-5 ${shaking ? "animate-bell-shake" : ""}`} />
           {unread > 0 && (
             <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
               {unread > 99 ? "99+" : unread}
@@ -128,6 +176,14 @@ export function NotificationsBell() {
             </ul>
           )}
         </ScrollArea>
+        <div className="p-2 border-t text-right">
+          <Link
+            to={"/settings/notifications" as never}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Preferências →
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );
