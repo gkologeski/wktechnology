@@ -120,9 +120,13 @@ function CalendarsPage() {
   const sync = useMutation({
     mutationFn: (id: string) => syncFn({ data: { id } }),
     onSuccess: (r) => {
-      toast.success(
-        `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
-      );
+      if (r && typeof r === "object" && "imported" in r) {
+        toast.success(
+          `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
+        );
+      } else {
+        toast.success("Sincronização iniciada. Atualizando dados...");
+      }
       qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
       qc.invalidateQueries({ queryKey: ["calendar_events"] });
     },
