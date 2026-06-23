@@ -60,12 +60,25 @@ function EmailSettings() {
   }, [search.gmail, qc]);
 
   const connect = async () => {
+    const oauthWindow = window.open("about:blank", "google-gmail-oauth");
     try {
       const r = await start({
         data: { return_to: "/settings/email", origin: window.location.origin },
       });
-      window.location.href = r.url;
+      if (oauthWindow) {
+        oauthWindow.location.href = r.url;
+        oauthWindow.focus();
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      const fallback = window.open(r.url, "_blank", "noopener,noreferrer");
+      if (fallback) {
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      window.location.assign(r.url);
     } catch (e) {
+      oauthWindow?.close();
       toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
     }
   };

@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   Calendar,
   CheckCircle2,
@@ -28,12 +29,16 @@ import {
   type CalendarTestStep,
 } from "@/lib/calendar.functions";
 
+const searchSchema = z.object({ calendar: z.string().optional() });
+
 export const Route = createFileRoute("/_authenticated/settings/calendars")({
+  validateSearch: searchSchema,
   component: CalendarsPage,
 });
 
 function CalendarsPage() {
   const qc = useQueryClient();
+  const search = useSearch({ from: "/_authenticated/settings/calendars" });
   const listFn = useServerFn(listCalendarAccounts);
   const startFn = useServerFn(startCalendarOAuth);
   const disconnectFn = useServerFn(disconnectCalendarAccount);
@@ -57,17 +62,43 @@ function CalendarsPage() {
       eventsFn({ data: { limit: 50, from: new Date(Date.now() - 7 * 86400000).toISOString() } }),
   });
 
+  useEffect(() => {
+    if (search.calendar === "connected") {
+      toast.success("Google Calendar conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+      qc.invalidateQueries({ queryKey: ["calendar_events"] });
+    }
+  }, [search.calendar, qc]);
+
   const connect = useMutation({
-    mutationFn: () =>
-      startFn({
+    mutationFn: async () => {
+      const oauthWindow = window.open("about:blank", "google-calendar-oauth");
+      try {
+        const r = await startFn({
         data: {
           provider: "google",
           return_to: "/settings/calendars",
           origin: window.location.origin,
         },
-      }),
+        });
+        if (oauthWindow) {
+          oauthWindow.location.href = r.url;
+          oauthWindow.focus();
+          return { openedInNewTab: true };
+        }
+        const fallback = window.open(r.url, "_blank", "noopener,noreferrer");
+        if (fallback) return { openedInNewTab: true };
+        window.location.assign(r.url);
+        return { openedInNewTab: false };
+      } catch (e) {
+        oauthWindow?.close();
+        throw e;
+      }
+    },
     onSuccess: (r) => {
-      window.location.href = r.url;
+      if (r.openedInNewTab) {
+        toast.info("Finalize a conexão do Google na nova aba.");
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -82,7 +82,7 @@ export function buildGmailAuthUrl(opts: { redirectUri: string; state: string }) 
     response_type: "code",
     scope: GMAIL_SCOPES.join(" "),
     access_type: "offline",
-    prompt: "consent",
+    prompt: "consent select_account",
     include_granted_scopes: "true",
     state: opts.state,
   });
@@ -98,7 +98,7 @@ export function buildCalendarAuthUrl(opts: { redirectUri: string; state: string 
     response_type: "code",
     scope: CALENDAR_SCOPES.join(" "),
     access_type: "offline",
-    prompt: "consent",
+    prompt: "consent select_account",
     include_granted_scopes: "true",
     state: opts.state,
   });
