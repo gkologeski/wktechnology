@@ -692,12 +692,15 @@ type DealRow = {
   name: string;
   value: number | null;
   stage: string;
+  stage_id: string | null;
   currency: string;
   expected_close_date: string | null;
   pipeline_id: string | null;
 };
 
-const DEAL_SELECT = "id, name, value, stage, currency, expected_close_date, pipeline_id";
+const DEAL_SELECT =
+  "id, name, value, stage, stage_id, currency, expected_close_date, pipeline_id";
+
 
 function formatDealDateLong(iso: string | null): string | null {
   if (!iso) return null;
@@ -860,8 +863,8 @@ function DealsCard({
 
   const changeStage = async (dealId: string, value: string) => {
     const prev = rows;
-    setRows((rs) => rs.map((r) => (r.id === dealId ? { ...r, stage: value } : r)));
-    const { error } = await sb.from("deals").update({ stage: value }).eq("id", dealId);
+    setRows((rs) => rs.map((r) => (r.id === dealId ? { ...r, stage_id: value } : r)));
+    const { error } = await sb.from("deals").update({ stage_id: value }).eq("id", dealId);
     if (error) {
       setRows(prev);
       toast.error(error.message);
@@ -869,6 +872,7 @@ function DealsCard({
     }
     toast.success("Etapa atualizada");
   };
+
 
   return (
     <>
@@ -941,10 +945,11 @@ function DealsCard({
                             <div className="mt-0.5">
                               <StagePicker
                                 dealId={d.id}
-                                stage={d.stage}
+                                stage={d.stage_id ?? d.stage}
                                 stages={stages}
                                 onChange={(v) => changeStage(d.id, v)}
                               />
+
                             </div>
                           </div>
 
