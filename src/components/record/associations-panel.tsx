@@ -930,9 +930,13 @@ function DealsCard({
                             label="Data de fechamento"
                             value={formatDealDateLong(d.expected_close_date)}
                           />
+                          <DetailRow
+                            label="Pipeline"
+                            value={pipeline?.name ?? "—"}
+                          />
                           <div className="min-w-0">
                             <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                              Etapa do negócio
+                              Fase
                             </div>
                             <div className="mt-0.5">
                               <StagePicker
@@ -943,6 +947,7 @@ function DealsCard({
                               />
                             </div>
                           </div>
+
                         </div>
                         <AssocLabelAdder />
                       </div>
