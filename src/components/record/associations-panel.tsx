@@ -863,8 +863,8 @@ function DealsCard({
 
   const changeStage = async (dealId: string, value: string) => {
     const prev = rows;
-    setRows((rs) => rs.map((r) => (r.id === dealId ? { ...r, stage: value } : r)));
-    const { error } = await sb.from("deals").update({ stage: value }).eq("id", dealId);
+    setRows((rs) => rs.map((r) => (r.id === dealId ? { ...r, stage_id: value } : r)));
+    const { error } = await sb.from("deals").update({ stage_id: value }).eq("id", dealId);
     if (error) {
       setRows(prev);
       toast.error(error.message);
@@ -872,6 +872,7 @@ function DealsCard({
     }
     toast.success("Etapa atualizada");
   };
+
 
   return (
     <>
