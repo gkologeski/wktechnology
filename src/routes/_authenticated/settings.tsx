@@ -90,6 +90,7 @@ const sections: Section[] = [
     tabs: [
       { to: "/settings", label: "Perfil", icon: User },
       { to: "/settings/email", label: "Conexão de email", icon: Mail },
+      { to: "/settings/notifications", label: "Notificações", icon: Bell },
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
     ],
   },
