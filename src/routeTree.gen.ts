@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -32,6 +33,7 @@ import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
@@ -59,6 +61,7 @@ import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -99,6 +102,7 @@ import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
@@ -155,6 +159,8 @@ import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/public/zapier/subscribe'
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
@@ -213,6 +219,11 @@ import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/pub
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -325,6 +336,11 @@ const LpSlugRoute = LpSlugRouteImport.update({
 const KbSlugRoute = KbSlugRouteImport.update({
   id: '/kb/$slug',
   path: '/kb/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookSlugRoute = BookSlugRouteImport.update({
@@ -470,6 +486,11 @@ const AuthenticatedInboxIndexRoute = AuthenticatedInboxIndexRouteImport.update({
   id: '/inbox/',
   path: '/inbox/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsIdRoute = AuthenticatedTicketsIdRouteImport.update({
   id: '/$id',
@@ -707,6 +728,12 @@ const AuthenticatedSettingsPaymentsRoute =
   AuthenticatedSettingsPaymentsRouteImport.update({
     id: '/payments',
     path: '/payments',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsNfseRoute =
@@ -1038,6 +1065,18 @@ const AuthenticatedProspectingCampaignsIndexRoute =
     path: '/campaigns/',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -1280,9 +1319,9 @@ const AuthenticatedSettingsRolesRoleIdRoute =
   } as any)
 const AuthenticatedSettingsNotificationsSlackRoute =
   AuthenticatedSettingsNotificationsSlackRouteImport.update({
-    id: '/notifications/slack',
-    path: '/notifications/slack',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+    id: '/slack',
+    path: '/slack',
+    getParentRoute: () => AuthenticatedSettingsNotificationsRoute,
   } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
   AuthenticatedProspectingCampaignsIdRouteImport.update({
@@ -1378,6 +1417,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -1400,6 +1440,7 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1465,6 +1506,7 @@ export interface FileRoutesByFullPath {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -1505,6 +1547,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
@@ -1555,6 +1598,8 @@ export interface FileRoutesByFullPath {
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1582,6 +1627,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -1601,6 +1647,7 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1666,6 +1713,7 @@ export interface FileRoutesByTo {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -1705,6 +1753,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
@@ -1755,6 +1804,8 @@ export interface FileRoutesByTo {
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1784,6 +1835,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -1806,6 +1858,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1871,6 +1924,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -1911,6 +1965,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
@@ -1961,6 +2016,8 @@ export interface FileRoutesById {
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
@@ -1990,6 +2047,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unsubscribe'
     | '/analytics'
     | '/communications'
     | '/companies'
@@ -2012,6 +2070,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2077,6 +2136,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
+    | '/settings/notifications'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -2117,6 +2177,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/lovable/email/suppression'
     | '/inbox/'
     | '/integrations/'
     | '/landing-pages/'
@@ -2167,6 +2228,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
     | '/tasks/queues/$queueId/play'
@@ -2194,6 +2257,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unsubscribe'
     | '/analytics'
     | '/communications'
     | '/companies'
@@ -2213,6 +2277,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2278,6 +2343,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/nfse'
+    | '/settings/notifications'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -2317,6 +2383,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/lovable/email/suppression'
     | '/inbox'
     | '/integrations'
     | '/landing-pages'
@@ -2367,6 +2434,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/prospecting/campaigns'
     | '/settings/roles'
     | '/tasks/queues/$queueId/play'
@@ -2395,6 +2464,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unsubscribe'
     | '/_authenticated/analytics'
     | '/_authenticated/communications'
     | '/_authenticated/companies'
@@ -2417,6 +2487,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2482,6 +2553,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/nfse'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payments'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
@@ -2522,6 +2594,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
+    | '/lovable/email/suppression'
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
@@ -2572,6 +2645,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/tasks/queues/$queueId/play'
@@ -2601,7 +2676,9 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   BookSlugRoute: typeof BookSlugRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
@@ -2613,6 +2690,7 @@ export interface RootRouteChildren {
   WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   KbIndexRoute: typeof KbIndexRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
@@ -2653,6 +2731,8 @@ export interface RootRouteChildren {
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
   ApiPublicZapierSubscribeRoute: typeof ApiPublicZapierSubscribeRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -2665,6 +2745,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -2824,6 +2911,13 @@ declare module '@tanstack/react-router' {
       path: '/kb/$slug'
       fullPath: '/kb/$slug'
       preLoaderRoute: typeof KbSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/$slug': {
@@ -3014,6 +3108,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/inbox/'
       preLoaderRoute: typeof AuthenticatedInboxIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tickets/$id': {
       id: '/_authenticated/tickets/$id'
@@ -3293,6 +3394,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/settings/payments'
       preLoaderRoute: typeof AuthenticatedSettingsPaymentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/nfse': {
@@ -3687,6 +3795,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
     }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -3983,10 +4105,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/settings/notifications/slack': {
       id: '/_authenticated/settings/notifications/slack'
-      path: '/notifications/slack'
+      path: '/slack'
       fullPath: '/settings/notifications/slack'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsSlackRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+      parentRoute: typeof AuthenticatedSettingsNotificationsRoute
     }
     '/_authenticated/prospecting/campaigns/$id': {
       id: '/_authenticated/prospecting/campaigns/$id'
@@ -4204,6 +4326,21 @@ const AuthenticatedProspectingRouteWithChildren =
     AuthenticatedProspectingRouteChildren,
   )
 
+interface AuthenticatedSettingsNotificationsRouteChildren {
+  AuthenticatedSettingsNotificationsSlackRoute: typeof AuthenticatedSettingsNotificationsSlackRoute
+}
+
+const AuthenticatedSettingsNotificationsRouteChildren: AuthenticatedSettingsNotificationsRouteChildren =
+  {
+    AuthenticatedSettingsNotificationsSlackRoute:
+      AuthenticatedSettingsNotificationsSlackRoute,
+  }
+
+const AuthenticatedSettingsNotificationsRouteWithChildren =
+  AuthenticatedSettingsNotificationsRoute._addFileChildren(
+    AuthenticatedSettingsNotificationsRouteChildren,
+  )
+
 interface AuthenticatedSettingsRolesRouteChildren {
   AuthenticatedSettingsRolesRoleIdRoute: typeof AuthenticatedSettingsRolesRoleIdRoute
   AuthenticatedSettingsRolesMatrixRoute: typeof AuthenticatedSettingsRolesMatrixRoute
@@ -4256,6 +4393,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
@@ -4294,7 +4432,6 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
-  AuthenticatedSettingsNotificationsSlackRoute: typeof AuthenticatedSettingsNotificationsSlackRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -4335,6 +4472,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRouteWithChildren,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
@@ -4381,8 +4520,6 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsZapierRoute: AuthenticatedSettingsZapierRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-  AuthenticatedSettingsNotificationsSlackRoute:
-    AuthenticatedSettingsNotificationsSlackRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
@@ -4586,7 +4723,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   BookSlugRoute: BookSlugRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
@@ -4598,6 +4737,7 @@ const rootRouteChildren: RootRouteChildren = {
   WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   KbIndexRoute: KbIndexRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
@@ -4643,6 +4783,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
   ApiPublicZapierSubscribeRoute: ApiPublicZapierSubscribeRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,

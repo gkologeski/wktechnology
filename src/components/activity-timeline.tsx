@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
+import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
 import {
@@ -266,6 +267,7 @@ export function ActivityTimeline({
   const [editingBody, setEditingBody] = useState("");
   const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
   const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
+  const notifyActivityEventFn = useServerFn(notifyActivityEvent);
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
@@ -687,8 +689,15 @@ export function ActivityTimeline({
       attachments,
       ...autoLinks,
     };
-    const { error } = await supabase.from("activities").insert(payload as never);
+    const { data: inserted, error } = await supabase
+      .from("activities")
+      .insert(payload as never)
+      .select("id")
+      .single();
     if (error) return toast.error(error.message);
+    if (inserted?.id) {
+      void notifyActivityEventFn({ data: { activityId: inserted.id } }).catch(() => {});
+    }
     setSubject("");
     setBody("");
     setDueDate("");

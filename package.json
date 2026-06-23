@@ -167,5 +167,10 @@
     "@tanstack/router-plugin": "1.167.28",
     "@tanstack/router-core": "1.168.17",
     "@tanstack/history": "1.161.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "entities": "4.5.0"
+    }
   }
 }
