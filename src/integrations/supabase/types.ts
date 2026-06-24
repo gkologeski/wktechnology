@@ -662,6 +662,260 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_applications: {
+        Row: {
+          ai_match_score: number | null
+          ai_match_summary: string | null
+          applied_at: string
+          candidate_id: string
+          created_at: string
+          id: string
+          job_id: string
+          moved_at: string
+          owner_id: string
+          position: number
+          rejection_reason: string | null
+          source: string
+          stage_value: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_match_score?: number | null
+          ai_match_summary?: string | null
+          applied_at?: string
+          candidate_id: string
+          created_at?: string
+          id?: string
+          job_id: string
+          moved_at?: string
+          owner_id: string
+          position?: number
+          rejection_reason?: string | null
+          source?: string
+          stage_value?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_match_score?: number | null
+          ai_match_summary?: string | null
+          applied_at?: string
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          moved_at?: string
+          owner_id?: string
+          position?: number
+          rejection_reason?: string | null
+          source?: string
+          stage_value?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_applications_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_candidates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_company: string | null
+          current_position: string | null
+          cv_parsed: Json | null
+          cv_url: string | null
+          email: string | null
+          full_name: string
+          id: string
+          linkedin_url: string | null
+          location: string | null
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          score: number | null
+          skills: string[]
+          source: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_company?: string | null
+          current_position?: string | null
+          cv_parsed?: Json | null
+          cv_url?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          linkedin_url?: string | null
+          location?: string | null
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          score?: number | null
+          skills?: string[]
+          source?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_company?: string | null
+          current_position?: string | null
+          cv_parsed?: Json | null
+          cv_url?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          linkedin_url?: string | null
+          location?: string | null
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          score?: number | null
+          skills?: string[]
+          source?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ats_jobs: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          employment_type: string | null
+          filled_at: string | null
+          hiring_manager_id: string | null
+          id: string
+          location: string | null
+          metadata: Json
+          opened_at: string | null
+          owner_id: string
+          pipeline_id: string | null
+          recruiter_id: string | null
+          remote_mode: string | null
+          requirements: string | null
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          seniority: string | null
+          slug: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          employment_type?: string | null
+          filled_at?: string | null
+          hiring_manager_id?: string | null
+          id?: string
+          location?: string | null
+          metadata?: Json
+          opened_at?: string | null
+          owner_id: string
+          pipeline_id?: string | null
+          recruiter_id?: string | null
+          remote_mode?: string | null
+          requirements?: string | null
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          seniority?: string | null
+          slug?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          employment_type?: string | null
+          filled_at?: string | null
+          hiring_manager_id?: string | null
+          id?: string
+          location?: string | null
+          metadata?: Json
+          opened_at?: string | null
+          owner_id?: string
+          pipeline_id?: string | null
+          recruiter_id?: string | null
+          remote_mode?: string | null
+          requirements?: string | null
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          seniority?: string | null
+          slug?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_jobs_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "ats_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_pipelines: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          stages: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id: string
+          stages?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          stages?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attribution_touchpoints: {
         Row: {
           campaign: string | null
@@ -2814,6 +3068,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      domain_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          entity_id: string | null
+          entity_type: string | null
+          event_name: string
+          id: string
+          last_error: string | null
+          occurred_at: string
+          owner_id: string
+          payload: Json
+          processed_at: string | null
+          source: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          event_name: string
+          id?: string
+          last_error?: string | null
+          occurred_at?: string
+          owner_id: string
+          payload?: Json
+          processed_at?: string | null
+          source?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          event_name?: string
+          id?: string
+          last_error?: string | null
+          occurred_at?: string
+          owner_id?: string
+          payload?: Json
+          processed_at?: string | null
+          source?: string
+        }
+        Relationships: []
       }
       dunning_policies: {
         Row: {

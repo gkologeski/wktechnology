@@ -56,6 +56,12 @@ export const ENT = {
   CUSTOM_ROLES: "feature.custom_roles",
   BRANDING_COLORS: "feature.branding_colors",
   WHITE_LABEL: "feature.white_label",
+  // ATS (Recrutamento & Seleção)
+  ATS: "feature.ats",
+  ATS_CV_PARSING: "feature.ats_cv_parsing",
+  ATS_LINKEDIN_APPLY: "feature.ats_linkedin_apply",
+  // Workflows v2 (event bus + branching + delays)
+  WORKFLOWS_V2: "feature.workflows_v2",
 } as const;
 
 /**
