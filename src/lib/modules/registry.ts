@@ -13,6 +13,7 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
   Settings as SettingsIcon,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
