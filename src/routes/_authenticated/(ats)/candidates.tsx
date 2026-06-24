@@ -26,6 +26,7 @@ import {
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
 import { parseCv } from "@/lib/ats/cv-parse.functions";
+import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
 
@@ -40,6 +41,7 @@ function CandidatesPage() {
   const save = useServerFn(saveAtsCandidate);
   const del = useServerFn(deleteAtsCandidate);
   const parse = useServerFn(parseCv);
+  const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
@@ -126,15 +128,19 @@ function CandidatesPage() {
   };
 
   const handleParseCv = async () => {
-    if (cvText.trim().length < 40) {
-      toast.error("Cole o texto do currículo ou faça upload de um PDF (mínimo 40 caracteres)");
+    const hasText = cvText.trim().length >= 40;
+    if (!hasText && !cvUrl) {
+      toast.error("Envie um PDF ou cole o texto do currículo (mínimo 40 caracteres)");
       return;
     }
     setParsing(true);
     try {
-      const res = await parse({ data: { cv_text: cvText, apply: true } });
+      // Prefere parser multimodal direto no PDF (mais preciso) quando há URL.
+      const res = cvUrl
+        ? await parsePdf({ data: { cv_url: cvUrl, apply: true } })
+        : await parse({ data: { cv_text: cvText, apply: true } });
       const newId = (res.saved as { id?: string } | null | undefined)?.id;
-      if (cvUrl && newId) {
+      if (cvUrl && newId && !("cv_url" in (res.parsed as object))) {
         const { supabase } = await import("@/integrations/supabase/client");
         await supabase.from("ats_candidates").update({ cv_url: cvUrl }).eq("id", newId);
       }
