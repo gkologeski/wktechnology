@@ -106,6 +106,7 @@ export type Database = {
           delete_scope: Database["public"]["Enums"]["access_scope"]
           edit_scope: Database["public"]["Enums"]["access_scope"]
           id: string
+          module_id: string | null
           object_key: string
           profile_id: string
           view_scope: Database["public"]["Enums"]["access_scope"]
@@ -115,6 +116,7 @@ export type Database = {
           delete_scope?: Database["public"]["Enums"]["access_scope"]
           edit_scope?: Database["public"]["Enums"]["access_scope"]
           id?: string
+          module_id?: string | null
           object_key: string
           profile_id: string
           view_scope?: Database["public"]["Enums"]["access_scope"]
@@ -124,11 +126,19 @@ export type Database = {
           delete_scope?: Database["public"]["Enums"]["access_scope"]
           edit_scope?: Database["public"]["Enums"]["access_scope"]
           id?: string
+          module_id?: string | null
           object_key?: string
           profile_id?: string
           view_scope?: Database["public"]["Enums"]["access_scope"]
         }
         Relationships: [
+          {
+            foreignKeyName: "access_profile_permissions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "access_profile_permissions_profile_id_fkey"
             columns: ["profile_id"]
@@ -1090,6 +1100,7 @@ export type Database = {
           entity_id: string | null
           id: string
           metadata: Json
+          module_id: string | null
           workspace_owner_id: string
         }
         Insert: {
@@ -1102,6 +1113,7 @@ export type Database = {
           entity_id?: string | null
           id?: string
           metadata?: Json
+          module_id?: string | null
           workspace_owner_id: string
         }
         Update: {
@@ -1114,6 +1126,7 @@ export type Database = {
           entity_id?: string | null
           id?: string
           metadata?: Json
+          module_id?: string | null
           workspace_owner_id?: string
         }
         Relationships: []
@@ -5744,6 +5757,99 @@ export type Database = {
         }
         Relationships: []
       }
+      module_branding: {
+        Row: {
+          created_at: string
+          custom_domain: string | null
+          favicon_url: string | null
+          id: string
+          logo_url: string | null
+          module_id: string
+          primary_color: string | null
+          product_name: string | null
+          secondary_color: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_domain?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          module_id: string
+          primary_color?: string | null
+          product_name?: string | null
+          secondary_color?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_domain?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          module_id?: string
+          primary_color?: string | null
+          product_name?: string | null
+          secondary_color?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_branding_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_branding_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          created_at: string
+          default_color: string
+          default_product_name: string
+          host_suffix: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_color?: string
+          default_product_name: string
+          host_suffix?: string | null
+          icon?: string | null
+          id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_color?: string
+          default_product_name?: string
+          host_suffix?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nfse_invoices: {
         Row: {
           amount: number | null
@@ -6008,6 +6114,7 @@ export type Database = {
           enabled: boolean
           key: string
           limit_int: number | null
+          module_id: string | null
           plan_code: string
         }
         Insert: {
@@ -6015,6 +6122,7 @@ export type Database = {
           enabled?: boolean
           key: string
           limit_int?: number | null
+          module_id?: string | null
           plan_code: string
         }
         Update: {
@@ -6022,9 +6130,17 @@ export type Database = {
           enabled?: boolean
           key?: string
           limit_int?: number | null
+          module_id?: string | null
           plan_code?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "plan_entitlements_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plan_entitlements_plan_code_fkey"
             columns: ["plan_code"]
@@ -10286,6 +10402,61 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_modules: {
+        Row: {
+          activated_at: string
+          created_at: string
+          enabled: boolean
+          id: string
+          module_id: string
+          plan_code: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_id: string
+          plan_code?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_id?: string
+          plan_code?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_modules_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "workspace_modules_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"

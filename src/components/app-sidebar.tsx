@@ -17,7 +17,9 @@ import { cn, normalizeSearch } from "@/lib/utils";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
+import { useActiveModuleDefinition } from "@/lib/modules/active-module";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -26,6 +28,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [query, setQuery] = useState("");
+  const activeModule = useActiveModuleDefinition();
 
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
@@ -50,21 +53,25 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-3 py-4 gap-3">
-        <Link to="/dashboard" className="flex items-center gap-2.5">
-          <div className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground grid place-items-center text-sm font-bold shadow-md shadow-primary/20">
-            WK
+        <Link to={activeModule.defaultRoute} className="flex items-center gap-2.5">
+          <div
+            className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
+            style={{ backgroundColor: activeModule.defaultColor, boxShadow: `0 4px 12px ${activeModule.defaultColor}33` }}
+          >
+            {activeModule.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
             <h2 className="text-base font-bold tracking-tight leading-tight truncate">
-              TechSales CRM
+              {activeModule.productName} {activeModule.name}
             </h2>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">
-              Operação comercial
+              {activeModule.shortDescription}
             </p>
           </div>
         </Link>
 
-        <div className="group-data-[collapsible=icon]:hidden">
+        <div className="group-data-[collapsible=icon]:hidden space-y-2">
+          <ModuleSwitcher className="w-full" />
           <WorkspaceSwitcher />
         </div>
 
