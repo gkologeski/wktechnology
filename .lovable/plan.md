@@ -1,171 +1,114 @@
 
-# Plano: ATS como Módulo Independente do ERP
+# 🎯 Plano de Evolução — TechHire ATS
 
-## 1. Visão geral
+## Diagnóstico
 
-Hoje o ATS vive como sub-rotas dentro do CRM TechSales (`/ats/*` debaixo do mesmo shell, mesmo menu, mesma marca). Vamos transformá-lo num **módulo de primeira classe** do ERP, com:
+Hoje o TechHire tem o **esqueleto** de um ATS (vagas, candidatos, Kanban, scorecards, e-mails por stage, career page pública, parsing de CV via Gemini, analytics básico), mas faltam as **camadas que definem um ATS de classe mundial em 2026**: agendamento de entrevistas, vídeo, agentes de IA, match score explicável, DEI analytics, fraud detection, fila de envio de e-mails, ofertas digitais e integrações HRIS.
 
-- Domínio próprio: `ats.wktechnology.com.br` (irmão de `crm.wktechnology.com.br`).
-- Shell / app próprio: cabeçalho, menu lateral, breadcrumbs e ícones específicos do ATS.
-- Identidade visual herdada do white-label do workspace, mas com nome/cor/logo configuráveis por módulo.
-- Configurações de plataforma (white-label, idioma, residência de dados, planos, billing, segurança, auditoria, equipe) **promovidas para o nível ERP**, compartilhadas entre CRM, ATS e futuros módulos (Projetos, Financeiro).
-
-O CRM continua intacto em `crm.wktechnology.com.br` — nenhuma rota do CRM muda de lugar nesta fase.
-
-## 2. Arquitetura de domínios e shell
-
-```text
-wktechnology.com.br                → site/marketing (futuro)
-crm.wktechnology.com.br            → módulo CRM (TechSales)  [hoje]
-ats.wktechnology.com.br            → módulo ATS              [novo]
-app.wktechnology.com.br            → hub / launcher de módulos (opcional, fase 2)
-```
-
-Estratégia técnica:
-
-- **Mesma aplicação TanStack Start** servida em todos os hosts (uma build, um deploy).
-- Um **detector de módulo** roda em `__root.tsx` (e middleware de SSR) lendo `window.location.hostname` / `request.headers.host` e definindo `activeModule = 'crm' | 'ats' | 'hub'`.
-- O shell renderizado (`AppShell`, menu, branding, rota inicial) é escolhido por `activeModule`.
-- Rotas exclusivas de um módulo ficam acessíveis apenas no host correspondente; tentar abrir `/ats/jobs` em `crm.wktechnology.com.br` redireciona para `https://ats.wktechnology.com.br/jobs` (e vice-versa). Rotas compartilhadas (`/settings/*`, `/login`, `/accept-invite/*`) funcionam em qualquer host.
-- Login único: sessão Supabase compartilhada via cookie de domínio `.wktechnology.com.br` (já é o padrão do Supabase quando os subdomínios pertencem ao mesmo apex). Usuário loga uma vez e navega entre módulos sem novo login.
-
-DNS / Lovable:
-
-- Adicionar `ats.wktechnology.com.br` em **Project Settings → Domains** (mesmo projeto).
-- Configurar como secundário; manter `crm.wktechnology.com.br` como Primary do CRM (ou promover um hub depois).
-
-## 3. Reestruturação de rotas
-
-Hoje:
-```text
-src/routes/_authenticated/ats.tsx              (layout)
-src/routes/_authenticated/ats.index.tsx
-src/routes/_authenticated/ats.jobs.tsx
-src/routes/_authenticated/ats.jobs.$id.tsx
-src/routes/_authenticated/ats.candidates.tsx
-```
-
-Depois (sem prefixo `ats.` — o módulo é definido pelo host):
-```text
-src/routes/_authenticated/(ats)/jobs.tsx
-src/routes/_authenticated/(ats)/jobs.$id.tsx
-src/routes/_authenticated/(ats)/candidates.tsx
-src/routes/_authenticated/(ats)/pipelines.tsx
-src/routes/_authenticated/(ats)/dashboard.tsx          (home do ATS)
-src/routes/_authenticated/(ats)/reports.tsx
-src/routes/_authenticated/(ats)/career-page.tsx        (config da página pública)
-```
-
-- O grupo `(ats)` é organizacional (não aparece na URL). URLs no host ATS: `/jobs`, `/candidates`, `/dashboard`.
-- Um **guard de módulo** em cada rota (via `beforeLoad`) checa `activeModule === 'ats'`; se não, redireciona para o host correto.
-- Para evitar quebrar links/bookmarks existentes do `/ats/*`, ficam **redirects** das rotas antigas para o novo host (`/ats/jobs` → `https://ats.wktechnology.com.br/jobs`).
-
-Página pública de vagas continua em `/jobs/:slug` (sem auth), também respondida pelo host `ats.wktechnology.com.br`.
-
-## 4. Shell, menu e branding do ATS
-
-Criar:
-
-- `src/components/shell/ats-shell.tsx` — espelha o `AppShell` do CRM mas com:
-  - Logo "TechHire" (ou nome a definir) + cor primária do ATS.
-  - Menu lateral: Dashboard, Vagas, Candidatos, Pipelines, Entrevistas, Relatórios, Configurações.
-  - Breadcrumbs e título com prefixo do módulo.
-- `src/lib/modules/active-module.ts` — detecta módulo por host (cliente + servidor) e expõe `useActiveModule()`.
-- `src/lib/modules/registry.ts` — registro central: `{ id, name, host, color, logo, defaultRoute, menu }` para CRM e ATS.
-- "Module switcher" no canto superior do shell (popover com CRM, ATS, +futuros), navegando entre subdomínios.
-
-White-label por módulo:
-
-- Estender `workspace_branding` (ou criar `module_branding`) com `module_id` para guardar logo, cor primária, nome do produto e favicon por módulo. Default herda do workspace.
-
-## 5. Configurações compartilhadas (ERP-level)
-
-Promover do "CRM" para "ERP/Workspace":
-
-| Área                          | Rota atual                              | Comportamento novo                                                                 |
-| ----------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
-| White-label / branding        | `/settings/branding`                    | Tabs: "Geral (workspace)" + uma tab por módulo ativo                               |
-| Idioma                        | `/settings/language`                    | Padrão do workspace + override por usuário                                         |
-| Residência de dados           | `/settings/data-residency`              | Aplica a todos os módulos                                                          |
-| Planos & cobrança             | `/settings/billing`, `/settings/plans`  | Plano por módulo (CRM Bronze + ATS Prata, etc.), fatura unificada por workspace    |
-| Segurança / SSO / SCIM        | `/settings/security`, `/settings/sso`   | Compartilhado                                                                      |
-| Equipe / papéis / permissões  | `/settings/workspace-team`, `/settings/roles` | Compartilhado, com permissões granulares por módulo                          |
-| Auditoria                     | `/settings/audit-log`                   | Filtro por módulo                                                                  |
-| API keys / Webhooks           | `/settings/api-keys`, `/settings/webhooks` | Compartilhado; escopo opcional por módulo                                       |
-| Integrações                   | `/integrations`                         | Compartilhado; cada integração declara módulos suportados                          |
-
-Configurações **específicas de módulo** ficam dentro do módulo:
-
-- CRM: pipelines de negócios, lead sources, sequences, dunning, e-mail/WhatsApp templates de vendas, scoring etc. permanecem em `/settings/*` mas só aparecem no menu quando `activeModule === 'crm'`.
-- ATS: pipelines de candidatos, templates de e-mail de recrutamento, scorecards, página de carreiras, conectores LinkedIn — ficam em `/settings/ats/*` e só aparecem no shell do ATS.
-
-Reformulação do índice de Configurações (`/settings`): agrupado por "Workspace (ERP)" vs "Módulo CRM" vs "Módulo ATS".
-
-## 6. Modelo de dados
-
-Novas tabelas / mudanças:
-
-- `modules` (catálogo: `id`, `name`, `host_suffix`, `default_color`). Seed: `crm`, `ats`.
-- `workspace_modules` (`workspace_id`, `module_id`, `enabled`, `plan_id`, `activated_at`). Substitui flags ad-hoc.
-- `module_branding` (`workspace_id`, `module_id`, `logo_url`, `primary_color`, `product_name`, `favicon_url`).
-- `plan_entitlements`: passa a ter `module_id` (entitlements escopadas por módulo).
-- `user_roles` / `access_profile_permissions`: incluir `module_id` para permissões cross-módulo (um usuário pode ser admin do ATS e leitor do CRM).
-- `audit_logs`: adicionar coluna `module_id` (nullable; backfill `crm` para registros existentes).
-
-RLS continua por `workspace_id`/`owner_id`; o módulo é apenas um eixo organizacional + permissões.
-
-## 7. Sessão, auth e cross-domain
-
-- Cookies Supabase configurados em `.wktechnology.com.br` (domínio pai), permitindo SSO entre subdomínios.
-- `auth-middleware` adiciona `activeModule` ao `context`, derivado do host.
-- `login` continua único; após login, redirect para o `defaultRoute` do módulo de onde o usuário veio (ou hub se entrou direto pelo apex).
-- Convites (`accept-invite/:token`) podem opcionalmente vincular o usuário a módulos específicos.
-
-## 8. Entrega em fases
-
-**Fase A — Fundação multi-módulo** (sem mudar UX visível)
-- Tabelas `modules`, `workspace_modules`, `module_branding`; seeds para CRM e ATS.
-- `active-module` detector + registry; `AppShell` consulta registry mas continua renderizando CRM por padrão.
-- Adicionar `module_id` em `plan_entitlements`, `audit_logs`, `access_profile_permissions` (com defaults `crm`).
-
-**Fase B — Shell e domínio do ATS** ✅
-- ✅ Menu lateral dedicado do ATS (`src/lib/menu-config-ats.ts`).
-- ✅ `AppSidebar` troca grupos automaticamente quando `activeModule === 'ats'`.
-- ✅ Module switcher no header + branding (cor, nome, ícone) via registry.
-- ✅ `ats.wktechnology.com.br` ativo (custom domain).
-- ✅ Rotas movidas para grupo `(ats)/` sem prefixo: `/jobs`, `/jobs/$id`, `/candidates`. Redirects mantidos em `/ats/jobs`, `/ats/jobs/:id`, `/ats/candidates`, `/ats`.
-- ✅ `detectModuleFromPath` reconhece os novos paths (`/jobs`, `/candidates`) para preview local.
-- ⏳ **Pendente**: `cookieOptions.domain = '.wktechnology.com.br'` para SSO cross-subdomain (depende de ajuste no Supabase project, fora do client.ts auto-gen).
-
-**Fase C — Configurações compartilhadas** ✅ (v1)
-- ✅ `/settings` reorganizado em grupos: Workspace (ERP) / TechSales CRM / TechHire ATS, com cards descritivos.
-- ✅ `/settings/branding` agora tem tabs: Workspace, CRM (TechSales), ATS (TechHire). Branding por módulo grava em `module_branding`.
-- ✅ Server fns `getModuleBranding` / `saveModuleBranding` (chave composta workspace_id+module_id).
-- ⏳ Próximas iterações: planos por módulo no `/settings/billing` (workspace_modules.plan_id); permissões por módulo no editor de roles; filtro `module_id` no audit log.
-
-**Fase D — Polimento**
-- Hub opcional em `app.wktechnology.com.br` (launcher + notificações cross-módulo).
-- Onboarding "qual módulo ativar".
-- Documentação interna (runbook) sobre como adicionar um novo módulo (Projetos, Financeiro) reutilizando o mesmo padrão.
-
-## 9. Riscos e cuidados
-
-- **Quebra de links**: manter redirects `/ats/* → ats.host/*` por pelo menos uma release.
-- **SEO da página pública de vagas**: definir canonical no host do ATS; sitemap separado.
-- **Sessão cross-subdomain**: validar localmente antes — Supabase cookies precisam de `cookieOptions.domain = '.wktechnology.com.br'`.
-- **Custos de domínio/SSL**: SSL automático do Lovable cobre o subdomínio; sem custo extra.
-- **Permissões legadas**: migration de `module_id` precisa preencher `crm` para tudo que já existe, senão usuários perdem acesso.
-
-## 10. O que NÃO está neste plano (fica para depois)
-
-- Implementação dos novos recursos do ATS (parsing de CV, LinkedIn Easy Apply, scorecards) — continua no roadmap já aprovado, executado **após** esta reestruturação.
-- Módulos Projetos e Financeiro — a fundação criada aqui os habilita, mas eles são planos próprios.
-- Hub `app.wktechnology.com.br` — opcional, fase D.
+Benchmarking de 17 players (Greenhouse, Lever, Ashby, Gem, Workable, SmartRecruiters, iCIMS, Teamtailor, Pinpoint, Manatal, BambooHR, Recruitee + Gupy, Sólides, Vagas.com, Pandapé, Compleo) mostra que o mercado migrou para **"Hiring Intelligence Platforms"** com agentes autônomos. SmartRecruiters declarou em jun/2025 "the end of the ATS era".
 
 ---
 
-**Próximo passo se aprovado:** começar pela **Fase A** (migrations de `modules`, `workspace_modules`, `module_branding`, colunas `module_id`) + detector de módulo. Confirmar antes:
+## Posicionamento alvo
 
-1. Nome comercial do módulo ATS (sugestão: **TechHire**)?
-2. Cor primária do ATS diferente do CRM, ou herdar do branding do workspace por padrão?
-3. Quer já criar o subdomínio `ats.wktechnology.com.br` agora (Fase A) ou só na Fase B?
+> **TechHire = "Greenhouse + Ashby para o Brasil, com agentes de IA da Lovable e LGPD-first"**
+
+Foco em **PME/Mid-Market tech** brasileiro, competindo no eixo Gupy/Sólides (BR) e Ashby/Workable (global), com diferenciais: **agentes IA nativos**, **scorecards estruturados**, **career pages white-label por workspace**, **integração CRM↔ATS** (vaga nasce de um Deal) e **LGPD nativo**.
+
+---
+
+## Roadmap — 4 fases
+
+### 🟢 FASE 1 — Fechar os buracos do MVP (2-3 sprints)
+*"Tornar utilizável de ponta a ponta"*
+
+1. **Cron de envio de e-mails de stage** — worker em `/api/public/hooks/ats-stage-emails-tick.ts` que processa `ats_stage_email_log` pendentes via Resend; marca `sent`/`failed`. Hoje a fila enche e ninguém envia.
+2. **E-mail de confirmação ao candidato** após `submitPublicApplication` (template branded por workspace).
+3. **Editor visual de pipeline** — UI em `/ats/pipelines` para criar/editar stages (drag-drop, cor, tipo: applied/interview/offer/hired/rejected). Hoje só existe o default hardcoded.
+4. **Export CSV** de candidatos e candidaturas de uma vaga.
+5. **Permissões por equipe** — RLS adicional: `hiring_manager_id` e `recruiter_id` veem apenas as vagas em que estão; admin vê tudo. Hoje qualquer membro do workspace vê tudo.
+6. **Auditoria de movimentações** — tabela `ats_application_events` registrando cada `moveApplication`, mudança de stage, scorecard submetido (usado por compliance LGPD e relatórios).
+
+### 🟡 FASE 2 — Entrevistas e ofertas (3-4 sprints)
+*"Fechar o ciclo até a contratação"*
+
+7. **Agendamento nativo de entrevistas** — tabela `ats_interviews` ligada à candidatura, reaproveitando módulo de booking que já existe (`/book/$slug`). Self-scheduling: candidato recebe link, escolhe horário, sincroniza Google/Outlook do recrutador, gera link Meet/Zoom.
+8. **Interview kits** — perguntas estruturadas por stage da vaga, mostradas ao avaliador junto do scorecard durante a entrevista.
+9. **Vídeo entrevistas assíncronas** — candidato grava respostas via webcam (MediaRecorder API + upload para Supabase Storage), recrutador assiste em playlist; reaproveita infra de recording que já existe em `screen-recorder`.
+10. **Módulo de Ofertas** — tabela `ats_offers` com salário, benefícios, data de início, status (draft/sent/accepted/rejected); geração de carta PDF; integração com `/sign/$token` para assinatura digital nativa (já existe).
+11. **Parsing de PDF server-side** — atual extração só funciona no browser. Mover para server function com `pdf-parse` (Worker-compatible) + fallback OCR via Gemini Vision para PDFs imagem.
+
+### 🔵 FASE 3 — IA diferenciada (4-5 sprints)
+*"Onde a Lovable vence"*
+
+12. **Match Score Explicável (Job ↔ Candidato)** — função IA que compara `requirements`/JD da vaga vs `cv_parsed` + scorecards e devolve score 0-100 com **justificativa transparente por critério** (DEI-safe: ignora nome, idade, foto, gênero). Exibido como badge no card do Kanban e ordenação automática.
+13. **AI Job Description Generator + Linguagem Inclusiva** — botão "Gerar com IA" no formulário de vaga: descreve cargo → IA produz JD completa, com checagem de termos enviesados (ex: "rockstar", "agressivo").
+14. **AI Notetaker para entrevistas** — captura áudio da chamada (Web Audio API), transcreve via Gemini, gera resumo estruturado (pontos fortes / fracos / recomendação) e pré-preenche o scorecard.
+15. **AI Sourcing Assistant** — busca por linguagem natural ("dev React sênior em SP, remoto") sobre o banco interno de candidatos (incluindo arquivados de processos anteriores) — embeddings de skills + Talent Rediscovery.
+16. **AI Copilot ATS** — extensão do copilot existente: "quantas vagas estão paradas há mais de 30 dias?", "compare meus tempos de fechamento por seniority", "redija e-mail de rejeição empático para o candidato X".
+17. **Candidate Fraud Detection** — heurísticas + IA sinalizando: e-mails descartáveis, CV gerado por IA, geolocalização inconsistente, múltiplas candidaturas com pequenas variações.
+
+### 🟣 FASE 4 — Enterprise & ecossistema (contínuo)
+*"Tirar bloqueios de venda"*
+
+18. **DEI Analytics opt-in** — coleta opcional e anonimizada de gênero/raça/PcD no formulário público; dashboard mostra **funil por estágio segmentado**, identificando perda de diversidade.
+19. **Custom Report Builder** — UI para o usuário arrastar dimensões (vaga, recrutador, source, stage) e métricas (tempo médio, conversão, score médio) e salvar dashboards.
+20. **Webhook de candidatura externa** — `/api/public/ats/$slug/apply` para LinkedIn/Indeed/Gupy postarem candidaturas direto.
+21. **Open API documentada + Webhooks de eventos ATS** — `ats.application.created`, `ats.candidate.hired`, etc., para Zapier/Make.
+22. **Integração HRIS** (TOTVS, Senior, Sankhya, BambooHR) — quando candidato vira `hired`, dispara criação do colaborador no HRIS escolhido.
+23. **Multiposting** — publicação em LinkedIn, Indeed, Glassdoor, Vagas.com via APIs/feed XML por workspace.
+24. **Onboarding pós-contratação** — checklist de pré-boarding (docs, exames, kit), integrado ao módulo `module-onboarding-checklist` já existente.
+
+---
+
+## Detalhes técnicos (resumo)
+
+```text
+Novas tabelas previstas:
+  ats_application_events    — auditoria de movimentações (fase 1)
+  ats_interviews            — agendamento + vídeo (fase 2)
+  ats_offers                — ofertas (fase 2)
+  ats_match_scores          — cache de score vaga↔candidato (fase 3)
+  ats_dei_responses         — autodeclaração anônima (fase 4)
+  ats_custom_reports        — dashboards salvos (fase 4)
+
+Novos cron/webhooks (/api/public/hooks/):
+  ats-stage-emails-tick     — envia fila de e-mails (fase 1)
+  ats-match-score-tick      — recalcula match scores em background (fase 3)
+  ats-fraud-scan-tick       — varre candidaturas suspeitas (fase 3)
+  ats-interview-reminders   — D-1 e 1h antes (fase 2)
+
+Reaproveitamentos:
+  - Booking module        → agendamento de entrevistas
+  - /sign/$token          → assinatura de oferta
+  - Resend infra          → e-mails branded
+  - Lovable AI Gateway    → match score, notetaker, JD generator
+  - Bug-report recorder   → vídeo entrevista assíncrona
+  - Copilot CMDK          → AI Copilot ATS
+```
+
+---
+
+## O que NÃO entra agora
+
+- **OFCCP compliance** (EUA) — adicionar só se aparecer cliente americano. LGPD já cobre o BR.
+- **Multiposting LinkedIn oficial** — exige acordo comercial; começar com feed XML público + Indeed.
+- **Voice screening** (estilo iCIMS Frontline) — fora do ICP tech.
+- **HRIS+Payroll completo** (estilo BambooHR) — TechHire foca em recrutamento; integrar via API com HRIS existentes em vez de construir.
+
+---
+
+## Como medir sucesso por fase
+
+| Fase | Métrica |
+|---|---|
+| 1 | Workspace consegue rodar 1 vaga end-to-end sem usar planilha externa |
+| 2 | Tempo médio de fechamento cai 30% vs fase 1 (medido em `getAtsAnalytics`) |
+| 3 | 60%+ das contratações vêm dos Top 10 sugeridos pelo Match Score (benchmark Gupy: 65%) |
+| 4 | TechHire vence Gupy/Sólides em pelo menos 1 RFP de cliente mid-market |
+
+---
+
+## Próximo passo sugerido
+
+Começar pela **Fase 1 inteira (itens 1–6)** porque sem ela o que já foi construído fura na operação real (e-mails que nunca saem, sem pipeline editável, sem permissões por equipe). Posso atacar tudo em sequência se você aprovar.
