@@ -31,6 +31,8 @@ const ENTITY_KEYS: Array<{ key: string; label: string }> = [
   { key: "contacts.max", label: "Contatos" },
   { key: "companies.max", label: "Empresas" },
   { key: "deals.max", label: "Negócios" },
+  { key: "ats.jobs.max", label: "Vagas ativas (ATS)" },
+  { key: "ats.candidates.max", label: "Candidatos (ATS)" },
 ];
 
 const MONTHLY_KEYS: Array<{ key: string; label: string }> = [
@@ -40,6 +42,8 @@ const MONTHLY_KEYS: Array<{ key: string; label: string }> = [
   { key: "enrichment.monthly", label: "Enriquecimentos (mês)" },
   { key: "ai_compose.monthly", label: "IA — gerar (mês)" },
   { key: "ai_summaries.monthly", label: "IA — resumos (mês)" },
+  { key: "ats.applications.monthly", label: "Candidaturas recebidas (mês)" },
+  { key: "ats.cv_parse.monthly", label: "Parsing de CV com IA (mês)" },
 ];
 
 // Linhas exibidas na tabela comparativa.
