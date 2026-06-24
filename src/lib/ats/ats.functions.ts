@@ -499,9 +499,19 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
       nameMap = Object.fromEntries(((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [p.id, p.full_name ?? ""]));
     }
     return (rows ?? []).map((r) => {
-      const row = r as { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_id: string | null; metadata: Record<string, unknown>; created_at: string };
-      return { ...row, actor_name: row.actor_id ? (nameMap[row.actor_id] || null) : null };
+      const row = r as { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_id: string | null; metadata: unknown; created_at: string };
+      return {
+        id: row.id,
+        event_type: row.event_type,
+        from_stage: row.from_stage,
+        to_stage: row.to_stage,
+        actor_id: row.actor_id,
+        actor_name: row.actor_id ? (nameMap[row.actor_id] || null) : null,
+        metadata: (row.metadata ?? null) as Record<string, string | number | boolean | null> | null,
+        created_at: row.created_at,
+      };
     });
+
   });
 
 
