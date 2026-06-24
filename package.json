@@ -152,7 +152,9 @@
     "@tanstack/react-start": "1.167.50",
     "@tanstack/router-plugin": "1.167.28",
     "@tanstack/router-core": "1.168.17",
-    "@tanstack/history": "1.161.6"
+    "@tanstack/history": "1.161.6",
+    "undici": "^7.16.0",
+    "ws": "^8.18.3"
   },
   "resolutions": {
     "esbuild": "0.25.12",
@@ -167,7 +169,9 @@
     "@tanstack/react-start": "1.167.50",
     "@tanstack/router-plugin": "1.167.28",
     "@tanstack/router-core": "1.168.17",
-    "@tanstack/history": "1.161.6"
+    "@tanstack/history": "1.161.6",
+    "undici": "^7.16.0",
+    "ws": "^8.18.3"
   },
   "pnpm": {
     "overrides": {
