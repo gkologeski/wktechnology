@@ -112,4 +112,5 @@ Reaproveitamentos:
 
 ## Próximo passo sugerido
 
-Começar pela **Fase 1 inteira (itens 1–6)** porque sem ela o que já foi construído fura na operação real (e-mails que nunca saem, sem pipeline editável, sem permissões por equipe). Posso atacar tudo em sequência se você aprovar.
+Itens 1–4 da Fase 1 estão concluídos. Atacar agora **itens 5 (permissões por equipe) e 6 (auditoria de movimentações)** para fechar a Fase 1 e liberar a Fase 2 (entrevistas e ofertas).
+
