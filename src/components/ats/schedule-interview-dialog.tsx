@@ -201,6 +201,26 @@ export function ScheduleInterviewDialog({
               </Select>
             </div>
 
+            <div className="space-y-1">
+              <Label>Kit de perguntas {kind === "async" ? "(obrigatório p/ vídeo assíncrono)" : "(opcional)"}</Label>
+              <Select value={kitId || "__none"} onValueChange={(v) => setKitId(v === "__none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Nenhum</SelectItem>
+                  {kits.map((k) => (
+                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {kits.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Crie kits em <span className="font-medium">ATS → Kits de Entrevista</span>.
+                </p>
+              )}
+            </div>
+
             <TabsContent value="manual" className="space-y-3 m-0">
               <div className="space-y-1">
                 <Label>Data e horário</Label>
