@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
   saveAtsCandidate,
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
+import { parseCv } from "@/lib/ats/cv-parse.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
   component: CandidatesPage,
@@ -36,6 +37,10 @@ function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
   const save = useServerFn(saveAtsCandidate);
   const del = useServerFn(deleteAtsCandidate);
+  const parse = useServerFn(parseCv);
+  const [parseOpen, setParseOpen] = useState(false);
+  const [cvText, setCvText] = useState("");
+  const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<Cand[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -116,6 +121,26 @@ function CandidatesPage() {
     }
   };
 
+  const handleParseCv = async () => {
+    if (cvText.trim().length < 40) {
+      toast.error("Cole o texto do currículo (mínimo 40 caracteres)");
+      return;
+    }
+    setParsing(true);
+    try {
+      const res = await parse({ data: { cv_text: cvText, apply: true } });
+      toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
+      setParseOpen(false);
+      setCvText("");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao processar CV");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -129,6 +154,38 @@ function CandidatesPage() {
             className="pl-9"
           />
         </div>
+        <Dialog open={parseOpen} onOpenChange={setParseOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Sparkles className="h-4 w-4 mr-2" />Parsing de CV (IA)
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>Cole o texto do currículo</Label>
+              <Textarea
+                rows={14}
+                value={cvText}
+                onChange={(e) => setCvText(e.target.value)}
+                placeholder="Cole aqui o conteúdo do CV (texto, exportado do PDF, LinkedIn, etc.)"
+              />
+              <p className="text-xs text-muted-foreground">
+                A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setParseOpen(false)} disabled={parsing}>
+                Cancelar
+              </Button>
+              <Button onClick={handleParseCv} disabled={parsing}>
+                {parsing ? "Processando…" : "Extrair e salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Novo candidato</Button>

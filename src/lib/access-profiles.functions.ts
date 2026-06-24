@@ -70,7 +70,7 @@ export const getAccessProfile = createServerFn({ method: "GET" })
     const [{ data: perms }, { data: tools }] = await Promise.all([
       supabase
         .from("access_profile_permissions")
-        .select("object_key, view_scope, edit_scope, delete_scope, create_enabled")
+        .select("object_key, view_scope, edit_scope, delete_scope, create_enabled, module_id")
         .eq("profile_id", data.id),
       supabase.from("access_profile_tools").select("tool_key, enabled").eq("profile_id", data.id),
     ]);
@@ -90,6 +90,7 @@ export const getAccessProfile = createServerFn({ method: "GET" })
         edit_scope: "none" | "own" | "team" | "all";
         delete_scope: "none" | "own" | "team" | "all";
         create_enabled: boolean;
+        module_id: string | null;
       }>,
       tools: (tools ?? []) as Array<{ tool_key: string; enabled: boolean }>,
     };
@@ -130,7 +131,7 @@ export const createAccessProfile = createServerFn({ method: "POST" })
       const [{ data: srcPerms }, { data: srcTools }] = await Promise.all([
         supabase
           .from("access_profile_permissions")
-          .select("object_key, view_scope, edit_scope, delete_scope, create_enabled")
+          .select("object_key, view_scope, edit_scope, delete_scope, create_enabled, module_id")
           .eq("profile_id", data.copy_from),
         supabase
           .from("access_profile_tools")
@@ -153,6 +154,7 @@ export const createAccessProfile = createServerFn({ method: "POST" })
         ACCESS_OBJECTS.map((o) => ({
           profile_id: newId,
           object_key: o.key,
+          module_id: o.module ?? null,
           view_scope: "own",
           edit_scope: "own",
           delete_scope: "none",
@@ -230,9 +232,14 @@ export const updateAccessProfile = createServerFn({ method: "POST" })
 
     if (data.permissions?.length) {
       for (const p of data.permissions) {
+        const objDef = ACCESS_OBJECTS.find((o) => o.key === p.object_key);
+        const module_id = objDef?.module ?? null;
         const { error } = await supabase
           .from("access_profile_permissions")
-          .upsert({ profile_id: data.id, ...p } as never, { onConflict: "profile_id,object_key" });
+          .upsert(
+            { profile_id: data.id, module_id, ...p } as never,
+            { onConflict: "profile_id,object_key" },
+          );
         if (error) throw new Error(error.message);
       }
     }

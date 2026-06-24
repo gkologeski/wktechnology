@@ -926,6 +926,107 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_scorecard_responses: {
+        Row: {
+          application_id: string
+          created_at: string
+          evaluator_id: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          recommendation: string | null
+          scorecard_id: string
+          scores: Json
+          total_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          evaluator_id?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          recommendation?: string | null
+          scorecard_id: string
+          scores?: Json
+          total_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          evaluator_id?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          recommendation?: string | null
+          scorecard_id?: string
+          scores?: Json
+          total_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_scorecard_responses_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_scorecard_responses_scorecard_id_fkey"
+            columns: ["scorecard_id"]
+            isOneToOne: false
+            referencedRelation: "ats_scorecards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_scorecards: {
+        Row: {
+          created_at: string
+          criteria: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          job_id: string | null
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          job_id?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          job_id?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_scorecards_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attribution_touchpoints: {
         Row: {
           campaign: string | null

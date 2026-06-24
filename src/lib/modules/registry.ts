@@ -13,6 +13,7 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
   Settings as SettingsIcon,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -69,6 +70,7 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     menu: [
       { title: "Vagas", url: "/jobs", icon: Briefcase },
       { title: "Candidatos", url: "/candidates", icon: Users },
+      { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { title: "Entrevistas", url: "/meetings", icon: CalendarIcon },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
