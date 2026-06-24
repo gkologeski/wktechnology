@@ -328,6 +328,15 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
         </DialogFooter>
 
       </DialogContent>
+      <ScheduleInterviewDialog
+        open={showSchedule}
+        onOpenChange={setShowSchedule}
+        applicationId={applicationId}
+        candidateName={candidateName}
+        onSaved={() => {
+          void reloadInterviews();
+        }}
+      />
     </Dialog>
   );
 }
