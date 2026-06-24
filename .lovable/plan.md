@@ -128,14 +128,14 @@ RLS continua por `workspace_id`/`owner_id`; o módulo é apenas um eixo organiza
 - `active-module` detector + registry; `AppShell` consulta registry mas continua renderizando CRM por padrão.
 - Adicionar `module_id` em `plan_entitlements`, `audit_logs`, `access_profile_permissions` (com defaults `crm`).
 
-**Fase B — Shell e domínio do ATS** ✅ (parcial — em andamento)
+**Fase B — Shell e domínio do ATS** ✅
 - ✅ Menu lateral dedicado do ATS (`src/lib/menu-config-ats.ts`).
-- ✅ `AppSidebar` troca grupos automaticamente quando `activeModule === 'ats'` (host `ats.*` ou path `/ats/*`).
-- ✅ Module switcher no header.
-- ✅ Branding do shell (cor, nome, ícone) já vinha do registry.
-- ⏳ **Pendente (manual)**: adicionar `ats.wktechnology.com.br` em *Project Settings → Domains*. SSL é provisionado automaticamente.
-- ⏳ **Pendente (próxima iteração)**: mover rotas `ats.*.tsx` para grupo `(ats)/*` sem prefixo + redirects do caminho antigo. Mantido com prefixo `/ats/*` por enquanto para não quebrar links.
-- ⏳ **Pendente**: configurar `cookieOptions.domain = '.wktechnology.com.br'` para SSO cross-subdomain (requer ajuste no client.ts, que é auto-gen — usar config do Supabase project).
+- ✅ `AppSidebar` troca grupos automaticamente quando `activeModule === 'ats'`.
+- ✅ Module switcher no header + branding (cor, nome, ícone) via registry.
+- ✅ `ats.wktechnology.com.br` ativo (custom domain).
+- ✅ Rotas movidas para grupo `(ats)/` sem prefixo: `/jobs`, `/jobs/$id`, `/candidates`. Redirects mantidos em `/ats/jobs`, `/ats/jobs/:id`, `/ats/candidates`, `/ats`.
+- ✅ `detectModuleFromPath` reconhece os novos paths (`/jobs`, `/candidates`) para preview local.
+- ⏳ **Pendente**: `cookieOptions.domain = '.wktechnology.com.br'` para SSO cross-subdomain (depende de ajuste no Supabase project, fora do client.ts auto-gen).
 
 **Fase C — Configurações compartilhadas**
 - Reorganizar `/settings` em grupos Workspace / CRM / ATS.
