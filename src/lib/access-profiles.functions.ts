@@ -70,7 +70,7 @@ export const getAccessProfile = createServerFn({ method: "GET" })
     const [{ data: perms }, { data: tools }] = await Promise.all([
       supabase
         .from("access_profile_permissions")
-        .select("object_key, view_scope, edit_scope, delete_scope, create_enabled")
+        .select("object_key, view_scope, edit_scope, delete_scope, create_enabled, module_id")
         .eq("profile_id", data.id),
       supabase.from("access_profile_tools").select("tool_key, enabled").eq("profile_id", data.id),
     ]);
@@ -90,6 +90,7 @@ export const getAccessProfile = createServerFn({ method: "GET" })
         edit_scope: "none" | "own" | "team" | "all";
         delete_scope: "none" | "own" | "team" | "all";
         create_enabled: boolean;
+        module_id: string | null;
       }>,
       tools: (tools ?? []) as Array<{ tool_key: string; enabled: boolean }>,
     };
