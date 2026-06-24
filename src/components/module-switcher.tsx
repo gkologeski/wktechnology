@@ -14,13 +14,6 @@ import { MODULE_LIST } from "@/lib/modules/registry";
 import { useActiveModule } from "@/lib/modules/active-module";
 import { cn } from "@/lib/utils";
 
-const APEX_DOMAIN = "wktechnology.com.br";
-
-function isProductionHost(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.location.hostname.endsWith(APEX_DOMAIN);
-}
-
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
   const navigate = useNavigate();
@@ -29,13 +22,9 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     if (moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
-
-    if (isProductionHost()) {
-      // Em produção, subdomínio dedicado por módulo.
-      window.location.href = `https://${target.hostSuffix}.${APEX_DOMAIN}${target.defaultRoute}`;
-      return;
-    }
-    // Preview/local: navega dentro da mesma origem.
+    // Sempre navegamos dentro da mesma origem (origem dinâmica).
+    // Em produção podemos servir múltiplos módulos a partir do mesmo host
+    // (ex.: ats.wktechnology.com.br) sem depender de subdomínios separados.
     navigate({ to: target.defaultRoute });
   };
 

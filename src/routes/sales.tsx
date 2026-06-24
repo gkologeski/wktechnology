@@ -30,13 +30,13 @@ export const Route = createFileRoute("/sales")({
         content:
           "CRM, WhatsApp, faturamento, NFS-e e automações para PMEs brasileiras. Comece grátis e cresça quando precisar.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/sales" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/sales" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "WK Technology CRM" },
       { name: "twitter:description", content: "CRM completo para PMEs brasileiras." },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/sales" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/sales" }],
   }),
   component: SalesPage,
 });

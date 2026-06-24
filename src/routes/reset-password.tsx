@@ -19,9 +19,9 @@ export const Route = createFileRoute("/reset-password")({
       },
       { property: "og:title", content: "Recuperar senha — WK Technology CRM" },
       { property: "og:description", content: "Solicite a redefinição de senha da sua conta." },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/reset-password" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/reset-password" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/reset-password" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/reset-password" }],
   }),
 });
 

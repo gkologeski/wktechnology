@@ -15,10 +15,10 @@ export const Route = createFileRoute("/privacy")({
         content:
           "Saiba como o WK Technology CRM coleta, usa, compartilha e protege seus dados pessoais e os dados de clientes, leads e integrações.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/privacy" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/privacy" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/privacy" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/privacy" }],
   }),
   component: PrivacyPage,
 });

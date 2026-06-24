@@ -18,10 +18,10 @@ export const Route = createFileRoute("/dpa")({
         content:
           "Acordo de Processamento de Dados do WK Technology CRM para clientes B2B, alinhado à LGPD e ao GDPR.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/dpa" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/dpa" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/dpa" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/dpa" }],
   }),
   component: DpaPage,
 });
