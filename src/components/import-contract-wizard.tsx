@@ -3,6 +3,7 @@
 // Passo 2: detecção de placeholders + edição/criação de campos variáveis
 // Passo 3: metadados (título, valor, validade) e criação
 import { useCallback, useMemo, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
@@ -516,7 +517,7 @@ export function ImportContractWizard() {
                 {rawHtml ? (
                   <div
                     className="prose prose-sm max-w-none p-3 text-xs"
-                    dangerouslySetInnerHTML={{ __html: rawHtml }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["style"] }) }}
                   />
                 ) : (
                   <pre className="p-3 text-xs whitespace-pre-wrap">{rawText}</pre>
