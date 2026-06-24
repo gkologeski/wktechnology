@@ -23,6 +23,7 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
+import { Route as CareersIndexRouteImport } from './routes/careers.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
 import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
@@ -34,6 +35,7 @@ import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
@@ -295,6 +297,11 @@ const KbIndexRoute = KbIndexRouteImport.update({
   path: '/kb/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareersIndexRoute = CareersIndexRouteImport.update({
+  id: '/careers/',
+  path: '/careers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
   id: '/widget/$workspaceId',
   path: '/widget/$workspaceId',
@@ -348,6 +355,11 @@ const KbSlugRoute = KbSlugRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersSlugRoute = CareersSlugRouteImport.update({
+  id: '/careers/$slug',
+  path: '/careers/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookSlugRoute = BookSlugRouteImport.update({
@@ -1484,6 +1496,7 @@ export interface FileRoutesByFullPath {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -1495,6 +1508,7 @@ export interface FileRoutesByFullPath {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1698,6 +1712,7 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -1709,6 +1724,7 @@ export interface FileRoutesByTo {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1916,6 +1932,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
+  '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -1927,6 +1944,7 @@ export interface FileRoutesById {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2135,6 +2153,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/careers/$slug'
     | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -2146,6 +2165,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers/'
     | '/kb/'
     | '/candidates'
     | '/jobs'
@@ -2349,6 +2369,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/careers/$slug'
     | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -2360,6 +2381,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers'
     | '/kb'
     | '/candidates'
     | '/jobs'
@@ -2566,6 +2588,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets'
     | '/accept-invite/$token'
     | '/book/$slug'
+    | '/careers/$slug'
     | '/email/unsubscribe'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -2577,6 +2600,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers/'
     | '/kb/'
     | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/jobs'
@@ -2764,6 +2788,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   BookSlugRoute: typeof BookSlugRoute
+  CareersSlugRoute: typeof CareersSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
@@ -2775,6 +2800,7 @@ export interface RootRouteChildren {
   VerifyHashRoute: typeof VerifyHashRoute
   WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
+  CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
@@ -2929,6 +2955,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KbIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/careers/': {
+      id: '/careers/'
+      path: '/careers'
+      fullPath: '/careers/'
+      preLoaderRoute: typeof CareersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/widget/$workspaceId': {
       id: '/widget/$workspaceId'
       path: '/widget/$workspaceId'
@@ -3004,6 +3037,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers/$slug': {
+      id: '/careers/$slug'
+      path: '/careers/$slug'
+      fullPath: '/careers/$slug'
+      preLoaderRoute: typeof CareersSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/$slug': {
@@ -4892,6 +4932,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   BookSlugRoute: BookSlugRoute,
+  CareersSlugRoute: CareersSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
@@ -4903,6 +4944,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyHashRoute: VerifyHashRoute,
   WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
+  CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
