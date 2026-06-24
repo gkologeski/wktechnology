@@ -1,118 +1,80 @@
 
-# 🎯 Plano de Evolução — TechHire ATS
+# Fase 2 — Entrevistas e Ofertas
 
-## Diagnóstico
-
-Hoje o TechHire tem o **esqueleto** de um ATS (vagas, candidatos, Kanban, scorecards, e-mails por stage, career page pública, parsing de CV via Gemini, analytics básico), mas faltam as **camadas que definem um ATS de classe mundial em 2026**: agendamento de entrevistas, vídeo, agentes de IA, match score explicável, DEI analytics, fraud detection, fila de envio de e-mails, ofertas digitais e integrações HRIS.
-
-Benchmarking de 17 players (Greenhouse, Lever, Ashby, Gem, Workable, SmartRecruiters, iCIMS, Teamtailor, Pinpoint, Manatal, BambooHR, Recruitee + Gupy, Sólides, Vagas.com, Pandapé, Compleo) mostra que o mercado migrou para **"Hiring Intelligence Platforms"** com agentes autônomos. SmartRecruiters declarou em jun/2025 "the end of the ATS era".
+Cinco entregas grandes. Vou propor a sequência em **3 ondas** para entregar valor incremental sem travar tudo em uma migration gigante.
 
 ---
 
-## Posicionamento alvo
+## 🌊 Onda A — Agendamento nativo de entrevistas (item 7)
 
-> **TechHire = "Greenhouse + Ashby para o Brasil, com agentes de IA da Lovable e LGPD-first"**
+A base do ciclo. Tudo depende disso.
 
-Foco em **PME/Mid-Market tech** brasileiro, competindo no eixo Gupy/Sólides (BR) e Ashby/Workable (global), com diferenciais: **agentes IA nativos**, **scorecards estruturados**, **career pages white-label por workspace**, **integração CRM↔ATS** (vaga nasce de um Deal) e **LGPD nativo**.
+**Banco** (`supabase--migration`):
+- Tabela `ats_interviews` com `application_id`, `job_id`, `interviewer_id`, `scheduled_at`, `duration_min`, `kind` (phone/video/onsite/async), `status` (scheduled/done/no_show/canceled/rescheduled), `meet_url`, `notes`, `owner_id`.
+- Tabela `ats_interview_slots` (slots ofertados antes do candidato escolher) ou reaproveitar `bookings`.
+- RLS via `can_access_ats_job(job_id)` + grants.
+- Trigger `updated_at`.
 
----
+**Backend** (`src/lib/ats/interviews.functions.ts`):
+- `listInterviews(application_id)` / `listMyUpcomingInterviews()`
+- `scheduleInterview({application_id, interviewer_id, scheduled_at, duration_min, kind})`
+- `rescheduleInterview(id, new_at)` / `cancelInterview(id, reason)` / `markInterviewDone(id)`
+- `createInterviewBookingLink(application_id)` → gera token público
+- Eventos: `interview_scheduled`, `interview_rescheduled`, `interview_canceled`, `interview_completed` em `ats_application_events`.
 
-## Roadmap — 4 fases
+**Public route** (reusa `/book/$slug` ou cria `/interview/$token`):
+- Candidato vê slots, escolhe, recebe e-mail com `.ics` + link Meet.
 
-### 🟢 FASE 1 — Fechar os buracos do MVP (2-3 sprints)
-*"Tornar utilizável de ponta a ponta"*
+**UI**:
+- Aba "Entrevistas" no `scorecard-eval-dialog` (timeline + botão "Agendar").
+- Dialog `schedule-interview-dialog` com seletor de entrevistador, data/hora, duração, kind.
+- Botão "Enviar link de auto-agendamento" no card do candidato.
 
-1. ✅ **Cron de envio de e-mails de stage** — worker `/api/public/hooks/ats-emails-tick.ts` processa `ats_stage_email_log` pendentes via Resend e marca `sent`/`failed`.
-2. ✅ **E-mail de confirmação ao candidato** após `submitPublicApplication` (template branded por workspace).
-3. ✅ **Editor visual de pipeline** — UI em `/pipelines` para criar/editar pipelines e stages (cor, tipo, ordem). Pipeline "RH - Seleção" já importado das fases de Tickets.
-4. ✅ **Export CSV** de candidatos e candidaturas por vaga (`exportCandidatesCsv` / `exportApplicationsCsv`).
-5. ✅ **Permissões por equipe** — RLS team-based via `can_access_ats_job(job_id)`: hiring_manager/recruiter veem suas vagas (e candidaturas/candidatos vinculados); owner/admin do workspace vê tudo. Aplicado a `ats_jobs`, `ats_applications`, `ats_candidates` e `ats_application_events`.
-6. ✅ **Auditoria de movimentações** — `ats_application_events` registra `application_created`, `stage_moved` (com from/to + actor) e `scorecard_submitted`. Listagem via `listApplicationEvents` e timeline exibida no diálogo de avaliação do candidato.
-
-
-
-### 🟡 FASE 2 — Entrevistas e ofertas (3-4 sprints)
-*"Fechar o ciclo até a contratação"*
-
-7. **Agendamento nativo de entrevistas** — tabela `ats_interviews` ligada à candidatura, reaproveitando módulo de booking que já existe (`/book/$slug`). Self-scheduling: candidato recebe link, escolhe horário, sincroniza Google/Outlook do recrutador, gera link Meet/Zoom.
-8. **Interview kits** — perguntas estruturadas por stage da vaga, mostradas ao avaliador junto do scorecard durante a entrevista.
-9. **Vídeo entrevistas assíncronas** — candidato grava respostas via webcam (MediaRecorder API + upload para Supabase Storage), recrutador assiste em playlist; reaproveita infra de recording que já existe em `screen-recorder`.
-10. **Módulo de Ofertas** — tabela `ats_offers` com salário, benefícios, data de início, status (draft/sent/accepted/rejected); geração de carta PDF; integração com `/sign/$token` para assinatura digital nativa (já existe).
-11. **Parsing de PDF server-side** — atual extração só funciona no browser. Mover para server function com `pdf-parse` (Worker-compatible) + fallback OCR via Gemini Vision para PDFs imagem.
-
-### 🔵 FASE 3 — IA diferenciada (4-5 sprints)
-*"Onde a Lovable vence"*
-
-12. **Match Score Explicável (Job ↔ Candidato)** — função IA que compara `requirements`/JD da vaga vs `cv_parsed` + scorecards e devolve score 0-100 com **justificativa transparente por critério** (DEI-safe: ignora nome, idade, foto, gênero). Exibido como badge no card do Kanban e ordenação automática.
-13. **AI Job Description Generator + Linguagem Inclusiva** — botão "Gerar com IA" no formulário de vaga: descreve cargo → IA produz JD completa, com checagem de termos enviesados (ex: "rockstar", "agressivo").
-14. **AI Notetaker para entrevistas** — captura áudio da chamada (Web Audio API), transcreve via Gemini, gera resumo estruturado (pontos fortes / fracos / recomendação) e pré-preenche o scorecard.
-15. **AI Sourcing Assistant** — busca por linguagem natural ("dev React sênior em SP, remoto") sobre o banco interno de candidatos (incluindo arquivados de processos anteriores) — embeddings de skills + Talent Rediscovery.
-16. **AI Copilot ATS** — extensão do copilot existente: "quantas vagas estão paradas há mais de 30 dias?", "compare meus tempos de fechamento por seniority", "redija e-mail de rejeição empático para o candidato X".
-17. **Candidate Fraud Detection** — heurísticas + IA sinalizando: e-mails descartáveis, CV gerado por IA, geolocalização inconsistente, múltiplas candidaturas com pequenas variações.
-
-### 🟣 FASE 4 — Enterprise & ecossistema (contínuo)
-*"Tirar bloqueios de venda"*
-
-18. **DEI Analytics opt-in** — coleta opcional e anonimizada de gênero/raça/PcD no formulário público; dashboard mostra **funil por estágio segmentado**, identificando perda de diversidade.
-19. **Custom Report Builder** — UI para o usuário arrastar dimensões (vaga, recrutador, source, stage) e métricas (tempo médio, conversão, score médio) e salvar dashboards.
-20. **Webhook de candidatura externa** — `/api/public/ats/$slug/apply` para LinkedIn/Indeed/Gupy postarem candidaturas direto.
-21. **Open API documentada + Webhooks de eventos ATS** — `ats.application.created`, `ats.candidate.hired`, etc., para Zapier/Make.
-22. **Integração HRIS** (TOTVS, Senior, Sankhya, BambooHR) — quando candidato vira `hired`, dispara criação do colaborador no HRIS escolhido.
-23. **Multiposting** — publicação em LinkedIn, Indeed, Glassdoor, Vagas.com via APIs/feed XML por workspace.
-24. **Onboarding pós-contratação** — checklist de pré-boarding (docs, exames, kit), integrado ao módulo `module-onboarding-checklist` já existente.
+**Cron** (`/api/public/hooks/ats-interview-reminders-tick.ts`):
+- Lembrete D-1 e 1h antes via Resend (workspace branded).
 
 ---
 
-## Detalhes técnicos (resumo)
+## 🌊 Onda B — Interview Kits + Vídeo assíncrono (itens 8 e 9)
 
-```text
-Novas tabelas previstas:
-  ats_application_events    — auditoria de movimentações (fase 1)
-  ats_interviews            — agendamento + vídeo (fase 2)
-  ats_offers                — ofertas (fase 2)
-  ats_match_scores          — cache de score vaga↔candidato (fase 3)
-  ats_dei_responses         — autodeclaração anônima (fase 4)
-  ats_custom_reports        — dashboards salvos (fase 4)
+**Item 8 — Interview Kits**:
+- Tabela `ats_interview_kits` (`pipeline_id`, `stage_id`, `questions jsonb`).
+- UI no editor de pipeline (`/pipelines`): aba "Kit de entrevista" por stage.
+- No `scorecard-eval-dialog`, ao avaliar uma entrevista do stage X, exibir perguntas do kit acima do scorecard.
 
-Novos cron/webhooks (/api/public/hooks/):
-  ats-stage-emails-tick     — envia fila de e-mails (fase 1)
-  ats-match-score-tick      — recalcula match scores em background (fase 3)
-  ats-fraud-scan-tick       — varre candidaturas suspeitas (fase 3)
-  ats-interview-reminders   — D-1 e 1h antes (fase 2)
-
-Reaproveitamentos:
-  - Booking module        → agendamento de entrevistas
-  - /sign/$token          → assinatura de oferta
-  - Resend infra          → e-mails branded
-  - Lovable AI Gateway    → match score, notetaker, JD generator
-  - Bug-report recorder   → vídeo entrevista assíncrona
-  - Copilot CMDK          → AI Copilot ATS
-```
+**Item 9 — Vídeo assíncrono**:
+- Tabela `ats_async_video_responses` (`application_id`, `question_idx`, `storage_path`, `duration_s`).
+- Bucket Supabase Storage `ats-async-videos` (privado, RLS).
+- Quando `kind='async'`, candidato recebe link público `/interview-async/$token` → grava respostas com MediaRecorder API (reusa `use-screen-recorder.ts`) → upload direto pro Storage.
+- Recrutador vê playlist no `scorecard-eval-dialog`.
 
 ---
 
-## O que NÃO entra agora
+## 🌊 Onda C — Ofertas + Parsing PDF server-side (itens 10 e 11)
 
-- **OFCCP compliance** (EUA) — adicionar só se aparecer cliente americano. LGPD já cobre o BR.
-- **Multiposting LinkedIn oficial** — exige acordo comercial; começar com feed XML público + Indeed.
-- **Voice screening** (estilo iCIMS Frontline) — fora do ICP tech.
-- **HRIS+Payroll completo** (estilo BambooHR) — TechHire foca em recrutamento; integrar via API com HRIS existentes em vez de construir.
+**Item 10 — Módulo de Ofertas**:
+- Tabela `ats_offers` (`application_id`, `salary`, `currency`, `benefits jsonb`, `start_date`, `status` draft/sent/accepted/rejected/expired, `signed_document_id` FK pra `esign_documents`, `expires_at`).
+- Server fns: `createOffer`, `sendOffer` (gera PDF + cria `esign_documents` + envia via `/sign/$token` existente), `markOfferStatus`.
+- UI: aba "Oferta" no candidato; quando aceita → muda stage automaticamente pra "Contratado".
+- Evento `offer_sent`, `offer_accepted`, `offer_rejected`.
 
----
-
-## Como medir sucesso por fase
-
-| Fase | Métrica |
-|---|---|
-| 1 | Workspace consegue rodar 1 vaga end-to-end sem usar planilha externa |
-| 2 | Tempo médio de fechamento cai 30% vs fase 1 (medido em `getAtsAnalytics`) |
-| 3 | 60%+ das contratações vêm dos Top 10 sugeridos pelo Match Score (benchmark Gupy: 65%) |
-| 4 | TechHire vence Gupy/Sólides em pelo menos 1 RFP de cliente mid-market |
+**Item 11 — Parsing PDF server-side**:
+- Mover lógica de `cv-parse.functions.ts` pra rodar no Worker.
+- Tentar `unpdf` ou `pdfjs-dist` (Worker-compatible). Se PDF for imagem, fallback Gemini Vision via Lovable AI Gateway.
+- Endpoint `parseCvServer({storage_path})` chamado direto do upload.
 
 ---
 
-## Próximo passo sugerido
+## 📋 Sequência sugerida
 
-✅ Fase 1 concluída (itens 1–6). Avançar para **Fase 2 — entrevistas e ofertas**, começando pelo item 7 (agendamento nativo de entrevistas reaproveitando o módulo `/book/$slug`).
+1. **Agora**: Onda A completa (migration + backend + UI básica do agendamento + self-scheduling público).
+2. Em seguida: Onda B (kits + vídeo).
+3. Por fim: Onda C (ofertas + parsing server-side).
 
+Cada onda termina com `.lovable/plan.md` atualizado.
 
+---
+
+## ❓ Pergunta antes de começar
+
+**Onda A** envolve criar tabela + 6 server functions + 2 dialogs + cron + e-mail template. É a maior das três. Confirmo o caminho ou prefere quebrar em sub-passos (ex: só agendamento manual por recrutador agora, deixar self-scheduling pra depois)?
