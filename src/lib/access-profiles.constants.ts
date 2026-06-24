@@ -1,22 +1,31 @@
 // Constantes de perfis de acesso. Client-safe (sem imports server-only).
+// `module` mapeia o objeto ao módulo (`crm` ou `ats`) para gravar `module_id`
+// em `access_profile_permissions`, viabilizando permissões por módulo.
+export type AccessCategory = "crm" | "marketing" | "sales" | "service" | "ats";
 export const ACCESS_OBJECTS: Array<{
   key: string;
   label: string;
-  category: "crm" | "marketing" | "sales" | "service";
+  category: AccessCategory;
+  module?: "crm" | "ats";
 }> = [
-  { key: "contacts", label: "Contatos", category: "crm" },
-  { key: "companies", label: "Empresas", category: "crm" },
-  { key: "leads", label: "Leads", category: "crm" },
-  { key: "deals", label: "Negócios", category: "sales" },
-  { key: "quotes", label: "Cotações", category: "sales" },
-  { key: "products", label: "Produtos", category: "sales" },
-  { key: "tickets", label: "Tickets", category: "service" },
-  { key: "tasks", label: "Tarefas", category: "crm" },
-  { key: "notes", label: "Notas", category: "crm" },
-  { key: "calls", label: "Chamadas", category: "crm" },
-  { key: "meetings", label: "Reuniões", category: "crm" },
-  { key: "emails", label: "E-mails do CRM", category: "crm" },
-  { key: "activities", label: "Atividades", category: "crm" },
+  { key: "contacts", label: "Contatos", category: "crm", module: "crm" },
+  { key: "companies", label: "Empresas", category: "crm", module: "crm" },
+  { key: "leads", label: "Leads", category: "crm", module: "crm" },
+  { key: "deals", label: "Negócios", category: "sales", module: "crm" },
+  { key: "quotes", label: "Cotações", category: "sales", module: "crm" },
+  { key: "products", label: "Produtos", category: "sales", module: "crm" },
+  { key: "tickets", label: "Tickets", category: "service", module: "crm" },
+  { key: "tasks", label: "Tarefas", category: "crm", module: "crm" },
+  { key: "notes", label: "Notas", category: "crm", module: "crm" },
+  { key: "calls", label: "Chamadas", category: "crm", module: "crm" },
+  { key: "meetings", label: "Reuniões", category: "crm", module: "crm" },
+  { key: "emails", label: "E-mails do CRM", category: "crm", module: "crm" },
+  { key: "activities", label: "Atividades", category: "crm", module: "crm" },
+  // ATS
+  { key: "ats_jobs", label: "Vagas", category: "ats", module: "ats" },
+  { key: "ats_candidates", label: "Candidatos", category: "ats", module: "ats" },
+  { key: "ats_applications", label: "Candidaturas", category: "ats", module: "ats" },
+  { key: "ats_scorecards", label: "Scorecards", category: "ats", module: "ats" },
 ];
 
 export const ACCESS_TOOLS: Array<{
