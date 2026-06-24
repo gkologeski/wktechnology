@@ -25,8 +25,14 @@ export function detectModuleFromHost(hostname: string | undefined | null): Modul
   return null;
 }
 
+// Paths que pertencem exclusivamente ao módulo ATS (fallback usado em
+// preview/local quando o subdomínio `ats.*` não está disponível).
+const ATS_PATH_PREFIXES = ["/jobs", "/candidates", "/ats"];
+
 export function detectModuleFromPath(pathname: string): ModuleId | null {
-  if (pathname === "/ats" || pathname.startsWith("/ats/")) return "ats";
+  for (const p of ATS_PATH_PREFIXES) {
+    if (pathname === p || pathname.startsWith(p + "/")) return "ats";
+  }
   return null;
 }
 
