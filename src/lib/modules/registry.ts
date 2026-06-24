@@ -14,6 +14,7 @@ import {
   BarChart3,
   Settings as SettingsIcon,
   ClipboardCheck,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -68,10 +69,12 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     hostSuffix: "ats",
     defaultRoute: "/jobs",
     menu: [
+      { title: "Insights", url: "/insights", icon: LayoutDashboard },
       { title: "Vagas", url: "/jobs", icon: Briefcase },
       { title: "Candidatos", url: "/candidates", icon: Users },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
+      { title: "E-mails por etapa", url: "/stage-emails", icon: Mail },
       { title: "Entrevistas", url: "/meetings", icon: CalendarIcon },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Configurações", url: "/settings", icon: SettingsIcon },

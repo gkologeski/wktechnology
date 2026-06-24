@@ -167,3 +167,36 @@ export const listScorecardResponses = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+/** Para o Kanban: melhor score por candidatura de uma vaga. */
+export const listJobScorecardSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ application_ids: z.array(z.string().uuid()).min(0).max(500) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    if (data.application_ids.length === 0) return {} as Record<string, { avg: number; count: number }>;
+    const { data: rows, error } = await supabase
+      .from("ats_scorecard_responses")
+      .select("application_id, total_score")
+      .eq("owner_id", userId)
+      .in("application_id", data.application_ids);
+    if (error) throw new Error(error.message);
+    const acc: Record<string, { sum: number; count: number }> = {};
+    for (const r of rows ?? []) {
+      const ap = r.application_id as string;
+      const v = r.total_score as number | null;
+      if (typeof v !== "number") continue;
+      const a = acc[ap] ?? { sum: 0, count: 0 };
+      a.sum += v;
+      a.count += 1;
+      acc[ap] = a;
+    }
+    const out: Record<string, { avg: number; count: number }> = {};
+    for (const [k, v] of Object.entries(acc)) {
+      out[k] = { avg: +(v.sum / v.count).toFixed(2), count: v.count };
+    }
+    return out;
+  });
+

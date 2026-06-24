@@ -1027,6 +1027,87 @@ export type Database = {
           },
         ]
       }
+      ats_stage_email_log: {
+        Row: {
+          application_id: string
+          body: string
+          candidate_id: string
+          created_at: string
+          error: string | null
+          id: string
+          job_id: string | null
+          owner_id: string
+          sent_at: string | null
+          stage_value: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          application_id: string
+          body: string
+          candidate_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id: string
+          sent_at?: string | null
+          stage_value: string
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          application_id?: string
+          body?: string
+          candidate_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id?: string
+          sent_at?: string | null
+          stage_value?: string
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
+      ats_stage_emails: {
+        Row: {
+          body: string
+          created_at: string
+          enabled: boolean
+          id: string
+          owner_id: string
+          stage_value: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          owner_id: string
+          stage_value: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          owner_id?: string
+          stage_value?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attribution_touchpoints: {
         Row: {
           campaign: string | null

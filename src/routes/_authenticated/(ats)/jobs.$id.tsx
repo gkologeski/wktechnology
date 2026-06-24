@@ -35,6 +35,9 @@ import {
   listAtsCandidates,
 } from "@/lib/ats/ats.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
+import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
+import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
+import { ClipboardCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
   component: JobDetailPage,
@@ -51,6 +54,7 @@ function JobDetailPage() {
   const moveApp = useServerFn(moveApplication);
   const addApp = useServerFn(addApplication);
   const listCands = useServerFn(listAtsCandidates);
+  const listSummary = useServerFn(listJobScorecardSummary);
 
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
@@ -59,6 +63,8 @@ function JobDetailPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCand, setSelectedCand] = useState<string>("");
+  const [scoreSummary, setScoreSummary] = useState<Record<string, { avg: number; count: number }>>({});
+  const [evalApp, setEvalApp] = useState<App | null>(null);
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
@@ -71,6 +77,15 @@ function JobDetailPage() {
       ]);
       setJob(j);
       setApps(a);
+      const ids = a.map((x) => x.id as string);
+      if (ids.length > 0) {
+        try {
+          const s = await listSummary({ data: { application_ids: ids } });
+          setScoreSummary(s as Record<string, { avg: number; count: number }>);
+        } catch { /* noop */ }
+      } else {
+        setScoreSummary({});
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar");
     } finally {
@@ -262,10 +277,27 @@ function JobDetailPage() {
                         </div>
                       )}
                       {a.ai_match_score != null && (
-                        <Badge variant="outline" className="mt-1 text-[10px]">
+                        <Badge variant="outline" className="mt-1 text-[10px] mr-1">
                           IA {Math.round(Number(a.ai_match_score))}
                         </Badge>
                       )}
+                      {scoreSummary[a.id] && (
+                        <Badge variant="secondary" className="mt-1 text-[10px] mr-1">
+                          Score {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                        </Badge>
+                      )}
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[11px]"
+                          onClick={(e) => { e.stopPropagation(); setEvalApp(a); }}
+                          draggable={false}
+                          onDragStart={(e) => e.stopPropagation()}
+                        >
+                          <ClipboardCheck className="h-3 w-3 mr-1" />Avaliar
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </CardContent>
@@ -274,6 +306,18 @@ function JobDetailPage() {
           ))}
         </div>
       </div>
+
+      {evalApp && (
+        <ScorecardEvalDialog
+          open={!!evalApp}
+          onOpenChange={(v) => { if (!v) setEvalApp(null); }}
+          applicationId={evalApp.id}
+          jobId={id}
+          candidateName={evalApp.candidate?.full_name ?? "Candidato"}
+          onSaved={refresh}
+        />
+      )}
     </div>
   );
 }
+

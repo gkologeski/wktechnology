@@ -15,6 +15,7 @@ import { SettingsMenu } from "@/components/settings-menu";
 import { AccountMenu } from "@/components/account-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 import { FocusQueueBar } from "@/components/focus-queue-bar";
+import { ModuleSwitcher } from "@/components/module-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -102,6 +103,7 @@ function AuthenticatedLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center gap-2 border-b bg-background px-3">
             <SidebarTrigger />
+            <ModuleSwitcher />
             <GlobalSearchTrigger />
             <div className="flex-1" />
             <QuickCreateMenu />

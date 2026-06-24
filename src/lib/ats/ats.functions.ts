@@ -538,5 +538,53 @@ export const moveApplication = createServerFn({ method: "POST" })
         }).catch(() => undefined);
       }
     }
+
+    // Enfileirar e-mail automático por etapa (se configurado)
+    try {
+      const { data: tpl } = await supabase
+        .from("ats_stage_emails")
+        .select("subject, body, enabled")
+        .eq("owner_id", userId)
+        .eq("stage_value", data.toStage)
+        .maybeSingle();
+      if (tpl && (tpl as { enabled: boolean }).enabled) {
+        const { data: cand } = await supabase
+          .from("ats_candidates")
+          .select("id, full_name, email")
+          .eq("id", prev.candidate_id as string)
+          .maybeSingle();
+        const { data: job } = await supabase
+          .from("ats_jobs")
+          .select("title")
+          .eq("id", prev.job_id as string)
+          .maybeSingle();
+        const c = cand as { full_name: string; email: string | null } | null;
+        const j = job as { title: string } | null;
+        if (c?.email) {
+          const replace = (s: string) =>
+            s
+              .replaceAll("{{candidate_name}}", c.full_name ?? "")
+              .replaceAll("{{job_title}}", j?.title ?? "")
+              .replaceAll("{{stage}}", data.toStage);
+          await supabase
+            .from("ats_stage_email_log")
+            .insert({
+              owner_id: userId,
+              application_id: data.applicationId,
+              candidate_id: prev.candidate_id,
+              job_id: prev.job_id,
+              stage_value: data.toStage,
+              to_email: c.email,
+              subject: replace((tpl as { subject: string }).subject),
+              body: replace((tpl as { body: string }).body),
+              status: "queued",
+            } as never);
+        }
+      }
+    } catch {
+      /* não bloqueia movimentação */
+    }
+
     return { ok: true };
   });
+

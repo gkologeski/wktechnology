@@ -26,6 +26,7 @@ import {
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
 import { parseCv } from "@/lib/ats/cv-parse.functions";
+import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
   component: CandidatesPage,
@@ -40,6 +41,7 @@ function CandidatesPage() {
   const parse = useServerFn(parseCv);
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
+  const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<Cand[]>([]);
   const [search, setSearch] = useState("");
@@ -123,15 +125,21 @@ function CandidatesPage() {
 
   const handleParseCv = async () => {
     if (cvText.trim().length < 40) {
-      toast.error("Cole o texto do currículo (mínimo 40 caracteres)");
+      toast.error("Cole o texto do currículo ou faça upload de um PDF (mínimo 40 caracteres)");
       return;
     }
     setParsing(true);
     try {
       const res = await parse({ data: { cv_text: cvText, apply: true } });
+      const newId = (res.saved as { id?: string } | null | undefined)?.id;
+      if (cvUrl && newId) {
+        const { supabase } = await import("@/integrations/supabase/client");
+        await supabase.from("ats_candidates").update({ cv_url: cvUrl }).eq("id", newId);
+      }
       toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
       setParseOpen(false);
       setCvText("");
+      setCvUrl(null);
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao processar CV");
@@ -165,13 +173,27 @@ function CandidatesPage() {
               <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
             </DialogHeader>
             <div className="space-y-2">
-              <Label>Cole o texto do currículo</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Cole o texto do currículo</Label>
+                <CvPdfUploadButton
+                  disabled={parsing}
+                  onExtracted={({ text, cvUrl: url }) => {
+                    if (text) setCvText(text);
+                    if (url) setCvUrl(url);
+                  }}
+                />
+              </div>
               <Textarea
-                rows={14}
+                rows={12}
                 value={cvText}
                 onChange={(e) => setCvText(e.target.value)}
-                placeholder="Cole aqui o conteúdo do CV (texto, exportado do PDF, LinkedIn, etc.)"
+                placeholder="Cole aqui o conteúdo do CV — ou clique em 'Enviar PDF' para extrair automaticamente."
               />
+              {cvUrl && (
+                <p className="text-xs text-muted-foreground">
+                  PDF anexado e armazenado em segurança. Será vinculado ao candidato.
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
               </p>
