@@ -1,94 +1,34 @@
-# Revisão do menu do TechHire (ATS)
+# Onda B — Interview Kits + Vídeo Assíncrono (concluída)
 
-## Problema
+## Entregas
 
-`src/lib/menu-config-ats.ts` aponta vários itens para rotas do CRM/Sales (TechSales). Exemplos confirmados navegando o código:
+### Schema (migration aplicada)
+- `ats_interview_kits` (owner, name, pipeline_id, stage_value, questions jsonb, is_default) + RLS.
+- `ats_async_video_responses` (interview_id, question_id, storage_path, duration_sec, mime_type, size_bytes) + RLS.
+- `ats_interviews`: novas colunas `interview_kit_id` (FK) e `async_questions_snapshot` (jsonb).
+- Bucket privado `ats-async-videos` + políticas (owner full-access no próprio prefixo; anon insert/select via token de entrevista).
 
-- **Entrevistas** → `/meetings` (página de reuniões do CRM)
-- **Página de Carreiras** → `/settings/portal` (portal do cliente — Vender)
-- **Inbox** → `/inbox` (inbox unificada do CRM com Email/WhatsApp/Chat)
-- **Templates de E-mail** → `/settings/email-templates` (CRM)
-- **Notificações** → `/settings/notifications` (CRM)
-- **Relatórios / Dashboards** → `/reports`, `/dashboards` (CRM)
-- **Workflows** → `/settings/workflows` (CRM)
+### Server functions
+- `src/lib/ats/interview-kits.functions.ts`: list/get/save/delete + `resolveKitForStage`.
+- `src/lib/ats/async-video.functions.ts`: `listAsyncVideoResponses` (com signed URL), `deleteAsyncVideoResponse`.
+- `interviews.functions.ts`: `scheduleInterview` e `createSelfScheduleLink` aceitam `interview_kit_id` e congelam snapshot das perguntas.
 
-Além disso o menu **omite páginas ATS reais** que existem em `src/routes/_authenticated/(ats)/`: `scorecards`, `stage-emails`, `insights`.
+### Rotas públicas
+- `src/routes/api/public/interview/$token.ts`: GET retorna perguntas + respostas já enviadas; POST aceita multipart com `question_id + file` para upload de vídeo (valida token, kind=async, expira, tamanho ≤ 100MB).
+- `src/routes/interview.$token.tsx`: detecta `kind=async`, renderiza `AsyncInterviewView` com gravador MediaRecorder por pergunta (start câmera → gravar com timer → review → upload). Suporta retomada (perguntas já enviadas aparecem como ✓).
 
-## Rotas ATS-only realmente existentes
+### UI Admin
+- `src/routes/_authenticated/(ats)/interview-kits.tsx`: CRUD visual de kits (nome, padrão, perguntas com tipo texto/vídeo e time_limit_sec).
+- Menu ATS ganhou item "Kits de Entrevista" → `/interview-kits`.
 
-Confirmado por `rg createFileRoute`:
+### Integração no fluxo de recrutador
+- `schedule-interview-dialog`: novo seletor "Kit de perguntas" carregado on-open; obrigatório em alerta para `async`; slots opcionais quando async (não há horário).
+- `scorecard-eval-dialog`: para cada entrevista async, exibe `<AsyncVideoResponses>` (toggle "Ver vídeos") com player + duração baseado em signed URL de 5min.
 
-| URL | Arquivo |
-|---|---|
-| `/jobs`, `/jobs/$id` | `(ats)/jobs(.$id).tsx` |
-| `/candidates` | `(ats)/candidates.tsx` |
-| `/pipelines` | `(ats)/pipelines.tsx` |
-| `/scorecards` | `(ats)/scorecards.tsx` |
-| `/stage-emails` | `(ats)/stage-emails.tsx` |
-| `/insights` | `(ats)/insights.tsx` |
+## Validação
+- `tsgo --noEmit`: OK
+- Migration: OK (apenas warnings pré-existentes do linter Supabase)
 
-Não existe rota administrativa nativa para **Entrevistas ATS** nem para **Página de Carreiras** (só existe a pública `/careers/$slug` e `/careers`).
-
-## Mudanças
-
-### 1. `src/lib/menu-config-ats.ts` — reescrever grupos
-
-```ts
-[
-  {
-    label: "Recrutamento",
-    items: [
-      { title: "Vagas",       url: "/jobs",        icon: Briefcase },
-      { title: "Candidatos",  url: "/candidates",  icon: Users },
-      { title: "Pipelines",   url: "/pipelines",   icon: GitBranch },
-      { title: "Scorecards",  url: "/scorecards",  icon: ClipboardCheck },
-    ],
-  },
-  {
-    label: "Comunicação",
-    items: [
-      { title: "E-mails por etapa", url: "/stage-emails", icon: Mail },
-      // Inbox/Templates/Notificações removidos — pertencem ao TechSales
-    ],
-  },
-  {
-    label: "Carreiras",
-    items: [
-      { title: "Página de Carreiras (pública)", url: "/careers", icon: Globe },
-      // Link externo para preview da careers page pública do workspace
-    ],
-  },
-  {
-    label: "Análise",
-    items: [
-      { title: "Insights ATS", url: "/insights", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "Workspace (ERP)",
-    items: [
-      { title: "Equipe",              url: "/settings/workspace-team", icon: UsersRound, need: "admin" },
-      { title: "Papéis & Permissões", url: "/settings/roles",          icon: ShieldCheck, need: "admin" },
-      { title: "Planos & Cobrança",   url: "/settings/billing",        icon: CreditCard, need: "admin" },
-      { title: "Idioma",              url: "/settings/language",       icon: Languages },
-      { title: "API Keys",            url: "/settings/api-keys",       icon: KeyRound, need: "admin" },
-    ],
-  },
-]
-```
-
-### 2. Itens removidos (e por quê)
-
-- **Entrevistas** — não há rota admin de entrevistas; o agendamento já vive dentro do candidato (`scorecard-eval-dialog`). Reintroduzir só quando existir uma página `/interviews` dedicada ao ATS.
-- **Inbox** — `/inbox` é do CRM (Email/WhatsApp/Chat). ATS não tem inbox próprio.
-- **Templates de E-mail / Notificações** — pertencem ao CRM. ATS usa `/stage-emails`.
-- **Relatórios / Dashboards / Workflows / Integrações** — sem equivalente ATS-only hoje; ficam acessíveis via troca de módulo para o TechSales.
-
-### 3. Validação
-
-- `rg "url:" src/lib/menu-config-ats.ts` — todas as URLs devem existir em `src/routes/_authenticated/(ats)/` ou em `settings.*` permitidos.
-- Smoke manual: abrir TechHire e clicar em cada item; nenhum deve cair em rota do CRM.
-
-## Fora de escopo
-
-- Criar páginas novas de "Entrevistas ATS" ou "Página de Carreiras (admin)". Se quiser, faço em sequência depois desta limpeza.
+## Próximo passo (Onda C)
+- Item 10: `ats_offers` + envio com eSign + auto-promoção da etapa.
+- Item 11: parser de CV server-side via `unpdf` ou Gemini Vision.
