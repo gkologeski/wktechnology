@@ -30,6 +30,7 @@ function AuditLogPage() {
   const [loading, setLoading] = useState(true);
   const [entity, setEntity] = useState<string>("all");
   const [action, setAction] = useState<string>("all");
+  const [moduleId, setModuleId] = useState<string>("all");
   const [detail, setDetail] = useState<Row | null>(null);
 
   const load = async () => {
@@ -40,6 +41,7 @@ function AuditLogPage() {
           data: {
             entity: entity === "all" ? null : (entity as never),
             action: action === "all" ? null : (action as never),
+            module_id: moduleId === "all" ? null : moduleId,
             limit: 200,
           },
         }),
@@ -50,7 +52,7 @@ function AuditLogPage() {
   };
   useEffect(() => {
     load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [entity, action]);
+  }, [entity, action, moduleId]);
 
   const fmtDate = (s: string) => formatDateTime(s);
 
@@ -72,7 +74,20 @@ function AuditLogPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-[200px_200px_1fr] gap-3 items-end">
+          <div className="grid grid-cols-[180px_180px_180px_1fr] gap-3 items-end">
+            <div className="space-y-1">
+              <Label>Módulo</Label>
+              <Select value={moduleId} onValueChange={setModuleId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="crm">TechSales (CRM)</SelectItem>
+                  <SelectItem value="ats">TechHire (ATS)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <Label>Entidade</Label>
               <Select value={entity} onValueChange={setEntity}>
@@ -127,8 +142,9 @@ function AuditLogPage() {
           )}
           {!loading && rows.length > 0 && (
             <div className="text-sm">
-              <div className="grid grid-cols-[160px_120px_120px_1fr_180px_60px] gap-2 py-2 border-b text-xs uppercase text-muted-foreground">
+              <div className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 py-2 border-b text-xs uppercase text-muted-foreground">
                 <div>Quando</div>
+                <div>Módulo</div>
                 <div>Entidade</div>
                 <div>Ação</div>
                 <div>Mudanças</div>
@@ -138,9 +154,12 @@ function AuditLogPage() {
               {rows.map((r) => (
                 <div
                   key={r.id}
-                  className="grid grid-cols-[160px_120px_120px_1fr_180px_60px] gap-2 items-center py-2 border-b last:border-0"
+                  className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 items-center py-2 border-b last:border-0"
                 >
                   <span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span>
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {r.module_id ?? "—"}
+                  </Badge>
                   <span>
                     {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
                   </span>

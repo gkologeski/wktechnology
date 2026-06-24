@@ -15,6 +15,7 @@ export const listAuditLogs = createServerFn({ method: "POST" })
         entity_id: z.string().uuid().nullable().optional(),
         actor_user_id: z.string().uuid().nullable().optional(),
         action: z.enum(["created", "updated", "deleted"]).nullable().optional(),
+        module_id: z.string().nullable().optional(),
         since: z.string().datetime().nullable().optional(),
         limit: z.number().int().min(1).max(500).default(100),
       })
@@ -25,7 +26,9 @@ export const listAuditLogs = createServerFn({ method: "POST" })
 
     let q = supabase
       .from("audit_logs")
-      .select("id, actor_user_id, entity, entity_id, action, before, after, metadata, created_at")
+      .select(
+        "id, actor_user_id, entity, entity_id, action, before, after, metadata, module_id, created_at",
+      )
       .eq("workspace_owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -34,6 +37,7 @@ export const listAuditLogs = createServerFn({ method: "POST" })
     if (data.entity_id) q = q.eq("entity_id", data.entity_id);
     if (data.actor_user_id) q = q.eq("actor_user_id", data.actor_user_id);
     if (data.action) q = q.eq("action", data.action);
+    if (data.module_id) q = q.eq("module_id", data.module_id);
     if (data.since) q = q.gte("created_at", data.since);
 
     const { data: rows, error } = await q;
