@@ -3,12 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const PlanCodeZ = z.enum(["free", "bronze", "prata", "ouro"]);
 
-type EntRow = { key: string; limit_int: number | null; enabled: boolean };
 type UsageRow = { key: string; used: number };
+
 
 /** Resolve o workspace_owner_id do usuário (owner do workspace ativo). */
 async function resolveWorkspaceOwner(userId: string): Promise<string> {
