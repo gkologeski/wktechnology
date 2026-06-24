@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { listAtsJobs, saveAtsJob } from "@/lib/ats/ats.functions";
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 
-export const Route = createFileRoute("/_authenticated/jobs")({
+export const Route = createFileRoute("/_authenticated/(ats)/jobs")({
   component: AtsJobsPage,
 });
 

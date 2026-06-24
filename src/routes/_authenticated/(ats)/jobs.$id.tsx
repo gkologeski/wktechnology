@@ -36,7 +36,7 @@ import {
 } from "@/lib/ats/ats.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 
-export const Route = createFileRoute("/_authenticated/jobs/$id")({
+export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
   component: JobDetailPage,
 });
 

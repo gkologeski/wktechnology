@@ -26,7 +26,7 @@ import {
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
 
-export const Route = createFileRoute("/_authenticated/candidates")({
+export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
   component: CandidatesPage,
 });
 
