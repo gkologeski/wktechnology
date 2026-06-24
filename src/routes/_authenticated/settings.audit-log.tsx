@@ -74,7 +74,20 @@ function AuditLogPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-[200px_200px_1fr] gap-3 items-end">
+          <div className="grid grid-cols-[180px_180px_180px_1fr] gap-3 items-end">
+            <div className="space-y-1">
+              <Label>Módulo</Label>
+              <Select value={moduleId} onValueChange={setModuleId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="crm">TechSales (CRM)</SelectItem>
+                  <SelectItem value="ats">TechHire (ATS)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <Label>Entidade</Label>
               <Select value={entity} onValueChange={setEntity}>
