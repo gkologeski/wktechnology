@@ -162,6 +162,7 @@ import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
+import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
 import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
@@ -1088,6 +1089,12 @@ const AuthenticatedAdminAlertsRoute =
     path: '/admin/alerts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsScorecardsRoute =
+  AuthenticatedatsScorecardsRouteImport.update({
+    id: '/(ats)/scorecards',
+    path: '/scorecards',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
   id: '/(ats)/jobs',
   path: '/jobs',
@@ -1512,6 +1519,7 @@ export interface FileRoutesByFullPath {
   '/kb/': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -1728,6 +1736,7 @@ export interface FileRoutesByTo {
   '/kb': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -1948,6 +1957,7 @@ export interface FileRoutesById {
   '/kb/': typeof KbIndexRoute
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -2169,6 +2179,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/candidates'
     | '/jobs'
+    | '/scorecards'
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
@@ -2385,6 +2396,7 @@ export interface FileRouteTypes {
     | '/kb'
     | '/candidates'
     | '/jobs'
+    | '/scorecards'
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
@@ -2604,6 +2616,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/jobs'
+    | '/_authenticated/(ats)/scorecards'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/quotas'
@@ -3928,6 +3941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/scorecards': {
+      id: '/_authenticated/(ats)/scorecards'
+      path: '/scorecards'
+      fullPath: '/scorecards'
+      preLoaderRoute: typeof AuthenticatedatsScorecardsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs': {
       id: '/_authenticated/(ats)/jobs'
       path: '/jobs'
@@ -4800,6 +4820,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
+  AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
@@ -4845,6 +4866,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
+  AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
