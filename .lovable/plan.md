@@ -5,7 +5,9 @@ Cinco entregas grandes. Vou propor a sequência em **3 ondas** para entregar val
 
 ---
 
-## 🌊 Onda A — Agendamento nativo de entrevistas (item 7)
+## 🌊 Onda A — Agendamento nativo de entrevistas (item 7) ✅ CONCLUÍDA
+
+Entregue: migration `ats_interviews` + RLS team-based, `src/lib/ats/interviews.functions.ts` (list, schedule, reschedule, cancel, markStatus, createSelfScheduleLink), `src/lib/ats/interviews-engine.server.ts` (lembretes D-1/1h + confirmação por token), dialog `schedule-interview-dialog` (manual + auto-agendamento), seção "Entrevistas" no `scorecard-eval-dialog`, página pública `/interview/$token`, endpoint `/api/public/interview/$token`, cron `ats-interview-reminders` rodando a cada 5min.
 
 A base do ciclo. Tudo depende disso.
 
