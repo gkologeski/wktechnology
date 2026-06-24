@@ -10948,6 +10948,7 @@ export type Database = {
         }
         Returns: string
       }
+      can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
       companies_facets: {
         Args: { p_limit?: number }
         Returns: {

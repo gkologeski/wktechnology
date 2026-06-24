@@ -73,7 +73,7 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
       { title: "Vagas", url: "/jobs", icon: Briefcase },
       { title: "Candidatos", url: "/candidates", icon: Users },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
-      { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
+      { title: "Pipelines", url: "/pipelines", icon: GitBranch },
       { title: "E-mails por etapa", url: "/stage-emails", icon: Mail },
       { title: "Entrevistas", url: "/meetings", icon: CalendarIcon },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
