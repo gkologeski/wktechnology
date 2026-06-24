@@ -288,12 +288,10 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
         interviewer_id: z.string().uuid().nullable().optional(),
         kind: KindEnum.default("video"),
         duration_min: z.number().int().min(5).max(480).default(45),
-        slots: z
-          .array(z.string().datetime())
-          .min(1)
-          .max(20),
+        slots: z.array(z.string().datetime()).min(1).max(20).optional(),
         expires_in_days: z.number().int().min(1).max(30).default(7),
         notes: z.string().max(4000).nullable().optional(),
+        interview_kit_id: z.string().uuid().nullable().optional(),
       })
       .parse(d),
   )
@@ -305,6 +303,17 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
       .eq("id", data.application_id)
       .single();
     if (aErr || !app) throw new Error(aErr?.message || "Candidatura não encontrada");
+
+    let snapshot: unknown = null;
+    if (data.interview_kit_id) {
+      const { data: kit } = await supabase
+        .from("ats_interview_kits")
+        .select("questions")
+        .eq("owner_id", userId)
+        .eq("id", data.interview_kit_id)
+        .maybeSingle();
+      snapshot = kit?.questions ?? null;
+    }
 
     const token = randomToken();
     const expiresAt = new Date(Date.now() + data.expires_in_days * 86400_000).toISOString();
@@ -323,7 +332,9 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
         stage_value: app.stage_value as string | null,
         self_schedule_token: token,
         self_schedule_expires_at: expiresAt,
-        slots: data.slots as never,
+        slots: (data.slots ?? []) as never,
+        interview_kit_id: data.interview_kit_id ?? null,
+        async_questions_snapshot: snapshot as never,
       } as never)
       .select("id")
       .single();
@@ -335,7 +346,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
       jobId: app.job_id as string,
       candidateId: app.candidate_id as string,
       eventType: "interview_link_sent",
-      metadata: { interview_id: ins.id, slots: data.slots.length },
+      metadata: { interview_id: ins.id, slots: data.slots?.length ?? 0, kind: data.kind },
     });
     return { id: ins.id as string, token };
   });
