@@ -22,12 +22,13 @@ Foco em **PME/Mid-Market tech** brasileiro, competindo no eixo Gupy/Sólides (BR
 ### 🟢 FASE 1 — Fechar os buracos do MVP (2-3 sprints)
 *"Tornar utilizável de ponta a ponta"*
 
-1. **Cron de envio de e-mails de stage** — worker em `/api/public/hooks/ats-stage-emails-tick.ts` que processa `ats_stage_email_log` pendentes via Resend; marca `sent`/`failed`. Hoje a fila enche e ninguém envia.
-2. **E-mail de confirmação ao candidato** após `submitPublicApplication` (template branded por workspace).
-3. **Editor visual de pipeline** — UI em `/ats/pipelines` para criar/editar stages (drag-drop, cor, tipo: applied/interview/offer/hired/rejected). Hoje só existe o default hardcoded.
-4. **Export CSV** de candidatos e candidaturas de uma vaga.
+1. ✅ **Cron de envio de e-mails de stage** — worker `/api/public/hooks/ats-emails-tick.ts` processa `ats_stage_email_log` pendentes via Resend e marca `sent`/`failed`.
+2. ✅ **E-mail de confirmação ao candidato** após `submitPublicApplication` (template branded por workspace).
+3. ✅ **Editor visual de pipeline** — UI em `/pipelines` para criar/editar pipelines e stages (cor, tipo, ordem). Pipeline "RH - Seleção" já importado das fases de Tickets.
+4. ✅ **Export CSV** de candidatos e candidaturas por vaga (`exportCandidatesCsv` / `exportApplicationsCsv`).
 5. **Permissões por equipe** — RLS adicional: `hiring_manager_id` e `recruiter_id` veem apenas as vagas em que estão; admin vê tudo. Hoje qualquer membro do workspace vê tudo.
-6. **Auditoria de movimentações** — tabela `ats_application_events` registrando cada `moveApplication`, mudança de stage, scorecard submetido (usado por compliance LGPD e relatórios).
+6. **Auditoria de movimentações** — tabela `ats_application_events` registrando cada `moveApplication`, mudança de stage, scorecard submetido (compliance LGPD + relatórios).
+
 
 ### 🟡 FASE 2 — Entrevistas e ofertas (3-4 sprints)
 *"Fechar o ciclo até a contratação"*
@@ -111,4 +112,5 @@ Reaproveitamentos:
 
 ## Próximo passo sugerido
 
-Começar pela **Fase 1 inteira (itens 1–6)** porque sem ela o que já foi construído fura na operação real (e-mails que nunca saem, sem pipeline editável, sem permissões por equipe). Posso atacar tudo em sequência se você aprovar.
+Itens 1–4 da Fase 1 estão concluídos. Atacar agora **itens 5 (permissões por equipe) e 6 (auditoria de movimentações)** para fechar a Fase 1 e liberar a Fase 2 (entrevistas e ofertas).
+
