@@ -1,5 +1,5 @@
 // Dialog para agendar entrevista — manual ou enviar link de auto-agendamento.
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   scheduleInterview,
   createSelfScheduleLink,
 } from "@/lib/ats/interviews.functions";
+import { listInterviewKits } from "@/lib/ats/interview-kits.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getAppUrl } from "@/lib/app-url";
 
@@ -45,10 +46,20 @@ export function ScheduleInterviewDialog({
 }: Props) {
   const schedule = useServerFn(scheduleInterview);
   const createLink = useServerFn(createSelfScheduleLink);
+  const listKits = useServerFn(listInterviewKits);
   const { data: members = [] } = useWorkspaceMembers();
 
   const [tab, setTab] = useState<"manual" | "self">("manual");
   const [saving, setSaving] = useState(false);
+  const [kits, setKits] = useState<Array<{ id: string; name: string }>>([]);
+  const [kitId, setKitId] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    listKits()
+      .then((rows) => setKits(rows.map((k) => ({ id: k.id as string, name: k.name as string }))))
+      .catch(() => undefined);
+  }, [open, listKits]);
 
   // manual
   const [when, setWhen] = useState("");
@@ -80,6 +91,7 @@ export function ScheduleInterviewDialog({
           meet_url: meetUrl || null,
           location: location || null,
           notes: notes || null,
+          interview_kit_id: kitId || null,
         },
       });
       toast.success("Entrevista agendada");
@@ -102,7 +114,8 @@ export function ScheduleInterviewDialog({
         return isNaN(d.getTime()) ? null : d.toISOString();
       })
       .filter((s): s is string => s !== null);
-    if (slots.length === 0) {
+    // Para entrevistas async, slots são opcionais (não há horário a escolher).
+    if (kind !== "async" && slots.length === 0) {
       toast.error("Adicione ao menos um horário válido");
       return;
     }
@@ -114,9 +127,10 @@ export function ScheduleInterviewDialog({
           interviewer_id: interviewer || null,
           kind,
           duration_min: duration,
-          slots,
+          slots: slots.length > 0 ? slots : undefined,
           expires_in_days: 7,
           notes: notes || null,
+          interview_kit_id: kitId || null,
         },
       });
       const url = `${getAppUrl()}/interview/${res.token}`;
@@ -185,6 +199,26 @@ export function ScheduleInterviewDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Kit de perguntas {kind === "async" ? "(obrigatório p/ vídeo assíncrono)" : "(opcional)"}</Label>
+              <Select value={kitId || "__none"} onValueChange={(v) => setKitId(v === "__none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Nenhum</SelectItem>
+                  {kits.map((k) => (
+                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {kits.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Crie kits em <span className="font-medium">ATS → Kits de Entrevista</span>.
+                </p>
+              )}
             </div>
 
             <TabsContent value="manual" className="space-y-3 m-0">

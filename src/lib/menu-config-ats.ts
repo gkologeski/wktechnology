@@ -19,6 +19,7 @@ import {
   UsersRound,
   Globe,
   ClipboardCheck,
+  BookOpen,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
@@ -31,6 +32,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Candidatos", url: "/candidates", icon: Users },
       { title: "Pipelines", url: "/pipelines", icon: GitBranch },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
+      { title: "Kits de Entrevista", url: "/interview-kits", icon: BookOpen },
     ],
   },
   {
