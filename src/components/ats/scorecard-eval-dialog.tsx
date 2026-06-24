@@ -34,7 +34,8 @@ import {
 } from "@/lib/ats/interviews.functions";
 import { ScheduleInterviewDialog } from "./schedule-interview-dialog";
 import { AsyncVideoResponses } from "./async-video-responses";
-import { CalendarPlus } from "lucide-react";
+import { CreateOfferDialog } from "./create-offer-dialog";
+import { CalendarPlus, FileSignature } from "lucide-react";
 
 
 type Criterion = { key: string; label: string; weight: number };
@@ -49,11 +50,12 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   applicationId: string;
   jobId: string;
+  candidateId?: string;
   candidateName: string;
   onSaved?: () => void;
 };
 
-export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, candidateName, onSaved }: Props) {
+export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, candidateId, candidateName, onSaved }: Props) {
   const fetchScs = useServerFn(listScorecards);
   const fetchRes = useServerFn(listScorecardResponses);
   const fetchEvents = useServerFn(listApplicationEvents);
