@@ -131,7 +131,7 @@ export const createAccessProfile = createServerFn({ method: "POST" })
       const [{ data: srcPerms }, { data: srcTools }] = await Promise.all([
         supabase
           .from("access_profile_permissions")
-          .select("object_key, view_scope, edit_scope, delete_scope, create_enabled")
+          .select("object_key, view_scope, edit_scope, delete_scope, create_enabled, module_id")
           .eq("profile_id", data.copy_from),
         supabase
           .from("access_profile_tools")
