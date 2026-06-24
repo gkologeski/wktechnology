@@ -1,82 +1,94 @@
+# Revisão do menu do TechHire (ATS)
 
-# Fase 2 — Entrevistas e Ofertas
+## Problema
 
-Cinco entregas grandes. Vou propor a sequência em **3 ondas** para entregar valor incremental sem travar tudo em uma migration gigante.
+`src/lib/menu-config-ats.ts` aponta vários itens para rotas do CRM/Sales (TechSales). Exemplos confirmados navegando o código:
 
----
+- **Entrevistas** → `/meetings` (página de reuniões do CRM)
+- **Página de Carreiras** → `/settings/portal` (portal do cliente — Vender)
+- **Inbox** → `/inbox` (inbox unificada do CRM com Email/WhatsApp/Chat)
+- **Templates de E-mail** → `/settings/email-templates` (CRM)
+- **Notificações** → `/settings/notifications` (CRM)
+- **Relatórios / Dashboards** → `/reports`, `/dashboards` (CRM)
+- **Workflows** → `/settings/workflows` (CRM)
 
-## 🌊 Onda A — Agendamento nativo de entrevistas (item 7) ✅ CONCLUÍDA
+Além disso o menu **omite páginas ATS reais** que existem em `src/routes/_authenticated/(ats)/`: `scorecards`, `stage-emails`, `insights`.
 
-Entregue: migration `ats_interviews` + RLS team-based, `src/lib/ats/interviews.functions.ts` (list, schedule, reschedule, cancel, markStatus, createSelfScheduleLink), `src/lib/ats/interviews-engine.server.ts` (lembretes D-1/1h + confirmação por token), dialog `schedule-interview-dialog` (manual + auto-agendamento), seção "Entrevistas" no `scorecard-eval-dialog`, página pública `/interview/$token`, endpoint `/api/public/interview/$token`, cron `ats-interview-reminders` rodando a cada 5min.
+## Rotas ATS-only realmente existentes
 
-A base do ciclo. Tudo depende disso.
+Confirmado por `rg createFileRoute`:
 
-**Banco** (`supabase--migration`):
-- Tabela `ats_interviews` com `application_id`, `job_id`, `interviewer_id`, `scheduled_at`, `duration_min`, `kind` (phone/video/onsite/async), `status` (scheduled/done/no_show/canceled/rescheduled), `meet_url`, `notes`, `owner_id`.
-- Tabela `ats_interview_slots` (slots ofertados antes do candidato escolher) ou reaproveitar `bookings`.
-- RLS via `can_access_ats_job(job_id)` + grants.
-- Trigger `updated_at`.
+| URL | Arquivo |
+|---|---|
+| `/jobs`, `/jobs/$id` | `(ats)/jobs(.$id).tsx` |
+| `/candidates` | `(ats)/candidates.tsx` |
+| `/pipelines` | `(ats)/pipelines.tsx` |
+| `/scorecards` | `(ats)/scorecards.tsx` |
+| `/stage-emails` | `(ats)/stage-emails.tsx` |
+| `/insights` | `(ats)/insights.tsx` |
 
-**Backend** (`src/lib/ats/interviews.functions.ts`):
-- `listInterviews(application_id)` / `listMyUpcomingInterviews()`
-- `scheduleInterview({application_id, interviewer_id, scheduled_at, duration_min, kind})`
-- `rescheduleInterview(id, new_at)` / `cancelInterview(id, reason)` / `markInterviewDone(id)`
-- `createInterviewBookingLink(application_id)` → gera token público
-- Eventos: `interview_scheduled`, `interview_rescheduled`, `interview_canceled`, `interview_completed` em `ats_application_events`.
+Não existe rota administrativa nativa para **Entrevistas ATS** nem para **Página de Carreiras** (só existe a pública `/careers/$slug` e `/careers`).
 
-**Public route** (reusa `/book/$slug` ou cria `/interview/$token`):
-- Candidato vê slots, escolhe, recebe e-mail com `.ics` + link Meet.
+## Mudanças
 
-**UI**:
-- Aba "Entrevistas" no `scorecard-eval-dialog` (timeline + botão "Agendar").
-- Dialog `schedule-interview-dialog` com seletor de entrevistador, data/hora, duração, kind.
-- Botão "Enviar link de auto-agendamento" no card do candidato.
+### 1. `src/lib/menu-config-ats.ts` — reescrever grupos
 
-**Cron** (`/api/public/hooks/ats-interview-reminders-tick.ts`):
-- Lembrete D-1 e 1h antes via Resend (workspace branded).
+```ts
+[
+  {
+    label: "Recrutamento",
+    items: [
+      { title: "Vagas",       url: "/jobs",        icon: Briefcase },
+      { title: "Candidatos",  url: "/candidates",  icon: Users },
+      { title: "Pipelines",   url: "/pipelines",   icon: GitBranch },
+      { title: "Scorecards",  url: "/scorecards",  icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: "Comunicação",
+    items: [
+      { title: "E-mails por etapa", url: "/stage-emails", icon: Mail },
+      // Inbox/Templates/Notificações removidos — pertencem ao TechSales
+    ],
+  },
+  {
+    label: "Carreiras",
+    items: [
+      { title: "Página de Carreiras (pública)", url: "/careers", icon: Globe },
+      // Link externo para preview da careers page pública do workspace
+    ],
+  },
+  {
+    label: "Análise",
+    items: [
+      { title: "Insights ATS", url: "/insights", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Workspace (ERP)",
+    items: [
+      { title: "Equipe",              url: "/settings/workspace-team", icon: UsersRound, need: "admin" },
+      { title: "Papéis & Permissões", url: "/settings/roles",          icon: ShieldCheck, need: "admin" },
+      { title: "Planos & Cobrança",   url: "/settings/billing",        icon: CreditCard, need: "admin" },
+      { title: "Idioma",              url: "/settings/language",       icon: Languages },
+      { title: "API Keys",            url: "/settings/api-keys",       icon: KeyRound, need: "admin" },
+    ],
+  },
+]
+```
 
----
+### 2. Itens removidos (e por quê)
 
-## 🌊 Onda B — Interview Kits + Vídeo assíncrono (itens 8 e 9)
+- **Entrevistas** — não há rota admin de entrevistas; o agendamento já vive dentro do candidato (`scorecard-eval-dialog`). Reintroduzir só quando existir uma página `/interviews` dedicada ao ATS.
+- **Inbox** — `/inbox` é do CRM (Email/WhatsApp/Chat). ATS não tem inbox próprio.
+- **Templates de E-mail / Notificações** — pertencem ao CRM. ATS usa `/stage-emails`.
+- **Relatórios / Dashboards / Workflows / Integrações** — sem equivalente ATS-only hoje; ficam acessíveis via troca de módulo para o TechSales.
 
-**Item 8 — Interview Kits**:
-- Tabela `ats_interview_kits` (`pipeline_id`, `stage_id`, `questions jsonb`).
-- UI no editor de pipeline (`/pipelines`): aba "Kit de entrevista" por stage.
-- No `scorecard-eval-dialog`, ao avaliar uma entrevista do stage X, exibir perguntas do kit acima do scorecard.
+### 3. Validação
 
-**Item 9 — Vídeo assíncrono**:
-- Tabela `ats_async_video_responses` (`application_id`, `question_idx`, `storage_path`, `duration_s`).
-- Bucket Supabase Storage `ats-async-videos` (privado, RLS).
-- Quando `kind='async'`, candidato recebe link público `/interview-async/$token` → grava respostas com MediaRecorder API (reusa `use-screen-recorder.ts`) → upload direto pro Storage.
-- Recrutador vê playlist no `scorecard-eval-dialog`.
+- `rg "url:" src/lib/menu-config-ats.ts` — todas as URLs devem existir em `src/routes/_authenticated/(ats)/` ou em `settings.*` permitidos.
+- Smoke manual: abrir TechHire e clicar em cada item; nenhum deve cair em rota do CRM.
 
----
+## Fora de escopo
 
-## 🌊 Onda C — Ofertas + Parsing PDF server-side (itens 10 e 11)
-
-**Item 10 — Módulo de Ofertas**:
-- Tabela `ats_offers` (`application_id`, `salary`, `currency`, `benefits jsonb`, `start_date`, `status` draft/sent/accepted/rejected/expired, `signed_document_id` FK pra `esign_documents`, `expires_at`).
-- Server fns: `createOffer`, `sendOffer` (gera PDF + cria `esign_documents` + envia via `/sign/$token` existente), `markOfferStatus`.
-- UI: aba "Oferta" no candidato; quando aceita → muda stage automaticamente pra "Contratado".
-- Evento `offer_sent`, `offer_accepted`, `offer_rejected`.
-
-**Item 11 — Parsing PDF server-side**:
-- Mover lógica de `cv-parse.functions.ts` pra rodar no Worker.
-- Tentar `unpdf` ou `pdfjs-dist` (Worker-compatible). Se PDF for imagem, fallback Gemini Vision via Lovable AI Gateway.
-- Endpoint `parseCvServer({storage_path})` chamado direto do upload.
-
----
-
-## 📋 Sequência sugerida
-
-1. **Agora**: Onda A completa (migration + backend + UI básica do agendamento + self-scheduling público).
-2. Em seguida: Onda B (kits + vídeo).
-3. Por fim: Onda C (ofertas + parsing server-side).
-
-Cada onda termina com `.lovable/plan.md` atualizado.
-
----
-
-## ❓ Pergunta antes de começar
-
-**Onda A** envolve criar tabela + 6 server functions + 2 dialogs + cron + e-mail template. É a maior das três. Confirmo o caminho ou prefere quebrar em sub-passos (ex: só agendamento manual por recrutador agora, deixar self-scheduling pra depois)?
+- Criar páginas novas de "Entrevistas ATS" ou "Página de Carreiras (admin)". Se quiser, faço em sequência depois desta limpeza.
