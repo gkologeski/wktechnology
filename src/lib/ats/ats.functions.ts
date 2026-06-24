@@ -365,21 +365,41 @@ export const listJobApplications = createServerFn({ method: "POST" })
       .order("stage_value", { ascending: true })
       .order("position", { ascending: true });
     if (error) throw new Error(error.message);
+    type Cand = {
+      id: string;
+      full_name: string;
+      email: string | null;
+      current_position: string | null;
+      current_company: string | null;
+      skills: string[] | null;
+    };
     const candidateIds = Array.from(new Set((apps ?? []).map((a) => a.candidate_id as string)));
-    let candidatesMap: Record<string, Record<string, unknown>> = {};
+    const candidatesMap: Record<string, Cand> = {};
     if (candidateIds.length) {
       const { data: cands } = await supabase
         .from("ats_candidates")
         .select("id, full_name, email, current_position, current_company, skills")
         .in("id", candidateIds);
-      for (const c of (cands ?? []) as Array<Record<string, unknown>>) {
-        candidatesMap[c.id as string] = c;
+      for (const c of (cands ?? []) as unknown as Cand[]) {
+        candidatesMap[c.id] = c;
       }
     }
-    return (apps ?? []).map((a) => ({
-      ...(a as Record<string, unknown>),
-      candidate: candidatesMap[a.candidate_id as string] ?? null,
-    }));
+    type AppRow = {
+      id: string;
+      candidate_id: string;
+      job_id: string;
+      stage_value: string;
+      status: string;
+      source: string;
+      applied_at: string;
+      moved_at: string;
+      position: number;
+      ai_match_score: number | null;
+    };
+    return (apps ?? []).map((a) => {
+      const row = a as unknown as AppRow;
+      return { ...row, candidate: candidatesMap[row.candidate_id] ?? null };
+    });
   });
 
 export const addApplication = createServerFn({ method: "POST" })
