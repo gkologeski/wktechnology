@@ -234,6 +234,16 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
               ))}
             </ul>
           )}
+          {/* players de vídeo das entrevistas async */}
+          {interviews
+            .filter((iv) => iv.kind === "async")
+            .map((iv) => (
+              <AsyncVideoResponses
+                key={`vids-${iv.id}`}
+                interviewId={iv.id}
+                snapshot={(iv as unknown as { async_questions_snapshot?: Array<{ id: string; text: string }> }).async_questions_snapshot ?? null}
+              />
+            ))}
         </div>
 
 
