@@ -34,6 +34,7 @@ import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
+import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
@@ -357,6 +358,11 @@ const LpSlugRoute = LpSlugRouteImport.update({
 const KbSlugRoute = KbSlugRouteImport.update({
   id: '/kb/$slug',
   path: '/kb/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewTokenRoute = InterviewTokenRouteImport.update({
+  id: '/interview/$token',
+  path: '/interview/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -1546,6 +1552,7 @@ export interface FileRoutesByFullPath {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1769,6 +1776,7 @@ export interface FileRoutesByTo {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1996,6 +2004,7 @@ export interface FileRoutesById {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -2224,6 +2233,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2447,6 +2457,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2673,6 +2684,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2880,6 +2892,7 @@ export interface RootRouteChildren {
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  InterviewTokenRoute: typeof InterviewTokenRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
@@ -3123,6 +3136,13 @@ declare module '@tanstack/react-router' {
       path: '/kb/$slug'
       fullPath: '/kb/$slug'
       preLoaderRoute: typeof KbSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview/$token': {
+      id: '/interview/$token'
+      path: '/interview/$token'
+      fullPath: '/interview/$token'
+      preLoaderRoute: typeof InterviewTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -5084,6 +5104,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  InterviewTokenRoute: InterviewTokenRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
