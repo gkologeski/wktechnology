@@ -96,6 +96,28 @@ export const ACCESS_TOOLS: Array<{
     description: "Convidar, editar e remover membros da equipe.",
     category: "account",
   },
+  // ATS
+  {
+    key: "ats_publish_jobs",
+    label: "Publicar vagas",
+    description: "Publicar/despublicar vagas na página de carreiras.",
+    category: "ats",
+    module: "ats",
+  },
+  {
+    key: "ats_manage_scorecards",
+    label: "Gerenciar scorecards",
+    description: "Criar e editar templates de avaliação de candidatos.",
+    category: "ats",
+    module: "ats",
+  },
+  {
+    key: "ats_parse_cv",
+    label: "Parsing de CV com IA",
+    description: "Extrair dados de currículos automaticamente.",
+    category: "ats",
+    module: "ats",
+  },
 ];
 
 export const SCOPE_LABELS: Record<"none" | "own" | "team" | "all", string> = {
