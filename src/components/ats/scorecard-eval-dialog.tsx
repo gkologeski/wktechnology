@@ -358,6 +358,16 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
           void reloadInterviews();
         }}
       />
+      {candidateId && (
+        <CreateOfferDialog
+          open={showOffer}
+          onOpenChange={setShowOffer}
+          candidateId={candidateId}
+          candidateName={candidateName}
+          jobId={jobId}
+          applicationId={applicationId}
+        />
+      )}
     </Dialog>
   );
 }
