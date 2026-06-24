@@ -46,10 +46,20 @@ export function ScheduleInterviewDialog({
 }: Props) {
   const schedule = useServerFn(scheduleInterview);
   const createLink = useServerFn(createSelfScheduleLink);
+  const listKits = useServerFn(listInterviewKits);
   const { data: members = [] } = useWorkspaceMembers();
 
   const [tab, setTab] = useState<"manual" | "self">("manual");
   const [saving, setSaving] = useState(false);
+  const [kits, setKits] = useState<Array<{ id: string; name: string }>>([]);
+  const [kitId, setKitId] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    listKits()
+      .then((rows) => setKits(rows.map((k) => ({ id: k.id as string, name: k.name as string }))))
+      .catch(() => undefined);
+  }, [open, listKits]);
 
   // manual
   const [when, setWhen] = useState("");
