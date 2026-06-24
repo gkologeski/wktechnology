@@ -3,12 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const PlanCodeZ = z.enum(["free", "bronze", "prata", "ouro"]);
 
-type EntRow = { key: string; limit_int: number | null; enabled: boolean };
 type UsageRow = { key: string; used: number };
+
 
 /** Resolve o workspace_owner_id do usuário (owner do workspace ativo). */
 async function resolveWorkspaceOwner(userId: string): Promise<string> {
@@ -51,7 +50,7 @@ export const getMyPlan = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const owner = await resolveWorkspaceOwner(context.userId);
 
-    // Garante linha de assinatura
+    // Garante linha de assinatura (plano "guarda-chuva" do workspace)
     const { data: sub } = await supabaseAdmin
       .from("workspace_subscriptions")
       .select("plan_code, status, trial_ends_at, current_period_start, current_period_end")
@@ -73,10 +72,41 @@ export const getMyPlan = createServerFn({ method: "GET" })
 
     if (!planRow) planCode = "free";
 
-    const { data: ents } = await supabaseAdmin
+    // Plano por módulo: workspace_modules.plan_code (cada módulo pode ter um plano
+    // diferente). Se um módulo não tiver plan_code definido, herda o plano do workspace.
+    // Para isso precisamos do workspace_id do owner.
+    const { data: ws } = await supabaseAdmin
+      .from("workspaces")
+      .select("id")
+      .eq("created_by", owner)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const workspaceId = (ws?.id as string | undefined) ?? null;
+
+    const modulePlans: Record<string, string> = {};
+    if (workspaceId) {
+      const { data: wms } = await supabaseAdmin
+        .from("workspace_modules")
+        .select("module_id, plan_code, enabled")
+        .eq("workspace_id", workspaceId);
+      for (const wm of wms ?? []) {
+        if (!wm.enabled) continue;
+        modulePlans[wm.module_id as string] =
+          (wm.plan_code as string | null) ?? planCode;
+      }
+    }
+    // Garante CRM como módulo ativo herdando o plano do workspace se não houver linha
+    if (!modulePlans["crm"]) modulePlans["crm"] = planCode;
+
+    // Busca entitlements de TODOS os módulos ativos no plano correspondente.
+    // plan_entitlements tem (plan_code, key, limit_int, enabled, module_id).
+    const moduleIds = Object.keys(modulePlans);
+    const planCodes = Array.from(new Set(Object.values(modulePlans)));
+    const { data: allEnts } = await supabaseAdmin
       .from("plan_entitlements")
-      .select("key, limit_int, enabled")
-      .eq("plan_code", planCode);
+      .select("key, limit_int, enabled, module_id, plan_code")
+      .in("plan_code", planCodes.length ? planCodes : ["free"]);
 
     const { data: usage } = await supabaseAdmin
       .from("usage_counters")
@@ -85,8 +115,18 @@ export const getMyPlan = createServerFn({ method: "GET" })
       .eq("period_month", periodMonth());
 
     const entMap: Record<string, { limit: number | null; enabled: boolean; used: number }> = {};
-    for (const e of (ents ?? []) as EntRow[]) {
-      entMap[e.key] = { limit: e.limit_int, enabled: e.enabled, used: 0 };
+    for (const e of allEnts ?? []) {
+      const mid = (e.module_id as string | null) ?? "crm";
+      // Só aplica a entitlement se o módulo está ativo E o plan_code da linha
+      // bate com o plano do módulo (planos diferentes coexistem no mesmo SELECT).
+      if (!moduleIds.includes(mid)) continue;
+      if (e.plan_code !== modulePlans[mid]) continue;
+      const key = e.key as string;
+      entMap[key] = {
+        limit: e.limit_int as number | null,
+        enabled: e.enabled as boolean,
+        used: 0,
+      };
     }
     for (const u of (usage ?? []) as UsageRow[]) {
       if (entMap[u.key]) entMap[u.key].used = u.used;
@@ -137,8 +177,10 @@ export const getMyPlan = createServerFn({ method: "GET" })
       status: sub?.status ?? "active",
       trial_ends_at: sub?.trial_ends_at ?? null,
       entitlements: entMap,
+      module_plans: modulePlans,
     };
   });
+
 
 /** Compara todos os planos lado a lado (para a tabela comparativa). */
 export const listPlansWithEntitlements = createServerFn({ method: "GET" })
