@@ -23,6 +23,7 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
+import { Route as CareersIndexRouteImport } from './routes/careers.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
 import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
@@ -293,6 +294,11 @@ const IndexRoute = IndexRouteImport.update({
 const KbIndexRoute = KbIndexRouteImport.update({
   id: '/kb/',
   path: '/kb/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersIndexRoute = CareersIndexRouteImport.update({
+  id: '/careers/',
+  path: '/careers/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
@@ -1495,6 +1501,7 @@ export interface FileRoutesByFullPath {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1709,6 +1716,7 @@ export interface FileRoutesByTo {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1927,6 +1935,7 @@ export interface FileRoutesById {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2146,6 +2155,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers/'
     | '/kb/'
     | '/candidates'
     | '/jobs'
@@ -2360,6 +2370,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers'
     | '/kb'
     | '/candidates'
     | '/jobs'
@@ -2577,6 +2588,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/careers/'
     | '/kb/'
     | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/jobs'
@@ -2775,6 +2787,7 @@ export interface RootRouteChildren {
   VerifyHashRoute: typeof VerifyHashRoute
   WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
+  CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
@@ -2927,6 +2940,13 @@ declare module '@tanstack/react-router' {
       path: '/kb'
       fullPath: '/kb/'
       preLoaderRoute: typeof KbIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers/': {
+      id: '/careers/'
+      path: '/careers'
+      fullPath: '/careers/'
+      preLoaderRoute: typeof CareersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widget/$workspaceId': {
@@ -4903,6 +4923,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyHashRoute: VerifyHashRoute,
   WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
+  CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
