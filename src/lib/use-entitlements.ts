@@ -16,6 +16,7 @@ export function useEntitlements() {
 
   const ents = query.data?.entitlements ?? {};
   const plan = (query.data?.plan?.code as PlanCode | undefined) ?? "free";
+  const modulePlans = (query.data?.module_plans ?? {}) as Record<string, PlanCode>;
 
   const info = (key: EntKey | string): EntitlementInfo =>
     ents[key] ?? { limit: 0, enabled: false, used: 0 };
@@ -36,10 +37,15 @@ export function useEntitlements() {
     return Math.max(0, i.limit - i.used);
   };
 
+  /** Plano ativo de um módulo específico (ex.: "crm" → "bronze", "ats" → "free"). */
+  const planFor = (moduleId: string): PlanCode => modulePlans[moduleId] ?? plan;
+
   return {
     loading: query.isLoading,
     plan,
     planName: query.data?.plan?.name ?? "Free",
+    modulePlans,
+    planFor,
     workspaceOwnerId: query.data?.workspace_owner_id ?? null,
     info,
     can,
