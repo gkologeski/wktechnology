@@ -154,6 +154,38 @@ function CandidatesPage() {
             className="pl-9"
           />
         </div>
+        <Dialog open={parseOpen} onOpenChange={setParseOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Sparkles className="h-4 w-4 mr-2" />Parsing de CV (IA)
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>Cole o texto do currículo</Label>
+              <Textarea
+                rows={14}
+                value={cvText}
+                onChange={(e) => setCvText(e.target.value)}
+                placeholder="Cole aqui o conteúdo do CV (texto, exportado do PDF, LinkedIn, etc.)"
+              />
+              <p className="text-xs text-muted-foreground">
+                A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setParseOpen(false)} disabled={parsing}>
+                Cancelar
+              </Button>
+              <Button onClick={handleParseCv} disabled={parsing}>
+                {parsing ? "Processando…" : "Extrair e salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Novo candidato</Button>
