@@ -114,7 +114,8 @@ export function ScheduleInterviewDialog({
         return isNaN(d.getTime()) ? null : d.toISOString();
       })
       .filter((s): s is string => s !== null);
-    if (slots.length === 0) {
+    // Para entrevistas async, slots são opcionais (não há horário a escolher).
+    if (kind !== "async" && slots.length === 0) {
       toast.error("Adicione ao menos um horário válido");
       return;
     }
@@ -126,9 +127,10 @@ export function ScheduleInterviewDialog({
           interviewer_id: interviewer || null,
           kind,
           duration_min: duration,
-          slots,
+          slots: slots.length > 0 ? slots : undefined,
           expires_in_days: 7,
           notes: notes || null,
+          interview_kit_id: kitId || null,
         },
       });
       const url = `${getAppUrl()}/interview/${res.token}`;
