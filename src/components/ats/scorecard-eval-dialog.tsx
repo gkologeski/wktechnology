@@ -158,6 +158,86 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
           </div>
         )}
 
+        <div className="border rounded-lg p-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-muted-foreground">Entrevistas</div>
+            <Button size="sm" variant="outline" onClick={() => setShowSchedule(true)}>
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar
+            </Button>
+          </div>
+          {interviews.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Nenhuma entrevista agendada.</div>
+          ) : (
+            <ul className="space-y-1.5 text-xs">
+              {interviews.map((iv) => (
+                <li key={iv.id} className="flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <Badge variant="outline" className="mr-1 capitalize">{iv.kind}</Badge>
+                    <Badge
+                      variant={
+                        iv.status === "scheduled"
+                          ? "default"
+                          : iv.status === "done"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="mr-1"
+                    >
+                      {iv.status}
+                    </Badge>
+                    {iv.scheduled_at
+                      ? new Date(iv.scheduled_at).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "aguardando candidato"}
+                    {iv.meet_url ? (
+                      <a
+                        href={iv.meet_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-2 text-primary underline"
+                      >
+                        link
+                      </a>
+                    ) : null}
+                  </div>
+                  {iv.status === "scheduled" && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={async () => {
+                          await markIv({ data: { id: iv.id, status: "done" } });
+                          await reloadInterviews();
+                          toast.success("Marcada como realizada");
+                        }}
+                      >
+                        Realizada
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={async () => {
+                          await cancelIv({ data: { id: iv.id } });
+                          await reloadInterviews();
+                          toast.success("Cancelada");
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+
+
         {scs.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center">
             Nenhum scorecard cadastrado. Crie um em <strong>/scorecards</strong>.
