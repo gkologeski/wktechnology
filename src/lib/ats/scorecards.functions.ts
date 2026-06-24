@@ -143,11 +143,34 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
     const { data: ins, error } = await supabase
       .from("ats_scorecard_responses")
       .insert(base as never)
-      .select("id")
+      .select("id, application_id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: (ins as { id: string }).id, total_score };
+    const created = ins as { id: string; application_id: string };
+    // Auditoria: registrar submissão do scorecard
+    const { data: app } = await supabase
+      .from("ats_applications")
+      .select("job_id, candidate_id")
+      .eq("id", created.application_id)
+      .maybeSingle();
+    if (app) {
+      const a = app as { job_id: string; candidate_id: string };
+      await supabase
+        .from("ats_application_events")
+        .insert({
+          owner_id: userId,
+          application_id: created.application_id,
+          job_id: a.job_id,
+          candidate_id: a.candidate_id,
+          event_type: "scorecard_submitted",
+          actor_id: userId,
+          metadata: { scorecard_id: data.scorecard_id, total_score, recommendation: data.recommendation ?? null },
+        } as never)
+        .then(() => undefined, () => undefined);
+    }
+    return { id: created.id, total_score };
   });
+
 
 export const listScorecardResponses = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
