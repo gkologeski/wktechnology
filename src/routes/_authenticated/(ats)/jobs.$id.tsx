@@ -237,9 +237,11 @@ function JobDetailPage() {
               <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
               <Button onClick={handleAdd} disabled={!selectedCand}>Adicionar</Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
 
       {(jobAny.description || jobAny.requirements) && (
         <Card>
