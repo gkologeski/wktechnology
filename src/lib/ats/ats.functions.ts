@@ -450,6 +450,19 @@ export const addApplication = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    await supabase
+      .from("ats_application_events")
+      .insert({
+        owner_id: userId,
+        application_id: ins.id as string,
+        job_id: data.jobId,
+        candidate_id: data.candidateId,
+        event_type: "application_created",
+        to_stage: "applied",
+        actor_id: userId,
+        metadata: { source: data.source },
+      } as never)
+      .then(() => undefined, () => undefined);
     await emitEvent(supabase, {
       ownerId: userId,
       eventName: "ats.application.created",
@@ -459,6 +472,48 @@ export const addApplication = createServerFn({ method: "POST" })
     }).catch(() => undefined);
     return ins;
   });
+
+export const listApplicationEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ application_id: z.string().uuid(), limit: z.number().int().min(1).max(200).default(100) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("ats_application_events")
+      .select("id, event_type, from_stage, to_stage, actor_id, metadata, created_at")
+      .eq("application_id", data.application_id)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    const actorIds = Array.from(
+      new Set((rows ?? []).map((r) => (r as { actor_id: string | null }).actor_id).filter(Boolean) as string[]),
+    );
+    let nameMap: Record<string, string> = {};
+    if (actorIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", actorIds);
+      nameMap = Object.fromEntries(((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [p.id, p.full_name ?? ""]));
+    }
+    return (rows ?? []).map((r) => {
+      const row = r as { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_id: string | null; metadata: unknown; created_at: string };
+      return {
+        id: row.id,
+        event_type: row.event_type,
+        from_stage: row.from_stage,
+        to_stage: row.to_stage,
+        actor_id: row.actor_id,
+        actor_name: row.actor_id ? (nameMap[row.actor_id] || null) : null,
+        metadata: (row.metadata ?? null) as Record<string, string | number | boolean | null> | null,
+        created_at: row.created_at,
+      };
+    });
+
+  });
+
 
 export const moveApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

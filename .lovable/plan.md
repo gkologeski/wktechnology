@@ -26,8 +26,9 @@ Foco em **PME/Mid-Market tech** brasileiro, competindo no eixo Gupy/Sólides (BR
 2. ✅ **E-mail de confirmação ao candidato** após `submitPublicApplication` (template branded por workspace).
 3. ✅ **Editor visual de pipeline** — UI em `/pipelines` para criar/editar pipelines e stages (cor, tipo, ordem). Pipeline "RH - Seleção" já importado das fases de Tickets.
 4. ✅ **Export CSV** de candidatos e candidaturas por vaga (`exportCandidatesCsv` / `exportApplicationsCsv`).
-5. **Permissões por equipe** — RLS adicional: `hiring_manager_id` e `recruiter_id` veem apenas as vagas em que estão; admin vê tudo. Hoje qualquer membro do workspace vê tudo.
-6. **Auditoria de movimentações** — tabela `ats_application_events` registrando cada `moveApplication`, mudança de stage, scorecard submetido (compliance LGPD + relatórios).
+5. ✅ **Permissões por equipe** — RLS team-based via `can_access_ats_job(job_id)`: hiring_manager/recruiter veem suas vagas (e candidaturas/candidatos vinculados); owner/admin do workspace vê tudo. Aplicado a `ats_jobs`, `ats_applications`, `ats_candidates` e `ats_application_events`.
+6. ✅ **Auditoria de movimentações** — `ats_application_events` registra `application_created`, `stage_moved` (com from/to + actor) e `scorecard_submitted`. Listagem via `listApplicationEvents` e timeline exibida no diálogo de avaliação do candidato.
+
 
 
 ### 🟡 FASE 2 — Entrevistas e ofertas (3-4 sprints)
@@ -112,5 +113,6 @@ Reaproveitamentos:
 
 ## Próximo passo sugerido
 
-Itens 1–4 da Fase 1 estão concluídos. Atacar agora **itens 5 (permissões por equipe) e 6 (auditoria de movimentações)** para fechar a Fase 1 e liberar a Fase 2 (entrevistas e ofertas).
+✅ Fase 1 concluída (itens 1–6). Avançar para **Fase 2 — entrevistas e ofertas**, começando pelo item 7 (agendamento nativo de entrevistas reaproveitando o módulo `/book/$slug`).
+
 
