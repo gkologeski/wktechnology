@@ -150,6 +150,8 @@ import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as AuthenticatedAtsJobsRouteImport } from './routes/_authenticated/ats.jobs'
+import { Route as AuthenticatedAtsCandidatesRouteImport } from './routes/_authenticated/ats.candidates'
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
@@ -208,6 +210,7 @@ import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
+import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
@@ -1015,6 +1018,17 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAtsJobsRoute = AuthenticatedAtsJobsRouteImport.update({
+  id: '/ats/jobs',
+  path: '/ats/jobs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAtsCandidatesRoute =
+  AuthenticatedAtsCandidatesRouteImport.update({
+    id: '/ats/candidates',
+    path: '/ats/candidates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAgentsSdrRoute = AuthenticatedAgentsSdrRouteImport.update({
   id: '/agents/sdr',
   path: '/agents/sdr',
@@ -1349,6 +1363,11 @@ const AuthenticatedProspectingCampaignsIdRoute =
     path: '/campaigns/$id',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedAtsJobsIdRoute = AuthenticatedAtsJobsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedAtsJobsRoute,
+} as any)
 const AuthenticatedAdminWorkspacesIdRoute =
   AuthenticatedAdminWorkspacesIdRouteImport.update({
     id: '/$id',
@@ -1487,6 +1506,8 @@ export interface FileRoutesByFullPath {
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
+  '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
+  '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1583,6 +1604,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
@@ -1698,6 +1720,8 @@ export interface FileRoutesByTo {
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
+  '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
+  '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -1793,6 +1817,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
@@ -1913,6 +1938,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
+  '/_authenticated/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
+  '/_authenticated/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -2009,6 +2036,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
@@ -2129,6 +2157,8 @@ export interface FileRouteTypes {
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
+    | '/ats/candidates'
+    | '/ats/jobs'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -2225,6 +2255,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/jobs/$id'
     | '/admin/workspaces/$id'
+    | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
@@ -2340,6 +2371,8 @@ export interface FileRouteTypes {
     | '/admin/status'
     | '/admin/workspaces'
     | '/agents/sdr'
+    | '/ats/candidates'
+    | '/ats/jobs'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -2435,6 +2468,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/jobs/$id'
     | '/admin/workspaces/$id'
+    | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
@@ -2554,6 +2588,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
     | '/_authenticated/agents/sdr'
+    | '/_authenticated/ats/candidates'
+    | '/_authenticated/ats/jobs'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/companies/$id'
@@ -2650,6 +2686,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/(ats)/jobs/$id'
     | '/_authenticated/admin/workspaces/$id'
+    | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
@@ -3781,6 +3818,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/ats/jobs': {
+      id: '/_authenticated/ats/jobs'
+      path: '/ats/jobs'
+      fullPath: '/ats/jobs'
+      preLoaderRoute: typeof AuthenticatedAtsJobsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ats/candidates': {
+      id: '/_authenticated/ats/candidates'
+      path: '/ats/candidates'
+      fullPath: '/ats/candidates'
+      preLoaderRoute: typeof AuthenticatedAtsCandidatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/agents/sdr': {
       id: '/_authenticated/agents/sdr'
       path: '/agents/sdr'
@@ -4186,6 +4237,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/prospecting/campaigns/$id'
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
+    }
+    '/_authenticated/ats/jobs/$id': {
+      id: '/_authenticated/ats/jobs/$id'
+      path: '/$id'
+      fullPath: '/ats/jobs/$id'
+      preLoaderRoute: typeof AuthenticatedAtsJobsIdRouteImport
+      parentRoute: typeof AuthenticatedAtsJobsRoute
     }
     '/_authenticated/admin/workspaces/$id': {
       id: '/_authenticated/admin/workspaces/$id'
@@ -4668,6 +4726,17 @@ const AuthenticatedAdminWorkspacesRouteWithChildren =
     AuthenticatedAdminWorkspacesRouteChildren,
   )
 
+interface AuthenticatedAtsJobsRouteChildren {
+  AuthenticatedAtsJobsIdRoute: typeof AuthenticatedAtsJobsIdRoute
+}
+
+const AuthenticatedAtsJobsRouteChildren: AuthenticatedAtsJobsRouteChildren = {
+  AuthenticatedAtsJobsIdRoute: AuthenticatedAtsJobsIdRoute,
+}
+
+const AuthenticatedAtsJobsRouteWithChildren =
+  AuthenticatedAtsJobsRoute._addFileChildren(AuthenticatedAtsJobsRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
@@ -4699,6 +4768,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
+  AuthenticatedAtsCandidatesRoute: typeof AuthenticatedAtsCandidatesRoute
+  AuthenticatedAtsJobsRoute: typeof AuthenticatedAtsJobsRouteWithChildren
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
@@ -4743,6 +4814,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
+  AuthenticatedAtsCandidatesRoute: AuthenticatedAtsCandidatesRoute,
+  AuthenticatedAtsJobsRoute: AuthenticatedAtsJobsRouteWithChildren,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
