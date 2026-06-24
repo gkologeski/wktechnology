@@ -32,7 +32,8 @@ export const ACCESS_TOOLS: Array<{
   key: string;
   label: string;
   description: string;
-  category: "crm" | "marketing" | "sales" | "service" | "account";
+  category: AccessCategory | "account";
+  module?: "crm" | "ats";
 }> = [
   {
     key: "communicate",
