@@ -791,6 +791,50 @@ export type Database = {
           },
         ]
       }
+      ats_async_video_responses: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          id: string
+          interview_id: string
+          mime_type: string | null
+          owner_id: string
+          question_id: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          interview_id: string
+          mime_type?: string | null
+          owner_id: string
+          question_id: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          interview_id?: string
+          mime_type?: string | null
+          owner_id?: string
+          question_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_async_video_responses_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "ats_interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_candidate_email_queue: {
         Row: {
           application_id: string | null
@@ -919,13 +963,59 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_interview_kits: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          pipeline_id: string | null
+          questions: Json
+          stage_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id: string
+          pipeline_id?: string | null
+          questions?: Json
+          stage_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          pipeline_id?: string | null
+          questions?: Json
+          stage_value?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_interview_kits_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "ats_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_interviews: {
         Row: {
           application_id: string
+          async_questions_snapshot: Json | null
           candidate_id: string
           created_at: string
           duration_min: number
           id: string
+          interview_kit_id: string | null
           interviewer_id: string | null
           job_id: string
           kind: string
@@ -945,10 +1035,12 @@ export type Database = {
         }
         Insert: {
           application_id: string
+          async_questions_snapshot?: Json | null
           candidate_id: string
           created_at?: string
           duration_min?: number
           id?: string
+          interview_kit_id?: string | null
           interviewer_id?: string | null
           job_id: string
           kind?: string
@@ -968,10 +1060,12 @@ export type Database = {
         }
         Update: {
           application_id?: string
+          async_questions_snapshot?: Json | null
           candidate_id?: string
           created_at?: string
           duration_min?: number
           id?: string
+          interview_kit_id?: string | null
           interviewer_id?: string | null
           job_id?: string
           kind?: string
@@ -1002,6 +1096,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_interviews_interview_kit_id_fkey"
+            columns: ["interview_kit_id"]
+            isOneToOne: false
+            referencedRelation: "ats_interview_kits"
             referencedColumns: ["id"]
           },
           {
