@@ -206,6 +206,7 @@ import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
 import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
+import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/public/hooks/ats-emails-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
@@ -1345,6 +1346,12 @@ const ApiPublicHooksAuditExportTickRoute =
     path: '/api/public/hooks/audit-export-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAtsEmailsTickRoute =
+  ApiPublicHooksAtsEmailsTickRouteImport.update({
+    id: '/api/public/hooks/ats-emails-tick',
+    path: '/api/public/hooks/ats-emails-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAiSummaryTickRoute =
   ApiPublicHooksAiSummaryTickRouteImport.update({
     id: '/api/public/hooks/ai-summary-tick',
@@ -1652,6 +1659,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -1870,6 +1878,7 @@ export interface FileRoutesByTo {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -2094,6 +2103,7 @@ export interface FileRoutesById {
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -2318,6 +2328,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2536,6 +2547,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2759,6 +2771,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2847,6 +2860,7 @@ export interface RootRouteChildren {
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
+  ApiPublicHooksAtsEmailsTickRoute: typeof ApiPublicHooksAtsEmailsTickRoute
   ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -4275,6 +4289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAuditExportTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ats-emails-tick': {
+      id: '/api/public/hooks/ats-emails-tick'
+      path: '/api/public/hooks/ats-emails-tick'
+      fullPath: '/api/public/hooks/ats-emails-tick'
+      preLoaderRoute: typeof ApiPublicHooksAtsEmailsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ai-summary-tick': {
       id: '/api/public/hooks/ai-summary-tick'
       path: '/api/public/hooks/ai-summary-tick'
@@ -5018,6 +5039,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
+  ApiPublicHooksAtsEmailsTickRoute: ApiPublicHooksAtsEmailsTickRoute,
   ApiPublicHooksAuditExportTickRoute: ApiPublicHooksAuditExportTickRoute,
   ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarRecordingsTickRoute:

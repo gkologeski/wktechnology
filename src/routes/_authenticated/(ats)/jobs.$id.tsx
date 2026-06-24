@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ import {
 } from "@/lib/ats/ats.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
+import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
 import { ClipboardCheck } from "lucide-react";
 
@@ -55,6 +56,8 @@ function JobDetailPage() {
   const addApp = useServerFn(addApplication);
   const listCands = useServerFn(listAtsCandidates);
   const listSummary = useServerFn(listJobScorecardSummary);
+  const exportCsv = useServerFn(exportJobApplicationsCsv);
+
 
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
@@ -180,10 +183,30 @@ function JobDetailPage() {
             </div>
           </div>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openAdd}><Plus className="h-4 w-4 mr-2" />Adicionar candidato</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                const r = await exportCsv({ data: { jobId: id } });
+                const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = r.filename;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Falha ao exportar");
+              }
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />CSV
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openAdd}><Plus className="h-4 w-4 mr-2" />Adicionar candidato</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Adicionar candidato à vaga</DialogTitle>
@@ -214,9 +237,11 @@ function JobDetailPage() {
               <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
               <Button onClick={handleAdd} disabled={!selectedCand}>Adicionar</Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
 
       {(jobAny.description || jobAny.requirements) && (
         <Card>

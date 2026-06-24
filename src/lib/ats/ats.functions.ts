@@ -496,6 +496,21 @@ export const moveApplication = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (prev.stage_value !== data.toStage) {
+      // Auditoria
+      await supabase
+        .from("ats_application_events")
+        .insert({
+          owner_id: userId,
+          application_id: data.applicationId,
+          job_id: prev.job_id,
+          candidate_id: prev.candidate_id,
+          event_type: "stage_moved",
+          from_stage: prev.stage_value,
+          to_stage: data.toStage,
+          actor_id: userId,
+        } as never)
+        .then(() => undefined, () => undefined);
+
       await emitEvent(supabase, {
         ownerId: userId,
         eventName: "ats.application.stage_changed",
@@ -553,19 +568,8 @@ export const moveApplication = createServerFn({ method: "POST" })
           .select("id, full_name, email")
           .eq("id", prev.candidate_id as string)
           .maybeSingle();
-        const { data: job } = await supabase
-          .from("ats_jobs")
-          .select("title")
-          .eq("id", prev.job_id as string)
-          .maybeSingle();
         const c = cand as { full_name: string; email: string | null } | null;
-        const j = job as { title: string } | null;
         if (c?.email) {
-          const replace = (s: string) =>
-            s
-              .replaceAll("{{candidate_name}}", c.full_name ?? "")
-              .replaceAll("{{job_title}}", j?.title ?? "")
-              .replaceAll("{{stage}}", data.toStage);
           await supabase
             .from("ats_stage_email_log")
             .insert({
@@ -575,9 +579,9 @@ export const moveApplication = createServerFn({ method: "POST" })
               job_id: prev.job_id,
               stage_value: data.toStage,
               to_email: c.email,
-              subject: replace((tpl as { subject: string }).subject),
-              body: replace((tpl as { body: string }).body),
-              status: "queued",
+              subject: (tpl as { subject: string }).subject,
+              body: (tpl as { body: string }).body,
+              status: "pending",
             } as never);
         }
       }

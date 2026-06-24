@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plus, Search, Trash2, Sparkles } from "lucide-react";
+import { Plus, Search, Trash2, Sparkles, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
 import { parseCv } from "@/lib/ats/cv-parse.functions";
+import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
@@ -39,6 +40,7 @@ function CandidatesPage() {
   const save = useServerFn(saveAtsCandidate);
   const del = useServerFn(deleteAtsCandidate);
   const parse = useServerFn(parseCv);
+  const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
@@ -149,6 +151,21 @@ function CandidatesPage() {
   };
 
 
+  const handleExport = async () => {
+    try {
+      const r = await exportCsv();
+      const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = r.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao exportar");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -162,6 +179,9 @@ function CandidatesPage() {
             className="pl-9"
           />
         </div>
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" />Exportar CSV
+        </Button>
         <Dialog open={parseOpen} onOpenChange={setParseOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
