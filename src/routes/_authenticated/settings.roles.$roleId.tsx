@@ -61,9 +61,9 @@ function EditRolePage() {
   const [isSystem, setIsSystem] = useState(false);
   const [perms, setPerms] = useState<Record<string, Perm>>({});
   const [tools, setTools] = useState<Record<string, Tool>>({});
-  const [category, setCategory] = useState<"crm" | "sales" | "service" | "marketing" | "account">(
-    "crm",
-  );
+  const [category, setCategory] = useState<
+    "crm" | "sales" | "service" | "marketing" | "ats" | "account"
+  >("crm");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
