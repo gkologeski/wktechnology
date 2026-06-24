@@ -91,6 +91,7 @@ export function ScheduleInterviewDialog({
           meet_url: meetUrl || null,
           location: location || null,
           notes: notes || null,
+          interview_kit_id: kitId || null,
         },
       });
       toast.success("Entrevista agendada");
