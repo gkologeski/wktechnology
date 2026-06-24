@@ -30,6 +30,7 @@ function AuditLogPage() {
   const [loading, setLoading] = useState(true);
   const [entity, setEntity] = useState<string>("all");
   const [action, setAction] = useState<string>("all");
+  const [moduleId, setModuleId] = useState<string>("all");
   const [detail, setDetail] = useState<Row | null>(null);
 
   const load = async () => {
@@ -40,6 +41,7 @@ function AuditLogPage() {
           data: {
             entity: entity === "all" ? null : (entity as never),
             action: action === "all" ? null : (action as never),
+            module_id: moduleId === "all" ? null : moduleId,
             limit: 200,
           },
         }),
@@ -50,7 +52,7 @@ function AuditLogPage() {
   };
   useEffect(() => {
     load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [entity, action]);
+  }, [entity, action, moduleId]);
 
   const fmtDate = (s: string) => formatDateTime(s);
 
