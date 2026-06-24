@@ -36,7 +36,7 @@ import {
 } from "@/lib/ats/ats.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 
-export const Route = createFileRoute("/_authenticated/ats/jobs/$id")({
+export const Route = createFileRoute("/_authenticated/jobs/$id")({
   component: JobDetailPage,
 });
 
@@ -151,7 +151,7 @@ function JobDetailPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/ats/jobs">
+          <Link to="/jobs">
             <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
           </Link>
           <div>

@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { listAtsJobs, saveAtsJob } from "@/lib/ats/ats.functions";
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 
-export const Route = createFileRoute("/_authenticated/ats/jobs")({
+export const Route = createFileRoute("/_authenticated/jobs")({
   component: AtsJobsPage,
 });
 
@@ -274,7 +274,7 @@ function AtsJobsPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((j) => (
-            <Link key={j.id} to="/ats/jobs/$id" params={{ id: j.id }}>
+            <Link key={j.id} to="/jobs/$id" params={{ id: j.id }}>
               <Card className="hover:border-primary/40 transition-colors h-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
