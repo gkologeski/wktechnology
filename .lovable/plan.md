@@ -113,5 +113,6 @@ Reaproveitamentos:
 
 ## Próximo passo sugerido
 
-Itens 1–4 da Fase 1 estão concluídos. Atacar agora **itens 5 (permissões por equipe) e 6 (auditoria de movimentações)** para fechar a Fase 1 e liberar a Fase 2 (entrevistas e ofertas).
+✅ Fase 1 concluída (itens 1–6). Avançar para **Fase 2 — entrevistas e ofertas**, começando pelo item 7 (agendamento nativo de entrevistas reaproveitando o módulo `/book/$slug`).
+
 
