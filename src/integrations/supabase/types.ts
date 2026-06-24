@@ -672,6 +672,56 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_application_events: {
+        Row: {
+          actor_id: string | null
+          application_id: string
+          candidate_id: string
+          created_at: string
+          event_type: string
+          from_stage: string | null
+          id: string
+          job_id: string
+          metadata: Json
+          owner_id: string
+          to_stage: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          application_id: string
+          candidate_id: string
+          created_at?: string
+          event_type: string
+          from_stage?: string | null
+          id?: string
+          job_id: string
+          metadata?: Json
+          owner_id: string
+          to_stage?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          application_id?: string
+          candidate_id?: string
+          created_at?: string
+          event_type?: string
+          from_stage?: string | null
+          id?: string
+          job_id?: string
+          metadata?: Json
+          owner_id?: string
+          to_stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_application_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_applications: {
         Row: {
           ai_match_score: number | null
@@ -737,6 +787,68 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_candidate_email_queue: {
+        Row: {
+          application_id: string | null
+          attempts: number
+          body_html: string
+          body_text: string | null
+          candidate_id: string
+          created_at: string
+          error: string | null
+          id: string
+          job_id: string | null
+          owner_id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          application_id?: string | null
+          attempts?: number
+          body_html: string
+          body_text?: string | null
+          candidate_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          application_id?: string | null
+          attempts?: number
+          body_html?: string
+          body_text?: string | null
+          candidate_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_candidate_email_queue_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
             referencedColumns: ["id"]
           },
         ]
