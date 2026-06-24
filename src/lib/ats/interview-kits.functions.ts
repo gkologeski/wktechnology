@@ -58,12 +58,13 @@ export const saveInterviewKit = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     if (data.is_default) {
       // garante 1 default por (pipeline_id, stage_value)
-      await supabase
+      let q = supabase
         .from("ats_interview_kits")
         .update({ is_default: false } as never)
-        .eq("owner_id", userId)
-        .eq("pipeline_id", data.pipeline_id ?? null)
-        .eq("stage_value", data.stage_value ?? null);
+        .eq("owner_id", userId);
+      q = data.pipeline_id ? q.eq("pipeline_id", data.pipeline_id) : q.is("pipeline_id", null);
+      q = data.stage_value ? q.eq("stage_value", data.stage_value) : q.is("stage_value", null);
+      await q;
     }
     const row = {
       owner_id: userId,
