@@ -86,6 +86,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         location: z.string().max(240).nullable().optional(),
         notes: z.string().max(4000).nullable().optional(),
         stage_value: z.string().max(80).nullable().optional(),
+        interview_kit_id: z.string().uuid().nullable().optional(),
       })
       .parse(d),
   )
@@ -97,6 +98,18 @@ export const scheduleInterview = createServerFn({ method: "POST" })
       .eq("id", data.application_id)
       .single();
     if (aErr || !app) throw new Error(aErr?.message || "Candidatura não encontrada");
+
+    // snapshot de perguntas do kit (se houver)
+    let snapshot: unknown = null;
+    if (data.interview_kit_id) {
+      const { data: kit } = await supabase
+        .from("ats_interview_kits")
+        .select("questions")
+        .eq("owner_id", userId)
+        .eq("id", data.interview_kit_id)
+        .maybeSingle();
+      snapshot = kit?.questions ?? null;
+    }
 
     const { data: ins, error } = await supabase
       .from("ats_interviews")
@@ -114,6 +127,8 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         location: data.location ?? null,
         notes: data.notes ?? null,
         stage_value: data.stage_value ?? (app.stage_value as string | null),
+        interview_kit_id: data.interview_kit_id ?? null,
+        async_questions_snapshot: snapshot as never,
       } as never)
       .select("id")
       .single();
