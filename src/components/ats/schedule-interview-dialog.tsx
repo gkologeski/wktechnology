@@ -1,5 +1,5 @@
 // Dialog para agendar entrevista — manual ou enviar link de auto-agendamento.
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   scheduleInterview,
   createSelfScheduleLink,
 } from "@/lib/ats/interviews.functions";
+import { listInterviewKits } from "@/lib/ats/interview-kits.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getAppUrl } from "@/lib/app-url";
 
