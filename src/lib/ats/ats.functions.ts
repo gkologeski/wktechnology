@@ -113,9 +113,25 @@ export const listAtsJobs = createServerFn({ method: "POST" })
         counts[a.job_id] = (counts[a.job_id] ?? 0) + 1;
       }
     }
-    return (rows ?? []).map((r) => ({
-      ...(r as Record<string, unknown>),
-      active_applications: counts[r.id as string] ?? 0,
+    type JobRow = {
+      id: string;
+      title: string;
+      slug: string | null;
+      status: string;
+      seniority: string | null;
+      employment_type: string | null;
+      location: string | null;
+      remote_mode: string | null;
+      salary_min: number | null;
+      salary_max: number | null;
+      deal_id: string | null;
+      opened_at: string | null;
+      filled_at: string | null;
+      updated_at: string;
+    };
+    return ((rows ?? []) as unknown as JobRow[]).map((r) => ({
+      ...r,
+      active_applications: counts[r.id] ?? 0,
     }));
   });
 
