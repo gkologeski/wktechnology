@@ -64,9 +64,26 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const [recommendation, setRecommendation] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const fetchScs = useServerFn(listScorecards);
+  const fetchRes = useServerFn(listScorecardResponses);
+  const fetchEvents = useServerFn(listApplicationEvents);
+  const fetchInterviews = useServerFn(listInterviews);
+  const cancelIv = useServerFn(cancelInterview);
+  const markIv = useServerFn(markInterviewStatus);
+  const submit = useServerFn(submitScorecardResponse);
+
+  const [scs, setScs] = useState<Scorecard[]>([]);
+  const [selected, setSelected] = useState<string>("");
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [recommendation, setRecommendation] = useState<string>("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<Array<{ id: string; total_score: number | null; recommendation: string | null }>>([]);
   type Event = { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_name: string | null; created_at: string };
   const [events, setEvents] = useState<Event[]>([]);
+  type Interview = { id: string; kind: string; status: string; scheduled_at: string | null; duration_min: number; meet_url: string | null; location: string | null };
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     if (!open) return;
