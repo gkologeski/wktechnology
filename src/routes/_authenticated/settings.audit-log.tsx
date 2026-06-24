@@ -142,8 +142,9 @@ function AuditLogPage() {
           )}
           {!loading && rows.length > 0 && (
             <div className="text-sm">
-              <div className="grid grid-cols-[160px_120px_120px_1fr_180px_60px] gap-2 py-2 border-b text-xs uppercase text-muted-foreground">
+              <div className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 py-2 border-b text-xs uppercase text-muted-foreground">
                 <div>Quando</div>
+                <div>Módulo</div>
                 <div>Entidade</div>
                 <div>Ação</div>
                 <div>Mudanças</div>
@@ -153,9 +154,12 @@ function AuditLogPage() {
               {rows.map((r) => (
                 <div
                   key={r.id}
-                  className="grid grid-cols-[160px_120px_120px_1fr_180px_60px] gap-2 items-center py-2 border-b last:border-0"
+                  className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 items-center py-2 border-b last:border-0"
                 >
                   <span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span>
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {r.module_id ?? "—"}
+                  </Badge>
                   <span>
                     {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
                   </span>
