@@ -86,7 +86,7 @@ function PipelinesPage() {
 
   const { data: pipelines = [], isLoading } = useQuery({
     queryKey: ["ats-pipelines"],
-    queryFn: () => list() as Promise<Pipeline[]>,
+    queryFn: () => list() as unknown as Promise<Pipeline[]>,
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);

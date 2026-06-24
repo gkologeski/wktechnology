@@ -164,6 +164,7 @@ import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedatsStageEmailsRouteImport } from './routes/_authenticated/(ats)/stage-emails'
 import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
+import { Route as AuthenticatedatsPipelinesRouteImport } from './routes/_authenticated/(ats)/pipelines'
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
 import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
@@ -1104,6 +1105,12 @@ const AuthenticatedatsScorecardsRoute =
     path: '/scorecards',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsPipelinesRoute =
+  AuthenticatedatsPipelinesRouteImport.update({
+    id: '/(ats)/pipelines',
+    path: '/pipelines',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
   id: '/(ats)/jobs',
   path: '/jobs',
@@ -1541,6 +1548,7 @@ export interface FileRoutesByFullPath {
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -1761,6 +1769,7 @@ export interface FileRoutesByTo {
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -1985,6 +1994,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/_authenticated/(ats)/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/_authenticated/(ats)/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -2210,6 +2220,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/insights'
     | '/jobs'
+    | '/pipelines'
     | '/scorecards'
     | '/stage-emails'
     | '/admin/alerts'
@@ -2430,6 +2441,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/insights'
     | '/jobs'
+    | '/pipelines'
     | '/scorecards'
     | '/stage-emails'
     | '/admin/alerts'
@@ -2653,6 +2665,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/insights'
     | '/_authenticated/(ats)/jobs'
+    | '/_authenticated/(ats)/pipelines'
     | '/_authenticated/(ats)/scorecards'
     | '/_authenticated/(ats)/stage-emails'
     | '/_authenticated/admin/alerts'
@@ -3995,6 +4008,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsScorecardsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/pipelines': {
+      id: '/_authenticated/(ats)/pipelines'
+      path: '/pipelines'
+      fullPath: '/pipelines'
+      preLoaderRoute: typeof AuthenticatedatsPipelinesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs': {
       id: '/_authenticated/(ats)/jobs'
       path: '/jobs'
@@ -4882,6 +4902,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
+  AuthenticatedatsPipelinesRoute: typeof AuthenticatedatsPipelinesRoute
   AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
   AuthenticatedatsStageEmailsRoute: typeof AuthenticatedatsStageEmailsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
@@ -4930,6 +4951,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
+  AuthenticatedatsPipelinesRoute: AuthenticatedatsPipelinesRoute,
   AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
   AuthenticatedatsStageEmailsRoute: AuthenticatedatsStageEmailsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
