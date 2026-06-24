@@ -56,17 +56,6 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const fetchScs = useServerFn(listScorecards);
   const fetchRes = useServerFn(listScorecardResponses);
   const fetchEvents = useServerFn(listApplicationEvents);
-  const submit = useServerFn(submitScorecardResponse);
-
-  const [scs, setScs] = useState<Scorecard[]>([]);
-  const [selected, setSelected] = useState<string>("");
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [recommendation, setRecommendation] = useState<string>("");
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-  const fetchScs = useServerFn(listScorecards);
-  const fetchRes = useServerFn(listScorecardResponses);
-  const fetchEvents = useServerFn(listApplicationEvents);
   const fetchInterviews = useServerFn(listInterviews);
   const cancelIv = useServerFn(cancelInterview);
   const markIv = useServerFn(markInterviewStatus);
