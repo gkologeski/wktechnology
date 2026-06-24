@@ -25,6 +25,7 @@ import {
   saveAtsCandidate,
   deleteAtsCandidate,
 } from "@/lib/ats/ats.functions";
+import { parseCv } from "@/lib/ats/cv-parse.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
   component: CandidatesPage,
