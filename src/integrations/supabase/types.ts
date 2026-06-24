@@ -919,6 +919,100 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_interviews: {
+        Row: {
+          application_id: string
+          candidate_id: string
+          created_at: string
+          duration_min: number
+          id: string
+          interviewer_id: string | null
+          job_id: string
+          kind: string
+          location: string | null
+          meet_url: string | null
+          notes: string | null
+          owner_id: string
+          reminder_1h_sent_at: string | null
+          reminder_d1_sent_at: string | null
+          scheduled_at: string | null
+          self_schedule_expires_at: string | null
+          self_schedule_token: string | null
+          slots: Json | null
+          stage_value: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          candidate_id: string
+          created_at?: string
+          duration_min?: number
+          id?: string
+          interviewer_id?: string | null
+          job_id: string
+          kind?: string
+          location?: string | null
+          meet_url?: string | null
+          notes?: string | null
+          owner_id: string
+          reminder_1h_sent_at?: string | null
+          reminder_d1_sent_at?: string | null
+          scheduled_at?: string | null
+          self_schedule_expires_at?: string | null
+          self_schedule_token?: string | null
+          slots?: Json | null
+          stage_value?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          candidate_id?: string
+          created_at?: string
+          duration_min?: number
+          id?: string
+          interviewer_id?: string | null
+          job_id?: string
+          kind?: string
+          location?: string | null
+          meet_url?: string | null
+          notes?: string | null
+          owner_id?: string
+          reminder_1h_sent_at?: string | null
+          reminder_d1_sent_at?: string | null
+          scheduled_at?: string | null
+          self_schedule_expires_at?: string | null
+          self_schedule_token?: string | null
+          slots?: Json | null
+          stage_value?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_interviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_interviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_jobs: {
         Row: {
           company_id: string | null

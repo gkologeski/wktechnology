@@ -34,6 +34,7 @@ import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
+import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
@@ -185,6 +186,7 @@ import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
+import { Route as ApiPublicInterviewTokenRouteImport } from './routes/api/public/interview/$token'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -207,6 +209,7 @@ import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
 import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
+import { Route as ApiPublicHooksAtsInterviewRemindersTickRouteImport } from './routes/api/public/hooks/ats-interview-reminders-tick'
 import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/public/hooks/ats-emails-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
@@ -355,6 +358,11 @@ const LpSlugRoute = LpSlugRouteImport.update({
 const KbSlugRoute = KbSlugRouteImport.update({
   id: '/kb/$slug',
   path: '/kb/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewTokenRoute = InterviewTokenRouteImport.update({
+  id: '/interview/$token',
+  path: '/interview/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -1223,6 +1231,11 @@ const ApiPublicMetaWhatsappWebhookRoute =
     path: '/api/public/meta/whatsapp-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicInterviewTokenRoute = ApiPublicInterviewTokenRouteImport.update({
+  id: '/api/public/interview/$token',
+  path: '/api/public/interview/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -1351,6 +1364,12 @@ const ApiPublicHooksAuditExportTickRoute =
   ApiPublicHooksAuditExportTickRouteImport.update({
     id: '/api/public/hooks/audit-export-tick',
     path: '/api/public/hooks/audit-export-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksAtsInterviewRemindersTickRoute =
+  ApiPublicHooksAtsInterviewRemindersTickRouteImport.update({
+    id: '/api/public/hooks/ats-interview-reminders-tick',
+    path: '/api/public/hooks/ats-interview-reminders-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksAtsEmailsTickRoute =
@@ -1533,6 +1552,7 @@ export interface FileRoutesByFullPath {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1668,6 +1688,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
+  '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -1690,6 +1711,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -1754,6 +1776,7 @@ export interface FileRoutesByTo {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -1888,6 +1911,7 @@ export interface FileRoutesByTo {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
+  '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -1910,6 +1934,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -1979,6 +2004,7 @@ export interface FileRoutesById {
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
@@ -2114,6 +2140,7 @@ export interface FileRoutesById {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
+  '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -2136,6 +2163,7 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -2205,6 +2233,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2340,6 +2369,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
+    | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2362,6 +2392,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -2426,6 +2457,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2560,6 +2592,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
+    | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2582,6 +2615,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -2650,6 +2684,7 @@ export interface FileRouteTypes {
     | '/book/$slug'
     | '/careers/$slug'
     | '/email/unsubscribe'
+    | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
@@ -2785,6 +2820,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
+    | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
@@ -2807,6 +2843,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -2855,6 +2892,7 @@ export interface RootRouteChildren {
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  InterviewTokenRoute: typeof InterviewTokenRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
@@ -2874,6 +2912,7 @@ export interface RootRouteChildren {
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
   ApiPublicHooksAtsEmailsTickRoute: typeof ApiPublicHooksAtsEmailsTickRoute
+  ApiPublicHooksAtsInterviewRemindersTickRoute: typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
@@ -2896,6 +2935,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicInterviewTokenRoute: typeof ApiPublicInterviewTokenRoute
   ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -3096,6 +3136,13 @@ declare module '@tanstack/react-router' {
       path: '/kb/$slug'
       fullPath: '/kb/$slug'
       preLoaderRoute: typeof KbSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview/$token': {
+      id: '/interview/$token'
+      path: '/interview/$token'
+      fullPath: '/interview/$token'
+      preLoaderRoute: typeof InterviewTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -4155,6 +4202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/interview/$token': {
+      id: '/api/public/interview/$token'
+      path: '/api/public/interview/$token'
+      fullPath: '/api/public/interview/$token'
+      preLoaderRoute: typeof ApiPublicInterviewTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/workflows-tick': {
       id: '/api/public/hooks/workflows-tick'
       path: '/api/public/hooks/workflows-tick'
@@ -4307,6 +4361,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/audit-export-tick'
       fullPath: '/api/public/hooks/audit-export-tick'
       preLoaderRoute: typeof ApiPublicHooksAuditExportTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/ats-interview-reminders-tick': {
+      id: '/api/public/hooks/ats-interview-reminders-tick'
+      path: '/api/public/hooks/ats-interview-reminders-tick'
+      fullPath: '/api/public/hooks/ats-interview-reminders-tick'
+      preLoaderRoute: typeof ApiPublicHooksAtsInterviewRemindersTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/ats-emails-tick': {
@@ -5043,6 +5104,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  InterviewTokenRoute: InterviewTokenRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
@@ -5062,6 +5124,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
   ApiPublicHooksAtsEmailsTickRoute: ApiPublicHooksAtsEmailsTickRoute,
+  ApiPublicHooksAtsInterviewRemindersTickRoute:
+    ApiPublicHooksAtsInterviewRemindersTickRoute,
   ApiPublicHooksAuditExportTickRoute: ApiPublicHooksAuditExportTickRoute,
   ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarRecordingsTickRoute:
@@ -5089,6 +5153,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicInterviewTokenRoute: ApiPublicInterviewTokenRoute,
   ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

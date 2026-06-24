@@ -27,6 +27,13 @@ import {
   listScorecardResponses,
 } from "@/lib/ats/scorecards.functions";
 import { listApplicationEvents } from "@/lib/ats/ats.functions";
+import {
+  listInterviews,
+  cancelInterview,
+  markInterviewStatus,
+} from "@/lib/ats/interviews.functions";
+import { ScheduleInterviewDialog } from "./schedule-interview-dialog";
+import { CalendarPlus } from "lucide-react";
 
 
 type Criterion = { key: string; label: string; weight: number };
@@ -49,6 +56,9 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const fetchScs = useServerFn(listScorecards);
   const fetchRes = useServerFn(listScorecardResponses);
   const fetchEvents = useServerFn(listApplicationEvents);
+  const fetchInterviews = useServerFn(listInterviews);
+  const cancelIv = useServerFn(cancelInterview);
+  const markIv = useServerFn(markInterviewStatus);
   const submit = useServerFn(submitScorecardResponse);
 
   const [scs, setScs] = useState<Scorecard[]>([]);
@@ -60,25 +70,39 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const [history, setHistory] = useState<Array<{ id: string; total_score: number | null; recommendation: string | null }>>([]);
   type Event = { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_name: string | null; created_at: string };
   const [events, setEvents] = useState<Event[]>([]);
+  type Interview = { id: string; kind: string; status: string; scheduled_at: string | null; duration_min: number; meet_url: string | null; location: string | null };
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  const reloadInterviews = async () => {
+    try {
+      const iv = await fetchInterviews({ data: { application_id: applicationId } });
+      setInterviews(iv as unknown as Interview[]);
+    } catch {
+      /* noop */
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
     (async () => {
       try {
-        const [s, h, ev] = await Promise.all([
+        const [s, h, ev, iv] = await Promise.all([
           fetchScs({ data: { job_id: jobId } }),
           fetchRes({ data: { application_id: applicationId } }),
           fetchEvents({ data: { application_id: applicationId, limit: 50 } }),
+          fetchInterviews({ data: { application_id: applicationId } }),
         ]);
         setScs(s as unknown as Scorecard[]);
         setHistory(h as unknown as typeof history);
         setEvents(ev as unknown as Event[]);
+        setInterviews(iv as unknown as Interview[]);
         if (s.length > 0) setSelected((s[0] as { id: string }).id);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falha ao carregar");
       }
     })();
-  }, [open, jobId, applicationId, fetchScs, fetchRes, fetchEvents]);
+  }, [open, jobId, applicationId, fetchScs, fetchRes, fetchEvents, fetchInterviews]);
 
 
   const current = useMemo(() => scs.find((s) => s.id === selected) ?? null, [scs, selected]);
@@ -133,6 +157,86 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
             ))}
           </div>
         )}
+
+        <div className="border rounded-lg p-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-muted-foreground">Entrevistas</div>
+            <Button size="sm" variant="outline" onClick={() => setShowSchedule(true)}>
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar
+            </Button>
+          </div>
+          {interviews.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Nenhuma entrevista agendada.</div>
+          ) : (
+            <ul className="space-y-1.5 text-xs">
+              {interviews.map((iv) => (
+                <li key={iv.id} className="flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <Badge variant="outline" className="mr-1 capitalize">{iv.kind}</Badge>
+                    <Badge
+                      variant={
+                        iv.status === "scheduled"
+                          ? "default"
+                          : iv.status === "done"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="mr-1"
+                    >
+                      {iv.status}
+                    </Badge>
+                    {iv.scheduled_at
+                      ? new Date(iv.scheduled_at).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "aguardando candidato"}
+                    {iv.meet_url ? (
+                      <a
+                        href={iv.meet_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-2 text-primary underline"
+                      >
+                        link
+                      </a>
+                    ) : null}
+                  </div>
+                  {iv.status === "scheduled" && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={async () => {
+                          await markIv({ data: { id: iv.id, status: "done" } });
+                          await reloadInterviews();
+                          toast.success("Marcada como realizada");
+                        }}
+                      >
+                        Realizada
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={async () => {
+                          await cancelIv({ data: { id: iv.id } });
+                          await reloadInterviews();
+                          toast.success("Cancelada");
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+
 
         {scs.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center">
@@ -224,6 +328,15 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
         </DialogFooter>
 
       </DialogContent>
+      <ScheduleInterviewDialog
+        open={showSchedule}
+        onOpenChange={setShowSchedule}
+        applicationId={applicationId}
+        candidateName={candidateName}
+        onSaved={() => {
+          void reloadInterviews();
+        }}
+      />
     </Dialog>
   );
 }
