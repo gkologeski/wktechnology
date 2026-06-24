@@ -1,34 +1,31 @@
-# Onda B — Interview Kits + Vídeo Assíncrono (concluída)
+# Onda C — Ofertas com eSign + Parser de CV (PDF multimodal)
 
 ## Entregas
 
 ### Schema (migration aplicada)
-- `ats_interview_kits` (owner, name, pipeline_id, stage_value, questions jsonb, is_default) + RLS.
-- `ats_async_video_responses` (interview_id, question_id, storage_path, duration_sec, mime_type, size_bytes) + RLS.
-- `ats_interviews`: novas colunas `interview_kit_id` (FK) e `async_questions_snapshot` (jsonb).
-- Bucket privado `ats-async-videos` + políticas (owner full-access no próprio prefixo; anon insert/select via token de entrevista).
+- `ats_offers` (owner, candidate_id, application_id, job_id, title, body, salary, currency, start_date, status, esign_document_id, promote_to_stage, sent/signed/declined_at) + RLS por owner.
+- Trigger `ats_offers_sync_on_esign` em `esign_signers`: quando todos assinam → oferta = signed e promove `ats_applications.stage_value` para `promote_to_stage`. Se algum signer recusa → oferta = declined.
 
-### Server functions
-- `src/lib/ats/interview-kits.functions.ts`: list/get/save/delete + `resolveKitForStage`.
-- `src/lib/ats/async-video.functions.ts`: `listAsyncVideoResponses` (com signed URL), `deleteAsyncVideoResponse`.
-- `interviews.functions.ts`: `scheduleInterview` e `createSelfScheduleLink` aceitam `interview_kit_id` e congelam snapshot das perguntas.
+### Server functions (`src/lib/ats/offers.functions.ts`)
+- `listOffers` / `getOffer` / `createOffer` / `updateOffer` / `cancelOffer` / `deleteOffer`.
+- `sendOffer`: cria documento eSign com o candidato como signatário único, marca como `sent` e linka `esign_document_id`. Cancela também o doc de eSign quando a oferta é cancelada.
 
-### Rotas públicas
-- `src/routes/api/public/interview/$token.ts`: GET retorna perguntas + respostas já enviadas; POST aceita multipart com `question_id + file` para upload de vídeo (valida token, kind=async, expira, tamanho ≤ 100MB).
-- `src/routes/interview.$token.tsx`: detecta `kind=async`, renderiza `AsyncInterviewView` com gravador MediaRecorder por pergunta (start câmera → gravar com timer → review → upload). Suporta retomada (perguntas já enviadas aparecem como ✓).
+### Parser de CV em PDF (multimodal)
+- `src/lib/ats/cv-parse-pdf.functions.ts`: baixa o PDF da URL assinada, encaminha como `type: file` para o Lovable AI Gateway (Gemini 2.5 Flash) com `response_format=json_object`, e devolve o mesmo schema de `parseCv`.
+- `candidates.tsx`: quando o upload do PDF tem URL, prefere o parser server-side (mais preciso, dispensa pdfjs no browser).
 
-### UI Admin
-- `src/routes/_authenticated/(ats)/interview-kits.tsx`: CRUD visual de kits (nome, padrão, perguntas com tipo texto/vídeo e time_limit_sec).
-- Menu ATS ganhou item "Kits de Entrevista" → `/interview-kits`.
-
-### Integração no fluxo de recrutador
-- `schedule-interview-dialog`: novo seletor "Kit de perguntas" carregado on-open; obrigatório em alerta para `async`; slots opcionais quando async (não há horário).
-- `scorecard-eval-dialog`: para cada entrevista async, exibe `<AsyncVideoResponses>` (toggle "Ver vídeos") com player + duração baseado em signed URL de 5min.
+### UI
+- Rota nova `/offers`: tabela completa (candidato, vaga, salário, status, ações enviar/cancelar/excluir).
+- Botão "Nova oferta" no `ScorecardEvalDialog` (mostra apenas quando `candidateId` está disponível) → abre `CreateOfferDialog`.
+- `CreateOfferDialog`: título, salário/moeda, data de início, texto livre, ações "Salvar rascunho" e "Salvar e enviar".
+- Sidebar ATS: novo grupo "Contratação" com item "Ofertas".
 
 ## Validação
 - `tsgo --noEmit`: OK
-- Migration: OK (apenas warnings pré-existentes do linter Supabase)
+- Migration: OK (warnings pré-existentes).
 
-## Próximo passo (Onda C)
-- Item 10: `ats_offers` + envio com eSign + auto-promoção da etapa.
-- Item 11: parser de CV server-side via `unpdf` ou Gemini Vision.
+## Próximos passos sugeridos
+- Página `/offers/[id]` com timeline do eSign (audit) e link público para o candidato.
+- Webhook/cron de lembrete para ofertas enviadas sem ação em N dias.
+- Templates de oferta reutilizáveis (similar a `quote_templates`).
+- Admin público da página de carreiras (logo, cores, descrição da empresa).

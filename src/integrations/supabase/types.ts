@@ -1203,6 +1203,101 @@ export type Database = {
           },
         ]
       }
+      ats_offers: {
+        Row: {
+          application_id: string | null
+          body: string
+          candidate_id: string
+          created_at: string
+          decline_reason: string | null
+          declined_at: string | null
+          esign_document_id: string | null
+          id: string
+          job_id: string | null
+          owner_id: string
+          promote_to_stage: string | null
+          salary_amount: number | null
+          salary_currency: string
+          sent_at: string | null
+          signed_at: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          body?: string
+          candidate_id: string
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          esign_document_id?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id: string
+          promote_to_stage?: string | null
+          salary_amount?: number | null
+          salary_currency?: string
+          sent_at?: string | null
+          signed_at?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          body?: string
+          candidate_id?: string
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          esign_document_id?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id?: string
+          promote_to_stage?: string | null
+          salary_amount?: number | null
+          salary_currency?: string
+          sent_at?: string | null
+          signed_at?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_offers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_offers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_offers_esign_document_id_fkey"
+            columns: ["esign_document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_pipelines: {
         Row: {
           created_at: string

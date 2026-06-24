@@ -34,7 +34,8 @@ import {
 } from "@/lib/ats/interviews.functions";
 import { ScheduleInterviewDialog } from "./schedule-interview-dialog";
 import { AsyncVideoResponses } from "./async-video-responses";
-import { CalendarPlus } from "lucide-react";
+import { CreateOfferDialog } from "./create-offer-dialog";
+import { CalendarPlus, FileSignature } from "lucide-react";
 
 
 type Criterion = { key: string; label: string; weight: number };
@@ -49,11 +50,12 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   applicationId: string;
   jobId: string;
+  candidateId?: string;
   candidateName: string;
   onSaved?: () => void;
 };
 
-export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, candidateName, onSaved }: Props) {
+export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, candidateId, candidateName, onSaved }: Props) {
   const fetchScs = useServerFn(listScorecards);
   const fetchRes = useServerFn(listScorecardResponses);
   const fetchEvents = useServerFn(listApplicationEvents);
@@ -74,6 +76,7 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   type Interview = { id: string; kind: string; status: string; scheduled_at: string | null; duration_min: number; meet_url: string | null; location: string | null };
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showOffer, setShowOffer] = useState(false);
 
   const reloadInterviews = async () => {
     try {
@@ -162,9 +165,16 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
         <div className="border rounded-lg p-3 mb-2">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-medium text-muted-foreground">Entrevistas</div>
-            <Button size="sm" variant="outline" onClick={() => setShowSchedule(true)}>
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar
-            </Button>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" onClick={() => setShowSchedule(true)}>
+                <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agendar
+              </Button>
+              {candidateId && (
+                <Button size="sm" variant="default" onClick={() => setShowOffer(true)}>
+                  <FileSignature className="h-3.5 w-3.5 mr-1" /> Nova oferta
+                </Button>
+              )}
+            </div>
           </div>
           {interviews.length === 0 ? (
             <div className="text-xs text-muted-foreground">Nenhuma entrevista agendada.</div>
@@ -348,6 +358,16 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
           void reloadInterviews();
         }}
       />
+      {candidateId && (
+        <CreateOfferDialog
+          open={showOffer}
+          onOpenChange={setShowOffer}
+          candidateId={candidateId}
+          candidateName={candidateName}
+          jobId={jobId}
+          applicationId={applicationId}
+        />
+      )}
     </Dialog>
   );
 }

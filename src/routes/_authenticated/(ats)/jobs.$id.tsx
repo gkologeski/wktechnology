@@ -338,6 +338,7 @@ function JobDetailPage() {
           onOpenChange={(v) => { if (!v) setEvalApp(null); }}
           applicationId={evalApp.id}
           jobId={id}
+          candidateId={evalApp.candidate_id}
           candidateName={evalApp.candidate?.full_name ?? "Candidato"}
           onSaved={refresh}
         />
