@@ -154,6 +154,7 @@ export const createAccessProfile = createServerFn({ method: "POST" })
         ACCESS_OBJECTS.map((o) => ({
           profile_id: newId,
           object_key: o.key,
+          module_id: o.module ?? null,
           view_scope: "own",
           edit_scope: "own",
           delete_scope: "none",
