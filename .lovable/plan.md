@@ -137,11 +137,11 @@ RLS continua por `workspace_id`/`owner_id`; o módulo é apenas um eixo organiza
 - ✅ `detectModuleFromPath` reconhece os novos paths (`/jobs`, `/candidates`) para preview local.
 - ⏳ **Pendente**: `cookieOptions.domain = '.wktechnology.com.br'` para SSO cross-subdomain (depende de ajuste no Supabase project, fora do client.ts auto-gen).
 
-**Fase C — Configurações compartilhadas**
-- Reorganizar `/settings` em grupos Workspace / CRM / ATS.
-- Branding por módulo (tabs).
-- Billing/planos por módulo, fatura unificada.
-- Permissões por módulo no editor de papéis.
+**Fase C — Configurações compartilhadas** ✅ (v1)
+- ✅ `/settings` reorganizado em grupos: Workspace (ERP) / TechSales CRM / TechHire ATS, com cards descritivos.
+- ✅ `/settings/branding` agora tem tabs: Workspace, CRM (TechSales), ATS (TechHire). Branding por módulo grava em `module_branding`.
+- ✅ Server fns `getModuleBranding` / `saveModuleBranding` (chave composta workspace_id+module_id).
+- ⏳ Próximas iterações: planos por módulo no `/settings/billing` (workspace_modules.plan_id); permissões por módulo no editor de roles; filtro `module_id` no audit log.
 
 **Fase D — Polimento**
 - Hub opcional em `app.wktechnology.com.br` (launcher + notificações cross-módulo).
