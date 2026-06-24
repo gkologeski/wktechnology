@@ -121,6 +121,26 @@ function CandidatesPage() {
     }
   };
 
+  const handleParseCv = async () => {
+    if (cvText.trim().length < 40) {
+      toast.error("Cole o texto do currículo (mínimo 40 caracteres)");
+      return;
+    }
+    setParsing(true);
+    try {
+      const res = await parse({ data: { cv_text: cvText, apply: true } });
+      toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
+      setParseOpen(false);
+      setCvText("");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao processar CV");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
