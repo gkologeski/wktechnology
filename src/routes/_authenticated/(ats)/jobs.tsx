@@ -116,7 +116,7 @@ function AtsJobsPage() {
         requirements: "",
         status: "draft",
       });
-      if (r?.id) navigate({ to: "/ats/jobs/$id", params: { id: r.id as string } });
+      if (r?.id) navigate({ to: "/jobs/$id", params: { id: r.id as string } });
       else refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao criar vaga");
