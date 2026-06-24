@@ -90,14 +90,17 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at",
+        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, owner_id, hiring_manager_id, recruiter_id",
       )
-      .eq("owner_id", userId)
+      .or(
+        `owner_id.eq.${userId},hiring_manager_id.eq.${userId},recruiter_id.eq.${userId}`,
+      )
       .order("updated_at", { ascending: false })
       .limit(200);
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
     const { data: rows, error } = await q;
+
     if (error) throw new Error(error.message);
 
     // contagem de candidaturas ativas por vaga
@@ -143,9 +146,9 @@ export const getAtsJob = createServerFn({ method: "POST" })
     const { data: job, error } = await supabase
       .from("ats_jobs")
       .select("*")
-      .eq("owner_id", userId)
       .eq("id", data.id)
       .maybeSingle();
+
     if (error) throw new Error(error.message);
     if (!job) throw new Error("Vaga não encontrada");
     return job;
@@ -376,10 +379,10 @@ export const listJobApplications = createServerFn({ method: "POST" })
       .select(
         "id, candidate_id, job_id, stage_value, status, source, applied_at, moved_at, position, ai_match_score",
       )
-      .eq("owner_id", userId)
       .eq("job_id", data.jobId)
       .order("stage_value", { ascending: true })
       .order("position", { ascending: true });
+
     if (error) throw new Error(error.message);
     type Cand = {
       id: string;
