@@ -81,7 +81,8 @@ export const saveModuleBranding = createServerFn({ method: "POST" })
     }
     const { error } = await supabase
       .from("module_branding")
-      .upsert(payload, { onConflict: "workspace_id,module_id" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .upsert(payload as any, { onConflict: "workspace_id,module_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
