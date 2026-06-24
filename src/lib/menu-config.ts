@@ -164,6 +164,20 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    label: "Recrutar",
+    items: [
+      {
+        title: "ATS",
+        url: "/ats/jobs",
+        icon: UsersRound,
+        children: [
+          { title: "Vagas", url: "/ats/jobs", icon: Briefcase },
+          { title: "Candidatos", url: "/ats/candidates", icon: UsersRound },
+        ],
+      },
+    ],
+  },
+  {
     label: "Otimizar",
     items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
