@@ -37,6 +37,10 @@ function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
   const save = useServerFn(saveAtsCandidate);
   const del = useServerFn(deleteAtsCandidate);
+  const parse = useServerFn(parseCv);
+  const [parseOpen, setParseOpen] = useState(false);
+  const [cvText, setCvText] = useState("");
+  const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<Cand[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
