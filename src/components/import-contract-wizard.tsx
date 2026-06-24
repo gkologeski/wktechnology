@@ -517,7 +517,7 @@ export function ImportContractWizard() {
                 {rawHtml ? (
                   <div
                     className="prose prose-sm max-w-none p-3 text-xs"
-                    dangerouslySetInnerHTML={{ __html: rawHtml }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["style"] }) }}
                   />
                 ) : (
                   <pre className="p-3 text-xs whitespace-pre-wrap">{rawText}</pre>
