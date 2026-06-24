@@ -74,24 +74,35 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [showSchedule, setShowSchedule] = useState(false);
 
+  const reloadInterviews = async () => {
+    try {
+      const iv = await fetchInterviews({ data: { application_id: applicationId } });
+      setInterviews(iv as unknown as Interview[]);
+    } catch {
+      /* noop */
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
     (async () => {
       try {
-        const [s, h, ev] = await Promise.all([
+        const [s, h, ev, iv] = await Promise.all([
           fetchScs({ data: { job_id: jobId } }),
           fetchRes({ data: { application_id: applicationId } }),
           fetchEvents({ data: { application_id: applicationId, limit: 50 } }),
+          fetchInterviews({ data: { application_id: applicationId } }),
         ]);
         setScs(s as unknown as Scorecard[]);
         setHistory(h as unknown as typeof history);
         setEvents(ev as unknown as Event[]);
+        setInterviews(iv as unknown as Interview[]);
         if (s.length > 0) setSelected((s[0] as { id: string }).id);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falha ao carregar");
       }
     })();
-  }, [open, jobId, applicationId, fetchScs, fetchRes, fetchEvents]);
+  }, [open, jobId, applicationId, fetchScs, fetchRes, fetchEvents, fetchInterviews]);
 
 
   const current = useMemo(() => scs.find((s) => s.id === selected) ?? null, [scs, selected]);
