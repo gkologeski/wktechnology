@@ -20,6 +20,7 @@ import {
 import { getMyPlan, listPlansWithEntitlements, requestSelfUpgrade } from "@/lib/billing.functions";
 import { PLAN_LABELS, type PlanCode } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/use-entitlements";
+import { ModulePlansSection } from "@/components/billing/module-plans-section";
 
 export const Route = createFileRoute("/_authenticated/settings/billing")({
   component: BillingPage,
@@ -135,6 +136,8 @@ function BillingPage() {
         title="Planos e cobrança"
         description="Visualize seu plano atual, consumo e compare os planos disponíveis."
       />
+      <ModulePlansSection />
+
 
       <Card>
         <CardHeader>
