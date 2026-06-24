@@ -14,6 +14,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { getPublicJob, submitPublicApplication } from "@/lib/ats/public.functions";
 
 export const Route = createFileRoute("/careers/$slug")({
+  loader: async ({ params }) => {
+    const host = typeof window !== "undefined" ? window.location.host : null;
+    const job = await getPublicJob({ data: { host, slug: params.slug } });
+    return { job };
+  },
+  head: ({ loaderData, params }) => {
+    const job = (loaderData as { job: { title?: string; description?: string | null } | null } | undefined)?.job;
+    const title = job?.title ? `${job.title} — Vagas` : "Vaga";
+    const desc = (job?.description ?? "Candidate-se à nossa vaga.").slice(0, 160);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `/careers/${params.slug}` },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+      ],
+    };
+  },
   component: CareerJobPage,
   notFoundComponent: () => (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">

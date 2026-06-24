@@ -162,8 +162,10 @@ import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminQuotasRouteImport } from './routes/_authenticated/admin.quotas'
 import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_authenticated/admin.bug-reports'
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
+import { Route as AuthenticatedatsStageEmailsRouteImport } from './routes/_authenticated/(ats)/stage-emails'
 import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
+import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
 import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
@@ -1089,6 +1091,12 @@ const AuthenticatedAdminAlertsRoute =
     path: '/admin/alerts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsStageEmailsRoute =
+  AuthenticatedatsStageEmailsRouteImport.update({
+    id: '/(ats)/stage-emails',
+    path: '/stage-emails',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsScorecardsRoute =
   AuthenticatedatsScorecardsRouteImport.update({
     id: '/(ats)/scorecards',
@@ -1100,6 +1108,12 @@ const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedatsInsightsRoute =
+  AuthenticatedatsInsightsRouteImport.update({
+    id: '/(ats)/insights',
+    path: '/insights',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsCandidatesRoute =
   AuthenticatedatsCandidatesRouteImport.update({
     id: '/(ats)/candidates',
@@ -1518,8 +1532,10 @@ export interface FileRoutesByFullPath {
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/insights': typeof AuthenticatedatsInsightsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
+  '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -1735,8 +1751,10 @@ export interface FileRoutesByTo {
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/insights': typeof AuthenticatedatsInsightsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
+  '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -1956,8 +1974,10 @@ export interface FileRoutesById {
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
+  '/_authenticated/(ats)/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
   '/_authenticated/admin/bug-reports': typeof AuthenticatedAdminBugReportsRoute
   '/_authenticated/admin/quotas': typeof AuthenticatedAdminQuotasRoute
@@ -2178,8 +2198,10 @@ export interface FileRouteTypes {
     | '/careers/'
     | '/kb/'
     | '/candidates'
+    | '/insights'
     | '/jobs'
     | '/scorecards'
+    | '/stage-emails'
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
@@ -2395,8 +2417,10 @@ export interface FileRouteTypes {
     | '/careers'
     | '/kb'
     | '/candidates'
+    | '/insights'
     | '/jobs'
     | '/scorecards'
+    | '/stage-emails'
     | '/admin/alerts'
     | '/admin/bug-reports'
     | '/admin/quotas'
@@ -2615,8 +2639,10 @@ export interface FileRouteTypes {
     | '/careers/'
     | '/kb/'
     | '/_authenticated/(ats)/candidates'
+    | '/_authenticated/(ats)/insights'
     | '/_authenticated/(ats)/jobs'
     | '/_authenticated/(ats)/scorecards'
+    | '/_authenticated/(ats)/stage-emails'
     | '/_authenticated/admin/alerts'
     | '/_authenticated/admin/bug-reports'
     | '/_authenticated/admin/quotas'
@@ -3941,6 +3967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAlertsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/stage-emails': {
+      id: '/_authenticated/(ats)/stage-emails'
+      path: '/stage-emails'
+      fullPath: '/stage-emails'
+      preLoaderRoute: typeof AuthenticatedatsStageEmailsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/scorecards': {
       id: '/_authenticated/(ats)/scorecards'
       path: '/scorecards'
@@ -3953,6 +3986,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/jobs'
       preLoaderRoute: typeof AuthenticatedatsJobsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/insights': {
+      id: '/_authenticated/(ats)/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedatsInsightsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/(ats)/candidates': {
@@ -4819,8 +4859,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
+  AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
   AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
+  AuthenticatedatsStageEmailsRoute: typeof AuthenticatedatsStageEmailsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
   AuthenticatedAdminBugReportsRoute: typeof AuthenticatedAdminBugReportsRoute
   AuthenticatedAdminQuotasRoute: typeof AuthenticatedAdminQuotasRoute
@@ -4865,8 +4907,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
+  AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
   AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
+  AuthenticatedatsStageEmailsRoute: AuthenticatedatsStageEmailsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
   AuthenticatedAdminBugReportsRoute: AuthenticatedAdminBugReportsRoute,
   AuthenticatedAdminQuotasRoute: AuthenticatedAdminQuotasRoute,
@@ -5029,13 +5073,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
