@@ -31,7 +31,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Vagas", url: "/jobs", icon: Briefcase },
       { title: "Candidatos", url: "/candidates", icon: Users },
-      { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
+      { title: "Pipelines", url: "/pipelines", icon: GitBranch },
       { title: "Entrevistas", url: "/meetings", icon: Calendar },
       { title: "Página de Carreiras", url: "/settings/portal", icon: Globe },
     ],
