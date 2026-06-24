@@ -17,9 +17,9 @@ export const Route = createFileRoute("/signup")({
         property: "og:description",
         content: "O cadastro no WK Technology CRM é feito apenas por convite.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/signup" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/signup" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/signup" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/signup" }],
   }),
 });
 

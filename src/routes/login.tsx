@@ -21,9 +21,9 @@ export const Route = createFileRoute("/login")({
       },
       { property: "og:title", content: "Entrar — WK Technology CRM" },
       { property: "og:description", content: "Acesse sua conta no WK Technology CRM." },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/login" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/login" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/login" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/login" }],
   }),
 });
 

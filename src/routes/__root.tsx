@@ -113,13 +113,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "Organization",
               name: "WK Technology CRM",
-              url: "https://crm.wktechnology.com.br",
+              url: "https://ats.wktechnology.com.br",
               logo: "https://storage.googleapis.com/gpt-engineer-file-uploads/PB4PktIUasgn421PW6R6A77d5kJ3/social-images/social-1778901422473-Logo_WK.webp",
             },
             {
               "@type": "WebSite",
               name: "WK Technology CRM",
-              url: "https://crm.wktechnology.com.br",
+              url: "https://ats.wktechnology.com.br",
             },
           ],
         }),

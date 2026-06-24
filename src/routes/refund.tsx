@@ -15,10 +15,10 @@ export const Route = createFileRoute("/refund")({
         content:
           "Regras de reembolso, cancelamento e devolução proporcional para assinaturas do WK Technology CRM.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/refund" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/refund" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/refund" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/refund" }],
   }),
   component: RefundPage,
 });

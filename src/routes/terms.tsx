@@ -15,10 +15,10 @@ export const Route = createFileRoute("/terms")({
         content:
           "Leia os Termos de Serviço do WK Technology CRM: regras de uso da plataforma, responsabilidades, limites e condições da sua assinatura.",
       },
-      { property: "og:url", content: "https://crm.wktechnology.com.br/terms" },
+      { property: "og:url", content: "https://ats.wktechnology.com.br/terms" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://crm.wktechnology.com.br/terms" }],
+    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/terms" }],
   }),
   component: TermsPage,
 });
