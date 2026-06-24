@@ -29,9 +29,8 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Recrutamento",
     items: [
-      { title: "Dashboard", url: "/ats", icon: LayoutDashboard },
-      { title: "Vagas", url: "/ats/jobs", icon: Briefcase },
-      { title: "Candidatos", url: "/ats/candidates", icon: Users },
+      { title: "Vagas", url: "/jobs", icon: Briefcase },
+      { title: "Candidatos", url: "/candidates", icon: Users },
       { title: "Pipelines", url: "/settings/pipelines", icon: GitBranch },
       { title: "Entrevistas", url: "/meetings", icon: Calendar },
       { title: "Página de Carreiras", url: "/settings/portal", icon: Globe },
