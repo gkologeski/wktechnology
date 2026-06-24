@@ -37,13 +37,14 @@ type Perm = {
 type Tool = { tool_key: string; enabled: boolean };
 
 const CATEGORIES: Array<{
-  key: "crm" | "sales" | "service" | "marketing" | "account";
+  key: "crm" | "sales" | "service" | "marketing" | "ats" | "account";
   label: string;
 }> = [
   { key: "crm", label: "CRM" },
   { key: "sales", label: "Vendas" },
   { key: "service", label: "Atendimento" },
   { key: "marketing", label: "Marketing" },
+  { key: "ats", label: "ATS / Recrutamento" },
   { key: "account", label: "Conta" },
 ];
 
