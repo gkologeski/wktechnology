@@ -181,7 +181,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
     }
 
     // Application (idempotente via UNIQUE job_id,candidate_id)
-    const { error: aErr } = await supabaseAdmin
+    const { data: app, error: aErr } = await supabaseAdmin
       .from("ats_applications")
       .upsert(
         {
@@ -193,8 +193,38 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
           source: "career_page",
         } as never,
         { onConflict: "job_id,candidate_id" },
-      );
+      )
+      .select("id")
+      .single();
     if (aErr) throw new Error(aErr.message);
+
+    // Auditoria + enfileira e-mail de confirmação ao candidato.
+    try {
+      await supabaseAdmin.from("ats_application_events").insert({
+        owner_id: ownerId,
+        application_id: app.id as string,
+        job_id: data.job_id,
+        candidate_id: candidateId,
+        event_type: "application_created",
+        metadata: { source: "career_page" },
+      } as never);
+    } catch {
+      /* auditoria não pode bloquear candidatura */
+    }
+    try {
+      const { enqueueApplicationConfirmation } = await import("./email-engine.server");
+      await enqueueApplicationConfirmation({
+        ownerId,
+        applicationId: app.id as string,
+        candidateId,
+        jobId: data.job_id,
+        toEmail: data.email,
+        candidateName: data.full_name,
+        jobTitle: (job.title as string) || "vaga",
+      });
+    } catch (e) {
+      console.warn("[submitPublicApplication] enqueue confirmation failed", e);
+    }
 
     return { ok: true };
   });
