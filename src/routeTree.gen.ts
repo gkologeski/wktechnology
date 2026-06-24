@@ -167,6 +167,7 @@ import { Route as AuthenticatedatsStageEmailsRouteImport } from './routes/_authe
 import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
 import { Route as AuthenticatedatsPipelinesRouteImport } from './routes/_authenticated/(ats)/pipelines'
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
+import { Route as AuthenticatedatsInterviewKitsRouteImport } from './routes/_authenticated/(ats)/interview-kits'
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
 import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
@@ -1124,6 +1125,12 @@ const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedatsInterviewKitsRoute =
+  AuthenticatedatsInterviewKitsRouteImport.update({
+    id: '/(ats)/interview-kits',
+    path: '/interview-kits',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsInsightsRoute =
   AuthenticatedatsInsightsRouteImport.update({
     id: '/(ats)/insights',
@@ -1567,6 +1574,7 @@ export interface FileRoutesByFullPath {
   '/kb/': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
+  '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -1791,6 +1799,7 @@ export interface FileRoutesByTo {
   '/kb': typeof KbIndexRoute
   '/candidates': typeof AuthenticatedatsCandidatesRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
+  '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -2019,6 +2028,7 @@ export interface FileRoutesById {
   '/kb/': typeof KbIndexRoute
   '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
+  '/_authenticated/(ats)/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/_authenticated/(ats)/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -2248,6 +2258,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/candidates'
     | '/insights'
+    | '/interview-kits'
     | '/jobs'
     | '/pipelines'
     | '/scorecards'
@@ -2472,6 +2483,7 @@ export interface FileRouteTypes {
     | '/kb'
     | '/candidates'
     | '/insights'
+    | '/interview-kits'
     | '/jobs'
     | '/pipelines'
     | '/scorecards'
@@ -2699,6 +2711,7 @@ export interface FileRouteTypes {
     | '/kb/'
     | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/insights'
+    | '/_authenticated/(ats)/interview-kits'
     | '/_authenticated/(ats)/jobs'
     | '/_authenticated/(ats)/pipelines'
     | '/_authenticated/(ats)/scorecards'
@@ -4069,6 +4082,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsJobsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/interview-kits': {
+      id: '/_authenticated/(ats)/interview-kits'
+      path: '/interview-kits'
+      fullPath: '/interview-kits'
+      preLoaderRoute: typeof AuthenticatedatsInterviewKitsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/insights': {
       id: '/_authenticated/(ats)/insights'
       path: '/insights'
@@ -4962,6 +4982,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
+  AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
   AuthenticatedatsPipelinesRoute: typeof AuthenticatedatsPipelinesRoute
   AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
@@ -5011,6 +5032,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
+  AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
   AuthenticatedatsPipelinesRoute: AuthenticatedatsPipelinesRoute,
   AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
