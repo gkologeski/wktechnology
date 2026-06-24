@@ -53,21 +53,25 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-3 py-4 gap-3">
-        <Link to="/dashboard" className="flex items-center gap-2.5">
-          <div className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground grid place-items-center text-sm font-bold shadow-md shadow-primary/20">
-            WK
+        <Link to={activeModule.defaultRoute} className="flex items-center gap-2.5">
+          <div
+            className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
+            style={{ backgroundColor: activeModule.defaultColor, boxShadow: `0 4px 12px ${activeModule.defaultColor}33` }}
+          >
+            {activeModule.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
             <h2 className="text-base font-bold tracking-tight leading-tight truncate">
-              TechSales CRM
+              {activeModule.productName} {activeModule.name}
             </h2>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">
-              Operação comercial
+              {activeModule.shortDescription}
             </p>
           </div>
         </Link>
 
-        <div className="group-data-[collapsible=icon]:hidden">
+        <div className="group-data-[collapsible=icon]:hidden space-y-2">
+          <ModuleSwitcher className="w-full" />
           <WorkspaceSwitcher />
         </div>
 
