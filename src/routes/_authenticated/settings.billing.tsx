@@ -136,6 +136,8 @@ function BillingPage() {
         title="Planos e cobrança"
         description="Visualize seu plano atual, consumo e compare os planos disponíveis."
       />
+      <ModulePlansSection />
+
 
       <Card>
         <CardHeader>
