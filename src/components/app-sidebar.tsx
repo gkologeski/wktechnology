@@ -19,7 +19,8 @@ import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
-import { useActiveModuleDefinition } from "@/lib/modules/active-module";
+import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
+import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -29,14 +30,17 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const [query, setQuery] = useState("");
   const activeModule = useActiveModuleDefinition();
+  const activeModuleId = useActiveModule();
 
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
+  const groupsSource = activeModuleId === "ats" ? ATS_SIDEBAR_GROUPS : SIDEBAR_GROUPS;
+
   const visibleGroups = useMemo(() => {
     const q = normalizeSearch(query);
     const matches = (title: string) => !q || normalizeSearch(title).includes(q);
-    return SIDEBAR_GROUPS.map((g) => ({
+    return groupsSource.map((g) => ({
       ...g,
       items: g.items
         .filter((i) => canSee(i.need, perms))
@@ -46,7 +50,7 @@ export function AppSidebar() {
         }))
         .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
     })).filter((g) => g.items.length > 0);
-  }, [query, isAdmin, isManager, isPlatformAdmin]);
+  }, [query, isAdmin, isManager, isPlatformAdmin, groupsSource]);
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
