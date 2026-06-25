@@ -74,13 +74,9 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
   temporary: "Temporário",
 };
 
-function MetaPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-sunken px-1.5 py-0.5 text-[11px] font-medium text-text-secondary whitespace-nowrap">
-      {children}
-    </span>
-  );
-}
+// MetaPill foi promovido para a camada global do TechHire.
+// Mantemos o re-export local para preservar imports e nomes existentes neste arquivo.
+import { MetaPill } from "@/components/techhire/ui";
 
 function JobCard({ job }: { job: JobRow }) {
   const badgeStatus = STATUS_TO_BADGE[job.status] ?? "draft";
