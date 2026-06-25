@@ -1363,7 +1363,7 @@ export function ActivityTimeline({
                             </div>
                           </div>
                         )}
-                        {(accessLink || recordingUrl) && (
+                        {(accessLink || recordingUrl || canSearchRecording) && (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {accessLink && (
                               <Button
@@ -1398,6 +1398,18 @@ export function ActivityTimeline({
                                   Resumir reunião
                                 </Button>
                               </>
+                            )}
+                            {canSearchRecording && !recordingUrl && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                disabled={refreshingRecId === calendarEventId}
+                                onClick={() => onRefreshRecording(calendarEventId!)}
+                                title="O Meet leva 10–30 min após o fim para publicar o MP4 no Drive"
+                              >
+                                {refreshingRecId === calendarEventId ? "Buscando…" : "Buscar gravação"}
+                              </Button>
                             )}
                           </div>
                         )}
