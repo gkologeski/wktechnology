@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Stethoscope,
   Trash2,
+  Video,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   setCalendarSyncEnabled,
   setCalendarMeetEnabled,
   syncCalendarNow,
+  syncAccountRecordings,
   listCalendarEvents,
   testCalendarConnection,
   type CalendarTestStep,
@@ -45,6 +47,7 @@ function CalendarsPage() {
   const toggleFn = useServerFn(setCalendarSyncEnabled);
   const toggleMeetFn = useServerFn(setCalendarMeetEnabled);
   const syncFn = useServerFn(syncCalendarNow);
+  const syncRecFn = useServerFn(syncAccountRecordings);
   const eventsFn = useServerFn(listCalendarEvents);
   const testFn = useServerFn(testCalendarConnection);
   const [testResult, setTestResult] = useState<{
@@ -154,6 +157,18 @@ function CalendarsPage() {
         `Sincronizado: ${r.imported} importados, ${r.pushed_created} criados, ${r.pushed_updated} atualizados`,
       );
       qc.invalidateQueries({ queryKey: ["calendar_accounts"] });
+      qc.invalidateQueries({ queryKey: ["calendar_events"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const syncRecordings = useMutation({
+    mutationFn: (id: string) => syncRecFn({ data: { account_id: id } }),
+    onSuccess: (r) => {
+      const res = r as { scanned: number; found: number; missing: number; errors: number };
+      toast.success(
+        `Gravações: ${res.found} vinculadas · ${res.missing} ainda não publicadas · ${res.errors} erros (de ${res.scanned} eventos)`,
+      );
       qc.invalidateQueries({ queryKey: ["calendar_events"] });
     },
     onError: (e: Error) => toast.error(e.message),
