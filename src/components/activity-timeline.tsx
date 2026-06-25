@@ -260,6 +260,8 @@ export function ActivityTimeline({
   const { user } = useAuth();
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [composerOpen, setComposerOpen] = useState(false);
   const [type, setType] = useState<LogKind>("note");
   const [moreOpen, setMoreOpen] = useState(false);
