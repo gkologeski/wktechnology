@@ -54,7 +54,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Carreiras",
     items: [
-      { title: "Página de Carreiras", url: "/careers", icon: Globe },
+      { title: "Ver site de Carreiras", url: "/careers", icon: Globe, external: true },
     ],
   },
   {
