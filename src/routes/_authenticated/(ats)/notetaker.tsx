@@ -57,15 +57,28 @@ type Notes = {
   ai_model: string | null;
 };
 
-const REC_MAP: Record<
-  string,
-  { label: string; tone: "success" | "warning" | "danger" | "neutral" | "info" }
-> = {
-  strong_hire: { label: "Forte contratação", tone: "success" },
-  hire: { label: "Contratar", tone: "success" },
-  neutral: { label: "Neutro", tone: "neutral" },
-  no_hire: { label: "Não contratar", tone: "warning" },
-  strong_no_hire: { label: "Forte rejeição", tone: "danger" },
+const REC_MAP: Record<string, { label: string; className: string }> = {
+  strong_hire: {
+    label: "Forte contratação",
+    className:
+      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+  },
+  hire: {
+    label: "Contratar",
+    className:
+      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+  },
+  neutral: { label: "Neutro", className: "" },
+  no_hire: {
+    label: "Não contratar",
+    className:
+      "bg-[hsl(var(--status-warning-bg))] text-[hsl(var(--status-warning-fg))] border-[hsl(var(--status-warning-fg)/0.2)]",
+  },
+  strong_no_hire: {
+    label: "Forte rejeição",
+    className:
+      "bg-[hsl(var(--status-danger-bg))] text-[hsl(var(--status-danger-fg))] border-[hsl(var(--status-danger-fg)/0.2)]",
+  },
 };
 
 function NotetakerPage() {
