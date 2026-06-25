@@ -243,12 +243,19 @@ async function findDriveRecording(
   };
 }
 
+// Skip auto-retry after this many attempts (~1h of every-5-min cron). User
+// can still force a lookup from the timeline button.
+const RECORDING_MAX_AUTO_ATTEMPTS = 12;
+
 async function syncPastRecordings(
   account: CalendarAccountRow,
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
   const token = await ensureAccessToken(account);
-  const since = new Date(Date.now() - 14 * 86400_000).toISOString();
-  const until = new Date(Date.now() - 5 * 60_000).toISOString();
+  // Meet typically publishes the MP4 to Drive 10-30 min after the meeting
+  // ends, so searching earlier wastes attempts. Look back 30 days to cover
+  // re-imported / late-synced events.
+  const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const until = new Date(Date.now() - 10 * 60_000).toISOString();
   const { data: events } = await supabaseAdmin
     .from("calendar_events")
     .select("id, title, end_at, conference_id, recording_attempts")
@@ -256,6 +263,7 @@ async function syncPastRecordings(
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
+    .lt("recording_attempts", RECORDING_MAX_AUTO_ATTEMPTS)
     .gte("end_at", since)
     .lte("end_at", until)
     .limit(20);
