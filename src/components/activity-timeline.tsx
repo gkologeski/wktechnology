@@ -292,6 +292,11 @@ export function ActivityTimeline({
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
   const [dragKey, setDragKey] = useState<string | null>(null);
 
+  // Filtro de período da timeline (presets + datas customizadas)
+  const [datePreset, setDatePreset] = useState<DatePreset>("any");
+  const [dateCustom, setDateCustom] = useState<CustomRange>({});
+  const [dateOpen, setDateOpen] = useState(false);
+
   const persistOrder = (next: OrderState) => {
     setOrder(next);
     try {
