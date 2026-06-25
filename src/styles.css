@@ -46,6 +46,43 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-row-hover: var(--row-hover);
+
+  /* ATS Design System — semantic surfaces, borders & text */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+
+  /* ATS — status / stage / score / risk / ai / dei */
+  --color-status-open: var(--status-open);
+  --color-status-onhold: var(--status-onhold);
+  --color-status-closed: var(--status-closed);
+  --color-status-draft: var(--status-draft);
+  --color-stage-sourced: var(--stage-sourced);
+  --color-stage-screen: var(--stage-screen);
+  --color-stage-interview: var(--stage-interview);
+  --color-stage-offer: var(--stage-offer);
+  --color-stage-hired: var(--stage-hired);
+  --color-stage-rejected: var(--stage-rejected);
+  --color-score-strong: var(--score-strong);
+  --color-score-good: var(--score-good);
+  --color-score-mixed: var(--score-mixed);
+  --color-score-weak: var(--score-weak);
+  --color-risk-low: var(--risk-low);
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-high: var(--risk-high);
+  --color-ai: var(--ai-accent);
+  --color-ai-surface: var(--ai-surface);
+  --color-ai-border: var(--ai-border);
+  --color-dei: var(--dei-accent);
+  --color-dei-surface: var(--dei-surface);
 }
 
 :root {
@@ -109,6 +146,41 @@
   --sla-ok: oklch(0.65 0.16 150);
   --sla-warn: oklch(0.74 0.14 90);
   --sla-breached: oklch(0.62 0.2 27);
+
+  /* ATS Design System — light */
+  --surface-1: oklch(0.985 0.004 250);
+  --surface-2: oklch(1 0 0);
+  --surface-3: oklch(0.975 0.005 250);
+  --surface-sunken: oklch(0.96 0.006 250);
+  --border-subtle: oklch(0.94 0.008 250);
+  --border-default: oklch(0.9 0.01 250);
+  --border-strong: oklch(0.82 0.012 250);
+  --text-primary: oklch(0.22 0.03 250);
+  --text-secondary: oklch(0.45 0.02 250);
+  --text-tertiary: oklch(0.58 0.018 250);
+  --text-disabled: oklch(0.72 0.012 250);
+  --status-open: oklch(0.62 0.16 150);
+  --status-onhold: oklch(0.74 0.14 90);
+  --status-closed: oklch(0.58 0.02 250);
+  --status-draft: oklch(0.7 0.015 250);
+  --stage-sourced: oklch(0.62 0.04 250);
+  --stage-screen: oklch(0.62 0.13 230);
+  --stage-interview: oklch(0.62 0.15 280);
+  --stage-offer: oklch(0.7 0.16 70);
+  --stage-hired: oklch(0.6 0.16 150);
+  --stage-rejected: oklch(0.6 0.18 27);
+  --score-strong: oklch(0.6 0.16 150);
+  --score-good: oklch(0.65 0.14 180);
+  --score-mixed: oklch(0.72 0.14 80);
+  --score-weak: oklch(0.62 0.2 27);
+  --risk-low: oklch(0.62 0.12 150);
+  --risk-medium: oklch(0.72 0.14 80);
+  --risk-high: oklch(0.6 0.2 27);
+  --ai-accent: oklch(0.58 0.18 295);
+  --ai-surface: color-mix(in oklab, oklch(0.58 0.18 295) 8%, transparent);
+  --ai-border: color-mix(in oklab, oklch(0.58 0.18 295) 28%, transparent);
+  --dei-accent: oklch(0.6 0.14 200);
+  --dei-surface: color-mix(in oklab, oklch(0.6 0.14 200) 8%, transparent);
 }
 
 .dark {
@@ -168,6 +240,41 @@
   --sla-ok: oklch(0.68 0.16 150);
   --sla-warn: oklch(0.76 0.16 90);
   --sla-breached: oklch(0.66 0.2 27);
+
+  /* ATS Design System — dark */
+  --surface-1: oklch(0.18 0.02 250);
+  --surface-2: oklch(0.22 0.025 250);
+  --surface-3: oklch(0.26 0.028 250);
+  --surface-sunken: oklch(0.16 0.02 250);
+  --border-subtle: oklch(1 0 0 / 8%);
+  --border-default: oklch(1 0 0 / 12%);
+  --border-strong: oklch(1 0 0 / 22%);
+  --text-primary: oklch(0.96 0.005 250);
+  --text-secondary: oklch(0.78 0.015 250);
+  --text-tertiary: oklch(0.66 0.018 250);
+  --text-disabled: oklch(0.5 0.015 250);
+  --status-open: oklch(0.7 0.16 150);
+  --status-onhold: oklch(0.78 0.14 90);
+  --status-closed: oklch(0.62 0.02 250);
+  --status-draft: oklch(0.6 0.015 250);
+  --stage-sourced: oklch(0.66 0.04 250);
+  --stage-screen: oklch(0.7 0.14 230);
+  --stage-interview: oklch(0.7 0.16 280);
+  --stage-offer: oklch(0.78 0.16 70);
+  --stage-hired: oklch(0.68 0.16 150);
+  --stage-rejected: oklch(0.66 0.18 27);
+  --score-strong: oklch(0.68 0.16 150);
+  --score-good: oklch(0.72 0.14 180);
+  --score-mixed: oklch(0.78 0.14 80);
+  --score-weak: oklch(0.68 0.2 27);
+  --risk-low: oklch(0.7 0.12 150);
+  --risk-medium: oklch(0.78 0.14 80);
+  --risk-high: oklch(0.68 0.2 27);
+  --ai-accent: oklch(0.72 0.17 295);
+  --ai-surface: color-mix(in oklab, oklch(0.72 0.17 295) 14%, transparent);
+  --ai-border: color-mix(in oklab, oklch(0.72 0.17 295) 36%, transparent);
+  --dei-accent: oklch(0.7 0.13 200);
+  --dei-surface: color-mix(in oklab, oklch(0.7 0.13 200) 14%, transparent);
 }
 
 @layer base {
