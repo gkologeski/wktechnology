@@ -126,25 +126,47 @@ export function AppSidebar() {
                                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                             )}
                           >
-                            <Link to={it.url} className="group/item flex items-center gap-2.5">
-                              <span
-                                className={cn(
-                                  "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
-                                  active || anyChildActive
-                                    ? "bg-primary/15 text-primary"
-                                    : "bg-muted text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
-                                )}
+                            {it.external ? (
+                              <a
+                                href={it.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group/item flex items-center gap-2.5"
                               >
-                                <Icon className="h-3.5 w-3.5" />
-                              </span>
-                              <span className="truncate group-data-[collapsible=icon]:hidden">
-                                {it.title}
-                              </span>
-                              {active && (
-                                <span className="ml-auto h-5 w-1 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
-                              )}
-                            </Link>
+                                <span
+                                  className={cn(
+                                    "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
+                                    "bg-muted text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
+                                  )}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                </span>
+                                <span className="truncate group-data-[collapsible=icon]:hidden">
+                                  {it.title}
+                                </span>
+                              </a>
+                            ) : (
+                              <Link to={it.url} className="group/item flex items-center gap-2.5">
+                                <span
+                                  className={cn(
+                                    "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
+                                    active || anyChildActive
+                                      ? "bg-primary/15 text-primary"
+                                      : "bg-muted text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
+                                  )}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                </span>
+                                <span className="truncate group-data-[collapsible=icon]:hidden">
+                                  {it.title}
+                                </span>
+                                {active && (
+                                  <span className="ml-auto h-5 w-1 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
+                                )}
+                              </Link>
+                            )}
                           </SidebarMenuButton>
+
 
                           {hasChildren && (
                             <ul

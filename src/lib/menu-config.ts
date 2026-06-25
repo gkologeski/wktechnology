@@ -63,6 +63,8 @@ export type SidebarItem = {
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
   children?: SidebarItem[];
+  /** Quando true, abre em nova aba (link externo / página pública). */
+  external?: boolean;
 };
 export type SidebarGroup = { label: string; items: SidebarItem[] };
 
