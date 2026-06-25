@@ -347,7 +347,6 @@ function JobDetailPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
         }
       />
 
