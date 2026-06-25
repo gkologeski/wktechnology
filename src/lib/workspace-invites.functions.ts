@@ -59,6 +59,7 @@ async function sendWorkspaceInviteEmail(args: {
         subject,
         html,
         text,
+        purpose: "transactional",
         label: templateName,
         idempotency_key: `workspace-invite:${args.inviteId}`,
         message_id: messageId,
