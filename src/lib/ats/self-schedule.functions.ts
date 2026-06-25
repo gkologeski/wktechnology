@@ -18,9 +18,9 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
     z.object({
       application_id: z.string().uuid(),
       candidate_id: z.string().uuid(),
-      slots: z.array(z.string()).min(1).max(20), // ISO strings
-      duration_minutes: z.number().int().min(15).max(240).default(30),
-      title: z.string().default("Entrevista"),
+      job_id: z.string().uuid(),
+      slots: z.array(z.string()).min(1).max(20),
+      duration_min: z.number().int().min(15).max(240).default(30),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -32,10 +32,10 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
         owner_id: userId,
         application_id: data.application_id,
         candidate_id: data.candidate_id,
-        title: data.title,
+        job_id: data.job_id,
         kind: "self_schedule",
         offered_slots: data.slots,
-        duration_minutes: data.duration_minutes,
+        duration_min: data.duration_min,
         self_schedule_token: token,
         status: "pending_candidate",
       })
@@ -51,7 +51,7 @@ export const getSelfScheduleByToken = createServerFn({ method: "GET" })
     const sb = publicClient();
     const { data: row, error } = await sb
       .from("ats_interviews")
-      .select("id, title, offered_slots, duration_minutes, status, scheduled_at, self_scheduled_at")
+      .select("id, offered_slots, duration_min, status, scheduled_at, self_scheduled_at")
       .eq("self_schedule_token", data.token)
       .maybeSingle();
     if (error) throw new Error(error.message);

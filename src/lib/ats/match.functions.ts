@@ -33,14 +33,17 @@ export const computeMatchScore = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const [{ data: job }, { data: cand }] = await Promise.all([
+    const [jobRes, candRes] = await Promise.all([
       supabase.from("ats_jobs").select("title, description, requirements, seniority, location").eq("id", data.job_id).single(),
-      supabase.from("ats_candidates").select("full_name, headline, experience, skills, education, cv_text").eq("id", data.candidate_id).single(),
+      supabase.from("ats_candidates").select("full_name, current_position, current_company, skills, cv_parsed, notes").eq("id", data.candidate_id).single(),
     ]);
-    if (!job || !cand) throw new Error("Vaga ou candidato não encontrado");
+    if (jobRes.error || !jobRes.data) throw new Error("Vaga não encontrada");
+    if (candRes.error || !candRes.data) throw new Error("Candidato não encontrado");
+    const job = jobRes.data;
+    const cand = candRes.data;
 
     const sys = "Você é um recrutador sênior. Avalie o match entre a vaga e o candidato. Responda APENAS JSON: {\"score\":0-100,\"summary\":\"...\",\"strengths\":[...],\"gaps\":[...]}";
-    const usr = `VAGA:\nTítulo: ${job.title}\nSenioridade: ${job.seniority ?? "-"}\nLocal: ${job.location ?? "-"}\nDescrição: ${job.description ?? ""}\nRequisitos: ${JSON.stringify(job.requirements ?? [])}\n\nCANDIDATO:\nNome: ${cand.full_name}\nHeadline: ${cand.headline ?? ""}\nSkills: ${JSON.stringify(cand.skills ?? [])}\nExperiência: ${JSON.stringify(cand.experience ?? [])}\nEducação: ${JSON.stringify(cand.education ?? [])}\nCV: ${(cand.cv_text ?? "").slice(0, 6000)}`;
+    const usr = `VAGA:\nTítulo: ${job.title}\nSenioridade: ${job.seniority ?? "-"}\nLocal: ${job.location ?? "-"}\nDescrição: ${job.description ?? ""}\nRequisitos: ${JSON.stringify(job.requirements ?? [])}\n\nCANDIDATO:\nNome: ${cand.full_name}\nCargo atual: ${cand.current_position ?? "-"} @ ${cand.current_company ?? "-"}\nSkills: ${JSON.stringify(cand.skills ?? [])}\nCV parseado: ${JSON.stringify(cand.cv_parsed ?? {}).slice(0, 6000)}\nNotas: ${(cand.notes ?? "").slice(0, 2000)}`;
 
     const out = await callAi(sys, usr);
     const score = Math.max(0, Math.min(100, Number(out.score) || 0));

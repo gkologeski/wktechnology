@@ -1,14 +1,15 @@
-// Fraud / risk flags do ATS (Fase 3)
-// Heurísticas simples + scan em lote.
+// Fraud / risk flags do ATS (Fase 3) — heurísticas simples + scan em lote.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Flag = {
   candidate_id: string;
   kind: string;
   severity: "low" | "medium" | "high";
-  details: Record<string, unknown>;
+  details: Json;
+  owner_id: string;
 };
 
 export const scanCandidateFraud = createServerFn({ method: "POST" })
@@ -17,7 +18,7 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: cands, error } = await supabase
       .from("ats_candidates")
-      .select("id, email, phone, cv_text, full_name")
+      .select("id, email, phone, cv_parsed, full_name")
       .limit(2000);
     if (error) throw new Error(error.message);
 
@@ -31,24 +32,23 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
       if (e) byEmail.set(e, [...(byEmail.get(e) ?? []), c.id]);
       if (p && p.length >= 8) byPhone.set(p, [...(byPhone.get(p) ?? []), c.id]);
 
-      // Heurística IA-CV: muitos clichês / sem números / sem datas
-      const t = (c.cv_text ?? "").toLowerCase();
-      const aiClues = ["proativo", "team player", "resultados", "comunicação", "dinâmico"].filter((w) => t.includes(w)).length;
-      const hasDates = /\b(19|20)\d{2}\b/.test(t);
-      if (t.length > 300 && aiClues >= 4 && !hasDates) {
-        flags.push({ candidate_id: c.id, kind: "ai_generated_cv", severity: "medium", details: { clues: aiClues } });
+      const cvText = JSON.stringify(c.cv_parsed ?? "").toLowerCase();
+      const aiClues = ["proativo", "team player", "resultados", "comunicação", "dinâmico"].filter((w) => cvText.includes(w)).length;
+      const hasDates = /\b(19|20)\d{2}\b/.test(cvText);
+      if (cvText.length > 300 && aiClues >= 4 && !hasDates) {
+        flags.push({ owner_id: userId, candidate_id: c.id, kind: "ai_generated_cv", severity: "medium", details: { clues: aiClues } as Json });
       }
     }
 
     for (const [email, ids] of byEmail) if (ids.length > 1) for (const id of ids)
-      flags.push({ candidate_id: id, kind: "duplicate_email", severity: "high", details: { email, dup_ids: ids } });
+      flags.push({ owner_id: userId, candidate_id: id, kind: "duplicate_email", severity: "high", details: { email, dup_ids: ids } as Json });
     for (const [phone, ids] of byPhone) if (ids.length > 1) for (const id of ids)
-      flags.push({ candidate_id: id, kind: "duplicate_phone", severity: "high", details: { phone, dup_ids: ids } });
+      flags.push({ owner_id: userId, candidate_id: id, kind: "duplicate_phone", severity: "high", details: { phone, dup_ids: ids } as Json });
 
-    // Limpa flags automáticas anteriores deste owner
     await supabase.from("ats_candidate_flags").delete().eq("owner_id", userId).neq("kind", "manual");
     if (flags.length > 0) {
-      await supabase.from("ats_candidate_flags").insert(flags.map((f) => ({ ...f, owner_id: userId })));
+      const { error: e2 } = await supabase.from("ats_candidate_flags").insert(flags);
+      if (e2) throw new Error(e2.message);
     }
     return { flags_created: flags.length };
   });
