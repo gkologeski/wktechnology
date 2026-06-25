@@ -1,13 +1,26 @@
 // Página /offers — gerenciamento de cartas-proposta com integração eSign.
+// Lote 5 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { FileSignature, Send, X, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import {
+  PageHeader,
+  EmptyState,
+  Skeletons,
+  MetaPill,
+} from "@/components/techhire/ui";
 import {
   listOffers,
   sendOffer,
@@ -35,20 +48,48 @@ type OfferRow = {
   ats_jobs: { title: string } | null;
 };
 
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  draft: "outline",
-  sent: "secondary",
-  signed: "default",
-  declined: "destructive",
-  cancelled: "outline",
+const OFFER_STATUS: Record<string, { label: string; cls: string }> = {
+  draft: {
+    label: "Rascunho",
+    cls: "border-border-default bg-surface-sunken text-text-secondary",
+  },
+  sent: {
+    label: "Enviada",
+    cls: "border-status-onhold/30 bg-status-onhold/10 text-status-onhold",
+  },
+  signed: {
+    label: "Assinada",
+    cls: "border-status-open/30 bg-status-open/10 text-status-open",
+  },
+  declined: {
+    label: "Recusada",
+    cls: "border-status-closed/30 bg-status-closed/10 text-status-closed",
+  },
+  cancelled: {
+    label: "Cancelada",
+    cls: "border-border-subtle bg-surface-sunken text-text-tertiary",
+  },
 };
-const statusLabel: Record<string, string> = {
-  draft: "Rascunho",
-  sent: "Enviada",
-  signed: "Assinada",
-  declined: "Recusada",
-  cancelled: "Cancelada",
-};
+
+function OfferStatusBadge({ status }: { status: string }) {
+  const cfg = OFFER_STATUS[status] ?? OFFER_STATUS.draft;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5",
+        "text-[11px] font-medium leading-none whitespace-nowrap",
+        cfg.cls,
+      )}
+    >
+      {cfg.label}
+    </span>
+  );
+}
+
+function formatSalary(amount: number | null, currency: string) {
+  if (amount == null) return "—";
+  return `${currency} ${amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+}
 
 function OffersPage() {
   const fetchAll = useServerFn(listOffers);
@@ -104,90 +145,131 @@ function OffersPage() {
     }
   };
 
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <FileSignature className="h-6 w-6" /> Ofertas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Cartas-proposta enviadas aos candidatos com assinatura eletrônica.
-          </p>
-        </div>
-      </div>
+  const counts = rows.reduce<Record<string, number>>((acc, r) => {
+    acc[r.status] = (acc[r.status] ?? 0) + 1;
+    return acc;
+  }, {});
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Todas as ofertas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma oferta ainda. Crie uma a partir da avaliação de um candidato.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Candidato</TableHead>
-                  <TableHead>Vaga</TableHead>
-                  <TableHead>Salário</TableHead>
-                  <TableHead>Início</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell>
-                      <div className="font-medium">{r.ats_candidates?.full_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{r.ats_candidates?.email}</div>
-                    </TableCell>
-                    <TableCell>{r.ats_jobs?.title ?? "—"}</TableCell>
-                    <TableCell>
-                      {r.salary_amount != null
-                        ? `${r.salary_currency} ${r.salary_amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
-                        : "—"}
-                    </TableCell>
-                    <TableCell>{r.start_date ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[r.status] ?? "outline"}>
-                        {statusLabel[r.status] ?? r.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right space-x-1">
+  const description = loading
+    ? "Carregando…"
+    : `${rows.length} oferta${rows.length === 1 ? "" : "s"} · ${counts.sent ?? 0} enviadas · ${counts.signed ?? 0} assinadas`;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="ATS"
+        title="Ofertas"
+        description={description}
+        descriptionLive
+      />
+
+      {loading ? (
+        <div className="rounded-lg border border-border-subtle bg-surface-1 p-2 shadow-xs">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeletons.Row key={i} />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={FileSignature}
+          title="Nenhuma oferta ainda"
+          description="Crie uma oferta a partir da avaliação de um candidato no detalhe da vaga."
+        />
+      ) : (
+        <section className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1 shadow-xs">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-surface-2/60">
+                <TableHead>Candidato</TableHead>
+                <TableHead>Vaga</TableHead>
+                <TableHead>Salário</TableHead>
+                <TableHead>Início</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id} className="group">
+                  <TableCell>
+                    <div className="font-medium text-text-primary">
+                      {r.ats_candidates?.full_name ?? "—"}
+                    </div>
+                    {r.ats_candidates?.email && (
+                      <div className="text-xs text-text-tertiary">
+                        {r.ats_candidates.email}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-text-secondary">
+                    {r.ats_jobs?.title ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <MetaPill>{formatSalary(r.salary_amount, r.salary_currency)}</MetaPill>
+                  </TableCell>
+                  <TableCell className="text-sm text-text-secondary tabular-nums">
+                    {r.start_date ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <OfferStatusBadge status={r.status} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex items-center gap-1">
                       {r.status === "draft" && (
-                        <Button size="sm" variant="default" onClick={() => handleSend(r.id)}>
-                          <Send className="h-3.5 w-3.5 mr-1" /> Enviar
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleSend(r.id)}
+                        >
+                          <Send className="h-3.5 w-3.5 mr-1" />
+                          Enviar
                         </Button>
                       )}
                       {r.status === "sent" && r.esign_document_id && (
-                        <Button size="sm" variant="ghost" asChild>
-                          <a href={`/sign-status/${r.esign_document_id}`} target="_blank" rel="noreferrer">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          asChild
+                        >
+                          <a
+                            href={`/sign-status/${r.esign_document_id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Abrir status da assinatura"
+                          >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                       )}
                       {(r.status === "draft" || r.status === "sent") && (
-                        <Button size="sm" variant="outline" onClick={() => handleCancel(r.id)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleCancel(r.id)}
+                          aria-label="Cancelar oferta"
+                        >
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(r.id)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-status-danger-foreground opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+                        onClick={() => handleDelete(r.id)}
+                        aria-label="Excluir oferta"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      )}
     </div>
   );
 }
