@@ -234,15 +234,15 @@ function NotetakerPage() {
           <SectionHeader
             title="Análise da IA"
             description={`Gerado em ${new Date(notes.ai_generated_at).toLocaleString("pt-BR")} · modelo ${notes.ai_model ?? "—"}`}
-            actions={
+            action={
               <div className="flex flex-wrap items-center gap-2">
                 {notes.ai_recommendation && (
-                  <MetaPill tone={REC_MAP[notes.ai_recommendation]?.tone ?? "neutral"}>
+                  <MetaPill className={REC_MAP[notes.ai_recommendation]?.className}>
                     {REC_MAP[notes.ai_recommendation]?.label ?? notes.ai_recommendation}
                   </MetaPill>
                 )}
                 {typeof notes.ai_score === "number" && (
-                  <MetaPill tone="info">Score {notes.ai_score}</MetaPill>
+                  <MetaPill>Score {notes.ai_score}</MetaPill>
                 )}
               </div>
             }
