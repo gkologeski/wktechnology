@@ -27,10 +27,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
-import { Plus, Trash2, Copy, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, Copy, Send } from "lucide-react";
 import {
   listWorkspaceTeam,
   createWorkspaceInvite,
+  resendWorkspaceInvite,
   revokeWorkspaceInvite,
   removeWorkspaceMemberFn,
   updateWorkspaceMemberRole,
@@ -46,6 +47,7 @@ type Role = "admin" | "manager" | "member";
 function WorkspaceTeamPage() {
   const listFn = useServerFn(listWorkspaceTeam);
   const inviteFn = useServerFn(createWorkspaceInvite);
+  const resendFn = useServerFn(resendWorkspaceInvite);
   const revokeFn = useServerFn(revokeWorkspaceInvite);
   const removeFn = useServerFn(removeWorkspaceMemberFn);
   const roleFn = useServerFn(updateWorkspaceMemberRole);
@@ -77,12 +79,19 @@ function WorkspaceTeamPage() {
         },
       }),
     onSuccess: (res) => {
-      toast.success("Convite criado.");
+      toast.success(`Convite enviado para ${res.email}.`);
       setLastUrl(res.url);
       setForm({ email: "", role: "member" });
       qc.invalidateQueries({ queryKey: ["workspace-team"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar convite"),
+  });
+
+  const resend = useMutation({
+    mutationFn: (id: string) =>
+      resendFn({ data: { invite_id: id, redirect_origin: window.location.origin } }),
+    onSuccess: () => toast.success("E-mail de convite reenviado."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar"),
   });
 
   const revoke = useMutation({
@@ -304,15 +313,11 @@ function WorkspaceTeamPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        const url = `${window.location.origin}/accept-invite/${""}`; // placeholder, real URL is shown at creation
-                        void url;
-                        toast.info(
-                          "Reabra o link no momento da criação ou revogue e gere um novo.",
-                        );
-                      }}
+                      disabled={resend.isPending}
+                      onClick={() => resend.mutate(i.id)}
+                      title="Reenviar e-mail de convite"
                     >
-                      <LinkIcon className="h-4 w-4" />
+                      <Send className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
