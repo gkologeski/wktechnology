@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CalendarRange, Filter } from "lucide-react";
+import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
 import {
   DATE_PRESET_LABELS,
@@ -260,6 +260,8 @@ export function ActivityTimeline({
   const { user } = useAuth();
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [composerOpen, setComposerOpen] = useState(false);
   const [type, setType] = useState<LogKind>("note");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -318,8 +320,10 @@ export function ActivityTimeline({
     persistOrder(next);
   };
 
-  const load = async () => {
+  const load = async (opts?: { silent?: boolean }) => {
+    if (opts?.silent) setRefreshing(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
+
 
     if (error) toast.error(error.message);
     let baseRows = ((data as Activity[]) ?? []).slice();
@@ -449,7 +453,9 @@ export function ActivityTimeline({
     });
     setItems(rows);
     setLoading(false);
+    setRefreshing(false);
   };
+
 
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
@@ -457,13 +463,21 @@ export function ActivityTimeline({
 
   // Recarrega quando uma associação é criada/removida em outro componente
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const handler = () => {
-      void load();
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void load({ silent: true });
+      }, 150);
     };
     window.addEventListener("timeline:refresh", handler);
-    return () => window.removeEventListener("timeline:refresh", handler);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("timeline:refresh", handler);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
 
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
@@ -1220,7 +1234,14 @@ export function ActivityTimeline({
             />
           </PopoverContent>
         </Popover>
+        {refreshing && !loading && (
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1" aria-live="polite">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Atualizando…
+          </span>
+        )}
       </div>
+
 
 
       {loading ? (
