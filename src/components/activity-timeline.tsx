@@ -1268,9 +1268,6 @@ export function ActivityTimeline({
                     const joinLink = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
                     const accessLink = calendarLink || joinLink;
                     const recordingUrl = meta.recording_url || (typeof ext.recording_url === "string" ? (ext.recording_url as string) : null);
-                    const calendarEventId = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
-                    const endedAgo = meta.end_at ? Date.now() - new Date(meta.end_at).getTime() : -1;
-                    const canSearchRecording = !!calendarEventId && !recordingUrl && endedAgo > 10 * 60_000;
                     const startD = a.due_date ? new Date(a.due_date) : null;
                     const endD = meta.end_at ? new Date(meta.end_at) : null;
                     const sameDay =
