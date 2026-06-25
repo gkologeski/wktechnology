@@ -28,7 +28,7 @@ export function AIInsightCard({
     <section
       className={cn(
         "rounded-lg border p-4 shadow-xs",
-        isAi ? "border-ai-border bg-ai-surface" : "border-[var(--dei-accent)]/30 bg-dei-surface",
+        isAi ? "border-ai-border bg-ai-surface" : "border-dei/30 bg-dei-surface",
         className,
       )}
     >
