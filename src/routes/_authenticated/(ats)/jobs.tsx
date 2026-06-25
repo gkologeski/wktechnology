@@ -283,20 +283,21 @@ function AtsJobsPage() {
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <Label>Título *</Label>
+            <Label htmlFor="job-title">Título *</Label>
             <Input
+              id="job-title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Ex.: Desenvolvedor(a) Full Stack Pleno"
             />
           </div>
           <div>
-            <Label>Senioridade</Label>
+            <Label htmlFor="job-seniority">Senioridade</Label>
             <Select
               value={form.seniority}
               onValueChange={(v) => setForm({ ...form, seniority: v })}
             >
-              <SelectTrigger>
+              <SelectTrigger id="job-seniority">
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
@@ -310,12 +311,12 @@ function AtsJobsPage() {
             </Select>
           </div>
           <div>
-            <Label>Vínculo</Label>
+            <Label htmlFor="job-employment">Vínculo</Label>
             <Select
               value={form.employment_type}
               onValueChange={(v) => setForm({ ...form, employment_type: v })}
             >
-              <SelectTrigger>
+              <SelectTrigger id="job-employment">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -328,12 +329,12 @@ function AtsJobsPage() {
             </Select>
           </div>
           <div>
-            <Label>Modalidade</Label>
+            <Label htmlFor="job-remote">Modalidade</Label>
             <Select
               value={form.remote_mode}
               onValueChange={(v) => setForm({ ...form, remote_mode: v })}
             >
-              <SelectTrigger>
+              <SelectTrigger id="job-remote">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -344,36 +345,39 @@ function AtsJobsPage() {
             </Select>
           </div>
           <div>
-            <Label>Localização</Label>
+            <Label htmlFor="job-location">Localização</Label>
             <Input
+              id="job-location"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               placeholder="Cidade, UF"
             />
           </div>
           <div className="col-span-2">
-            <Label>Descrição</Label>
+            <Label htmlFor="job-description">Descrição</Label>
             <Textarea
+              id="job-description"
               rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
           <div className="col-span-2">
-            <Label>Requisitos</Label>
+            <Label htmlFor="job-requirements">Requisitos</Label>
             <Textarea
+              id="job-requirements"
               rows={3}
               value={form.requirements}
               onChange={(e) => setForm({ ...form, requirements: e.target.value })}
             />
           </div>
           <div className="col-span-2">
-            <Label>Status</Label>
+            <Label htmlFor="job-status">Status</Label>
             <Select
               value={form.status}
               onValueChange={(v) => setForm({ ...form, status: v })}
             >
-              <SelectTrigger>
+              <SelectTrigger id="job-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
