@@ -142,20 +142,16 @@ function NotetakerPage() {
   return (
     <div className="container mx-auto max-w-5xl space-y-6 p-6">
       <PageHeader
-        icon={Sparkles}
+        eyebrow="Inteligência (IA)"
         title="Notetaker IA"
         description="Cole a transcrição ou anotações da entrevista e a IA gera resumo, pontos fortes, preocupações, follow-ups e recomendação."
-        meta={
-          listLoading
-            ? undefined
-            : [
-                <MetaPill key="total" tone="neutral">
-                  {rows.length} entrevistas recentes
-                </MetaPill>,
-                <MetaPill key="ai" tone="info">
-                  {aiCount} já analisadas
-                </MetaPill>,
-              ]
+        secondaryActions={
+          listLoading ? null : (
+            <div className="flex flex-wrap items-center gap-2">
+              <MetaPill>{rows.length} entrevistas recentes</MetaPill>
+              <MetaPill>{aiCount} já analisadas</MetaPill>
+            </div>
+          )
         }
       />
 
