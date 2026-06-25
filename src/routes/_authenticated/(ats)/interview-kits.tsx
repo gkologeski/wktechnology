@@ -172,7 +172,10 @@ function InterviewKitsPage() {
                         {k.questions.length === 1 ? "" : "s"}
                       </MetaPill>
                       {videoCount > 0 && (
-                        <MetaPill icon={Video}>{videoCount} em vídeo</MetaPill>
+                        <MetaPill>
+                          <Video className="h-3 w-3" />
+                          {videoCount} em vídeo
+                        </MetaPill>
                       )}
                       {k.is_default && <MetaPill>Padrão</MetaPill>}
                     </div>
