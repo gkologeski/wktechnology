@@ -1187,7 +1187,30 @@ export function ActivityTimeline({
           );
         })()}
         <div className="h-px flex-1 bg-border/60" />
+        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <CalendarRange className="h-3.5 w-3.5" />
+              {DATE_PRESET_LABELS[datePreset] ?? "Desde sempre"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 p-2 max-h-[60vh] overflow-y-auto">
+            <div className="px-2 pb-2 text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Filter className="h-3 w-3" /> Período da timeline
+            </div>
+            <DateFilter
+              name="timeline-date-filter"
+              value={datePreset}
+              custom={dateCustom}
+              onChange={({ value, custom }) => {
+                setDatePreset(value);
+                setDateCustom(custom);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
