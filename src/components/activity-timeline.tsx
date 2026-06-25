@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
-import { refreshEventRecording } from "@/lib/calendar/recordings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
@@ -730,26 +729,6 @@ export function ActivityTimeline({
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
   const summarizeCalEventFn = useServerFn(summarizeCalendarEventRecording);
-  const refreshRecordingFn = useServerFn(refreshEventRecording);
-  const [refreshingRecId, setRefreshingRecId] = useState<string | null>(null);
-  const onRefreshRecording = async (calendarEventId: string) => {
-    setRefreshingRecId(calendarEventId);
-    try {
-      const res = (await refreshRecordingFn({ data: { event_id: calendarEventId } })) as
-        | { ok: true; recording_url: string }
-        | { ok: false; reason: string };
-      if (res.ok) {
-        toast.success("Gravação vinculada");
-        void load();
-      } else {
-        toast.message("Gravação ainda não disponível", { description: res.reason });
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao buscar gravação");
-    } finally {
-      setRefreshingRecId(null);
-    }
-  };
   const onSummarizeMeeting = async (activityId: string) => {
     const a = items.find((i) => i.id === activityId);
     const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
