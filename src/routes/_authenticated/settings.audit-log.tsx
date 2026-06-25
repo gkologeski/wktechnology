@@ -38,6 +38,7 @@ function AuditLogPage() {
   const fn = useServerFn(listAuditLogs);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [entity, setEntity] = useState<string>("all");
   const [action, setAction] = useState<string>("all");
   const [moduleId, setModuleId] = useState<string>("all");
@@ -45,6 +46,7 @@ function AuditLogPage() {
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       setRows(
         await fn({
@@ -56,6 +58,9 @@ function AuditLogPage() {
           },
         }),
       );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao carregar eventos.");
+      setRows([]);
     } finally {
       setLoading(false);
     }
