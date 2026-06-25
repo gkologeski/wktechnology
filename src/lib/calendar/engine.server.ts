@@ -247,7 +247,7 @@ async function findDriveRecording(
 // can still force a lookup from the timeline button.
 const RECORDING_MAX_AUTO_ATTEMPTS = 12;
 
-async function syncPastRecordings(
+export async function syncPastRecordings(
   account: CalendarAccountRow,
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
   const token = await ensureAccessToken(account);
