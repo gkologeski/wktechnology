@@ -370,8 +370,8 @@ export function ActivityTimeline({
       const { data: tl, error: tlErr } = await supabase.rpc("get_entity_timeline", {
         p_entity_kind: kindMap[relatedKey],
         p_entity_id: relatedId,
-        p_since: start ? start.toISOString() : null,
-        p_until: end ? end.toISOString() : null,
+        p_since: start ? start.toISOString() : undefined,
+        p_until: end ? end.toISOString() : undefined,
         p_limit: 300,
       });
       if (tlErr) throw tlErr;
