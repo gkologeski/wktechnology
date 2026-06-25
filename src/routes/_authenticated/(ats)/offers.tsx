@@ -256,7 +256,7 @@ function OffersPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-status-danger-foreground opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+                        className="h-8 w-8 text-destructive opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
                         onClick={() => handleDelete(r.id)}
                         aria-label="Excluir oferta"
                       >
