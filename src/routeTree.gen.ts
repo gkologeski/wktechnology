@@ -174,6 +174,7 @@ import { Route as AuthenticatedatsStageEmailsRouteImport } from './routes/_authe
 import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
 import { Route as AuthenticatedatsPipelinesRouteImport } from './routes/_authenticated/(ats)/pipelines'
 import { Route as AuthenticatedatsOffersRouteImport } from './routes/_authenticated/(ats)/offers'
+import { Route as AuthenticatedatsNotetakerRouteImport } from './routes/_authenticated/(ats)/notetaker'
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
 import { Route as AuthenticatedatsInterviewKitsRouteImport } from './routes/_authenticated/(ats)/interview-kits'
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
@@ -1172,6 +1173,12 @@ const AuthenticatedatsOffersRoute = AuthenticatedatsOffersRouteImport.update({
   path: '/offers',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedatsNotetakerRoute =
+  AuthenticatedatsNotetakerRouteImport.update({
+    id: '/(ats)/notetaker',
+    path: '/notetaker',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
   id: '/(ats)/jobs',
   path: '/jobs',
@@ -1633,6 +1640,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -1866,6 +1874,7 @@ export interface FileRoutesByTo {
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -2103,6 +2112,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
+  '/_authenticated/(ats)/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/_authenticated/(ats)/offers': typeof AuthenticatedatsOffersRoute
   '/_authenticated/(ats)/pipelines': typeof AuthenticatedatsPipelinesRoute
   '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
@@ -2341,6 +2351,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/interview-kits'
     | '/jobs'
+    | '/notetaker'
     | '/offers'
     | '/pipelines'
     | '/scorecards'
@@ -2574,6 +2585,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/interview-kits'
     | '/jobs'
+    | '/notetaker'
     | '/offers'
     | '/pipelines'
     | '/scorecards'
@@ -2810,6 +2822,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/insights'
     | '/_authenticated/(ats)/interview-kits'
     | '/_authenticated/(ats)/jobs'
+    | '/_authenticated/(ats)/notetaker'
     | '/_authenticated/(ats)/offers'
     | '/_authenticated/(ats)/pipelines'
     | '/_authenticated/(ats)/scorecards'
@@ -4233,6 +4246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsOffersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/notetaker': {
+      id: '/_authenticated/(ats)/notetaker'
+      path: '/notetaker'
+      fullPath: '/notetaker'
+      preLoaderRoute: typeof AuthenticatedatsNotetakerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs': {
       id: '/_authenticated/(ats)/jobs'
       path: '/jobs'
@@ -5145,6 +5165,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
+  AuthenticatedatsNotetakerRoute: typeof AuthenticatedatsNotetakerRoute
   AuthenticatedatsOffersRoute: typeof AuthenticatedatsOffersRoute
   AuthenticatedatsPipelinesRoute: typeof AuthenticatedatsPipelinesRoute
   AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
@@ -5201,6 +5222,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
+  AuthenticatedatsNotetakerRoute: AuthenticatedatsNotetakerRoute,
   AuthenticatedatsOffersRoute: AuthenticatedatsOffersRoute,
   AuthenticatedatsPipelinesRoute: AuthenticatedatsPipelinesRoute,
   AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
