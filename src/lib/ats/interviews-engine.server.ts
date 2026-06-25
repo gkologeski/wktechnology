@@ -1,9 +1,10 @@
 // Engine de lembretes de entrevista (D-1 e 1h antes).
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
 
-const SENDER_DOMAIN = "notify.notify.wktechnology.com.br";
-const FROM_DOMAIN = "notify.wktechnology.com.br";
+const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_NAME_DEFAULT = "TechHire ATS";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +72,7 @@ async function sendReminderEmail(args: {
   <p style="font-size:12px;color:#64748b">Enviado por ${branding.productName}.</p>
 </div>`.trim();
   try {
+    const unsubscribeToken = await getOrCreateEmailUnsubscribeToken(args.to);
     await sendLovableEmail(
       {
         to: args.to,
@@ -79,9 +81,11 @@ async function sendReminderEmail(args: {
         subject,
         html,
         text: `${label}. Entrevista para ${args.jobTitle} em ${when}.${args.meetUrl ? " Link: " + args.meetUrl : ""}`,
+        purpose: "transactional",
         label: `ats-interview-${args.reminderType}`,
         idempotency_key: args.messageId,
         message_id: args.messageId,
+        unsubscribe_token: unsubscribeToken,
       },
       { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
     );

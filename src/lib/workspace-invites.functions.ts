@@ -1,9 +1,17 @@
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
+import * as React from "react";
+import { render as renderEmail } from "@react-email/render";
+import { sendLovableEmail } from "@lovable.dev/email-js";
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { TEMPLATES } from "@/lib/email-templates/registry";
+import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
+
+const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_NAME = "WK Technology";
 
 async function sendWorkspaceInviteEmail(args: {
   to: string;
@@ -14,31 +22,71 @@ async function sendWorkspaceInviteEmail(args: {
   expiresAt: string;
   inviteId: string;
 }) {
+  const messageId = crypto.randomUUID();
+  const templateName = "workspace-invite";
+  const template = TEMPLATES[templateName];
+  const templateData = {
+    inviteeEmail: args.to,
+    workspaceName: args.workspaceName,
+    inviterName: args.inviterName,
+    roleLabel: args.role,
+    inviteUrl: args.inviteUrl,
+    expiresAt: args.expiresAt,
+  };
+
   try {
-    const req = getRequest();
-    if (!req) return;
-    const origin = new URL(req.url).origin;
-    const bearer = req.headers.get("authorization") ?? "";
-    if (!bearer) return;
-    await fetch(`${origin}/lovable/email/transactional/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: bearer },
-      body: JSON.stringify({
-        templateName: "workspace-invite",
-        recipientEmail: args.to,
-        idempotencyKey: `workspace-invite:${args.inviteId}`,
-        templateData: {
-          inviteeEmail: args.to,
-          workspaceName: args.workspaceName,
-          inviterName: args.inviterName,
-          roleLabel: args.role,
-          inviteUrl: args.inviteUrl,
-          expiresAt: args.expiresAt,
-        },
-      }),
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+    if (!template) throw new Error("Template workspace-invite não registrado");
+    const unsubscribeToken = await getOrCreateEmailUnsubscribeToken(args.to);
+
+    const element = React.createElement(template.component, templateData);
+    const html = await renderEmail(element);
+    const text = await renderEmail(element, { plainText: true });
+    const subject =
+      typeof template.subject === "function" ? template.subject(templateData) : template.subject;
+
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: templateName,
+      recipient_email: args.to,
+      status: "pending",
+    } as never);
+
+    await sendLovableEmail(
+      {
+        to: args.to,
+        from: `${FROM_NAME} <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject,
+        html,
+        text,
+        purpose: "transactional",
+        label: templateName,
+        idempotency_key: `workspace-invite:${args.inviteId}`,
+        message_id: messageId,
+        unsubscribe_token: unsubscribeToken,
+      },
+      { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
+    );
+
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: templateName,
+      recipient_email: args.to,
+      status: "sent",
     });
   } catch (e) {
-    console.error("workspace-invite email failed", e);
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("workspace-invite email failed", message);
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: templateName,
+      recipient_email: args.to,
+      status: "failed",
+      error_message: message,
+    } as never);
+    throw new Error(`Falha ao enviar convite por e-mail: ${message}`);
   }
 }
 

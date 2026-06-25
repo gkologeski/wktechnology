@@ -6,10 +6,11 @@
 // já verificado pelo workspace.
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
 
 // Sender padrão do projeto — coincide com o utilizado em transactional/send.ts.
-const SENDER_DOMAIN = "notify.notify.wktechnology.com.br";
-const FROM_DOMAIN = "notify.wktechnology.com.br";
+const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_NAME_DEFAULT = "TechHire ATS";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +72,7 @@ async function sendOne(args: {
   if (!apiKey) return { ok: false, error: "LOVABLE_API_KEY missing" };
   const branding = await getBrandingFor(args.ownerId);
   try {
+    const unsubscribeToken = await getOrCreateEmailUnsubscribeToken(args.to);
     await sendLovableEmail(
       {
         to: args.to,
@@ -79,9 +81,11 @@ async function sendOne(args: {
         subject: args.subject,
         html: args.html,
         text: args.text,
+        purpose: "transactional",
         label: args.label,
         idempotency_key: args.messageId,
         message_id: args.messageId,
+        unsubscribe_token: unsubscribeToken,
       },
       { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
     );
