@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
-import { refreshEventRecording } from "@/lib/calendar/recordings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
@@ -730,26 +729,6 @@ export function ActivityTimeline({
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
   const summarizeCalEventFn = useServerFn(summarizeCalendarEventRecording);
-  const refreshRecordingFn = useServerFn(refreshEventRecording);
-  const [refreshingRecId, setRefreshingRecId] = useState<string | null>(null);
-  const onRefreshRecording = async (calendarEventId: string) => {
-    setRefreshingRecId(calendarEventId);
-    try {
-      const res = (await refreshRecordingFn({ data: { event_id: calendarEventId } })) as
-        | { ok: true; recording_url: string }
-        | { ok: false; reason: string };
-      if (res.ok) {
-        toast.success("Gravação vinculada");
-        void load();
-      } else {
-        toast.message("Gravação ainda não disponível", { description: res.reason });
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao buscar gravação");
-    } finally {
-      setRefreshingRecId(null);
-    }
-  };
   const onSummarizeMeeting = async (activityId: string) => {
     const a = items.find((i) => i.id === activityId);
     const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
@@ -1289,9 +1268,6 @@ export function ActivityTimeline({
                     const joinLink = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
                     const accessLink = calendarLink || joinLink;
                     const recordingUrl = meta.recording_url || (typeof ext.recording_url === "string" ? (ext.recording_url as string) : null);
-                    const calendarEventId = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
-                    const endedAgo = meta.end_at ? Date.now() - new Date(meta.end_at).getTime() : -1;
-                    const canSearchRecording = !!calendarEventId && !recordingUrl && endedAgo > 10 * 60_000;
                     const startD = a.due_date ? new Date(a.due_date) : null;
                     const endD = meta.end_at ? new Date(meta.end_at) : null;
                     const sameDay =
@@ -1363,7 +1339,7 @@ export function ActivityTimeline({
                             </div>
                           </div>
                         )}
-                        {(accessLink || recordingUrl || canSearchRecording) && (
+                        {(accessLink || recordingUrl) && (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {accessLink && (
                               <Button
@@ -1398,18 +1374,6 @@ export function ActivityTimeline({
                                   Resumir reunião
                                 </Button>
                               </>
-                            )}
-                            {canSearchRecording && !recordingUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs"
-                                disabled={refreshingRecId === calendarEventId}
-                                onClick={() => onRefreshRecording(calendarEventId!)}
-                                title="O Meet leva 10–30 min após o fim para publicar o MP4 no Drive"
-                              >
-                                {refreshingRecId === calendarEventId ? "Buscando…" : "Buscar gravação"}
-                              </Button>
                             )}
                           </div>
                         )}

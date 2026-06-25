@@ -1,43 +1,38 @@
-# Por que a gravação não apareceu
+## Objetivo
 
-A reunião "WK Technology <> FLOWER MARKET SOLUTIONS LTDA" (Meet `ndt-mkkh-ccv`, encerrada 18:30 UTC) está no calendário do `guilherme@wktechnology.com.br`, que tem escopo `drive.readonly` — então a busca no Drive funcionaria. Mas o registro está com `recording_attempts = 0`, `recording_status = NULL` e `recording_last_error = NULL`: o vinculador nunca rodou para este evento.
+Tirar o botão "Buscar gravação" do card individual de reunião na timeline e disponibilizar uma ação por **conta de calendário conectada**, em `/settings/calendars`, que varre as gravações pendentes daquele usuário.
 
-Causas, em ordem:
+## Mudanças
 
-1. **O cron de gravações não está agendado.** O endpoint `/api/public/hooks/calendar-recordings-tick` existe e funciona (chama `tickAllRecordings → syncPastRecordings`), porém não há migration registrando-o em `cron.job` (`grep` em `supabase/migrations/` não retorna nada). Sem agendamento, nada chama o tick, e o `recording_drive_file_id` nunca é preenchido.
-2. **Latência natural do Meet → Drive.** Mesmo com o cron ativo, o Meet leva tipicamente 10–30 min após o fim para publicar o MP4 no Drive do organizador. A janela atual `end_at ≤ now − 5 min` busca cedo demais; se cair em "not_found" precisa esperar a próxima execução.
-3. **Sem ação manual no UI.** Hoje não há como o usuário forçar a busca da gravação a partir do timeline; ele só pode esperar.
+### 1. Remover botão da timeline
+- `src/components/activity-timeline.tsx`
+  - Remover `canSearchRecording`, `calendarEventId`, `refreshingRecId`, `refreshRecordingFn`, `onRefreshRecording` e o JSX do botão "Buscar gravação".
+  - Remover o import `refreshEventRecording`.
+- `src/lib/calendar/recordings.functions.ts` deixa de ser usado pela UI; manter apenas se quisermos endpoint avulso. Plano: **remover** para evitar superfície morta.
 
-# O que vou implementar
+### 2. Nova ação por conta em `/settings/calendars`
+- Nova server function `syncAccountRecordings` em `src/lib/calendar.functions.ts`:
+  - Middleware `requireSupabaseAuth`.
+  - Input: `{ account_id: string }`.
+  - Valida que a conta pertence ao `userId` autenticado (via `context.supabase`).
+  - Dentro do handler, importa dinamicamente `@/lib/calendar/engine.server` e chama a função já existente `syncPastRecordings(account)` (a mesma usada pelo cron `calendar-recordings-tick`).
+  - Retorna `{ scanned, found, missing, errors }`.
+- `src/routes/_authenticated/settings.calendars.tsx`:
+  - Adicionar mutation `syncRecordings` chamando a nova função.
+  - Adicionar botão "Sincronizar gravações" (ícone `Video` ou `Film`) ao lado de "Testar"/sync, por linha de conta.
+  - Toast com resultado: "X gravações vinculadas, Y ainda não publicadas".
+  - Invalida `calendar_events`.
 
-## 1. Agendar o cron `calendar-recordings-tick`
+### 3. Backend (engine)
+- `syncPastRecordings` já existe e está exportada; nenhum schema novo. Apenas precisamos exportá-la se ainda não estiver: confirmar e ajustar.
 
-Nova migration que cria um `cron.job` rodando a cada 5 minutos contra `https://wktechnology.lovable.app/api/public/hooks/calendar-recordings-tick` com `Authorization: Bearer <CRON_SECRET>` (mesmo padrão dos outros ticks do projeto). Inclui `unschedule` defensivo antes do `schedule` para ser idempotente.
+## Resultado para o usuário
 
-## 2. Ajustar a janela de varredura
+- Timeline volta a mostrar apenas "Acessar reunião", "Ver gravação" e "Resumir reunião" (sem botão de busca).
+- Em **Configurações → Calendários**, cada conta Google conectada ganha um botão **"Sincronizar gravações"** que processa os eventos pendentes da conta inteira (mesma rotina do cron, sob demanda).
 
-Em `src/lib/calendar/engine.server.ts → syncPastRecordings`:
+## Detalhes técnicos
 
-- Mudar `until = now − 5 min` para `now − 10 min` (alinhar com o tempo mínimo de publicação no Drive e evitar gastar tentativas em vão).
-- Aumentar `since` de 14 para 30 dias (cobre reuniões antigas re-importadas).
-- Adicionar backoff: se `recording_attempts ≥ 12` (≈ 1 h tentando) e status `not_found`, pular nas próximas execuções automáticas — ainda processável via botão manual.
-
-## 3. Botão "Buscar gravação agora" em /settings/calendar
-
-- Nova server function `refreshEventRecording({ event_id })` em `src/lib/calendar/recordings.functions.ts` (protegida com `requireSupabaseAuth`, valida que `owner_id = userId`, importa `supabaseAdmin` dentro do handler, reusa `findDriveRecording` do engine).
-- Em `src/components/activity-timeline.tsx`, no card de reunião do Google Calendar, mostrar:
-  - Link de "Abrir gravação" quando `recording_url` existir.
-  - Botão "Buscar gravação" quando não existir, que chama a server fn e invalida a query do timeline. Mostrar tooltip com o último erro (`recording_last_error`) quando houver.
-
-## 4. Forçar a busca para o evento atual
-
-Após deploy, disparar uma vez o tick (via curl autenticado) para vincular o evento `cba435e8-…` e demais reuniões pendentes do workspace.
-
-# Arquivos tocados
-
-- `supabase/migrations/<timestamp>_schedule_calendar_recordings_tick.sql` (novo)
-- `src/lib/calendar/engine.server.ts` (janela + backoff)
-- `src/lib/calendar/recordings.functions.ts` (novo)
-- `src/components/activity-timeline.tsx` (botão + link de gravação)
-
-Sem mudanças em RLS, schemas de tabela ou rotas existentes.
+- Não há alterações de schema nem de cron.
+- A função roda na mesma janela do cron (`now - 10min` até 30 dias atrás, máx. 20 eventos, com backoff após 12 tentativas).
+- Autorização: a conta precisa pertencer ao `auth.uid()` que disparou a chamada.

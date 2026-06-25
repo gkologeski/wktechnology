@@ -270,6 +270,21 @@ export const syncCalendarNow = createServerFn({ method: "POST" })
     return syncCalendarAccount(data.id);
   });
 
+export const syncAccountRecordings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ account_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("calendar_accounts")
+      .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at")
+      .eq("id", data.account_id)
+      .maybeSingle();
+    if (error || !row) throw new Error("Calendário não encontrado");
+    const { syncPastRecordings } = await import("./calendar/engine.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return syncPastRecordings(row as any);
+  });
+
 export const pushActivityToCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
