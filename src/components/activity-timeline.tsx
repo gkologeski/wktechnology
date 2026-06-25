@@ -320,8 +320,10 @@ export function ActivityTimeline({
     persistOrder(next);
   };
 
-  const load = async () => {
+  const load = async (opts?: { silent?: boolean }) => {
+    if (opts?.silent) setRefreshing(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
+
 
     if (error) toast.error(error.message);
     let baseRows = ((data as Activity[]) ?? []).slice();
