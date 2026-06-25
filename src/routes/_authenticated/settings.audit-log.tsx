@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listAuditLogs, AUDIT_ENTITY_LABELS, AUDIT_ACTION_LABELS } from "@/lib/audit.functions";
-import { RefreshCcw, Eye, ShieldCheck } from "lucide-react";
+import { RefreshCcw, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
 import {
   PageHeader,
   FilterBar,
@@ -38,6 +38,7 @@ function AuditLogPage() {
   const fn = useServerFn(listAuditLogs);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [entity, setEntity] = useState<string>("all");
   const [action, setAction] = useState<string>("all");
   const [moduleId, setModuleId] = useState<string>("all");
@@ -45,6 +46,7 @@ function AuditLogPage() {
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       setRows(
         await fn({
@@ -56,6 +58,9 @@ function AuditLogPage() {
           },
         }),
       );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao carregar eventos.");
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -149,6 +154,20 @@ function AuditLogPage() {
             <Skeletons.Row />
             <Skeletons.Row />
           </div>
+        ) : error ? (
+          <div className="p-6">
+            <EmptyState
+              icon={AlertTriangle}
+              title="Não foi possível carregar o log"
+              description={error}
+              action={
+                <Button variant="outline" size="sm" onClick={load}>
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Tentar novamente
+                </Button>
+              }
+            />
+          </div>
         ) : rows.length === 0 ? (
           <div className="p-6">
             <EmptyState
@@ -158,61 +177,63 @@ function AuditLogPage() {
             />
           </div>
         ) : (
-          <div className="text-sm">
-            <div className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 px-4 py-2.5 border-b border-border-subtle text-[11px] uppercase tracking-wider text-text-tertiary bg-surface-2 rounded-t-xl">
-              <div>Quando</div>
-              <div>Módulo</div>
-              <div>Entidade</div>
-              <div>Ação</div>
-              <div>Mudanças</div>
-              <div>Por</div>
-              <div className="sr-only">Ações</div>
-            </div>
-            {rows.map((r) => (
-              <div
-                key={r.id}
-                className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 items-center px-4 py-2.5 border-b border-border-subtle last:border-0 hover:bg-surface-2/60 transition-colors"
-              >
-                <span className="text-xs text-text-secondary">{fmtDate(r.created_at)}</span>
-                <MetaPill>{(r.module_id ?? "—").toUpperCase()}</MetaPill>
-                <span className="text-text-primary truncate">
-                  {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
-                </span>
-                <Badge
-                  variant={
-                    r.action === "deleted"
-                      ? "destructive"
-                      : r.action === "created"
-                        ? "default"
-                        : "secondary"
-                  }
-                  className="w-fit"
-                >
-                  {AUDIT_ACTION_LABELS[r.action as keyof typeof AUDIT_ACTION_LABELS] ?? r.action}
-                </Badge>
-                <span className="truncate text-xs text-text-secondary">
-                  {r.action === "updated"
-                    ? r.changed_keys.length
-                      ? r.changed_keys.slice(0, 5).join(", ") +
-                        (r.changed_keys.length > 5 ? "…" : "")
-                      : "—"
-                    : (r.entity_id ?? "")}
-                </span>
-                <span className="text-xs text-text-secondary truncate">
-                  {r.actor_name ||
-                    r.actor_email ||
-                    (r.actor_user_id ? r.actor_user_id.slice(0, 8) : "sistema")}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDetail(r)}
-                  aria-label={`Detalhes do evento ${r.action} em ${r.entity}`}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+          <div className="overflow-x-auto">
+            <div className="text-sm min-w-[880px]">
+              <div className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 px-4 py-2.5 border-b border-border-subtle text-[11px] uppercase tracking-wider text-text-tertiary bg-surface-2 rounded-t-xl">
+                <div>Quando</div>
+                <div>Módulo</div>
+                <div>Entidade</div>
+                <div>Ação</div>
+                <div>Mudanças</div>
+                <div>Por</div>
+                <div className="sr-only">Ações</div>
               </div>
-            ))}
+              {rows.map((r) => (
+                <div
+                  key={r.id}
+                  className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 items-center px-4 py-2.5 border-b border-border-subtle last:border-0 hover:bg-surface-2/60 transition-colors"
+                >
+                  <span className="text-xs text-text-secondary">{fmtDate(r.created_at)}</span>
+                  <MetaPill>{(r.module_id ?? "—").toUpperCase()}</MetaPill>
+                  <span className="text-text-primary truncate">
+                    {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
+                  </span>
+                  <Badge
+                    variant={
+                      r.action === "deleted"
+                        ? "destructive"
+                        : r.action === "created"
+                          ? "default"
+                          : "secondary"
+                    }
+                    className="w-fit"
+                  >
+                    {AUDIT_ACTION_LABELS[r.action as keyof typeof AUDIT_ACTION_LABELS] ?? r.action}
+                  </Badge>
+                  <span className="truncate text-xs text-text-secondary">
+                    {r.action === "updated"
+                      ? r.changed_keys.length
+                        ? r.changed_keys.slice(0, 5).join(", ") +
+                          (r.changed_keys.length > 5 ? "…" : "")
+                        : "—"
+                      : (r.entity_id ?? "")}
+                  </span>
+                  <span className="text-xs text-text-secondary truncate">
+                    {r.actor_name ||
+                      r.actor_email ||
+                      (r.actor_user_id ? r.actor_user_id.slice(0, 8) : "sistema")}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDetail(r)}
+                    aria-label={`Detalhes do evento ${r.action} em ${r.entity}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
