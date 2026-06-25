@@ -1,8 +1,58 @@
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function sendWorkspaceInviteEmail(args: {
+  to: string;
+  inviteUrl: string;
+  workspaceName: string;
+  inviterName: string;
+  role: string;
+  expiresAt: string;
+  inviteId: string;
+}) {
+  try {
+    const req = getRequest();
+    if (!req) return;
+    const origin = new URL(req.url).origin;
+    const bearer = req.headers.get("authorization") ?? "";
+    if (!bearer) return;
+    await fetch(`${origin}/lovable/email/transactional/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: bearer },
+      body: JSON.stringify({
+        templateName: "workspace-invite",
+        recipientEmail: args.to,
+        idempotencyKey: `workspace-invite:${args.inviteId}`,
+        templateData: {
+          inviteeEmail: args.to,
+          workspaceName: args.workspaceName,
+          inviterName: args.inviterName,
+          roleLabel: args.role,
+          inviteUrl: args.inviteUrl,
+          expiresAt: args.expiresAt,
+        },
+      }),
+    });
+  } catch (e) {
+    console.error("workspace-invite email failed", e);
+  }
+}
+
+async function loadInviteContext(workspaceId: string, inviterId: string) {
+  const [{ data: ws }, { data: prof }] = await Promise.all([
+    supabaseAdmin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle(),
+    supabaseAdmin.from("profiles").select("full_name").eq("id", inviterId).maybeSingle(),
+  ]);
+  return {
+    workspaceName: (ws?.name as string) ?? "WK Technology",
+    inviterName: (prof?.full_name as string) ?? "Sua equipe",
+  };
+}
+
 
 const Role = z.enum(["admin", "manager", "member"]);
 
@@ -140,17 +190,73 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       .eq("email", email)
       .is("accepted_at", null);
 
-    const { error } = await supabaseAdmin.from("workspace_invites").insert({
-      workspace_id: workspaceId,
-      email,
-      role: data.role,
-      token,
-      invited_by: userId,
-    } as never);
-    if (error) throw new Error(error.message);
+    const { data: inserted, error } = await supabaseAdmin
+      .from("workspace_invites")
+      .insert({
+        workspace_id: workspaceId,
+        email,
+        role: data.role,
+        token,
+        invited_by: userId,
+      } as never)
+      .select("id, expires_at")
+      .single();
+    if (error || !inserted) throw new Error(error?.message ?? "Falha ao criar convite.");
 
     const url = `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite/${token}`;
-    return { ok: true, url, token, email };
+    const ctx = await loadInviteContext(workspaceId, userId);
+    await sendWorkspaceInviteEmail({
+      to: email,
+      inviteUrl: url,
+      workspaceName: ctx.workspaceName,
+      inviterName: ctx.inviterName,
+      role: data.role,
+      expiresAt: (inserted as { expires_at: string }).expires_at,
+      inviteId: (inserted as { id: string }).id,
+    });
+
+    return { ok: true, url, token, email, emailed: true };
+  });
+
+/** Reenvia o e-mail de um convite pendente (sem regenerar o token). */
+export const resendWorkspaceInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        invite_id: z.string().uuid(),
+        redirect_origin: z.string().trim().url().max(255),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(workspaceId, userId);
+
+    const { data: inv, error } = await supabaseAdmin
+      .from("workspace_invites")
+      .select("id, email, role, token, expires_at, accepted_at")
+      .eq("id", data.invite_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!inv) throw new Error("Convite não encontrado.");
+    if (inv.accepted_at) throw new Error("Este convite já foi aceito.");
+
+    const url = `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite/${inv.token as string}`;
+    const ctx = await loadInviteContext(workspaceId, userId);
+    await sendWorkspaceInviteEmail({
+      to: inv.email as string,
+      inviteUrl: url,
+      workspaceName: ctx.workspaceName,
+      inviterName: ctx.inviterName,
+      role: inv.role as string,
+      expiresAt: inv.expires_at as string,
+      inviteId: inv.id as string,
+    });
+
+    return { ok: true, url };
   });
 
 /** Revoga convite pendente (admin do workspace ativo). */
@@ -169,6 +275,7 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 const ASSIGNED_TABLES = ["contacts", "companies", "leads", "deals"] as const;
 
