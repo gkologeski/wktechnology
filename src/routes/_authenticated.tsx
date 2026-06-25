@@ -107,6 +107,7 @@ function AuthenticatedLayout() {
             <ModuleSwitcher />
             <GlobalSearchTrigger />
             <div className="flex-1" />
+            <WorkspaceMenu />
             <QuickCreateMenu />
             <SettingsMenu />
             <NotificationsBell />
