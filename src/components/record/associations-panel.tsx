@@ -400,6 +400,7 @@ function CompanyCard({
     const { error } = await sb.from(tableFor(entity)).update({ company_id: id }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Empresa vinculada");
+    emitTimelineRefresh();
     setCurrentId(id);
   };
 
@@ -418,6 +419,7 @@ function CompanyCard({
       .eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Empresa desvinculada");
+    emitTimelineRefresh();
     setCurrentId(null);
   };
 
@@ -558,6 +560,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       if (error && error.code !== "23505") return toast.error(error.message);
     }
     toast.success("Contato vinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -594,6 +597,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
       }
     }
     toast.success("Contato desvinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -833,6 +837,7 @@ function DealsCard({
       if (error && error.code !== "23505") return toast.error(error.message);
     }
     toast.success("Negócio vinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -867,6 +872,7 @@ function DealsCard({
       }
     }
     toast.success("Negócio desvinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -1055,6 +1061,7 @@ function TicketsCard({
       return toast.error("Sem permissão para vincular este ticket.");
     }
     toast.success("Ticket vinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -1073,6 +1080,7 @@ function TicketsCard({
       .eq("id", ticketId);
     if (error) return toast.error(error.message);
     toast.success("Ticket desvinculado");
+    emitTimelineRefresh();
     refresh();
   };
 
@@ -1237,6 +1245,7 @@ function SingleContactCard({
     const { error } = await sb.from("tickets").update({ contact_id: id }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Contato vinculado");
+    emitTimelineRefresh();
     setCurrentId(id);
   };
 
@@ -1252,6 +1261,7 @@ function SingleContactCard({
     const { error } = await sb.from("tickets").update({ contact_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Contato desvinculado");
+    emitTimelineRefresh();
     setCurrentId(null);
   };
 
@@ -1374,6 +1384,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
     const { error } = await sb.from("tickets").update({ deal_id: id }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Negócio vinculado");
+    emitTimelineRefresh();
     setCurrentId(id);
   };
 
@@ -1389,6 +1400,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
     const { error } = await sb.from("tickets").update({ deal_id: null }).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Negócio desvinculado");
+    emitTimelineRefresh();
     setCurrentId(null);
   };
 
