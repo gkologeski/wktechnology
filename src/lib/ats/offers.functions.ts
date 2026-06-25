@@ -157,13 +157,17 @@ export const sendOffer = createServerFn({ method: "POST" })
       event: "sent",
     });
 
+    const publicToken =
+      (offer.public_token as string | null) ??
+      (crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, ""));
+
     const { error: e4 } = await supabase
       .from("ats_offers")
-      .update({ status: "sent", sent_at: nowIso, esign_document_id: esignId })
+      .update({ status: "sent", sent_at: nowIso, esign_document_id: esignId, public_token: publicToken })
       .eq("id", offer.id);
     if (e4) throw new Error(e4.message);
 
-    return { ok: true, esign_document_id: esignId };
+    return { ok: true, esign_document_id: esignId, public_token: publicToken };
   });
 
 export const cancelOffer = createServerFn({ method: "POST" })
