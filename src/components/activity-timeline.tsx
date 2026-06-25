@@ -44,6 +44,14 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { CalendarRange, Filter } from "lucide-react";
+import { DateFilter } from "@/components/date-filter";
+import {
+  DATE_PRESET_LABELS,
+  getDateRange,
+  type CustomRange,
+  type DatePreset,
+} from "@/lib/date-presets";
 
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { CallDialer } from "@/components/voice/call-dialer";
@@ -284,6 +292,11 @@ export function ActivityTimeline({
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
   const [dragKey, setDragKey] = useState<string | null>(null);
 
+  // Filtro de período da timeline (presets + datas customizadas)
+  const [datePreset, setDatePreset] = useState<DatePreset>("any");
+  const [dateCustom, setDateCustom] = useState<CustomRange>({});
+  const [dateOpen, setDateOpen] = useState(false);
+
   const persistOrder = (next: OrderState) => {
     setOrder(next);
     try {
@@ -340,118 +353,42 @@ export function ActivityTimeline({
       });
     }
 
-    // Also pull synced Google Calendar events by the entity's contact e-mails.
-    // The contact e-mail is the source of truth; matching events are mirrored
-    // to related deals, companies and tickets through their associated contacts.
+    // Mirror Google Calendar events via the unified `get_entity_timeline` RPC.
+    // The RPC resolves the relationship graph (Deal → Contacts → Company, etc.)
+    // server-side, so any meeting linked to a related contact appears on this
+    // entity's timeline without duplicating records.
     let calendarVirtuals: Activity[] = [];
     try {
-      const contactIdsSet = new Set<string>();
-      const targetEmailsSet = new Set<string>();
-      const addContactIds = (ids: Array<string | null | undefined>) => {
-        ids.filter(Boolean).forEach((id) => contactIdsSet.add(id as string));
+      const kindMap: Record<RelatedKey, string> = {
+        related_lead_id: "lead",
+        related_contact_id: "contact",
+        related_company_id: "company",
+        related_deal_id: "deal",
+        related_ticket_id: "ticket",
       };
-      const addCompanyContacts = async (companyId: string | null | undefined) => {
-        if (!companyId) return;
-        const { data: contacts } = await supabase
-          .from("contacts")
-          .select("id")
-          .eq("company_id", companyId)
-          .is("deleted_at", null);
-        addContactIds(((contacts ?? []) as Array<{ id: string }>).map((c) => c.id));
-      };
-      const addDealContacts = async (dealId: string | null | undefined) => {
-        if (!dealId) return;
-        const { data: deal } = await supabase
-          .from("deals")
-          .select("primary_contact_id")
-          .eq("id", dealId)
-          .maybeSingle();
-        addContactIds([deal?.primary_contact_id]);
-        const { data: dc } = await supabase
-          .from("deal_contacts")
-          .select("contact_id")
-          .eq("deal_id", dealId);
-        addContactIds(((dc ?? []) as Array<{ contact_id: string }>).map((r) => r.contact_id));
-      };
-
-      if (relatedKey === "related_contact_id") {
-        contactIdsSet.add(relatedId);
-      } else if (relatedKey === "related_deal_id") {
-        await addDealContacts(relatedId);
-      } else if (relatedKey === "related_company_id") {
-        await addCompanyContacts(relatedId);
-      } else if (relatedKey === "related_ticket_id") {
-        const { data: ticket } = await supabase
-          .from("tickets")
-          .select("contact_id, company_id, deal_id")
-          .eq("id", relatedId)
-          .maybeSingle();
-        addContactIds([ticket?.contact_id]);
-        await addDealContacts(ticket?.deal_id);
-        if (!ticket?.contact_id && !ticket?.deal_id) await addCompanyContacts(ticket?.company_id);
-      } else if (relatedKey === "related_lead_id") {
-        const { data: lead } = await supabase
-          .from("leads")
-          .select("email")
-          .eq("id", relatedId)
-          .maybeSingle();
-        const email = normalizeTimelineEmail(lead?.email);
-        if (email) targetEmailsSet.add(email);
-      }
-      const contactIds = Array.from(contactIdsSet);
-      if (contactIds.length > 0) {
-        const { data: cs } = await supabase
-          .from("contacts")
-          .select("id, email")
-          .in("id", contactIds);
-        for (const contact of (cs ?? []) as Array<{ id: string; email: string | null }>) {
-          const email = normalizeTimelineEmail(contact.email);
-          if (email) targetEmailsSet.add(email);
-        }
-      }
-
-      const targetEmails = Array.from(targetEmailsSet);
-      if (contactIds.length > 0 || targetEmails.length > 0) {
-        const contactEmailById = new Map<string, string>();
-        if (contactIds.length > 0) {
-          const { data: cs } = await supabase
-            .from("contacts")
-            .select("id, email")
-            .in("id", contactIds);
-          for (const contact of (cs ?? []) as Array<{ id: string; email: string | null }>) {
-            const email = normalizeTimelineEmail(contact.email);
-            if (email) contactEmailById.set(contact.id, email);
-          }
-        }
-
-        const selectCols = "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
-        const merged = new Map<string, Record<string, unknown>>();
-        if (contactIds.length > 0) {
-          const byContact = await supabase
-            .from("calendar_events")
-            .select(selectCols)
-            .in("related_contact_id", contactIds);
-          for (const row of (byContact.data ?? []) as Array<Record<string, unknown>>) {
-            merged.set(row.id as string, row);
-          }
-        }
-        // Match by attendee email (one query per email — PostgREST `or` with jsonb cs is fragile)
-        await Promise.all(
-          targetEmails.map(async (em) => {
-            const { data } = await supabase
-              .from("calendar_events")
-              .select(selectCols)
-              .contains("attendees", [{ email: em }]);
-            for (const row of (data ?? []) as Array<Record<string, unknown>>) {
-              merged.set(row.id as string, row);
-            }
-          }),
-        );
-        const targetContactIds = new Set(contactIds);
-        const finalEvents = Array.from(merged.values()).filter((event) =>
-          calendarEventTargetsEmails(event, targetEmailsSet, targetContactIds, contactEmailById),
-        );
-        calendarVirtuals = finalEvents.map((e) => {
+      const { start, end } = getDateRange(datePreset, new Date(), dateCustom);
+      const { data: tl, error: tlErr } = await supabase.rpc("get_entity_timeline", {
+        p_entity_kind: kindMap[relatedKey],
+        p_entity_id: relatedId,
+        p_since: start ? start.toISOString() : undefined,
+        p_until: end ? end.toISOString() : undefined,
+        p_limit: 300,
+      });
+      if (tlErr) throw tlErr;
+      const calRows = ((tl ?? []) as Array<{ id: string; source: string }>).filter(
+        (r) => r.source === "calendar_event",
+      );
+      const calIds = calRows
+        .map((r) => r.id.replace(/^cal_/, ""))
+        .filter(Boolean);
+      if (calIds.length > 0) {
+        const selectCols =
+          "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
+        const { data: events } = await supabase
+          .from("calendar_events")
+          .select(selectCols)
+          .in("id", calIds);
+        calendarVirtuals = ((events ?? []) as Array<Record<string, unknown>>).map((e) => {
           const atts = calendarAttendees(e.attendees);
           return {
             id: `cal_${e.id as string}`,
@@ -477,7 +414,6 @@ export function ActivityTimeline({
                 .filter((a) => a.email)
                 .map((a) => ({ email: a.email, name: a.displayName })),
             },
-            // mark read-only for edit/delete
             completed: false,
             owner_id: null,
             [relatedKey]: relatedId,
@@ -485,11 +421,28 @@ export function ActivityTimeline({
         });
       }
     } catch (e) {
-      console.error("[timeline] calendar events load", e);
+      console.error("[timeline] mirrored events load", e);
     }
 
+    // Apply the date-range filter to direct activity rows as well.
+    const { start: filtStart, end: filtEnd } = getDateRange(
+      datePreset,
+      new Date(),
+      dateCustom,
+    );
+    const inRange = (iso: string | null | undefined) => {
+      if (!iso) return !filtStart && !filtEnd;
+      const t = new Date(iso).getTime();
+      if (filtStart && t < filtStart.getTime()) return false;
+      if (filtEnd && t >= filtEnd.getTime()) return false;
+      return true;
+    };
+    const filteredBase =
+      datePreset === "any"
+        ? baseRows
+        : baseRows.filter((row) => inRange(row.hs_createdate ?? row.created_at));
 
-    const rows = [...baseRows, ...calendarVirtuals].sort((a, b) => {
+    const rows = [...filteredBase, ...calendarVirtuals].sort((a, b) => {
       const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
       const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
       return tb - ta;
@@ -500,7 +453,7 @@ export function ActivityTimeline({
 
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
-  }, [relatedId]);
+  }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
@@ -1234,7 +1187,30 @@ export function ActivityTimeline({
           );
         })()}
         <div className="h-px flex-1 bg-border/60" />
+        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+              <CalendarRange className="h-3.5 w-3.5" />
+              {DATE_PRESET_LABELS[datePreset] ?? "Desde sempre"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 p-2 max-h-[60vh] overflow-y-auto">
+            <div className="px-2 pb-2 text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Filter className="h-3 w-3" /> Período da timeline
+            </div>
+            <DateFilter
+              name="timeline-date-filter"
+              value={datePreset}
+              custom={dateCustom}
+              onChange={({ value, custom }) => {
+                setDatePreset(value);
+                setDateCustom(custom);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
