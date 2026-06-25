@@ -345,6 +345,14 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
       .eq("id", data.invite_id)
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
+    await supabaseAdmin.from("audit_logs").insert({
+      workspace_owner_id: workspaceId,
+      actor_user_id: userId,
+      entity: "workspace_invite",
+      entity_id: data.invite_id,
+      action: "invite.revoked",
+      before: invRow ? { email: invRow.email, role: invRow.role } : null,
+    } as never);
     return { ok: true };
   });
 
