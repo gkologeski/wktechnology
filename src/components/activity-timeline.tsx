@@ -1234,7 +1234,14 @@ export function ActivityTimeline({
             />
           </PopoverContent>
         </Popover>
+        {refreshing && !loading && (
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1" aria-live="polite">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Atualizando…
+          </span>
+        )}
       </div>
+
 
 
       {loading ? (
