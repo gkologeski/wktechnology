@@ -40,6 +40,7 @@ const ATS_PATH_PREFIXES = [
   "/fraud-flags",
   "/insights",
   "/dei-analytics",
+  "/notetaker",
 ];
 
 export function detectModuleFromPath(pathname: string): ModuleId | null {
