@@ -57,7 +57,7 @@ export const confirmSelfSchedule = createServerFn({ method: "POST" })
     z.object({ token: z.string().min(8), slot: z.string() }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = publicClient();
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error: e0 } = await sb
       .from("ats_interviews")
       .select("id, offered_slots, status")
