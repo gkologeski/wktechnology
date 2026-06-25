@@ -276,18 +276,17 @@ function JobDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       <AtsPageHeader
-        eyebrow={
-          <Link
-            to="/jobs"
-            className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3" aria-hidden="true" />
-            Vagas
-          </Link>
-        }
+        eyebrow="Vagas"
         title={jobAny.title}
         description={
-          <div className="flex flex-wrap items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/jobs"
+              className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+            >
+              <ArrowLeft className="h-3 w-3" aria-hidden="true" />
+              Voltar
+            </Link>
             <StatusBadge status={statusVariant} />
             {metaItems.map((m) => (
               <MetaPill key={m.key}>{m.label}</MetaPill>
@@ -296,15 +295,16 @@ function JobDetailPage() {
               <Users className="h-3 w-3" aria-hidden="true" />
               {totalApps} {totalApps === 1 ? "candidato" : "candidatos"}
             </span>
-          </div>
+          </span>
         }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
-              CSV
-            </Button>
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        secondaryActions={
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+            CSV
+          </Button>
+        }
+        primaryAction={
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogTrigger asChild>
                 <Button onClick={openAdd}>
                   <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
