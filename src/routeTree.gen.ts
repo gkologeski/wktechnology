@@ -72,6 +72,7 @@ import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
@@ -570,6 +571,12 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWorkspaceModulesRoute =
+  AuthenticatedWorkspaceModulesRouteImport.update({
+    id: '/workspace/modules',
+    path: '/workspace/modules',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTicketsIdRoute = AuthenticatedTicketsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1727,6 +1734,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
@@ -1958,6 +1966,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
@@ -2195,6 +2204,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
+  '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
@@ -2432,6 +2442,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/workspace/modules'
     | '/lovable/email/suppression'
     | '/ats/'
     | '/inbox/'
@@ -2663,6 +2674,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
+    | '/workspace/modules'
     | '/lovable/email/suppression'
     | '/ats'
     | '/inbox'
@@ -2899,6 +2911,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
+    | '/_authenticated/workspace/modules'
     | '/lovable/email/suppression'
     | '/_authenticated/ats/'
     | '/_authenticated/inbox/'
@@ -3505,6 +3518,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/workspace/modules': {
+      id: '/_authenticated/workspace/modules'
+      path: '/workspace/modules'
+      fullPath: '/workspace/modules'
+      preLoaderRoute: typeof AuthenticatedWorkspaceModulesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tickets/$id': {
       id: '/_authenticated/tickets/$id'
@@ -5146,6 +5166,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
+  AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
@@ -5202,6 +5223,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
+  AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
