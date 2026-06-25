@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listAuditLogs, AUDIT_ENTITY_LABELS, AUDIT_ACTION_LABELS } from "@/lib/audit.functions";
-import { RefreshCcw, Eye, ShieldCheck } from "lucide-react";
+import { RefreshCcw, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
 import {
   PageHeader,
   FilterBar,
