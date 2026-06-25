@@ -453,7 +453,9 @@ export function ActivityTimeline({
     });
     setItems(rows);
     setLoading(false);
+    setRefreshing(false);
   };
+
 
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
