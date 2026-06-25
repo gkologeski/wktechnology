@@ -4,11 +4,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Sparkles, FileText, RefreshCw } from "lucide-react";
+import { Sparkles, FileText, RefreshCw, AlertCircle, CheckCircle2, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  PageHeader,
+  SectionHeader,
+  EmptyState,
+  MetaPill,
+  Skeletons,
+} from "@/components/techhire/ui";
+import { cn } from "@/lib/utils";
 import {
   listRecentInterviews,
   getInterviewWithNotes,
@@ -50,12 +57,28 @@ type Notes = {
   ai_model: string | null;
 };
 
-const REC_LABEL: Record<string, { label: string; tone: string }> = {
-  strong_hire: { label: "Forte contratação", tone: "bg-emerald-600" },
-  hire: { label: "Contratar", tone: "bg-emerald-500" },
-  neutral: { label: "Neutro", tone: "bg-slate-500" },
-  no_hire: { label: "Não contratar", tone: "bg-orange-500" },
-  strong_no_hire: { label: "Forte rejeição", tone: "bg-red-600" },
+const REC_MAP: Record<string, { label: string; className: string }> = {
+  strong_hire: {
+    label: "Forte contratação",
+    className:
+      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+  },
+  hire: {
+    label: "Contratar",
+    className:
+      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+  },
+  neutral: { label: "Neutro", className: "" },
+  no_hire: {
+    label: "Não contratar",
+    className:
+      "bg-[hsl(var(--status-warning-bg))] text-[hsl(var(--status-warning-fg))] border-[hsl(var(--status-warning-fg)/0.2)]",
+  },
+  strong_no_hire: {
+    label: "Forte rejeição",
+    className:
+      "bg-[hsl(var(--status-danger-bg))] text-[hsl(var(--status-danger-fg))] border-[hsl(var(--status-danger-fg)/0.2)]",
+  },
 };
 
 function NotetakerPage() {
@@ -64,6 +87,7 @@ function NotetakerPage() {
   const genFn = useServerFn(generateInterviewNotes);
 
   const [rows, setRows] = useState<ItvRow[]>([]);
+  const [listLoading, setListLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
   const [transcript, setTranscript] = useState("");
   const [notes, setNotes] = useState<Notes | null>(null);
@@ -73,7 +97,8 @@ function NotetakerPage() {
   useEffect(() => {
     listFn()
       .then((r) => setRows(r as ItvRow[]))
-      .catch((e: Error) => toast.error(e.message));
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setListLoading(false));
   }, [listFn]);
 
   useEffect(() => {
@@ -112,134 +137,188 @@ function NotetakerPage() {
     }
   }
 
+  const aiCount = rows.filter((r) => r.ai_generated_at).length;
+
   return (
     <div className="container mx-auto max-w-5xl space-y-6 p-6">
-      <header className="flex items-center gap-3">
-        <Sparkles className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-semibold">Notetaker IA</h1>
-          <p className="text-sm text-muted-foreground">
-            Cole a transcrição/anotações da entrevista e a IA gera resumo, pontos fortes,
-            preocupações, follow-ups e recomendação.
-          </p>
-        </div>
-      </header>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Entrevista</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma entrevista recente" />
-            </SelectTrigger>
-            <SelectContent>
-              {rows.map((r) => (
-                <SelectItem key={r.id} value={r.id}>
-                  {r.scheduled_at
-                    ? new Date(r.scheduled_at).toLocaleString("pt-BR")
-                    : "Sem data"}{" "}
-                  · {r.kind} · {r.status}
-                  {r.ai_generated_at ? " · IA ✓" : ""}
-                </SelectItem>
-              ))}
-              {rows.length === 0 && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  Nenhuma entrevista encontrada.
-                </div>
-              )}
-            </SelectContent>
-          </Select>
-
-          {selectedId && (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Transcrição / anotações</label>
-                <Textarea
-                  rows={10}
-                  placeholder="Cole aqui a transcrição da reunião ou suas anotações detalhadas..."
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  disabled={loading || generating}
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {transcript.length.toLocaleString("pt-BR")} caracteres
-                  </span>
-                  <Button onClick={handleGenerate} disabled={generating || loading}>
-                    {generating ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Analisando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Gerar notas com IA
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {notes?.ai_generated_at && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileText className="h-4 w-4" /> Análise da IA
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {notes.ai_recommendation && (
-                <Badge className={REC_LABEL[notes.ai_recommendation]?.tone}>
-                  {REC_LABEL[notes.ai_recommendation]?.label ?? notes.ai_recommendation}
-                </Badge>
-              )}
-              {typeof notes.ai_score === "number" && (
-                <Badge variant="outline">Score: {notes.ai_score}</Badge>
-              )}
+      <PageHeader
+        eyebrow="Inteligência (IA)"
+        title="Notetaker IA"
+        description="Cole a transcrição ou anotações da entrevista e a IA gera resumo, pontos fortes, preocupações, follow-ups e recomendação."
+        secondaryActions={
+          listLoading ? null : (
+            <div className="flex flex-wrap items-center gap-2">
+              <MetaPill>{rows.length} entrevistas recentes</MetaPill>
+              <MetaPill>{aiCount} já analisadas</MetaPill>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <section>
-              <h3 className="mb-1 font-medium">Resumo</h3>
-              <p className="whitespace-pre-wrap text-muted-foreground">{notes.ai_summary}</p>
-            </section>
-            {(notes.ai_strengths ?? []).length > 0 && (
-              <section>
-                <h3 className="mb-1 font-medium text-emerald-600">Pontos fortes</h3>
-                <ul className="list-disc pl-5 text-muted-foreground">
-                  {notes.ai_strengths!.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </section>
-            )}
-            {(notes.ai_concerns ?? []).length > 0 && (
-              <section>
-                <h3 className="mb-1 font-medium text-orange-600">Preocupações</h3>
-                <ul className="list-disc pl-5 text-muted-foreground">
-                  {notes.ai_concerns!.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </section>
-            )}
-            {(notes.ai_followups ?? []).length > 0 && (
-              <section>
-                <h3 className="mb-1 font-medium">Follow-ups sugeridos</h3>
-                <ul className="list-disc pl-5 text-muted-foreground">
-                  {notes.ai_followups!.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </section>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Gerado em {new Date(notes.ai_generated_at).toLocaleString("pt-BR")} · modelo{" "}
-              {notes.ai_model}
-            </p>
-          </CardContent>
-        </Card>
+          )
+        }
+      />
+
+      <section className="surface-1 space-y-4 rounded-lg border p-6">
+        <SectionHeader title="Entrevista" description="Selecione a sessão a analisar." />
+
+        {listLoading ? (
+          <Skeletons.Row />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="Nenhuma entrevista encontrada"
+            description="Agende ou registre uma entrevista para usar o Notetaker IA."
+          />
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="itv-select">Entrevista</Label>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger id="itv-select">
+                <SelectValue placeholder="Selecione uma entrevista recente" />
+              </SelectTrigger>
+              <SelectContent>
+                {rows.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.scheduled_at
+                      ? new Date(r.scheduled_at).toLocaleString("pt-BR")
+                      : "Sem data"}{" "}
+                    · {r.kind} · {r.status}
+                    {r.ai_generated_at ? " · IA ✓" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {selectedId && (
+          <div className="space-y-3 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="transcript">Transcrição / anotações</Label>
+              <Textarea
+                id="transcript"
+                rows={10}
+                placeholder="Cole aqui a transcrição da reunião ou suas anotações detalhadas..."
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                disabled={loading || generating}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-muted-foreground">
+                {transcript.length.toLocaleString("pt-BR")} caracteres
+              </span>
+              <Button
+                onClick={handleGenerate}
+                disabled={generating || loading || transcript.trim().length < 40}
+              >
+                {generating ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Analisando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Gerar notas com IA
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {loading && selectedId && <Skeletons.Card />}
+
+      {notes?.ai_generated_at && !loading && (
+        <section className="surface-1 space-y-5 rounded-lg border p-6">
+          <SectionHeader
+            title="Análise da IA"
+            description={`Gerado em ${new Date(notes.ai_generated_at).toLocaleString("pt-BR")} · modelo ${notes.ai_model ?? "—"}`}
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                {notes.ai_recommendation && (
+                  <MetaPill className={REC_MAP[notes.ai_recommendation]?.className}>
+                    {REC_MAP[notes.ai_recommendation]?.label ?? notes.ai_recommendation}
+                  </MetaPill>
+                )}
+                {typeof notes.ai_score === "number" && (
+                  <MetaPill>Score {notes.ai_score}</MetaPill>
+                )}
+              </div>
+            }
+          />
+
+          {notes.ai_summary && (
+            <AnalysisSection icon={FileText} title="Resumo" iconTone="text-muted-foreground">
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {notes.ai_summary}
+              </p>
+            </AnalysisSection>
+          )}
+
+          {(notes.ai_strengths ?? []).length > 0 && (
+            <AnalysisSection
+              icon={CheckCircle2}
+              title="Pontos fortes"
+              iconTone="text-[hsl(var(--status-success-fg))]"
+            >
+              <BulletList items={notes.ai_strengths!} />
+            </AnalysisSection>
+          )}
+
+          {(notes.ai_concerns ?? []).length > 0 && (
+            <AnalysisSection
+              icon={AlertCircle}
+              title="Preocupações"
+              iconTone="text-[hsl(var(--status-warning-fg))]"
+            >
+              <BulletList items={notes.ai_concerns!} />
+            </AnalysisSection>
+          )}
+
+          {(notes.ai_followups ?? []).length > 0 && (
+            <AnalysisSection
+              icon={ListChecks}
+              title="Follow-ups sugeridos"
+              iconTone="text-[hsl(var(--status-info-fg))]"
+            >
+              <BulletList items={notes.ai_followups!} />
+            </AnalysisSection>
+          )}
+        </section>
       )}
     </div>
+  );
+}
+
+function AnalysisSection({
+  icon: Icon,
+  title,
+  iconTone,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  iconTone?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon className={cn("h-4 w-4", iconTone ?? "text-muted-foreground")} aria-hidden />
+        <h3 className="text-sm font-medium">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+      {items.map((s, i) => (
+        <li key={i}>{s}</li>
+      ))}
+    </ul>
   );
 }
