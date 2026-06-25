@@ -41,7 +41,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
 export const getSelfScheduleByToken = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
   .handler(async ({ data }) => {
-    const sb = publicClient();
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await sb
       .from("ats_interviews")
       .select("id, offered_slots, duration_min, status, scheduled_at, self_scheduled_at")
