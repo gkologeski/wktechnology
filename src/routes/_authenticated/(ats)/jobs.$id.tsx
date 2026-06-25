@@ -230,10 +230,10 @@ function JobDetailPage() {
   if (error && !job) {
     return (
       <EmptyState
-        icon={<Briefcase className="h-6 w-6" aria-hidden="true" />}
+        icon={Briefcase}
         title="Não foi possível carregar a vaga"
         description={error}
-        action={{ label: "Tentar novamente", onClick: refresh }}
+        action={<Button onClick={refresh}>Tentar novamente</Button>}
       />
     );
   }
@@ -241,10 +241,14 @@ function JobDetailPage() {
   if (!job) {
     return (
       <EmptyState
-        icon={<Briefcase className="h-6 w-6" aria-hidden="true" />}
+        icon={Briefcase}
         title="Vaga não encontrada"
         description="Esta vaga pode ter sido removida ou você não tem acesso a ela."
-        action={{ label: "Voltar para vagas", to: "/jobs" }}
+        action={
+          <Link to="/jobs">
+            <Button variant="outline">Voltar para vagas</Button>
+          </Link>
+        }
       />
     );
   }
