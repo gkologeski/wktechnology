@@ -304,6 +304,18 @@ function CalendarsPage() {
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => syncRecordings.mutate(row.id)}
+                      disabled={syncRecordings.isPending}
+                      title="Procurar no Google Drive gravações de reuniões já encerradas (Meet leva 10–30 min para publicar)"
+                    >
+                      <Video className="mr-1 h-4 w-4" />
+                      {syncRecordings.isPending && syncRecordings.variables === row.id
+                        ? "Buscando…"
+                        : "Sincronizar gravações"}
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
