@@ -29,8 +29,10 @@ import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as ScheduleTokenRouteImport } from './routes/schedule.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as OfferTokenRouteImport } from './routes/offer.$token'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
@@ -48,10 +50,13 @@ import { Route as AuthenticatedProposalsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
+import { Route as AuthenticatedMatchScoresRouteImport } from './routes/_authenticated/match-scores'
 import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
+import { Route as AuthenticatedFraudFlagsRouteImport } from './routes/_authenticated/fraud-flags'
+import { Route as AuthenticatedDeiAnalyticsRouteImport } from './routes/_authenticated/dei-analytics'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -337,6 +342,11 @@ const SignTokenRoute = SignTokenRouteImport.update({
   path: '/sign/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScheduleTokenRoute = ScheduleTokenRouteImport.update({
+  id: '/schedule/$token',
+  path: '/schedule/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuoteTokenRoute = QuoteTokenRouteImport.update({
   id: '/quote/$token',
   path: '/quote/$token',
@@ -345,6 +355,11 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
   path: '/portal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfferTokenRoute = OfferTokenRouteImport.update({
+  id: '/offer/$token',
+  path: '/offer/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeetTokenRoute = MeetTokenRouteImport.update({
@@ -434,6 +449,12 @@ const AuthenticatedMeetingsRoute = AuthenticatedMeetingsRouteImport.update({
   path: '/meetings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMatchScoresRoute =
+  AuthenticatedMatchScoresRouteImport.update({
+    id: '/match-scores',
+    path: '/match-scores',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMarketplaceRoute =
   AuthenticatedMarketplaceRouteImport.update({
     id: '/marketplace',
@@ -454,6 +475,17 @@ const AuthenticatedIntegrationsRoute =
   AuthenticatedIntegrationsRouteImport.update({
     id: '/integrations',
     path: '/integrations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFraudFlagsRoute = AuthenticatedFraudFlagsRouteImport.update({
+  id: '/fraud-flags',
+  path: '/fraud-flags',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDeiAnalyticsRoute =
+  AuthenticatedDeiAnalyticsRouteImport.update({
+    id: '/dei-analytics',
+    path: '/dei-analytics',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDealsRoute = AuthenticatedDealsRouteImport.update({
@@ -1548,10 +1580,13 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
+  '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
+  '/match-scores': typeof AuthenticatedMatchScoresRoute
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -1569,8 +1604,10 @@ export interface FileRoutesByFullPath {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/verify/$hash': typeof VerifyHashRoute
@@ -1777,9 +1814,12 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
+  '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
+  '/match-scores': typeof AuthenticatedMatchScoresRoute
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
@@ -1795,8 +1835,10 @@ export interface FileRoutesByTo {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/verify/$hash': typeof VerifyHashRoute
@@ -2004,10 +2046,13 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
+  '/_authenticated/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/_authenticated/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
+  '/_authenticated/match-scores': typeof AuthenticatedMatchScoresRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
@@ -2025,8 +2070,10 @@ export interface FileRoutesById {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/verify/$hash': typeof VerifyHashRoute
@@ -2235,10 +2282,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboards'
     | '/deals'
+    | '/dei-analytics'
+    | '/fraud-flags'
     | '/integrations'
     | '/invoices'
     | '/leads'
     | '/marketplace'
+    | '/match-scores'
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
@@ -2256,8 +2306,10 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
     | '/verify/$hash'
@@ -2464,9 +2516,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboards'
     | '/deals'
+    | '/dei-analytics'
+    | '/fraud-flags'
     | '/invoices'
     | '/leads'
     | '/marketplace'
+    | '/match-scores'
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
@@ -2482,8 +2537,10 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
     | '/verify/$hash'
@@ -2690,10 +2747,13 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboards'
     | '/_authenticated/deals'
+    | '/_authenticated/dei-analytics'
+    | '/_authenticated/fraud-flags'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
     | '/_authenticated/marketplace'
+    | '/_authenticated/match-scores'
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
@@ -2711,8 +2771,10 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
     | '/verify/$hash'
@@ -2921,8 +2983,10 @@ export interface RootRouteChildren {
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
+  OfferTokenRoute: typeof OfferTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
+  ScheduleTokenRoute: typeof ScheduleTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   VerifyHashRoute: typeof VerifyHashRoute
@@ -3128,6 +3192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/schedule/$token': {
+      id: '/schedule/$token'
+      path: '/schedule/$token'
+      fullPath: '/schedule/$token'
+      preLoaderRoute: typeof ScheduleTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quote/$token': {
       id: '/quote/$token'
       path: '/quote/$token'
@@ -3140,6 +3211,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offer/$token': {
+      id: '/offer/$token'
+      path: '/offer/$token'
+      fullPath: '/offer/$token'
+      preLoaderRoute: typeof OfferTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meet/$token': {
@@ -3261,6 +3339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeetingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/match-scores': {
+      id: '/_authenticated/match-scores'
+      path: '/match-scores'
+      fullPath: '/match-scores'
+      preLoaderRoute: typeof AuthenticatedMatchScoresRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/marketplace': {
       id: '/_authenticated/marketplace'
       path: '/marketplace'
@@ -3287,6 +3372,20 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/fraud-flags': {
+      id: '/_authenticated/fraud-flags'
+      path: '/fraud-flags'
+      fullPath: '/fraud-flags'
+      preLoaderRoute: typeof AuthenticatedFraudFlagsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dei-analytics': {
+      id: '/_authenticated/dei-analytics'
+      path: '/dei-analytics'
+      fullPath: '/dei-analytics'
+      preLoaderRoute: typeof AuthenticatedDeiAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/deals': {
@@ -4986,10 +5085,13 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
+  AuthenticatedDeiAnalyticsRoute: typeof AuthenticatedDeiAnalyticsRoute
+  AuthenticatedFraudFlagsRoute: typeof AuthenticatedFraudFlagsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRouteWithChildren
+  AuthenticatedMatchScoresRoute: typeof AuthenticatedMatchScoresRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
@@ -5037,10 +5139,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
+  AuthenticatedDeiAnalyticsRoute: AuthenticatedDeiAnalyticsRoute,
+  AuthenticatedFraudFlagsRoute: AuthenticatedFraudFlagsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRouteWithChildren,
+  AuthenticatedMatchScoresRoute: AuthenticatedMatchScoresRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
@@ -5151,8 +5256,10 @@ const rootRouteChildren: RootRouteChildren = {
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
+  OfferTokenRoute: OfferTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
+  ScheduleTokenRoute: ScheduleTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   VerifyHashRoute: VerifyHashRoute,
