@@ -2,7 +2,7 @@
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const SENDER_DOMAIN = "notify.notify.wktechnology.com.br";
+const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_DOMAIN = "notify.wktechnology.com.br";
 const FROM_NAME_DEFAULT = "TechHire ATS";
 

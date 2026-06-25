@@ -8,7 +8,7 @@ import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Sender padrão do projeto — coincide com o utilizado em transactional/send.ts.
-const SENDER_DOMAIN = "notify.notify.wktechnology.com.br";
+const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_DOMAIN = "notify.wktechnology.com.br";
 const FROM_NAME_DEFAULT = "TechHire ATS";
 
