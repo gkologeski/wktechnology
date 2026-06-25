@@ -1,9 +1,18 @@
 // Admin de Kits de Entrevista (perguntas reaproveitáveis).
+// Lote 4 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Video, Type as TypeIcon, Star } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Save,
+  Video,
+  Type as TypeIcon,
+  Star,
+  MessagesSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  PageHeader,
+  SectionHeader,
+  EmptyState,
+  MetaPill,
+  Skeletons,
+} from "@/components/techhire/ui";
 import {
   listInterviewKits,
   saveInterviewKit,
@@ -48,26 +64,34 @@ function InterviewKitsPage() {
   const delFn = useServerFn(deleteInterviewKit);
 
   const [kits, setKits] = useState<Array<Kit & { id: string }>>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Kit | null>(null);
   const [saving, setSaving] = useState(false);
 
   const reload = () =>
-    listFn().then((rows) =>
-      setKits(
-        rows.map((r) => ({
-          id: r.id as string,
-          name: r.name as string,
-          is_default: !!r.is_default,
-          questions: (r.questions as InterviewKitQuestion[]) ?? [],
-        })),
-      ),
-    );
-  useEffect(() => { reload(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    listFn()
+      .then((rows) =>
+        setKits(
+          rows.map((r) => ({
+            id: r.id as string,
+            name: r.name as string,
+            is_default: !!r.is_default,
+            questions: (r.questions as InterviewKitQuestion[]) ?? [],
+          })),
+        ),
+      )
+      .finally(() => setLoading(false));
+  useEffect(() => {
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     if (!editing) return;
     if (!editing.name.trim()) return toast.error("Dê um nome ao kit");
-    if (editing.questions.length === 0 || editing.questions.some((q) => !q.text.trim()))
+    if (
+      editing.questions.length === 0 ||
+      editing.questions.some((q) => !q.text.trim())
+    )
       return toast.error("Preencha o texto de todas as perguntas");
     setSaving(true);
     try {
@@ -77,7 +101,9 @@ function InterviewKitsPage() {
       reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -88,75 +114,150 @@ function InterviewKitsPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Kits de Entrevista</h1>
-          <p className="text-sm text-muted-foreground">
-            Conjuntos de perguntas reaproveitáveis. Para entrevistas assíncronas, marque perguntas como vídeo.
-          </p>
-        </div>
-        <Button onClick={() => setEditing(emptyKit())}>
-          <Plus className="h-4 w-4 mr-2" /> Novo kit
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Configurações · ATS"
+        title="Kits de entrevista"
+        description="Conjuntos de perguntas reaproveitáveis. Para entrevistas assíncronas, marque perguntas como vídeo."
+        descriptionLive
+        primaryAction={
+          <Button onClick={() => setEditing(emptyKit())}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo kit
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {kits.map((k) => (
-          <div key={k.id} className="border rounded-lg p-4 hover:bg-muted/30 transition">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-semibold flex items-center gap-2">
-                  {k.name}
-                  {k.is_default && <Star className="h-4 w-4 text-amber-500" />}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {k.questions.length} pergunta{k.questions.length === 1 ? "" : "s"}
-                  {" · "}
-                  {k.questions.filter((q) => q.kind === "video").length} em vídeo
-                </p>
-              </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="outline" onClick={() => setEditing(k)}>Editar</Button>
-                <Button size="sm" variant="ghost" onClick={() => handleDelete(k.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-        {kits.length === 0 && (
-          <div className="col-span-2 text-center text-muted-foreground py-12 border rounded-lg border-dashed">
-            Nenhum kit ainda. Crie o primeiro.
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeletons.Card key={i} lines={2} />
+          ))}
+        </div>
+      ) : kits.length === 0 ? (
+        <EmptyState
+          icon={MessagesSquare}
+          title="Nenhum kit ainda"
+          description="Crie um kit para padronizar entrevistas e habilitar respostas assíncronas em vídeo."
+          action={
+            <Button size="sm" onClick={() => setEditing(emptyKit())}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo kit
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {kits.map((k) => {
+            const videoCount = k.questions.filter((q) => q.kind === "video").length;
+            return (
+              <article
+                key={k.id}
+                className="group flex flex-col rounded-lg border border-border-subtle bg-surface-1 p-4 shadow-xs transition hover:border-border-default hover:bg-surface-2"
+              >
+                <header className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-text-primary flex items-center gap-1.5 truncate">
+                      {k.name}
+                      {k.is_default && (
+                        <Star
+                          className="h-3.5 w-3.5 text-status-warning-foreground shrink-0"
+                          aria-label="Kit padrão"
+                        />
+                      )}
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <MetaPill>
+                        {k.questions.length} pergunta
+                        {k.questions.length === 1 ? "" : "s"}
+                      </MetaPill>
+                      {videoCount > 0 && (
+                        <MetaPill icon={Video}>{videoCount} em vídeo</MetaPill>
+                      )}
+                      {k.is_default && <MetaPill>Padrão</MetaPill>}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditing(k)}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-status-danger-foreground"
+                      onClick={() => handleDelete(k.id)}
+                      aria-label={`Excluir kit ${k.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </header>
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       {editing && (
-        <div className="border rounded-lg p-6 space-y-4 bg-card">
+        <section className="rounded-lg border border-border-default bg-surface-1 p-5 shadow-xs space-y-5">
+          <SectionHeader
+            title={editing.id ? "Editar kit" : "Novo kit"}
+            description="Defina nome, marque como padrão e gerencie as perguntas."
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-            <div className="space-y-1">
-              <Label>Nome do kit</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="kit-name">Nome do kit</Label>
               <Input
+                id="kit-name"
                 value={editing.name}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               />
             </div>
             <div className="flex items-center gap-2">
               <Switch
+                id="kit-default"
                 checked={editing.is_default}
                 onCheckedChange={(v) => setEditing({ ...editing, is_default: v })}
               />
-              <Label>Kit padrão</Label>
+              <Label htmlFor="kit-default" className="!m-0">
+                Kit padrão
+              </Label>
             </div>
           </div>
 
           <div className="space-y-3">
-            <Label>Perguntas</Label>
+            <SectionHeader
+              title="Perguntas"
+              description="Adicione perguntas em texto ou vídeo (com tempo-limite)."
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setEditing({
+                      ...editing,
+                      questions: [...editing.questions, emptyQ()],
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Adicionar
+                </Button>
+              }
+            />
             {editing.questions.map((q, idx) => (
-              <div key={q.id} className="border rounded-lg p-3 space-y-2">
+              <div
+                key={q.id}
+                className="rounded-lg border border-border-subtle bg-surface-2 p-3 space-y-2"
+              >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">#{idx + 1}</span>
+                  <span className="text-xs font-medium text-text-tertiary">
+                    Pergunta #{idx + 1}
+                  </span>
                   <div className="flex items-center gap-2">
                     <Select
                       value={q.kind ?? "text"}
@@ -166,12 +267,21 @@ function InterviewKitsPage() {
                         setEditing({ ...editing, questions: qs });
                       }}
                     >
-                      <SelectTrigger className="w-32 h-8">
+                      <SelectTrigger
+                        className="w-32 h-8"
+                        aria-label={`Tipo da pergunta ${idx + 1}`}
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="text"><TypeIcon className="inline h-3 w-3 mr-1" />Texto</SelectItem>
-                        <SelectItem value="video"><Video className="inline h-3 w-3 mr-1" />Vídeo</SelectItem>
+                        <SelectItem value="text">
+                          <TypeIcon className="inline h-3 w-3 mr-1" />
+                          Texto
+                        </SelectItem>
+                        <SelectItem value="video">
+                          <Video className="inline h-3 w-3 mr-1" />
+                          Vídeo
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     {q.kind === "video" && (
@@ -179,21 +289,27 @@ function InterviewKitsPage() {
                         type="number"
                         className="w-20 h-8"
                         placeholder="seg"
+                        aria-label={`Tempo limite em segundos da pergunta ${idx + 1}`}
                         value={q.time_limit_sec ?? ""}
                         onChange={(e) => {
                           const qs = [...editing.questions];
-                          qs[idx] = { ...q, time_limit_sec: Number(e.target.value) || undefined };
+                          qs[idx] = {
+                            ...q,
+                            time_limit_sec: Number(e.target.value) || undefined,
+                          };
                           setEditing({ ...editing, questions: qs });
                         }}
                       />
                     )}
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="ghost"
+                      className="h-8 w-8 text-status-danger-foreground"
                       onClick={() => {
                         const qs = editing.questions.filter((_, i) => i !== idx);
                         setEditing({ ...editing, questions: qs });
                       }}
+                      aria-label={`Remover pergunta ${idx + 1}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -202,6 +318,7 @@ function InterviewKitsPage() {
                 <Textarea
                   rows={2}
                   placeholder="Texto da pergunta"
+                  aria-label={`Texto da pergunta ${idx + 1}`}
                   value={q.text}
                   onChange={(e) => {
                     const qs = [...editing.questions];
@@ -211,23 +328,18 @@ function InterviewKitsPage() {
                 />
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing({ ...editing, questions: [...editing.questions, emptyQ()] })}
-            >
-              <Plus className="h-4 w-4 mr-2" /> Adicionar pergunta
-            </Button>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
             <Button onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Salvando…" : "Salvar"}
             </Button>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
