@@ -1,16 +1,9 @@
 // Self-scheduling (Fase 2): candidato escolhe um slot via token.
+// O token é validado no handler; usamos o admin client porque as policies
+// anônimas em ats_interviews foram removidas (evita exposição em massa).
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-function publicClient() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-}
 
 export const createSelfScheduleLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -48,7 +41,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
 export const getSelfScheduleByToken = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
   .handler(async ({ data }) => {
-    const sb = publicClient();
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await sb
       .from("ats_interviews")
       .select("id, offered_slots, duration_min, status, scheduled_at, self_scheduled_at")
@@ -64,7 +57,7 @@ export const confirmSelfSchedule = createServerFn({ method: "POST" })
     z.object({ token: z.string().min(8), slot: z.string() }).parse(d),
   )
   .handler(async ({ data }) => {
-    const sb = publicClient();
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error: e0 } = await sb
       .from("ats_interviews")
       .select("id, offered_slots, status")
