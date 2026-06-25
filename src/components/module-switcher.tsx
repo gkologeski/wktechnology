@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useActiveModule } from "@/lib/modules/active-module";
+import { buildModuleUrl, isCrossHostUrl } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 export function ModuleSwitcher({ className }: { className?: string }) {
@@ -22,10 +23,12 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     if (moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
-    // Sempre navegamos dentro da mesma origem (origem dinâmica).
-    // Em produção podemos servir múltiplos módulos a partir do mesmo host
-    // (ex.: ats.wktechnology.com.br) sem depender de subdomínios separados.
-    navigate({ to: target.defaultRoute });
+    const url = buildModuleUrl(moduleId, target.defaultRoute);
+    if (isCrossHostUrl(url)) {
+      window.location.assign(url);
+    } else {
+      navigate({ to: url });
+    }
   };
 
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];

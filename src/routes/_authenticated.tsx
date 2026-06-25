@@ -13,6 +13,7 @@ import { GlobalSearchTrigger } from "@/components/global-search-trigger";
 import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SettingsMenu } from "@/components/settings-menu";
 import { AccountMenu } from "@/components/account-menu";
+import { WorkspaceMenu } from "@/components/workspace-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 import { FocusQueueBar } from "@/components/focus-queue-bar";
 import { ModuleSwitcher } from "@/components/module-switcher";
@@ -106,6 +107,7 @@ function AuthenticatedLayout() {
             <ModuleSwitcher />
             <GlobalSearchTrigger />
             <div className="flex-1" />
+            <WorkspaceMenu />
             <QuickCreateMenu />
             <SettingsMenu />
             <NotificationsBell />
