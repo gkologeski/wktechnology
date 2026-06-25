@@ -191,7 +191,7 @@ function InterviewKitsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-status-danger-foreground"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => handleDelete(k.id)}
                       aria-label={`Excluir kit ${k.name}`}
                     >
@@ -307,7 +307,7 @@ function InterviewKitsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-status-danger-foreground"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => {
                         const qs = editing.questions.filter((_, i) => i !== idx);
                         setEditing({ ...editing, questions: qs });

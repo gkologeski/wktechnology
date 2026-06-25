@@ -181,7 +181,7 @@ function StageEmailsPage() {
                 variant="outline"
                 onClick={() => remove.mutate()}
                 disabled={remove.isPending}
-                className="text-status-danger-foreground"
+                className="text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Remover
