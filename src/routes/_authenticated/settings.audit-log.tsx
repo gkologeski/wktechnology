@@ -1,9 +1,12 @@
 import { formatDateTime } from "@/lib/crm";
 // Página /settings/audit-log — histórico de alterações.
+// Lote 8 — alinhada à Design Foundation oficial do TechHire ("quiet premium").
+// Mantém integralmente a regra de negócio: usa o mesmo server function
+// `listAuditLogs`, mesmos filtros (entity, action, module_id) e mesmo
+// detail dialog. Nenhuma mudança em RLS, schema ou autenticação.
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,7 +19,14 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listAuditLogs, AUDIT_ENTITY_LABELS, AUDIT_ACTION_LABELS } from "@/lib/audit.functions";
-import { RefreshCcw, Eye } from "lucide-react";
+import { RefreshCcw, Eye, ShieldCheck } from "lucide-react";
+import {
+  PageHeader,
+  FilterBar,
+  EmptyState,
+  MetaPill,
+  Skeletons,
+} from "@/components/techhire/ui";
 
 export const Route = createFileRoute("/_authenticated/settings/audit-log")({
   component: AuditLogPage,
@@ -57,28 +67,31 @@ function AuditLogPage() {
   const fmtDate = (s: string) => formatDateTime(s);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Log de auditoria</h2>
-          <p className="text-sm text-muted-foreground">
-            Registro automático de criação, alteração e exclusão de leads, contatos, empresas e
-            negócios.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Atualizar
-        </Button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Segurança & governança"
+        title="Log de auditoria"
+        description={
+          loading
+            ? "Carregando eventos…"
+            : `${rows.length} registro(s) — criação, alteração e exclusão de leads, contatos, empresas e negócios.`
+        }
+        descriptionLive
+        primaryAction={
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-[180px_180px_180px_1fr] gap-3 items-end">
+      <FilterBar
+        chips={
+          <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
-              <Label>Módulo</Label>
+              <Label className="text-xs text-text-tertiary">Módulo</Label>
               <Select value={moduleId} onValueChange={setModuleId}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 w-[170px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -89,9 +102,9 @@ function AuditLogPage() {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label>Entidade</Label>
+              <Label className="text-xs text-text-tertiary">Entidade</Label>
               <Select value={entity} onValueChange={setEntity}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -107,9 +120,9 @@ function AuditLogPage() {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label>Ação</Label>
+              <Label className="text-xs text-text-tertiary">Ação</Label>
               <Select value={action} onValueChange={setAction}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -124,83 +137,85 @@ function AuditLogPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="text-sm text-muted-foreground text-right">
-              {rows.length} registro(s)
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Eventos recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading && <p className="text-sm text-muted-foreground">Carregando…</p>}
-          {!loading && rows.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhum evento.</p>
-          )}
-          {!loading && rows.length > 0 && (
-            <div className="text-sm">
-              <div className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 py-2 border-b text-xs uppercase text-muted-foreground">
-                <div>Quando</div>
-                <div>Módulo</div>
-                <div>Entidade</div>
-                <div>Ação</div>
-                <div>Mudanças</div>
-                <div>Por</div>
-                <div></div>
-              </div>
-              {rows.map((r) => (
-                <div
-                  key={r.id}
-                  className="grid grid-cols-[150px_80px_110px_110px_1fr_160px_60px] gap-2 items-center py-2 border-b last:border-0"
-                >
-                  <span className="text-xs text-muted-foreground">{fmtDate(r.created_at)}</span>
-                  <Badge variant="outline" className="text-[10px] uppercase">
-                    {r.module_id ?? "—"}
-                  </Badge>
-                  <span>
-                    {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
-                  </span>
-                  <Badge
-                    variant={
-                      r.action === "deleted"
-                        ? "destructive"
-                        : r.action === "created"
-                          ? "default"
-                          : "secondary"
-                    }
-                  >
-                    {AUDIT_ACTION_LABELS[r.action as keyof typeof AUDIT_ACTION_LABELS] ?? r.action}
-                  </Badge>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {r.action === "updated"
-                      ? r.changed_keys.length
-                        ? r.changed_keys.slice(0, 5).join(", ") +
-                          (r.changed_keys.length > 5 ? "…" : "")
-                        : "—"
-                      : (r.entity_id ?? "")}
-                  </span>
-                  <span className="text-xs truncate">
-                    {r.actor_name ||
-                      r.actor_email ||
-                      (r.actor_user_id ? r.actor_user_id.slice(0, 8) : "sistema")}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDetail(r)}
-                    aria-label="Detalhes"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+      <section className="rounded-xl border border-border-subtle bg-surface-1 shadow-xs">
+        {loading ? (
+          <div className="p-4">
+            <Skeletons.Row />
+            <Skeletons.Row />
+            <Skeletons.Row />
+            <Skeletons.Row />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              icon={ShieldCheck}
+              title="Nenhum evento encontrado"
+              description="Ajuste os filtros acima ou aguarde novas ações no workspace."
+            />
+          </div>
+        ) : (
+          <div className="text-sm">
+            <div className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 px-4 py-2.5 border-b border-border-subtle text-[11px] uppercase tracking-wider text-text-tertiary bg-surface-2 rounded-t-xl">
+              <div>Quando</div>
+              <div>Módulo</div>
+              <div>Entidade</div>
+              <div>Ação</div>
+              <div>Mudanças</div>
+              <div>Por</div>
+              <div className="sr-only">Ações</div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {rows.map((r) => (
+              <div
+                key={r.id}
+                className="grid grid-cols-[160px_88px_140px_120px_minmax(0,1fr)_180px_56px] gap-2 items-center px-4 py-2.5 border-b border-border-subtle last:border-0 hover:bg-surface-2/60 transition-colors"
+              >
+                <span className="text-xs text-text-secondary">{fmtDate(r.created_at)}</span>
+                <MetaPill>{(r.module_id ?? "—").toUpperCase()}</MetaPill>
+                <span className="text-text-primary truncate">
+                  {AUDIT_ENTITY_LABELS[r.entity as keyof typeof AUDIT_ENTITY_LABELS] ?? r.entity}
+                </span>
+                <Badge
+                  variant={
+                    r.action === "deleted"
+                      ? "destructive"
+                      : r.action === "created"
+                        ? "default"
+                        : "secondary"
+                  }
+                  className="w-fit"
+                >
+                  {AUDIT_ACTION_LABELS[r.action as keyof typeof AUDIT_ACTION_LABELS] ?? r.action}
+                </Badge>
+                <span className="truncate text-xs text-text-secondary">
+                  {r.action === "updated"
+                    ? r.changed_keys.length
+                      ? r.changed_keys.slice(0, 5).join(", ") +
+                        (r.changed_keys.length > 5 ? "…" : "")
+                      : "—"
+                    : (r.entity_id ?? "")}
+                </span>
+                <span className="text-xs text-text-secondary truncate">
+                  {r.actor_name ||
+                    r.actor_email ||
+                    (r.actor_user_id ? r.actor_user_id.slice(0, 8) : "sistema")}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDetail(r)}
+                  aria-label={`Detalhes do evento ${r.action} em ${r.entity}`}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <DetailDialog row={detail} onClose={() => setDetail(null)} />
     </div>
@@ -233,34 +248,34 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-muted-foreground">Quando:</span>{" "}
+                <span className="text-text-tertiary">Quando:</span>{" "}
                 {formatDateTime(row.created_at)}
               </div>
               <div>
-                <span className="text-muted-foreground">Por:</span>{" "}
+                <span className="text-text-tertiary">Por:</span>{" "}
                 {row.actor_name || row.actor_email || row.actor_user_id || "sistema"}
               </div>
               <div>
-                <span className="text-muted-foreground">Entidade:</span> {row.entity}
+                <span className="text-text-tertiary">Entidade:</span> {row.entity}
               </div>
               <div>
-                <span className="text-muted-foreground">ID:</span>{" "}
+                <span className="text-text-tertiary">ID:</span>{" "}
                 <code className="text-xs">{row.entity_id}</code>
               </div>
               <div>
-                <span className="text-muted-foreground">Ação:</span> {row.action}
+                <span className="text-text-tertiary">Ação:</span> {row.action}
               </div>
             </div>
 
             {row.action === "updated" && (
               <div>
-                <div className="font-medium mb-1">Mudanças</div>
+                <div className="font-medium mb-1 text-text-primary">Mudanças</div>
                 {diff.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Nenhuma diferença relevante.</p>
+                  <p className="text-xs text-text-tertiary">Nenhuma diferença relevante.</p>
                 )}
                 {diff.length > 0 && (
-                  <div className="border rounded">
-                    <div className="grid grid-cols-[160px_1fr_1fr] gap-2 px-2 py-1 border-b text-xs uppercase text-muted-foreground">
+                  <div className="border border-border-subtle rounded-md overflow-hidden">
+                    <div className="grid grid-cols-[160px_1fr_1fr] gap-2 px-2 py-1 border-b border-border-subtle text-[11px] uppercase tracking-wider text-text-tertiary bg-surface-2">
                       <div>Campo</div>
                       <div>Antes</div>
                       <div>Depois</div>
@@ -268,11 +283,11 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
                     {diff.map((d) => (
                       <div
                         key={d.key}
-                        className="grid grid-cols-[160px_1fr_1fr] gap-2 px-2 py-1 border-b last:border-0 text-xs"
+                        className="grid grid-cols-[160px_1fr_1fr] gap-2 px-2 py-1 border-b border-border-subtle last:border-0 text-xs"
                       >
-                        <div className="font-medium">{d.key}</div>
-                        <div className="truncate text-muted-foreground">{fmt(d.before)}</div>
-                        <div className="truncate">{fmt(d.after)}</div>
+                        <div className="font-medium text-text-primary">{d.key}</div>
+                        <div className="truncate text-text-tertiary">{fmt(d.before)}</div>
+                        <div className="truncate text-text-primary">{fmt(d.after)}</div>
                       </div>
                     ))}
                   </div>
@@ -282,8 +297,8 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
 
             {(row.action === "created" || row.action === "deleted") && (
               <div>
-                <div className="font-medium mb-1">Snapshot</div>
-                <pre className="text-xs bg-muted p-2 rounded overflow-x-auto max-h-80">
+                <div className="font-medium mb-1 text-text-primary">Snapshot</div>
+                <pre className="text-xs bg-surface-sunken text-text-primary p-2 rounded-md overflow-x-auto max-h-80 border border-border-subtle">
                   {JSON.stringify(row.action === "created" ? row.after : row.before, null, 2)}
                 </pre>
               </div>
