@@ -263,6 +263,15 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       inviteId: (inserted as { id: string }).id,
     });
 
+    await supabaseAdmin.from("audit_logs").insert({
+      workspace_owner_id: workspaceId,
+      actor_user_id: userId,
+      entity: "workspace_invite",
+      entity_id: (inserted as { id: string }).id,
+      action: "invite.created",
+      after: { email, role: data.role },
+    } as never);
+
     return { ok: true, url, token, email, emailed: true };
   });
 
@@ -304,6 +313,15 @@ export const resendWorkspaceInvite = createServerFn({ method: "POST" })
       inviteId: inv.id as string,
     });
 
+    await supabaseAdmin.from("audit_logs").insert({
+      workspace_owner_id: workspaceId,
+      actor_user_id: userId,
+      entity: "workspace_invite",
+      entity_id: inv.id as string,
+      action: "invite.resent",
+      after: { email: inv.email, role: inv.role },
+    } as never);
+
     return { ok: true, url };
   });
 
@@ -315,12 +333,26 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
+    const { data: invRow } = await supabaseAdmin
+      .from("workspace_invites")
+      .select("id, email, role")
+      .eq("id", data.invite_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
     const { error } = await supabaseAdmin
       .from("workspace_invites")
       .delete()
       .eq("id", data.invite_id)
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
+    await supabaseAdmin.from("audit_logs").insert({
+      workspace_owner_id: workspaceId,
+      actor_user_id: userId,
+      entity: "workspace_invite",
+      entity_id: data.invite_id,
+      action: "invite.revoked",
+      before: invRow ? { email: invRow.email, role: invRow.role } : null,
+    } as never);
     return { ok: true };
   });
 

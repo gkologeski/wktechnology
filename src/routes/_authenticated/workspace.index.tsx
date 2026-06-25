@@ -55,21 +55,30 @@ const CARDS: HubCard[] = [
     title: "Branding",
     desc: "Logo, cores e identidade visual do workspace.",
     icon: Palette,
-    status: "Em breve",
   },
   {
     to: "/settings/api-keys",
     title: "API Keys",
     desc: "Tokens para integração programática.",
     icon: KeyRound,
-    status: "Em breve",
   },
   {
-    to: "/settings/locale",
+    to: "/settings/language",
     title: "Idioma & Região",
     desc: "Preferências de idioma, fuso horário e moeda.",
     icon: Languages,
-    status: "Em breve",
+  },
+  {
+    to: "/settings/webhooks",
+    title: "Webhooks de saída",
+    desc: "Notifique sistemas externos sobre eventos do workspace.",
+    icon: KeyRound,
+  },
+  {
+    to: "/settings/audit-log",
+    title: "Audit Log",
+    desc: "Histórico de ações administrativas e de segurança.",
+    icon: ShieldCheck,
   },
 ];
 
