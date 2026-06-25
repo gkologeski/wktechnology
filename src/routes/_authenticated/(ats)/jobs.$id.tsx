@@ -1,16 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Download } from "lucide-react";
+import { ArrowLeft, Plus, Download, ClipboardCheck, Briefcase, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +31,17 @@ import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
-import { ClipboardCheck } from "lucide-react";
+import {
+  AtsPageHeader,
+  AtsSectionHeader,
+  EmptyState,
+  ScoreBadge,
+  Skeletons,
+  StatusBadge,
+  type JobStatus,
+} from "@/components/ats/ui";
+import { MetaPill } from "@/components/techhire/ui";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
   component: JobDetailPage,
@@ -47,6 +50,58 @@ export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
 type App = Awaited<ReturnType<typeof listJobApplications>>[number];
 type Job = Awaited<ReturnType<typeof getAtsJob>>;
 type Candidate = Awaited<ReturnType<typeof listAtsCandidates>>[number];
+
+const STATUS_TO_BADGE: Record<string, JobStatus> = {
+  published: "open",
+  draft: "draft",
+  on_hold: "onhold",
+  filled: "closed",
+  closed: "closed",
+};
+
+const SENIORITY_LABEL: Record<string, string> = {
+  intern: "Estágio",
+  junior: "Júnior",
+  mid: "Pleno",
+  senior: "Sênior",
+  lead: "Líder",
+  principal: "Principal",
+};
+const REMOTE_LABEL: Record<string, string> = {
+  onsite: "Presencial",
+  hybrid: "Híbrido",
+  remote: "Remoto",
+};
+const EMPLOYMENT_LABEL: Record<string, string> = {
+  clt: "CLT",
+  pj: "PJ",
+  contract: "Contrato",
+  internship: "Estágio",
+  temporary: "Temporário",
+};
+
+function JobDetailSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="space-y-3">
+        <div className="h-4 w-32 rounded-md bg-surface-sunken animate-pulse" />
+        <div className="h-7 w-72 rounded-md bg-surface-sunken animate-pulse" />
+        <div className="flex gap-2">
+          <div className="h-5 w-16 rounded-md bg-surface-sunken animate-pulse" />
+          <div className="h-5 w-20 rounded-md bg-surface-sunken animate-pulse" />
+          <div className="h-5 w-24 rounded-md bg-surface-sunken animate-pulse" />
+        </div>
+      </div>
+      <div className="flex gap-3 overflow-hidden">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="w-72 flex-shrink-0">
+            <Skeletons.Card />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function JobDetailPage() {
   const { id } = Route.useParams();
@@ -58,10 +113,10 @@ function JobDetailPage() {
   const listSummary = useServerFn(listJobScorecardSummary);
   const exportCsv = useServerFn(exportJobApplicationsCsv);
 
-
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -73,6 +128,7 @@ function JobDetailPage() {
 
   const refresh = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [j, a] = await Promise.all([
         getJob({ data: { id } }),
@@ -90,7 +146,9 @@ function JobDetailPage() {
         setScoreSummary({});
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao carregar");
+      const msg = e instanceof Error ? e.message : "Falha ao carregar";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -110,6 +168,8 @@ function JobDetailPage() {
     }
     return m;
   }, [apps, stages]);
+
+  const totalApps = apps.length;
 
   const openAdd = async () => {
     setAddOpen(true);
@@ -139,7 +199,6 @@ function JobDetailPage() {
     const app = apps.find((a) => a.id === dragging);
     setDragging(null);
     if (!app || app.stage_value === toStage) return;
-    // optimistic
     setApps((prev) =>
       prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)),
     );
@@ -151,8 +210,44 @@ function JobDetailPage() {
     }
   };
 
-  if (loading) return <div className="text-sm text-muted-foreground p-6">Carregando…</div>;
-  if (!job) return <div className="p-6 text-sm">Vaga não encontrada.</div>;
+  const handleExport = async () => {
+    try {
+      const r = await exportCsv({ data: { jobId: id } });
+      const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = r.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao exportar");
+    }
+  };
+
+  if (loading) return <JobDetailSkeleton />;
+
+  if (error && !job) {
+    return (
+      <EmptyState
+        icon={<Briefcase className="h-6 w-6" aria-hidden="true" />}
+        title="Não foi possível carregar a vaga"
+        description={error}
+        action={{ label: "Tentar novamente", onClick: refresh }}
+      />
+    );
+  }
+
+  if (!job) {
+    return (
+      <EmptyState
+        icon={<Briefcase className="h-6 w-6" aria-hidden="true" />}
+        title="Vaga não encontrada"
+        description="Esta vaga pode ter sido removida ou você não tem acesso a ela."
+        action={{ label: "Voltar para vagas", to: "/jobs" }}
+      />
+    );
+  }
 
   const jobAny = job as unknown as {
     title: string;
@@ -163,174 +258,224 @@ function JobDetailPage() {
     description: string | null;
     requirements: string | null;
     status: string;
+    department?: string | null;
   };
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Link to="/jobs">
-            <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
-          <div>
-            <h2 className="text-xl font-semibold">{jobAny.title}</h2>
-            <div className="flex flex-wrap gap-2 mt-1">
-              <Badge>{jobAny.status}</Badge>
-              {jobAny.seniority && <Badge variant="outline">{jobAny.seniority}</Badge>}
-              {jobAny.remote_mode && <Badge variant="outline">{jobAny.remote_mode}</Badge>}
-              {jobAny.employment_type && <Badge variant="outline">{jobAny.employment_type}</Badge>}
-              {jobAny.location && <Badge variant="outline">{jobAny.location}</Badge>}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                const r = await exportCsv({ data: { jobId: id } });
-                const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = r.filename;
-                a.click();
-                URL.revokeObjectURL(url);
-              } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Falha ao exportar");
-              }
-            }}
-          >
-            <Download className="h-4 w-4 mr-2" />CSV
-          </Button>
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openAdd}><Plus className="h-4 w-4 mr-2" />Adicionar candidato</Button>
-            </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar candidato à vaga</DialogTitle>
-            </DialogHeader>
-            <div>
-              <Label>Candidato</Label>
-              <Select value={selectedCand} onValueChange={setSelectedCand}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha um candidato cadastrado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {candidates.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      Nenhum candidato cadastrado. Cadastre em /ats/candidates.
-                    </div>
-                  ) : (
-                    candidates.map((c) => (
-                      <SelectItem key={c.id} value={c.id as string}>
-                        {c.full_name as string}
-                        {c.email ? ` — ${c.email}` : ""}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
-              <Button onClick={handleAdd} disabled={!selectedCand}>Adicionar</Button>
-            </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+  const statusVariant = STATUS_TO_BADGE[jobAny.status] ?? "draft";
+  const metaItems: Array<{ key: string; label: string }> = [];
+  if (jobAny.seniority) metaItems.push({ key: "sen", label: SENIORITY_LABEL[jobAny.seniority] ?? jobAny.seniority });
+  if (jobAny.remote_mode) metaItems.push({ key: "rem", label: REMOTE_LABEL[jobAny.remote_mode] ?? jobAny.remote_mode });
+  if (jobAny.employment_type) metaItems.push({ key: "emp", label: EMPLOYMENT_LABEL[jobAny.employment_type] ?? jobAny.employment_type });
+  if (jobAny.location) metaItems.push({ key: "loc", label: jobAny.location });
+  if (jobAny.department) metaItems.push({ key: "dep", label: jobAny.department });
 
+  return (
+    <div className="flex flex-col gap-6">
+      <AtsPageHeader
+        eyebrow={
+          <Link
+            to="/jobs"
+            className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" aria-hidden="true" />
+            Vagas
+          </Link>
+        }
+        title={jobAny.title}
+        description={
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={statusVariant} />
+            {metaItems.map((m) => (
+              <MetaPill key={m.key}>{m.label}</MetaPill>
+            ))}
+            <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
+              <Users className="h-3 w-3" aria-hidden="true" />
+              {totalApps} {totalApps === 1 ? "candidato" : "candidatos"}
+            </span>
+          </div>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </Button>
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openAdd}>
+                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Adicionar candidato
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar candidato à vaga</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="job-detail-add-candidate">Candidato</Label>
+                  <Select value={selectedCand} onValueChange={setSelectedCand}>
+                    <SelectTrigger id="job-detail-add-candidate">
+                      <SelectValue placeholder="Escolha um candidato cadastrado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {candidates.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-text-tertiary">
+                          Nenhum candidato cadastrado. Cadastre em /candidates.
+                        </div>
+                      ) : (
+                        candidates.map((c) => (
+                          <SelectItem key={c.id} value={c.id as string}>
+                            {c.full_name as string}
+                            {c.email ? ` — ${c.email}` : ""}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAdd} disabled={!selectedCand}>
+                    Adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+      />
 
       {(jobAny.description || jobAny.requirements) && (
-        <Card>
-          <CardContent className="pt-4 grid md:grid-cols-2 gap-4 text-sm">
+        <section
+          className={cn(
+            "rounded-lg border border-border-subtle bg-surface-1",
+            "shadow-xs",
+          )}
+        >
+          <div className="grid md:grid-cols-2 gap-6 p-5 text-sm">
             {jobAny.description && (
               <div>
-                <div className="font-medium mb-1">Descrição</div>
-                <p className="text-muted-foreground whitespace-pre-wrap">{jobAny.description}</p>
+                <AtsSectionHeader title="Descrição" />
+                <p className="mt-2 text-text-secondary whitespace-pre-wrap leading-relaxed">
+                  {jobAny.description}
+                </p>
               </div>
             )}
             {jobAny.requirements && (
               <div>
-                <div className="font-medium mb-1">Requisitos</div>
-                <p className="text-muted-foreground whitespace-pre-wrap">{jobAny.requirements}</p>
+                <AtsSectionHeader title="Requisitos" />
+                <p className="mt-2 text-text-secondary whitespace-pre-wrap leading-relaxed">
+                  {jobAny.requirements}
+                </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
 
-      <div className="overflow-x-auto">
-        <div className="flex gap-3 min-w-max pb-2">
-          {stages.map((s) => (
-            <div
-              key={s.value}
-              className="w-72 flex-shrink-0"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDrop(s.value)}
-            >
-              <Card className="bg-muted/30 h-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <span>{s.label}</span>
-                    <Badge variant="secondary">{byStage[s.value]?.length ?? 0}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 min-h-[200px]">
-                  {(byStage[s.value] ?? []).map((a) => (
-                    <div
-                      key={a.id}
-                      draggable
-                      onDragStart={() => setDragging(a.id)}
-                      onDragEnd={() => setDragging(null)}
-                      className="bg-background border rounded-md p-3 text-sm cursor-grab active:cursor-grabbing hover:border-primary/40"
-                    >
-                      <div className="font-medium truncate">
-                        {a.candidate?.full_name ?? "Candidato"}
+      <section className="flex flex-col gap-3">
+        <AtsSectionHeader
+          title="Pipeline"
+          description="Arraste candidatos entre etapas para atualizar o status."
+        />
+        {totalApps === 0 ? (
+          <EmptyState
+            icon={<Users className="h-6 w-6" aria-hidden="true" />}
+            title="Nenhum candidato nesta vaga"
+            description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
+            action={{ label: "Adicionar candidato", onClick: openAdd }}
+          />
+        ) : (
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div className="flex gap-3 min-w-max pb-2">
+              {stages.map((s) => {
+                const items = byStage[s.value] ?? [];
+                return (
+                  <div
+                    key={s.value}
+                    className="w-72 flex-shrink-0"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => onDrop(s.value)}
+                  >
+                    <div className="rounded-lg border border-border-subtle bg-surface-sunken h-full flex flex-col">
+                      <div className="px-3 py-2.5 border-b border-border-subtle flex items-center justify-between">
+                        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                          {s.label}
+                        </span>
+                        <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-md bg-surface-1 border border-border-subtle text-[11px] font-medium text-text-secondary tabular-nums">
+                          {items.length}
+                        </span>
                       </div>
-                      {a.candidate?.current_position && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {a.candidate.current_position}
-                          {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
-                        </div>
-                      )}
-                      {a.candidate?.email && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {a.candidate.email}
-                        </div>
-                      )}
-                      {a.ai_match_score != null && (
-                        <Badge variant="outline" className="mt-1 text-[10px] mr-1">
-                          IA {Math.round(Number(a.ai_match_score))}
-                        </Badge>
-                      )}
-                      {scoreSummary[a.id] && (
-                        <Badge variant="secondary" className="mt-1 text-[10px] mr-1">
-                          Score {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
-                        </Badge>
-                      )}
-                      <div className="mt-2 flex justify-end">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-[11px]"
-                          onClick={(e) => { e.stopPropagation(); setEvalApp(a); }}
-                          draggable={false}
-                          onDragStart={(e) => e.stopPropagation()}
-                        >
-                          <ClipboardCheck className="h-3 w-3 mr-1" />Avaliar
-                        </Button>
+                      <div className="space-y-2 p-2 min-h-[200px] flex-1">
+                        {items.length === 0 ? (
+                          <div className="h-full min-h-[180px] flex items-center justify-center text-[11px] text-text-tertiary">
+                            Solte aqui
+                          </div>
+                        ) : (
+                          items.map((a) => (
+                            <div
+                              key={a.id}
+                              draggable
+                              onDragStart={() => setDragging(a.id)}
+                              onDragEnd={() => setDragging(null)}
+                              className={cn(
+                                "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
+                                "cursor-grab active:cursor-grabbing",
+                                "hover:border-border-strong hover:shadow-xs transition-all",
+                                "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
+                              )}
+                            >
+                              <div className="font-medium text-text-primary truncate">
+                                {a.candidate?.full_name ?? "Candidato"}
+                              </div>
+                              {a.candidate?.current_position && (
+                                <div className="text-xs text-text-tertiary truncate mt-0.5">
+                                  {a.candidate.current_position}
+                                  {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
+                                </div>
+                              )}
+                              {a.candidate?.email && (
+                                <div className="text-xs text-text-tertiary truncate">
+                                  {a.candidate.email}
+                                </div>
+                              )}
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                {a.ai_match_score != null && (
+                                  <ScoreBadge score={Number(a.ai_match_score)} />
+                                )}
+                                {scoreSummary[a.id] && (
+                                  <MetaPill>
+                                    Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                                  </MetaPill>
+                                )}
+                              </div>
+                              <div className="mt-2 flex justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-[11px]"
+                                  onClick={(e) => { e.stopPropagation(); setEvalApp(a); }}
+                                  draggable={false}
+                                  onDragStart={(e) => e.stopPropagation()}
+                                >
+                                  <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden="true" />
+                                  Avaliar
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
+      </section>
 
       {evalApp && (
         <ScorecardEvalDialog
@@ -346,4 +491,3 @@ function JobDetailPage() {
     </div>
   );
 }
-
