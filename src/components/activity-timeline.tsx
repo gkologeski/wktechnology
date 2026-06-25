@@ -455,6 +455,17 @@ export function ActivityTimeline({
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
+  // Recarrega quando uma associação é criada/removida em outro componente
+  useEffect(() => {
+    const handler = () => {
+      void load();
+    };
+    window.addEventListener("timeline:refresh", handler);
+    return () => window.removeEventListener("timeline:refresh", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
+
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
     (async () => {
