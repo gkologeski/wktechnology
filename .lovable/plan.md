@@ -1,165 +1,43 @@
-# Plano: Cross-entity Timeline + Vínculo de Reuniões ao Negócio
+# Por que a gravação não apareceu
 
-Resolve dois problemas em uma única entrega coerente:
+A reunião "WK Technology <> FLOWER MARKET SOLUTIONS LTDA" (Meet `ndt-mkkh-ccv`, encerrada 18:30 UTC) está no calendário do `guilherme@wktechnology.com.br`, que tem escopo `drive.readonly` — então a busca no Drive funcionaria. Mas o registro está com `recording_attempts = 0`, `recording_status = NULL` e `recording_last_error = NULL`: o vinculador nunca rodou para este evento.
 
-1. **Reunião do Google Calendar não aparece no Negócio recém-criado** (caso Ignacio Celedon).
-2. **Generalizar**: ao abrir/criar qualquer entidade ligada a outra, espelhar o histórico relevante da entidade pai, com seletor de período (presets em pt-BR).
+Causas, em ordem:
 
----
+1. **O cron de gravações não está agendado.** O endpoint `/api/public/hooks/calendar-recordings-tick` existe e funciona (chama `tickAllRecordings → syncPastRecordings`), porém não há migration registrando-o em `cron.job` (`grep` em `supabase/migrations/` não retorna nada). Sem agendamento, nada chama o tick, e o `recording_drive_file_id` nunca é preenchido.
+2. **Latência natural do Meet → Drive.** Mesmo com o cron ativo, o Meet leva tipicamente 10–30 min após o fim para publicar o MP4 no Drive do organizador. A janela atual `end_at ≤ now − 5 min` busca cedo demais; se cair em "not_found" precisa esperar a próxima execução.
+3. **Sem ação manual no UI.** Hoje não há como o usuário forçar a busca da gravação a partir do timeline; ele só pode esperar.
 
-## Parte A — Diagnóstico do caso atual (já investigado)
+# O que vou implementar
 
-O dado existe: o `calendar_event` `cba435e8…` está com `related_contact_id` = Ignacio, attendees corretos e horário 15:00–15:30 GMT-3. O código em `activity-timeline.tsx` (linhas 343–489) já tenta espelhar calendar_events do contato do deal. Causas prováveis da invisibilidade observada:
+## 1. Agendar o cron `calendar-recordings-tick`
 
-- A timeline só busca `calendar_events` **na primeira renderização** do deal — não há invalidação quando o sync do Google roda em background.
-- O filtro `calendarEventTargetsEmails` exige que o domínio do contato não esteja entre os "internal domains". Funciona neste caso, mas é frágil quando o sync ainda não preencheu attendees.
-- Não há indexação por `(related_contact_id, start_at)` em `calendar_events`, então a query escala mal e tende a ser cortada.
-- O deal-detail-drawer e a página `/deals/$id` montam a timeline independentes; cache do TanStack Query não é invalidado quando o Google Calendar webhook insere/atualiza um evento.
+Nova migration que cria um `cron.job` rodando a cada 5 minutos contra `https://wktechnology.lovable.app/api/public/hooks/calendar-recordings-tick` com `Authorization: Bearer <CRON_SECRET>` (mesmo padrão dos outros ticks do projeto). Inclui `unschedule` defensivo antes do `schedule` para ser idempotente.
 
-A Parte B resolve isso de forma estrutural.
+## 2. Ajustar a janela de varredura
 
----
+Em `src/lib/calendar/engine.server.ts → syncPastRecordings`:
 
-## Parte B — Modelo de "espelhamento" (definitivo)
+- Mudar `until = now − 5 min` para `now − 10 min` (alinhar com o tempo mínimo de publicação no Drive e evitar gastar tentativas em vão).
+- Aumentar `since` de 14 para 30 dias (cobre reuniões antigas re-importadas).
+- Adicionar backoff: se `recording_attempts ≥ 12` (≈ 1 h tentando) e status `not_found`, pular nas próximas execuções automáticas — ainda processável via botão manual.
 
-Decisão arquitetural: **espelhar em vez de duplicar**. Nenhum INSERT em `activities`. A timeline passa a consultar uma fonte unificada por entidade.
+## 3. Botão "Buscar gravação agora" em /settings/calendar
 
-### B.1 — View consolidada `timeline_items`
+- Nova server function `refreshEventRecording({ event_id })` em `src/lib/calendar/recordings.functions.ts` (protegida com `requireSupabaseAuth`, valida que `owner_id = userId`, importa `supabaseAdmin` dentro do handler, reusa `findDriveRecording` do engine).
+- Em `src/components/activity-timeline.tsx`, no card de reunião do Google Calendar, mostrar:
+  - Link de "Abrir gravação" quando `recording_url` existir.
+  - Botão "Buscar gravação" quando não existir, que chama a server fn e invalida a query do timeline. Mostrar tooltip com o último erro (`recording_last_error`) quando houver.
 
-Uma view materializada virtual (Postgres view com `security_invoker=on`) que une, por workspace:
+## 4. Forçar a busca para o evento atual
 
-```text
-activities  →  type, subject, body, related_*_id, owner, due_date, created_at
-emails      →  related_*_id via thread/contact match
-meetings    →  related_*_id (já existe)
-calendar_events → expandido com related_deal_id derivado do contato
-whatsapp_messages → via conversa↔contato
-notes (em activities type='note')
-```
+Após deploy, disparar uma vez o tick (via curl autenticado) para vincular o evento `cba435e8-…` e demais reuniões pendentes do workspace.
 
-Cada item carrega: `id`, `source`, `type`, `subject`, `body_excerpt`, `occurred_at`, `actor_id`, `direct_link` (true = vínculo direto na entidade), `mirrored_from` (origem do espelhamento), `workspace_id` + colunas `related_contact_id | related_company_id | related_deal_id | related_lead_id | related_ticket_id`.
+# Arquivos tocados
 
-### B.2 — Função RPC `get_entity_timeline(entity_kind, entity_id, since, until, limit)`
+- `supabase/migrations/<timestamp>_schedule_calendar_recordings_tick.sql` (novo)
+- `src/lib/calendar/engine.server.ts` (janela + backoff)
+- `src/lib/calendar/recordings.functions.ts` (novo)
+- `src/components/activity-timeline.tsx` (botão + link de gravação)
 
-Server-side, SECURITY INVOKER, recebe:
-
-- `entity_kind`: `'deal' | 'contact' | 'company' | 'lead' | 'ticket'`
-- `entity_id`: UUID
-- `since` / `until`: timestamptz nullable (null = sem limite)
-- `limit`: default 200
-
-A função resolve o **grafo de espelhamento** uma única vez no servidor:
-
-```text
-deal      → primary_contact + deal_contacts + (contact.company_id)
-contact   → contact.company_id
-company   → todos contacts da company + todos deals da company
-ticket    → contact_id + deal_id + company_id
-lead      → email match
-```
-
-Filtra `timeline_items` por `related_*_id IN (grafo)` + período. Retorna ordenado por `occurred_at DESC`.
-
-### B.3 — Vínculo `calendar_events → deal` (sem coluna nova)
-
-A resolução é feita **na função RPC** (não na tabela), por ser dinâmica: um evento ligado ao contato Ignacio aparece automaticamente no deal X enquanto Ignacio for `primary_contact_id` ou estiver em `deal_contacts`. Sem trigger, sem duplicação, reversível.
-
-Opcional: criar índice parcial `idx_calendar_events_contact_time ON calendar_events(related_contact_id, start_at DESC) WHERE related_contact_id IS NOT NULL` para velocidade.
-
-### B.4 — "Fixar ao Negócio" (escape hatch híbrido)
-
-Botão "Fixar a este negócio" em itens espelhados grava uma row em **nova tabela** `timeline_pins(workspace_id, source, source_id, entity_kind, entity_id, pinned_at, pinned_by)`. Pins são incluídos na resposta da RPC mesmo fora do período — útil para registrar "essa reunião foi decisiva para fechar este deal".
-
----
-
-## Parte C — Seletor de período (preset pt-BR)
-
-Usa a skill `date-range-picker-br` (já documentada). Cria:
-
-- `src/lib/date-presets.ts` — `getPresetRange(key)` e `PRESETS[]` com grupos: Dias, Semanas, Trimestres, Semestres, Anos, Últimos N dias, Personalizado, **+ "Desde sempre"**.
-- `src/components/date-range-picker.tsx` — Popover com Select de presets + Calendar custom.
-
-Default no contexto da timeline: **`allTime`** ("Desde sempre"), conforme escolhido.
-
-A escolha persiste em `user_grid_preferences` por par (`entity_kind`, escopo `timeline`), para que cada usuário tenha sua preferência lembrada.
-
----
-
-## Parte D — Integração na UI
-
-### D.1 — `activity-timeline.tsx`
-
-- Substituir a montagem manual (8 fontes em paralelo) por **uma chamada** a `get_entity_timeline` via `useSuspenseQuery`.
-- Adicionar `<DateRangePicker />` no header da timeline, ao lado do filtro de tipos já existente.
-- `queryKey: ["timeline", entity_kind, entity_id, since, until]` → invalidação cirúrgica.
-- Badge visual diferenciando: vínculo direto (cinza) vs espelhado (azul-claro com tooltip "Espelhado de Contato: Ignacio").
-
-### D.2 — Realtime
-
-Subscrever canal Postgres Changes em `activities`, `calendar_events`, `meetings`, `emails` filtrado por workspace. Em mudança → `queryClient.invalidateQueries({ queryKey: ["timeline"] })`.
-
-Resolve a queixa original: a reunião aparece sozinha assim que o sync do Google a insere.
-
-### D.3 — Páginas atingidas (rota → arquivo)
-
-- `/deals/$id` → `src/routes/_authenticated/deals.$id.tsx`
-- `/contacts/$id` → `src/routes/_authenticated/contacts.$id.tsx`
-- `/companies/$id` → `src/routes/_authenticated/companies.$id.tsx`
-- `/leads/$id` → `src/routes/_authenticated/leads.$id.tsx`
-- `/tickets/$id` → `src/routes/_authenticated/tickets.$id.tsx`
-- `deal-detail-drawer.tsx` (consome o mesmo componente)
-
----
-
-## Parte E — Server function
-
-`src/lib/timeline.functions.ts`:
-
-```ts
-getEntityTimeline = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({
-    entityKind: z.enum(["deal","contact","company","lead","ticket"]),
-    entityId: z.string().uuid(),
-    since: z.string().datetime().nullable(),
-    until: z.string().datetime().nullable(),
-    limit: z.number().int().min(1).max(500).default(200),
-  }))
-  .handler(...)  // chama RPC get_entity_timeline; RLS aplicada
-```
-
-Pin/unpin:
-- `pinTimelineItem({ source, sourceId, entityKind, entityId })`
-- `unpinTimelineItem({ id })`
-
----
-
-## Parte F — Validação no caso Ignacio
-
-Após deploy, abrir `/deals/31be50c0-...`:
-
-1. Seletor de período mostra "Desde sempre".
-2. A reunião `WK Technology <> FLOWER MARKET SOLUTIONS LTDA` (15:00–15:30 GMT-3) aparece com badge "Espelhado de Ignacio Celedon" e link para o Google Meet.
-3. Trocar o período para "Hoje" mantém visível; "Próximo Ano" oculta.
-4. Botão "Fixar a este negócio" persiste em `timeline_pins` e o item passa a ser "permanente" no deal.
-
----
-
-## Detalhes técnicos / impacto
-
-- **Migrations**: 1 função RPC + 1 tabela `timeline_pins` (com GRANTs e RLS por workspace) + 1 índice opcional. Sem alterações destrutivas em tabelas existentes.
-- **Sem duplicação de dados**: nenhum INSERT cruzado entre `activities` e `calendar_events`.
-- **Performance**: a RPC roda 1 query unificada (vs. 8 round-trips atuais), com índices.
-- **Reversibilidade**: trocar a fonte da timeline é uma feature flag; basta apontar o componente para o caminho antigo.
-- **Compatível com HubSpot import** já existente (que grava em `activities`).
-- **Skill aplicada**: `date-range-picker-br` (presets pt-BR + cálculo de semestres).
-
-## Entregáveis (ordem de implementação)
-
-1. Migration: `timeline_pins` + função RPC `get_entity_timeline` + índice em `calendar_events`.
-2. `src/lib/timeline.functions.ts` (server fns).
-3. `src/lib/date-presets.ts` + `src/components/date-range-picker.tsx`.
-4. Refactor de `activity-timeline.tsx` para consumir RPC + realtime + date picker + badge espelhado.
-5. Botão "Fixar" + `pin/unpin` fns.
-6. Persistência de preferência de período em `user_grid_preferences`.
-7. Smoke test no deal do Ignacio.
+Sem mudanças em RLS, schemas de tabela ou rotas existentes.
