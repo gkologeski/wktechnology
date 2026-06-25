@@ -1,81 +1,44 @@
-# Onda 1 — Separação Workspace × Módulos (host, sidebars, hub, header, ativação)
+## Objetivo
 
-Entrega o "aha moment" da arquitetura proposta: **`app.` = Workspace**, **`ats.` / `crm.` = módulos**. Pura UI + roteamento + leitura de `workspace_modules` (tabela já existe). Sem migração de RBAC — isso fica para a Onda 2.
+Fazer com que a rota `/` deixe de mandar todo mundo para `/dashboard` (CRM) e passe a respeitar a arquitetura multi-host introduzida na Onda 1:
 
-## Escopo
+- `app.wktechnology.com.br` → Workspace Hub (`/workspace`)
+- `ats.wktechnology.com.br` → TechHire (`/jobs`)
+- `crm.wktechnology.com.br` → TechSales (`/dashboard`)
+- Preview / localhost / domínio único → mantém `/dashboard` como antes (não quebra o fluxo de desenvolvimento)
 
-### 1. Roteamento de host (Etapa 1 dos subdomínios)
-- Criar `src/lib/hosts.ts` com:
-  - `WORKSPACE_HOST = "app.wktechnology.com.br"`
-  - `MODULE_HOSTS = { ats: "ats.wktechnology.com.br", crm: "crm.wktechnology.com.br" }`
-  - `getCurrentHostKind()` → `"workspace" | "ats" | "crm" | "preview"`
-  - `buildModuleUrl(moduleKey, path)` e `buildWorkspaceUrl(path)` — em `localhost` / preview Lovable, devolvem path relativo (SPA); em produção, devolvem URL absoluta no host correto.
-- Guard de host em `_authenticated.tsx`:
-  - Se rota é de módulo (`/jobs`, `/candidates`, `/pipelines`…) e host é `crm.` → redireciona para `ats.<path>`.
-  - Se rota é `/workspace/*` e host é `ats.`/`crm.` → redireciona para `app./workspace/*`.
-  - Em preview/localhost, guard fica inerte (tudo SPA).
-- Atualizar `ModuleSwitcher` para usar `buildModuleUrl` (já é SPA em preview, cross-host em prod).
+## O que muda
 
-### 2. Limpar sidebars dos módulos (Passo 1)
-- Em `src/lib/menu-config.ts` (CRM) e `src/lib/menu-config-ats.ts` (ATS): remover qualquer item de **Workspace/ERP/Billing/Membros/Branding/API Keys/Idioma**.
-- Sidebars passam a conter **somente** itens nativos do módulo.
+Apenas o arquivo `src/routes/index.tsx`. O resto da aplicação continua igual.
 
-### 3. Criar `/workspace` Hub (Passo 2)
-- Nova rota `src/routes/_authenticated/workspace.tsx` (layout com `<Outlet />` + breadcrumbs "Workspace").
-- Nova rota `src/routes/_authenticated/workspace.index.tsx` com grid de **7 cards**:
-  - Membros → `/workspace/members` (reaproveita tela existente de team)
-  - Papéis & Permissões → `/workspace/roles`
-  - Billing & Plano → `/workspace/billing` (alias para `/settings/billing` atual)
-  - Módulos → `/workspace/modules` (novo, ver passo 5)
-  - Branding → `/workspace/branding`
-  - API Keys & Webhooks → `/workspace/api-keys`
-  - Idioma & Região → `/workspace/locale`
-- Cada card mostra ícone, título, descrição curta, status (ex.: "3 membros", "Plano Pro", "2 módulos ativos").
-- Reaproveita rotas existentes onde já há tela (alias via redirect ou `Link` direto) — **sem reescrever** billing/team agora.
+### Lógica nova
 
-### 4. Atalho no header (Passo 3)
-- Em `_authenticated.tsx`, adicionar `WorkspaceMenu` no header (avatar/logo da empresa, à esquerda do `ModuleSwitcher`):
-  - Dropdown com: nome do workspace, "Configurações do Workspace" → `/workspace`, "Billing", "Membros", separador, "Trocar de workspace" (futuro), "Sair".
-- Disponível em **todos** os hosts (ATS e CRM) — clicar leva ao `app./workspace` via `buildWorkspaceUrl`.
+1. Ler `window.location.hostname` dentro de `beforeLoad`.
+2. Se host = `app.wktechnology.com.br` → `redirect({ to: "/workspace" })`.
+3. Se host = `ats.wktechnology.com.br` (ou casar `MODULES.ats.defaultRoute`) → `redirect({ to: "/jobs" })`.
+4. Se host = `crm.wktechnology.com.br` → `redirect({ to: "/dashboard" })`.
+5. Caso contrário (preview, localhost, qualquer outro host) → manter `redirect({ to: "/dashboard" })`.
 
-### 5. Página `/workspace/modules` (Passo 5)
-- Nova rota `src/routes/_authenticated/workspace.modules.tsx`.
-- Lê `workspace_modules` + `modules` (catálogo) via server function nova `src/lib/workspace/modules.functions.ts` (`listWorkspaceModules`, `toggleModule`).
-- Layout: duas seções
-  - **Contratados** (cards com toggle ativo/inativo, contador de uso, link "Abrir módulo" → `buildModuleUrl`).
-  - **Disponíveis** (cards de upsell com badge "Adicionar ao plano" → CTA para billing).
-- Guard de módulo: cada rota de módulo (`ats.functions.ts`, `crm` equivalente) já valida workspace; adicionar checagem `workspace_modules.is_active`. Se inativo, retorna 403 e UI redireciona para `/workspace/modules` com toast "Módulo X não está ativo neste workspace".
+Reaproveitar `getHostKind` de `src/lib/hosts.ts` e `MODULES` de `src/lib/modules/registry.ts` em vez de hard-codear paths — assim, quando adicionarmos um terceiro módulo, basta atualizar o registry.
 
-## Fora de escopo (próximas ondas)
+### Comportamento esperado
 
-- **Onda 2 (RBAC por módulo — Passo 4):** migração `user_roles.module_id` nullable, helper `has_module_role`, refator RLS de `ats_*` e CRM para usar o novo helper, UI de "Papéis & Permissões".
-- Workspace switcher multi-tenant (trocar entre workspaces).
-- Domínio próprio do cliente (`careers.acme.com`) — Enterprise.
-- Admin Platform (`admin.wktechnology.com.br`) — host separado.
+| Host                          | URL final           |
+| ----------------------------- | ------------------- |
+| `app.wktechnology.com.br`     | `/workspace`        |
+| `ats.wktechnology.com.br`     | `/jobs`             |
+| `crm.wktechnology.com.br`     | `/dashboard`        |
+| `*.lovable.app` (preview)     | `/dashboard`        |
+| `localhost`                   | `/dashboard`        |
 
-## Arquivos tocados
+Usuário não autenticado continua sendo capturado pelo gate `_authenticated` e mandado para `/auth`.
 
-**Novos**
-- `src/lib/hosts.ts`
-- `src/lib/workspace/modules.functions.ts`
-- `src/components/workspace-menu.tsx`
-- `src/routes/_authenticated/workspace.tsx`
-- `src/routes/_authenticated/workspace.index.tsx`
-- `src/routes/_authenticated/workspace.modules.tsx`
+## Fora de escopo
 
-**Editados**
-- `src/routes/_authenticated.tsx` (header + guard de host)
-- `src/components/module-switcher.tsx` (usa `buildModuleUrl`)
-- `src/lib/menu-config.ts` e `src/lib/menu-config-ats.ts` (remover Workspace)
-- `src/lib/registry.ts` (registrar 3 rotas novas)
+- Não vou alterar `/dashboard`, `/jobs`, `/workspace` em si.
+- Não vou mudar o `defaultRoute` dos módulos no registry.
+- Não vou adicionar/remover itens de menu.
 
-## Critérios de aceite
+## Riscos
 
-1. Em `ats.wktechnology.com.br`, sidebar **não mostra** Workspace/Billing/Membros.
-2. Header em qualquer módulo tem avatar → "Configurações do Workspace" que leva a `app./workspace` mantendo sessão.
-3. `/workspace` mostra os 7 cards e cada um navega para sua tela (reaproveitando billing/team existentes onde aplicável).
-4. `/workspace/modules` lista módulos contratados com toggle e disponíveis com CTA de upsell; toggle persiste em `workspace_modules`.
-5. Em preview Lovable / localhost, toda navegação cross-host degrada para SPA (sem quebrar a sessão).
-6. Typecheck limpo e `/dashboard` continua rápido.
-
-Confirma que sigo com essa onda?
+- `beforeLoad` roda durante SSR/prerender, onde `window` não existe. Vou proteger com `typeof window === "undefined"` e nesse caso devolver `/dashboard` (mesma rota que hoje, então não há regressão no build).
