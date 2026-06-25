@@ -9797,6 +9797,47 @@ export type Database = {
           },
         ]
       }
+      timeline_pins: {
+        Row: {
+          entity_id: string
+          entity_kind: string
+          id: string
+          pinned_at: string
+          pinned_by: string | null
+          source: string
+          source_id: string
+          workspace_id: string
+        }
+        Insert: {
+          entity_id: string
+          entity_kind: string
+          id?: string
+          pinned_at?: string
+          pinned_by?: string | null
+          source: string
+          source_id: string
+          workspace_id: string
+        }
+        Update: {
+          entity_id?: string
+          entity_kind?: string
+          id?: string
+          pinned_at?: string
+          pinned_by?: string | null
+          source?: string
+          source_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_pins_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_counters: {
         Row: {
           key: string
@@ -11417,6 +11458,34 @@ export type Database = {
           data_type: string
           distinct_count: number
           distinct_values: string[]
+        }[]
+      }
+      get_entity_timeline: {
+        Args: {
+          p_entity_id: string
+          p_entity_kind: string
+          p_limit?: number
+          p_since?: string
+          p_until?: string
+        }
+        Returns: {
+          actor_id: string
+          body_excerpt: string
+          direct_link: boolean
+          extra: Json
+          id: string
+          is_pinned: boolean
+          mirrored_from_id: string
+          mirrored_from_kind: string
+          occurred_at: string
+          related_company_id: string
+          related_contact_id: string
+          related_deal_id: string
+          related_lead_id: string
+          related_ticket_id: string
+          source: string
+          subject: string
+          type: string
         }[]
       }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
