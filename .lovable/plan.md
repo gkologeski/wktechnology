@@ -1,80 +1,58 @@
-# Onda 0 + piloto da Onda 1 no `/insights` — Execução controlada
+# TechHire ATS — Roadmap de Funcionalidades (Ondas 5–8)
 
-Escopo desta entrega (aprovado): fundação visual do ATS + redesign apenas do Dashboard/Insights como piloto. Nenhuma outra rota é tocada nesta etapa.
+Resgatado do histórico (msg #2464). Comparação contra líderes globais
+(Greenhouse, Lever, Ashby, Workday, Gem, SmartRecruiters, iCIMS) e plano
+de evolução em 4 ondas. Independente do roadmap de UX/UI.
 
-## 1. Onda 0 — Fundação
+## Diagnóstico atual
 
-### Tokens semânticos em `src/styles.css`
-Adicionar (sem remover os existentes) — versões `:root` e `.dark`, e mapear no bloco `@theme inline` para virarem classes Tailwind:
+**Pontos fortes do TechHire:**
+- Núcleo sólido: jobs → pipeline → scorecards → offers
+- Acima da média em IA: notetaker, match score, fraud flags, JD generator, parsing multimodal de CV
+- Acima da média em DEI analytics — área em que ATS legados ainda patinam
 
-- Superfícies: `--surface-1`, `--surface-2`, `--surface-3`, `--surface-sunken`
-- Bordas: `--border-subtle`, `--border-default`, `--border-strong`
-- Texto: `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`
-- Status de vaga: `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`
-- Etapas de pipeline: `--stage-sourced`, `--stage-screen`, `--stage-interview`, `--stage-offer`, `--stage-hired`, `--stage-rejected`
-- Score: `--score-strong`, `--score-good`, `--score-mixed`, `--score-weak`
-- Risco/Fraude: `--risk-low`, `--risk-medium`, `--risk-high`
-- IA: `--ai-accent`, `--ai-surface`, `--ai-border`
-- DEI: `--dei-accent`, `--dei-surface`
+**Gaps competitivos identificados:**
+1. **Distribuição & Sourcing** — sem multi-posting, sem talent CRM, sem extensão Chrome, sem referrals
+2. **Scheduling de alto volume** — só self-schedule simples; sem panel / round-robin / load-balance
+3. **Assessments & Background check** — sem integrações; exige planilhas paralelas
+4. **Workflows de aprovação** — sem cadeias configuráveis
+5. **Plataforma & integrações** — sem API pública, sem multi-idioma, sem handoff HRIS, sem app mobile
+6. **Compliance LGPD/GDPR** — incompleto (falta consentimento explícito, retenção, DSAR end-to-end)
 
-Sem mexer em `--primary`, `--background`, `--card`, `--border` etc. existentes. Sem novas dependências.
+## Onda 5 — Distribuição & Sourcing (maior ROI imediato)
 
-### Pasta `src/components/ats/ui/` (presentacional, sem Supabase/queries/mutations)
+- Multi-posting: LinkedIn, Indeed, Vagas.com, Catho, Glassdoor
+- Apply with LinkedIn (OAuth) na página de carreiras
+- Talent CRM (reaproveitando `stage-emails` + segmentação de candidatos passivos)
+- Chrome extension para sourcing (capturar perfis públicos → candidate pool)
+- Programa de Referral (link único por colaborador, tracking, recompensa)
 
-Shells autorizados nesta etapa:
-- `page-header.tsx` — `PageHeader` (title, eyebrow, description, primaryAction, secondaryActions, tabs opcionais)
-- `section-header.tsx` — `SectionHeader` (title, description, action)
-- `metric-card.tsx` — `MetricCard` (label, value, delta opcional, hint, icon, tone, loading)
-- `badges.tsx` — `StatusBadge`, `StageBadge`, `ScoreBadge`, `SourceBadge`, `RiskBadge`
-- `empty-state.tsx` — `EmptyState` (icon, title, description, action)
-- `loading-skeleton.tsx` — `Skeletons` (variantes: metric, card, row, funnel)
-- `filter-bar.tsx` — `FilterBar` shell (criado, **não aplicado** ainda — `/insights` não precisa)
-- `ai-insight-card.tsx` — `AIInsightCard` (criado, **só aplicado** se já houver bloco IA na tela atual)
-- `form-section.tsx` — `FormSection` shell (criado, **não aplicado**)
-- `index.ts` — barril de exports
+## Onda 6 — Scheduling & Avaliação
 
-### Documentação
-`docs/ats-design-system.md` com: filosofia "quiet premium", tabela de tokens, escala de espaçamento/raios/sombras, e quando usar cada componente.
+- Scheduler avançado: painel, round-robin, load-balance entre entrevistadores
+- Knockout questions na candidatura
+- Integração com assessments: HackerRank, Codility, iMocha
+- Integração com background check (Checkr ou equivalente BR)
+- Interviewer training: trilha + certificação interna de entrevistadores
 
-## 2. Piloto — `/insights` (`src/routes/_authenticated/(ats)/insights.tsx`)
+## Onda 7 — Approvals, Compliance & Plataforma
 
-- Substituir cabeçalho ad-hoc por `PageHeader` da nova lib.
-- Grid de KPIs com `MetricCard` (mesmos dados: vagas publicadas, candidaturas 30d, contratados, taxa de conversão).
-- Funil mantém `Progress` shadcn, embrulhado por `SectionHeader` e `LoadingSkeleton`.
-- Fontes: badges com `SourceBadge`; vazio usa `EmptyState` ("Sem candidaturas ainda — publique uma vaga para começar").
-- Tempo médio para fechar com `ScoreBadge`/`StatusBadge` apenas se semântico.
-- `LoadingSkeleton` fiel ao layout final (substitui "Carregando…").
-- Estado de erro: mensagem clara + ação "Tentar novamente".
-- Apenas dados já retornados por `getAtsAnalytics`. Nenhuma query/mutation nova.
+- Cadeias de aprovação configuráveis (vaga, requisição, oferta)
+- Aprovação multi-nível de oferta antes do eSign
+- LGPD/GDPR granular: consentimento explícito, retenção, DSAR, direito ao esquecimento
+- Vagas confidenciais (visibilidade restrita por equipe)
+- API pública + webhooks para integrações de terceiros
+- Multi-idioma (PT-BR, EN, ES) em carreiras e e-mails
 
-## 3. Regras técnicas
+## Onda 8 — Inteligência avançada & Mobilidade
 
-- Zero alteração: schema, auth, RLS, server functions, permissões, rotas, lógica.
-- Componentes em `ats/ui` **não** importam Supabase nem `*.functions`.
-- Componente global existente `src/components/page-header.tsx` permanece intacto — o novo vive em `ats/ui/page-header.tsx` para evitar regressão em outras 50+ telas.
-- Preservar `data-testid`, roles ARIA e textos de botão.
-- Dark mode validado: cada token novo tem variante `.dark`.
-- Sem libs novas (Tailwind v4 + shadcn + lucide).
+- Universal AI Copilot (chat contextual em qualquer tela do ATS)
+- Quality-of-hire loop (feedback pós-contratação realimentando o match score)
+- Relatórios e dashboards customizáveis pelo usuário
+- HRIS handoff (export estruturado para folha/onboarding)
+- PWA para recrutadores (uso mobile real, offline básico)
+- Marketplace de mobilidade interna (vagas internas + candidatura de colaboradores)
 
-## 4. Critérios de aceite
+## Sugestão de início
 
-1. Build verde.
-2. `/insights` carrega e mostra os mesmos números.
-3. Dark mode OK.
-4. Nenhuma feature removida.
-5. Tokens documentados.
-6. Componentes reutilizáveis e isolados de dados.
-7. `/insights` visivelmente mais premium e consistente.
-
-## 5. Riscos & mitigação
-
-| Risco | Mitigação |
-|---|---|
-| Token novo conflita com classe existente | Prefixos `surface-*`, `text-*`, `stage-*` não colidem com tokens shadcn atuais |
-| Quebrar a única rota tocada | Manter exatamente as mesmas queries e dados; só camada visual muda |
-| Regressão dark mode | Cada novo token tem par `.dark`, validado visualmente |
-| Confusão com `PageHeader` global | Novo componente é `@/components/ats/ui` — escopo claro |
-
-## 6. Próximo passo (não nesta etapa)
-
-Após sua validação visual do `/insights`, aplicar Onda 1 (PageHeader + Empty/Loading + badges) em `jobs.tsx` e `candidates.tsx`.
+Começar pela **Onda 5 — Distribuição & Sourcing**: é o maior gap competitivo e o que mais acelera o pipeline de candidatos qualitativamente, destravando ROI para as ondas seguintes.
