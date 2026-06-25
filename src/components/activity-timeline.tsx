@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CalendarRange, Filter } from "lucide-react";
+import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
 import {
   DATE_PRESET_LABELS,
