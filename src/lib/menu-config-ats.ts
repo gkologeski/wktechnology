@@ -12,11 +12,6 @@ import {
   GitBranch,
   BarChart3,
   Mail,
-  ShieldCheck,
-  Languages,
-  CreditCard,
-  KeyRound,
-  UsersRound,
   Globe,
   ClipboardCheck,
   BookOpen,
@@ -28,6 +23,9 @@ import {
 
 import type { SidebarGroup } from "@/lib/menu-config";
 
+// Sidebar ATS: somente itens do módulo. Configurações de workspace (membros,
+// papéis, billing, idioma, API keys) ficam no Workspace Hub (/workspace),
+// acessível pelo menu "Workspace" no header.
 export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Recrutamento",
@@ -69,16 +67,6 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Insights ATS", url: "/insights", icon: BarChart3 },
       { title: "DEI Analytics", url: "/dei-analytics", icon: Heart },
-    ],
-  },
-  {
-    label: "Workspace (ERP)",
-    items: [
-      { title: "Equipe", url: "/settings/workspace-team", icon: UsersRound, need: "admin" },
-      { title: "Papéis & Permissões", url: "/settings/roles", icon: ShieldCheck, need: "admin" },
-      { title: "Planos & Cobrança", url: "/settings/billing", icon: CreditCard, need: "admin" },
-      { title: "Idioma", url: "/settings/language", icon: Languages },
-      { title: "API Keys", url: "/settings/api-keys", icon: KeyRound, need: "admin" },
     ],
   },
 ];
