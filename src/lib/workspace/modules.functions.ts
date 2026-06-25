@@ -17,12 +17,8 @@ export type WorkspaceModuleRow = {
 };
 
 /** Resolve o workspace "ativo" do usuário (1º membership, ou criado por ele). */
-async function resolveActiveWorkspace(
-  supabase: ReturnType<typeof Object>,
-  userId: string,
-): Promise<string | null> {
-  // 1) workspace_members
-  // @ts-expect-error - supabase typing
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
   const m = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -30,8 +26,6 @@ async function resolveActiveWorkspace(
     .limit(1)
     .maybeSingle();
   if (m.data?.workspace_id) return m.data.workspace_id as string;
-  // 2) workspace que ele criou
-  // @ts-expect-error - supabase typing
   const w = await supabase
     .from("workspaces")
     .select("id")
