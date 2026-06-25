@@ -897,6 +897,47 @@ export type Database = {
           },
         ]
       }
+      ats_candidate_flags: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          owner_id: string
+          resolved: boolean
+          severity: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          owner_id: string
+          resolved?: boolean
+          severity?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          owner_id?: string
+          resolved?: boolean
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_candidate_flags_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_candidates: {
         Row: {
           created_at: string
@@ -905,6 +946,10 @@ export type Database = {
           current_position: string | null
           cv_parsed: Json | null
           cv_url: string | null
+          dei_disability: string | null
+          dei_gender: string | null
+          dei_lgbtqia: string | null
+          dei_race: string | null
           email: string | null
           full_name: string
           id: string
@@ -926,6 +971,10 @@ export type Database = {
           current_position?: string | null
           cv_parsed?: Json | null
           cv_url?: string | null
+          dei_disability?: string | null
+          dei_gender?: string | null
+          dei_lgbtqia?: string | null
+          dei_race?: string | null
           email?: string | null
           full_name: string
           id?: string
@@ -947,6 +996,10 @@ export type Database = {
           current_position?: string | null
           cv_parsed?: Json | null
           cv_url?: string | null
+          dei_disability?: string | null
+          dei_gender?: string | null
+          dei_lgbtqia?: string | null
+          dei_race?: string | null
           email?: string | null
           full_name?: string
           id?: string
@@ -1022,12 +1075,14 @@ export type Database = {
           location: string | null
           meet_url: string | null
           notes: string | null
+          offered_slots: Json
           owner_id: string
           reminder_1h_sent_at: string | null
           reminder_d1_sent_at: string | null
           scheduled_at: string | null
           self_schedule_expires_at: string | null
           self_schedule_token: string | null
+          self_scheduled_at: string | null
           slots: Json | null
           stage_value: string | null
           status: string
@@ -1047,12 +1102,14 @@ export type Database = {
           location?: string | null
           meet_url?: string | null
           notes?: string | null
+          offered_slots?: Json
           owner_id: string
           reminder_1h_sent_at?: string | null
           reminder_d1_sent_at?: string | null
           scheduled_at?: string | null
           self_schedule_expires_at?: string | null
           self_schedule_token?: string | null
+          self_scheduled_at?: string | null
           slots?: Json | null
           stage_value?: string | null
           status?: string
@@ -1072,12 +1129,14 @@ export type Database = {
           location?: string | null
           meet_url?: string | null
           notes?: string | null
+          offered_slots?: Json
           owner_id?: string
           reminder_1h_sent_at?: string | null
           reminder_d1_sent_at?: string | null
           scheduled_at?: string | null
           self_schedule_expires_at?: string | null
           self_schedule_token?: string | null
+          self_scheduled_at?: string | null
           slots?: Json | null
           stage_value?: string | null
           status?: string
@@ -1203,6 +1262,70 @@ export type Database = {
           },
         ]
       }
+      ats_match_scores: {
+        Row: {
+          application_id: string | null
+          candidate_id: string
+          created_at: string
+          gaps: Json
+          id: string
+          job_id: string
+          model: string | null
+          owner_id: string
+          score: number
+          strengths: Json
+          summary: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          candidate_id: string
+          created_at?: string
+          gaps?: Json
+          id?: string
+          job_id: string
+          model?: string | null
+          owner_id: string
+          score: number
+          strengths?: Json
+          summary?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          candidate_id?: string
+          created_at?: string
+          gaps?: Json
+          id?: string
+          job_id?: string
+          model?: string | null
+          owner_id?: string
+          score?: number
+          strengths?: Json
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_match_scores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_match_scores_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_match_scores_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_offers: {
         Row: {
           application_id: string | null
@@ -1216,6 +1339,7 @@ export type Database = {
           job_id: string | null
           owner_id: string
           promote_to_stage: string | null
+          public_token: string | null
           salary_amount: number | null
           salary_currency: string
           sent_at: string | null
@@ -1224,6 +1348,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           application_id?: string | null
@@ -1237,6 +1362,7 @@ export type Database = {
           job_id?: string | null
           owner_id: string
           promote_to_stage?: string | null
+          public_token?: string | null
           salary_amount?: number | null
           salary_currency?: string
           sent_at?: string | null
@@ -1245,6 +1371,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           application_id?: string | null
@@ -1258,6 +1385,7 @@ export type Database = {
           job_id?: string | null
           owner_id?: string
           promote_to_stage?: string | null
+          public_token?: string | null
           salary_amount?: number | null
           salary_currency?: string
           sent_at?: string | null
@@ -1266,6 +1394,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
