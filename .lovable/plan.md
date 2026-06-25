@@ -1,38 +1,36 @@
-## Objetivo
+## Problema
 
-Tirar o botão "Buscar gravação" do card individual de reunião na timeline e disponibilizar uma ação por **conta de calendário conectada**, em `/settings/calendars`, que varre as gravações pendentes daquele usuário.
+`ActivityTimeline` carrega eventos com um `useEffect` cuja dependência é só `[relatedId, datePreset, dateCustom]`. Quando o `AssociationsPanel` adiciona/remove um contato ou empresa (ex.: `deal_contacts`, `deals.company_id`, `deals.primary_contact_id`), nenhum sinal é emitido para o timeline, então as atividades espelhadas só aparecem após F5 (quando o componente remonta e o `load()` roda de novo).
 
-## Mudanças
+## Solução
 
-### 1. Remover botão da timeline
-- `src/components/activity-timeline.tsx`
-  - Remover `canSearchRecording`, `calendarEventId`, `refreshingRecId`, `refreshRecordingFn`, `onRefreshRecording` e o JSX do botão "Buscar gravação".
-  - Remover o import `refreshEventRecording`.
-- `src/lib/calendar/recordings.functions.ts` deixa de ser usado pela UI; manter apenas se quisermos endpoint avulso. Plano: **remover** para evitar superfície morta.
+Notificar o timeline sempre que uma associação muda, e reagir a esse sinal.
 
-### 2. Nova ação por conta em `/settings/calendars`
-- Nova server function `syncAccountRecordings` em `src/lib/calendar.functions.ts`:
-  - Middleware `requireSupabaseAuth`.
-  - Input: `{ account_id: string }`.
-  - Valida que a conta pertence ao `userId` autenticado (via `context.supabase`).
-  - Dentro do handler, importa dinamicamente `@/lib/calendar/engine.server` e chama a função já existente `syncPastRecordings(account)` (a mesma usada pelo cron `calendar-recordings-tick`).
-  - Retorna `{ scanned, found, missing, errors }`.
-- `src/routes/_authenticated/settings.calendars.tsx`:
-  - Adicionar mutation `syncRecordings` chamando a nova função.
-  - Adicionar botão "Sincronizar gravações" (ícone `Video` ou `Film`) ao lado de "Testar"/sync, por linha de conta.
-  - Toast com resultado: "X gravações vinculadas, Y ainda não publicadas".
-  - Invalida `calendar_events`.
+### 1. Emitir evento no `AssociationsPanel`
 
-### 3. Backend (engine)
-- `syncPastRecordings` já existe e está exportada; nenhum schema novo. Apenas precisamos exportá-la se ainda não estiver: confirmar e ajustar.
+Em `src/components/record/associations-panel.tsx`, após cada mutação de associação bem-sucedida (vincular/desvincular contato em deal, definir empresa/contato primário, etc.), disparar:
 
-## Resultado para o usuário
+```ts
+window.dispatchEvent(new CustomEvent("timeline:refresh", {
+  detail: { entityType, entityId },
+}));
+```
 
-- Timeline volta a mostrar apenas "Acessar reunião", "Ver gravação" e "Resumir reunião" (sem botão de busca).
-- Em **Configurações → Calendários**, cada conta Google conectada ganha um botão **"Sincronizar gravações"** que processa os eventos pendentes da conta inteira (mesma rotina do cron, sob demanda).
+Aplicar nos pontos onde hoje há inserts/updates em `deal_contacts`, mudanças de `company_id`/`primary_contact_id` em deals, e equivalentes para contact↔company. Disparar para os dois lados do vínculo (ex.: ao vincular contato X ao deal Y, emitir para `{deal, Y}` e `{contact, X}`) para que qualquer timeline aberto em outra aba/janela do mesmo workspace receba.
 
-## Detalhes técnicos
+### 2. Reagir no `ActivityTimeline`
 
-- Não há alterações de schema nem de cron.
-- A função roda na mesma janela do cron (`now - 10min` até 30 dias atrás, máx. 20 eventos, com backoff após 12 tentativas).
-- Autorização: a conta precisa pertencer ao `auth.uid()` que disparou a chamada.
+Em `src/components/activity-timeline.tsx`, adicionar um `useEffect` que registra listener de `timeline:refresh` e chama `load()` quando o evento corresponde ao `relatedKey`/`relatedId` atual (ou quando o `detail` é o par espelhado — ex.: timeline do contato deve recarregar quando o evento é do deal que o referencia, e vice-versa).
+
+Como o `load()` já é definido no escopo do componente, basta envolvê-lo num `useCallback` (ou usar uma ref) para evitar stale closure, e fazer `window.addEventListener("timeline:refresh", handler)` com cleanup.
+
+### 3. Verificação
+
+- Abrir um deal, associar um contato pela aba "Associações" → atividades do contato devem aparecer no timeline do deal sem reload.
+- Abrir o contato em outra aba → também atualizar (mesmo evento de window).
+- Remover a associação → entradas espelhadas somem sem reload.
+
+## Fora de escopo
+
+- Não mexer em RLS, no RPC `get_entity_timeline`, nem na lógica de mirror (`timeline_pins`); o backend já está correto, é só refresh no cliente.
+- Não introduzir realtime/postgres_changes — overkill para esta correção; o `CustomEvent` cobre o fluxo originado na mesma sessão (que é o relato).
