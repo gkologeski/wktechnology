@@ -722,3 +722,68 @@ export async function tickAllRecordings(): Promise<{
   }
   return { processed, totals };
 }
+
+/**
+ * Manually look up the Drive recording for a single calendar event.
+ * Used by the timeline "Buscar gravação" button. Bypasses the auto-attempt
+ * cap so users can force a retry, but still updates the same fields.
+ */
+export async function syncRecordingForEvent(eventId: string): Promise<
+  | { ok: true; recording_url: string; recording_status: string }
+  | { ok: false; reason: string; recording_status: string }
+> {
+  const { data: ev, error } = await supabaseAdmin
+    .from("calendar_events")
+    .select(
+      "id, title, end_at, conference_id, calendar_account_id, recording_attempts, recording_drive_file_id, recording_url",
+    )
+    .eq("id", eventId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!ev) throw new Error("Evento não encontrado");
+  if (ev.recording_url) {
+    return { ok: true, recording_url: ev.recording_url as string, recording_status: "available" };
+  }
+  if (!ev.conference_id) {
+    return { ok: false, reason: "Evento sem Google Meet vinculado", recording_status: "not_found" };
+  }
+  const { data: acct } = await supabaseAdmin
+    .from("calendar_accounts")
+    .select(
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
+    )
+    .eq("id", ev.calendar_account_id as string)
+    .maybeSingle();
+  if (!acct) throw new Error("Conta de calendário não encontrada");
+  const token = await ensureAccessToken(acct as CalendarAccountRow);
+  const attempts = ((ev.recording_attempts as number | null) ?? 0) + 1;
+  const rec = await findDriveRecording(token, {
+    title: ev.title as string | null,
+    end_at: ev.end_at as string | null,
+  });
+  if (rec.ok) {
+    await supabaseAdmin
+      .from("calendar_events")
+      .update({
+        recording_drive_file_id: rec.file_id,
+        recording_url: rec.url,
+        recording_mime_type: rec.mime_type,
+        recording_synced_at: new Date().toISOString(),
+        recording_status: "available",
+        recording_last_error: null,
+        recording_attempts: attempts,
+      } as never)
+      .eq("id", eventId);
+    return { ok: true, recording_url: rec.url, recording_status: "available" };
+  }
+  await supabaseAdmin
+    .from("calendar_events")
+    .update({
+      recording_synced_at: new Date().toISOString(),
+      recording_status: "not_found",
+      recording_last_error: rec.reason.slice(0, 500),
+      recording_attempts: attempts,
+    } as never)
+    .eq("id", eventId);
+  return { ok: false, reason: rec.reason, recording_status: "not_found" };
+}
