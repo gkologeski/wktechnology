@@ -150,7 +150,10 @@ function InsightsContent({
                   <span className="text-text-primary">{f.label}</span>
                   <span className="text-text-tertiary tabular-nums">{f.count}</span>
                 </div>
-                <Progress value={(f.count / maxFunnel) * 100} />
+                <Progress
+                  value={(f.count / maxFunnel) * 100}
+                  aria-label={`${f.label}: ${f.count} candidatos`}
+                />
               </div>
             ))}
           </div>
