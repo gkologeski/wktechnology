@@ -1,8 +1,58 @@
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+async function sendWorkspaceInviteEmail(args: {
+  to: string;
+  inviteUrl: string;
+  workspaceName: string;
+  inviterName: string;
+  role: string;
+  expiresAt: string;
+  inviteId: string;
+}) {
+  try {
+    const req = getRequest();
+    if (!req) return;
+    const origin = new URL(req.url).origin;
+    const bearer = req.headers.get("authorization") ?? "";
+    if (!bearer) return;
+    await fetch(`${origin}/lovable/email/transactional/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: bearer },
+      body: JSON.stringify({
+        templateName: "workspace-invite",
+        recipientEmail: args.to,
+        idempotencyKey: `workspace-invite:${args.inviteId}`,
+        templateData: {
+          inviteeEmail: args.to,
+          workspaceName: args.workspaceName,
+          inviterName: args.inviterName,
+          roleLabel: args.role,
+          inviteUrl: args.inviteUrl,
+          expiresAt: args.expiresAt,
+        },
+      }),
+    });
+  } catch (e) {
+    console.error("workspace-invite email failed", e);
+  }
+}
+
+async function loadInviteContext(workspaceId: string, inviterId: string) {
+  const [{ data: ws }, { data: prof }] = await Promise.all([
+    supabaseAdmin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle(),
+    supabaseAdmin.from("profiles").select("full_name").eq("id", inviterId).maybeSingle(),
+  ]);
+  return {
+    workspaceName: (ws?.name as string) ?? "WK Technology",
+    inviterName: (prof?.full_name as string) ?? "Sua equipe",
+  };
+}
+
 
 const Role = z.enum(["admin", "manager", "member"]);
 
