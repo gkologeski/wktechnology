@@ -21,6 +21,9 @@ import {
   ClipboardCheck,
   BookOpen,
   FileSignature,
+  Sparkles,
+  ShieldAlert,
+  Heart,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
@@ -55,9 +58,17 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    label: "Inteligência (IA)",
+    items: [
+      { title: "Match Scores", url: "/match-scores", icon: Sparkles },
+      { title: "Flags de risco", url: "/fraud-flags", icon: ShieldAlert },
+    ],
+  },
+  {
     label: "Análise",
     items: [
       { title: "Insights ATS", url: "/insights", icon: BarChart3 },
+      { title: "DEI Analytics", url: "/dei-analytics", icon: Heart },
     ],
   },
   {
