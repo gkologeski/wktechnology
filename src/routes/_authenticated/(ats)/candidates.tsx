@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plus, Search, Trash2, Sparkles, Download } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Sparkles,
+  Download,
+  Users,
+  MapPin,
+  Mail,
+  Briefcase,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -29,12 +33,31 @@ import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
+import {
+  AtsPageHeader,
+  FilterBar,
+  EmptyState,
+  Skeletons,
+  SourceBadge,
+} from "@/components/ats/ui";
+import { MetaPill } from "@/components/techhire/ui";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
   component: CandidatesPage,
 });
 
 type Cand = Awaited<ReturnType<typeof listAtsCandidates>>[number];
+
+function CandidatesGridSkeleton() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeletons.Card key={i} lines={3} />
+      ))}
+    </div>
+  );
+}
 
 function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
@@ -49,6 +72,8 @@ function CandidatesPage() {
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<Cand[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
@@ -63,11 +88,17 @@ function CandidatesPage() {
   });
 
   const refresh = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const r = await list({ data: { search } });
       setRows(r);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao listar");
+      const msg = e instanceof Error ? e.message : "Falha ao listar";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,6 +106,15 @@ function CandidatesPage() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Debounced search refresh
+  useEffect(() => {
+    const t = setTimeout(() => {
+      refresh();
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const handleCreate = async () => {
     if (!form.full_name.trim()) {
@@ -135,7 +175,6 @@ function CandidatesPage() {
     }
     setParsing(true);
     try {
-      // Prefere parser multimodal direto no PDF (mais preciso) quando há URL.
       const res = cvUrl
         ? await parsePdf({ data: { cv_url: cvUrl, apply: true } })
         : await parse({ data: { cv_text: cvText, apply: true } });
@@ -156,7 +195,6 @@ function CandidatesPage() {
     }
   };
 
-
   const handleExport = async () => {
     try {
       const r = await exportCsv();
@@ -172,149 +210,288 @@ function CandidatesPage() {
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar candidato…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && refresh()}
-            className="pl-9"
-          />
-        </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-2" />Exportar CSV
-        </Button>
-        <Dialog open={parseOpen} onOpenChange={setParseOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Sparkles className="h-4 w-4 mr-2" />Parsing de CV (IA)
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label>Cole o texto do currículo</Label>
-                <CvPdfUploadButton
-                  disabled={parsing}
-                  onExtracted={({ text, cvUrl: url }) => {
-                    if (text) setCvText(text);
-                    if (url) setCvUrl(url);
-                  }}
-                />
-              </div>
-              <Textarea
-                rows={12}
-                value={cvText}
-                onChange={(e) => setCvText(e.target.value)}
-                placeholder="Cole aqui o conteúdo do CV — ou clique em 'Enviar PDF' para extrair automaticamente."
-              />
-              {cvUrl && (
-                <p className="text-xs text-muted-foreground">
-                  PDF anexado e armazenado em segurança. Será vinculado ao candidato.
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setParseOpen(false)} disabled={parsing}>
-                Cancelar
-              </Button>
-              <Button onClick={handleParseCv} disabled={parsing}>
-                {parsing ? "Processando…" : "Extrair e salvar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Novo candidato</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>Novo candidato</DialogTitle></DialogHeader>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><Label>Nome *</Label>
-                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-              </div>
-              <div><Label>Email</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div><Label>Telefone</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div className="col-span-2"><Label>LinkedIn</Label>
-                <Input value={form.linkedin_url} onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/..." />
-              </div>
-              <div><Label>Localização</Label>
-                <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              </div>
-              <div><Label>Cargo atual</Label>
-                <Input value={form.current_position} onChange={(e) => setForm({ ...form, current_position: e.target.value })} />
-              </div>
-              <div className="col-span-2"><Label>Empresa atual</Label>
-                <Input value={form.current_company} onChange={(e) => setForm({ ...form, current_company: e.target.value })} />
-              </div>
-              <div className="col-span-2"><Label>Skills (separadas por vírgula)</Label>
-                <Input value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} placeholder="React, Node.js, PostgreSQL" />
-              </div>
-              <div className="col-span-2"><Label>Notas</Label>
-                <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreate}>Salvar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+  const total = rows.length;
+  const descriptionText = loading
+    ? "Carregando candidatos…"
+    : `${total} ${total === 1 ? "candidato" : "candidatos"}`;
 
-      {rows.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Nenhum candidato cadastrado.
-        </CardContent></Card>
+  return (
+    <div className="flex flex-col gap-6">
+      <AtsPageHeader
+        eyebrow="Talentos"
+        title="Candidatos"
+        description={descriptionText}
+        descriptionLive
+        secondaryActions={
+          <>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </Button>
+            <Dialog open={parseOpen} onOpenChange={setParseOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Sparkles className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Parsing de CV (IA)
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="cv-text">Cole o texto do currículo</Label>
+                    <CvPdfUploadButton
+                      disabled={parsing}
+                      onExtracted={({ text, cvUrl: url }) => {
+                        if (text) setCvText(text);
+                        if (url) setCvUrl(url);
+                      }}
+                    />
+                  </div>
+                  <Textarea
+                    id="cv-text"
+                    rows={12}
+                    value={cvText}
+                    onChange={(e) => setCvText(e.target.value)}
+                    placeholder="Cole aqui o conteúdo do CV — ou clique em 'Enviar PDF' para extrair automaticamente."
+                  />
+                  {cvUrl && (
+                    <p className="text-xs text-text-tertiary">
+                      PDF anexado e armazenado em segurança. Será vinculado ao candidato.
+                    </p>
+                  )}
+                  <p className="text-xs text-text-tertiary">
+                    A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setParseOpen(false)} disabled={parsing}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleParseCv} disabled={parsing}>
+                    {parsing ? "Processando…" : "Extrair e salvar"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+        primaryAction={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Novo candidato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Novo candidato</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label htmlFor="cand-name">Nome *</Label>
+                  <Input
+                    id="cand-name"
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cand-email">Email</Label>
+                  <Input
+                    id="cand-email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cand-phone">Telefone</Label>
+                  <Input
+                    id="cand-phone"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="cand-linkedin">LinkedIn</Label>
+                  <Input
+                    id="cand-linkedin"
+                    value={form.linkedin_url}
+                    onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cand-location">Localização</Label>
+                  <Input
+                    id="cand-location"
+                    value={form.location}
+                    onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cand-position">Cargo atual</Label>
+                  <Input
+                    id="cand-position"
+                    value={form.current_position}
+                    onChange={(e) => setForm({ ...form, current_position: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="cand-company">Empresa atual</Label>
+                  <Input
+                    id="cand-company"
+                    value={form.current_company}
+                    onChange={(e) => setForm({ ...form, current_company: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="cand-skills">Skills (separadas por vírgula)</Label>
+                  <Input
+                    id="cand-skills"
+                    value={form.skills}
+                    onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                    placeholder="React, Node.js, PostgreSQL"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="cand-notes">Notas</Label>
+                  <Textarea
+                    id="cand-notes"
+                    rows={3}
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreate}>Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      />
+
+      <FilterBar
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: "Buscar por nome, email, cargo ou skill…",
+        }}
+      />
+
+      {loading ? (
+        <CandidatesGridSkeleton />
+      ) : error ? (
+        <EmptyState
+          icon={Users}
+          title="Não foi possível carregar os candidatos"
+          description={error}
+          action={<Button onClick={refresh}>Tentar novamente</Button>}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title={search ? "Nenhum candidato encontrado" : "Nenhum candidato cadastrado"}
+          description={
+            search
+              ? "Tente outros termos ou limpe o filtro de busca."
+              : "Cadastre um candidato manualmente ou use o parsing de CV (IA) para importar a partir de um currículo."
+          }
+          action={
+            search ? (
+              <Button variant="outline" onClick={() => setSearch("")}>
+                Limpar busca
+              </Button>
+            ) : (
+              <Button onClick={() => setOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Novo candidato
+              </Button>
+            )
+          }
+        />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {rows.map((c) => (
-            <Card key={c.id} className="hover:border-primary/40">
-              <CardContent className="pt-4 text-sm space-y-1">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="font-medium">{c.full_name as string}</div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((c) => {
+            const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+            return (
+              <article
+                key={c.id as string}
+                className={cn(
+                  "group relative rounded-lg border border-border-subtle bg-surface-1",
+                  "p-4 shadow-xs transition-all",
+                  "hover:border-border-strong hover:shadow-sm",
+                  "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-text-primary truncate">
+                      {c.full_name as string}
+                    </h3>
+                    {c.current_position ? (
+                      <p className="mt-0.5 text-xs text-text-secondary truncate inline-flex items-center gap-1">
+                        <Briefcase className="h-3 w-3 text-text-tertiary" aria-hidden="true" />
+                        <span className="truncate">
+                          {c.current_position}
+                          {c.current_company ? ` @ ${c.current_company}` : ""}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                    aria-label={`Excluir candidato ${c.full_name}`}
                     onClick={() => handleDelete(c.id as string)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 </div>
-                {c.current_position && (
-                  <div className="text-muted-foreground text-xs">
-                    {c.current_position}{c.current_company ? ` @ ${c.current_company}` : ""}
-                  </div>
-                )}
-                {c.email && <div className="text-muted-foreground text-xs">{c.email}</div>}
-                {c.location && <div className="text-muted-foreground text-xs">{c.location}</div>}
-                {Array.isArray(c.skills) && c.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-2">
-                    {(c.skills as string[]).slice(0, 6).map((s) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+
+                <div className="mt-2 space-y-1 text-xs text-text-tertiary">
+                  {c.email ? (
+                    <div className="inline-flex items-center gap-1 truncate">
+                      <Mail className="h-3 w-3" aria-hidden="true" />
+                      <span className="truncate">{c.email as string}</span>
+                    </div>
+                  ) : null}
+                  {c.location ? (
+                    <div className="inline-flex items-center gap-1 truncate">
+                      <MapPin className="h-3 w-3" aria-hidden="true" />
+                      <span className="truncate">{c.location as string}</span>
+                    </div>
+                  ) : null}
+                </div>
+
+                {skills.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {skills.slice(0, 6).map((s) => (
+                      <MetaPill key={s}>{s}</MetaPill>
                     ))}
+                    {skills.length > 6 ? (
+                      <MetaPill>+{skills.length - 6}</MetaPill>
+                    ) : null}
                   </div>
-                )}
-                <div className="pt-1"><Badge variant="secondary" className="text-[10px]">{c.source as string}</Badge></div>
-              </CardContent>
-            </Card>
-          ))}
+                ) : null}
+
+                {c.source ? (
+                  <div className="mt-3 pt-3 border-t border-border-subtle">
+                    <SourceBadge source={c.source as string} />
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
