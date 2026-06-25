@@ -26,6 +26,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+
+const emitTimelineRefresh = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("timeline:refresh"));
+  }
+};
+
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
 import { ContactPickerPopover } from "@/components/ui/contact-picker";
