@@ -60,6 +60,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Match Scores", url: "/match-scores", icon: Sparkles },
       { title: "Flags de risco", url: "/fraud-flags", icon: ShieldAlert },
+      { title: "Notetaker IA", url: "/notetaker", icon: Sparkles },
     ],
   },
   {
