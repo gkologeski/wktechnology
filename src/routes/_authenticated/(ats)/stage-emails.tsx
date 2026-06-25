@@ -1,11 +1,11 @@
 // Configuração de e-mails automáticos por etapa do funil ATS.
+// Lote 4 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Mail, Save, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageHeader, SectionHeader, Skeletons } from "@/components/techhire/ui";
 import { DEFAULT_ATS_STAGES } from "@/lib/ats/stages";
 import {
   listStageEmails,
@@ -47,13 +48,6 @@ function StageEmailsPage() {
     subject: "Recebemos sua candidatura — {{job_title}}",
     body: "Olá {{candidate_name}},\n\nObrigado pelo interesse na vaga {{job_title}}. Em breve seguiremos com o próximo passo.\n\nAbraços,\nEquipe de recrutamento",
   });
-
-  // Sincroniza form quando muda stage selecionada
-  const stageRow = current;
-  // useEffect-like pattern minimal:
-  if (stageRow && (form.subject !== stageRow.subject || form.body !== stageRow.body)) {
-    // só sincroniza ao mudar de stage
-  }
 
   const onSelectStage = (v: string) => {
     setStage(v);
@@ -95,71 +89,111 @@ function StageEmailsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
+  const configuredCount = rows.length;
 
   return (
-    <div className="flex flex-col gap-4 max-w-3xl">
-      <header>
-        <h1 className="text-xl font-semibold flex items-center gap-2">
-          <Mail className="h-5 w-5" />E-mails automáticos por etapa
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Quando uma candidatura entrar nesta etapa, um e-mail é enfileirado para o candidato.
-          Use <code>{"{{candidate_name}}"}</code>, <code>{"{{job_title}}"}</code> e <code>{"{{stage}}"}</code> como variáveis.
-        </p>
-      </header>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Configurações · ATS"
+        title="E-mails automáticos por etapa"
+        description={
+          <>
+            Quando uma candidatura entrar nesta etapa, um e-mail é enfileirado
+            para o candidato. Use{" "}
+            <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">
+              {"{{candidate_name}}"}
+            </code>
+            ,{" "}
+            <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">
+              {"{{job_title}}"}
+            </code>{" "}
+            e{" "}
+            <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">
+              {"{{stage}}"}
+            </code>{" "}
+            como variáveis. {configuredCount} de {DEFAULT_ATS_STAGES.length}{" "}
+            etapas configuradas.
+          </>
+        }
+        descriptionLive
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Etapa</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Select value={stage} onValueChange={onSelectStage}>
-            <SelectTrigger className="w-full md:w-72"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {DEFAULT_ATS_STAGES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label} {rows.some((r) => r.stage_value === s.value) ? "✓" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {isLoading ? (
+        <Skeletons.Card lines={6} />
+      ) : (
+        <section className="max-w-3xl rounded-lg border border-border-subtle bg-surface-1 p-5 shadow-xs space-y-5">
+          <SectionHeader
+            title="Etapa"
+            description="Selecione a etapa para editar o template enviado quando uma candidatura entra nela."
+          />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="se-stage">Etapa do funil</Label>
+            <Select value={stage} onValueChange={onSelectStage}>
+              <SelectTrigger id="se-stage" className="w-full md:w-72">
+                <Mail className="h-4 w-4 mr-2 text-text-tertiary" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DEFAULT_ATS_STAGES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}{" "}
+                    {rows.some((r) => r.stage_value === s.value) ? "·  ✓" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex items-center gap-3">
-            <Switch checked={form.enabled} onCheckedChange={(v) => setForm({ ...form, enabled: v })} />
-            <Label className="!m-0">Ativo — disparar nesta etapa</Label>
+            <Switch
+              id="se-enabled"
+              checked={form.enabled}
+              onCheckedChange={(v) => setForm({ ...form, enabled: v })}
+            />
+            <Label htmlFor="se-enabled" className="!m-0">
+              Ativo — disparar nesta etapa
+            </Label>
           </div>
 
-          <div className="space-y-2">
-            <Label>Assunto</Label>
-            <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+          <div className="space-y-1.5">
+            <Label htmlFor="se-subject">Assunto</Label>
+            <Input
+              id="se-subject"
+              value={form.subject}
+              onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            />
           </div>
 
-          <div className="space-y-2">
-            <Label>Corpo do e-mail</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="se-body">Corpo do e-mail</Label>
             <Textarea
+              id="se-body"
               rows={10}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
-              <Save className="h-4 w-4 mr-2" />Salvar template
-            </Button>
+          <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border-subtle">
             {current && (
               <Button
                 variant="outline"
                 onClick={() => remove.mutate()}
                 disabled={remove.isPending}
+                className="text-status-danger-foreground"
               >
-                <Trash2 className="h-4 w-4 mr-2" />Remover
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remover
               </Button>
             )}
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {save.isPending ? "Salvando…" : "Salvar template"}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </section>
+      )}
     </div>
   );
 }

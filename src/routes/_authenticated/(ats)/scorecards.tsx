@@ -1,23 +1,27 @@
 // Página de gerenciamento de scorecards de entrevista (ATS).
+// Lote 4 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  PageHeader,
+  EmptyState,
+  MetaPill,
+  Skeletons,
+} from "@/components/techhire/ui";
 import {
   listScorecards,
   saveScorecard,
@@ -44,6 +48,7 @@ function ScorecardsPage() {
   const del = useServerFn(deleteScorecard);
 
   const [rows, setRows] = useState<SC[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SC | null>(null);
   const [form, setForm] = useState({
@@ -58,6 +63,8 @@ function ScorecardsPage() {
       setRows(r);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,139 +126,195 @@ function ScorecardsPage() {
   const addCriterion = () =>
     setForm((f) => ({
       ...f,
-      criteria: [...f.criteria, { key: `c${f.criteria.length + 1}`, label: "Novo critério", weight: 1 }],
+      criteria: [
+        ...f.criteria,
+        { key: `c${f.criteria.length + 1}`, label: "Novo critério", weight: 1 },
+      ],
     }));
   const removeCriterion = (i: number) =>
     setForm((f) => ({ ...f, criteria: f.criteria.filter((_, idx) => idx !== i) }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Scorecards de entrevista</h2>
-          <p className="text-sm text-muted-foreground">
-            Templates de avaliação aplicados durante entrevistas de candidatos.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew}>
-              <Plus className="h-4 w-4 mr-2" />Novo scorecard
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editing ? "Editar" : "Novo"} scorecard</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label>Nome</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div>
-                <Label>Descrição</Label>
-                <Textarea
-                  rows={2}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Critérios (escala 0-5)</Label>
-                  <Button size="sm" variant="outline" onClick={addCriterion}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />Critério
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {form.criteria.map((c, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_2fr_90px_36px] gap-2 items-center">
-                      <Input
-                        placeholder="chave"
-                        value={c.key}
-                        onChange={(e) => setCriterion(i, { key: e.target.value })}
-                      />
-                      <Input
-                        placeholder="rótulo"
-                        value={c.label}
-                        onChange={(e) => setCriterion(i, { label: e.target.value })}
-                      />
-                      <Input
-                        type="number"
-                        min={0.1}
-                        max={10}
-                        step={0.1}
-                        value={c.weight}
-                        onChange={(e) => setCriterion(i, { weight: Number(e.target.value) || 1 })}
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeCriterion(i)}
-                        className="h-9 w-9"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSave}>Salvar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Configurações · ATS"
+        title="Scorecards de entrevista"
+        description="Templates de avaliação aplicados durante entrevistas de candidatos."
+        descriptionLive
+        primaryAction={
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo scorecard
+          </Button>
+        }
+      />
 
-      {rows.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhum scorecard criado.
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeletons.Card key={i} lines={3} />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={ClipboardList}
+          title="Nenhum scorecard criado"
+          description="Crie templates de avaliação reutilizáveis para padronizar entrevistas e reduzir vieses."
+          action={
+            <Button onClick={openNew} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo scorecard
+            </Button>
+          }
+        />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((sc) => {
             const criteria = (sc.criteria as Criterion[]) ?? [];
             return (
-              <Card key={sc.id as string}>
-                <CardHeader className="pb-2 flex flex-row items-start justify-between space-y-0">
-                  <div>
-                    <CardTitle className="text-base">{sc.name as string}</CardTitle>
-                    {sc.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{sc.description as string}</p>
-                    )}
+              <article
+                key={sc.id as string}
+                className="group flex flex-col rounded-lg border border-border-subtle bg-surface-1 p-4 shadow-xs transition hover:border-border-default hover:bg-surface-2"
+              >
+                <header className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-text-primary truncate">
+                      {sc.name as string}
+                    </h3>
+                    {sc.description ? (
+                      <p className="text-xs text-text-secondary mt-1 line-clamp-2">
+                        {sc.description as string}
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(sc)}>
+                  <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => openEdit(sc)}
+                      aria-label={`Editar scorecard ${sc.name as string}`}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-7 w-7"
+                      className="h-7 w-7 text-status-danger-foreground"
                       onClick={() => handleDelete(sc.id as string)}
+                      aria-label={`Excluir scorecard ${sc.name as string}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1">
-                    {criteria.map((c) => (
-                      <Badge key={c.key} variant="outline" className="text-[10px]">
-                        {c.label} · ×{c.weight}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                </header>
+                <div className="mt-3 flex items-center gap-2 text-[11px] text-text-tertiary">
+                  <span>
+                    {criteria.length} critério{criteria.length === 1 ? "" : "s"}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>
+                    Peso total{" "}
+                    {criteria.reduce((acc, c) => acc + (Number(c.weight) || 0), 0).toFixed(1)}
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {criteria.map((c) => (
+                    <MetaPill key={c.key}>
+                      {c.label} · ×{c.weight}
+                    </MetaPill>
+                  ))}
+                </div>
+              </article>
             );
           })}
         </div>
       )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar" : "Novo"} scorecard</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sc-name">Nome</Label>
+              <Input
+                id="sc-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex.: Entrevista técnica — Engenharia"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sc-desc">Descrição</Label>
+              <Textarea
+                id="sc-desc"
+                rows={2}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Quando usar este scorecard"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Critérios (escala 0–5)</Label>
+                <Button size="sm" variant="outline" onClick={addCriterion}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Critério
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {form.criteria.map((c, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-[1fr_2fr_90px_36px] gap-2 items-center"
+                  >
+                    <Input
+                      placeholder="chave"
+                      aria-label={`Chave do critério ${i + 1}`}
+                      value={c.key}
+                      onChange={(e) => setCriterion(i, { key: e.target.value })}
+                    />
+                    <Input
+                      placeholder="rótulo"
+                      aria-label={`Rótulo do critério ${i + 1}`}
+                      value={c.label}
+                      onChange={(e) => setCriterion(i, { label: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      min={0.1}
+                      max={10}
+                      step={0.1}
+                      aria-label={`Peso do critério ${i + 1}`}
+                      value={c.weight}
+                      onChange={(e) =>
+                        setCriterion(i, { weight: Number(e.target.value) || 1 })
+                      }
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeCriterion(i)}
+                      className="h-9 w-9"
+                      aria-label={`Remover critério ${i + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
