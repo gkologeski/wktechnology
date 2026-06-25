@@ -5,12 +5,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, MapPin } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SectionHeader, MetaPill, Skeletons } from "@/components/techhire/ui";
 import { getPublicJob, submitPublicApplication } from "@/lib/ats/public.functions";
 
 export const Route = createFileRoute("/careers/$slug")({
@@ -40,19 +39,19 @@ export const Route = createFileRoute("/careers/$slug")({
   component: CareerJobPage,
   notFoundComponent: () => (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-      <h1 className="text-2xl font-semibold">Vaga não encontrada</h1>
-      <p className="mt-2 text-muted-foreground">
+      <h1 className="text-2xl font-semibold text-text-primary">Vaga não encontrada</h1>
+      <p className="mt-2 text-text-secondary">
         Esta vaga pode ter sido encerrada ou despublicada.
       </p>
-      <Link to="/careers" className="text-primary mt-4 inline-block">
+      <Link to="/careers" className="mt-4 inline-block text-primary hover:underline">
         ← Ver outras vagas
       </Link>
     </div>
   ),
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-      <h1 className="text-2xl font-semibold">Ops</h1>
-      <p className="mt-2 text-muted-foreground">{error.message}</p>
+      <h1 className="text-2xl font-semibold text-text-primary">Ops</h1>
+      <p className="mt-2 text-text-secondary">{error.message}</p>
     </div>
   ),
 });
@@ -102,7 +101,12 @@ function CareerJobPage() {
   });
 
   if (query.isLoading) {
-    return <div className="mx-auto max-w-3xl px-6 py-10 text-sm text-muted-foreground">Carregando…</div>;
+    return (
+      <div className="mx-auto max-w-3xl space-y-4 px-6 py-10">
+        <Skeletons.Card />
+        <Skeletons.Card />
+      </div>
+    );
   }
   const job = query.data!;
   const jobAny = job as unknown as {
@@ -122,9 +126,9 @@ function CareerJobPage() {
   if (mutation.isSuccess) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-        <h1 className="mt-4 text-2xl font-semibold">Candidatura enviada!</h1>
-        <p className="mt-2 text-muted-foreground">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-primary" aria-hidden />
+        <h1 className="mt-4 text-2xl font-semibold text-text-primary">Candidatura enviada!</h1>
+        <p className="mt-2 text-text-secondary">
           Obrigado pelo interesse na vaga <strong>{jobAny.title}</strong>. Nosso time entrará em
           contato se houver fit.
         </p>
@@ -138,135 +142,144 @@ function CareerJobPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-text-primary">
       <div className="mx-auto max-w-3xl px-6 py-10">
-        <Link to="/careers" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4 mr-1" />
+        <Link
+          to="/careers"
+          className="inline-flex items-center gap-1 text-sm text-text-secondary transition hover:text-text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
           Todas as vagas
         </Link>
 
-        <header className="mt-4">
+        <header className="mt-4 border-b border-border-subtle pb-6">
           <h1 className="text-3xl font-semibold tracking-tight">{jobAny.title}</h1>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {jobAny.seniority && <Badge variant="outline">{jobAny.seniority}</Badge>}
-            {jobAny.employment_type && <Badge variant="outline">{jobAny.employment_type}</Badge>}
-            {jobAny.remote_mode && <Badge variant="outline">{jobAny.remote_mode}</Badge>}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {jobAny.seniority && <MetaPill>{jobAny.seniority}</MetaPill>}
+            {jobAny.employment_type && <MetaPill>{jobAny.employment_type}</MetaPill>}
+            {jobAny.remote_mode && <MetaPill>{jobAny.remote_mode}</MetaPill>}
             {jobAny.location && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+              <MetaPill>
+                <MapPin className="h-3 w-3" aria-hidden />
                 {jobAny.location}
-              </span>
+              </MetaPill>
             )}
             {(jobAny.salary_min || jobAny.salary_max) && (
-              <Badge variant="secondary">
+              <MetaPill className="bg-[hsl(var(--status-info-bg))] text-[hsl(var(--status-info-fg))] border-[hsl(var(--status-info-fg)/0.2)]">
                 {jobAny.salary_currency ?? "BRL"}{" "}
                 {jobAny.salary_min?.toLocaleString("pt-BR") ?? "?"}
                 {jobAny.salary_max ? ` – ${jobAny.salary_max.toLocaleString("pt-BR")}` : ""}
-              </Badge>
+              </MetaPill>
             )}
           </div>
         </header>
 
         {(jobAny.description || jobAny.requirements) && (
-          <Card className="mt-6">
-            <CardContent className="pt-5 space-y-5">
-              {jobAny.description && (
-                <section>
-                  <h2 className="font-semibold mb-2">Sobre a vaga</h2>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {jobAny.description}
-                  </p>
-                </section>
-              )}
-              {jobAny.requirements && (
-                <section>
-                  <h2 className="font-semibold mb-2">Requisitos</h2>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {jobAny.requirements}
-                  </p>
-                </section>
-              )}
-            </CardContent>
-          </Card>
+          <section className="surface-1 mt-6 space-y-6 rounded-lg border border-border-subtle p-6">
+            {jobAny.description && (
+              <div className="space-y-2">
+                <SectionHeader title="Sobre a vaga" />
+                <p className="whitespace-pre-wrap text-sm text-text-secondary">
+                  {jobAny.description}
+                </p>
+              </div>
+            )}
+            {jobAny.requirements && (
+              <div className="space-y-2">
+                <SectionHeader title="Requisitos" />
+                <p className="whitespace-pre-wrap text-sm text-text-secondary">
+                  {jobAny.requirements}
+                </p>
+              </div>
+            )}
+          </section>
         )}
 
-        <Card className="mt-6">
-          <CardContent className="pt-5">
-            <h2 className="font-semibold mb-4">Candidate-se</h2>
-            <form
-              className="grid gap-3 sm:grid-cols-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!form.full_name || !form.email) {
-                  toast.error("Nome e e-mail são obrigatórios.");
-                  return;
-                }
-                mutation.mutate();
-              }}
-            >
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Nome completo *</Label>
-                <Input
-                  required
-                  value={form.full_name}
-                  onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>E-mail *</Label>
-                <Input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Telefone</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>LinkedIn</Label>
-                <Input
-                  placeholder="https://linkedin.com/in/seu-perfil"
-                  value={form.linkedin_url}
-                  onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Cidade / Estado</Label>
-                <Input
-                  value={form.location}
-                  onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Link do currículo (PDF)</Label>
-                <Input
-                  placeholder="https://… (Drive, Dropbox, etc.)"
-                  value={form.cv_url}
-                  onChange={(e) => setForm((f) => ({ ...f, cv_url: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Mensagem (opcional)</Label>
-                <Textarea
-                  rows={4}
-                  value={form.message}
-                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                />
-              </div>
-              <div className="sm:col-span-2 flex justify-end">
-                <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? "Enviando…" : "Enviar candidatura"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <section className="surface-1 mt-6 space-y-5 rounded-lg border border-border-subtle p-6">
+          <SectionHeader
+            title="Candidate-se"
+            description="Os campos marcados com * são obrigatórios."
+          />
+          <form
+            className="grid gap-4 sm:grid-cols-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!form.full_name || !form.email) {
+                toast.error("Nome e e-mail são obrigatórios.");
+                return;
+              }
+              mutation.mutate();
+            }}
+          >
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="full_name">Nome completo *</Label>
+              <Input
+                id="full_name"
+                required
+                value={form.full_name}
+                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">E-mail *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="linkedin_url">LinkedIn</Label>
+              <Input
+                id="linkedin_url"
+                placeholder="https://linkedin.com/in/seu-perfil"
+                value={form.linkedin_url}
+                onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="location">Cidade / Estado</Label>
+              <Input
+                id="location"
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="cv_url">Link do currículo (PDF)</Label>
+              <Input
+                id="cv_url"
+                placeholder="https://… (Drive, Dropbox, etc.)"
+                value={form.cv_url}
+                onChange={(e) => setForm((f) => ({ ...f, cv_url: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="message">Mensagem (opcional)</Label>
+              <Textarea
+                id="message"
+                rows={4}
+                value={form.message}
+                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+              />
+            </div>
+            <div className="flex justify-end sm:col-span-2">
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? "Enviando…" : "Enviar candidatura"}
+              </Button>
+            </div>
+          </form>
+        </section>
       </div>
     </div>
   );
