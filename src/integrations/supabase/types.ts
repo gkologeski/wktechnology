@@ -1062,6 +1062,14 @@ export type Database = {
       }
       ats_interviews: {
         Row: {
+          ai_concerns: Json | null
+          ai_followups: Json | null
+          ai_generated_at: string | null
+          ai_model: string | null
+          ai_recommendation: string | null
+          ai_score: number | null
+          ai_strengths: Json | null
+          ai_summary: string | null
           application_id: string
           async_questions_snapshot: Json | null
           candidate_id: string
@@ -1086,9 +1094,18 @@ export type Database = {
           slots: Json | null
           stage_value: string | null
           status: string
+          transcript: string | null
           updated_at: string
         }
         Insert: {
+          ai_concerns?: Json | null
+          ai_followups?: Json | null
+          ai_generated_at?: string | null
+          ai_model?: string | null
+          ai_recommendation?: string | null
+          ai_score?: number | null
+          ai_strengths?: Json | null
+          ai_summary?: string | null
           application_id: string
           async_questions_snapshot?: Json | null
           candidate_id: string
@@ -1113,9 +1130,18 @@ export type Database = {
           slots?: Json | null
           stage_value?: string | null
           status?: string
+          transcript?: string | null
           updated_at?: string
         }
         Update: {
+          ai_concerns?: Json | null
+          ai_followups?: Json | null
+          ai_generated_at?: string | null
+          ai_model?: string | null
+          ai_recommendation?: string | null
+          ai_score?: number | null
+          ai_strengths?: Json | null
+          ai_summary?: string | null
           application_id?: string
           async_questions_snapshot?: Json | null
           candidate_id?: string
@@ -1140,6 +1166,7 @@ export type Database = {
           slots?: Json | null
           stage_value?: string | null
           status?: string
+          transcript?: string | null
           updated_at?: string
         }
         Relationships: [
