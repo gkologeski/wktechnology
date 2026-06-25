@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS activities_pending_due_date_idx ON public.activities (due_date ASC) WHERE completed = false AND due_date IS NOT NULL;
