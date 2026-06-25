@@ -7,48 +7,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TEMPLATES } from "@/lib/email-templates/registry";
+import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
 
 const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_NAME = "WK Technology";
-
-function randomHexToken(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function getOrCreateUnsubscribeToken(email: string): Promise<string> {
-  const normalizedEmail = email.toLowerCase();
-  const { data: existing, error: lookupError } = await supabaseAdmin
-    .from("email_unsubscribe_tokens")
-    .select("token, used_at")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
-  if (lookupError) throw new Error(`Falha ao consultar token de descadastro: ${lookupError.message}`);
-  if (existing && !existing.used_at) return existing.token as string;
-
-  const token = randomHexToken();
-  const { error: insertError } = await supabaseAdmin
-    .from("email_unsubscribe_tokens")
-    .upsert(
-      { email: normalizedEmail, token } as never,
-      { onConflict: "email", ignoreDuplicates: true },
-    );
-  if (insertError) throw new Error(`Falha ao criar token de descadastro: ${insertError.message}`);
-
-  const { data: stored, error: readError } = await supabaseAdmin
-    .from("email_unsubscribe_tokens")
-    .select("token")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
-  if (readError || !stored?.token) {
-    throw new Error(readError?.message ?? "Falha ao confirmar token de descadastro");
-  }
-  return stored.token as string;
-}
 
 async function sendWorkspaceInviteEmail(args: {
   to: string;
@@ -75,7 +38,7 @@ async function sendWorkspaceInviteEmail(args: {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
     if (!template) throw new Error("Template workspace-invite não registrado");
-    const unsubscribeToken = await getOrCreateUnsubscribeToken(args.to);
+    const unsubscribeToken = await getOrCreateEmailUnsubscribeToken(args.to);
 
     const element = React.createElement(template.component, templateData);
     const html = await renderEmail(element);
