@@ -60,24 +60,20 @@ type Notes = {
 const REC_MAP: Record<string, { label: string; className: string }> = {
   strong_hire: {
     label: "Forte contratação",
-    className:
-      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+    className: "bg-success/10 text-success border-success/30",
   },
   hire: {
     label: "Contratar",
-    className:
-      "bg-[hsl(var(--status-success-bg))] text-[hsl(var(--status-success-fg))] border-[hsl(var(--status-success-fg)/0.2)]",
+    className: "bg-success/10 text-success border-success/30",
   },
   neutral: { label: "Neutro", className: "" },
   no_hire: {
     label: "Não contratar",
-    className:
-      "bg-[hsl(var(--status-warning-bg))] text-[hsl(var(--status-warning-fg))] border-[hsl(var(--status-warning-fg)/0.2)]",
+    className: "bg-warning/10 text-warning border-warning/30",
   },
   strong_no_hire: {
     label: "Forte rejeição",
-    className:
-      "bg-[hsl(var(--status-danger-bg))] text-[hsl(var(--status-danger-fg))] border-[hsl(var(--status-danger-fg)/0.2)]",
+    className: "bg-destructive/10 text-destructive border-destructive/30",
   },
 };
 
