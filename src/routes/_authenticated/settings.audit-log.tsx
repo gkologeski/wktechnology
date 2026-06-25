@@ -152,7 +152,7 @@ function AuditLogPage() {
         ) : rows.length === 0 ? (
           <div className="p-6">
             <EmptyState
-              icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
+              icon={ShieldCheck}
               title="Nenhum evento encontrado"
               description="Ajuste os filtros acima ou aguarde novas ações no workspace."
             />
