@@ -385,10 +385,10 @@ function JobDetailPage() {
         />
         {totalApps === 0 ? (
           <EmptyState
-            icon={<Users className="h-6 w-6" aria-hidden="true" />}
+            icon={Users}
             title="Nenhum candidato nesta vaga"
             description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
-            action={{ label: "Adicionar candidato", onClick: openAdd }}
+            action={<Button onClick={openAdd}><Plus className="h-4 w-4 mr-2" aria-hidden="true" />Adicionar candidato</Button>}
           />
         ) : (
           <div className="overflow-x-auto -mx-1 px-1">
