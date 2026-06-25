@@ -41,6 +41,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
+import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -401,6 +402,11 @@ const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
   id: '/$token',
   path: '/$token',
   getParentRoute: () => AcceptInviteRoute,
+} as any)
+const AuthenticatedWorkspaceRoute = AuthenticatedWorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
@@ -1596,6 +1602,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/workspace': typeof AuthenticatedWorkspaceRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -1827,6 +1834,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/workspace': typeof AuthenticatedWorkspaceRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -2062,6 +2070,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -2298,6 +2307,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/tickets'
+    | '/workspace'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -2529,6 +2539,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/tickets'
+    | '/workspace'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -2763,6 +2774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/_authenticated/workspace'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -3275,6 +3287,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accept-invite/$token'
       preLoaderRoute: typeof AcceptInviteTokenRouteImport
       parentRoute: typeof AcceptInviteRoute
+    }
+    '/_authenticated/workspace': {
+      id: '/_authenticated/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof AuthenticatedWorkspaceRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
@@ -5101,6 +5120,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
+  AuthenticatedWorkspaceRoute: typeof AuthenticatedWorkspaceRoute
   AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
@@ -5155,6 +5175,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
+  AuthenticatedWorkspaceRoute: AuthenticatedWorkspaceRoute,
   AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
