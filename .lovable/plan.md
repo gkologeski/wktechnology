@@ -1,21 +1,50 @@
-# Fases 2, 3 e 4 — Entregas finais
+## Problema
 
-## Fase 2 (concluída)
-- **Self-scheduling**: `ats_interviews.self_schedule_token` + `offered_slots`. Server fns em `src/lib/ats/self-schedule.functions.ts` (createSelfScheduleLink, getSelfScheduleByToken, confirmSelfSchedule). Rota pública `/schedule/$token`.
-- **Página pública de oferta**: `ats_offers.public_token` (gerado em `sendOffer`). Server fn `getOfferByToken`. Rota pública `/offer/$token` com leitura via política `TO anon`.
+**1) Menus do TechHire voltam para TechSales**
+`src/lib/modules/active-module.ts` detecta o módulo ATS por path apenas com 3 prefixos:
+```
+const ATS_PATH_PREFIXES = ["/jobs", "/candidates", "/ats"];
+```
+Rotas como `/pipelines`, `/scorecards`, `/interview-kits`, `/offers`, `/stage-emails`, `/match-scores`, `/fraud-flags`, `/insights`, `/dei-analytics` não estão na lista → `useActiveModule()` cai no default `"crm"` → `AppSidebar` troca para `SIDEBAR_GROUPS` (TechSales) assim que a navegação se assenta.
 
-## Fase 3 (concluída)
-- **AI Match Score**: tabela `ats_match_scores` (job × candidato, UNIQUE). `computeMatchScore` chama Gemini 2.5 Flash com JSON estruturado (score 0-100, summary, strengths, gaps). Página `/match-scores` lista e permite recalcular.
-- **AI JD Generator**: `generateJobDescription` em `src/lib/ats/jd-generator.functions.ts` retorna `{description, requirements, benefits, tags}`.
-- **Fraud detection**: tabela `ats_candidate_flags`. `scanCandidateFraud` detecta duplicados por email/telefone e heurística de "CV IA". Página `/fraud-flags` com botão de scan e resolução.
+**2) Página de Carreiras abre fora do shell**
+O item aponta para `/careers`, que é rota pública (não fica sob `_authenticated`), então renderiza sem sidebar/header.
 
-## Fase 4 (concluída)
-- **DEI**: 4 colunas opcionais em `ats_candidates` (gender, race, disability, lgbtqia). `getDeiAnalytics` agrega contagens. Página `/dei-analytics`.
-- **Webhooks**: reaproveita `outbound_webhooks` + `enqueueWebhookEvent` (eventos podem ser disparados pelas server fns existentes).
-- Menu lateral ATS atualizado: grupos "Inteligência (IA)" e "DEI Analytics".
+## Correções
 
-## Pendente intencional
-- AI Notetaker (transcrição/sumário de entrevistas) — requer pipeline de áudio.
-- Multiposting LinkedIn/Indeed/Gupy — exige credenciais de cada plataforma.
-- Custom Reports builder ATS-específico.
-- Admin público da página de carreiras (branding por workspace).
+### A) Ampliar a detecção de módulo ATS
+Em `src/lib/modules/active-module.ts`, adicionar todos os paths exclusivos do TechHire:
+```ts
+const ATS_PATH_PREFIXES = [
+  "/jobs",
+  "/candidates",
+  "/ats",
+  "/pipelines",
+  "/scorecards",
+  "/interview-kits",
+  "/offers",
+  "/stage-emails",
+  "/match-scores",
+  "/fraud-flags",
+  "/insights",
+  "/dei-analytics",
+];
+```
+(Conferir nomes finais com `src/lib/menu-config-ats.ts` antes de aplicar para não esquecer nenhum item.)
+
+### B) Página de Carreiras dentro do shell
+`/careers` é a página pública dos candidatos — não deve substituir o shell autenticado. Duas opções:
+
+- **Opção 1 (recomendada):** trocar o item do menu para abrir em nova aba (`target="_blank"`) com rótulo "Ver site público de Carreiras". Mantém o app principal intacto e deixa claro que é uma visualização externa. Requer um pequeno ajuste no item de menu do ATS para suportar `external: true` e o `AppSidebar` renderizar `<a target="_blank">` quando presente.
+- **Opção 2:** criar `/_authenticated/careers-admin` que renderiza a listagem pública embutida (iframe ou reuso do componente) dentro do shell. Mais trabalho e duplica UI.
+
+Sugiro Opção 1.
+
+## Arquivos afetados
+- `src/lib/modules/active-module.ts` — ampliar `ATS_PATH_PREFIXES`.
+- `src/lib/menu-config-ats.ts` — marcar item "Página de Carreiras" como `external: true`.
+- `src/components/app-sidebar.tsx` — renderizar `<a target="_blank" rel="noopener">` quando `item.external`.
+
+## Validação
+1. Navegar em `/pipelines`, `/scorecards`, `/interview-kits`, `/offers`, `/stage-emails`, `/match-scores`, `/fraud-flags`, `/insights`, `/dei-analytics` — sidebar continua ATS.
+2. Clicar "Página de Carreiras" — abre `/careers` em nova aba; shell ATS permanece.
