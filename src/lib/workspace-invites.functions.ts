@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TEMPLATES } from "@/lib/email-templates/registry";
 
 const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
-const FROM_DOMAIN = "notify.wktechnology.com.br";
+const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
 const FROM_NAME = "WK Technology";
 
 async function sendWorkspaceInviteEmail(args: {
