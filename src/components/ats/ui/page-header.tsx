@@ -4,7 +4,12 @@ import { cn } from "@/lib/utils";
 export interface AtsPageHeaderProps {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
+  /**
+   * Quando true, anuncia mudanças no `description` para leitores de tela
+   * (útil quando o texto reflete estado dinâmico, ex: "12 resultados").
+   */
+  descriptionLive?: boolean;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
   tabs?: ReactNode;
@@ -19,6 +24,7 @@ export function AtsPageHeader({
   eyebrow,
   title,
   description,
+  descriptionLive = false,
   primaryAction,
   secondaryActions,
   tabs,
@@ -37,7 +43,12 @@ export function AtsPageHeader({
             {title}
           </h1>
           {description ? (
-            <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">{description}</p>
+            <p
+              className="text-sm text-text-secondary mt-1.5 max-w-2xl"
+              {...(descriptionLive ? { "aria-live": "polite", "aria-atomic": true } : {})}
+            >
+              {description}
+            </p>
           ) : null}
         </div>
         {(primaryAction || secondaryActions) && (
