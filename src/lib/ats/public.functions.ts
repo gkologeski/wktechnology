@@ -160,6 +160,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         .maybeSingle();
       if (existing) candidateId = existing.id as string;
     }
+    let candidateWasCreated = false;
     if (!candidateId) {
       const { data: created, error: cErr } = await supabaseAdmin
         .from("ats_candidates")
@@ -178,6 +179,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         .single();
       if (cErr) throw new Error(cErr.message);
       candidateId = created.id as string;
+      candidateWasCreated = true;
     }
 
     // Application (idempotente via UNIQUE job_id,candidate_id)
