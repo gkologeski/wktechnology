@@ -261,7 +261,16 @@ export async function processDueEnrollments(limit = 50): Promise<{
         .eq("sequence_id", e.sequence_id)
         .order("step_order", { ascending: true });
 
-      const next = (steps ?? []).find((s) => s.step_order === e.current_step + 1);
+      const stepList = (steps ?? []) as Array<{
+        id: string;
+        step_order: number;
+        channel: string;
+        delay_days: number | null;
+        subject: string | null;
+        body: string | null;
+        task_instructions: string | null;
+      }>;
+      const next = stepList.find((s) => s.step_order === e.current_step + 1);
       if (!next) {
         await supabaseAdmin
           .from("ats_sourcing_enrollments")
