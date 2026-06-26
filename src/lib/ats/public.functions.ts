@@ -213,6 +213,26 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
     } catch {
       /* auditoria não pode bloquear candidatura */
     }
+    if (candidateWasCreated && candidateId) {
+      try {
+        const { recordAtsEvent } = await import("./audit.server");
+        await recordAtsEvent(supabaseAdmin, {
+          ownerId,
+          name: "ats.candidate.sourced",
+          entityType: "candidate",
+          entityId: candidateId,
+          payload: {
+            source: "career_page",
+            jobId: data.job_id,
+            applicationId: app.id as string,
+            fullName: data.full_name,
+            email: data.email,
+          },
+        });
+      } catch {
+        /* não bloqueia candidatura */
+      }
+    }
     try {
       const { enqueueApplicationConfirmation } = await import("./email-engine.server");
       await enqueueApplicationConfirmation({
