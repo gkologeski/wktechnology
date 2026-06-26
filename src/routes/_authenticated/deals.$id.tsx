@@ -37,6 +37,16 @@ function DealDetail() {
     void load(); /* eslint-disable-next-line */
   }, [id]);
 
+  useEffect(() => {
+    function onChanged(e: Event) {
+      const detail = (e as CustomEvent<{ dealId?: string }>).detail;
+      if (!detail?.dealId || detail.dealId === id) void load();
+    }
+    window.addEventListener("deal:line-items-changed", onChanged);
+    return () => window.removeEventListener("deal:line-items-changed", onChanged);
+    /* eslint-disable-next-line */
+  }, [id]);
+
   const dealPipeline = useMemo(() => {
     if (!deal) return null;
     const pid = (deal as unknown as { pipeline_id?: string | null }).pipeline_id;
