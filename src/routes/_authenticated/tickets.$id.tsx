@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { CallHistoryPanel } from "@/components/voice/call-history-panel";
-import { MeetingsPanel } from "@/components/meetings/meetings-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
@@ -217,8 +215,6 @@ function TicketDetail() {
       center={
         <>
           <AiSummaryPanel entity="ticket" entityId={ticket.id} />
-          <CallHistoryPanel entity="ticket" entityId={ticket.id} />
-          <MeetingsPanel entity="ticket" entityId={ticket.id} />
           <KbSuggestions subject={ticket.subject} description={ticket.description} />
           {ticket.description && (
             <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60">
