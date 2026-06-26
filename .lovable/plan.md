@@ -1,21 +1,42 @@
-Ajustar o layout 3-colunas da página de detalhe de entidade (Negócios/Leads/Tickets/Contatos/Empresas) para que, em telas reduzidas, o conteúdo deixe de ser cortado por `truncate` nas colunas laterais.
+## Problema
 
-Mudanças mínimas, somente UI:
+Ao abrir uma tarefa em `/tasks/:id`, a tela aparece desconfigurada:
 
-1. `src/components/record/record-layout.tsx`
-   - Elevar o breakpoint da grade 3-colunas de `xl` para `2xl` (`2xl:grid-cols-12`).
-   - Entre `lg` e `2xl`, passar para 2 colunas: aside esquerdo + centro lado a lado (`lg:grid-cols-[280px_minmax(0,1fr)]`), com o aside direito ocupando largura total abaixo. Isso devolve largura útil aos painéis laterais em telas ~1000–1500px (como a do print).
-   - Manter stack único em telas pequenas.
+- Botões "—" vazios no topo direito (badges de status/prioridade renderizando hífen como conteúdo de Badge fora de contexto).
+- O corpo da tarefa exibe HTML cru (`<br>`, `<div>`) porque é renderizado como texto.
+- Painel "Sobre" desencaixado no canto inferior direito, sem coluna de timeline ou associações ao lado.
+- Usa `<select>` nativo em vez do Select do design system.
+- Não segue o padrão Quiet Premium aplicado em leads, deals e tickets (sem `RecordLayout`, sem `AssociationsPanel`, sem `ActivityTimeline`).
 
-2. `src/components/properties-panel.tsx` (linha ~359)
-   - Trocar `truncate` por `break-words` no valor da propriedade, permitindo quebra em múltiplas linhas em vez de cortar nomes/valores longos.
+## Escopo
 
-3. `src/components/record/associations-panel.tsx`
-   - Em campos críticos do cartão (nome principal da empresa/contato, e-mail e telefone, linhas ~459, ~647, ~658, ~934, ~1147, ~1307, ~1316, ~1503, ~1549): substituir `truncate` por `break-words` (mantendo `line-clamp-2` onde fizer sentido para títulos).
-   - Manter `truncate` apenas em rótulos secundários onde o corte é aceitável.
+Apenas frontend de `src/routes/_authenticated/tasks.$id.tsx`. Não altero banco, RLS, server functions, regras de negócio ou outras telas.
 
-Sem alterar dados, queries, RLS, lógica ou densidade visual além das classes utilitárias necessárias. Light/dark mode preservados pelos tokens existentes.
+## Mudanças
 
-Validação manual:
-- Abrir `/deals/:id`, `/leads/:id`, `/tickets/:id`, `/contacts/:id`, `/companies/:id` em ~1060px, ~1280px e ≥1536px.
-- Verificar que "Nome", "Valor", "Empresa", "Contato", "E-mail", "Telefone" aparecem completos (com wrap) e que nenhuma linha é truncada por reticências.
+`src/routes/_authenticated/tasks.$id.tsx`:
+
+1. Adotar o mesmo cabeçalho premium usado em leads/tickets: card arredondado com botão voltar circular, ícone/título da tarefa, badges de status/prioridade renderizadas apenas quando há valor (sem badge vazia "—"), data de vencimento e criação em metadados.
+2. Renderizar `task.body` com HTML sanitizado via `DOMPurify` (mesma abordagem do `activity-timeline`), corrigindo a exibição de `<br>` e `<div>`.
+3. Substituir o `<select>` nativo de Responsável por `Select` do shadcn, mantendo a função `reassign`.
+4. Substituir o grid solto `[1fr_320px]` por `RecordLayout`:
+   - Esquerda: `PropertiesPanel` com os mesmos campos atuais.
+   - Centro: cabeçalho premium + card de descrição + `ActivityTimeline` filtrada para o contexto da tarefa (mostra comentários/edições; sem alterar regras).
+   - Direita: `AssociationsPanel` referenciando a `activity` (entity `activities`) — apenas leitura/criação de vínculos, sem mudar lógica.
+5. Manter ações "Concluir" e "Excluir" no header, com confirmação via `AlertDialog` (padrão das outras telas) em vez de `confirm()` nativo.
+6. Sem mudanças em `useWorkspaceMembers`, queries Supabase atuais ou rotas.
+
+## Validação manual
+
+- Abrir uma tarefa existente a partir de `/tasks` e a partir da timeline de um lead/deal.
+- Conferir que o corpo HTML é renderizado formatado.
+- Conferir badges aparecem só quando há status/prioridade.
+- Trocar responsável pelo novo Select e ver toast.
+- Concluir e excluir tarefa via novos botões/alert dialog.
+- Testar light/dark mode e responsividade (desktop, tablet, mobile).
+
+## Fora de escopo
+
+- Migrar conteúdo legado com HTML salvo no `body` para texto puro.
+- Alterar a tela de listagem `/tasks` ou o editor inline da timeline.
+- Mudar permissões, RLS ou schema.
