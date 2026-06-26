@@ -16,6 +16,26 @@ export const WEBHOOK_EVENTS = [
   "deal.stage_changed",
   "ticket.created",
   "ticket.updated",
+  // ATS — Onda 7.5
+  "ats.job.posted",
+  "ats.job.unposted",
+  "ats.candidate.sourced",
+  "ats.referral.submitted",
+  "ats.assessment.invited",
+  "ats.assessment.completed",
+  "ats.background_check.started",
+  "ats.background_check.completed",
+  "ats.interview.scheduled",
+  "ats.interview.completed",
+  "ats.offer.approved",
+  "ats.offer.signed",
+  "ats.candidate.hired",
+  "ats.hire.handed_off",
+  "ats.quality_of_hire.recorded",
+  "ats.dsar.requested",
+  "ats.dsar.fulfilled",
+  "ats.consent.granted",
+  "ats.consent.revoked",
 ] as const;
 
 export const listWebhooks = createServerFn({ method: "GET" })
