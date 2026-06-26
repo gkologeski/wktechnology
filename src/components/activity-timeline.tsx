@@ -745,17 +745,28 @@ export function ActivityTimeline({
   const saveEdit = async (a: Activity) => {
     const uploaded = await uploadEditingFiles();
     const finalAttachments = [...editingAttachments, ...uploaded];
+    const patch: Record<string, unknown> = {
+      body: editingBody || null,
+      attachments: finalAttachments,
+    };
+    if (a.type === "task") {
+      patch.owner_id = editingAssigneeId ?? user?.id ?? null;
+      patch.due_date = editingDueDate ? new Date(editingDueDate).toISOString() : null;
+    }
     const { error } = await supabase
       .from("activities")
-      .update({ body: editingBody || null, attachments: finalAttachments } as never)
+      .update(patch as never)
       .eq("id", a.id);
     if (error) return toast.error(error.message);
     setEditingId(null);
     setEditingAttachments([]);
     setEditingNewFiles([]);
+    setEditingAssigneeId(null);
+    setEditingDueDate(null);
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
+
 
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
