@@ -1771,6 +1771,8 @@ export function ActivityTimeline({
                         </div>
                       );
                     }
+                    if (editingId === a.id) return null;
+
                     return (
                       <div className="flex gap-1 mt-3 pt-3 border-t border-border/60">
                         <Button
