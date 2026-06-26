@@ -40,6 +40,14 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    label: "Sourcing",
+    items: [
+      { title: "Talent Pools", url: "/sourcing/pools", icon: Users2 },
+      { title: "Sequências", url: "/sourcing/sequences", icon: Mail },
+      { title: "Indicações", url: "/sourcing/referrals", icon: Gift },
+    ],
+  },
+  {
     label: "Contratação",
     items: [
       { title: "Ofertas", url: "/offers", icon: FileSignature },
