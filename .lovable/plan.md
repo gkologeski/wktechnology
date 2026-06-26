@@ -1,57 +1,58 @@
-## Objetivo
+## Diagnóstico
 
-Manter `deals.value` sincronizado automaticamente com a soma dos totais dos itens de linha do negócio.
+Na timeline do negócio, ao renderizar uma atividade do tipo `meeting` (`src/components/activity-timeline.tsx`), há dois problemas visuais:
 
-## Comportamento
+1. **Caixa vazia logo abaixo do cabeçalho "Reunião"**
+   O bloco de metadados (linhas ~1310–1412) renderiza o wrapper `<div class="mt-2 ... border ... bg-muted/30 p-3">` sempre que `a.type === "meeting"`, mesmo quando todos os filhos (`startD`, `joinLink`/`loc`, `attendees`, `accessLink`, `recordingUrl`) são vazios. Nesse caso aparece um retângulo branco/cinza vazio com a aparência de um `<input>`, exatamente como no screenshot.
 
-Total da linha = `quantity * unit_price * (1 - discount_pct/100) * (1 + tax_rate/100)` — mesma fórmula já usada no front (`lineTotal`).
+2. **Corpo da reunião renderizado sem hierarquia (parede de texto sem marcadores, sem espaçamento entre parágrafos)**
+   `HtmlContent` (`src/components/rich-html-editor.tsx`) aplica classes `prose prose-sm ...` do plugin `@tailwindcss/typography`. O pacote não está instalado nem registrado em `src/styles.css`, então em Tailwind v4 as classes `prose-*` viram no-op. Como o Preflight zera `list-style` de `ul/ol` e margens de `p`, listas e parágrafos do HTML salvo aparecem colados, sem marcadores e sem respiro — exatamente o efeito visto.
 
-`deals.value` é recalculado quando um item é inserido, atualizado ou removido:
+Escopo: somente UI/apresentação na timeline. Sem mexer em dados, RLS, server functions, schema ou regras de negócio.
 
-- Há ≥1 item → `value = SUM(line_total)`.
-- Não há itens → mantém o valor manual atual (não zera, evita apagar valor preenchido antes de cadastrar itens). Sem alteração quando o usuário edita `deals.value` diretamente.
+## Mudanças
 
-`currency` do negócio não é alterado.
+### 1. `src/components/activity-timeline.tsx` — esconder caixa vazia da reunião
 
-## Implementação (mínima e centralizada)
+Dentro do bloco `a.type === "meeting" && (() => { ... })()`, calcular após as variáveis derivadas:
 
-### 1. Migration — trigger no banco
+```ts
+const hasMeetingMeta =
+  !!startD || !!joinLink || !!loc ||
+  (meta.attendees && meta.attendees.length > 0) ||
+  !!accessLink || !!recordingUrl;
+if (!hasMeetingMeta) return null;
+```
 
-`supabase/migrations/<timestamp>_deal_value_from_line_items.sql`:
+Assim o wrapper `<div class="mt-2 space-y-2 rounded-lg border ...">` só renderiza quando há ao menos um campo. Nenhum outro comportamento muda.
 
-- Função `public.recalc_deal_value(_deal_id uuid)` (`SECURITY DEFINER`, `search_path = public`):
-  - Calcula `SUM(quantity * unit_price * (1 - coalesce(discount_pct,0)/100) * (1 + coalesce(tax_rate,0)/100))` da tabela `deal_line_items` para o `_deal_id`.
-  - Se a soma for `NULL` (sem itens), retorna sem alterar `deals.value`.
-  - Caso contrário, faz `UPDATE deals SET value = soma WHERE id = _deal_id` (apenas quando o valor mudou, para não disparar updates desnecessários).
-- Trigger `trg_deal_line_items_recalc_value` em `deal_line_items` `AFTER INSERT OR UPDATE OR DELETE FOR EACH ROW`:
-  - Em INSERT/UPDATE → chama `recalc_deal_value(NEW.deal_id)`.
-  - Em DELETE → chama `recalc_deal_value(OLD.deal_id)`.
-  - Em UPDATE com mudança de `deal_id` → recalcula ambos.
-- `GRANT EXECUTE ON FUNCTION public.recalc_deal_value(uuid) TO authenticated, service_role`.
-- Backfill único ao final da migration: para todo deal com itens, aplicar o recálculo.
+### 2. Estilização do conteúdo HTML salvo (notas, e-mails, descrições)
 
-### 2. Front-end — refresh imediato
+Não introduzir dependência nova. Adicionar regras locais em `src/styles.css` (dentro de uma `@layer components`) que dão a `HtmlContent` o mínimo de tipografia esperada — espaçamento de parágrafo, listas com marcador, headings, citações, links e código — usando apenas tokens semânticos já existentes (`--foreground`, `--muted-foreground`, `--primary`, `--border`).
 
-`src/components/deals/deal-line-items.tsx`: nos handlers `addBlank`, `addFromProduct`, `update`, `remove`, além das invalidações existentes, invalidar também o registro do deal para refletir o novo `value` sem reload:
+Resumo dos seletores adicionados (escopados em `.prose`):
 
-- `qc.invalidateQueries({ queryKey: ["deal", dealId] })` (se a chave for outra, descobrir e usar a real do `deals.$id.tsx`).
+- `p` com `margin-block`;
+- `ul` com `list-disc` + `padding-inline-start`;
+- `ol` com `list-decimal` + `padding-inline-start`;
+- `li` com `margin-block` pequeno;
+- `h1/h2/h3` com pesos/tamanhos;
+- `a` com cor `--primary` e `text-decoration: underline`;
+- `blockquote` com borda lateral via `--border`;
+- `code`/`pre` com fundo `--muted` e fonte monoespaçada;
+- `strong`/`em` mantidos.
 
-Sem alterar UI/UX, sem mexer em RLS de `deals` (trigger é `SECURITY DEFINER`), sem alterar `currency`, server functions ou regras de cotação.
+Isso resolve todos os usos de `HtmlContent` (notas, e-mails, reuniões), sem dependência de plugin. As classes utilitárias já no componente (`prose-p:my-1`, etc.) continuam inofensivas.
 
-## Fora do escopo
+## Verificação manual
 
-- Não alterar fórmula de impostos/descontos.
-- Não recalcular ao zerar itens (preserva valor manual).
-- Não tocar em quotes / line_items de cotação.
-- Não criar UI extra (somente refletir o valor).
+1. Abrir o negócio do contato `ignacio.celedon@arquimidia.com` → conferir que a caixa vazia sumiu para reuniões sem metadados e que reuniões com link/participantes continuam exibindo o bloco normal.
+2. No corpo da mesma reunião, confirmar que as bullet lists agora aparecem com marcadores e respiro entre linhas.
+3. Verificar uma nota antiga e um e-mail registrado para garantir que a tipografia melhorou em todos os usos de `HtmlContent`.
+4. Validar light/dark mode.
 
-## Validação manual
+## Fora de escopo
 
-1. Deal com `value` manual = R$ 1.000 e sem itens → adicionar item R$ 500 → `value` exibido no header e cards passa a R$ 500.
-2. Editar quantidade/preço/desconto/imposto do item → `value` recalcula automaticamente.
-3. Excluir todos os itens → `value` permanece no último calculado (não zera).
-4. Conferir backfill: deals existentes com itens passaram a refletir a soma.
-
-## Risco
-
-Baixo. Trigger isolado em `deal_line_items`; nenhuma mudança em RLS, schema de cotações ou regras de negócio existentes. Sobrescreve `deals.value` quando há itens — comportamento solicitado pelo usuário.
+- Não instalar `@tailwindcss/typography` (evita dependência só por estilização básica).
+- Não alterar o editor `RichHtmlEditor`, sanitização, schema, RLS ou server functions.
+- Não tocar nos blocos de `call`, `email`, anexos ou rodapé de ações.
