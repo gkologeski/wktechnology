@@ -322,6 +322,35 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
       user_agent: ua,
     });
 
+    // Se este documento estiver ligado a uma oferta do ATS, emitir ats.offer.signed.
+    try {
+      const { data: offer } = await supabaseAdmin
+        .from("ats_offers")
+        .select("id, owner_id, candidate_id, job_id, application_id")
+        .eq("esign_document_id", signer.document_id)
+        .maybeSingle();
+      if (offer?.id && offer.owner_id) {
+        const { recordAtsEvent } = await import("./ats/audit.server");
+        await recordAtsEvent(supabaseAdmin, {
+          ownerId: offer.owner_id as string,
+          name: "ats.offer.signed",
+          entityType: "offer",
+          entityId: offer.id as string,
+          dedupeKey: `ats.offer.signed:${offer.id}`,
+          payload: {
+            offerId: offer.id,
+            candidateId: offer.candidate_id,
+            jobId: offer.job_id,
+            applicationId: offer.application_id,
+            esignDocumentId: signer.document_id,
+            signerId: signer.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("[submitEsignSignature] ats.offer.signed emit failed", e);
+    }
+
     return { ok: true };
   });
 
