@@ -147,15 +147,18 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         scheduled_at: data.scheduled_at,
       },
     });
-    await emitEvent(supabase, {
+    await recordAtsEvent(supabase, {
       ownerId: userId,
-      eventName: "ats.interview.scheduled",
-      entityType: "ats_interview",
+      name: "ats.interview.scheduled",
+      entityType: "interview",
       entityId: ins.id as string,
       payload: {
         applicationId: data.application_id,
+        candidateId: app.candidate_id as string,
+        jobId: app.job_id as string,
         scheduledAt: data.scheduled_at,
         kind: data.kind,
+        source: "manual",
       },
     }).catch(() => undefined);
     return { id: ins.id as string };
