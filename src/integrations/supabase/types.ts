@@ -11696,6 +11696,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recalc_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       security_scan_collect: { Args: never; Returns: Json }
