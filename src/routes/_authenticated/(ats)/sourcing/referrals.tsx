@@ -112,7 +112,7 @@ function ReferralsPage() {
         eyebrow="ATS · Sourcing"
         title="Indicações"
         description="Programa de referrals — colaboradores indicam talentos e acompanham bônus."
-        actions={
+        primaryAction={
           <div className="flex items-center gap-2">
             <Select value={scope} onValueChange={(v) => setScope(v as "mine" | "all")}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>

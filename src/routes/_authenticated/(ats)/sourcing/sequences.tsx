@@ -69,7 +69,7 @@ function SequencesPage() {
         eyebrow="ATS · Sourcing"
         title="Sequências de outreach"
         description="Cadências automáticas para nutrir candidatos por email, WhatsApp e tarefas no LinkedIn."
-        actions={
+        primaryAction={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">

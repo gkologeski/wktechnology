@@ -68,7 +68,7 @@ function TalentPoolsPage() {
         eyebrow="ATS · Sourcing"
         title="Talent Pools"
         description="Agrupe candidatos por interesse, stack ou status de relacionamento."
-        actions={
+        primaryAction={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
