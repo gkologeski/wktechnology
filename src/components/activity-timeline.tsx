@@ -1503,14 +1503,16 @@ export function ActivityTimeline({
                         mentions={team}
                       />
                       {a.type === "task" && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="space-y-3 rounded-md border bg-muted/30 p-3">
                           <div className="space-y-1">
-                            <label className="text-xs text-muted-foreground">Responsável</label>
+                            <label className="text-xs font-medium text-muted-foreground">
+                              Responsável
+                            </label>
                             <Select
                               value={editingAssigneeId ?? ""}
                               onValueChange={(v) => setEditingAssigneeId(v || null)}
                             >
-                              <SelectTrigger className="h-9 text-xs">
+                              <SelectTrigger className="h-9 text-xs w-full">
                                 <SelectValue placeholder="Selecionar responsável" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1522,49 +1524,43 @@ export function ActivityTimeline({
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div className="space-y-1">
-                            <label className="text-xs text-muted-foreground">Data de vencimento</label>
-                            <div className="flex gap-2">
-                              <Select
-                                value=""
-                                onValueChange={(v) => {
-                                  const preset = v as TaskDuePreset;
-                                  if (preset === "custom") return;
-                                  setEditingDueDate(computeDuePreset(preset, editingDueDate));
-                                }}
-                              >
-                                <SelectTrigger className="h-9 text-xs flex-1">
-                                  <SelectValue placeholder="Preset" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(Object.keys(TASK_DUE_PRESET_LABELS) as TaskDuePreset[]).map((k) => (
-                                    <SelectItem key={k} value={k} className="text-xs">
-                                      {TASK_DUE_PRESET_LABELS[k]}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            <label className="text-xs font-medium text-muted-foreground">
+                              Data de vencimento
+                            </label>
+                            <div className="flex items-center gap-1.5">
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                      "h-9 text-xs justify-start font-normal flex-1",
+                                      "h-9 text-xs justify-start font-normal flex-1 min-w-0",
                                       !editingDueDate && "text-muted-foreground",
                                     )}
                                   >
-                                    <CalendarDays className="h-3.5 w-3.5 mr-1" />
-                                    {editingDueDate ? formatDateTime(editingDueDate) : "Escolher data"}
+                                    <CalendarDays className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                                    <span className="truncate">
+                                      {editingDueDate
+                                        ? formatDateTime(editingDueDate)
+                                        : "Definir vencimento"}
+                                    </span>
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent
+                                  className="w-auto p-0"
+                                  align="end"
+                                  sideOffset={8}
+                                >
                                   <Calendar
                                     mode="single"
                                     selected={editingDueDate ? new Date(editingDueDate) : undefined}
                                     onSelect={(d) => {
                                       if (!d) return;
-                                      const base = editingDueDate ? new Date(editingDueDate) : new Date();
+                                      const base = editingDueDate
+                                        ? new Date(editingDueDate)
+                                        : new Date();
                                       d.setHours(base.getHours(), base.getMinutes(), 0, 0);
                                       setEditingDueDate(d.toISOString());
                                     }}
@@ -1576,13 +1572,32 @@ export function ActivityTimeline({
                               {editingDueDate && (
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  className="h-9 text-xs px-2"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
                                   onClick={() => setEditingDueDate(null)}
+                                  aria-label="Limpar data"
                                 >
-                                  Limpar
+                                  <X className="h-4 w-4" />
                                 </Button>
                               )}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {(Object.keys(TASK_DUE_PRESET_LABELS) as TaskDuePreset[])
+                                .filter((k) => k !== "custom")
+                                .map((k) => (
+                                  <Button
+                                    key={k}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs px-2.5 rounded-full font-normal"
+                                    onClick={() =>
+                                      setEditingDueDate(computeDuePreset(k, editingDueDate))
+                                    }
+                                  >
+                                    {TASK_DUE_PRESET_LABELS[k]}
+                                  </Button>
+                                ))}
                             </div>
                           </div>
                         </div>
