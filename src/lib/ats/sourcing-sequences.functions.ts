@@ -323,7 +323,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
       } as never);
 
       // calcula próximo step
-      const following = (steps ?? []).find((s) => s.step_order === next.step_order + 1);
+      const following = stepList.find((s) => s.step_order === next.step_order + 1);
       const nextRunAt = following
         ? new Date(Date.now() + (following.delay_days ?? 0) * 86400_000).toISOString()
         : null;
