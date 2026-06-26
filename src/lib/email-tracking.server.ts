@@ -1,4 +1,5 @@
 // Server-only helpers for email open/click tracking.
+import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export function trackingBaseUrl(): string {
@@ -7,6 +8,31 @@ export function trackingBaseUrl(): string {
     process.env.PUBLIC_APP_URL ||
     "https://wktechnology.lovable.app"
   ).replace(/\/+$/, "");
+}
+
+function trackingSecret(): string {
+  return (
+    process.env.EMAIL_TRACKING_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "lovable-email-tracking-fallback"
+  );
+}
+
+export function signTrackedUrl(messageId: string, url: string): string {
+  return createHmac("sha256", trackingSecret())
+    .update(`${messageId}:${url}`)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+export function verifyTrackedUrl(messageId: string, url: string, sig: string): boolean {
+  const expected = signTrackedUrl(messageId, url);
+  if (sig.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  } catch {
+    return false;
+  }
 }
 
 const TRANSPARENT_GIF = Buffer.from(
