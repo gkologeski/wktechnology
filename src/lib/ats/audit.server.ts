@@ -63,7 +63,10 @@ export async function recordAtsEvent(
       | "background_check"
       | "consent"
       | "hire"
-      | "quality_of_hire";
+      | "quality_of_hire"
+      | "talent_pool"
+      | "sequence"
+      | "enrollment";
     entityId: string;
     payload?: Record<string, unknown>;
     dedupeKey?: string;
