@@ -1,58 +1,77 @@
-## Diagnóstico
+## Escopo
 
-Na timeline do negócio, ao renderizar uma atividade do tipo `meeting` (`src/components/activity-timeline.tsx`), há dois problemas visuais:
+Ao editar uma atividade do tipo **tarefa** na timeline (`src/components/activity-timeline.tsx`), permitir:
 
-1. **Caixa vazia logo abaixo do cabeçalho "Reunião"**
-   O bloco de metadados (linhas ~1310–1412) renderiza o wrapper `<div class="mt-2 ... border ... bg-muted/30 p-3">` sempre que `a.type === "meeting"`, mesmo quando todos os filhos (`startD`, `joinLink`/`loc`, `attendees`, `accessLink`, `recordingUrl`) são vazios. Nesse caso aparece um retângulo branco/cinza vazio com a aparência de um `<input>`, exatamente como no screenshot.
+1. Trocar o **responsável** (usuários do workspace, já carregados em `team`).
+2. Alterar a **data de vencimento** com presets rápidos.
 
-2. **Corpo da reunião renderizado sem hierarquia (parede de texto sem marcadores, sem espaçamento entre parágrafos)**
-   `HtmlContent` (`src/components/rich-html-editor.tsx`) aplica classes `prose prose-sm ...` do plugin `@tailwindcss/typography`. O pacote não está instalado nem registrado em `src/styles.css`, então em Tailwind v4 as classes `prose-*` viram no-op. Como o Preflight zera `list-style` de `ul/ol` e margens de `p`, listas e parágrafos do HTML salvo aparecem colados, sem marcadores e sem respiro — exatamente o efeito visto.
+Aplica-se somente ao modo de edição de `a.type === "task"`. Não afeta outros tipos, criação de tarefas, schema, RLS, server functions ou regras de negócio. `owner_id` e `due_date` já existem em `activities` e são gravados na criação — apenas estendemos o `saveEdit`.
 
-Escopo: somente UI/apresentação na timeline. Sem mexer em dados, RLS, server functions, schema ou regras de negócio.
+## Mudanças (apenas `src/components/activity-timeline.tsx`)
 
-## Mudanças
-
-### 1. `src/components/activity-timeline.tsx` — esconder caixa vazia da reunião
-
-Dentro do bloco `a.type === "meeting" && (() => { ... })()`, calcular após as variáveis derivadas:
-
+### 1. Novos estados de edição
 ```ts
-const hasMeetingMeta =
-  !!startD || !!joinLink || !!loc ||
-  (meta.attendees && meta.attendees.length > 0) ||
-  !!accessLink || !!recordingUrl;
-if (!hasMeetingMeta) return null;
+const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
+const [editingDueDate, setEditingDueDate] = useState<string | null>(null); // ISO
 ```
 
-Assim o wrapper `<div class="mt-2 space-y-2 rounded-lg border ...">` só renderiza quando há ao menos um campo. Nenhum outro comportamento muda.
+### 2. `startEdit(a)`
+Inicializa os novos campos quando a atividade for tarefa:
+```ts
+setEditingAssigneeId(a.type === "task" ? (a.owner_id ?? null) : null);
+setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
+```
 
-### 2. Estilização do conteúdo HTML salvo (notas, e-mails, descrições)
+### 3. `saveEdit(a)`
+Para tarefas, incluir os dois campos no `update`:
+```ts
+const patch: Record<string, unknown> = { body: editingBody || null, attachments: finalAttachments };
+if (a.type === "task") {
+  patch.owner_id = editingAssigneeId ?? user?.id;
+  patch.due_date = editingDueDate ? new Date(editingDueDate).toISOString() : null;
+}
+```
+Reset dos novos states após salvar/cancelar.
 
-Não introduzir dependência nova. Adicionar regras locais em `src/styles.css` (dentro de uma `@layer components`) que dão a `HtmlContent` o mínimo de tipografia esperada — espaçamento de parágrafo, listas com marcador, headings, citações, links e código — usando apenas tokens semânticos já existentes (`--foreground`, `--muted-foreground`, `--primary`, `--border`).
+### 4. UI dentro do bloco de edição (`editingId === a.id` e `a.type === "task"`)
+Adicionar uma linha de controles compactos acima da barra "Anexar / Salvar / Cancelar":
 
-Resumo dos seletores adicionados (escopados em `.prose`):
+- **Responsável**: `Select` (shadcn) listando `team` (Você + membros do workspace), label "Responsável".
+- **Data de vencimento**: dois controles lado a lado:
+  - `Select` de preset com opções na ordem pedida:
+    - Personalizada
+    - Hoje
+    - Amanhã
+    - Semana que vem (próxima segunda-feira)
+    - Mês que vem (mesmo dia do próximo mês)
+    - Daqui 3 meses (mesmo dia +3 meses)
+  - `DatePicker` (Popover + Calendar shadcn já usados no projeto), visível quando preset = "Personalizada" e também como controle auxiliar para qualquer preset (mostra a data calculada e permite ajuste fino). A hora atual (HH:mm do `due_date` original ou agora) é preservada.
+- Botão "Limpar" pequeno para zerar a data (`null`).
 
-- `p` com `margin-block`;
-- `ul` com `list-disc` + `padding-inline-start`;
-- `ol` com `list-decimal` + `padding-inline-start`;
-- `li` com `margin-block` pequeno;
-- `h1/h2/h3` com pesos/tamanhos;
-- `a` com cor `--primary` e `text-decoration: underline`;
-- `blockquote` com borda lateral via `--border`;
-- `code`/`pre` com fundo `--muted` e fonte monoespaçada;
-- `strong`/`em` mantidos.
+Regras de cálculo dos presets (em local time, preserva HH:mm atual):
+- Hoje: `startOfToday + horário`.
+- Amanhã: `+1 dia`.
+- Semana que vem: próxima segunda-feira (`day = 1`); se hoje for segunda, +7 dias.
+- Mês que vem: `addMonths(base, 1)`, com clamp do dia para o último dia do mês destino.
+- Daqui 3 meses: `addMonths(base, 3)` com mesmo clamp.
 
-Isso resolve todos os usos de `HtmlContent` (notas, e-mails, reuniões), sem dependência de plugin. As classes utilitárias já no componente (`prose-p:my-1`, etc.) continuam inofensivas.
+Selecionar um preset atualiza `editingDueDate` imediatamente; selecionar "Personalizada" apenas abre o calendário sem alterar a data.
+
+### 5. Acessibilidade e UX
+- Labels visíveis em texto pequeno (`text-xs text-muted-foreground`).
+- Mantém o mesmo grid/espacamento do bloco de edição já existente.
+- Funciona em light/dark mode (usa tokens semânticos).
 
 ## Verificação manual
 
-1. Abrir o negócio do contato `ignacio.celedon@arquimidia.com` → conferir que a caixa vazia sumiu para reuniões sem metadados e que reuniões com link/participantes continuam exibindo o bloco normal.
-2. No corpo da mesma reunião, confirmar que as bullet lists agora aparecem com marcadores e respiro entre linhas.
-3. Verificar uma nota antiga e um e-mail registrado para garantir que a tipografia melhorou em todos os usos de `HtmlContent`.
-4. Validar light/dark mode.
+1. Na timeline de um negócio, editar uma tarefa: trocar responsável, escolher cada preset e confirmar que a data exibida no card ("Vence …") muda após salvar.
+2. Escolher "Personalizada" e selecionar uma data no calendário; salvar e validar.
+3. Limpar a data e salvar; o rótulo "Vence …" deve sumir.
+4. Editar uma nota/e-mail/reunião: os novos controles **não** devem aparecer.
 
 ## Fora de escopo
 
-- Não instalar `@tailwindcss/typography` (evita dependência só por estilização básica).
-- Não alterar o editor `RichHtmlEditor`, sanitização, schema, RLS ou server functions.
-- Não tocar nos blocos de `call`, `email`, anexos ou rodapé de ações.
+- Criação de tarefas (já tem assignee + data).
+- Edição de outros tipos.
+- Notificações/automação por mudança de responsável ou prazo.
+- Schema, RLS, server functions.
