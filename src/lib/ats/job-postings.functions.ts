@@ -5,7 +5,7 @@
  * em job boards externos (LinkedIn, Indeed, Vagas.com).
  *
  * As implementações reais dependem de credenciais externas — sem elas, os
- * adapters caem em modo MOCK (ver `adapters/*/job-board.ts`). O resultado
+ * adapters caem em modo MOCK (ver adapters de cada provider). O resultado
  * é persistido em `public.ats_job_postings` com `is_mock=true` para tornar
  * o estado óbvio na UI e em relatórios.
  */
