@@ -2,11 +2,9 @@ import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -33,8 +31,16 @@ import {
   retryWebhookDelivery,
   WEBHOOK_EVENTS,
 } from "@/lib/webhooks.functions";
-import { Plus, Trash2, Copy, RotateCcw, Eye, Repeat } from "lucide-react";
+import { Plus, Trash2, Copy, RotateCcw, Eye, Repeat, Webhook, Inbox } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AtsPageHeader,
+  AtsSectionHeader,
+  EmptyState,
+  FilterBar,
+  Skeletons,
+} from "@/components/ats/ui";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings/webhooks")({
   component: WebhooksPage,
@@ -62,6 +68,45 @@ type Delivery = {
   next_retry_at: string | null;
 };
 
+const DELIVERY_STATUS = {
+  pending: {
+    label: "Pendente",
+    cls: "border-status-onhold/30 bg-status-onhold/10 text-status-onhold",
+  },
+  success: {
+    label: "Sucesso",
+    cls: "border-status-open/30 bg-status-open/10 text-status-open",
+  },
+  failed: {
+    label: "Falha",
+    cls: "border-risk-medium/30 bg-risk-medium/10 text-risk-medium",
+  },
+  dead: {
+    label: "Dead-letter",
+    cls: "border-risk-high/30 bg-risk-high/10 text-risk-high",
+  },
+} as const;
+
+function DeliveryStatusBadge({ status, http }: { status: string; http?: number | null }) {
+  const cfg =
+    (DELIVERY_STATUS as Record<string, { label: string; cls: string }>)[status] ?? {
+      label: status,
+      cls: "border-border-default bg-surface-sunken text-text-secondary",
+    };
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5",
+        "text-[11px] font-medium leading-none whitespace-nowrap tabular-nums",
+        cfg.cls,
+      )}
+    >
+      {cfg.label}
+      {http ? <span className="opacity-70">· {http}</span> : null}
+    </span>
+  );
+}
+
 function WebhooksPage() {
   const list = useServerFn(listWebhooks);
   const save = useServerFn(upsertWebhook);
@@ -71,6 +116,7 @@ function WebhooksPage() {
   const retry = useServerFn(retryWebhookDelivery);
 
   const [hooks, setHooks] = useState<Hook[]>([]);
+  const [hooksLoading, setHooksLoading] = useState(true);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Hook | null>(null);
@@ -80,14 +126,19 @@ function WebhooksPage() {
   const [fWebhook, setFWebhook] = useState<string>("all");
   const [fEvent, setFEvent] = useState<string>("all");
   const [fStatus, setFStatus] = useState<string>("all");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // payload viewer
   const [viewing, setViewing] = useState<Delivery | null>(null);
 
   const loadHooks = async () => {
-    const r = await list({});
-    setHooks(r.hooks as Hook[]);
+    setHooksLoading(true);
+    try {
+      const r = await list({});
+      setHooks(r.hooks as Hook[]);
+    } finally {
+      setHooksLoading(false);
+    }
   };
 
   const loadDeliveries = async () => {
@@ -137,6 +188,16 @@ function WebhooksPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await del({ data: { id } });
+      await loadHooks();
+      toast.success("Webhook removido");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   const toggleEvent = (e: string) =>
     setForm((f) => ({
       ...f,
@@ -146,7 +207,7 @@ function WebhooksPage() {
   const showSecret = async (id: string) => {
     const r = await getSec({ data: { id } });
     if (r.secret) {
-      navigator.clipboard.writeText(r.secret);
+      await navigator.clipboard.writeText(r.secret);
       toast.success("Secret copiado");
     }
   };
@@ -167,213 +228,251 @@ function WebhooksPage() {
     return m;
   }, [hooks]);
 
+  const activeCount = hooks.filter((h) => h.active).length;
+  const description =
+    hooksLoading
+      ? "Carregando endpoints…"
+      : `${hooks.length} endpoint${hooks.length === 1 ? "" : "s"} · ${activeCount} ativo${activeCount === 1 ? "" : "s"} · POST JSON com header X-Webhook-Signature (HMAC-SHA256).`;
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Webhooks de saída</h1>
-          <p className="text-sm text-muted-foreground">
-            Receba eventos do CRM e do ATS em seus sistemas externos.
-          </p>
-        </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4 mr-2" /> Novo webhook
-        </Button>
-      </div>
+      <AtsPageHeader
+        eyebrow="Integrações"
+        title="Webhooks de saída"
+        description={description}
+        descriptionLive
+        primaryAction={
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4 mr-2" /> Novo webhook
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Endpoints configurados</CardTitle>
-          <CardDescription>
-            POST JSON com header <code>X-Webhook-Signature</code> HMAC-SHA256 do body.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {hooks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum webhook.</p>
-          ) : (
-            <div className="space-y-2">
-              {hooks.map((h) => (
-                <div
-                  key={h.id}
-                  className="border rounded-md p-3 flex justify-between items-start gap-4"
-                >
-                  <div className="flex-1 space-y-1">
-                    <div className="font-medium flex items-center gap-2">
+      {/* Endpoints */}
+      <section className="space-y-3">
+        <AtsSectionHeader title="Endpoints configurados" />
+        {hooksLoading ? (
+          <div className="space-y-2">
+            <Skeletons.Card lines={2} />
+            <Skeletons.Card lines={2} />
+          </div>
+        ) : hooks.length === 0 ? (
+          <EmptyState
+            icon={Webhook}
+            title="Nenhum endpoint configurado"
+            description="Cadastre um endpoint HTTPS para receber eventos do CRM e do ATS em tempo real."
+            action={
+              <Button onClick={openNew} size="sm">
+                <Plus className="h-4 w-4 mr-2" /> Novo webhook
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            {hooks.map((h) => (
+              <div
+                key={h.id}
+                className="rounded-lg border border-border-subtle bg-surface-2 p-3 shadow-xs flex justify-between items-start gap-4"
+              >
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-text-primary truncate">{h.name}</span>
+                    {h.active ? (
+                      <span className="inline-flex items-center rounded-md border border-status-open/30 bg-status-open/10 px-1.5 py-0.5 text-[11px] font-medium text-status-open">
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-md border border-border-default bg-surface-sunken px-1.5 py-0.5 text-[11px] font-medium text-text-secondary">
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-text-tertiary font-mono break-all">{h.url}</div>
+                  <div className="flex gap-1 flex-wrap">
+                    {h.events.map((e) => (
+                      <span
+                        key={e}
+                        className="inline-flex items-center rounded-md border border-border-subtle bg-surface-sunken px-1.5 py-0.5 text-[11px] font-mono text-text-secondary"
+                      >
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => showSecret(h.id)}
+                    title="Copiar secret"
+                    aria-label="Copiar secret"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(h)}>
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(h.id)}
+                    aria-label="Remover webhook"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Deliveries */}
+      <section className="space-y-3">
+        <AtsSectionHeader
+          title="Entregas recentes"
+          description="Últimas 100 entregas correspondentes ao filtro."
+        />
+
+        <FilterBar
+          chips={
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+              <Select value={fWebhook} onValueChange={setFWebhook}>
+                <SelectTrigger aria-label="Filtrar por webhook">
+                  <SelectValue placeholder="Webhook" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os webhooks</SelectItem>
+                  {hooks.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>
                       {h.name}
-                      {!h.active && <Badge variant="secondary">Inativo</Badge>}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono break-all">{h.url}</div>
-                    <div className="flex gap-1 flex-wrap">
-                      {h.events.map((e) => (
-                        <Badge key={e} variant="outline">
-                          {e}
-                        </Badge>
-                      ))}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={fEvent} onValueChange={setFEvent}>
+                <SelectTrigger aria-label="Filtrar por evento">
+                  <SelectValue placeholder="Evento" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="all">Todos os eventos</SelectItem>
+                  {WEBHOOK_EVENTS.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={fStatus} onValueChange={setFStatus}>
+                <SelectTrigger aria-label="Filtrar por status">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="success">Sucesso</SelectItem>
+                  <SelectItem value="failed">Falha (retry)</SelectItem>
+                  <SelectItem value="dead">Dead-letter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadDeliveries}
+              disabled={loading}
+              aria-label="Atualizar entregas"
+            >
+              <RotateCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+            </Button>
+          }
+        />
+
+        {loading ? (
+          <div className="space-y-1">
+            <Skeletons.Row />
+            <Skeletons.Row />
+            <Skeletons.Row />
+            <Skeletons.Row />
+          </div>
+        ) : deliveries.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="Sem entregas para os filtros atuais"
+            description="Quando um evento for disparado, ele aparecerá aqui com o status da tentativa."
+            compact
+          />
+        ) : (
+          <div className="rounded-lg border border-border-subtle bg-surface-2 shadow-xs divide-y divide-border-subtle max-h-[28rem] overflow-auto">
+            {deliveries.map((d) => {
+              const hook = hooksById.get(d.webhook_id);
+              return (
+                <div
+                  key={d.id}
+                  className="px-3 py-2 text-xs flex items-center justify-between gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono truncate text-text-primary">{d.event_type}</div>
+                    <div className="text-text-tertiary truncate">
+                      {hook?.name ?? "—"} · tent. {d.attempt}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => showSecret(h.id)}
-                      title="Copiar secret"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => openEdit(h)}>
-                      Editar
-                    </Button>
+                  <DeliveryStatusBadge status={d.status} http={d.response_status} />
+                  <span className="text-text-tertiary hidden md:inline tabular-nums">
+                    {formatDateTime(d.created_at)}
+                  </span>
+                  <div className="flex gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={async () => {
-                        await del({ data: { id: h.id } });
-                        loadHooks();
-                      }}
+                      onClick={() => setViewing(d)}
+                      aria-label="Ver payload e resposta"
+                      title="Ver payload e resposta"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Entregas recentes
-            <Button variant="ghost" size="sm" onClick={loadDeliveries} disabled={loading}>
-              <RotateCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
-          </CardTitle>
-          <CardDescription>Últimas 100 entregas correspondentes ao filtro.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Select value={fWebhook} onValueChange={setFWebhook}>
-              <SelectTrigger>
-                <SelectValue placeholder="Webhook" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os webhooks</SelectItem>
-                {hooks.map((h) => (
-                  <SelectItem key={h.id} value={h.id}>
-                    {h.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={fEvent} onValueChange={setFEvent}>
-              <SelectTrigger>
-                <SelectValue placeholder="Evento" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                <SelectItem value="all">Todos os eventos</SelectItem>
-                {WEBHOOK_EVENTS.map((e) => (
-                  <SelectItem key={e} value={e}>
-                    {e}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={fStatus} onValueChange={setFStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="success">Sucesso</SelectItem>
-                <SelectItem value="failed">Falha (retry)</SelectItem>
-                <SelectItem value="dead">Dead-letter</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {deliveries.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              Sem entregas para os filtros atuais.
-            </p>
-          ) : (
-            <div className="border rounded-md divide-y max-h-[28rem] overflow-auto">
-              {deliveries.map((d) => {
-                const hook = hooksById.get(d.webhook_id);
-                return (
-                  <div
-                    key={d.id}
-                    className="px-3 py-2 text-xs flex items-center justify-between gap-3"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-mono truncate">{d.event_type}</div>
-                      <div className="text-muted-foreground truncate">
-                        {hook?.name ?? "—"} · tent. {d.attempt}
-                      </div>
-                    </div>
-                    <Badge
-                      variant={
-                        d.status === "success"
-                          ? "default"
-                          : d.status === "dead"
-                            ? "destructive"
-                            : d.status === "failed"
-                              ? "secondary"
-                              : "outline"
-                      }
-                    >
-                      {d.status}
-                      {d.response_status ? ` ${d.response_status}` : ""}
-                    </Badge>
-                    <span className="text-muted-foreground hidden md:inline">
-                      {formatDateTime(d.created_at)}
-                    </span>
-                    <div className="flex gap-1">
+                    {(d.status === "failed" || d.status === "dead") && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setViewing(d)}
-                        title="Ver payload e resposta"
+                        onClick={() => handleRetry(d.id)}
+                        aria-label="Reenviar entrega"
+                        title="Reenviar"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Repeat className="h-4 w-4" />
                       </Button>
-                      {(d.status === "failed" || d.status === "dead") && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRetry(d.id)}
-                          title="Reenviar"
-                        >
-                          <Repeat className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{edit ? "Editar webhook" : "Novo webhook"}</DialogTitle>
+            <DialogDescription>
+              Configure o endpoint HTTPS e os eventos que deseja receber.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nome</Label>
+              <Label htmlFor="wh-name">Nome</Label>
               <Input
+                id="wh-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
             <div>
-              <Label>URL</Label>
+              <Label htmlFor="wh-url">URL</Label>
               <Input
+                id="wh-url"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
                 placeholder="https://"
@@ -381,13 +480,13 @@ function WebhooksPage() {
             </div>
             <div>
               <Label>Eventos</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2 max-h-60 overflow-auto">
+              <div className="grid grid-cols-2 gap-2 mt-2 max-h-60 overflow-auto rounded-md border border-border-subtle bg-surface-sunken p-2">
                 {WEBHOOK_EVENTS.map((e) => (
-                  <label key={e} className="flex items-center gap-2 text-sm">
+                  <label key={e} className="flex items-center gap-2 text-sm font-mono">
                     <Checkbox
                       checked={form.events.includes(e)}
                       onCheckedChange={() => toggleEvent(e)}
-                    />{" "}
+                    />
                     {e}
                   </label>
                 ))}
@@ -397,7 +496,7 @@ function WebhooksPage() {
               <Switch
                 checked={form.active}
                 onCheckedChange={(v) => setForm({ ...form, active: v })}
-              />{" "}
+              />
               Ativo
             </label>
           </div>
@@ -421,27 +520,26 @@ function WebhooksPage() {
           {viewing && (
             <div className="space-y-3 text-xs">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">status: {viewing.status}</Badge>
-                <Badge variant="outline">tentativas: {viewing.attempt}</Badge>
-                {viewing.response_status !== null && (
-                  <Badge variant="outline">HTTP {viewing.response_status}</Badge>
-                )}
+                <DeliveryStatusBadge status={viewing.status} http={viewing.response_status} />
+                <span className="inline-flex items-center rounded-md border border-border-subtle bg-surface-sunken px-1.5 py-0.5 text-[11px] text-text-secondary">
+                  tentativas: {viewing.attempt}
+                </span>
                 {viewing.next_retry_at && (
-                  <Badge variant="outline">
+                  <span className="inline-flex items-center rounded-md border border-border-subtle bg-surface-sunken px-1.5 py-0.5 text-[11px] text-text-secondary">
                     próximo retry: {formatDateTime(viewing.next_retry_at)}
-                  </Badge>
+                  </span>
                 )}
               </div>
               <div>
-                <div className="font-medium mb-1">Payload</div>
-                <pre className="bg-muted rounded p-2 max-h-60 overflow-auto whitespace-pre-wrap break-all">
+                <div className="font-medium mb-1 text-text-primary">Payload</div>
+                <pre className="bg-surface-sunken border border-border-subtle rounded p-2 max-h-60 overflow-auto whitespace-pre-wrap break-all">
                   {JSON.stringify(viewing.payload, null, 2)}
                 </pre>
               </div>
               {viewing.response_body && (
                 <div>
-                  <div className="font-medium mb-1">Resposta</div>
-                  <pre className="bg-muted rounded p-2 max-h-40 overflow-auto whitespace-pre-wrap break-all">
+                  <div className="font-medium mb-1 text-text-primary">Resposta</div>
+                  <pre className="bg-surface-sunken border border-border-subtle rounded p-2 max-h-40 overflow-auto whitespace-pre-wrap break-all">
                     {viewing.response_body}
                   </pre>
                 </div>
