@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { recordAtsEvent } from "./audit.server";
 
 const OfferInsert = z.object({
   candidate_id: z.string().uuid(),
