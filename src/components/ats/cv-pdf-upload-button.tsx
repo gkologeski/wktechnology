@@ -22,9 +22,10 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
       let text = "";
       try {
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = "";
+        const workerUrl = (await import("pdfjs-dist/legacy/build/pdf.worker.mjs?url")).default;
+        (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
         const buf = await file.arrayBuffer();
-        const doc = await pdfjs.getDocument({ data: buf, disableWorker: true } as never).promise;
+        const doc = await pdfjs.getDocument({ data: buf }).promise;
         const parts: string[] = [];
         for (let i = 1; i <= doc.numPages; i++) {
           const page = await doc.getPage(i);
