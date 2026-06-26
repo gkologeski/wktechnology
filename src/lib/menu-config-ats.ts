@@ -19,6 +19,8 @@ import {
   Sparkles,
   ShieldAlert,
   Heart,
+  Users2,
+  Gift,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
