@@ -277,6 +277,9 @@ export function ActivityTimeline({
   const [editingBody, setEditingBody] = useState("");
   const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
   const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
+  const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
+  const [editingDueDate, setEditingDueDate] = useState<string | null>(null);
+
   const notifyActivityEventFn = useServerFn(notifyActivityEvent);
 
   // Action dialogs open state
