@@ -9,7 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/admin-client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recordAtsEvent } from "./audit.server";
 
 const CHANNEL = z.enum(["email", "whatsapp", "linkedin_task", "wait"]);
