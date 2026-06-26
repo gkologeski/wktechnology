@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { emitEvent } from "@/lib/events.server";
 import { recordAtsEvent } from "./audit.server";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
