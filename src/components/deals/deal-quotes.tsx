@@ -105,7 +105,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   }
 
   const { data: lineItems = [] } = useQuery({
-    queryKey: ["deal_line_items_count", dealId],
+    queryKey: ["deal_line_items", dealId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deal_line_items")
