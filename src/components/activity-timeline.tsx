@@ -1347,15 +1347,24 @@ export function ActivityTimeline({
                         {a.subject || ACTIVITY_TYPES.find((t) => t.value === a.type)?.label}
                       </h4>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(a.hs_createdate ?? a.created_at)}
-                    </span>
+                    <div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(a.hs_createdate ?? a.created_at)}
+                      </span>
+                      {a.due_date && a.type !== "meeting" && (() => {
+                        const isOverdue =
+                          !a.completed &&
+                          new Date(a.due_date).getTime() < Date.now();
+                        return (
+                          <span
+                            className={`text-xs ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}
+                          >
+                            Vence {formatDateTime(a.due_date)}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  {a.due_date && a.type !== "meeting" && (
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Vence {formatDateTime(a.due_date)}
-                    </p>
-                  )}
                   {a.type === "meeting" && (() => {
                     const meta = ((a as unknown as { attachments?: unknown }).attachments ?? {}) as {
                       attendees?: Array<{ email: string; name?: string; contact_id?: string }>;
