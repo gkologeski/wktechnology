@@ -1552,6 +1552,145 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_referral_programs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          default_bonus_cents: number
+          eligibility_rules: Json
+          enabled: boolean
+          id: string
+          name: string
+          owner_id: string
+          terms_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_bonus_cents?: number
+          eligibility_rules?: Json
+          enabled?: boolean
+          id?: string
+          name: string
+          owner_id: string
+          terms_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_bonus_cents?: number
+          eligibility_rules?: Json
+          enabled?: boolean
+          id?: string
+          name?: string
+          owner_id?: string
+          terms_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ats_referrals: {
+        Row: {
+          bonus_cents: number
+          bonus_paid_at: string | null
+          bonus_status: string
+          candidate_email: string | null
+          candidate_id: string | null
+          candidate_linkedin: string | null
+          candidate_name: string | null
+          candidate_phone: string | null
+          created_at: string
+          decided_at: string | null
+          decision_notes: string | null
+          hired_at: string | null
+          id: string
+          job_id: string | null
+          notes: string | null
+          owner_id: string
+          program_id: string | null
+          referrer_user_id: string
+          relationship: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          bonus_cents?: number
+          bonus_paid_at?: string | null
+          bonus_status?: string
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_linkedin?: string | null
+          candidate_name?: string | null
+          candidate_phone?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          hired_at?: string | null
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          owner_id: string
+          program_id?: string | null
+          referrer_user_id: string
+          relationship?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          bonus_cents?: number
+          bonus_paid_at?: string | null
+          bonus_status?: string
+          candidate_email?: string | null
+          candidate_id?: string | null
+          candidate_linkedin?: string | null
+          candidate_name?: string | null
+          candidate_phone?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          hired_at?: string | null
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          program_id?: string | null
+          referrer_user_id?: string
+          relationship?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_referrals_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_referrals_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_referrals_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "ats_referral_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_scorecard_responses: {
         Row: {
           application_id: string
@@ -1649,6 +1788,210 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_sourcing_enrollments: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          current_step: number
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          next_run_at: string | null
+          owner_id: string
+          sequence_id: string
+          started_at: string
+          started_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          current_step?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_run_at?: string | null
+          owner_id: string
+          sequence_id: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          current_step?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_run_at?: string | null
+          owner_id?: string
+          sequence_id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_sourcing_enrollments_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sourcing_enrollments_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "ats_sourcing_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_sourcing_sequence_steps: {
+        Row: {
+          body: string | null
+          channel: string
+          created_at: string
+          delay_days: number
+          id: string
+          owner_id: string
+          sequence_id: string
+          step_order: number
+          subject: string | null
+          task_instructions: string | null
+          template_ref: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          owner_id: string
+          sequence_id: string
+          step_order: number
+          subject?: string | null
+          task_instructions?: string | null
+          template_ref?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          owner_id?: string
+          sequence_id?: string
+          step_order?: number
+          subject?: string | null
+          task_instructions?: string | null
+          template_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_sourcing_sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "ats_sourcing_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_sourcing_sequences: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          owner_id: string
+          pool_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          owner_id: string
+          pool_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          owner_id?: string
+          pool_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_sourcing_sequences_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "ats_talent_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_sourcing_step_log: {
+        Row: {
+          channel: string
+          created_at: string
+          enrollment_id: string
+          error: string | null
+          id: string
+          metadata: Json
+          owner_id: string
+          ref_id: string | null
+          status: string
+          step_order: number
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          enrollment_id: string
+          error?: string | null
+          id?: string
+          metadata?: Json
+          owner_id: string
+          ref_id?: string | null
+          status: string
+          step_order: number
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          enrollment_id?: string
+          error?: string | null
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          ref_id?: string | null
+          status?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_sourcing_step_log_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "ats_sourcing_enrollments"
             referencedColumns: ["id"]
           },
         ]
