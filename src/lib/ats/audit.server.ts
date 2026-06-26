@@ -41,7 +41,19 @@ export async function recordAtsEvent(
   args: {
     ownerId: string;
     name: AtsEventName;
-    entityType: "job" | "candidate" | "application" | "interview" | "offer" | "dsar";
+    entityType:
+      | "job"
+      | "candidate"
+      | "application"
+      | "interview"
+      | "offer"
+      | "dsar"
+      | "referral"
+      | "assessment"
+      | "background_check"
+      | "consent"
+      | "hire"
+      | "quality_of_hire";
     entityId: string;
     payload?: Record<string, unknown>;
     dedupeKey?: string;
