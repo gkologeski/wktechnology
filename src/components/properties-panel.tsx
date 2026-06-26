@@ -355,8 +355,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           </div>
         )
       ) : (
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm text-foreground truncate">
+        <div className="flex items-start justify-between gap-2 min-w-0">
+          <span className="text-sm text-foreground break-words min-w-0 flex-1">
+
             {(() => {
               const v = row[p.key];
               if (p.options && v != null && v !== "") {
