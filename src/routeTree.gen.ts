@@ -235,6 +235,8 @@ import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_au
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
+import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/ats/jobs'
+import { Route as ApiPublicV1AtsApplicationsRouteImport } from './routes/api/public/v1/ats/applications'
 import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
 import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
@@ -245,6 +247,7 @@ import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
+import { Route as ApiPublicV1AtsApplicationsIdHireRouteImport } from './routes/api/public/v1/ats/applications.$id.hire'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -1523,6 +1526,17 @@ const ApiPublicZapierTriggersEventRoute =
     path: '/api/public/zapier/triggers/$event',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicV1AtsJobsRoute = ApiPublicV1AtsJobsRouteImport.update({
+  id: '/api/public/v1/ats/jobs',
+  path: '/api/public/v1/ats/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1AtsApplicationsRoute =
+  ApiPublicV1AtsApplicationsRouteImport.update({
+    id: '/api/public/v1/ats/applications',
+    path: '/api/public/v1/ats/applications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicScimV2UsersRoute = ApiPublicScimV2UsersRouteImport.update({
   id: '/api/public/scim/v2/Users',
   path: '/api/public/scim/v2/Users',
@@ -1580,6 +1594,12 @@ const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPublicScimV2UsersRoute,
 } as any)
+const ApiPublicV1AtsApplicationsIdHireRoute =
+  ApiPublicV1AtsApplicationsIdHireRouteImport.update({
+    id: '/$id/hire',
+    path: '/$id/hire',
+    getParentRoute: () => ApiPublicV1AtsApplicationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1814,9 +1834,12 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
+  '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
+  '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -2047,9 +2070,12 @@ export interface FileRoutesByTo {
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
+  '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
+  '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -2286,9 +2312,12 @@ export interface FileRoutesById {
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
+  '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
+  '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -2525,9 +2554,12 @@ export interface FileRouteTypes {
     | '/api/public/payments/br-webhook/$provider'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
+    | '/api/public/v1/ats/applications'
+    | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/ats/applications/$id/hire'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -2758,9 +2790,12 @@ export interface FileRouteTypes {
     | '/api/public/payments/br-webhook/$provider'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
+    | '/api/public/v1/ats/applications'
+    | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/ats/applications/$id/hire'
   id:
     | '__root__'
     | '/'
@@ -2996,9 +3031,12 @@ export interface FileRouteTypes {
     | '/api/public/payments/br-webhook/$provider'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
+    | '/api/public/v1/ats/applications'
+    | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/ats/applications/$id/hire'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -3085,6 +3123,8 @@ export interface RootRouteChildren {
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
   ApiPublicScimV2GroupsRoute: typeof ApiPublicScimV2GroupsRoute
   ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
+  ApiPublicV1AtsApplicationsRoute: typeof ApiPublicV1AtsApplicationsRouteWithChildren
+  ApiPublicV1AtsJobsRoute: typeof ApiPublicV1AtsJobsRoute
   ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
   ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
@@ -4673,6 +4713,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZapierTriggersEventRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/ats/jobs': {
+      id: '/api/public/v1/ats/jobs'
+      path: '/api/public/v1/ats/jobs'
+      fullPath: '/api/public/v1/ats/jobs'
+      preLoaderRoute: typeof ApiPublicV1AtsJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/ats/applications': {
+      id: '/api/public/v1/ats/applications'
+      path: '/api/public/v1/ats/applications'
+      fullPath: '/api/public/v1/ats/applications'
+      preLoaderRoute: typeof ApiPublicV1AtsApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/scim/v2/Users': {
       id: '/api/public/scim/v2/Users'
       path: '/api/public/scim/v2/Users'
@@ -4742,6 +4796,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/scim/v2/Users/$id'
       preLoaderRoute: typeof ApiPublicScimV2UsersIdRouteImport
       parentRoute: typeof ApiPublicScimV2UsersRoute
+    }
+    '/api/public/v1/ats/applications/$id/hire': {
+      id: '/api/public/v1/ats/applications/$id/hire'
+      path: '/$id/hire'
+      fullPath: '/api/public/v1/ats/applications/$id/hire'
+      preLoaderRoute: typeof ApiPublicV1AtsApplicationsIdHireRouteImport
+      parentRoute: typeof ApiPublicV1AtsApplicationsRoute
     }
   }
 }
@@ -5301,6 +5362,21 @@ const ApiPublicScimV2UsersRouteChildren: ApiPublicScimV2UsersRouteChildren = {
 const ApiPublicScimV2UsersRouteWithChildren =
   ApiPublicScimV2UsersRoute._addFileChildren(ApiPublicScimV2UsersRouteChildren)
 
+interface ApiPublicV1AtsApplicationsRouteChildren {
+  ApiPublicV1AtsApplicationsIdHireRoute: typeof ApiPublicV1AtsApplicationsIdHireRoute
+}
+
+const ApiPublicV1AtsApplicationsRouteChildren: ApiPublicV1AtsApplicationsRouteChildren =
+  {
+    ApiPublicV1AtsApplicationsIdHireRoute:
+      ApiPublicV1AtsApplicationsIdHireRoute,
+  }
+
+const ApiPublicV1AtsApplicationsRouteWithChildren =
+  ApiPublicV1AtsApplicationsRoute._addFileChildren(
+    ApiPublicV1AtsApplicationsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -5392,6 +5468,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicPaymentsBrWebhookProviderRoute,
   ApiPublicScimV2GroupsRoute: ApiPublicScimV2GroupsRoute,
   ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,
+  ApiPublicV1AtsApplicationsRoute: ApiPublicV1AtsApplicationsRouteWithChildren,
+  ApiPublicV1AtsJobsRoute: ApiPublicV1AtsJobsRoute,
   ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
   ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }
