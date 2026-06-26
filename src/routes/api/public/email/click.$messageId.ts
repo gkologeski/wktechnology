@@ -1,15 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { recordTrackingEvent } from "@/lib/email-tracking.server";
+import { recordTrackingEvent, verifyTrackedUrl } from "@/lib/email-tracking.server";
 
-function safeRedirect(target: string | null): string {
-  if (!target) return "https://wktechnology.lovable.app";
+const FALLBACK = "https://wktechnology.lovable.app";
+
+function parseTarget(raw: string | null): string | null {
+  if (!raw) return null;
   try {
-    const u = new URL(target);
+    const u = new URL(raw);
     if (u.protocol === "http:" || u.protocol === "https:") return u.toString();
   } catch {
     /* ignore */
   }
-  return "https://wktechnology.lovable.app";
+  return null;
 }
 
 export const Route = createFileRoute("/api/public/email/click/$messageId")({
@@ -17,9 +19,20 @@ export const Route = createFileRoute("/api/public/email/click/$messageId")({
     handlers: {
       GET: async ({ request, params }) => {
         const url = new URL(request.url);
-        const target = safeRedirect(url.searchParams.get("u"));
+        const rawTarget = url.searchParams.get("u");
+        const sig = url.searchParams.get("s") ?? "";
         const id = params.messageId ?? "";
-        if (/^[0-9a-f-]{36}$/i.test(id)) {
+
+        const candidate = parseTarget(rawTarget);
+        const isValidId = /^[0-9a-f-]{36}$/i.test(id);
+        const isSigned =
+          !!candidate && isValidId && !!sig && verifyTrackedUrl(id, candidate, sig);
+
+        // Only redirect to URLs we signed at send-time. Anything else falls
+        // back to the app root so the endpoint can't be used as an open redirect.
+        const target = isSigned ? (candidate as string) : FALLBACK;
+
+        if (isValidId && isSigned) {
           try {
             await recordTrackingEvent({
               messageId: id,
@@ -35,6 +48,7 @@ export const Route = createFileRoute("/api/public/email/click/$messageId")({
             console.error("[email click] track error", e);
           }
         }
+
         return new Response(null, {
           status: 302,
           headers: { Location: target, "Cache-Control": "no-store" },
