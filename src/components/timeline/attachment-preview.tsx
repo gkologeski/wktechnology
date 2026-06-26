@@ -42,6 +42,7 @@ function formatSize(bytes: number) {
 
 export function AttachmentPreview({ attachment, signRecording }: Props) {
   const [url, setUrl] = useState<string | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [textPreview, setTextPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -88,6 +89,33 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
       cancelled = true;
     };
   }, [url, kind]);
+
+  // PDF: baixa como Blob e renderiza via object URL para contornar
+  // Content-Disposition: attachment das signed URLs do Storage.
+  useEffect(() => {
+    if (!url || kind !== "pdf") return;
+    let cancelled = false;
+    let createdUrl: string | null = null;
+    (async () => {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const raw = await r.blob();
+        const blob = raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
+        createdUrl = URL.createObjectURL(blob);
+        if (!cancelled) setPdfBlobUrl(createdUrl);
+        else URL.revokeObjectURL(createdUrl);
+      } catch {
+        /* fallback: usa a signed URL diretamente no iframe */
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+      setPdfBlobUrl(null);
+    };
+  }, [url, kind]);
+
 
   const canExpand = kind === "pdf" || kind === "office" || kind === "image" || kind === "text";
 
@@ -187,11 +215,12 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
   }
 
   if (kind === "pdf") {
+    const pdfSrc = pdfBlobUrl ?? url;
     return (
       <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <iframe
-          src={`${url}#toolbar=1&navpanes=0`}
+          src={`${pdfSrc}#toolbar=1&navpanes=0`}
           title={attachment.name}
           className={`block w-full bg-muted/20 ${frameH}`}
         />
