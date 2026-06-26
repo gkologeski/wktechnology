@@ -1502,6 +1502,92 @@ export function ActivityTimeline({
                         minHeight={120}
                         mentions={team}
                       />
+                      {a.type === "task" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Responsável</label>
+                            <Select
+                              value={editingAssigneeId ?? ""}
+                              onValueChange={(v) => setEditingAssigneeId(v || null)}
+                            >
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Selecionar responsável" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {team.map((m) => (
+                                  <SelectItem key={m.id} value={m.id} className="text-xs">
+                                    {m.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Data de vencimento</label>
+                            <div className="flex gap-2">
+                              <Select
+                                value=""
+                                onValueChange={(v) => {
+                                  const preset = v as TaskDuePreset;
+                                  if (preset === "custom") return;
+                                  setEditingDueDate(computeDuePreset(preset, editingDueDate));
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs flex-1">
+                                  <SelectValue placeholder="Preset" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(Object.keys(TASK_DUE_PRESET_LABELS) as TaskDuePreset[]).map((k) => (
+                                    <SelectItem key={k} value={k} className="text-xs">
+                                      {TASK_DUE_PRESET_LABELS[k]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                      "h-9 text-xs justify-start font-normal flex-1",
+                                      !editingDueDate && "text-muted-foreground",
+                                    )}
+                                  >
+                                    <CalendarDays className="h-3.5 w-3.5 mr-1" />
+                                    {editingDueDate ? formatDateTime(editingDueDate) : "Escolher data"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={editingDueDate ? new Date(editingDueDate) : undefined}
+                                    onSelect={(d) => {
+                                      if (!d) return;
+                                      const base = editingDueDate ? new Date(editingDueDate) : new Date();
+                                      d.setHours(base.getHours(), base.getMinutes(), 0, 0);
+                                      setEditingDueDate(d.toISOString());
+                                    }}
+                                    initialFocus
+                                    className={cn("p-3 pointer-events-auto")}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              {editingDueDate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 text-xs px-2"
+                                  onClick={() => setEditingDueDate(null)}
+                                >
+                                  Limpar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {(editingAttachments.length > 0 || editingNewFiles.length > 0) && (
                         <div className="flex flex-wrap gap-2">
                           {editingAttachments.map((att, i) => (
