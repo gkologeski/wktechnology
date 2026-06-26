@@ -59,7 +59,7 @@ export async function recordAtsEvent(
     dedupeKey?: string;
   },
 ) {
-  return emitEvent(supabase, {
+  const result = await emitEvent(supabase, {
     ownerId: args.ownerId,
     eventName: args.name,
     source: "ats",
@@ -68,4 +68,18 @@ export async function recordAtsEvent(
     payload: args.payload ?? {},
     dedupeKey: args.dedupeKey,
   });
+  // Fan-out para webhooks de saída (silencioso em falha para não bloquear o caller).
+  if (!result.deduped) {
+    try {
+      const { enqueueWebhookEvent } = await import("@/lib/webhooks/dispatcher.server");
+      await enqueueWebhookEvent(args.ownerId, args.name, {
+        entity_type: args.entityType,
+        entity_id: args.entityId,
+        ...(args.payload ?? {}),
+      });
+    } catch (e) {
+      console.warn("[recordAtsEvent] webhook enqueue failed", e);
+    }
+  }
+  return result;
 }
