@@ -75,7 +75,8 @@ export function injectTracking(opts: { messageId: string; bodyHtml?: string; bod
       ) {
         return `${prefix}${quote}${url}${quote}`;
       }
-      const tracked = `${base}/api/public/email/click/${opts.messageId}?u=${encodeURIComponent(trimmed)}`;
+      const sig = signTrackedUrl(opts.messageId, trimmed);
+      const tracked = `${base}/api/public/email/click/${opts.messageId}?u=${encodeURIComponent(trimmed)}&s=${sig}`;
       return `${prefix}${quote}${tracked}${quote}`;
     },
   );
