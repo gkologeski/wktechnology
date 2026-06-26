@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordAtsEvent } from "./audit.server";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
@@ -96,10 +97,10 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: itv, error: ie } = await supabase
       .from("ats_interviews")
-      .select("id, interview_kit_id, job_id")
+      .select("id, interview_kit_id, job_id, candidate_id")
       .eq("id", data.interview_id)
       .maybeSingle();
     if (ie || !itv) throw new Error(ie?.message || "Entrevista não encontrada");
@@ -140,6 +141,21 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
       })
       .eq("id", data.interview_id);
     if (ue) throw new Error(ue.message);
+
+    await recordAtsEvent(supabase, {
+      ownerId: userId,
+      name: "ats.interview.completed",
+      entityType: "interview",
+      entityId: data.interview_id,
+      dedupeKey: `ats.interview.completed:${data.interview_id}`,
+      payload: {
+        interviewId: data.interview_id,
+        jobId: itv.job_id,
+        candidateId: itv.candidate_id,
+        recommendation: ai.recommendation,
+        score: ai.score,
+      },
+    }).catch(() => undefined);
 
     return { ok: true as const, ...ai };
   });

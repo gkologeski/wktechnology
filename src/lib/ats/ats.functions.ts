@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
+import { recordAtsEvent } from "./audit.server";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "./stages";
 
 // ---------- helpers ---------------------------------------------------------
@@ -584,10 +585,10 @@ export const moveApplication = createServerFn({ method: "POST" })
       }).catch(() => undefined);
 
       if (data.toStage === "hired") {
-        await emitEvent(supabase, {
+        await recordAtsEvent(supabase, {
           ownerId: userId,
-          eventName: "ats.candidate.hired",
-          entityType: "ats_candidate",
+          name: "ats.candidate.hired",
+          entityType: "candidate",
           entityId: prev.candidate_id as string,
           dedupeKey: `ats.candidate.hired:${data.applicationId}`,
           payload: {
