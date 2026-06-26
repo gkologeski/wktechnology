@@ -203,6 +203,7 @@ import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksVapiRouteImport } from './routes/api/public/hooks/vapi'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
+import { Route as ApiPublicHooksSourcingTickRouteImport } from './routes/api/public/hooks/sourcing-tick'
 import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
@@ -1340,6 +1341,12 @@ const ApiPublicHooksTwilioWhatsappRoute =
     path: '/api/public/hooks/twilio-whatsapp',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSourcingTickRoute =
+  ApiPublicHooksSourcingTickRouteImport.update({
+    id: '/api/public/hooks/sourcing-tick',
+    path: '/api/public/hooks/sourcing-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSlaTickRoute = ApiPublicHooksSlaTickRouteImport.update({
   id: '/api/public/hooks/sla-tick',
   path: '/api/public/hooks/sla-tick',
@@ -1801,6 +1808,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -2037,6 +2045,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -2279,6 +2288,7 @@ export interface FileRoutesById {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -2521,6 +2531,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -2757,6 +2768,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -2998,6 +3010,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -3095,6 +3108,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
+  ApiPublicHooksSourcingTickRoute: typeof ApiPublicHooksSourcingTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksVapiRoute: typeof ApiPublicHooksVapiRoute
@@ -4489,6 +4503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTwilioWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sourcing-tick': {
+      id: '/api/public/hooks/sourcing-tick'
+      path: '/api/public/hooks/sourcing-tick'
+      fullPath: '/api/public/hooks/sourcing-tick'
+      preLoaderRoute: typeof ApiPublicHooksSourcingTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sla-tick': {
       id: '/api/public/hooks/sla-tick'
       path: '/api/public/hooks/sla-tick'
@@ -5437,6 +5458,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
   ApiPublicHooksSlaTickRoute: ApiPublicHooksSlaTickRoute,
+  ApiPublicHooksSourcingTickRoute: ApiPublicHooksSourcingTickRoute,
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
