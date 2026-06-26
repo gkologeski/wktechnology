@@ -16,7 +16,17 @@ export type AtsEventName =
   | "ats.job.posted"
   | "ats.job.unposted"
   | "ats.candidate.sourced"
+  | "ats.candidate.added_to_pool"
+  | "ats.candidate.relationship_changed"
+  | "ats.candidate.silver_medalist"
+  | "ats.sequence.started"
+  | "ats.sequence.step_sent"
+  | "ats.sequence.replied"
+  | "ats.sequence.stopped"
   | "ats.referral.submitted"
+  | "ats.referral.accepted"
+  | "ats.referral.hired"
+  | "ats.referral.bonus_paid"
   // Onda 6
   | "ats.assessment.invited"
   | "ats.assessment.completed"
@@ -53,7 +63,10 @@ export async function recordAtsEvent(
       | "background_check"
       | "consent"
       | "hire"
-      | "quality_of_hire";
+      | "quality_of_hire"
+      | "talent_pool"
+      | "sequence"
+      | "enrollment";
     entityId: string;
     payload?: Record<string, unknown>;
     dedupeKey?: string;

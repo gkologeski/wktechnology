@@ -181,6 +181,7 @@ import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
+import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -203,6 +204,7 @@ import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksVapiRouteImport } from './routes/api/public/hooks/vapi'
 import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
 import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
+import { Route as ApiPublicHooksSourcingTickRouteImport } from './routes/api/public/hooks/sourcing-tick'
 import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
@@ -232,6 +234,9 @@ import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './r
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
+import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
+import { Route as AuthenticatedatsSourcingReferralsRouteImport } from './routes/_authenticated/(ats)/sourcing/referrals'
+import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_authenticated/(ats)/sourcing/pools'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
@@ -246,6 +251,7 @@ import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
+import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 import { Route as ApiPublicV1AtsApplicationsIdHireRouteImport } from './routes/api/public/v1/ats/applications.$id.hire'
 
@@ -1217,6 +1223,12 @@ const AuthenticatedProspectingCampaignsIndexRoute =
     path: '/campaigns/',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedatsSourcingIndexRoute =
+  AuthenticatedatsSourcingIndexRouteImport.update({
+    id: '/(ats)/sourcing/',
+    path: '/sourcing/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -1338,6 +1350,12 @@ const ApiPublicHooksTwilioWhatsappRoute =
   ApiPublicHooksTwilioWhatsappRouteImport.update({
     id: '/api/public/hooks/twilio-whatsapp',
     path: '/api/public/hooks/twilio-whatsapp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSourcingTickRoute =
+  ApiPublicHooksSourcingTickRouteImport.update({
+    id: '/api/public/hooks/sourcing-tick',
+    path: '/api/public/hooks/sourcing-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksSlaTickRoute = ApiPublicHooksSlaTickRouteImport.update({
@@ -1509,6 +1527,24 @@ const AuthenticatedAdminWorkspacesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
   } as any)
+const AuthenticatedatsSourcingSequencesRoute =
+  AuthenticatedatsSourcingSequencesRouteImport.update({
+    id: '/(ats)/sourcing/sequences',
+    path: '/sourcing/sequences',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsSourcingReferralsRoute =
+  AuthenticatedatsSourcingReferralsRouteImport.update({
+    id: '/(ats)/sourcing/referrals',
+    path: '/sourcing/referrals',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsSourcingPoolsRoute =
+  AuthenticatedatsSourcingPoolsRouteImport.update({
+    id: '/(ats)/sourcing/pools',
+    path: '/sourcing/pools',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1588,6 +1624,12 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
     id: '/$queueId/play',
     path: '/$queueId/play',
     getParentRoute: () => AuthenticatedTasksQueuesRoute,
+  } as any)
+const AuthenticatedatsSourcingSequencesIdRoute =
+  AuthenticatedatsSourcingSequencesIdRouteImport.update({
+    id: '/(ats)/sourcing/sequences_/$id',
+    path: '/sourcing/sequences/$id',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
   id: '/$id',
@@ -1772,6 +1814,9 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
+  '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
+  '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -1801,6 +1846,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -1823,8 +1869,10 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
+  '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -2008,6 +2056,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
+  '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
+  '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -2037,6 +2088,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -2059,8 +2111,10 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
+  '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -2250,6 +2304,9 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/_authenticated/(ats)/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
+  '/_authenticated/(ats)/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
+  '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -2279,6 +2336,7 @@ export interface FileRoutesById {
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
+  '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
   '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
   '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
@@ -2301,8 +2359,10 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
+  '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -2492,6 +2552,9 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/workspace/'
     | '/jobs/$id'
+    | '/sourcing/pools'
+    | '/sourcing/referrals'
+    | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
@@ -2521,6 +2584,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -2543,8 +2607,10 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/sourcing/'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
+    | '/sourcing/sequences/$id'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -2728,6 +2794,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/workspace'
     | '/jobs/$id'
+    | '/sourcing/pools'
+    | '/sourcing/referrals'
+    | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
@@ -2757,6 +2826,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -2779,8 +2849,10 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/sourcing'
     | '/prospecting/campaigns'
     | '/settings/roles'
+    | '/sourcing/sequences/$id'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -2969,6 +3041,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
     | '/_authenticated/(ats)/jobs/$id'
+    | '/_authenticated/(ats)/sourcing/pools'
+    | '/_authenticated/(ats)/sourcing/referrals'
+    | '/_authenticated/(ats)/sourcing/sequences'
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/prospecting/campaigns/$id'
@@ -2998,6 +3073,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
     | '/api/public/hooks/sla-tick'
+    | '/api/public/hooks/sourcing-tick'
     | '/api/public/hooks/twilio-whatsapp'
     | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/vapi'
@@ -3020,8 +3096,10 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
+    | '/_authenticated/(ats)/sourcing/sequences_/$id'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -3095,6 +3173,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
   ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
+  ApiPublicHooksSourcingTickRoute: typeof ApiPublicHooksSourcingTickRoute
   ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
   ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksVapiRoute: typeof ApiPublicHooksVapiRoute
@@ -4335,6 +4414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
     }
+    '/_authenticated/(ats)/sourcing/': {
+      id: '/_authenticated/(ats)/sourcing/'
+      path: '/sourcing'
+      fullPath: '/sourcing/'
+      preLoaderRoute: typeof AuthenticatedatsSourcingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -4487,6 +4573,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/twilio-whatsapp'
       fullPath: '/api/public/hooks/twilio-whatsapp'
       preLoaderRoute: typeof ApiPublicHooksTwilioWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sourcing-tick': {
+      id: '/api/public/hooks/sourcing-tick'
+      path: '/api/public/hooks/sourcing-tick'
+      fullPath: '/api/public/hooks/sourcing-tick'
+      preLoaderRoute: typeof ApiPublicHooksSourcingTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sla-tick': {
@@ -4692,6 +4785,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
       parentRoute: typeof AuthenticatedAdminWorkspacesRoute
     }
+    '/_authenticated/(ats)/sourcing/sequences': {
+      id: '/_authenticated/(ats)/sourcing/sequences'
+      path: '/sourcing/sequences'
+      fullPath: '/sourcing/sequences'
+      preLoaderRoute: typeof AuthenticatedatsSourcingSequencesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/sourcing/referrals': {
+      id: '/_authenticated/(ats)/sourcing/referrals'
+      path: '/sourcing/referrals'
+      fullPath: '/sourcing/referrals'
+      preLoaderRoute: typeof AuthenticatedatsSourcingReferralsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/sourcing/pools': {
+      id: '/_authenticated/(ats)/sourcing/pools'
+      path: '/sourcing/pools'
+      fullPath: '/sourcing/pools'
+      preLoaderRoute: typeof AuthenticatedatsSourcingPoolsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs/$id': {
       id: '/_authenticated/(ats)/jobs/$id'
       path: '/$id'
@@ -4789,6 +4903,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/queues/$queueId/play'
       preLoaderRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRouteImport
       parentRoute: typeof AuthenticatedTasksQueuesRoute
+    }
+    '/_authenticated/(ats)/sourcing/sequences_/$id': {
+      id: '/_authenticated/(ats)/sourcing/sequences_/$id'
+      path: '/sourcing/sequences/$id'
+      fullPath: '/sourcing/sequences/$id'
+      preLoaderRoute: typeof AuthenticatedatsSourcingSequencesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/scim/v2/Users/$id': {
       id: '/api/public/scim/v2/Users/$id'
@@ -5253,6 +5374,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
+  AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
+  AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
+  AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
+  AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -5311,6 +5437,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsSourcingPoolsRoute: AuthenticatedatsSourcingPoolsRoute,
+  AuthenticatedatsSourcingReferralsRoute:
+    AuthenticatedatsSourcingReferralsRoute,
+  AuthenticatedatsSourcingSequencesRoute:
+    AuthenticatedatsSourcingSequencesRoute,
+  AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
+  AuthenticatedatsSourcingSequencesIdRoute:
+    AuthenticatedatsSourcingSequencesIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -5437,6 +5571,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
   ApiPublicHooksSlaTickRoute: ApiPublicHooksSlaTickRoute,
+  ApiPublicHooksSourcingTickRoute: ApiPublicHooksSourcingTickRoute,
   ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
   ApiPublicHooksTwilioWhatsappStatusRoute:
     ApiPublicHooksTwilioWhatsappStatusRoute,
