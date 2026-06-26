@@ -60,7 +60,7 @@ export const confirmSelfSchedule = createServerFn({ method: "POST" })
     const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error: e0 } = await sb
       .from("ats_interviews")
-      .select("id, offered_slots, status")
+      .select("id, offered_slots, status, owner_id, application_id, job_id, candidate_id, kind")
       .eq("self_schedule_token", data.token)
       .maybeSingle();
     if (e0 || !row) throw new Error("Link inválido");
@@ -76,5 +76,24 @@ export const confirmSelfSchedule = createServerFn({ method: "POST" })
       })
       .eq("id", row.id);
     if (error) throw new Error(error.message);
+    try {
+      const { recordAtsEvent } = await import("./audit.server");
+      await recordAtsEvent(sb, {
+        ownerId: row.owner_id as string,
+        name: "ats.interview.scheduled",
+        entityType: "interview",
+        entityId: row.id as string,
+        payload: {
+          applicationId: row.application_id as string,
+          candidateId: row.candidate_id as string,
+          jobId: row.job_id as string,
+          scheduledAt: data.slot,
+          kind: row.kind as string,
+          source: "self_schedule",
+        },
+      });
+    } catch {
+      /* não bloqueia confirmação */
+    }
     return { ok: true };
   });
