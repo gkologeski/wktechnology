@@ -43,6 +43,10 @@ import {
   Zap,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
@@ -86,6 +90,58 @@ type CalendarAttendee = { email?: string; displayName?: string; organizer?: bool
 function normalizeTimelineEmail(email: string | null | undefined) {
   return (email ?? "").trim().toLowerCase();
 }
+
+type TaskDuePreset = "custom" | "today" | "tomorrow" | "next_week" | "next_month" | "in_3_months";
+
+const TASK_DUE_PRESET_LABELS: Record<TaskDuePreset, string> = {
+  custom: "Personalizada",
+  today: "Hoje",
+  tomorrow: "Amanhã",
+  next_week: "Semana que vem",
+  next_month: "Mês que vem",
+  in_3_months: "Daqui 3 meses",
+};
+
+function addMonthsClamped(base: Date, months: number): Date {
+  const d = new Date(base);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return d;
+}
+
+function computeDuePreset(preset: TaskDuePreset, baseIso: string | null): string | null {
+  if (preset === "custom") return baseIso;
+  const now = new Date();
+  const base = baseIso ? new Date(baseIso) : now;
+  const hours = base.getHours();
+  const minutes = base.getMinutes();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+  if (preset === "today") {
+    return target.toISOString();
+  }
+  if (preset === "tomorrow") {
+    target.setDate(target.getDate() + 1);
+    return target.toISOString();
+  }
+  if (preset === "next_week") {
+    const day = target.getDay(); // 0=Sun..6=Sat
+    const daysUntilNextMonday = day === 1 ? 7 : ((8 - day) % 7) || 7;
+    target.setDate(target.getDate() + daysUntilNextMonday);
+    return target.toISOString();
+  }
+  if (preset === "next_month") {
+    return addMonthsClamped(target, 1).toISOString();
+  }
+  if (preset === "in_3_months") {
+    return addMonthsClamped(target, 3).toISOString();
+  }
+  return baseIso;
+}
+
+
 
 function emailDomain(email: string | null | undefined) {
   return normalizeTimelineEmail(email).split("@")[1] ?? "";
@@ -277,6 +333,9 @@ export function ActivityTimeline({
   const [editingBody, setEditingBody] = useState("");
   const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
   const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
+  const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
+  const [editingDueDate, setEditingDueDate] = useState<string | null>(null);
+
   const notifyActivityEventFn = useServerFn(notifyActivityEvent);
 
   // Action dialogs open state
@@ -709,7 +768,10 @@ export function ActivityTimeline({
     const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
     setEditingAttachments(existing);
     setEditingNewFiles([]);
+    setEditingAssigneeId(a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null);
+    setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
+
 
   const uploadEditingFiles = async (): Promise<Attachment[]> => {
     if (!user || editingNewFiles.length === 0) return [];
@@ -739,17 +801,28 @@ export function ActivityTimeline({
   const saveEdit = async (a: Activity) => {
     const uploaded = await uploadEditingFiles();
     const finalAttachments = [...editingAttachments, ...uploaded];
+    const patch: Record<string, unknown> = {
+      body: editingBody || null,
+      attachments: finalAttachments,
+    };
+    if (a.type === "task") {
+      patch.owner_id = editingAssigneeId ?? user?.id ?? null;
+      patch.due_date = editingDueDate ? new Date(editingDueDate).toISOString() : null;
+    }
     const { error } = await supabase
       .from("activities")
-      .update({ body: editingBody || null, attachments: finalAttachments } as never)
+      .update(patch as never)
       .eq("id", a.id);
     if (error) return toast.error(error.message);
     setEditingId(null);
     setEditingAttachments([]);
     setEditingNewFiles([]);
+    setEditingAssigneeId(null);
+    setEditingDueDate(null);
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
+
 
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
@@ -1429,6 +1502,92 @@ export function ActivityTimeline({
                         minHeight={120}
                         mentions={team}
                       />
+                      {a.type === "task" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Responsável</label>
+                            <Select
+                              value={editingAssigneeId ?? ""}
+                              onValueChange={(v) => setEditingAssigneeId(v || null)}
+                            >
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Selecionar responsável" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {team.map((m) => (
+                                  <SelectItem key={m.id} value={m.id} className="text-xs">
+                                    {m.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Data de vencimento</label>
+                            <div className="flex gap-2">
+                              <Select
+                                value=""
+                                onValueChange={(v) => {
+                                  const preset = v as TaskDuePreset;
+                                  if (preset === "custom") return;
+                                  setEditingDueDate(computeDuePreset(preset, editingDueDate));
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs flex-1">
+                                  <SelectValue placeholder="Preset" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(Object.keys(TASK_DUE_PRESET_LABELS) as TaskDuePreset[]).map((k) => (
+                                    <SelectItem key={k} value={k} className="text-xs">
+                                      {TASK_DUE_PRESET_LABELS[k]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                      "h-9 text-xs justify-start font-normal flex-1",
+                                      !editingDueDate && "text-muted-foreground",
+                                    )}
+                                  >
+                                    <CalendarDays className="h-3.5 w-3.5 mr-1" />
+                                    {editingDueDate ? formatDateTime(editingDueDate) : "Escolher data"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={editingDueDate ? new Date(editingDueDate) : undefined}
+                                    onSelect={(d) => {
+                                      if (!d) return;
+                                      const base = editingDueDate ? new Date(editingDueDate) : new Date();
+                                      d.setHours(base.getHours(), base.getMinutes(), 0, 0);
+                                      setEditingDueDate(d.toISOString());
+                                    }}
+                                    initialFocus
+                                    className={cn("p-3 pointer-events-auto")}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              {editingDueDate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 text-xs px-2"
+                                  onClick={() => setEditingDueDate(null)}
+                                >
+                                  Limpar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {(editingAttachments.length > 0 || editingNewFiles.length > 0) && (
                         <div className="flex flex-wrap gap-2">
                           {editingAttachments.map((att, i) => (
