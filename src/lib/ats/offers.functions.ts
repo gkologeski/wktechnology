@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { recordAtsEvent } from "./audit.server";
 
 const OfferInsert = z.object({
   candidate_id: z.string().uuid(),
@@ -166,6 +167,21 @@ export const sendOffer = createServerFn({ method: "POST" })
       .update({ status: "sent", sent_at: nowIso, esign_document_id: esignId, public_token: publicToken })
       .eq("id", offer.id);
     if (e4) throw new Error(e4.message);
+
+    await recordAtsEvent(supabase, {
+      ownerId: userId,
+      name: "ats.offer.approved",
+      entityType: "offer",
+      entityId: offer.id as string,
+      dedupeKey: `ats.offer.approved:${offer.id}`,
+      payload: {
+        offerId: offer.id,
+        candidateId: offer.candidate_id,
+        jobId: offer.job_id,
+        applicationId: offer.application_id,
+        esignDocumentId: esignId,
+      },
+    }).catch(() => undefined);
 
     return { ok: true, esign_document_id: esignId, public_token: publicToken };
   });
