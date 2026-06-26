@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
+import { recordAtsEvent } from "./audit.server";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "./stages";
 
 // ---------- helpers ---------------------------------------------------------
