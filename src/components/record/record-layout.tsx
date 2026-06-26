@@ -24,11 +24,12 @@ export function RecordLayout({
   return (
     <div className="-m-4 md:-m-6 p-6 md:p-8 bg-muted/30 min-h-full space-y-6">
       {header}
-      <div className="grid gap-6 xl:grid-cols-12 grid-cols-1">
-        <aside className="space-y-4 xl:col-span-3 order-1">{left}</aside>
-        <div className="space-y-6 xl:col-span-6 order-3 xl:order-2 min-w-0">{center}</div>
-        <aside className="space-y-4 xl:col-span-3 order-2 xl:order-3">{right}</aside>
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-12">
+        <aside className="space-y-4 order-1 2xl:col-span-3 min-w-0">{left}</aside>
+        <div className="space-y-6 order-3 lg:order-2 2xl:col-span-6 min-w-0">{center}</div>
+        <aside className="space-y-4 order-2 lg:order-3 lg:col-span-2 2xl:col-span-3 2xl:col-start-auto min-w-0">{right}</aside>
       </div>
+
     </div>
   );
 }

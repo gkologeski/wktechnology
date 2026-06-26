@@ -168,12 +168,12 @@ function DetailRow({
           <a
             href={href}
             onClick={(e) => e.stopPropagation()}
-            className="text-xs text-foreground hover:text-primary hover:underline truncate min-w-0 flex-1"
+            className="text-xs text-foreground hover:text-primary hover:underline break-words min-w-0 flex-1"
           >
             {v}
           </a>
         ) : (
-          <span className="text-xs text-foreground truncate min-w-0 flex-1">{v}</span>
+          <span className="text-xs text-foreground break-words min-w-0 flex-1">{v}</span>
         )}
         {copyable && <CopyButton value={v} label={label} />}
       </div>
@@ -456,7 +456,7 @@ function CompanyCard({
                     <Link
                       to="/companies/$id"
                       params={{ id: c.id }}
-                      className="text-sm font-semibold text-primary hover:underline truncate"
+                      className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
                     >
                       {c.name}
                     </Link>
@@ -644,7 +644,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                           <Link
                             to="/contacts/$id"
                             params={{ id: c.id }}
-                            className="text-sm font-semibold text-primary hover:underline truncate"
+                            className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
                           >
                             {fullName}
                           </Link>
@@ -655,7 +655,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
                           )}
                         </div>
                         {role && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                          <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
                             {role}
                           </p>
                         )}
@@ -931,7 +931,7 @@ function DealsCard({
                           <Link
                             to="/deals/$id"
                             params={{ id: d.id }}
-                            className="text-sm font-semibold text-primary hover:underline truncate"
+                            className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
                           >
                             {d.name}
                           </Link>
@@ -1144,7 +1144,7 @@ function TicketsCard({
                           <Link
                             to="/tickets/$id"
                             params={{ id: t.id }}
-                            className="text-sm font-semibold text-primary hover:underline truncate"
+                            className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
                           >
                             {t.subject}
                           </Link>
@@ -1304,7 +1304,7 @@ function SingleContactCard({
                       <Link
                         to="/contacts/$id"
                         params={{ id: c.id }}
-                        className="text-sm font-semibold text-primary hover:underline truncate"
+                        className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
                       >
                         {fullName}
                       </Link>
@@ -1313,7 +1313,7 @@ function SingleContactCard({
                       </span>
                     </div>
                     {role && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{role}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 break-words">{role}</p>
                     )}
                     <div className="mt-2 space-y-1">
                       <DetailRow
@@ -1436,7 +1436,7 @@ function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string
               params={{ id: d.id }}
               className="block p-3 border border-border/60 rounded-xl hover:bg-muted/40 transition-colors flex-1 min-w-0"
             >
-              <p className="text-xs font-semibold text-foreground mb-1 truncate">{d.name}</p>
+              <p className="text-xs font-semibold text-foreground mb-1 break-words">{d.name}</p>
               <div className="flex justify-between items-center gap-2">
                 <span className="text-[10px] text-muted-foreground tabular-nums">
                   {d.value != null ? formatCurrency(d.value, d.currency ?? "BRL") : "—"}
@@ -1500,7 +1500,7 @@ function TasksCard({ entity, entityId }: { entity: AssociationEntity; entityId: 
           {rows.map((t) => (
             <li key={t.id}>
               <Link to="/tasks/$id" params={{ id: t.id }} className="block group">
-                <p className="text-xs font-semibold text-foreground group-hover:text-primary truncate">
+                <p className="text-xs font-semibold text-foreground group-hover:text-primary break-words">
                   {t.subject || "(sem assunto)"}
                 </p>
                 {t.due_date && (
@@ -1546,7 +1546,7 @@ function EmailsCard({ entity, entityId }: { entity: AssociationEntity; entityId:
         <ul className="space-y-2">
           {rows.map((e) => (
             <li key={e.id} className="text-xs">
-              <p className="font-semibold text-foreground truncate">
+              <p className="font-semibold text-foreground break-words">
                 {e.subject || "(sem assunto)"}
               </p>
               <p className="text-[10px] text-muted-foreground">
