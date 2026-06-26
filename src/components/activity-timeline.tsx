@@ -1306,8 +1306,17 @@ export function ActivityTimeline({
                       startD && endD && startD.toDateString() === endD.toDateString();
                     const timeFmt = (d: Date) =>
                       d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                    const hasMeetingMeta =
+                      !!startD ||
+                      !!joinLink ||
+                      !!loc ||
+                      (meta.attendees && meta.attendees.length > 0) ||
+                      !!accessLink ||
+                      !!recordingUrl;
+                    if (!hasMeetingMeta) return null;
                     return (
                       <div className="mt-2 space-y-2 rounded-lg border border-border/50 bg-muted/30 p-3 text-xs">
+
                         {startD && (
                           <div className="flex items-start gap-2">
                             <CalendarDays className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
