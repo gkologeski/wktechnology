@@ -160,6 +160,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         .maybeSingle();
       if (existing) candidateId = existing.id as string;
     }
+    let candidateWasCreated = false;
     if (!candidateId) {
       const { data: created, error: cErr } = await supabaseAdmin
         .from("ats_candidates")
@@ -178,6 +179,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         .single();
       if (cErr) throw new Error(cErr.message);
       candidateId = created.id as string;
+      candidateWasCreated = true;
     }
 
     // Application (idempotente via UNIQUE job_id,candidate_id)
@@ -210,6 +212,26 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
       } as never);
     } catch {
       /* auditoria não pode bloquear candidatura */
+    }
+    if (candidateWasCreated && candidateId) {
+      try {
+        const { recordAtsEvent } = await import("./audit.server");
+        await recordAtsEvent(supabaseAdmin, {
+          ownerId,
+          name: "ats.candidate.sourced",
+          entityType: "candidate",
+          entityId: candidateId,
+          payload: {
+            source: "career_page",
+            jobId: data.job_id,
+            applicationId: app.id as string,
+            fullName: data.full_name,
+            email: data.email,
+          },
+        });
+      } catch {
+        /* não bloqueia candidatura */
+      }
     }
     try {
       const { enqueueApplicationConfirmation } = await import("./email-engine.server");

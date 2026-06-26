@@ -351,6 +351,17 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    await recordAtsEvent(supabase, {
+      ownerId: userId,
+      name: "ats.candidate.sourced",
+      entityType: "candidate",
+      entityId: ins.id as string,
+      payload: {
+        source: data.source,
+        fullName: data.full_name,
+        email: data.email || null,
+      },
+    }).catch(() => undefined);
     return ins;
   });
 

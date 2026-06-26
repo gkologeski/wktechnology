@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { emitEvent } from "@/lib/events.server";
+import { recordAtsEvent } from "./audit.server";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
 const StatusEnum = z.enum([
@@ -146,15 +146,18 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         scheduled_at: data.scheduled_at,
       },
     });
-    await emitEvent(supabase, {
+    await recordAtsEvent(supabase, {
       ownerId: userId,
-      eventName: "ats.interview.scheduled",
-      entityType: "ats_interview",
+      name: "ats.interview.scheduled",
+      entityType: "interview",
       entityId: ins.id as string,
       payload: {
         applicationId: data.application_id,
+        candidateId: app.candidate_id as string,
+        jobId: app.job_id as string,
         scheduledAt: data.scheduled_at,
         kind: data.kind,
+        source: "manual",
       },
     }).catch(() => undefined);
     return { id: ins.id as string };
