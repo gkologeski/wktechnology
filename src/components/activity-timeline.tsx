@@ -712,7 +712,10 @@ export function ActivityTimeline({
     const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
     setEditingAttachments(existing);
     setEditingNewFiles([]);
+    setEditingAssigneeId(a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null);
+    setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
+
 
   const uploadEditingFiles = async (): Promise<Attachment[]> => {
     if (!user || editingNewFiles.length === 0) return [];
