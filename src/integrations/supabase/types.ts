@@ -1200,6 +1200,62 @@ export type Database = {
           },
         ]
       }
+      ats_job_postings: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          external_url: string | null
+          id: string
+          is_mock: boolean
+          job_id: string
+          last_error: string | null
+          last_synced_at: string | null
+          metadata: Json
+          owner_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          external_url?: string | null
+          id?: string
+          is_mock?: boolean
+          job_id: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          metadata?: Json
+          owner_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          external_url?: string | null
+          id?: string
+          is_mock?: boolean
+          job_id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          metadata?: Json
+          owner_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_job_postings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_jobs: {
         Row: {
           company_id: string | null

@@ -1,0 +1,195 @@
+/**
+ * Multi-posting de vagas — Onda 5 / slice 1.
+ *
+ * Server functions para listar, publicar, atualizar e despublicar uma vaga
+ * em job boards externos (LinkedIn, Indeed, Vagas.com).
+ *
+ * As implementações reais dependem de credenciais externas — sem elas, os
+ * adapters caem em modo MOCK (ver adapters de cada provider). O resultado
+ * é persistido em `public.ats_job_postings` com `is_mock=true` para tornar
+ * o estado óbvio na UI e em relatórios.
+ */
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { findAdapterDescriptor } from "./adapters/registry";
+import type { JobBoardAdapter, JobPostPayload } from "./adapters/types";
+import { recordAtsEvent } from "./audit.server";
+
+const PROVIDER = z.enum(["linkedin", "indeed", "vagas_com"]);
+
+async function loadAdapter(provider: z.infer<typeof PROVIDER>): Promise<JobBoardAdapter> {
+  if (provider === "linkedin") {
+    const { LinkedInJobBoardAdapter } = await import("./adapters/linkedin/job-board");
+    return LinkedInJobBoardAdapter;
+  }
+  if (provider === "indeed") {
+    const { IndeedJobBoardAdapter } = await import("./adapters/indeed/job-board");
+    return IndeedJobBoardAdapter;
+  }
+  const { VagasComJobBoardAdapter } = await import("./adapters/vagas_com/job-board");
+  return VagasComJobBoardAdapter;
+}
+
+async function detectIsMock(provider: z.infer<typeof PROVIDER>): Promise<boolean> {
+  if (provider === "linkedin") {
+    const m = await import("./adapters/linkedin/job-board");
+    return !m.__linkedinIsLive();
+  }
+  if (provider === "indeed") {
+    const m = await import("./adapters/indeed/job-board");
+    return !m.__indeedIsLive();
+  }
+  const m = await import("./adapters/vagas_com/job-board");
+  return !m.__vagasIsLive();
+}
+
+export const listJobPostings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ job_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { data: rows, error } = await context.supabase
+      .from("ats_job_postings")
+      .select("id, provider, status, external_id, external_url, is_mock, last_synced_at, last_error, updated_at")
+      .eq("job_id", data.job_id)
+      .order("provider", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { postings: rows ?? [] };
+  });
+
+export const publishJobToProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ job_id: z.string().uuid(), provider: PROVIDER }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    // 1. Carrega a vaga (RLS garante autorização)
+    const { data: job, error: jobErr } = await context.supabase
+      .from("ats_jobs")
+      .select(
+        "id, owner_id, title, description, location, remote_mode, employment_type, salary_min, salary_max",
+      )
+      .eq("id", data.job_id)
+      .maybeSingle();
+    if (jobErr) throw new Error(jobErr.message);
+    if (!job) throw new Error("Vaga não encontrada");
+
+    const descriptor = findAdapterDescriptor(data.provider);
+    if (!descriptor) throw new Error("Provider desconhecido");
+
+    const adapter = await loadAdapter(data.provider);
+    const payload: JobPostPayload = {
+      jobId: job.id,
+      title: job.title,
+      description: job.description ?? "",
+      location: job.location ?? null,
+      employmentType: job.employment_type ?? null,
+      remote: job.remote_mode === "remote",
+      salaryMin: job.salary_min,
+      salaryMax: job.salary_max,
+      currency: "BRL",
+    };
+
+    const result = await adapter.postJob(
+      { ownerId: context.userId, provider: data.provider, config: {}, credentialsSecretRef: null },
+      payload,
+    );
+
+    if (!result.ok) {
+      await context.supabase
+        .from("ats_job_postings")
+        .upsert(
+          {
+            owner_id: context.userId,
+            job_id: job.id,
+            provider: data.provider,
+            status: "failed",
+            last_error: result.error,
+            last_synced_at: new Date().toISOString(),
+          },
+          { onConflict: "job_id,provider" },
+        );
+      throw new Error(result.error);
+    }
+
+    const isMock = await detectIsMock(data.provider);
+
+    const { data: row, error } = await context.supabase
+      .from("ats_job_postings")
+      .upsert(
+        {
+          owner_id: context.userId,
+          job_id: job.id,
+          provider: data.provider,
+          status: "published",
+          external_id: result.data.externalId,
+          external_url: result.data.url,
+          is_mock: isMock,
+          last_synced_at: new Date().toISOString(),
+          last_error: null,
+        },
+        { onConflict: "job_id,provider" },
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+
+    await recordAtsEvent(context.supabase, {
+      ownerId: context.userId,
+      name: "ats.job.posted",
+      entityType: "job",
+      entityId: job.id,
+      payload: {
+        provider: data.provider,
+        external_id: result.data.externalId,
+        external_url: result.data.url,
+        is_mock: isMock,
+      },
+    });
+
+    return { posting: row };
+  });
+
+export const unpublishJobFromProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ posting_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    const { data: posting, error: pErr } = await context.supabase
+      .from("ats_job_postings")
+      .select("id, job_id, provider, external_id")
+      .eq("id", data.posting_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!posting) throw new Error("Publicação não encontrada");
+
+    const provider = PROVIDER.parse(posting.provider);
+    const adapter = await loadAdapter(provider);
+    if (adapter.closeJob && posting.external_id) {
+      await adapter.closeJob(
+        { ownerId: context.userId, provider, config: {}, credentialsSecretRef: null },
+        posting.external_id,
+      );
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("ats_job_postings")
+      .update({
+        status: "unpublished",
+        last_synced_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("id", posting.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+
+    await recordAtsEvent(context.supabase, {
+      ownerId: context.userId,
+      name: "ats.job.unposted",
+      entityType: "job",
+      entityId: posting.job_id,
+      payload: { provider, external_id: posting.external_id },
+    });
+
+    return { posting: row };
+  });
