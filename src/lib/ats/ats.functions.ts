@@ -585,10 +585,10 @@ export const moveApplication = createServerFn({ method: "POST" })
       }).catch(() => undefined);
 
       if (data.toStage === "hired") {
-        await emitEvent(supabase, {
+        await recordAtsEvent(supabase, {
           ownerId: userId,
-          eventName: "ats.candidate.hired",
-          entityType: "ats_candidate",
+          name: "ats.candidate.hired",
+          entityType: "candidate",
           entityId: prev.candidate_id as string,
           dedupeKey: `ats.candidate.hired:${data.applicationId}`,
           payload: {
