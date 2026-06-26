@@ -953,11 +953,15 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          last_touch_at: string | null
           linkedin_url: string | null
           location: string | null
+          next_action_at: string | null
           notes: string | null
           owner_id: string
           phone: string | null
+          relationship_owner_id: string | null
+          relationship_status: string
           score: number | null
           skills: string[]
           source: string
@@ -978,11 +982,15 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
+          last_touch_at?: string | null
           linkedin_url?: string | null
           location?: string | null
+          next_action_at?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
+          relationship_owner_id?: string | null
+          relationship_status?: string
           score?: number | null
           skills?: string[]
           source?: string
@@ -1003,11 +1011,15 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          last_touch_at?: string | null
           linkedin_url?: string | null
           location?: string | null
+          next_action_at?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          relationship_owner_id?: string | null
+          relationship_status?: string
           score?: number | null
           skills?: string[]
           source?: string
@@ -1718,6 +1730,96 @@ export type Database = {
           owner_id?: string
           stage_value?: string
           subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ats_talent_pool_members: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          candidate_id: string
+          id: string
+          notes: string | null
+          owner_id: string
+          pool_id: string
+          source: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          candidate_id: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          pool_id: string
+          source?: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          candidate_id?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          pool_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_talent_pool_members_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_talent_pool_members_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "ats_talent_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_talent_pools: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          filters: Json
+          id: string
+          name: string
+          owner_id: string
+          system_key: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json
+          id?: string
+          name: string
+          owner_id: string
+          system_key?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json
+          id?: string
+          name?: string
+          owner_id?: string
+          system_key?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []
