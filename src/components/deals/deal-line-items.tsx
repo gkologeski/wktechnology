@@ -151,6 +151,14 @@ function LineItemsEditorBody({
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useLineItems(dealId);
 
+  function notifyChanged() {
+    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
+    qc.invalidateQueries({ queryKey: ["deals"] });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("deal:line-items-changed", { detail: { dealId } }));
+    }
+  }
+
   async function addBlank() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").insert({
@@ -164,8 +172,7 @@ function LineItemsEditorBody({
       position: items.length,
     });
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
-    qc.invalidateQueries({ queryKey: ["deals"] });
+    notifyChanged();
   }
   async function addFromProduct(pid: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -188,23 +195,21 @@ function LineItemsEditorBody({
       position: items.length,
     });
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
-    qc.invalidateQueries({ queryKey: ["deals"] });
+    notifyChanged();
   }
   async function update(id: string, patch: Partial<LineItem>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
-    qc.invalidateQueries({ queryKey: ["deals"] });
+    notifyChanged();
   }
   async function remove(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
-    qc.invalidateQueries({ queryKey: ["deals"] });
+    notifyChanged();
   }
+
 
   const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
   const discount = items.reduce(
