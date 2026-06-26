@@ -379,7 +379,7 @@ function JobDetailPage() {
         </section>
       )}
 
-      <JobPostingsPanel jobId={jobAny.id} />
+      <JobPostingsPanel jobId={String(id)} />
 
       <section className="flex flex-col gap-3">
         <AtsSectionHeader
