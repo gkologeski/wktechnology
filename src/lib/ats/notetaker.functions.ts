@@ -142,6 +142,21 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
       .eq("id", data.interview_id);
     if (ue) throw new Error(ue.message);
 
+    await recordAtsEvent(supabase, {
+      ownerId: userId,
+      name: "ats.interview.completed",
+      entityType: "interview",
+      entityId: data.interview_id,
+      dedupeKey: `ats.interview.completed:${data.interview_id}`,
+      payload: {
+        interviewId: data.interview_id,
+        jobId: itv.job_id,
+        candidateId: itv.candidate_id,
+        recommendation: ai.recommendation,
+        score: ai.score,
+      },
+    }).catch(() => undefined);
+
     return { ok: true as const, ...ai };
   });
 
