@@ -215,11 +215,12 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
   }
 
   if (kind === "pdf") {
+    const pdfSrc = pdfBlobUrl ?? url;
     return (
       <div className={`rounded-lg border border-border/60 overflow-hidden bg-card ${wrapMax}`}>
         {header}
         <iframe
-          src={`${url}#toolbar=1&navpanes=0`}
+          src={`${pdfSrc}#toolbar=1&navpanes=0`}
           title={attachment.name}
           className={`block w-full bg-muted/20 ${frameH}`}
         />
