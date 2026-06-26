@@ -97,10 +97,10 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: itv, error: ie } = await supabase
       .from("ats_interviews")
-      .select("id, interview_kit_id, job_id")
+      .select("id, interview_kit_id, job_id, candidate_id")
       .eq("id", data.interview_id)
       .maybeSingle();
     if (ie || !itv) throw new Error(ie?.message || "Entrevista não encontrada");
