@@ -1,33 +1,41 @@
-## Problema
+## Objetivo
+Garantir que as telas de detalhe de entidade (Lead, Deal, Company, Contact, Ticket) usem layout firme em 3 colunas — esquerda: informações, centro: timeline de atividades, direita: associações — sem que a coluna de associações caia para baixo da timeline em larguras intermediárias.
 
-Hoje a data de vencimento ("Vence 29 de Jun de 2026 16:47 GMT-3") aparece em uma linha separada abaixo do título/checkbox, alinhada à esquerda. O pedido é:
+## Diagnóstico
+`src/components/record/record-layout.tsx` hoje define:
+- `grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-12`
+- A direita usa `order-2 lg:order-3 lg:col-span-2` dentro de um grid de 2 colunas → não cabe e quebra abaixo do centro.
+- Só em `2xl` (≥1536px) o layout vira 3 colunas reais (3/6/3).
+- Resultado no viewport atual (~1052px): associações empilham abaixo da timeline.
 
-- Exibir o vencimento logo **abaixo da data de criação** (canto superior direito do item).
-- Quando o vencimento estiver **no passado** e a tarefa **não estiver concluída**, exibir o texto em **vermelho** (`text-destructive`).
-
-## Escopo
-
-Apenas `src/components/activity-timeline.tsx`, no cabeçalho de cada item da timeline (linhas ~1338-1358). Sem mudar regras de negócio, schema, queries, edição inline ou outras seções.
-
-Aplica-se a qualquer item com `due_date` definido (exceto `meeting`, que já tem seu próprio bloco de horários). Mantém comportamento atual para `meeting`.
+Também é o componente já usado por todas as telas listadas, então basta corrigi-lo num único lugar.
 
 ## Mudanças
 
-1. Mover o bloco `Vence {formatDateTime(a.due_date)}` para dentro da coluna direita do header, **abaixo** do `formatDateTime(a.hs_createdate ?? a.created_at)`, alinhado à direita, `whitespace-nowrap`, `text-xs`.
-2. Calcular `isOverdue = a.due_date && !a.completed && new Date(a.due_date).getTime() < Date.now()`.
-3. Aplicar classe `text-destructive font-medium` quando `isOverdue`; caso contrário, manter `text-muted-foreground`.
-4. Continuar ocultando para `a.type === "meeting"` (mantém o bloco de horários existente).
-5. Remover a linha antiga abaixo do header para não duplicar.
+### 1. `src/components/record/record-layout.tsx`
+- Substituir o grid por 3 colunas reais a partir de `lg`:
+  - `grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]`
+- Remover o esquema `2xl:grid-cols-12` e os `col-span` correspondentes.
+- Ajustar ordens para empilhar de forma legível no mobile:
+  - mobile: esquerda → direita (associações) → centro? Não. Mobile mantém ordem natural: esquerda, centro, direita (1, 2, 3) para preservar leitura quando empilhado.
+- Garantir `min-w-0` em todas as colunas (já presente).
+- Manter `header` full-width acima.
 
-## Validação manual
+### 2. Sem mudanças nas páginas
+As 5 telas (`leads.$id`, `deals.$id`, `companies.$id`, `contacts.$id`, `tickets.$id`) já passam `left`, `center`, `right` ao `RecordLayout`. Nenhuma alteração necessária nelas.
 
-- Tarefa com vencimento futuro: aparece em cinza no canto superior direito, abaixo da data de criação.
-- Tarefa vencida e não concluída: aparece em vermelho.
-- Tarefa vencida e concluída: volta ao cinza (sem alarmar).
-- Reuniões continuam exibindo o bloco de horário/local como antes.
-- Light/dark mode e responsividade preservados.
+### 3. Verificações
+- Visualmente em ~1052px (viewport atual), ~1280px, ~1440px e ≥1536px: 3 colunas lado a lado.
+- Em <1024px: colunas empilham (esquerda, centro, direita) com `min-w-0` evitando overflow.
+- Nada muda em regras de negócio, queries, RLS, server functions ou conteúdo dos painéis.
 
 ## Fora de escopo
+- Reordenar ou redesenhar os painéis internos (PropertiesPanel, ActivityTimeline, AssociationsPanel).
+- Mover blocos extras (Itens de linha / Cotações em `deals.$id`, Hierarquia em `companies.$id`) — eles continuam onde estão, dentro da coluna direita abaixo das associações, conforme já implementado.
+- Alterar telas que não usam `RecordLayout`.
 
-- Página `/tasks/:id`, composer, edição inline, outros módulos.
-- Qualquer alteração em filtros, ordenação ou persistência.
+## Como validar manualmente
+1. Abrir `/leads/:id`, `/deals/:id`, `/companies/:id`, `/contacts/:id`, `/tickets/:id`.
+2. Em desktop (≥1024px): confirmar 3 colunas lado a lado, associações à direita da timeline.
+3. Redimensionar abaixo de 1024px: confirmar empilhamento sem corte de conteúdo.
+4. Alternar dark mode: sem regressão visual.
