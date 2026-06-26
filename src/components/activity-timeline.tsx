@@ -87,6 +87,58 @@ function normalizeTimelineEmail(email: string | null | undefined) {
   return (email ?? "").trim().toLowerCase();
 }
 
+type TaskDuePreset = "custom" | "today" | "tomorrow" | "next_week" | "next_month" | "in_3_months";
+
+const TASK_DUE_PRESET_LABELS: Record<TaskDuePreset, string> = {
+  custom: "Personalizada",
+  today: "Hoje",
+  tomorrow: "Amanhã",
+  next_week: "Semana que vem",
+  next_month: "Mês que vem",
+  in_3_months: "Daqui 3 meses",
+};
+
+function addMonthsClamped(base: Date, months: number): Date {
+  const d = new Date(base);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return d;
+}
+
+function computeDuePreset(preset: TaskDuePreset, baseIso: string | null): string | null {
+  if (preset === "custom") return baseIso;
+  const now = new Date();
+  const base = baseIso ? new Date(baseIso) : now;
+  const hours = base.getHours();
+  const minutes = base.getMinutes();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+  if (preset === "today") {
+    return target.toISOString();
+  }
+  if (preset === "tomorrow") {
+    target.setDate(target.getDate() + 1);
+    return target.toISOString();
+  }
+  if (preset === "next_week") {
+    const day = target.getDay(); // 0=Sun..6=Sat
+    const daysUntilNextMonday = day === 1 ? 7 : ((8 - day) % 7) || 7;
+    target.setDate(target.getDate() + daysUntilNextMonday);
+    return target.toISOString();
+  }
+  if (preset === "next_month") {
+    return addMonthsClamped(target, 1).toISOString();
+  }
+  if (preset === "in_3_months") {
+    return addMonthsClamped(target, 3).toISOString();
+  }
+  return baseIso;
+}
+
+
+
 function emailDomain(email: string | null | undefined) {
   return normalizeTimelineEmail(email).split("@")[1] ?? "";
 }
