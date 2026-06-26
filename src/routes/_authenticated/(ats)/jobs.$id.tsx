@@ -31,6 +31,7 @@ import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
+import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
 import {
   AtsPageHeader,
   AtsSectionHeader,
@@ -377,6 +378,8 @@ function JobDetailPage() {
           </div>
         </section>
       )}
+
+      <JobPostingsPanel jobId={jobAny.id} />
 
       <section className="flex flex-col gap-3">
         <AtsSectionHeader
