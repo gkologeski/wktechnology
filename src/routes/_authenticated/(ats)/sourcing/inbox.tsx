@@ -103,6 +103,7 @@ function InboxPage() {
   const markHandled = useServerFn(markStepHandled);
   const resume = useServerFn(resumeEnrollment);
   const stop = useServerFn(stopEnrollment);
+  const markReplied = useServerFn(markCandidateReplied);
   const [tab, setTab] = useState<"tasks" | "failures" | "review">("tasks");
 
   const { data, isLoading } = useQuery({
