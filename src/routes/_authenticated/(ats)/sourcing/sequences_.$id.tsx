@@ -43,6 +43,7 @@ function SequenceDetailPage() {
   const fetcher = useServerFn(getSequence);
   const upsert = useServerFn(upsertStep);
   const del = useServerFn(deleteStep);
+  const update = useServerFn(updateSequence);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ats-sequence", id],
