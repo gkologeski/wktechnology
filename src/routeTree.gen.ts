@@ -183,6 +183,7 @@ import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
+import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -1239,6 +1240,12 @@ const AuthenticatedatsSourcingIndexRoute =
     path: '/sourcing/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsHuntingIndexRoute =
+  AuthenticatedatsHuntingIndexRouteImport.update({
+    id: '/(ats)/hunting/',
+    path: '/hunting/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -1901,6 +1908,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2147,6 +2155,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2399,6 +2408,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2651,6 +2661,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/hunting/'
     | '/sourcing/'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
@@ -2897,6 +2908,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/hunting'
     | '/sourcing'
     | '/prospecting/campaigns'
     | '/settings/roles'
@@ -3148,6 +3160,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
@@ -4481,6 +4494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/hunting/': {
+      id: '/_authenticated/(ats)/hunting/'
+      path: '/hunting'
+      fullPath: '/hunting/'
+      preLoaderRoute: typeof AuthenticatedatsHuntingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -5461,6 +5481,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
+  AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
 }
@@ -5530,6 +5551,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingReferralsRoute,
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
+  AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
