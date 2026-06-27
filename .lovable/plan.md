@@ -1,53 +1,58 @@
-## Plano para corrigir a captura incompleta do TechHire Hunter
+## Plano de correção controlada — TechHire Hunter não detecta cargo/empresa/local
 
-### Problema confirmado
-A captura está falhando antes de chegar ao TechHire: na própria sidebar da extensão o perfil aparece com nome, mas cargo, empresa e localização ficam como `—`. Ou seja, o endpoint está recebendo payload incompleto; não é problema principal da lista de candidatos.
+### Objetivo
+Corrigir a extensão para capturar, no mínimo, nome, headline/cargo, empresa e localização visíveis no topo do perfil do LinkedIn, evitando o erro `Extension context invalidated` e melhorando a capacidade de diagnóstico quando o DOM do LinkedIn mudar.
 
-### Entrega proposta
-Corrigir somente a extensão e o empacotamento, sem alterar banco, RLS, autenticação, regras de negócio ou integrações existentes.
+### Diagnóstico provável
+Pelas imagens, os dados estão claramente visíveis na tela, mas a extensão só lê o nome. O problema está no `extension/content.js`:
+- o `topCardScope()` provavelmente escolhe um container pequeno demais, que contém o `h1`, mas não contém os blocos de headline, localização e empresa;
+- a heurística de empresa depende muito de link `/company/`, mas no topo do LinkedIn atual a empresa aparece em blocos laterais com texto/imagem e nem sempre como link limpo;
+- o erro `Extension context invalidated` aparece quando a extensão é recarregada/atualizada enquanto um content script antigo ainda roda no LinkedIn. Isso deve ser tratado defensivamente para não quebrar callbacks e timers.
 
-### 1. Melhorar a leitura do top card do LinkedIn
-- Ajustar o `topCardScope()` para capturar o container real do perfil, não apenas o `div` imediato do `h1`.
-- Adicionar fallback que usa o bloco visual maior do topo do perfil quando `section.artdeco-card` não existir ou estiver fora do escopo.
-- Ler `innerText` do container e não apenas seletores frágeis.
+### Implementação proposta
 
-### 2. Extrair campos por texto visível, não só por classes
-- Cargo/headline: buscar pelos seletores atuais e, se falhar, derivar a linha imediatamente abaixo do nome no bloco do topo.
-- Localização: detectar linha com padrão de cidade/estado/país e remover ruídos como “Dados de contato”, conexões e seguidores.
-- Empresa: priorizar links `/company/`, botões/aria-labels e, se necessário, inferir pelo painel direito de “experiência/empresa atual” visível no top card.
-- Usar heurísticas conservadoras para não capturar “Destaques”, “Conectar”, “Mensagem” ou textos de botões.
+1. **Reescrever a seleção do Top Card**
+   - Priorizar containers reais do LinkedIn atual: `.pv-top-card`, `.ph5.pb5`, `.mt2.relative`, `section:has(h1)` quando disponível.
+   - Se não encontrar, subir a partir do `h1` até um container que contenha simultaneamente nome, headline e localização.
+   - Evitar containers que incluam seções abaixo como `Destaques`, `Experiência`, `Atividade` ou sidebar de recomendações.
 
-### 3. Impedir salvamento incompleto por clique precoce
-- Se o usuário clicar em “Salvar candidato” enquanto só há nome, a extensão fará uma última re-detecção síncrona antes de enviar.
-- Se ainda faltar cargo e localização/empresa, manter a confirmação explícita: mostrar aviso e pedir para clicar novamente para salvar parcial, em vez de salvar incompleto sem fricção.
-- Isso evita novos candidatos só com nome quando a extração ainda não terminou.
+2. **Extrair por layout visual, não só por seletores antigos**
+   - `headline`: pegar a primeira linha útil logo abaixo do `h1`, incluindo casos como `Account Manager | Telecom... at 3CORP TECHNOLOGY`.
+   - `location`: aceitar linhas como `Santana de Parnaíba, São Paulo, Brasil`, mesmo sem classes antigas.
+   - `company`: primeiro tentar bloco lateral do top card; depois extrair do headline por `at`, `em`, `na`, `no`, `@`; depois fallback em linhas próximas que pareçam nome de empresa.
 
-### 4. Melhorar feedback visual da sidebar
-- Mostrar status de detecção: “Detectando detalhes…” enquanto ainda falta cargo/empresa/local.
-- Trocar o aviso atual para uma mensagem mais objetiva quando o LinkedIn não expõe algum campo.
-- Manter o botão “Re-detectar”.
+3. **Adicionar fallback por texto normalizado da página**
+   - Quando o card falhar, usar uma janela de texto próxima ao nome dentro do `main`.
+   - Remover ruído: botões, conexões, idiomas, sugestões, template da extensão, recomendações e seções abaixo.
+   - Preservar apenas dados já visíveis ao usuário.
 
-### 5. Atualizar versão e ZIP
-- Bump da extensão para `0.2.4`.
-- Regerar `public/techhire-hunter.zip`.
-- Ajustar o README, se necessário, para orientar reinstalação/reload da extensão.
+4. **Tratar `Extension context invalidated` sem quebrar a UI**
+   - Criar wrappers seguros para `chrome.runtime.sendMessage`.
+   - Antes de chamar APIs da extensão, validar se `chrome.runtime?.id` existe.
+   - Se o contexto estiver inválido, mostrar mensagem clara: “Extensão recarregada. Recarregue a aba do LinkedIn.” em vez de gerar erro repetido.
+   - Limpar observers/timers ao fechar sidebar ou ao detectar contexto inválido.
 
-### 6. Validação
-- Validar o parsing com um fixture local baseado no HTML/texto visível do print enviado.
-- Confirmar que o payload final teria:
-  - `full_name`: Juliana C.
-  - `current_position`: Especialista Growth Marketing | Marketing | Aquisição | Performance & Mídia | CRM | Mídias Digitais | IA aplicada a regra de negócio
-  - `location`: São Bernardo do Campo, São Paulo, Brasil
-  - `current_company`: Growth Lead - Assessoria de Marketing de Performance, quando detectável no bloco visível
-- Rodar checagens estáticas aplicáveis sem alterar escopo.
+5. **Melhorar diagnóstico dentro da sidebar**
+   - Incluir um pequeno modo técnico não intrusivo no preview: quando faltar campo, mostrar quais campos faltam.
+   - Não expor dados sensíveis, tokens ou payloads de API.
 
-### Arquivos previstos
-- `extension/content.js`
-- `extension/manifest.json`
-- `extension/README.md`, se necessário
-- `public/techhire-hunter.zip`
+6. **Atualizar versão e pacote**
+   - Subir a extensão para `0.2.5` em `manifest.json` e `README.md`.
+   - Regenerar `public/techhire-hunter.zip`.
+   - Manter a página `/hunting/install` como está, pois o download já aponta para o ZIP público.
+
+### Validação planejada
+- Criar/rodar teste local com fixture HTML representando exatamente o caso da imagem:
+  - Nome: `Antonio Andrade`
+  - Headline: `Account Manager | Telecom, Cloud & Infra | B2B & Government at 3CORP TECHNOLOGY`
+  - Localização: `Santana de Parnaíba, São Paulo, Brasil`
+  - Empresa lateral: `3CORP Technology`
+- Confirmar que `extractProfile()` retorna todos os campos.
+- Verificar que não há escrita em banco, RLS, autenticação ou regras de negócio.
 
 ### Fora do escopo
-- Não mexer em banco, RLS, API keys, autenticação, migrations ou server functions.
-- Não alterar o layout da tela `/candidates`.
-- Não prometer extração de e-mail/telefone do LinkedIn quando esses dados não estão visíveis no perfil.
+- Não alterar banco de dados.
+- Não alterar API pública de captura.
+- Não alterar autenticação, API keys ou pareamento.
+- Não automatizar envio de mensagens no LinkedIn.
+- Não implementar scraping em background.
