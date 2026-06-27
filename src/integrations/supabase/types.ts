@@ -1909,34 +1909,49 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          daily_send_limit: number | null
           description: string | null
           enabled: boolean
           id: string
           name: string
           owner_id: string
           pool_id: string | null
+          quiet_hours_end: number | null
+          quiet_hours_start: number | null
+          send_days: number[]
+          timezone: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          daily_send_limit?: number | null
           description?: string | null
           enabled?: boolean
           id?: string
           name: string
           owner_id: string
           pool_id?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          send_days?: number[]
+          timezone?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          daily_send_limit?: number | null
           description?: string | null
           enabled?: boolean
           id?: string
           name?: string
           owner_id?: string
           pool_id?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          send_days?: number[]
+          timezone?: string
           updated_at?: string
         }
         Relationships: [
