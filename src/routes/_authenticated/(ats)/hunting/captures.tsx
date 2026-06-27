@@ -9,6 +9,7 @@ import { AtsPageHeader, EmptyState, RowSkeleton } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "@tanstack/react-router";
 import { listRecentCaptures } from "@/lib/ats/hunting.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/hunting/captures")({
