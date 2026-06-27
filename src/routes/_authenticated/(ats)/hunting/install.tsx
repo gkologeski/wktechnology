@@ -5,6 +5,7 @@ import { AtsPageHeader, FormSection } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PairingStatusPanel } from "@/components/ats/hunting/pairing-status-panel";
 
 export const Route = createFileRoute("/_authenticated/(ats)/hunting/install")({
   component: HuntingInstallPage,
@@ -95,6 +96,7 @@ function HuntingInstallPage() {
         </Card>
 
         <div className="flex flex-col gap-4">
+          <PairingStatusPanel />
           <Card>
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2">

@@ -31,6 +31,16 @@
       ],
       "js": ["pair-bridge.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.lovable.app/hunting/install*",
+        "https://*.wktechnology.com.br/hunting/install*",
+        "https://*.lovable.app/auth/extension-link*",
+        "https://*.wktechnology.com.br/auth/extension-link*"
+      ],
+      "js": ["status-bridge.js"],
+      "run_at": "document_idle"
     }
   ]
 }
