@@ -262,3 +262,146 @@ function SequenceDetailPage() {
     </div>
   );
 }
+
+type SequenceLike = {
+  timezone?: string | null;
+  quiet_hours_start?: number | null;
+  quiet_hours_end?: number | null;
+  daily_send_limit?: number | null;
+  send_days?: number[] | null;
+};
+
+type SequenceSettingsPatch = {
+  timezone?: string;
+  quiet_hours_start?: number | null;
+  quiet_hours_end?: number | null;
+  daily_send_limit?: number | null;
+  send_days?: number[];
+};
+
+const WEEKDAYS = [
+  { v: 0, l: "Dom" },
+  { v: 1, l: "Seg" },
+  { v: 2, l: "Ter" },
+  { v: 3, l: "Qua" },
+  { v: 4, l: "Qui" },
+  { v: 5, l: "Sex" },
+  { v: 6, l: "Sáb" },
+];
+
+function SequenceSettings({
+  sequence,
+  onSave,
+}: {
+  sequence: SequenceLike;
+  onSave: (patch: SequenceSettingsPatch) => Promise<void>;
+}) {
+  const [tz, setTz] = useState(sequence.timezone ?? "America/Sao_Paulo");
+  const [qStart, setQStart] = useState<string>(
+    sequence.quiet_hours_start == null ? "" : String(sequence.quiet_hours_start),
+  );
+  const [qEnd, setQEnd] = useState<string>(
+    sequence.quiet_hours_end == null ? "" : String(sequence.quiet_hours_end),
+  );
+  const [limit, setLimit] = useState<string>(
+    sequence.daily_send_limit == null ? "" : String(sequence.daily_send_limit),
+  );
+  const [days, setDays] = useState<number[]>(sequence.send_days ?? [1, 2, 3, 4, 5]);
+  const [saving, setSaving] = useState(false);
+
+  const toggleDay = (d: number) =>
+    setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort()));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave({
+        timezone: tz,
+        quiet_hours_start: qStart === "" ? null : Number(qStart),
+        quiet_hours_end: qEnd === "" ? null : Number(qEnd),
+        daily_send_limit: limit === "" ? null : Number(limit),
+        send_days: days,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="space-y-3">
+      <AtsSectionHeader
+        title="Throttling & quiet hours"
+        description="Controle o ritmo de envio para proteger reputação de domínio."
+      />
+      <Card>
+        <CardContent className="space-y-4 p-5">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label>Fuso horário</Label>
+              <Input value={tz} onChange={(e) => setTz(e.target.value)} placeholder="America/Sao_Paulo" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Limite diário</Label>
+              <Input
+                type="number"
+                min={0}
+                value={limit}
+                onChange={(e) => setLimit(e.target.value)}
+                placeholder="ilimitado"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quiet hours (hora 0–23)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={qStart}
+                  onChange={(e) => setQStart(e.target.value)}
+                  placeholder="início"
+                />
+                <span className="text-xs text-muted-foreground">→</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={qEnd}
+                  onChange={(e) => setQEnd(e.target.value)}
+                  placeholder="fim"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Dias de envio</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAYS.map((d) => {
+                const on = days.includes(d.v);
+                return (
+                  <button
+                    key={d.v}
+                    type="button"
+                    onClick={() => toggleDay(d.v)}
+                    className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {d.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar configurações"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
