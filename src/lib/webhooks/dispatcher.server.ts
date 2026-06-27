@@ -1,8 +1,8 @@
 // Dispatcher de webhooks de saída + helper para enfileirar eventos.
-import { createHmac } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-function sign(secret: string, body: string) {
+async function sign(secret: string, body: string) {
+  const { createHmac } = await import("node:crypto");
   return createHmac("sha256", secret).update(body).digest("hex");
 }
 
