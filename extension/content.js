@@ -505,12 +505,29 @@
         <hr/>
         <label class="thh-label">Template</label>
         <select id="thh-template" class="thh-select"><option value="">—</option></select>
-        <textarea id="thh-message" class="thh-textarea" rows="6" placeholder="Mensagem renderizada aparece aqui"></textarea>
-        <div class="thh-actions">
-          <button id="thh-copy" class="thh-btn">Copiar mensagem</button>
-          <button id="thh-log" class="thh-btn">Marcar como enviada</button>
+        <div class="thh-mode-row">
+          <label class="thh-label" style="margin:0">Modo</label>
+          <select id="thh-mode" class="thh-select thh-select-inline">
+            <option value="auto">Detectar automaticamente</option>
+            <option value="direct">Mensagem direta</option>
+            <option value="connect">Convite com nota</option>
+            <option value="inmail">InMail</option>
+          </select>
         </div>
-        <p class="thh-footer">Configure a extensão no ícone da barra do navegador.</p>
+        <textarea id="thh-message" class="thh-textarea" rows="6" placeholder="Mensagem renderizada aparece aqui"></textarea>
+        <div class="thh-counter-row">
+          <span id="thh-counter" class="thh-counter">0 caracteres</span>
+          <span id="thh-pill" class="thh-pill thh-pill-idle">idle</span>
+        </div>
+        <div class="thh-actions">
+          <button id="thh-prepare" class="thh-btn thh-primary">Preparar no LinkedIn</button>
+          <button id="thh-copy" class="thh-btn">Copiar</button>
+        </div>
+        <div class="thh-actions" id="thh-confirm-row" style="display:none">
+          <button id="thh-already-sent" class="thh-btn">Já enviei</button>
+          <button id="thh-cancel-watch" class="thh-btn">Cancelar</button>
+        </div>
+        <p class="thh-footer">Você sempre confirma o envio dentro do LinkedIn. Pareie no ícone da extensão.</p>
       </div>`;
     document.body.appendChild(root);
 
