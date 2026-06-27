@@ -181,10 +181,46 @@ function SequenceDetailPage() {
       </section>
 
       <section className="space-y-3">
-        <AtsSectionHeader title="Adicionar step" />
+        <AtsSectionHeader title="Adicionar step ou variante (A/B)" description="Mesma posição (step) com variant_label diferente cria uma variante A/B sorteada por peso." />
         <Card>
           <CardContent className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-4">
+              <div className="space-y-1.5">
+                <Label>Posição</Label>
+                <Select
+                  value={String(draft.step_order)}
+                  onValueChange={(v) => setDraft({ ...draft, step_order: Number(v) })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Novo step (#{maxStepOrder + 1})</SelectItem>
+                    {Array.from({ length: maxStepOrder }, (_, i) => i + 1).map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        Variante do step {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Variante</Label>
+                <Input
+                  maxLength={8}
+                  value={draft.variant_label}
+                  onChange={(e) => setDraft({ ...draft, variant_label: e.target.value })}
+                  placeholder="A, B, C..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Peso</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={draft.variant_weight}
+                  onChange={(e) => setDraft({ ...draft, variant_weight: Number(e.target.value) || 1 })}
+                />
+              </div>
               <div className="space-y-1.5">
                 <Label>Canal</Label>
                 <Select
@@ -200,17 +236,16 @@ function SequenceDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Atraso (dias)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={draft.delay_days}
-                  onChange={(e) => setDraft({ ...draft, delay_days: Number(e.target.value) || 0 })}
-                />
-              </div>
             </div>
-            {draft.channel === "email" ? (
+            <div className="space-y-1.5">
+              <Label>Atraso (dias)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={draft.delay_days}
+                onChange={(e) => setDraft({ ...draft, delay_days: Number(e.target.value) || 0 })}
+              />
+            </div>
               <>
                 <div className="space-y-1.5">
                   <Label>Assunto</Label>
