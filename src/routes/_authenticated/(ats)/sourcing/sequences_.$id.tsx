@@ -51,6 +51,9 @@ function SequenceDetailPage() {
   });
 
   const [draft, setDraft] = useState({
+    step_order: 0, // 0 = novo step (auto), >0 = variante de step existente
+    variant_label: "A",
+    variant_weight: 1,
     channel: "email" as "email" | "whatsapp" | "linkedin_task" | "wait",
     delay_days: 0,
     subject: "",
@@ -58,22 +61,36 @@ function SequenceDetailPage() {
     task_instructions: "",
   });
 
+  const maxStepOrder = data?.steps.reduce((m, s) => Math.max(m, s.step_order), 0) ?? 0;
+  const targetStepOrder = draft.step_order > 0 ? draft.step_order : maxStepOrder + 1;
+
   const addStep = useMutation({
     mutationFn: () =>
       upsert({
         data: {
           sequence_id: id,
-          step_order: (data?.steps.length ?? 0) + 1,
+          step_order: targetStepOrder,
           channel: draft.channel,
           delay_days: draft.delay_days,
           subject: draft.subject.trim() || null,
           body: draft.body.trim() || null,
           task_instructions: draft.task_instructions.trim() || null,
+          variant_label: draft.variant_label.trim().toUpperCase().slice(0, 8) || "A",
+          variant_weight: draft.variant_weight,
         },
       }),
     onSuccess: () => {
       toast.success("Step adicionado");
-      setDraft({ channel: "email", delay_days: 0, subject: "", body: "", task_instructions: "" });
+      setDraft({
+        step_order: 0,
+        variant_label: "A",
+        variant_weight: 1,
+        channel: "email",
+        delay_days: 0,
+        subject: "",
+        body: "",
+        task_instructions: "",
+      });
       qc.invalidateQueries({ queryKey: ["ats-sequence", id] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -131,9 +148,17 @@ function SequenceDetailPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                          Step {s.step_order} · {s.channel}
-                          {s.delay_days ? ` · +${s.delay_days}d` : ""}
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <span>
+                            Step {s.step_order} · {s.channel}
+                            {s.delay_days ? ` · +${s.delay_days}d` : ""}
+                          </span>
+                          <Badge variant="outline" className="text-[10px]">
+                            Variante {(s as { variant_label?: string }).variant_label ?? "A"}
+                            {((s as { variant_weight?: number }).variant_weight ?? 1) > 1
+                              ? ` · peso ${(s as { variant_weight?: number }).variant_weight}`
+                              : ""}
+                          </Badge>
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {s.subject || s.task_instructions || s.body || "—"}
@@ -156,10 +181,46 @@ function SequenceDetailPage() {
       </section>
 
       <section className="space-y-3">
-        <AtsSectionHeader title="Adicionar step" />
+        <AtsSectionHeader title="Adicionar step ou variante (A/B)" description="Mesma posição (step) com variant_label diferente cria uma variante A/B sorteada por peso." />
         <Card>
           <CardContent className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-4">
+              <div className="space-y-1.5">
+                <Label>Posição</Label>
+                <Select
+                  value={String(draft.step_order)}
+                  onValueChange={(v) => setDraft({ ...draft, step_order: Number(v) })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Novo step (#{maxStepOrder + 1})</SelectItem>
+                    {Array.from({ length: maxStepOrder }, (_, i) => i + 1).map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        Variante do step {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Variante</Label>
+                <Input
+                  maxLength={8}
+                  value={draft.variant_label}
+                  onChange={(e) => setDraft({ ...draft, variant_label: e.target.value })}
+                  placeholder="A, B, C..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Peso</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={draft.variant_weight}
+                  onChange={(e) => setDraft({ ...draft, variant_weight: Number(e.target.value) || 1 })}
+                />
+              </div>
               <div className="space-y-1.5">
                 <Label>Canal</Label>
                 <Select
@@ -175,15 +236,15 @@ function SequenceDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Atraso (dias)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={draft.delay_days}
-                  onChange={(e) => setDraft({ ...draft, delay_days: Number(e.target.value) || 0 })}
-                />
-              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Atraso (dias)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={draft.delay_days}
+                onChange={(e) => setDraft({ ...draft, delay_days: Number(e.target.value) || 0 })}
+              />
             </div>
             {draft.channel === "email" ? (
               <>

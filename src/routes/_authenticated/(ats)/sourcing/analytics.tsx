@@ -175,6 +175,12 @@ function SourcingAnalyticsPage() {
     for (const f of data.funnel) {
       rows.push([`Step ${f.step_order + 1}`, f.sent, f.failed, f.skipped]);
     }
+    rows.push([]);
+    rows.push(["A/B por variante"]);
+    rows.push(["Sequência", "Step", "Variante", "Enviados", "Engajados", "Respostas", "Resp. rate"]);
+    for (const v of data.by_variant) {
+      rows.push([v.sequence_name, v.step_order, v.variant, v.sent, v.enrolled, v.replied, pct(v.response_rate)]);
+    }
     const today = new Date().toISOString().slice(0, 10);
     downloadCsv(`sourcing-analytics-${days}d-${today}.csv`, rows);
   }
@@ -533,6 +539,60 @@ function SourcingAnalyticsPage() {
                     );
                   })}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="space-y-3">
+          <AtsSectionHeader
+            title="A/B por variante"
+            description="Compare assunto/copy de cada variante por step."
+          />
+          <Card>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="py-8 text-center text-sm text-text-tertiary">Carregando…</div>
+              ) : !data || data.by_variant.length === 0 ? (
+                <div className="p-4">
+                  <EmptyState
+                    icon={Activity}
+                    title="Sem variantes registradas"
+                    description="Crie variantes A/B em uma sequência para comparar performance aqui."
+                    compact
+                  />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sequência</TableHead>
+                      <TableHead className="text-center">Step</TableHead>
+                      <TableHead className="text-center">Variante</TableHead>
+                      <TableHead className="text-right">Enviados</TableHead>
+                      <TableHead className="text-right">Engajados</TableHead>
+                      <TableHead className="text-right">Respostas</TableHead>
+                      <TableHead className="text-right">Resp. rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.by_variant.map((v) => (
+                      <TableRow key={`${v.sequence_id}-${v.step_order}-${v.variant}`}>
+                        <TableCell className="font-medium">{v.sequence_name}</TableCell>
+                        <TableCell className="text-center tabular-nums">{v.step_order}</TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded bg-surface-sunken px-1.5 text-[11px] font-semibold">
+                            {v.variant}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{v.sent}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.enrolled}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.replied}</TableCell>
+                        <TableCell className="text-right tabular-nums">{pct(v.response_rate)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>

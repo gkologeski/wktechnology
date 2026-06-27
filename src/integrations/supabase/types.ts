@@ -1868,6 +1868,8 @@ export type Database = {
           subject: string | null
           task_instructions: string | null
           template_ref: string | null
+          variant_label: string
+          variant_weight: number
         }
         Insert: {
           body?: string | null
@@ -1881,6 +1883,8 @@ export type Database = {
           subject?: string | null
           task_instructions?: string | null
           template_ref?: string | null
+          variant_label?: string
+          variant_weight?: number
         }
         Update: {
           body?: string | null
@@ -1894,6 +1898,8 @@ export type Database = {
           subject?: string | null
           task_instructions?: string | null
           template_ref?: string | null
+          variant_label?: string
+          variant_weight?: number
         }
         Relationships: [
           {
