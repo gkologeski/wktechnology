@@ -29,8 +29,8 @@ export function PairingStatusPanel() {
   }, []);
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
     let intervalId: ReturnType<typeof setInterval>;
+
 
     function onMessage(event: MessageEvent) {
       if (event.source !== window) return;
@@ -73,7 +73,6 @@ export function PairingStatusPanel() {
 
     return () => {
       window.removeEventListener("message", onMessage);
-      clearTimeout(timeoutId);
       clearInterval(intervalId);
       clearInterval(probe);
     };
