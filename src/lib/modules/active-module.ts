@@ -61,9 +61,11 @@ export function useActiveModule(): ModuleId {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return useMemo(() => {
     const hostname = typeof window !== "undefined" ? window.location.hostname : null;
+    // Path-first quando indica claramente outro módulo (ex.: /jobs em crm.*),
+    // senão cai no host, senão default.
     return (
-      detectModuleFromHost(hostname) ??
       detectModuleFromPath(path) ??
+      detectModuleFromHost(hostname) ??
       "crm"
     );
   }, [path]);
