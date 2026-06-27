@@ -4,7 +4,6 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope } from "@/lib/api-keys/auth.server";
 import {
-  CORS_HEADERS,
   corsPreflight,
   jsonResponse,
   normalizeLinkedinUrl,
