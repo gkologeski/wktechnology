@@ -74,6 +74,17 @@ export type DailyPoint = {
   failed: number;
 };
 
+export type VariantStats = {
+  sequence_id: string;
+  sequence_name: string;
+  step_order: number;
+  variant: string;
+  sent: number;
+  enrolled: number;
+  replied: number;
+  response_rate: number;
+};
+
 export type SourcingAnalyticsResult = {
   window_days: number;
   totals: {
@@ -90,6 +101,7 @@ export type SourcingAnalyticsResult = {
   by_channel: ChannelStats[];
   funnel: StepFunnel[];
   timeseries: DailyPoint[];
+  by_variant: VariantStats[];
 };
 
 export const getSourcingAnalytics = createServerFn({ method: "POST" })
