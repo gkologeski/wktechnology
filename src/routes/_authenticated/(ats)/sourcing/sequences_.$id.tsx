@@ -9,6 +9,7 @@ import {
   getSequence,
   upsertStep,
   deleteStep,
+  updateSequence,
 } from "@/lib/ats/sourcing-sequences.functions";
 import { AtsPageHeader, AtsSectionHeader, EmptyState, Skeletons } from "@/components/ats/ui";
 import { Button } from "@/components/ui/button";
