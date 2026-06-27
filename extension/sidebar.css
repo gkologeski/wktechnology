@@ -1,0 +1,94 @@
+#techhire-hunter-sidebar {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  width: 320px;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #0f172a;
+}
+#techhire-hunter-sidebar .thh-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  padding: 14px;
+}
+#techhire-hunter-sidebar .thh-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+#techhire-hunter-sidebar #thh-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #64748b;
+}
+#techhire-hunter-sidebar .thh-status {
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 8px;
+}
+#techhire-hunter-sidebar .thh-warn { color: #b91c1c; font-weight: 500; }
+#techhire-hunter-sidebar .thh-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+#techhire-hunter-sidebar .thh-muted { color: #64748b; font-size: 12px; }
+#techhire-hunter-sidebar .thh-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 0 4px;
+}
+#techhire-hunter-sidebar .thh-select,
+#techhire-hunter-sidebar .thh-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+#techhire-hunter-sidebar .thh-actions {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0;
+}
+#techhire-hunter-sidebar .thh-btn {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+#techhire-hunter-sidebar .thh-btn:hover { background: #f1f5f9; }
+#techhire-hunter-sidebar .thh-primary {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
+#techhire-hunter-sidebar .thh-primary:hover { background: #1e293b; }
+#techhire-hunter-sidebar hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 10px 0;
+}
+#techhire-hunter-sidebar .thh-footer {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
