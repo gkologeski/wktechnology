@@ -1,6 +1,6 @@
 # TechHire Hunter — Extensão Chrome
 
-Versão atual: 0.2.4
+Versão atual: 0.2.5
 
 Extensão Manifest V3 que injeta uma sidebar nos perfis do LinkedIn (`linkedin.com/in/*`
 e `linkedin.com/sales/lead/*`) permitindo:

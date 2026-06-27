@@ -1,5 +1,5 @@
-// TechHire Hunter — Content script (v0.2.4)
-// Extrai dados de perfil do LinkedIn via DOM + <title> + og:meta + JSON-LD.
+// TechHire Hunter — Content script (v0.2.5)
+// Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
 (function () {
@@ -8,8 +8,11 @@
 
   const SIDEBAR_ID = "techhire-hunter-sidebar";
   const EXTRACT_TIMEOUT_MS = 15000;
+  const CONTEXT_INVALIDATED = "Extensão recarregada. Recarregue a aba do LinkedIn.";
+  const extractionStops = new Set();
 
   const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const lower = (s) => clean(s).toLowerCase();
   const escapeHtml = (s) =>
     clean(s)
       .replace(/&/g, "&amp;")
@@ -36,34 +39,119 @@
       .map(clean)
       .filter(Boolean);
 
-  const isNoiseLine = (line) =>
-    !line ||
-    /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada)$/i.test(
-      line,
-    ) ||
-    /seguidores|followers|seguidor|conexões|conexoes|connections|connection|mútuo|mutual|grau|degree/i.test(
-      line,
-    );
+  const uniqueLines = (lines) => {
+    const seen = new Set();
+    return lines.filter((line) => {
+      const key = lower(line);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
-  const looksLikeLocation = (line) =>
-    !!line &&
-    line.length <= 140 &&
-    /,/.test(line) &&
-    !/[|@]/.test(line) &&
-    !/marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|CEO|CTO|CFO/i.test(
-      line,
-    ) &&
-    /(brasil|brazil|portugal|united states|usa|canad[áa]|remote|remoto|são|sao|rio|belo|curitiba|florianópolis|florianopolis|porto|lisboa|paulo|sp|rj|rs|sc|pr|mg|es|ba|pe|ce)$/i.test(
-      line,
-    );
+  const isRuntimeAvailable = () => typeof chrome !== "undefined" && Boolean(chrome.runtime?.id);
 
-  const sanitizeCompany = (line) =>
-    clean(line)
+  function setStatus(message, warn) {
+    const status = document.getElementById("thh-status");
+    if (!status) return;
+    status.innerHTML = warn ? `<span class="thh-warn">${escapeHtml(message)}</span>` : escapeHtml(message);
+  }
+
+  function sendRuntimeMessage(message, callback) {
+    if (!isRuntimeAvailable()) {
+      setStatus(CONTEXT_INVALIDATED, true);
+      callback?.({ ok: false, error: CONTEXT_INVALIDATED, contextInvalidated: true });
+      return;
+    }
+    try {
+      chrome.runtime.sendMessage(message, (resp) => {
+        const err = chrome.runtime.lastError;
+        if (err) {
+          const text = /context invalidated/i.test(err.message || "")
+            ? CONTEXT_INVALIDATED
+            : err.message || "Erro na extensão";
+          setStatus(text, true);
+          callback?.({ ok: false, error: text, contextInvalidated: /context invalidated/i.test(text) });
+          return;
+        }
+        callback?.(resp);
+      });
+    } catch (e) {
+      const messageText = /context invalidated/i.test(e?.message || "")
+        ? CONTEXT_INVALIDATED
+        : e?.message || "Erro na extensão";
+      setStatus(messageText, true);
+      callback?.({ ok: false, error: messageText, contextInvalidated: /context invalidated/i.test(messageText) });
+    }
+  }
+
+  const isNoiseLine = (line) => {
+    const value = lower(line);
+    return (
+      !value ||
+      /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada|português|portugues|english|inglês|ingles|para negócios|para negocios|anunciar|minha rede|vagas|notificações|notificacoes|eu)$/.test(
+        value,
+      ) ||
+      /seguidores|followers|seguidor|conexões|conexoes|connections|connection|mútuo|mutual|grau|degree|perfis para você|people also viewed|mais perfis|destaques|highlights/.test(
+        value,
+      )
+    );
+  };
+
+  const looksLikeLocation = (line) => {
+    const value = clean(line);
+    return (
+      !!value &&
+      value.length <= 160 &&
+      /,/.test(value) &&
+      !/[|@]/.test(value) &&
+      !/marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|CEO|CTO|CFO|account|sales|product|software|telecom/i.test(
+        value,
+      ) &&
+      /(brasil|brazil|portugal|united states|usa|canad[áa]|remote|remoto|são|sao|rio|belo|curitiba|florianópolis|florianopolis|porto|lisboa|paulo|sp|rj|rs|sc|pr|mg|es|ba|pe|ce)$/i.test(
+        value,
+      )
+    );
+  };
+
+  const looksLikeHeadline = (line) => {
+    const value = clean(line);
+    return (
+      value.length > 8 &&
+      value.length < 420 &&
+      !looksLikeLocation(value) &&
+      !isNoiseLine(value) &&
+      (/\|/.test(value) ||
+        /\bat\b|\bem\b|\bna\b|\bno\b|@/i.test(value) ||
+        /\b(account|sales|marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|recruiter|growth|designer|product|software|programador|arquiteto|telecom|cloud|infra|government|governo)\b/i.test(
+          value,
+        ))
+    );
+  };
+
+  const looksLikeCompany = (line) => {
+    const value = sanitizeCompany(line);
+    return (
+      value.length > 2 &&
+      value.length < 160 &&
+      !looksLikeLocation(value) &&
+      !isNoiseLine(value) &&
+      !looksLikeHeadline(value) &&
+      /(ltda|inc\.?|llc|sa\b|s\.a\.|company|corp|corporation|group|grupo|tecnologia|technology|consultoria|assessoria|marketing|software|solutions|soluções|solucoes|escola|university|universidade|tech|systems|sistemas|3corp)/i.test(
+        value,
+      )
+    );
+  };
+
+  function sanitizeCompany(line) {
+    return clean(line)
       .replace(/^empresa atual\s*:?\s*/i, "")
       .replace(/^current company\s*:?\s*/i, "")
       .replace(/^empresa actual\s*:?\s*/i, "")
+      .replace(/^company\s*:?\s*/i, "")
       .replace(/\s+(logo|logotipo)$/i, "")
       .replace(/^[•·\-–]+\s*/, "");
+  }
 
   function getJsonLdPerson() {
     const scripts = document.querySelectorAll('script[type="application/ld+json"]');
@@ -93,46 +181,75 @@
     );
   }
 
+  function scoreTopCard(el, h1) {
+    if (!el || !el.querySelector?.("h1")) return -999;
+    const text = getVisibleText(el);
+    const lines = getLines(el).filter((line) => !isNoiseLine(line));
+    if (text.length < clean(h1.textContent).length + 10 || text.length > 4500) return -999;
+    let score = 0;
+    if (el.matches?.(".pv-top-card, .ph5, .ph5.pb5, .mt2.relative, section")) score += 5;
+    if (lines.some(looksLikeHeadline)) score += 8;
+    if (lines.some(looksLikeLocation)) score += 8;
+    if (el.querySelector('a[href*="/company/"], button[aria-label*="Empresa atual"], button[aria-label*="Current company"]')) score += 5;
+    if (/dados de contato|contact info/i.test(text)) score += 2;
+    if (/destaques|highlights|atividade|activity|experiência|experience|mais perfis|people also viewed/i.test(text)) score -= 10;
+    score -= Math.max(0, lines.length - 14);
+    return score;
+  }
+
   function topCardScope() {
     const h1 = document.querySelector("main h1") || document.querySelector("h1");
     if (!h1) return null;
-    const direct =
-      h1.closest("section.artdeco-card") ||
-      h1.closest("section") ||
-      h1.closest(".pv-top-card") ||
-      h1.closest(".ph5") ||
-      h1.closest(".mt2.relative");
-    if (direct && getVisibleText(direct).length > clean(h1.textContent).length + 20) return direct;
+    const candidates = [];
+    const selectors = [
+      ".pv-top-card",
+      ".ph5.pb5",
+      ".ph5",
+      ".mt2.relative",
+      "section.artdeco-card",
+      "section",
+    ];
+    for (const sel of selectors) {
+      const el = h1.closest(sel);
+      if (el) candidates.push(el);
+    }
 
-    const main = document.querySelector("main");
-    let best = direct || h1.parentElement;
-    let bestScore = -1;
     let node = h1.parentElement;
-    for (let i = 0; node && node !== document.body && node !== main?.parentElement && i < 10; i += 1) {
-      const text = getVisibleText(node);
-      const lines = getLines(node);
-      if (text.length > 40 && text.length < 5000 && node.querySelector("h1")) {
-        let score = lines.length;
-        if (node.querySelector('a[href*="/company/"]')) score += 5;
-        if (lines.some(looksLikeLocation)) score += 5;
-        if (/dados de contato|contact info/i.test(text)) score += 1;
-        if (/destaques|highlights|atividade|activity|experiência|experience/i.test(text)) score -= 4;
-        if (score > bestScore) {
-          bestScore = score;
-          best = node;
-        }
-      }
+    const main = document.querySelector("main");
+    for (let i = 0; node && node !== document.body && node !== main?.parentElement && i < 12; i += 1) {
+      candidates.push(node);
       node = node.parentElement;
     }
-    return best;
+
+    let best = null;
+    let bestScore = -999;
+    for (const candidate of candidates) {
+      const score = scoreTopCard(candidate, h1);
+      if (score > bestScore) {
+        bestScore = score;
+        best = candidate;
+      }
+    }
+    return best || h1.parentElement;
+  }
+
+  function getMainProfileWindow(fullName) {
+    const main = document.querySelector("main");
+    const lines = uniqueLines(getLines(main).filter((line) => !isNoiseLine(line)));
+    const name = lower(fullName);
+    if (!name) return lines.slice(0, 20);
+    const idx = lines.findIndex((line) => lower(line).replace(/\s*[·•]\s*\d+º?.*$/i, "") === name);
+    if (idx >= 0) return lines.slice(idx, idx + 14);
+    return lines.slice(0, 20);
   }
 
   function extractProfileLines(card, fullName) {
-    const lines = getLines(card).filter((line) => !isNoiseLine(line));
+    const cardLines = getLines(card).filter((line) => !isNoiseLine(line));
+    const windowLines = getMainProfileWindow(fullName);
     const name = clean(fullName).replace(/\s*[·•]\s*\d+º?.*$/i, "");
-    return lines.filter((line) => {
+    return uniqueLines([...cardLines, ...windowLines]).filter((line) => {
       const comparable = clean(line).replace(/\s*[·•]\s*\d+º?.*$/i, "");
-      return comparable && comparable !== name && comparable !== clean(fullName);
+      return comparable && lower(comparable) !== lower(name) && lower(comparable) !== lower(fullName);
     });
   }
 
@@ -148,27 +265,37 @@
       for (const sel of sels) {
         const el = card.querySelector(sel);
         const txt = clean(el?.textContent);
-        if (txt && !isNoiseLine(txt) && txt !== clean(fullName)) return txt;
-      }
-
-      const lines = extractProfileLines(card, fullName);
-      for (const line of lines) {
-        if (looksLikeLocation(line)) continue;
-        if (/^\+?\d+\s/.test(line)) continue;
-        if (/^[A-Z0-9 .,&'’\-–]+$/.test(line) && line.length < 80) continue;
-        if (line.length > 8 && /[|@]|\b(marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|recruiter|sales|growth|designer|product|software|programador)\b/i.test(line)) {
-          return line;
-        }
+        if (looksLikeHeadline(txt) && lower(txt) !== lower(fullName)) return txt;
       }
     }
+
+    const lines = extractProfileLines(card, fullName);
+    for (const line of lines) {
+      if (looksLikeHeadline(line)) return line;
+    }
+
     const jt = clean(person?.jobTitle);
     if (jt) return jt;
     const og = safe(() => document.querySelector('meta[property="og:description"]')?.content);
-    if (og) return clean(og.split(/[|·•]/)[0]);
+    if (og) return clean(og.split(/[·•]/)[0]);
     return "";
   }
 
-  function extractCompany(card, person, headline) {
+  function companyFromHeadline(headline) {
+    if (!headline) return "";
+    const patterns = [
+      /\bat\s+([^|·•,]+(?:[, ]+[A-Z0-9][^|·•,]+)?)$/i,
+      /\b(?:na|no|em)\s+([^|·•,]+(?:[, ]+[A-Z0-9][^|·•,]+)?)$/i,
+      /@\s*([^|·•,]+)$/i,
+    ];
+    for (const pattern of patterns) {
+      const m = headline.match(pattern);
+      if (m?.[1]) return sanitizeCompany(m[1]);
+    }
+    return "";
+  }
+
+  function extractCompany(card, person, headline, fullName) {
     try {
       const wf = person?.worksFor;
       if (Array.isArray(wf) && wf[0]?.name) return clean(wf[0].name);
@@ -177,41 +304,29 @@
       /* ignore */
     }
     if (card) {
-      // Botão "Empresa atual" do topo (PT/EN/ES)
       const btn = card.querySelector(
         'button[aria-label*="Empresa atual"], button[aria-label*="Current company"], button[aria-label*="Empresa actual"], a[aria-label*="Empresa atual"], a[aria-label*="Current company"], a[aria-label*="Empresa actual"]',
       );
       const btnTxt = sanitizeCompany(clean(btn?.textContent || btn?.getAttribute("aria-label")));
-      if (btnTxt) return btnTxt;
-      // Links de company com aria-label costumam ter o nome limpo
+      if (btnTxt && !isNoiseLine(btnTxt)) return btnTxt;
+
       const linkAria = card.querySelector('a[href*="/company/"][aria-label]');
       const aria = sanitizeCompany(clean(linkAria?.getAttribute("aria-label")));
-      if (aria) return aria;
+      if (aria && !isNoiseLine(aria)) return aria;
       const link = card.querySelector('a[href*="/company/"]');
       const txt = sanitizeCompany(clean(link?.textContent));
-      if (txt) return txt;
+      if (txt && !isNoiseLine(txt)) return txt;
+    }
 
-      const lines = getLines(card).filter((line) => !isNoiseLine(line));
-      const companyLine = lines.find(
-        (line) =>
-          line !== headline &&
-          !looksLikeLocation(line) &&
-          line.length > 3 &&
-          line.length < 140 &&
-          /(ltda|inc\.?|llc|sa\b|s\.a\.|company|corp|corporation|group|grupo|tecnologia|technology|consultoria|assessoria|marketing|software|solutions|soluções|escola|university|universidade)/i.test(
-            line,
-          ),
-      );
-      if (companyLine) return sanitizeCompany(companyLine);
-    }
-    if (headline) {
-      const m = headline.match(/\s(?:at|na|no|em|@)\s+(.+)$/i);
-      if (m) return clean(m[1]);
-    }
-    return "";
+    const fromHeadline = companyFromHeadline(headline);
+    if (fromHeadline) return fromHeadline;
+
+    const lines = extractProfileLines(card, fullName);
+    const companyLine = lines.find((line) => line !== headline && looksLikeCompany(line));
+    return companyLine ? sanitizeCompany(companyLine) : "";
   }
 
-  function extractLocation(card, person) {
+  function extractLocation(card, person, fullName) {
     try {
       const addr = person?.address;
       if (typeof addr === "string" && addr.trim()) return clean(addr);
@@ -222,32 +337,26 @@
     } catch {
       /* ignore */
     }
+
     if (card) {
       const spans = card.querySelectorAll(
         'span.text-body-small.inline.t-black--light, span.text-body-small, .pv-text-details__left-panel .text-body-small',
       );
       for (const el of spans) {
         const txt = clean(el.textContent);
-        if (
-          txt &&
-          txt.length < 120 &&
-          !/seguidores|followers|seguidor|conex|connections|connection|mútuo|mutual/i.test(txt)
-        ) {
-          return txt;
-        }
+        if (looksLikeLocation(txt)) return txt;
       }
-
-      const line = getLines(card).find((candidate) => !isNoiseLine(candidate) && looksLikeLocation(candidate));
-      if (line) return line;
     }
-    return "";
+
+    const line = extractProfileLines(card, fullName).find((candidate) => looksLikeLocation(candidate));
+    return line || "";
   }
 
   function extractAvatar(card) {
     if (card) {
       const sels = [
         "img.pv-top-card-profile-picture__image",
-        'img.pv-top-card-profile-picture__image--show',
+        "img.pv-top-card-profile-picture__image--show",
         'img[width="200"]',
         'button img.profile-photo-edit__preview',
       ];
@@ -277,8 +386,8 @@
     full_name = clean(full_name).replace(/\s*[|\-–]\s*LinkedIn.*$/i, "");
 
     const headline = extractHeadline(card, person, full_name);
-    const company = extractCompany(card, person, headline);
-    const location_ = extractLocation(card, person);
+    const company = extractCompany(card, person, headline, full_name);
+    const location_ = extractLocation(card, person, full_name);
     const avatar = extractAvatar(card);
 
     return {
@@ -290,6 +399,15 @@
       avatar_url: avatar,
       source: "linkedin_extension",
     };
+  }
+
+  function missingFields(profile) {
+    const fields = [];
+    if (!profile.full_name) fields.push("nome");
+    if (!profile.current_position) fields.push("cargo/headline");
+    if (!profile.current_company) fields.push("empresa");
+    if (!profile.location) fields.push("localização");
+    return fields;
   }
 
   function renderPreview(profile, opts) {
@@ -305,8 +423,9 @@
     if (status && !opts?.captured) {
       status.textContent = complete ? "Detalhes detectados · pronto para capturar." : "Detectando detalhes do perfil…";
     }
+    const missing = missingFields(profile).filter((field) => field !== "nome");
     const partial = opts?.partial
-      ? `<div class="thh-warn" style="margin-top:6px">Ainda faltam campos. Role até o topo, aguarde o perfil carregar e tente novamente.</div>`
+      ? `<div class="thh-warn" style="margin-top:6px">Ainda faltam: ${escapeHtml(missing.join(", ") || "detalhes")}. Role até o topo, aguarde o perfil carregar e tente novamente.</div>`
       : "";
     el.innerHTML = `
       <div><b>${escapeHtml(profile.full_name)}</b></div>
@@ -319,13 +438,29 @@
     return !!(p.full_name && p.current_position && (p.current_company || p.location));
   }
 
+  function stopExtractionLoops() {
+    extractionStops.forEach((stop) => stop());
+    extractionStops.clear();
+  }
+
   function startExtractionLoop(onProfile) {
     let observer = null;
     let debounce = null;
+    let timeout = null;
     let done = false;
     const start = Date.now();
 
+    function cleanup() {
+      if (observer) observer.disconnect();
+      observer = null;
+      if (debounce) clearTimeout(debounce);
+      if (timeout) clearTimeout(timeout);
+      extractionStops.delete(cleanup);
+    }
+    extractionStops.add(cleanup);
+
     function attempt() {
+      if (done) return;
       const profile = extractProfile();
       const complete = isComplete(profile);
       const timedOut = Date.now() - start > EXTRACT_TIMEOUT_MS;
@@ -335,24 +470,20 @@
         cleanup();
       }
     }
-    function cleanup() {
-      if (observer) observer.disconnect();
-      observer = null;
-      if (debounce) clearTimeout(debounce);
-    }
 
     attempt();
-    if (done) return;
+    if (done) return cleanup;
 
     const target = document.querySelector("main") || document.body;
     observer = new MutationObserver(() => {
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(attempt, 300);
     });
-    observer.observe(target, { childList: true, subtree: true });
-    setTimeout(() => {
+    observer.observe(target, { childList: true, subtree: true, characterData: true });
+    timeout = setTimeout(() => {
       if (!done) attempt();
     }, EXTRACT_TIMEOUT_MS + 500);
+    return cleanup;
   }
 
   function injectSidebar() {
@@ -383,7 +514,10 @@
       </div>`;
     document.body.appendChild(root);
 
-    document.getElementById("thh-close").onclick = () => root.remove();
+    document.getElementById("thh-close").onclick = () => {
+      stopExtractionLoops();
+      root.remove();
+    };
 
     let latestProfile = extractProfile();
     let allowPartialOnce = false;
@@ -396,6 +530,7 @@
 
     document.getElementById("thh-recheck").onclick = () => {
       allowPartialOnce = false;
+      stopExtractionLoops();
       startExtractionLoop((p, opts) => {
         latestProfile = p;
         if (isComplete(p)) allowPartialOnce = false;
@@ -403,11 +538,11 @@
       });
     };
 
-    chrome.runtime.sendMessage({ type: "PING" }, (resp) => {
+    sendRuntimeMessage({ type: "PING" }, (resp) => {
       const status = document.getElementById("thh-status");
       if (!status) return;
       if (!resp?.paired) {
-        status.innerHTML = `<span class="thh-warn">Extensão não pareada.</span>`;
+        status.innerHTML = `<span class="thh-warn">${escapeHtml(resp?.error || "Extensão não pareada.")}</span>`;
       } else {
         status.textContent = isComplete(latestProfile)
           ? "Detalhes detectados · pronto para capturar."
@@ -421,34 +556,28 @@
       renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
       if (!isComplete(latestProfile) && !allowPartialOnce) {
         allowPartialOnce = true;
-        const status = document.getElementById("thh-status");
-        if (status) {
-          status.innerHTML = `<span class="thh-warn">Perfil incompleto. Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.</span>`;
-        }
+        const missing = missingFields(latestProfile).filter((field) => field !== "nome");
+        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
         return;
       }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
       btn.textContent = "Salvando…";
-      chrome.runtime.sendMessage(
-        { type: "CAPTURE_CANDIDATE", payload: latestProfile },
-        (resp) => {
-          btn.disabled = false;
-          btn.textContent = "Salvar candidato";
-          const status = document.getElementById("thh-status");
-          if (resp?.ok) {
-            status.textContent = "Capturado ✓ — abra TechHire para vincular vaga.";
-            renderPreview(latestProfile, { captured: true });
-            window.__thhCaptureId = resp.data?.capture_id;
-          } else {
-            status.innerHTML = `<span class="thh-warn">${escapeHtml(resp?.error || "Erro")}</span>`;
-          }
-        },
-      );
+      sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        if (resp?.ok) {
+          setStatus("Capturado ✓ — abra TechHire para vincular vaga.");
+          renderPreview(latestProfile, { captured: true });
+          window.__thhCaptureId = resp.data?.capture_id;
+        } else {
+          setStatus(resp?.error || "Erro", true);
+        }
+      });
     };
 
     function loadTemplates() {
-      chrome.runtime.sendMessage({ type: "LIST_TEMPLATES" }, (resp) => {
+      sendRuntimeMessage({ type: "LIST_TEMPLATES" }, (resp) => {
         if (!resp?.ok) return;
         const sel = document.getElementById("thh-template");
         for (const t of resp.data?.templates || []) {
@@ -463,27 +592,24 @@
 
     function renderTemplate(templateId) {
       if (!templateId) return;
-      chrome.runtime.sendMessage(
-        { type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } },
-        (resp) => {
-          if (resp?.ok) {
-            document.getElementById("thh-message").value = resp.data?.body || "";
-          }
-        },
-      );
+      sendRuntimeMessage({ type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } }, (resp) => {
+        if (resp?.ok) {
+          document.getElementById("thh-message").value = resp.data?.body || "";
+        }
+      });
     }
 
     document.getElementById("thh-copy").onclick = async () => {
       const v = document.getElementById("thh-message").value;
       await navigator.clipboard.writeText(v);
-      document.getElementById("thh-status").textContent = "Mensagem copiada.";
+      setStatus("Mensagem copiada.");
     };
 
     document.getElementById("thh-log").onclick = () => {
       const channel =
-        document.getElementById("thh-template").selectedOptions[0]?.textContent
-          ?.match(/\((.+)\)/)?.[1] || "linkedin_message";
-      chrome.runtime.sendMessage(
+        document.getElementById("thh-template").selectedOptions[0]?.textContent?.match(/\((.+)\)/)?.[1] ||
+        "linkedin_message";
+      sendRuntimeMessage(
         {
           type: "LOG_OUTREACH",
           payload: {
@@ -493,8 +619,7 @@
           },
         },
         (resp) => {
-          const status = document.getElementById("thh-status");
-          status.textContent = resp?.ok ? "Outreach registrado ✓" : resp?.error || "Erro";
+          setStatus(resp?.ok ? "Outreach registrado ✓" : resp?.error || "Erro", !resp?.ok);
         },
       );
     };
@@ -504,6 +629,7 @@
   setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
+      stopExtractionLoops();
       const old = document.getElementById(SIDEBAR_ID);
       if (old) old.remove();
       if (/\/in\/|\/sales\/lead\//.test(location.pathname)) {
@@ -517,6 +643,9 @@
       setTimeout(injectSidebar, 800);
     }
   }
+
+  window.__techhireHunterExtractProfile = extractProfile;
+
   if (document.readyState === "complete") boot();
   else window.addEventListener("load", boot, { once: true });
 })();
