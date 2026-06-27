@@ -175,6 +175,12 @@ function SourcingAnalyticsPage() {
     for (const f of data.funnel) {
       rows.push([`Step ${f.step_order + 1}`, f.sent, f.failed, f.skipped]);
     }
+    rows.push([]);
+    rows.push(["A/B por variante"]);
+    rows.push(["Sequência", "Step", "Variante", "Enviados", "Engajados", "Respostas", "Resp. rate"]);
+    for (const v of data.by_variant) {
+      rows.push([v.sequence_name, v.step_order, v.variant, v.sent, v.enrolled, v.replied, pct(v.response_rate)]);
+    }
     const today = new Date().toISOString().slice(0, 10);
     downloadCsv(`sourcing-analytics-${days}d-${today}.csv`, rows);
   }
