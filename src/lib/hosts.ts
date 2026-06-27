@@ -27,6 +27,32 @@ export function isProductionHost(hostname: string | undefined | null): boolean {
   return PRODUCTION_HOSTS.has(hostname.toLowerCase());
 }
 
+/**
+ * Hosts considerados "alcançáveis" — i.e., realmente servidos por este
+ * projeto em produção. Permite desligar redirects cross-host quando um
+ * subdomínio ainda não está configurado (SSL/DNS), evitando loops.
+ *
+ * Configuração opcional via `VITE_REACHABLE_HOSTS` (CSV). Sem a variável,
+ * assumimos que todos os PRODUCTION_HOSTS estão alcançáveis (comportamento
+ * legado).
+ */
+export function getReachableHosts(): Set<string> {
+  const raw = (import.meta as { env?: Record<string, string | undefined> }).env
+    ?.VITE_REACHABLE_HOSTS;
+  if (!raw) return new Set(PRODUCTION_HOSTS);
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+export function isReachableHost(hostname: string | undefined | null): boolean {
+  if (!hostname) return false;
+  return getReachableHosts().has(hostname.toLowerCase());
+}
+
 export function getHostKind(hostname: string | undefined | null): HostKind {
   if (!hostname) return "preview";
   const h = hostname.toLowerCase();
