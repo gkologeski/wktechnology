@@ -200,6 +200,10 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
 import { Route as ApiPublicInterviewTokenRouteImport } from './routes/api/public/interview/$token'
+import { Route as ApiPublicHuntingTemplatesRouteImport } from './routes/api/public/hunting/templates'
+import { Route as ApiPublicHuntingRenderTemplateRouteImport } from './routes/api/public/hunting/render-template'
+import { Route as ApiPublicHuntingLogOutreachRouteImport } from './routes/api/public/hunting/log-outreach'
+import { Route as ApiPublicHuntingCaptureRouteImport } from './routes/api/public/hunting/capture'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -1337,6 +1341,29 @@ const ApiPublicInterviewTokenRoute = ApiPublicInterviewTokenRouteImport.update({
   path: '/api/public/interview/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHuntingTemplatesRoute =
+  ApiPublicHuntingTemplatesRouteImport.update({
+    id: '/api/public/hunting/templates',
+    path: '/api/public/hunting/templates',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHuntingRenderTemplateRoute =
+  ApiPublicHuntingRenderTemplateRouteImport.update({
+    id: '/api/public/hunting/render-template',
+    path: '/api/public/hunting/render-template',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHuntingLogOutreachRoute =
+  ApiPublicHuntingLogOutreachRouteImport.update({
+    id: '/api/public/hunting/log-outreach',
+    path: '/api/public/hunting/log-outreach',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHuntingCaptureRoute = ApiPublicHuntingCaptureRouteImport.update({
+  id: '/api/public/hunting/capture',
+  path: '/api/public/hunting/capture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -1916,6 +1943,10 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
+  '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
+  '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
+  '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -2166,6 +2197,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
+  '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
+  '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
+  '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -2422,6 +2457,10 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
+  '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
+  '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
+  '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
@@ -2678,6 +2717,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/capture'
+    | '/api/public/hunting/log-outreach'
+    | '/api/public/hunting/render-template'
+    | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
@@ -2928,6 +2971,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/capture'
+    | '/api/public/hunting/log-outreach'
+    | '/api/public/hunting/render-template'
+    | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
@@ -3183,6 +3230,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/capture'
+    | '/api/public/hunting/log-outreach'
+    | '/api/public/hunting/render-template'
+    | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
@@ -3285,6 +3336,10 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicHuntingCaptureRoute: typeof ApiPublicHuntingCaptureRoute
+  ApiPublicHuntingLogOutreachRoute: typeof ApiPublicHuntingLogOutreachRoute
+  ApiPublicHuntingRenderTemplateRoute: typeof ApiPublicHuntingRenderTemplateRoute
+  ApiPublicHuntingTemplatesRoute: typeof ApiPublicHuntingTemplatesRoute
   ApiPublicInterviewTokenRoute: typeof ApiPublicInterviewTokenRoute
   ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
@@ -4652,6 +4707,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInterviewTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hunting/templates': {
+      id: '/api/public/hunting/templates'
+      path: '/api/public/hunting/templates'
+      fullPath: '/api/public/hunting/templates'
+      preLoaderRoute: typeof ApiPublicHuntingTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hunting/render-template': {
+      id: '/api/public/hunting/render-template'
+      path: '/api/public/hunting/render-template'
+      fullPath: '/api/public/hunting/render-template'
+      preLoaderRoute: typeof ApiPublicHuntingRenderTemplateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hunting/log-outreach': {
+      id: '/api/public/hunting/log-outreach'
+      path: '/api/public/hunting/log-outreach'
+      fullPath: '/api/public/hunting/log-outreach'
+      preLoaderRoute: typeof ApiPublicHuntingLogOutreachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hunting/capture': {
+      id: '/api/public/hunting/capture'
+      path: '/api/public/hunting/capture'
+      fullPath: '/api/public/hunting/capture'
+      preLoaderRoute: typeof ApiPublicHuntingCaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/workflows-tick': {
       id: '/api/public/hooks/workflows-tick'
       path: '/api/public/hooks/workflows-tick'
@@ -5758,6 +5841,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicHuntingCaptureRoute: ApiPublicHuntingCaptureRoute,
+  ApiPublicHuntingLogOutreachRoute: ApiPublicHuntingLogOutreachRoute,
+  ApiPublicHuntingRenderTemplateRoute: ApiPublicHuntingRenderTemplateRoute,
+  ApiPublicHuntingTemplatesRoute: ApiPublicHuntingTemplatesRoute,
   ApiPublicInterviewTokenRoute: ApiPublicInterviewTokenRoute,
   ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
@@ -5789,13 +5876,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
