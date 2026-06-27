@@ -42,6 +42,8 @@ const ATS_PATH_PREFIXES = [
   "/dei-analytics",
   "/notetaker",
   "/sourcing",
+  "/hunting",
+  "/scheduling",
 ];
 
 export function detectModuleFromPath(pathname: string): ModuleId | null {

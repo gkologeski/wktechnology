@@ -183,6 +183,7 @@ import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
+import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -242,6 +243,9 @@ import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_aut
 import { Route as AuthenticatedatsSourcingInboxRouteImport } from './routes/_authenticated/(ats)/sourcing/inbox'
 import { Route as AuthenticatedatsSourcingAnalyticsRouteImport } from './routes/_authenticated/(ats)/sourcing/analytics'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
+import { Route as AuthenticatedatsHuntingTemplatesRouteImport } from './routes/_authenticated/(ats)/hunting/templates'
+import { Route as AuthenticatedatsHuntingInstallRouteImport } from './routes/_authenticated/(ats)/hunting/install'
+import { Route as AuthenticatedatsHuntingCapturesRouteImport } from './routes/_authenticated/(ats)/hunting/captures'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/ats/jobs'
@@ -1239,6 +1243,12 @@ const AuthenticatedatsSourcingIndexRoute =
     path: '/sourcing/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsHuntingIndexRoute =
+  AuthenticatedatsHuntingIndexRouteImport.update({
+    id: '/(ats)/hunting/',
+    path: '/hunting/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -1578,6 +1588,24 @@ const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedatsJobsRoute,
 } as any)
+const AuthenticatedatsHuntingTemplatesRoute =
+  AuthenticatedatsHuntingTemplatesRouteImport.update({
+    id: '/(ats)/hunting/templates',
+    path: '/hunting/templates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsHuntingInstallRoute =
+  AuthenticatedatsHuntingInstallRouteImport.update({
+    id: '/(ats)/hunting/install',
+    path: '/hunting/install',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsHuntingCapturesRoute =
+  AuthenticatedatsHuntingCapturesRouteImport.update({
+    id: '/(ats)/hunting/captures',
+    path: '/hunting/captures',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicZapierUnsubscribeIdRoute =
   ApiPublicZapierUnsubscribeIdRouteImport.update({
     id: '/api/public/zapier/unsubscribe/$id',
@@ -1842,6 +1870,9 @@ export interface FileRoutesByFullPath {
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
+  '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -1901,6 +1932,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2088,6 +2120,9 @@ export interface FileRoutesByTo {
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
+  '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -2147,6 +2182,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2340,6 +2376,9 @@ export interface FileRoutesById {
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/(ats)/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
+  '/_authenticated/(ats)/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/_authenticated/(ats)/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/_authenticated/(ats)/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/_authenticated/(ats)/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -2399,6 +2438,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2592,6 +2632,9 @@ export interface FileRouteTypes {
     | '/proposals/'
     | '/settings/'
     | '/workspace/'
+    | '/hunting/captures'
+    | '/hunting/install'
+    | '/hunting/templates'
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
@@ -2651,6 +2694,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/hunting/'
     | '/sourcing/'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
@@ -2838,6 +2882,9 @@ export interface FileRouteTypes {
     | '/proposals'
     | '/settings'
     | '/workspace'
+    | '/hunting/captures'
+    | '/hunting/install'
+    | '/hunting/templates'
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
@@ -2897,6 +2944,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/hunting'
     | '/sourcing'
     | '/prospecting/campaigns'
     | '/settings/roles'
@@ -3089,6 +3137,9 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/(ats)/hunting/captures'
+    | '/_authenticated/(ats)/hunting/install'
+    | '/_authenticated/(ats)/hunting/templates'
     | '/_authenticated/(ats)/jobs/$id'
     | '/_authenticated/(ats)/sourcing/analytics'
     | '/_authenticated/(ats)/sourcing/inbox'
@@ -3148,6 +3199,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
@@ -4481,6 +4533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/hunting/': {
+      id: '/_authenticated/(ats)/hunting/'
+      path: '/hunting'
+      fullPath: '/hunting/'
+      preLoaderRoute: typeof AuthenticatedatsHuntingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -4893,6 +4952,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/jobs/$id'
       preLoaderRoute: typeof AuthenticatedatsJobsIdRouteImport
       parentRoute: typeof AuthenticatedatsJobsRoute
+    }
+    '/_authenticated/(ats)/hunting/templates': {
+      id: '/_authenticated/(ats)/hunting/templates'
+      path: '/hunting/templates'
+      fullPath: '/hunting/templates'
+      preLoaderRoute: typeof AuthenticatedatsHuntingTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/hunting/install': {
+      id: '/_authenticated/(ats)/hunting/install'
+      path: '/hunting/install'
+      fullPath: '/hunting/install'
+      preLoaderRoute: typeof AuthenticatedatsHuntingInstallRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/hunting/captures': {
+      id: '/_authenticated/(ats)/hunting/captures'
+      path: '/hunting/captures'
+      fullPath: '/hunting/captures'
+      preLoaderRoute: typeof AuthenticatedatsHuntingCapturesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/zapier/unsubscribe/$id': {
       id: '/api/public/zapier/unsubscribe/$id'
@@ -5456,11 +5536,15 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
+  AuthenticatedatsHuntingInstallRoute: typeof AuthenticatedatsHuntingInstallRoute
+  AuthenticatedatsHuntingTemplatesRoute: typeof AuthenticatedatsHuntingTemplatesRoute
   AuthenticatedatsSourcingAnalyticsRoute: typeof AuthenticatedatsSourcingAnalyticsRoute
   AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
+  AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
 }
@@ -5522,6 +5606,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
+  AuthenticatedatsHuntingInstallRoute: AuthenticatedatsHuntingInstallRoute,
+  AuthenticatedatsHuntingTemplatesRoute: AuthenticatedatsHuntingTemplatesRoute,
   AuthenticatedatsSourcingAnalyticsRoute:
     AuthenticatedatsSourcingAnalyticsRoute,
   AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
@@ -5530,6 +5617,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingReferralsRoute,
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
+  AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,

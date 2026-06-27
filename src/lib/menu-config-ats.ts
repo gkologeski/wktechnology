@@ -23,6 +23,8 @@ import {
   Gift,
   Inbox,
   CalendarClock,
+  Search,
+  Download,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
@@ -50,6 +52,15 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Sequências", url: "/sourcing/sequences", icon: Mail },
       { title: "Indicações", url: "/sourcing/referrals", icon: Gift },
       { title: "Analytics", url: "/sourcing/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Hunting (LinkedIn)",
+    items: [
+      { title: "Hub", url: "/hunting", icon: Search },
+      { title: "Capturados", url: "/hunting/captures", icon: Inbox },
+      { title: "Templates", url: "/hunting/templates", icon: Mail },
+      { title: "Instalar extensão", url: "/hunting/install", icon: Download },
     ],
   },
   {
