@@ -237,6 +237,25 @@ function InboxPage() {
                         </Button>
                         <Button
                           size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            repliedMut.mutate({
+                              enrollment_id: item.enrollment.id,
+                              channel:
+                                item.log.channel === "whatsapp"
+                                  ? "whatsapp"
+                                  : item.log.channel === "linkedin_task"
+                                    ? "linkedin_task"
+                                    : "inbound",
+                            })
+                          }
+                          disabled={repliedMut.isPending}
+                        >
+                          <MessageSquare className="mr-1 h-3.5 w-3.5" />
+                          Respondeu
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => handleMut.mutate(item.log.id)}
                           disabled={handleMut.isPending}
                         >
