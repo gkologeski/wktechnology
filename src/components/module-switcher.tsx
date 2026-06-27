@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useActiveModule } from "@/lib/modules/active-module";
-import { buildModuleUrl, isCrossHostUrl } from "@/lib/hosts";
+import { buildModuleUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 export function ModuleSwitcher({ className }: { className?: string }) {
@@ -25,6 +25,17 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     if (!target) return;
     const url = buildModuleUrl(moduleId, target.defaultRoute);
     if (isCrossHostUrl(url)) {
+      // Se o host alvo não está alcançável (sem SSL/DNS ativo), evita
+      // navegação cross-host que provocaria loop e cai pra SPA.
+      try {
+        const targetHost = new URL(url).hostname;
+        if (!isReachableHost(targetHost)) {
+          navigate({ to: target.defaultRoute });
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
       window.location.assign(url);
     } else {
       navigate({ to: url });
