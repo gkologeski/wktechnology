@@ -49,7 +49,7 @@
     });
   };
 
-  const isRuntimeAvailable = () => Boolean(chrome?.runtime?.id);
+  const isRuntimeAvailable = () => typeof chrome !== "undefined" && Boolean(chrome.runtime?.id);
 
   function setStatus(message, warn) {
     const status = document.getElementById("thh-status");
