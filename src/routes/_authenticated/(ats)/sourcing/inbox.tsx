@@ -26,6 +26,7 @@ import {
   listInbox,
   markStepHandled,
   resumeEnrollment,
+  markCandidateReplied,
 } from "@/lib/ats/sourcing-inbox.functions";
 import { stopEnrollment } from "@/lib/ats/sourcing-sequences.functions";
 
