@@ -48,7 +48,7 @@ export type CandidateFlag = {
   id: string;
   kind: string;
   severity: string | null;
-  details: Record<string, unknown> | null;
+  details_json: string | null;
   resolved: boolean | null;
   created_at: string;
 };
@@ -59,7 +59,7 @@ export type CandidateEvent = {
   from_stage: string | null;
   to_stage: string | null;
   created_at: string;
-  metadata: Record<string, unknown> | null;
+  metadata_json: string | null;
 };
 
 export type CandidateDetail = {
