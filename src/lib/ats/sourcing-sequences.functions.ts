@@ -237,12 +237,6 @@ export async function processDueEnrollments(limit = 50): Promise<{
   sent: number;
   tasks: number;
   errors: number;
-}> {
-export async function processDueEnrollments(limit = 50): Promise<{
-  processed: number;
-  sent: number;
-  tasks: number;
-  errors: number;
   throttled: number;
   quiet: number;
 }> {
