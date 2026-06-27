@@ -151,7 +151,11 @@ function InboxPage() {
       />
 
       {isLoading ? (
-        <Skeletons.Cards count={3} />
+        <div className="space-y-2">
+          <Skeletons.Card />
+          <Skeletons.Card />
+          <Skeletons.Card />
+        </div>
       ) : total === 0 ? (
         <EmptyState
           icon={InboxIcon}
