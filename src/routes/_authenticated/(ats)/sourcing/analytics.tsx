@@ -71,6 +71,28 @@ function fmtHours(h: number | null) {
   return `${(h / 24).toFixed(1)}d`;
 }
 
+function fmtDay(d: string) {
+  const [, m, dd] = d.split("-");
+  return `${dd}/${m}`;
+}
+
+function downloadCsv(filename: string, rows: (string | number | null)[][]) {
+  const esc = (v: string | number | null) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(esc).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function SourcingAnalyticsPage() {
   const [days, setDays] = useState<number>(30);
   const fetcher = useServerFn(getSourcingAnalytics);
@@ -78,6 +100,84 @@ function SourcingAnalyticsPage() {
     queryKey: ["sourcing-analytics", days],
     queryFn: () => fetcher({ data: { days } }),
   });
+
+  const chartData = useMemo(
+    () =>
+      (data?.timeseries ?? []).map((p) => ({
+        ...p,
+        label: fmtDay(p.date),
+      })),
+    [data?.timeseries],
+  );
+
+  function exportCsv() {
+    if (!data) return;
+    const rows: (string | number | null)[][] = [];
+    rows.push([`Sourcing Analytics — janela ${days} dias`]);
+    rows.push([]);
+    rows.push(["Totais"]);
+    rows.push(["Enrollments", data.totals.enrollments]);
+    rows.push(["Ativos", data.totals.active]);
+    rows.push(["Pausados", data.totals.paused]);
+    rows.push(["Responderam", data.totals.replied]);
+    rows.push(["Falhas", data.totals.failed]);
+    rows.push(["Finalizados", data.totals.finished]);
+    rows.push(["Taxa de resposta", (data.totals.response_rate * 100).toFixed(2) + "%"]);
+    rows.push([
+      "Tempo médio até resposta (h)",
+      data.totals.avg_time_to_reply_hours == null
+        ? ""
+        : data.totals.avg_time_to_reply_hours.toFixed(2),
+    ]);
+    rows.push([]);
+    rows.push(["Série temporal"]);
+    rows.push(["Data", "Enrollments", "Enviados", "Respostas", "Falhas"]);
+    for (const p of data.timeseries) {
+      rows.push([p.date, p.enrollments, p.sent, p.replied, p.failed]);
+    }
+    rows.push([]);
+    rows.push(["Por sequência"]);
+    rows.push([
+      "Sequência",
+      "Enrollments",
+      "Ativos",
+      "Respostas",
+      "Falhas",
+      "Resp. rate %",
+      "Tempo médio (h)",
+    ]);
+    for (const s of data.by_sequence) {
+      rows.push([
+        s.name,
+        s.total_enrollments,
+        s.active,
+        s.replied,
+        s.failed,
+        (s.response_rate * 100).toFixed(2),
+        s.avg_time_to_reply_hours == null ? "" : s.avg_time_to_reply_hours.toFixed(2),
+      ]);
+    }
+    rows.push([]);
+    rows.push(["Por canal"]);
+    rows.push(["Canal", "Enviados", "Falhas", "Pulados", "Total"]);
+    for (const c of data.by_channel) {
+      rows.push([
+        CHANNEL_LABELS[c.channel] ?? c.channel,
+        c.sent,
+        c.failed,
+        c.skipped,
+        c.total,
+      ]);
+    }
+    rows.push([]);
+    rows.push(["Funil por step"]);
+    rows.push(["Step", "Enviados", "Falhas", "Pulados"]);
+    for (const f of data.funnel) {
+      rows.push([`Step ${f.step_order + 1}`, f.sent, f.failed, f.skipped]);
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    downloadCsv(`sourcing-analytics-${days}d-${today}.csv`, rows);
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-10">
