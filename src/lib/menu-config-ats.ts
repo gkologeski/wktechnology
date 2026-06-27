@@ -39,6 +39,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Pipelines", url: "/pipelines", icon: GitBranch },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
       { title: "Kits de Entrevista", url: "/interview-kits", icon: BookOpen },
+      { title: "Scheduling", url: "/scheduling", icon: CalendarClock },
     ],
   },
   {
