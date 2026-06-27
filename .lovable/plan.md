@@ -1,52 +1,38 @@
-# Plano: Validação Sourcing (Onda 5 / Slice 2)
+## Diagnóstico
 
-Validação somente leitura — sem alterações de código, schema, RLS ou regras de negócio. Apenas correções pontuais se algum estado quebrado for detectado durante a execução (e somente após reportar).
+No **preview ativo** (`id-preview--68dcfa85…lovable.app`):
+- `/sourcing` responde **HTTP 200** e a rota está registrada no `routeTree.gen.ts`.
+- A sidebar do TechHire **já mostra** o grupo **Sourcing** com Talent Pools, Sequências e Indicações (validado via JS no DOM atual do seu navegador).
 
-## Escopo
-Telas: `/sourcing`, `/sourcing/pools`, `/sourcing/sequences`, `/sourcing/referrals`.
+Ou seja, no preview tudo está no ar. O sintoma "não funciona / não há menus novos" só bate com **outra origem** que ainda não recebeu o último build:
 
-## Execução (Playwright headless, viewport 1280x1800, sessão Supabase injetada)
+- `https://wktechnology.lovable.app` (publicado)
+- `https://ats.wktechnology.com.br` (domínio custom — aponta para o publicado)
 
-### 1. Smoke navegacional
-- Restaurar sessão via `LOVABLE_BROWSER_SUPABASE_*`.
-- Visitar cada uma das 4 rotas; capturar screenshot inicial.
-- Coletar console errors e network 4xx/5xx por rota.
-- Confirmar que o item "Sourcing" aparece no menu lateral ATS e que `active-module` resolve para ATS (sem flip para CRM).
+Como o domínio custom serve a versão **publicada**, e o último publish foi anterior a toda a entrega do Slice 2 (Sourcing, Pools, Sequências, Referrals, Notetaker etc.), nada disso aparece lá.
 
-### 2. `/sourcing` (hub)
-- 3 tiles (Pools, Sequências, Indicações) renderizam e navegam para as rotas-filhas.
-- `AtsPageHeader` presente, hover/focus visíveis.
+## Plano
 
-### 3. `/sourcing/pools`
-- Estado inicial: loading → empty OR lista de pools.
-- Abrir dialog "Novo pool", validar campos (nome, descrição, tipo static/smart), fechar sem salvar.
-- Verificar `member_count`, ícones (Lock/Sparkles/Users2) renderizando.
-- Confirmar que `listPools` responde 200 (network).
+Republicar o app para que as rotas e menus novos fiquem disponíveis nos domínios publicado e custom (`ats.wktechnology.com.br`).
 
-### 4. `/sourcing/sequences`
-- Loading → empty OR cards.
-- Abrir dialog "Nova sequência", validar campos.
-- Em uma sequência existente (se houver): botão toggle Power/PowerOff e link "Abrir" → `/sourcing/sequences/$id` carrega editor de steps e enrollments sem erro.
-- Se não houver sequência, criar uma temporária para validar o detalhe e remover via toggle (apenas se a função permitir sem efeitos colaterais; caso contrário, apenas reportar não-validado).
+Passos:
 
-### 5. `/sourcing/referrals`
-- Loading → empty OR lista.
-- Validar filtros de scope (mine/all) e status.
-- Validar dialog de submissão de indicação (campos obrigatórios, validação de email/url).
+1. Confirmar com você que quer publicar a versão atual (estamos no preview com todas as entregas recentes: Sourcing completo, Notetaker, Wave 5 Slice 1/2, redesign Quiet Premium, correções de timeline, etc.).
+2. Acionar **Publish** pelo painel do Lovable (botão abaixo).
+3. Após o publish concluir, validar:
+   - `https://wktechnology.lovable.app/sourcing` carrega.
+   - `https://ats.wktechnology.com.br/sourcing` carrega.
+   - Sidebar do TechHire mostra o grupo **Sourcing** com **Talent Pools**, **Sequências** e **Indicações**.
+   - `/notetaker`, `/dei-analytics`, `/insights` também respondem.
 
-### 6. Checagens transversais
-- Tokens semânticos (sem cores hardcoded visíveis fora do DS).
-- Dark mode: alternar `class="dark"` no `<html>` e re-screenshot de cada rota.
-- Responsividade: re-render em 768px e 375px para checar quebras.
-- Acessibilidade rápida: foco visível no primeiro botão de cada página, `aria-label` em ícones-only.
+Nenhuma alteração de código é necessária — o código já está correto no preview. Se após o publish ainda faltar algo, aí sim investigamos como bug de rota/sidebar.
 
-## Entregáveis no relatório final
-1. Tabela rota × (status HTTP, console errors, screenshots light/dark/mobile).
-2. Lista de estados quebrados encontrados (se houver), com severidade.
-3. Pendências de UX/UI vs `docs/techhire-design-system.md`.
-4. Recomendação de correção (sem implementar) — caso encontre algo, peço aprovação antes de corrigir.
+## Como você pode publicar agora
 
-## Fora do escopo
-- Alterar código, schema, RLS, server functions.
-- Executar `processDueEnrollments` real ou enviar emails.
-- Testar fluxos que disparam side-effects externos (Resend, WhatsApp).
+<presentation-actions>
+<presentation-open-publish>Publicar app</presentation-open-publish>
+</presentation-actions>
+
+## Se você quiser que eu mexa em código
+
+Me confirme qual URL exata você está abrindo quando vê o erro. Se for o preview (`id-preview--…`) e mesmo assim faltar o menu, eu abro investigação (cache do navegador, service worker antigo, permissão de role específica filtrando o grupo, etc.) antes de propor alteração.
