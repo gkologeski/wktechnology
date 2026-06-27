@@ -32,20 +32,25 @@ export function isProductionHost(hostname: string | undefined | null): boolean {
  * projeto em produção. Permite desligar redirects cross-host quando um
  * subdomínio ainda não está configurado (SSL/DNS), evitando loops.
  *
- * Configuração opcional via `VITE_REACHABLE_HOSTS` (CSV). Sem a variável,
- * assumimos que todos os PRODUCTION_HOSTS estão alcançáveis (comportamento
- * legado).
+ * Default conservador: sem `VITE_REACHABLE_HOSTS`, apenas o host atual é
+ * considerado alcançável — assim cross-host redirect só ocorre após
+ * opt-in explícito (ex.: VITE_REACHABLE_HOSTS="app.x,crm.x,ats.x").
  */
 export function getReachableHosts(): Set<string> {
   const raw = (import.meta as { env?: Record<string, string | undefined> }).env
     ?.VITE_REACHABLE_HOSTS;
-  if (!raw) return new Set(PRODUCTION_HOSTS);
-  return new Set(
-    raw
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  );
+  if (raw) {
+    return new Set(
+      raw
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    );
+  }
+  if (typeof window !== "undefined") {
+    return new Set([window.location.hostname.toLowerCase()]);
+  }
+  return new Set();
 }
 
 export function isReachableHost(hostname: string | undefined | null): boolean {
