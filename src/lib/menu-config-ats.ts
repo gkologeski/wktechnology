@@ -55,6 +55,15 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    label: "Hunting (LinkedIn)",
+    items: [
+      { title: "Hub", url: "/hunting", icon: Search },
+      { title: "Capturados", url: "/hunting/captures", icon: Inbox },
+      { title: "Templates", url: "/hunting/templates", icon: Mail },
+      { title: "Instalar extensão", url: "/hunting/install", icon: Download },
+    ],
+  },
+  {
     label: "Contratação",
     items: [
       { title: "Ofertas", url: "/offers", icon: FileSignature },
