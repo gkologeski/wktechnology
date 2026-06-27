@@ -211,6 +211,15 @@ function SourcingAnalyticsPage() {
             >
               {isFetching ? "Atualizando…" : "Atualizar"}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={!data || isLoading}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              CSV
+            </Button>
           </div>
         }
       />
