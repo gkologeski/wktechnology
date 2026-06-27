@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TechHire Hunter",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Capture candidatos do LinkedIn direto pro TechHire ATS.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [

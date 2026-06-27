@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Trash2,
@@ -66,14 +67,13 @@ function CandidatesPage() {
   const parse = useServerFn(parseCv);
   const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
+  const queryClient = useQueryClient();
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
-  const [rows, setRows] = useState<Cand[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
@@ -87,34 +87,23 @@ function CandidatesPage() {
     notes: "",
   });
 
-  const refresh = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await list({ data: { search } });
-      setRows(r);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao listar";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Debounced search refresh
-  useEffect(() => {
-    const t = setTimeout(() => {
-      refresh();
-    }, 300);
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  const q = useQuery({
+    queryKey: ["ats-candidates", debouncedSearch],
+    queryFn: () => list({ data: { search: debouncedSearch } }),
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+  });
+
+  const rows: Cand[] = q.data ?? [];
+  const loading = q.isLoading;
+  const error = q.error ? (q.error instanceof Error ? q.error.message : "Falha ao listar") : null;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
 
   const handleCreate = async () => {
     if (!form.full_name.trim()) {

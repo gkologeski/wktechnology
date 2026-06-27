@@ -1,26 +1,22 @@
-// TechHire Hunter — Content script (v0.2.2)
-// Injeta sidebar nos perfis do LinkedIn e extrai dados via múltiplas fontes:
-// DOM (vários seletores), <title>, og:meta tags e JSON-LD. Reextrai com
-// MutationObserver até preencher full_name ou estourar timeout.
+// TechHire Hunter — Content script (v0.2.3)
+// Extrai dados de perfil do LinkedIn via DOM + <title> + og:meta + JSON-LD.
+// Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
 (function () {
   if (window.__techhireHunterInjected) return;
   window.__techhireHunterInjected = true;
 
   const SIDEBAR_ID = "techhire-hunter-sidebar";
-  const EXTRACT_TIMEOUT_MS = 10000;
+  const EXTRACT_TIMEOUT_MS = 15000;
 
-  function clean(s) {
-    return (s || "").replace(/\s+/g, " ").trim();
-  }
-
-  function safe(fn) {
+  const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const safe = (fn) => {
     try {
-      return fn();
+      return fn() || "";
     } catch {
       return "";
     }
-  }
+  };
 
   function getJsonLdPerson() {
     const scripts = document.querySelectorAll('script[type="application/ld+json"]');
@@ -31,8 +27,7 @@
         for (const item of arr) {
           if (!item) continue;
           const t = item["@type"];
-          const isPerson = t === "Person" || (Array.isArray(t) && t.includes("Person"));
-          if (isPerson) return item;
+          if (t === "Person" || (Array.isArray(t) && t.includes("Person"))) return item;
         }
       } catch {
         /* ignore */
@@ -43,7 +38,6 @@
 
   function nameFromTitle() {
     const t = document.title || "";
-    // Ex: "(7) Rafaela Correa | LinkedIn" → "Rafaela Correa"
     return clean(
       t
         .replace(/^\(\d+\)\s*/, "")
@@ -52,76 +46,129 @@
     );
   }
 
+  function topCardScope() {
+    const h1 = document.querySelector("main h1") || document.querySelector("h1");
+    if (!h1) return null;
+    return h1.closest("section.artdeco-card") || h1.closest("section") || h1.closest("div");
+  }
+
+  function extractHeadline(card, person) {
+    if (card) {
+      const sels = [
+        ".text-body-medium.break-words",
+        "div.text-body-medium.break-words",
+        "div.text-body-medium",
+        ".pv-text-details__left-panel .text-body-medium",
+      ];
+      for (const sel of sels) {
+        const el = card.querySelector(sel);
+        const txt = clean(el?.textContent);
+        if (txt) return txt;
+      }
+    }
+    const jt = clean(person?.jobTitle);
+    if (jt) return jt;
+    const og = safe(() => document.querySelector('meta[property="og:description"]')?.content);
+    if (og) return clean(og.split(/[|·•]/)[0]);
+    return "";
+  }
+
+  function extractCompany(card, person, headline) {
+    try {
+      const wf = person?.worksFor;
+      if (Array.isArray(wf) && wf[0]?.name) return clean(wf[0].name);
+      if (wf && typeof wf === "object" && wf.name) return clean(wf.name);
+    } catch {
+      /* ignore */
+    }
+    if (card) {
+      // Botão "Empresa atual" do topo (PT/EN/ES)
+      const btn = card.querySelector(
+        'button[aria-label^="Empresa atual"], button[aria-label^="Current company"], button[aria-label^="Empresa actual"]',
+      );
+      const btnTxt = clean(btn?.textContent);
+      if (btnTxt) return btnTxt;
+      // Links de company com aria-label costumam ter o nome limpo
+      const linkAria = card.querySelector('a[href*="/company/"][aria-label]');
+      const aria = clean(linkAria?.getAttribute("aria-label"));
+      if (aria) return aria;
+      const link = card.querySelector('a[href*="/company/"]');
+      const txt = clean(link?.textContent);
+      if (txt) return txt;
+    }
+    if (headline) {
+      const m = headline.match(/\s(?:at|na|no|em|@)\s+(.+)$/i);
+      if (m) return clean(m[1]);
+    }
+    return "";
+  }
+
+  function extractLocation(card, person) {
+    try {
+      const addr = person?.address;
+      if (typeof addr === "string" && addr.trim()) return clean(addr);
+      if (addr && typeof addr === "object") {
+        const loc = clean(addr.addressLocality || addr.name || "");
+        if (loc) return loc;
+      }
+    } catch {
+      /* ignore */
+    }
+    if (card) {
+      const spans = card.querySelectorAll(
+        'span.text-body-small.inline.t-black--light, span.text-body-small, .pv-text-details__left-panel .text-body-small',
+      );
+      for (const el of spans) {
+        const txt = clean(el.textContent);
+        if (
+          txt &&
+          txt.length < 120 &&
+          !/seguidores|followers|seguidor|conex|connections|connection|mútuo|mutual/i.test(txt)
+        ) {
+          return txt;
+        }
+      }
+    }
+    return "";
+  }
+
+  function extractAvatar(card) {
+    if (card) {
+      const sels = [
+        "img.pv-top-card-profile-picture__image",
+        'img.pv-top-card-profile-picture__image--show',
+        'img[width="200"]',
+        'button img.profile-photo-edit__preview',
+      ];
+      for (const sel of sels) {
+        const el = card.querySelector(sel);
+        const src = el?.getAttribute("src");
+        if (src && /^https?:/i.test(src)) return src;
+      }
+    }
+    const og = safe(() => document.querySelector('meta[property="og:image"]')?.content);
+    if (og && /^https?:/i.test(og)) return og;
+    return "";
+  }
+
   function extractProfile() {
     const url = (location.href.split("?")[0] || "").replace(/\/+$/, "");
     const person = getJsonLdPerson();
+    const card = topCardScope();
 
-    // ---- full_name
     let full_name =
+      safe(() => clean(card?.querySelector("h1")?.textContent)) ||
       safe(() => clean(document.querySelector("main h1")?.textContent)) ||
       safe(() => clean(document.querySelector("h1")?.textContent)) ||
-      safe(() => clean(person?.name)) ||
+      clean(person?.name) ||
       safe(() => clean(document.querySelector('meta[property="og:title"]')?.content)) ||
       nameFromTitle();
     full_name = clean(full_name).replace(/\s*[|\-–]\s*LinkedIn.*$/i, "");
 
-    // ---- current_position (headline)
-    let headline = "";
-    const h1 = document.querySelector("main h1") || document.querySelector("h1");
-    if (h1) {
-      // Procura nó .text-body-medium próximo ao h1 (mesmo card)
-      const card = h1.closest("section, div");
-      const med = card?.querySelector(".text-body-medium");
-      if (med) headline = clean(med.textContent);
-    }
-    if (!headline) {
-      headline = safe(() => clean(person?.jobTitle));
-    }
-    if (!headline) {
-      const og = safe(() => document.querySelector('meta[property="og:description"]')?.content);
-      if (og) headline = clean(og.split(/[|·•]/)[0]);
-    }
-
-    // ---- current_company
-    let company = "";
-    try {
-      const wf = person?.worksFor;
-      if (Array.isArray(wf) && wf[0]) company = clean(wf[0].name);
-      else if (wf && typeof wf === "object") company = clean(wf.name);
-    } catch {
-      /* ignore */
-    }
-    if (!company && h1) {
-      const card = h1.closest("section, div") || document;
-      const link = card.querySelector('a[href*="/company/"]');
-      if (link) company = clean(link.textContent);
-    }
-    if (!company && headline) {
-      const m = headline.match(/\s(?:at|na|no|@)\s+(.+)$/i);
-      if (m) company = clean(m[1]);
-    }
-
-    // ---- location
-    let location_ = "";
-    try {
-      const addr = person?.address;
-      if (typeof addr === "string") location_ = clean(addr);
-      else if (addr && typeof addr === "object")
-        location_ = clean(addr.addressLocality || addr.name || "");
-    } catch {
-      /* ignore */
-    }
-    if (!location_ && h1) {
-      const card = h1.closest("section, div");
-      const candidates = card?.querySelectorAll('[class*="text-body-small"]') || [];
-      for (const el of candidates) {
-        const txt = clean(el.textContent);
-        if (txt && !/seguidores|followers|connections|conex/i.test(txt) && txt.length < 120) {
-          location_ = txt;
-          break;
-        }
-      }
-    }
+    const headline = extractHeadline(card, person);
+    const company = extractCompany(card, person, headline);
+    const location_ = extractLocation(card, person);
+    const avatar = extractAvatar(card);
 
     return {
       linkedin_url: url,
@@ -129,37 +176,45 @@
       current_position: headline,
       current_company: company,
       location: location_,
+      avatar_url: avatar,
       source: "linkedin_extension",
     };
   }
 
-  function renderPreview(profile) {
+  function renderPreview(profile, opts) {
     const el = document.getElementById("thh-preview");
     if (!el) return;
     if (!profile.full_name) {
       el.innerHTML = `<div class="thh-muted">Detectando perfil…</div>`;
       return;
     }
+    const partial = opts?.partial
+      ? `<div class="thh-warn" style="margin-top:6px">Alguns campos não foram detectados. Role o perfil até o topo e tente novamente.</div>`
+      : "";
     el.innerHTML = `
       <div><b>${profile.full_name}</b></div>
-      <div class="thh-muted">${profile.current_position || ""}</div>
-      <div class="thh-muted">${profile.current_company || ""}</div>
-      <div class="thh-muted">${profile.location || ""}</div>`;
+      <div class="thh-muted">${profile.current_position || "—"}</div>
+      <div class="thh-muted">${profile.current_company || "—"}</div>
+      <div class="thh-muted">${profile.location || "—"}</div>${partial}`;
+  }
+
+  function isComplete(p) {
+    return !!(p.full_name && p.current_position && (p.current_company || p.location));
   }
 
   function startExtractionLoop(onProfile) {
-    let resolved = false;
     let observer = null;
     let debounce = null;
+    let done = false;
     const start = Date.now();
 
     function attempt() {
       const profile = extractProfile();
-      onProfile(profile);
-      if (profile.full_name) {
-        resolved = true;
-        cleanup();
-      } else if (Date.now() - start > EXTRACT_TIMEOUT_MS) {
+      const complete = isComplete(profile);
+      const timedOut = Date.now() - start > EXTRACT_TIMEOUT_MS;
+      onProfile(profile, { partial: timedOut && !complete });
+      if (complete || timedOut) {
+        done = true;
         cleanup();
       }
     }
@@ -170,7 +225,7 @@
     }
 
     attempt();
-    if (resolved) return;
+    if (done) return;
 
     const target = document.querySelector("main") || document.body;
     observer = new MutationObserver(() => {
@@ -178,9 +233,9 @@
       debounce = setTimeout(attempt, 300);
     });
     observer.observe(target, { childList: true, subtree: true });
-
-    // Hard timeout
-    setTimeout(cleanup, EXTRACT_TIMEOUT_MS + 500);
+    setTimeout(() => {
+      if (!done) attempt();
+    }, EXTRACT_TIMEOUT_MS + 500);
   }
 
   function injectSidebar() {
@@ -196,6 +251,7 @@
         <div id="thh-status" class="thh-status">Carregando…</div>
         <div id="thh-preview" class="thh-preview"><div class="thh-muted">Detectando perfil…</div></div>
         <div class="thh-actions">
+          <button id="thh-recheck" class="thh-btn">Re-detectar</button>
           <button id="thh-capture" class="thh-btn thh-primary">Salvar candidato</button>
         </div>
         <hr/>
@@ -212,15 +268,20 @@
 
     document.getElementById("thh-close").onclick = () => root.remove();
 
-    // Mantém o perfil mais recente capturado pela rotina de extração
     let latestProfile = extractProfile();
-    renderPreview(latestProfile);
-    startExtractionLoop((p) => {
+    renderPreview(latestProfile, { partial: false });
+    startExtractionLoop((p, opts) => {
       latestProfile = p;
-      renderPreview(p);
+      renderPreview(p, opts);
     });
 
-    // Estado de pareamento
+    document.getElementById("thh-recheck").onclick = () => {
+      startExtractionLoop((p, opts) => {
+        latestProfile = p;
+        renderPreview(p, opts);
+      });
+    };
+
     chrome.runtime.sendMessage({ type: "PING" }, (resp) => {
       const status = document.getElementById("thh-status");
       if (!status) return;
@@ -305,7 +366,6 @@
     };
   }
 
-  // Reinjeta ao navegar entre perfis (SPA do LinkedIn)
   let lastUrl = location.href;
   setInterval(() => {
     if (location.href !== lastUrl) {
