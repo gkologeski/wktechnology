@@ -1,19 +1,32 @@
 # TechHire Hunter — Extensão Chrome
 
-Versão atual: 0.2.5
+Versão atual: 0.3.0
 
 Extensão Manifest V3 que injeta uma sidebar nos perfis do LinkedIn (`linkedin.com/in/*`
 e `linkedin.com/sales/lead/*`) permitindo:
 
 - Capturar o candidato (nome, cargo, empresa, localização, URL) direto pro TechHire ATS.
 - Listar templates de mensagem e renderizar com variáveis do perfil.
-- Copiar a mensagem renderizada (cole no chat do LinkedIn).
-- Registrar o outreach na timeline do candidato.
+- **Preparar a mensagem dentro do LinkedIn** — abre o composer correto (mensagem
+  direta, convite com nota ou InMail), pré-preenche o texto e respeita o limite
+  de caracteres. Você revisa e clica **Enviar** no próprio LinkedIn.
+- Detectar o envio (toast ou item novo na conversa) e registrar automaticamente
+  na timeline do candidato. Se a detecção falhar, há botão "Já enviei".
 
-## Por que extensão (e não iframe)
-O LinkedIn envia `X-Frame-Options: DENY` — impossível embutir num iframe. Toda
-captura acontece **no contexto da sua sessão autenticada do LinkedIn**, sob
-demanda, quando você abre o perfil. Não há scraping em background.
+## Envio assistido (v0.3.0)
+
+A extensão **nunca clica em Enviar por você**. Os Termos de Uso do LinkedIn
+exigem confirmação humana de cada mensagem; a extensão apenas:
+
+1. Identifica o canal disponível (1º grau, fora da rede, Premium/Recruiter).
+2. Abre o composer certo.
+3. Cola o texto do template renderizado, truncando se exceder o limite
+   (300 chars no convite, ~1900 na mensagem direta, ~1900 no InMail).
+4. Observa o DOM por até 5 min e registra na timeline quando detecta envio.
+
+Os 3 modos são: **Mensagem direta**, **Convite com nota**, **InMail**. O modo
+"Detectar automaticamente" escolhe o melhor disponível.
+
 
 ## Instalação (modo desenvolvedor)
 1. Clone/baixe esta pasta `extension/`.
