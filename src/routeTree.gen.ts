@@ -239,6 +239,7 @@ import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/
 import { Route as AuthenticatedatsSourcingReferralsRouteImport } from './routes/_authenticated/(ats)/sourcing/referrals'
 import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_authenticated/(ats)/sourcing/pools'
 import { Route as AuthenticatedatsSourcingInboxRouteImport } from './routes/_authenticated/(ats)/sourcing/inbox'
+import { Route as AuthenticatedatsSourcingAnalyticsRouteImport } from './routes/_authenticated/(ats)/sourcing/analytics'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
@@ -1559,6 +1560,12 @@ const AuthenticatedatsSourcingInboxRoute =
     path: '/sourcing/inbox',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsSourcingAnalyticsRoute =
+  AuthenticatedatsSourcingAnalyticsRouteImport.update({
+    id: '/(ats)/sourcing/analytics',
+    path: '/sourcing/analytics',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1828,6 +1835,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
@@ -2072,6 +2080,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
@@ -2322,6 +2331,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/_authenticated/(ats)/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/_authenticated/(ats)/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/_authenticated/(ats)/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/_authenticated/(ats)/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
@@ -2572,6 +2582,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/workspace/'
     | '/jobs/$id'
+    | '/sourcing/analytics'
     | '/sourcing/inbox'
     | '/sourcing/pools'
     | '/sourcing/referrals'
@@ -2816,6 +2827,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/workspace'
     | '/jobs/$id'
+    | '/sourcing/analytics'
     | '/sourcing/inbox'
     | '/sourcing/pools'
     | '/sourcing/referrals'
@@ -3065,6 +3077,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
     | '/_authenticated/(ats)/jobs/$id'
+    | '/_authenticated/(ats)/sourcing/analytics'
     | '/_authenticated/(ats)/sourcing/inbox'
     | '/_authenticated/(ats)/sourcing/pools'
     | '/_authenticated/(ats)/sourcing/referrals'
@@ -4847,6 +4860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingInboxRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/sourcing/analytics': {
+      id: '/_authenticated/(ats)/sourcing/analytics'
+      path: '/sourcing/analytics'
+      fullPath: '/sourcing/analytics'
+      preLoaderRoute: typeof AuthenticatedatsSourcingAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs/$id': {
       id: '/_authenticated/(ats)/jobs/$id'
       path: '/$id'
@@ -5415,6 +5435,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsSourcingAnalyticsRoute: typeof AuthenticatedatsSourcingAnalyticsRoute
   AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
@@ -5479,6 +5500,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsSourcingAnalyticsRoute:
+    AuthenticatedatsSourcingAnalyticsRoute,
   AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
   AuthenticatedatsSourcingPoolsRoute: AuthenticatedatsSourcingPoolsRoute,
   AuthenticatedatsSourcingReferralsRoute:
