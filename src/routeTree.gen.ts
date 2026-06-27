@@ -243,6 +243,7 @@ import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_aut
 import { Route as AuthenticatedatsSourcingInboxRouteImport } from './routes/_authenticated/(ats)/sourcing/inbox'
 import { Route as AuthenticatedatsSourcingAnalyticsRouteImport } from './routes/_authenticated/(ats)/sourcing/analytics'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
+import { Route as AuthenticatedatsHuntingCapturesRouteImport } from './routes/_authenticated/(ats)/hunting/captures'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/ats/jobs'
@@ -1585,6 +1586,12 @@ const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedatsJobsRoute,
 } as any)
+const AuthenticatedatsHuntingCapturesRoute =
+  AuthenticatedatsHuntingCapturesRouteImport.update({
+    id: '/(ats)/hunting/captures',
+    path: '/hunting/captures',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicZapierUnsubscribeIdRoute =
   ApiPublicZapierUnsubscribeIdRouteImport.update({
     id: '/api/public/zapier/unsubscribe/$id',
@@ -1849,6 +1856,7 @@ export interface FileRoutesByFullPath {
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -2096,6 +2104,7 @@ export interface FileRoutesByTo {
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -2349,6 +2358,7 @@ export interface FileRoutesById {
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/(ats)/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/_authenticated/(ats)/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/_authenticated/(ats)/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
@@ -2602,6 +2612,7 @@ export interface FileRouteTypes {
     | '/proposals/'
     | '/settings/'
     | '/workspace/'
+    | '/hunting/captures'
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
@@ -2849,6 +2860,7 @@ export interface FileRouteTypes {
     | '/proposals'
     | '/settings'
     | '/workspace'
+    | '/hunting/captures'
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
@@ -3101,6 +3113,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/(ats)/hunting/captures'
     | '/_authenticated/(ats)/jobs/$id'
     | '/_authenticated/(ats)/sourcing/analytics'
     | '/_authenticated/(ats)/sourcing/inbox'
@@ -4914,6 +4927,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsJobsIdRouteImport
       parentRoute: typeof AuthenticatedatsJobsRoute
     }
+    '/_authenticated/(ats)/hunting/captures': {
+      id: '/_authenticated/(ats)/hunting/captures'
+      path: '/hunting/captures'
+      fullPath: '/hunting/captures'
+      preLoaderRoute: typeof AuthenticatedatsHuntingCapturesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/zapier/unsubscribe/$id': {
       id: '/api/public/zapier/unsubscribe/$id'
       path: '/api/public/zapier/unsubscribe/$id'
@@ -5476,6 +5496,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
   AuthenticatedatsSourcingAnalyticsRoute: typeof AuthenticatedatsSourcingAnalyticsRoute
   AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
@@ -5543,6 +5564,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
   AuthenticatedatsSourcingAnalyticsRoute:
     AuthenticatedatsSourcingAnalyticsRoute,
   AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
