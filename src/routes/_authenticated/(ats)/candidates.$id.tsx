@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
-import { MetaPill } from "@/components/ats/ui/meta-pill";
+import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import {
   getCandidateDetail,
   removeCandidateFromPool,
