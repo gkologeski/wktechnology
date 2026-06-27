@@ -33,13 +33,19 @@ function HuntingCapturesPage() {
       />
 
       {q.isLoading ? (
-        <Skeletons rows={6} />
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
+        </div>
       ) : (q.data?.captures ?? []).length === 0 ? (
         <EmptyState
           icon={Inbox}
           title="Nenhuma captura ainda"
           description="Instale a extensão Chrome, abra um perfil no LinkedIn e clique em 'Salvar candidato'."
-          action={{ label: "Instalar extensão", to: "/hunting/install" }}
+          action={
+            <Button asChild size="sm">
+              <Link to="/hunting/install">Instalar extensão</Link>
+            </Button>
+          }
         />
       ) : (
         <Card>
