@@ -65,6 +65,14 @@ export type StepFunnel = {
   skipped: number;
 };
 
+export type DailyPoint = {
+  date: string; // YYYY-MM-DD
+  enrollments: number;
+  sent: number;
+  replied: number;
+  failed: number;
+};
+
 export type SourcingAnalyticsResult = {
   window_days: number;
   totals: {
@@ -80,6 +88,7 @@ export type SourcingAnalyticsResult = {
   by_sequence: SequencePerformance[];
   by_channel: ChannelStats[];
   funnel: StepFunnel[];
+  timeseries: DailyPoint[];
 };
 
 export const getSourcingAnalytics = createServerFn({ method: "POST" })
@@ -226,11 +235,41 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
     }
     const funnel = Array.from(perStep.values()).sort((a, b) => a.step_order - b.step_order);
 
+    // Time series (daily)
+    const dayKey = (iso: string) => iso.slice(0, 10);
+    const tsMap = new Map<string, DailyPoint>();
+    const ensureDay = (d: string) => {
+      let row = tsMap.get(d);
+      if (!row) {
+        row = { date: d, enrollments: 0, sent: 0, replied: 0, failed: 0 };
+        tsMap.set(d, row);
+      }
+      return row;
+    };
+    // Pre-fill the window with zeros so charts have a continuous x-axis
+    for (let i = data.days - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400_000).toISOString().slice(0, 10);
+      ensureDay(d);
+    }
+    for (const e of enrollments) {
+      ensureDay(dayKey(e.started_at)).enrollments++;
+      if (e.status === "replied" && e.finished_at) {
+        ensureDay(dayKey(e.finished_at)).replied++;
+      }
+    }
+    for (const l of stepLog) {
+      const row = ensureDay(dayKey(l.created_at));
+      if (l.status === "sent" || l.status === "queued" || l.status === "completed") row.sent++;
+      else if (l.status === "failed") row.failed++;
+    }
+    const timeseries = Array.from(tsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
     return {
       window_days: data.days,
       totals,
       by_sequence,
       by_channel,
       funnel,
+      timeseries,
     };
   });

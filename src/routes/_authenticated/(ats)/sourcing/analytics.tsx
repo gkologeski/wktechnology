@@ -2,20 +2,29 @@
 // Métricas de cadências: volume, response rate, time-to-reply, ranking por
 // sequência, performance por canal e funil por step.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
   AlertCircle,
-  BarChart3,
+  Download,
   Mail,
-  MessageSquare,
   Reply,
   Send,
   TrendingUp,
   Users2,
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   AtsPageHeader,
   AtsSectionHeader,
@@ -62,6 +71,28 @@ function fmtHours(h: number | null) {
   return `${(h / 24).toFixed(1)}d`;
 }
 
+function fmtDay(d: string) {
+  const [, m, dd] = d.split("-");
+  return `${dd}/${m}`;
+}
+
+function downloadCsv(filename: string, rows: (string | number | null)[][]) {
+  const esc = (v: string | number | null) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(esc).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function SourcingAnalyticsPage() {
   const [days, setDays] = useState<number>(30);
   const fetcher = useServerFn(getSourcingAnalytics);
@@ -69,6 +100,84 @@ function SourcingAnalyticsPage() {
     queryKey: ["sourcing-analytics", days],
     queryFn: () => fetcher({ data: { days } }),
   });
+
+  const chartData = useMemo(
+    () =>
+      (data?.timeseries ?? []).map((p) => ({
+        ...p,
+        label: fmtDay(p.date),
+      })),
+    [data?.timeseries],
+  );
+
+  function exportCsv() {
+    if (!data) return;
+    const rows: (string | number | null)[][] = [];
+    rows.push([`Sourcing Analytics — janela ${days} dias`]);
+    rows.push([]);
+    rows.push(["Totais"]);
+    rows.push(["Enrollments", data.totals.enrollments]);
+    rows.push(["Ativos", data.totals.active]);
+    rows.push(["Pausados", data.totals.paused]);
+    rows.push(["Responderam", data.totals.replied]);
+    rows.push(["Falhas", data.totals.failed]);
+    rows.push(["Finalizados", data.totals.finished]);
+    rows.push(["Taxa de resposta", (data.totals.response_rate * 100).toFixed(2) + "%"]);
+    rows.push([
+      "Tempo médio até resposta (h)",
+      data.totals.avg_time_to_reply_hours == null
+        ? ""
+        : data.totals.avg_time_to_reply_hours.toFixed(2),
+    ]);
+    rows.push([]);
+    rows.push(["Série temporal"]);
+    rows.push(["Data", "Enrollments", "Enviados", "Respostas", "Falhas"]);
+    for (const p of data.timeseries) {
+      rows.push([p.date, p.enrollments, p.sent, p.replied, p.failed]);
+    }
+    rows.push([]);
+    rows.push(["Por sequência"]);
+    rows.push([
+      "Sequência",
+      "Enrollments",
+      "Ativos",
+      "Respostas",
+      "Falhas",
+      "Resp. rate %",
+      "Tempo médio (h)",
+    ]);
+    for (const s of data.by_sequence) {
+      rows.push([
+        s.name,
+        s.total_enrollments,
+        s.active,
+        s.replied,
+        s.failed,
+        (s.response_rate * 100).toFixed(2),
+        s.avg_time_to_reply_hours == null ? "" : s.avg_time_to_reply_hours.toFixed(2),
+      ]);
+    }
+    rows.push([]);
+    rows.push(["Por canal"]);
+    rows.push(["Canal", "Enviados", "Falhas", "Pulados", "Total"]);
+    for (const c of data.by_channel) {
+      rows.push([
+        CHANNEL_LABELS[c.channel] ?? c.channel,
+        c.sent,
+        c.failed,
+        c.skipped,
+        c.total,
+      ]);
+    }
+    rows.push([]);
+    rows.push(["Funil por step"]);
+    rows.push(["Step", "Enviados", "Falhas", "Pulados"]);
+    for (const f of data.funnel) {
+      rows.push([`Step ${f.step_order + 1}`, f.sent, f.failed, f.skipped]);
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    downloadCsv(`sourcing-analytics-${days}d-${today}.csv`, rows);
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -101,6 +210,15 @@ function SourcingAnalyticsPage() {
               disabled={isFetching}
             >
               {isFetching ? "Atualizando…" : "Atualizar"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={!data || isLoading}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              CSV
             </Button>
           </div>
         }
@@ -151,6 +269,98 @@ function SourcingAnalyticsPage() {
           loading={isLoading}
         />
       </div>
+
+      <section className="space-y-3">
+        <AtsSectionHeader title="Evolução diária" />
+        <Card>
+          <CardContent className="p-4">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm text-text-tertiary">Carregando…</div>
+            ) : chartData.length === 0 ? (
+              <EmptyState
+                icon={Activity}
+                title="Sem atividade na janela"
+                description="Inscreva candidatos em uma sequência para começar a ver a evolução diária."
+                compact
+              />
+            ) : (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+                    <defs>
+                      <linearGradient id="g-sent" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="g-replied" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--status-open))" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="hsl(var(--status-open))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="g-failed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                      width={32}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 500 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Area
+                      type="monotone"
+                      dataKey="sent"
+                      name="Enviados"
+                      stroke="hsl(var(--primary))"
+                      fill="url(#g-sent)"
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="replied"
+                      name="Respostas"
+                      stroke="hsl(var(--status-open))"
+                      fill="url(#g-replied)"
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="failed"
+                      name="Falhas"
+                      stroke="hsl(var(--destructive))"
+                      fill="url(#g-failed)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+
 
       <section className="space-y-3">
         <AtsSectionHeader title="Performance por sequência" />
