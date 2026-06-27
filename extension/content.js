@@ -609,9 +609,11 @@
 
     function renderTemplate(templateId) {
       if (!templateId) return;
+      lastTemplateId = templateId;
       sendRuntimeMessage({ type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } }, (resp) => {
         if (resp?.ok) {
           document.getElementById("thh-message").value = resp.data?.body || "";
+          updateCounter?.();
         }
       });
     }
