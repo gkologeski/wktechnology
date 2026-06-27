@@ -2,20 +2,29 @@
 // Métricas de cadências: volume, response rate, time-to-reply, ranking por
 // sequência, performance por canal e funil por step.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
   AlertCircle,
-  BarChart3,
+  Download,
   Mail,
-  MessageSquare,
   Reply,
   Send,
   TrendingUp,
   Users2,
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   AtsPageHeader,
   AtsSectionHeader,
