@@ -50,14 +50,22 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const apiBase = String(msg.apiBase || "").trim().replace(/\/$/, "");
         const apiKey = String(msg.apiKey || "").trim();
         if (!apiBase || !apiKey) {
+          await chrome.storage.local.set({ lastPairError: "missing_fields", lastPairAt: Date.now() });
           sendResponse({ ok: false, error: "missing_fields" });
           return;
         }
-        await chrome.storage.local.set({ apiBase, apiKey });
+        await chrome.storage.local.set({ apiBase, apiKey, lastPairError: null, lastPairAt: Date.now() });
         sendResponse({ ok: true });
       } else if (msg.type === "PING") {
         const cfg = await getConfig();
-        sendResponse({ ok: true, paired: Boolean(cfg.apiKey), apiBase: cfg.apiBase });
+        const stored = await chrome.storage.local.get(["lastPairError", "lastPairAt"]);
+        sendResponse({
+          ok: true,
+          paired: Boolean(cfg.apiKey),
+          apiBase: cfg.apiBase,
+          lastError: stored.lastPairError || null,
+          lastPairAt: stored.lastPairAt || null,
+        });
       } else {
         sendResponse({ ok: false, error: "Mensagem desconhecida" });
       }
