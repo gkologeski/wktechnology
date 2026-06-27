@@ -101,6 +101,16 @@ function SequenceDetailPage() {
         description={data.sequence.description ?? "Cadência multi-canal."}
       />
 
+      <SequenceSettings
+        sequence={data.sequence as never}
+        onSave={async (patch) => {
+          await update({ data: { id, ...patch } });
+          toast.success("Configurações salvas");
+          qc.invalidateQueries({ queryKey: ["ats-sequence", id] });
+        }}
+      />
+
+
       <section className="space-y-3">
         <AtsSectionHeader title="Steps" description="Ordem de execução da cadência." />
         {data.steps.length === 0 ? (
