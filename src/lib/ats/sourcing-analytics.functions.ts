@@ -277,6 +277,59 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
     }
     const timeseries = Array.from(tsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
+    // A/B variants — agrupa step_log por (sequence, step_order, variant) via enrollment→sequence.
+    const enrMap = new Map<string, { sequence_id: string; status: string }>();
+    for (const e of enrollments) enrMap.set(e.id, { sequence_id: e.sequence_id, status: e.status });
+    type VKey = string;
+    const variantMap = new Map<
+      VKey,
+      { sequence_id: string; step_order: number; variant: string; sent: number; enrollees: Set<string> }
+    >();
+    for (const l of stepLog) {
+      const enr = enrMap.get(l.enrollment_id);
+      if (!enr) continue;
+      const variant = String((l.metadata as { variant?: string } | null)?.variant ?? "A");
+      const key = `${enr.sequence_id}::${l.step_order}::${variant}`;
+      let row = variantMap.get(key);
+      if (!row) {
+        row = {
+          sequence_id: enr.sequence_id,
+          step_order: l.step_order,
+          variant,
+          sent: 0,
+          enrollees: new Set(),
+        };
+        variantMap.set(key, row);
+      }
+      if (l.status === "sent" || l.status === "task_created" || l.status === "completed") {
+        row.sent++;
+        row.enrollees.add(l.enrollment_id);
+      }
+    }
+    const by_variant: VariantStats[] = Array.from(variantMap.values())
+      .map((r) => {
+        const enrolled = r.enrollees.size;
+        let replied = 0;
+        for (const eid of r.enrollees) {
+          if (enrMap.get(eid)?.status === "replied") replied++;
+        }
+        return {
+          sequence_id: r.sequence_id,
+          sequence_name: seqName.get(r.sequence_id) ?? "—",
+          step_order: r.step_order,
+          variant: r.variant,
+          sent: r.sent,
+          enrolled,
+          replied,
+          response_rate: enrolled > 0 ? replied / enrolled : 0,
+        };
+      })
+      .sort((a, b) =>
+        a.sequence_name.localeCompare(b.sequence_name) ||
+        a.step_order - b.step_order ||
+        a.variant.localeCompare(b.variant),
+      );
+
     return {
       window_days: data.days,
       totals,
@@ -284,5 +337,6 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
       by_channel,
       funnel,
       timeseries,
+      by_variant,
     };
   });
