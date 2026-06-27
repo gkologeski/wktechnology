@@ -32,6 +32,7 @@ type StepLogRow = {
   channel: string;
   status: string;
   created_at: string;
+  metadata: Record<string, unknown> | null;
 };
 
 type SequenceRow = { id: string; name: string };
