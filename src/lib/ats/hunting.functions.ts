@@ -79,7 +79,6 @@ export const captureCandidate = createServerFn({ method: "POST" })
           created_by: userId,
           full_name: data.full_name,
           linkedin_url: linkedinUrl,
-          headline: data.headline ?? null,
           location: data.location ?? null,
           current_company: data.current_company ?? null,
           current_position: data.current_position ?? data.headline ?? null,
