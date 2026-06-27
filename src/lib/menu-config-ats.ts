@@ -21,6 +21,7 @@ import {
   Heart,
   Users2,
   Gift,
+  Inbox,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
