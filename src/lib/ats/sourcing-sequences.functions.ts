@@ -394,14 +394,28 @@ export async function processDueEnrollments(limit = 50): Promise<{
         subject: string | null;
         body: string | null;
         task_instructions: string | null;
+        variant_label: string | null;
+        variant_weight: number | null;
       }>;
-      const next = stepList.find((s) => s.step_order === e.current_step + 1);
-      if (!next) {
+      const nextOrder = e.current_step + 1;
+      const variants = stepList.filter((s) => s.step_order === nextOrder);
+      if (variants.length === 0) {
         await supabaseAdmin
           .from("ats_sourcing_enrollments")
           .update({ status: "completed", finished_at: new Date().toISOString() } as never)
           .eq("id", e.id);
         continue;
+      }
+      // Sorteio ponderado por variant_weight (default 1).
+      const totalWeight = variants.reduce((sum, v) => sum + Math.max(1, v.variant_weight ?? 1), 0);
+      let pick = Math.random() * totalWeight;
+      let next = variants[0];
+      for (const v of variants) {
+        pick -= Math.max(1, v.variant_weight ?? 1);
+        if (pick <= 0) {
+          next = v;
+          break;
+        }
       }
 
       const candidate = e.candidate as { full_name?: string; email?: string } | null;
@@ -444,13 +458,15 @@ export async function processDueEnrollments(limit = 50): Promise<{
         channel: next.channel,
         status: logStatus,
         error: logError,
-        metadata: {},
+        metadata: { variant: next.variant_label ?? "A" },
       } as never);
 
-      const following = stepList.find((s) => s.step_order === next.step_order + 1);
-      const nextRunAt = following
-        ? new Date(Date.now() + (following.delay_days ?? 0) * 86400_000).toISOString()
+      const followingVariants = stepList.filter((s) => s.step_order === next.step_order + 1);
+      const followingDelay = followingVariants[0]?.delay_days ?? 0;
+      const nextRunAt = followingVariants.length
+        ? new Date(Date.now() + followingDelay * 86400_000).toISOString()
         : null;
+
 
       await supabaseAdmin
         .from("ats_sourcing_enrollments")
