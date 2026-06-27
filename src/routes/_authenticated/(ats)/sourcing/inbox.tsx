@@ -26,6 +26,7 @@ import {
   listInbox,
   markStepHandled,
   resumeEnrollment,
+  markCandidateReplied,
 } from "@/lib/ats/sourcing-inbox.functions";
 import { stopEnrollment } from "@/lib/ats/sourcing-sequences.functions";
 
@@ -102,6 +103,7 @@ function InboxPage() {
   const markHandled = useServerFn(markStepHandled);
   const resume = useServerFn(resumeEnrollment);
   const stop = useServerFn(stopEnrollment);
+  const markReplied = useServerFn(markCandidateReplied);
   const [tab, setTab] = useState<"tasks" | "failures" | "review">("tasks");
 
   const { data, isLoading } = useQuery({
@@ -134,6 +136,16 @@ function InboxPage() {
       stop({ data: { enrollment_id, reason: "stopped" } }),
     onSuccess: () => {
       toast.success("Sequência encerrada");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const repliedMut = useMutation({
+    mutationFn: (vars: { enrollment_id: string; channel: "whatsapp" | "linkedin_task" | "email" | "inbound" }) =>
+      markReplied({ data: vars }),
+    onSuccess: () => {
+      toast.success("Candidato marcado como respondeu");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -222,6 +234,25 @@ function InboxPage() {
                         >
                           <Pause className="mr-1 h-3.5 w-3.5" />
                           Pausar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            repliedMut.mutate({
+                              enrollment_id: item.enrollment.id,
+                              channel:
+                                item.log.channel === "whatsapp"
+                                  ? "whatsapp"
+                                  : item.log.channel === "linkedin_task"
+                                    ? "linkedin_task"
+                                    : "inbound",
+                            })
+                          }
+                          disabled={repliedMut.isPending}
+                        >
+                          <MessageSquare className="mr-1 h-3.5 w-3.5" />
+                          Respondeu
                         </Button>
                         <Button
                           size="sm"
