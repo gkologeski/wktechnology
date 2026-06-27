@@ -22,6 +22,7 @@ import {
   Users2,
   Gift,
   Inbox,
+  CalendarClock,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
