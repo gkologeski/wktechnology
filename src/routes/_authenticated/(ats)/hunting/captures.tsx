@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Inbox } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AtsPageHeader, EmptyState, Skeletons } from "@/components/ats/ui";
+import { AtsPageHeader, EmptyState, RowSkeleton } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
