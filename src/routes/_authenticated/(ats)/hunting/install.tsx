@@ -31,13 +31,36 @@ function HuntingInstallPage() {
                   <span className="font-medium text-text-primary">Baixe o pacote</span>{" "}
                   da extensão (.zip) e descompacte numa pasta local.
                   <div className="mt-2">
-                    <Button asChild size="sm" variant="outline" disabled>
-                      <span>
-                        <Download className="mr-1 h-3.5 w-3.5" />
-                        techhire-hunter.zip — em breve
-                      </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        fetch("/techhire-hunter.zip")
+                          .then((r) => {
+                            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                            return r.blob();
+                          })
+                          .then((blob) => {
+                            const a = document.createElement("a");
+                            a.href = URL.createObjectURL(blob);
+                            a.download = "techhire-hunter.zip";
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                          })
+                          .catch((e) => alert(`Download falhou: ${e.message}`));
+                      }}
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      techhire-hunter.zip
                     </Button>
                   </div>
+                </li>
+                <li>
+                  Após instalar, abra{" "}
+                  <a className="underline" href="/auth/extension-link">
+                    /auth/extension-link
+                  </a>{" "}
+                  pra parear a extensão automaticamente (sem copy-paste no popup).
                 </li>
                 <li>
                   Abra o Chrome/Edge em{" "}
