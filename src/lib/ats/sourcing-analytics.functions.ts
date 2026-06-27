@@ -65,6 +65,14 @@ export type StepFunnel = {
   skipped: number;
 };
 
+export type DailyPoint = {
+  date: string; // YYYY-MM-DD
+  enrollments: number;
+  sent: number;
+  replied: number;
+  failed: number;
+};
+
 export type SourcingAnalyticsResult = {
   window_days: number;
   totals: {
@@ -80,6 +88,7 @@ export type SourcingAnalyticsResult = {
   by_sequence: SequencePerformance[];
   by_channel: ChannelStats[];
   funnel: StepFunnel[];
+  timeseries: DailyPoint[];
 };
 
 export const getSourcingAnalytics = createServerFn({ method: "POST" })
