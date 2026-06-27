@@ -1,5 +1,7 @@
 # TechHire Hunter — Extensão Chrome
 
+Versão atual: 0.2.4
+
 Extensão Manifest V3 que injeta uma sidebar nos perfis do LinkedIn (`linkedin.com/in/*`
 e `linkedin.com/sales/lead/*`) permitindo:
 
@@ -19,6 +21,10 @@ demanda, quando você abre o perfil. Não há scraping em background.
 3. Ative **Modo do desenvolvedor**.
 4. Clique em **Carregar sem compactação** e selecione a pasta `extension/`.
 5. Fixe a extensão na barra do navegador.
+
+Ao atualizar uma versão já instalada, remova/recarregue a extensão em
+`chrome://extensions` e recarregue a aba do LinkedIn antes de testar uma nova
+captura.
 
 ## Pareamento
 1. No TechHire, abra **Configurações · API keys** e gere uma chave pessoal.

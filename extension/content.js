@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v0.2.3)
+// TechHire Hunter — Content script (v0.2.4)
 // Extrai dados de perfil do LinkedIn via DOM + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
@@ -10,6 +10,13 @@
   const EXTRACT_TIMEOUT_MS = 15000;
 
   const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const escapeHtml = (s) =>
+    clean(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   const safe = (fn) => {
     try {
       return fn() || "";
@@ -17,6 +24,46 @@
       return "";
     }
   };
+
+  const getVisibleText = (el) => {
+    if (!el) return "";
+    return (el.innerText || el.textContent || "").replace(/\u00a0/g, " ").trim();
+  };
+
+  const getLines = (el) =>
+    getVisibleText(el)
+      .split(/\n+/)
+      .map(clean)
+      .filter(Boolean);
+
+  const isNoiseLine = (line) =>
+    !line ||
+    /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada)$/i.test(
+      line,
+    ) ||
+    /seguidores|followers|seguidor|conexões|conexoes|connections|connection|mútuo|mutual|grau|degree/i.test(
+      line,
+    );
+
+  const looksLikeLocation = (line) =>
+    !!line &&
+    line.length <= 140 &&
+    /,/.test(line) &&
+    !/[|@]/.test(line) &&
+    !/marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|CEO|CTO|CFO/i.test(
+      line,
+    ) &&
+    /(brasil|brazil|portugal|united states|usa|canad[áa]|remote|remoto|são|sao|rio|belo|curitiba|florianópolis|florianopolis|porto|lisboa|paulo|sp|rj|rs|sc|pr|mg|es|ba|pe|ce)$/i.test(
+      line,
+    );
+
+  const sanitizeCompany = (line) =>
+    clean(line)
+      .replace(/^empresa atual\s*:?\s*/i, "")
+      .replace(/^current company\s*:?\s*/i, "")
+      .replace(/^empresa actual\s*:?\s*/i, "")
+      .replace(/\s+(logo|logotipo)$/i, "")
+      .replace(/^[•·\-–]+\s*/, "");
 
   function getJsonLdPerson() {
     const scripts = document.querySelectorAll('script[type="application/ld+json"]');
@@ -49,21 +96,69 @@
   function topCardScope() {
     const h1 = document.querySelector("main h1") || document.querySelector("h1");
     if (!h1) return null;
-    return h1.closest("section.artdeco-card") || h1.closest("section") || h1.closest("div");
+    const direct =
+      h1.closest("section.artdeco-card") ||
+      h1.closest("section") ||
+      h1.closest(".pv-top-card") ||
+      h1.closest(".ph5") ||
+      h1.closest(".mt2.relative");
+    if (direct && getVisibleText(direct).length > clean(h1.textContent).length + 20) return direct;
+
+    const main = document.querySelector("main");
+    let best = direct || h1.parentElement;
+    let bestScore = -1;
+    let node = h1.parentElement;
+    for (let i = 0; node && node !== document.body && node !== main?.parentElement && i < 10; i += 1) {
+      const text = getVisibleText(node);
+      const lines = getLines(node);
+      if (text.length > 40 && text.length < 5000 && node.querySelector("h1")) {
+        let score = lines.length;
+        if (node.querySelector('a[href*="/company/"]')) score += 5;
+        if (lines.some(looksLikeLocation)) score += 5;
+        if (/dados de contato|contact info/i.test(text)) score += 1;
+        if (/destaques|highlights|atividade|activity|experiência|experience/i.test(text)) score -= 4;
+        if (score > bestScore) {
+          bestScore = score;
+          best = node;
+        }
+      }
+      node = node.parentElement;
+    }
+    return best;
   }
 
-  function extractHeadline(card, person) {
+  function extractProfileLines(card, fullName) {
+    const lines = getLines(card).filter((line) => !isNoiseLine(line));
+    const name = clean(fullName).replace(/\s*[·•]\s*\d+º?.*$/i, "");
+    return lines.filter((line) => {
+      const comparable = clean(line).replace(/\s*[·•]\s*\d+º?.*$/i, "");
+      return comparable && comparable !== name && comparable !== clean(fullName);
+    });
+  }
+
+  function extractHeadline(card, person, fullName) {
     if (card) {
       const sels = [
         ".text-body-medium.break-words",
         "div.text-body-medium.break-words",
         "div.text-body-medium",
         ".pv-text-details__left-panel .text-body-medium",
+        "div[data-generated-suggestion-target]",
       ];
       for (const sel of sels) {
         const el = card.querySelector(sel);
         const txt = clean(el?.textContent);
-        if (txt) return txt;
+        if (txt && !isNoiseLine(txt) && txt !== clean(fullName)) return txt;
+      }
+
+      const lines = extractProfileLines(card, fullName);
+      for (const line of lines) {
+        if (looksLikeLocation(line)) continue;
+        if (/^\+?\d+\s/.test(line)) continue;
+        if (/^[A-Z0-9 .,&'’\-–]+$/.test(line) && line.length < 80) continue;
+        if (line.length > 8 && /[|@]|\b(marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|recruiter|sales|growth|designer|product|software|programador)\b/i.test(line)) {
+          return line;
+        }
       }
     }
     const jt = clean(person?.jobTitle);
@@ -84,17 +179,30 @@
     if (card) {
       // Botão "Empresa atual" do topo (PT/EN/ES)
       const btn = card.querySelector(
-        'button[aria-label^="Empresa atual"], button[aria-label^="Current company"], button[aria-label^="Empresa actual"]',
+        'button[aria-label*="Empresa atual"], button[aria-label*="Current company"], button[aria-label*="Empresa actual"], a[aria-label*="Empresa atual"], a[aria-label*="Current company"], a[aria-label*="Empresa actual"]',
       );
-      const btnTxt = clean(btn?.textContent);
+      const btnTxt = sanitizeCompany(clean(btn?.textContent || btn?.getAttribute("aria-label")));
       if (btnTxt) return btnTxt;
       // Links de company com aria-label costumam ter o nome limpo
       const linkAria = card.querySelector('a[href*="/company/"][aria-label]');
-      const aria = clean(linkAria?.getAttribute("aria-label"));
+      const aria = sanitizeCompany(clean(linkAria?.getAttribute("aria-label")));
       if (aria) return aria;
       const link = card.querySelector('a[href*="/company/"]');
-      const txt = clean(link?.textContent);
+      const txt = sanitizeCompany(clean(link?.textContent));
       if (txt) return txt;
+
+      const lines = getLines(card).filter((line) => !isNoiseLine(line));
+      const companyLine = lines.find(
+        (line) =>
+          line !== headline &&
+          !looksLikeLocation(line) &&
+          line.length > 3 &&
+          line.length < 140 &&
+          /(ltda|inc\.?|llc|sa\b|s\.a\.|company|corp|corporation|group|grupo|tecnologia|technology|consultoria|assessoria|marketing|software|solutions|soluções|escola|university|universidade)/i.test(
+            line,
+          ),
+      );
+      if (companyLine) return sanitizeCompany(companyLine);
     }
     if (headline) {
       const m = headline.match(/\s(?:at|na|no|em|@)\s+(.+)$/i);
@@ -128,6 +236,9 @@
           return txt;
         }
       }
+
+      const line = getLines(card).find((candidate) => !isNoiseLine(candidate) && looksLikeLocation(candidate));
+      if (line) return line;
     }
     return "";
   }
@@ -165,7 +276,7 @@
       nameFromTitle();
     full_name = clean(full_name).replace(/\s*[|\-–]\s*LinkedIn.*$/i, "");
 
-    const headline = extractHeadline(card, person);
+    const headline = extractHeadline(card, person, full_name);
     const company = extractCompany(card, person, headline);
     const location_ = extractLocation(card, person);
     const avatar = extractAvatar(card);
@@ -183,19 +294,25 @@
 
   function renderPreview(profile, opts) {
     const el = document.getElementById("thh-preview");
+    const status = document.getElementById("thh-status");
     if (!el) return;
     if (!profile.full_name) {
       el.innerHTML = `<div class="thh-muted">Detectando perfil…</div>`;
+      if (status) status.textContent = "Detectando perfil…";
       return;
     }
+    const complete = isComplete(profile);
+    if (status && !opts?.captured) {
+      status.textContent = complete ? "Detalhes detectados · pronto para capturar." : "Detectando detalhes do perfil…";
+    }
     const partial = opts?.partial
-      ? `<div class="thh-warn" style="margin-top:6px">Alguns campos não foram detectados. Role o perfil até o topo e tente novamente.</div>`
+      ? `<div class="thh-warn" style="margin-top:6px">Ainda faltam campos. Role até o topo, aguarde o perfil carregar e tente novamente.</div>`
       : "";
     el.innerHTML = `
-      <div><b>${profile.full_name}</b></div>
-      <div class="thh-muted">${profile.current_position || "—"}</div>
-      <div class="thh-muted">${profile.current_company || "—"}</div>
-      <div class="thh-muted">${profile.location || "—"}</div>${partial}`;
+      <div><b>${escapeHtml(profile.full_name)}</b></div>
+      <div class="thh-muted">${escapeHtml(profile.current_position) || "—"}</div>
+      <div class="thh-muted">${escapeHtml(profile.current_company) || "—"}</div>
+      <div class="thh-muted">${escapeHtml(profile.location) || "—"}</div>${partial}`;
   }
 
   function isComplete(p) {
@@ -269,15 +386,19 @@
     document.getElementById("thh-close").onclick = () => root.remove();
 
     let latestProfile = extractProfile();
+    let allowPartialOnce = false;
     renderPreview(latestProfile, { partial: false });
     startExtractionLoop((p, opts) => {
       latestProfile = p;
+      if (isComplete(p)) allowPartialOnce = false;
       renderPreview(p, opts);
     });
 
     document.getElementById("thh-recheck").onclick = () => {
+      allowPartialOnce = false;
       startExtractionLoop((p, opts) => {
         latestProfile = p;
+        if (isComplete(p)) allowPartialOnce = false;
         renderPreview(p, opts);
       });
     };
@@ -288,12 +409,24 @@
       if (!resp?.paired) {
         status.innerHTML = `<span class="thh-warn">Extensão não pareada.</span>`;
       } else {
-        status.textContent = "Pareada · pronta para capturar.";
+        status.textContent = isComplete(latestProfile)
+          ? "Detalhes detectados · pronto para capturar."
+          : "Pareada · detectando detalhes do perfil…";
         loadTemplates();
       }
     });
 
     document.getElementById("thh-capture").onclick = async () => {
+      latestProfile = extractProfile();
+      renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
+      if (!isComplete(latestProfile) && !allowPartialOnce) {
+        allowPartialOnce = true;
+        const status = document.getElementById("thh-status");
+        if (status) {
+          status.innerHTML = `<span class="thh-warn">Perfil incompleto. Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.</span>`;
+        }
+        return;
+      }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
       btn.textContent = "Salvando…";
@@ -305,9 +438,10 @@
           const status = document.getElementById("thh-status");
           if (resp?.ok) {
             status.textContent = "Capturado ✓ — abra TechHire para vincular vaga.";
+            renderPreview(latestProfile, { captured: true });
             window.__thhCaptureId = resp.data?.capture_id;
           } else {
-            status.innerHTML = `<span class="thh-warn">${resp?.error || "Erro"}</span>`;
+            status.innerHTML = `<span class="thh-warn">${escapeHtml(resp?.error || "Erro")}</span>`;
           }
         },
       );
