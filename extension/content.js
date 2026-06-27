@@ -505,12 +505,29 @@
         <hr/>
         <label class="thh-label">Template</label>
         <select id="thh-template" class="thh-select"><option value="">—</option></select>
-        <textarea id="thh-message" class="thh-textarea" rows="6" placeholder="Mensagem renderizada aparece aqui"></textarea>
-        <div class="thh-actions">
-          <button id="thh-copy" class="thh-btn">Copiar mensagem</button>
-          <button id="thh-log" class="thh-btn">Marcar como enviada</button>
+        <div class="thh-mode-row">
+          <label class="thh-label" style="margin:0">Modo</label>
+          <select id="thh-mode" class="thh-select thh-select-inline">
+            <option value="auto">Detectar automaticamente</option>
+            <option value="direct">Mensagem direta</option>
+            <option value="connect">Convite com nota</option>
+            <option value="inmail">InMail</option>
+          </select>
         </div>
-        <p class="thh-footer">Configure a extensão no ícone da barra do navegador.</p>
+        <textarea id="thh-message" class="thh-textarea" rows="6" placeholder="Mensagem renderizada aparece aqui"></textarea>
+        <div class="thh-counter-row">
+          <span id="thh-counter" class="thh-counter">0 caracteres</span>
+          <span id="thh-pill" class="thh-pill thh-pill-idle">idle</span>
+        </div>
+        <div class="thh-actions">
+          <button id="thh-prepare" class="thh-btn thh-primary">Preparar no LinkedIn</button>
+          <button id="thh-copy" class="thh-btn">Copiar</button>
+        </div>
+        <div class="thh-actions" id="thh-confirm-row" style="display:none">
+          <button id="thh-already-sent" class="thh-btn">Já enviei</button>
+          <button id="thh-cancel-watch" class="thh-btn">Cancelar</button>
+        </div>
+        <p class="thh-footer">Você sempre confirma o envio dentro do LinkedIn. Pareie no ícone da extensão.</p>
       </div>`;
     document.body.appendChild(root);
 
@@ -592,36 +609,166 @@
 
     function renderTemplate(templateId) {
       if (!templateId) return;
+      lastTemplateId = templateId;
       sendRuntimeMessage({ type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } }, (resp) => {
         if (resp?.ok) {
           document.getElementById("thh-message").value = resp.data?.body || "";
+          updateCounter?.();
         }
       });
     }
 
-    document.getElementById("thh-copy").onclick = async () => {
-      const v = document.getElementById("thh-message").value;
-      await navigator.clipboard.writeText(v);
-      setStatus("Mensagem copiada.");
-    };
+    // ──────────────────────────────────────────────────────────────
+    // Envio assistido via window.__thhMessenger (v0.3.0)
+    // ──────────────────────────────────────────────────────────────
 
-    document.getElementById("thh-log").onclick = () => {
-      const channel =
-        document.getElementById("thh-template").selectedOptions[0]?.textContent?.match(/\((.+)\)/)?.[1] ||
-        "linkedin_message";
+    const LIMITS = window.__thhMessenger?.LIMITS || { connect: 300, direct: 1900, inmail_body: 1900 };
+    const messageEl = document.getElementById("thh-message");
+    const counterEl = document.getElementById("thh-counter");
+    const pillEl = document.getElementById("thh-pill");
+    const modeSel = document.getElementById("thh-mode");
+    const prepareBtn = document.getElementById("thh-prepare");
+    const confirmRow = document.getElementById("thh-confirm-row");
+    let lastTemplateId = "";
+    let cancelWatch = null;
+    let lastPrepared = null;
+
+    function setPill(state, label) {
+      if (!pillEl) return;
+      pillEl.className = `thh-pill thh-pill-${state}`;
+      pillEl.textContent = label;
+    }
+
+    function effectiveMode() {
+      const sel = modeSel?.value || "auto";
+      if (sel !== "auto") return sel;
+      try {
+        return window.__thhMessenger?.pickAuto?.(window.__thhMessenger.detect()) || "direct";
+      } catch {
+        return "direct";
+      }
+    }
+
+    function limitFor(mode) {
+      if (mode === "connect") return LIMITS.connect || 300;
+      if (mode === "inmail") return LIMITS.inmail_body || 1900;
+      return LIMITS.direct || 1900;
+    }
+
+    function updateCounter() {
+      const text = messageEl?.value || "";
+      const mode = effectiveMode();
+      const limit = limitFor(mode);
+      const len = text.length;
+      if (counterEl) {
+        counterEl.textContent = `${len}/${limit} · ${
+          mode === "connect" ? "convite" : mode === "inmail" ? "InMail" : "mensagem direta"
+        }`;
+        counterEl.classList.toggle("thh-over", len > limit);
+      }
+      if (prepareBtn) {
+        prepareBtn.textContent =
+          mode === "connect"
+            ? "Preparar convite"
+            : mode === "inmail"
+              ? "Preparar InMail"
+              : "Preparar mensagem";
+      }
+    }
+
+    messageEl?.addEventListener("input", updateCounter);
+    modeSel?.addEventListener("change", updateCounter);
+    updateCounter();
+
+    function logOutreach({ channel, body, detected }) {
       sendRuntimeMessage(
         {
           type: "LOG_OUTREACH",
           payload: {
             linkedin_url: latestProfile.linkedin_url,
             channel,
-            body: document.getElementById("thh-message").value,
+            body,
+            template_id: lastTemplateId || undefined,
+            detected: Boolean(detected),
+            final_length: body.length,
           },
         },
         (resp) => {
-          setStatus(resp?.ok ? "Outreach registrado ✓" : resp?.error || "Erro", !resp?.ok);
+          if (resp?.ok) {
+            setStatus("Outreach registrado ✓");
+            setPill("sent", detected ? "enviado" : "enviado (manual)");
+          } else {
+            setStatus(resp?.error || "Erro ao registrar outreach", true);
+            setPill("failed", "falhou");
+          }
         },
       );
+    }
+
+    document.getElementById("thh-copy").onclick = async () => {
+      const v = messageEl.value;
+      await navigator.clipboard.writeText(v);
+      setStatus("Mensagem copiada.");
+    };
+
+    prepareBtn.onclick = async () => {
+      const messenger = window.__thhMessenger;
+      if (!messenger) {
+        setStatus("Messenger não carregado. Recarregue a aba.", true);
+        return;
+      }
+      const body = messageEl.value;
+      if (!body.trim()) {
+        setStatus("Escreva ou selecione um template primeiro.", true);
+        return;
+      }
+      const mode = effectiveMode();
+      prepareBtn.disabled = true;
+      setPill("filling", "preenchendo…");
+      try {
+        const result = await messenger.prepare(mode, { body });
+        lastPrepared = result;
+        setPill("ready", result.truncated ? "preenchido (truncado)" : "aguardando envio");
+        setStatus(
+          result.truncated
+            ? `Texto truncado para ${result.final_length} chars (limite do LinkedIn). Revise e envie.`
+            : "Preenchido no LinkedIn. Revise e clique em Enviar lá.",
+          result.truncated,
+        );
+        confirmRow.style.display = "flex";
+        if (cancelWatch) cancelWatch();
+        cancelWatch = messenger.watchSend(result.mode, body, (outcome) => {
+          confirmRow.style.display = "none";
+          cancelWatch = null;
+          if (outcome.ok && outcome.detected) {
+            logOutreach({ channel: result.channel, body, detected: true });
+          } else if (outcome.evidence === "timeout") {
+            setPill("idle", "sem confirmação");
+            setStatus("Não detectamos o envio em 5min. Se enviou, clique em 'Já enviei'.", true);
+          }
+        });
+      } catch (e) {
+        setPill("failed", "falhou");
+        setStatus(e?.message || "Erro ao preparar mensagem.", true);
+      } finally {
+        prepareBtn.disabled = false;
+      }
+    };
+
+    document.getElementById("thh-already-sent").onclick = () => {
+      if (cancelWatch) cancelWatch();
+      cancelWatch = null;
+      confirmRow.style.display = "none";
+      const channel = lastPrepared?.channel || "linkedin_message";
+      logOutreach({ channel, body: messageEl.value, detected: false });
+    };
+
+    document.getElementById("thh-cancel-watch").onclick = () => {
+      if (cancelWatch) cancelWatch();
+      cancelWatch = null;
+      confirmRow.style.display = "none";
+      setPill("idle", "idle");
+      setStatus("Acompanhamento cancelado.");
     };
   }
 

@@ -92,3 +92,37 @@
   font-size: 11px;
   color: #94a3b8;
 }
+#techhire-hunter-sidebar .thh-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#techhire-hunter-sidebar .thh-select-inline {
+  flex: 1;
+  margin-bottom: 0;
+}
+#techhire-hunter-sidebar .thh-counter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -4px 0 8px;
+}
+#techhire-hunter-sidebar .thh-counter {
+  font-size: 11px;
+  color: #64748b;
+}
+#techhire-hunter-sidebar .thh-counter.thh-over { color: #b91c1c; font-weight: 600; }
+#techhire-hunter-sidebar .thh-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#techhire-hunter-sidebar .thh-pill-idle { background: #f1f5f9; color: #475569; }
+#techhire-hunter-sidebar .thh-pill-filling { background: #fef3c7; color: #92400e; }
+#techhire-hunter-sidebar .thh-pill-ready { background: #dbeafe; color: #1d4ed8; }
+#techhire-hunter-sidebar .thh-pill-sent { background: #dcfce7; color: #166534; }
+#techhire-hunter-sidebar .thh-pill-failed { background: #fee2e2; color: #b91c1c; }
