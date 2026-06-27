@@ -1,6 +1,6 @@
 // Sourcing — overview hub. Onda 5 / Slice 2.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users2, Mail, Gift, ArrowRight } from "lucide-react";
+import { Users2, Mail, Gift, ArrowRight, Inbox } from "lucide-react";
 import { AtsPageHeader } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -9,6 +9,12 @@ export const Route = createFileRoute("/_authenticated/(ats)/sourcing/")({
 });
 
 const TILES = [
+  {
+    to: "/sourcing/inbox",
+    icon: Inbox,
+    title: "Inbox",
+    description: "Triagem unificada das sequências: tarefas, falhas e respostas.",
+  },
   {
     to: "/sourcing/pools",
     icon: Users2,

@@ -237,6 +237,7 @@ import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_au
 import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
 import { Route as AuthenticatedatsSourcingReferralsRouteImport } from './routes/_authenticated/(ats)/sourcing/referrals'
 import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_authenticated/(ats)/sourcing/pools'
+import { Route as AuthenticatedatsSourcingInboxRouteImport } from './routes/_authenticated/(ats)/sourcing/inbox'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
@@ -1545,6 +1546,12 @@ const AuthenticatedatsSourcingPoolsRoute =
     path: '/sourcing/pools',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsSourcingInboxRoute =
+  AuthenticatedatsSourcingInboxRouteImport.update({
+    id: '/(ats)/sourcing/inbox',
+    path: '/sourcing/inbox',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1814,6 +1821,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2056,6 +2064,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2304,6 +2313,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
+  '/_authenticated/(ats)/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
   '/_authenticated/(ats)/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/_authenticated/(ats)/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2552,6 +2562,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/workspace/'
     | '/jobs/$id'
+    | '/sourcing/inbox'
     | '/sourcing/pools'
     | '/sourcing/referrals'
     | '/sourcing/sequences'
@@ -2794,6 +2805,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/workspace'
     | '/jobs/$id'
+    | '/sourcing/inbox'
     | '/sourcing/pools'
     | '/sourcing/referrals'
     | '/sourcing/sequences'
@@ -3041,6 +3053,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
     | '/_authenticated/(ats)/jobs/$id'
+    | '/_authenticated/(ats)/sourcing/inbox'
     | '/_authenticated/(ats)/sourcing/pools'
     | '/_authenticated/(ats)/sourcing/referrals'
     | '/_authenticated/(ats)/sourcing/sequences'
@@ -4806,6 +4819,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingPoolsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/sourcing/inbox': {
+      id: '/_authenticated/(ats)/sourcing/inbox'
+      path: '/sourcing/inbox'
+      fullPath: '/sourcing/inbox'
+      preLoaderRoute: typeof AuthenticatedatsSourcingInboxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/jobs/$id': {
       id: '/_authenticated/(ats)/jobs/$id'
       path: '/$id'
@@ -5374,6 +5394,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
@@ -5437,6 +5458,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
   AuthenticatedatsSourcingPoolsRoute: AuthenticatedatsSourcingPoolsRoute,
   AuthenticatedatsSourcingReferralsRoute:
     AuthenticatedatsSourcingReferralsRoute,
@@ -5611,3 +5633,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

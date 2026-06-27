@@ -23,6 +23,7 @@ export type AtsEventName =
   | "ats.sequence.step_sent"
   | "ats.sequence.replied"
   | "ats.sequence.stopped"
+  | "ats.sequence.resumed"
   | "ats.referral.submitted"
   | "ats.referral.accepted"
   | "ats.referral.hired"

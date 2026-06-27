@@ -21,6 +21,7 @@ import {
   Heart,
   Users2,
   Gift,
+  Inbox,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
@@ -42,6 +43,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Sourcing",
     items: [
+      { title: "Inbox", url: "/sourcing/inbox", icon: Inbox },
       { title: "Talent Pools", url: "/sourcing/pools", icon: Users2 },
       { title: "Sequências", url: "/sourcing/sequences", icon: Mail },
       { title: "Indicações", url: "/sourcing/referrals", icon: Gift },
