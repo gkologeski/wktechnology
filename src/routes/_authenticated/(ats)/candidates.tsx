@@ -423,9 +423,13 @@ function CandidatesPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-text-primary truncate">
+                    <Link
+                      to="/candidates/$id"
+                      params={{ id: c.id as string }}
+                      className="text-sm font-semibold text-text-primary truncate block hover:underline"
+                    >
                       {c.full_name as string}
-                    </h3>
+                    </Link>
                     {c.current_position ? (
                       <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-text-secondary">
                         <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden="true" />
