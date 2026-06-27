@@ -51,6 +51,9 @@ function SequenceDetailPage() {
   });
 
   const [draft, setDraft] = useState({
+    step_order: 0, // 0 = novo step (auto), >0 = variante de step existente
+    variant_label: "A",
+    variant_weight: 1,
     channel: "email" as "email" | "whatsapp" | "linkedin_task" | "wait",
     delay_days: 0,
     subject: "",
@@ -58,22 +61,36 @@ function SequenceDetailPage() {
     task_instructions: "",
   });
 
+  const maxStepOrder = data?.steps.reduce((m, s) => Math.max(m, s.step_order), 0) ?? 0;
+  const targetStepOrder = draft.step_order > 0 ? draft.step_order : maxStepOrder + 1;
+
   const addStep = useMutation({
     mutationFn: () =>
       upsert({
         data: {
           sequence_id: id,
-          step_order: (data?.steps.length ?? 0) + 1,
+          step_order: targetStepOrder,
           channel: draft.channel,
           delay_days: draft.delay_days,
           subject: draft.subject.trim() || null,
           body: draft.body.trim() || null,
           task_instructions: draft.task_instructions.trim() || null,
+          variant_label: draft.variant_label.trim().toUpperCase().slice(0, 8) || "A",
+          variant_weight: draft.variant_weight,
         },
       }),
     onSuccess: () => {
       toast.success("Step adicionado");
-      setDraft({ channel: "email", delay_days: 0, subject: "", body: "", task_instructions: "" });
+      setDraft({
+        step_order: 0,
+        variant_label: "A",
+        variant_weight: 1,
+        channel: "email",
+        delay_days: 0,
+        subject: "",
+        body: "",
+        task_instructions: "",
+      });
       qc.invalidateQueries({ queryKey: ["ats-sequence", id] });
     },
     onError: (e: Error) => toast.error(e.message),
