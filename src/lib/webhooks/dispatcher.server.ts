@@ -61,7 +61,7 @@ export async function runWebhookDispatch() {
       data: d.payload,
       timestamp: new Date().toISOString(),
     });
-    const signature = sign(hook.secret as string, body);
+    const signature = await sign(hook.secret as string, body);
     let status = 0,
       text = "";
     try {
