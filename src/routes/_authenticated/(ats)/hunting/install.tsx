@@ -96,6 +96,7 @@ function HuntingInstallPage() {
         </Card>
 
         <div className="flex flex-col gap-4">
+          <PairingStatusPanel />
           <Card>
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2">
