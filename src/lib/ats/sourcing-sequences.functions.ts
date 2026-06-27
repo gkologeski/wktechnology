@@ -473,8 +473,8 @@ export async function processDueEnrollments(limit = 50): Promise<{
         .update({
           current_step: next.step_order,
           next_run_at: nextRunAt,
-          status: following ? "active" : "completed",
-          finished_at: following ? null : new Date().toISOString(),
+          status: followingVariants.length ? "active" : "completed",
+          finished_at: followingVariants.length ? null : new Date().toISOString(),
         } as never)
         .eq("id", e.id);
 
