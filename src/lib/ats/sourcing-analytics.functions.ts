@@ -122,7 +122,7 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
         .limit(5000),
       context.supabase
         .from("ats_sourcing_step_log")
-        .select("id, enrollment_id, step_order, channel, status, created_at")
+        .select("id, enrollment_id, step_order, channel, status, created_at, metadata")
         .gte("created_at", since)
         .limit(10000),
       context.supabase
