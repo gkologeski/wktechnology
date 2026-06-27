@@ -2,6 +2,16 @@
 // e o background da extensão. Anuncia presença e responde com o estado de
 // pareamento atual (paired/pending/failed) sob demanda.
 (function () {
+  // Marcador DOM imediato — sobrevive a perdas de postMessage e permite
+  // ao painel detectar a extensão instalada com 100% de confiabilidade.
+  try {
+    document.documentElement.setAttribute("data-techhire-hunter", "installed");
+    document.documentElement.setAttribute(
+      "data-techhire-hunter-version",
+      (chrome?.runtime?.getManifest?.()?.version) || "unknown",
+    );
+  } catch {}
+
   function broadcastStatus() {
     try {
       chrome.runtime.sendMessage({ type: "PING" }, (resp) => {

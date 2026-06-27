@@ -51,17 +51,31 @@ export function PairingStatusPanel() {
 
     window.addEventListener("message", onMessage);
     requestStatus();
-    // Se em 1.5s não recebermos nada, marcamos como não instalada.
-    timeoutId = setTimeout(() => {
-      setState((prev) => (prev === "checking" ? "not_installed" : prev));
-    }, 1500);
-    // Polling em tempo (quase) real.
+
+    // Fallback robusto: o content script marca o <html> assim que carrega.
+    // Checa por até 3s antes de declarar "not_installed".
+    const start = Date.now();
+    const probe = setInterval(() => {
+      const installed =
+        document.documentElement.getAttribute("data-techhire-hunter") === "installed";
+      if (installed) {
+        setState((prev) => (prev === "checking" || prev === "not_installed" ? "pending" : prev));
+        requestStatus();
+        clearInterval(probe);
+      } else if (Date.now() - start > 3000) {
+        setState((prev) => (prev === "checking" ? "not_installed" : prev));
+        clearInterval(probe);
+      }
+    }, 200);
+
+    // Polling de estado pareado.
     intervalId = setInterval(requestStatus, 2000);
 
     return () => {
       window.removeEventListener("message", onMessage);
       clearTimeout(timeoutId);
       clearInterval(intervalId);
+      clearInterval(probe);
     };
   }, [requestStatus]);
 
