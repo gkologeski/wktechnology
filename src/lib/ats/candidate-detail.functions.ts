@@ -271,7 +271,21 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       .select("id, kind, severity, details, resolved, created_at")
       .eq("candidate_id", data.id)
       .order("created_at", { ascending: false });
-    const flags = (flagRowsRaw ?? []) as unknown as CandidateFlag[];
+    const flags: CandidateFlag[] = ((flagRowsRaw ?? []) as unknown as Array<{
+      id: string;
+      kind: string;
+      severity: string | null;
+      details: unknown;
+      resolved: boolean | null;
+      created_at: string;
+    }>).map((f) => ({
+      id: f.id,
+      kind: f.kind,
+      severity: f.severity,
+      details_json: f.details == null ? null : JSON.stringify(f.details),
+      resolved: f.resolved,
+      created_at: f.created_at,
+    }));
 
     // Events
     const appIds = apps.map((a) => a.id);
@@ -283,7 +297,21 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         .in("application_id", appIds)
         .order("created_at", { ascending: false })
         .limit(50);
-      events = (evRowsRaw ?? []) as unknown as CandidateEvent[];
+      events = ((evRowsRaw ?? []) as unknown as Array<{
+        id: string;
+        event_type: string;
+        from_stage: string | null;
+        to_stage: string | null;
+        created_at: string;
+        metadata: unknown;
+      }>).map((e) => ({
+        id: e.id,
+        event_type: e.event_type,
+        from_stage: e.from_stage,
+        to_stage: e.to_stage,
+        created_at: e.created_at,
+        metadata_json: e.metadata == null ? null : JSON.stringify(e.metadata),
+      }));
     }
 
     // Derived status
