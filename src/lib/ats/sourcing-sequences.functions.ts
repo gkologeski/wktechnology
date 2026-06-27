@@ -90,6 +90,11 @@ export const updateSequence = createServerFn({ method: "POST" })
         description: z.string().max(500).nullable().optional(),
         enabled: z.boolean().optional(),
         pool_id: z.string().uuid().nullable().optional(),
+        daily_send_limit: z.number().int().min(0).max(10000).nullable().optional(),
+        quiet_hours_start: z.number().int().min(0).max(23).nullable().optional(),
+        quiet_hours_end: z.number().int().min(0).max(23).nullable().optional(),
+        timezone: z.string().min(1).max(64).optional(),
+        send_days: z.array(z.number().int().min(0).max(6)).max(7).optional(),
       })
       .parse(input),
   )
@@ -232,8 +237,10 @@ export async function processDueEnrollments(limit = 50): Promise<{
   sent: number;
   tasks: number;
   errors: number;
+  throttled: number;
+  quiet: number;
 }> {
-  const result = { processed: 0, sent: 0, tasks: 0, errors: 0 };
+  const result = { processed: 0, sent: 0, tasks: 0, errors: 0, throttled: 0, quiet: 0 };
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
@@ -245,15 +252,129 @@ export async function processDueEnrollments(limit = 50): Promise<{
 
   if (error || !due) return result;
 
+  // cache simples por sequência neste tick
+  type SeqMeta = {
+    enabled: boolean;
+    timezone: string;
+    quiet_hours_start: number | null;
+    quiet_hours_end: number | null;
+    send_days: number[];
+    daily_send_limit: number | null;
+    sentToday: number;
+  };
+  const seqCache = new Map<string, SeqMeta>();
+
+  async function getSeqMeta(seqId: string): Promise<SeqMeta | null> {
+    if (seqCache.has(seqId)) return seqCache.get(seqId)!;
+    const { data: s } = await supabaseAdmin
+      .from("ats_sourcing_sequences")
+      .select("enabled, timezone, quiet_hours_start, quiet_hours_end, send_days, daily_send_limit")
+      .eq("id", seqId)
+      .maybeSingle();
+    if (!s) return null;
+    // contagem de envios hoje (UTC do dia atual no TZ da sequência)
+    let sentToday = 0;
+    if (s.daily_send_limit) {
+      const startOfDay = new Date();
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const { count } = await supabaseAdmin
+        .from("ats_sourcing_step_log")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startOfDay.toISOString())
+        .in("status", ["sent", "task_created"])
+        .in(
+          "enrollment_id",
+          (
+            await supabaseAdmin
+              .from("ats_sourcing_enrollments")
+              .select("id")
+              .eq("sequence_id", seqId)
+          ).data?.map((r) => r.id) ?? [],
+        );
+      sentToday = count ?? 0;
+    }
+    const meta: SeqMeta = {
+      enabled: !!s.enabled,
+      timezone: s.timezone ?? "America/Sao_Paulo",
+      quiet_hours_start: s.quiet_hours_start ?? null,
+      quiet_hours_end: s.quiet_hours_end ?? null,
+      send_days: (s.send_days ?? [1, 2, 3, 4, 5]) as number[],
+      daily_send_limit: s.daily_send_limit ?? null,
+      sentToday,
+    };
+    seqCache.set(seqId, meta);
+    return meta;
+  }
+
+  function getZonedParts(tz: string): { hour: number; day: number } {
+    try {
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hour: "2-digit",
+        hour12: false,
+        weekday: "short",
+      });
+      const parts = fmt.formatToParts(new Date());
+      const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+      const wkMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      const day = wkMap[parts.find((p) => p.type === "weekday")?.value ?? "Mon"] ?? 1;
+      return { hour: hour % 24, day };
+    } catch {
+      const d = new Date();
+      return { hour: d.getUTCHours(), day: d.getUTCDay() };
+    }
+  }
+
+  function inQuietHours(hour: number, qStart: number | null, qEnd: number | null): boolean {
+    if (qStart === null || qEnd === null) return false;
+    if (qStart === qEnd) return false;
+    if (qStart < qEnd) return hour >= qStart && hour < qEnd;
+    // janela cruzando meia-noite (ex.: 20→8)
+    return hour >= qStart || hour < qEnd;
+  }
+
+  function nextAllowedTime(meta: SeqMeta): string {
+    // adia 30min e deixa o próximo tick re-avaliar (mantém lógica simples)
+    return new Date(Date.now() + 30 * 60_000).toISOString();
+  }
+
   for (const e of due) {
     result.processed += 1;
     try {
-      const { data: seq } = await supabaseAdmin
-        .from("ats_sourcing_sequences")
-        .select("enabled")
-        .eq("id", e.sequence_id)
-        .maybeSingle();
-      if (!seq?.enabled) continue;
+      const meta = await getSeqMeta(e.sequence_id);
+      if (!meta?.enabled) continue;
+
+      const { hour, day } = getZonedParts(meta.timezone);
+
+      // dia da semana não permitido?
+      if (!meta.send_days.includes(day)) {
+        result.quiet += 1;
+        await supabaseAdmin
+          .from("ats_sourcing_enrollments")
+          .update({ next_run_at: nextAllowedTime(meta) } as never)
+          .eq("id", e.id);
+        continue;
+      }
+
+      // quiet hours?
+      if (inQuietHours(hour, meta.quiet_hours_start, meta.quiet_hours_end)) {
+        result.quiet += 1;
+        await supabaseAdmin
+          .from("ats_sourcing_enrollments")
+          .update({ next_run_at: nextAllowedTime(meta) } as never)
+          .eq("id", e.id);
+        continue;
+      }
+
+      // throttle diário?
+      if (meta.daily_send_limit && meta.sentToday >= meta.daily_send_limit) {
+        result.throttled += 1;
+        await supabaseAdmin
+          .from("ats_sourcing_enrollments")
+          .update({ next_run_at: nextAllowedTime(meta) } as never)
+          .eq("id", e.id);
+        continue;
+      }
 
       const { data: steps } = await supabaseAdmin
         .from("ats_sourcing_sequence_steps")
@@ -290,14 +411,14 @@ export async function processDueEnrollments(limit = 50): Promise<{
           logStatus = "failed";
           logError = "Candidato sem email";
         } else {
-          // Best-effort: registra como enviado; transporte real reaproveita pipeline existente.
           logStatus = "sent";
           result.sent += 1;
+          meta.sentToday += 1;
         }
       } else {
-        // whatsapp ou linkedin_task → cria tarefa para o owner
         logStatus = "task_created";
         result.tasks += 1;
+        meta.sentToday += 1;
         try {
           await supabaseAdmin.from("activities").insert({
             user_id: e.owner_id,
@@ -308,7 +429,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
             status: "pending",
           } as never);
         } catch {
-          // silencioso — tarefa é apoio, não bloqueia
+          // silencioso
         }
       }
 
@@ -322,7 +443,6 @@ export async function processDueEnrollments(limit = 50): Promise<{
         metadata: {},
       } as never);
 
-      // calcula próximo step
       const following = stepList.find((s) => s.step_order === next.step_order + 1);
       const nextRunAt = following
         ? new Date(Date.now() + (following.delay_days ?? 0) * 86400_000).toISOString()
