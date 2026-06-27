@@ -28,7 +28,6 @@ type EnrollmentRow = {
 type StepLogRow = {
   id: string;
   enrollment_id: string;
-  sequence_id: string | null;
   step_order: number;
   channel: string;
   status: string;
