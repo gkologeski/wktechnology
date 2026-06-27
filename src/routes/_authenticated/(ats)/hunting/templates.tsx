@@ -123,7 +123,7 @@ function HuntingTemplatesPage() {
         eyebrow="ATS · Hunting"
         title="Templates de mensagem"
         description="Variáveis suportadas: {{nome}}, {{primeiro_nome}}, {{empresa_atual}}, {{cargo_atual}}, {{localizacao}}, {{vaga}}, {{vaga_local}}"
-        actions={
+        primaryAction={
           <Button size="sm" onClick={openNew}>
             <Plus className="mr-1 h-4 w-4" /> Novo template
           </Button>
