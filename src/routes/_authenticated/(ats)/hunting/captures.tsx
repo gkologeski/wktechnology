@@ -22,6 +22,8 @@ function HuntingCapturesPage() {
     queryKey: ["hunting-captures"],
     queryFn: () => fetchCaptures({ data: { limit: 100 } }),
     staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
   return (
