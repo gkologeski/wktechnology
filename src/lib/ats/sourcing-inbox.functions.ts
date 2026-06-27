@@ -13,7 +13,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
 
-type Json = Record<string, unknown>;
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+type Json = { [k: string]: JsonValue };
+
 
 type StepLogRow = {
   id: string;
