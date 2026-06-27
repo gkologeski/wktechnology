@@ -201,3 +201,61 @@ export const resumeEnrollment = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Fase 4 — Inbound Replies.
+ * Marca um enrollment como "replied" manualmente (WhatsApp/LinkedIn) e
+ * registra um step_log de canal `inbound` para auditoria.
+ */
+export const markCandidateReplied = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        enrollment_id: z.string().uuid(),
+        channel: z.enum(["whatsapp", "linkedin_task", "email", "inbound"]).default("inbound"),
+        note: z.string().max(1000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: enrollment, error: fetchErr } = await supabase
+      .from("ats_sourcing_enrollments")
+      .select("id, current_step, owner_id, candidate_id")
+      .eq("id", data.enrollment_id)
+      .maybeSingle();
+    if (fetchErr) throw new Error(fetchErr.message);
+    if (!enrollment) throw new Error("Enrollment não encontrado");
+
+    const nowIso = new Date().toISOString();
+    const { error: upErr } = await supabase
+      .from("ats_sourcing_enrollments")
+      .update({
+        status: "replied",
+        finished_at: nowIso,
+        last_error: null,
+      } as never)
+      .eq("id", data.enrollment_id);
+    if (upErr) throw new Error(upErr.message);
+
+    await supabase.from("ats_sourcing_step_log").insert({
+      enrollment_id: data.enrollment_id,
+      owner_id: userId,
+      step_order: enrollment.current_step ?? 0,
+      channel: data.channel,
+      status: "replied",
+      metadata: { source: "manual", note: data.note ?? null, at: nowIso } as never,
+    } as never);
+
+    await recordAtsEvent(context.supabase, {
+      ownerId: userId,
+      name: "ats.sequence.replied",
+      entityType: "enrollment",
+      entityId: data.enrollment_id,
+      payload: { channel: data.channel, source: "manual" },
+    });
+
+    return { ok: true };
+  });
+
