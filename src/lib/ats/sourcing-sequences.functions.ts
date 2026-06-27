@@ -133,6 +133,8 @@ export const upsertStep = createServerFn({ method: "POST" })
         subject: z.string().max(200).nullable().optional(),
         body: z.string().max(10000).nullable().optional(),
         task_instructions: z.string().max(2000).nullable().optional(),
+        variant_label: z.string().min(1).max(8).default("A"),
+        variant_weight: z.number().int().min(1).max(100).default(1),
       })
       .parse(input),
   )
@@ -147,10 +149,12 @@ export const upsertStep = createServerFn({ method: "POST" })
       subject: data.subject ?? null,
       body: data.body ?? null,
       task_instructions: data.task_instructions ?? null,
+      variant_label: data.variant_label,
+      variant_weight: data.variant_weight,
     };
     const { data: saved, error } = await context.supabase
       .from("ats_sourcing_sequence_steps")
-      .upsert(row as never, { onConflict: "sequence_id,step_order" })
+      .upsert(row as never, { onConflict: "sequence_id,step_order,variant_label" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
