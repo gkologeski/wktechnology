@@ -246,6 +246,7 @@ function SequenceDetailPage() {
                 onChange={(e) => setDraft({ ...draft, delay_days: Number(e.target.value) || 0 })}
               />
             </div>
+            {draft.channel === "email" ? (
               <>
                 <div className="space-y-1.5">
                   <Label>Assunto</Label>
