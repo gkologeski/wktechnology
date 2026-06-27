@@ -433,9 +433,16 @@ function JobDetailPage() {
                                 "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
                               )}
                             >
-                              <div className="font-medium text-text-primary truncate">
+                              <Link
+                                to="/candidates/$id"
+                                params={{ id: a.candidate_id as string }}
+                                onClick={(e) => e.stopPropagation()}
+                                draggable={false}
+                                onDragStart={(e) => e.stopPropagation()}
+                                className="font-medium text-text-primary truncate hover:underline block"
+                              >
                                 {a.candidate?.full_name ?? "Candidato"}
-                              </div>
+                              </Link>
                               {a.candidate?.current_position && (
                                 <div className="text-xs text-text-tertiary truncate mt-0.5">
                                   {a.candidate.current_position}
