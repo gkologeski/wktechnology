@@ -23,6 +23,8 @@ import {
   Gift,
   Inbox,
   CalendarClock,
+  Search,
+  Download,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
