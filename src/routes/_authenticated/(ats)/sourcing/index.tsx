@@ -10,6 +10,12 @@ export const Route = createFileRoute("/_authenticated/(ats)/sourcing/")({
 
 const TILES = [
   {
+    to: "/sourcing/inbox",
+    icon: Inbox,
+    title: "Inbox",
+    description: "Triagem unificada das sequências: tarefas, falhas e respostas.",
+  },
+  {
     to: "/sourcing/pools",
     icon: Users2,
     title: "Talent Pools",
