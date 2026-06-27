@@ -141,6 +141,16 @@ function InboxPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const repliedMut = useMutation({
+    mutationFn: (vars: { enrollment_id: string; channel: "whatsapp" | "linkedin_task" | "email" | "inbound" }) =>
+      markReplied({ data: vars }),
+    onSuccess: () => {
+      toast.success("Candidato marcado como respondeu");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const counts = data?.counts ?? { tasks: 0, failures: 0, review: 0 };
   const total = useMemo(() => counts.tasks + counts.failures + counts.review, [counts]);
 
