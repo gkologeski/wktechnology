@@ -160,6 +160,7 @@ import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
+import { Route as AuthenticatedAuthExtensionLinkRouteImport } from './routes/_authenticated/auth/extension-link'
 import { Route as AuthenticatedAtsJobsRouteImport } from './routes/_authenticated/ats.jobs'
 import { Route as AuthenticatedAtsCandidatesRouteImport } from './routes/_authenticated/ats.candidates'
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
@@ -1113,6 +1114,12 @@ const AuthenticatedCampaignsEmailRoute =
     path: '/campaigns/email',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAuthExtensionLinkRoute =
+  AuthenticatedAuthExtensionLinkRouteImport.update({
+    id: '/auth/extension-link',
+    path: '/auth/extension-link',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAtsJobsRoute = AuthenticatedAtsJobsRouteImport.update({
   id: '/ats/jobs',
   path: '/ats/jobs',
@@ -1801,6 +1808,7 @@ export interface FileRoutesByFullPath {
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
+  '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -2056,6 +2064,7 @@ export interface FileRoutesByTo {
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
+  '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -2315,6 +2324,7 @@ export interface FileRoutesById {
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/_authenticated/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
+  '/_authenticated/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -2575,6 +2585,7 @@ export interface FileRouteTypes {
     | '/agents/sdr'
     | '/ats/candidates'
     | '/ats/jobs'
+    | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -2830,6 +2841,7 @@ export interface FileRouteTypes {
     | '/agents/sdr'
     | '/ats/candidates'
     | '/ats/jobs'
+    | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
     | '/companies/$id'
@@ -3088,6 +3100,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents/sdr'
     | '/_authenticated/ats/candidates'
     | '/_authenticated/ats/jobs'
+    | '/_authenticated/auth/extension-link'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/companies/$id'
@@ -4427,6 +4440,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsEmailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/auth/extension-link': {
+      id: '/_authenticated/auth/extension-link'
+      path: '/auth/extension-link'
+      fullPath: '/auth/extension-link'
+      preLoaderRoute: typeof AuthenticatedAuthExtensionLinkRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/ats/jobs': {
       id: '/_authenticated/ats/jobs'
       path: '/ats/jobs'
@@ -5607,6 +5627,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedAtsCandidatesRoute: typeof AuthenticatedAtsCandidatesRoute
   AuthenticatedAtsJobsRoute: typeof AuthenticatedAtsJobsRouteWithChildren
+  AuthenticatedAuthExtensionLinkRoute: typeof AuthenticatedAuthExtensionLinkRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
@@ -5677,6 +5698,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
   AuthenticatedAtsCandidatesRoute: AuthenticatedAtsCandidatesRoute,
   AuthenticatedAtsJobsRoute: AuthenticatedAtsJobsRouteWithChildren,
+  AuthenticatedAuthExtensionLinkRoute: AuthenticatedAuthExtensionLinkRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
