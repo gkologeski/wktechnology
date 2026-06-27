@@ -153,7 +153,7 @@ function SourcingAnalyticsPage() {
       </div>
 
       <section className="space-y-3">
-        <AtsSectionHeader title="Performance por sequência" icon={BarChart3} />
+        <AtsSectionHeader title="Performance por sequência" />
         <Card>
           <CardContent className="p-0">
             {isLoading ? (
@@ -226,7 +226,7 @@ function SourcingAnalyticsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3">
-          <AtsSectionHeader title="Por canal" icon={MessageSquare} />
+          <AtsSectionHeader title="Por canal" />
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
@@ -279,7 +279,7 @@ function SourcingAnalyticsPage() {
         </section>
 
         <section className="space-y-3">
-          <AtsSectionHeader title="Funil por step" icon={Activity} />
+          <AtsSectionHeader title="Funil por step" />
           <Card>
             <CardContent className="p-4">
               {isLoading ? (
