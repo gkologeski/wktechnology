@@ -1,6 +1,6 @@
 // Sourcing — overview hub. Onda 5 / Slice 2.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users2, Mail, Gift, ArrowRight, Inbox } from "lucide-react";
+import { Users2, Mail, Gift, ArrowRight, Inbox, BarChart3 } from "lucide-react";
 import { AtsPageHeader } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 
