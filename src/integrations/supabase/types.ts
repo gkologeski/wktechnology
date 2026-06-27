@@ -1028,6 +1028,92 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_hunting_captures: {
+        Row: {
+          candidate_id: string
+          captured_at: string
+          captured_by: string | null
+          id: string
+          owner_id: string
+          parser_version: string | null
+          raw_payload: Json
+          session_id: string | null
+          source_url: string
+        }
+        Insert: {
+          candidate_id: string
+          captured_at?: string
+          captured_by?: string | null
+          id?: string
+          owner_id: string
+          parser_version?: string | null
+          raw_payload?: Json
+          session_id?: string | null
+          source_url: string
+        }
+        Update: {
+          candidate_id?: string
+          captured_at?: string
+          captured_by?: string | null
+          id?: string
+          owner_id?: string
+          parser_version?: string | null
+          raw_payload?: Json
+          session_id?: string | null
+          source_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_hunting_captures_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_hunting_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          subject: string | null
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       ats_interview_kits: {
         Row: {
           created_at: string
