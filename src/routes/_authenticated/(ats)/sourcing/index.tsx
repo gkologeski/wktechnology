@@ -33,6 +33,12 @@ const TILES = [
     title: "Indicações",
     description: "Programa de referrals com tracking de bônus.",
   },
+  {
+    to: "/sourcing/analytics",
+    icon: BarChart3,
+    title: "Analytics",
+    description: "Response rate, tempo até resposta e funil por step das cadências.",
+  },
 ] as const;
 
 function SourcingHub() {
