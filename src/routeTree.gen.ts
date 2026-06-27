@@ -251,6 +251,7 @@ import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedatsHuntingTemplatesRouteImport } from './routes/_authenticated/(ats)/hunting/templates'
 import { Route as AuthenticatedatsHuntingInstallRouteImport } from './routes/_authenticated/(ats)/hunting/install'
 import { Route as AuthenticatedatsHuntingCapturesRouteImport } from './routes/_authenticated/(ats)/hunting/captures'
+import { Route as AuthenticatedatsCandidatesIdRouteImport } from './routes/_authenticated/(ats)/candidates.$id'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/ats/jobs'
@@ -1640,6 +1641,12 @@ const AuthenticatedatsHuntingCapturesRoute =
     path: '/hunting/captures',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsCandidatesIdRoute =
+  AuthenticatedatsCandidatesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedatsCandidatesRoute,
+  } as any)
 const ApiPublicZapierUnsubscribeIdRoute =
   ApiPublicZapierUnsubscribeIdRouteImport.update({
     id: '/api/public/zapier/unsubscribe/$id',
@@ -1788,7 +1795,7 @@ export interface FileRoutesByFullPath {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
-  '/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1905,6 +1912,7 @@ export interface FileRoutesByFullPath {
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
   '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
@@ -2044,7 +2052,7 @@ export interface FileRoutesByTo {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
-  '/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2160,6 +2168,7 @@ export interface FileRoutesByTo {
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
   '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
@@ -2304,7 +2313,7 @@ export interface FileRoutesById {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
-  '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRoute
+  '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2421,6 +2430,7 @@ export interface FileRoutesById {
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/(ats)/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/_authenticated/(ats)/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/_authenticated/(ats)/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
   '/_authenticated/(ats)/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
@@ -2682,6 +2692,7 @@ export interface FileRouteTypes {
     | '/proposals/'
     | '/settings/'
     | '/workspace/'
+    | '/candidates/$id'
     | '/hunting/captures'
     | '/hunting/install'
     | '/hunting/templates'
@@ -2937,6 +2948,7 @@ export interface FileRouteTypes {
     | '/proposals'
     | '/settings'
     | '/workspace'
+    | '/candidates/$id'
     | '/hunting/captures'
     | '/hunting/install'
     | '/hunting/templates'
@@ -3197,6 +3209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/(ats)/candidates/$id'
     | '/_authenticated/(ats)/hunting/captures'
     | '/_authenticated/(ats)/hunting/install'
     | '/_authenticated/(ats)/hunting/templates'
@@ -5077,6 +5090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsHuntingCapturesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/candidates/$id': {
+      id: '/_authenticated/(ats)/candidates/$id'
+      path: '/$id'
+      fullPath: '/candidates/$id'
+      preLoaderRoute: typeof AuthenticatedatsCandidatesIdRouteImport
+      parentRoute: typeof AuthenticatedatsCandidatesRoute
+    }
     '/api/public/zapier/unsubscribe/$id': {
       id: '/api/public/zapier/unsubscribe/$id'
       path: '/api/public/zapier/unsubscribe/$id'
@@ -5547,6 +5567,20 @@ const AuthenticatedTicketsRouteChildren: AuthenticatedTicketsRouteChildren = {
 const AuthenticatedTicketsRouteWithChildren =
   AuthenticatedTicketsRoute._addFileChildren(AuthenticatedTicketsRouteChildren)
 
+interface AuthenticatedatsCandidatesRouteChildren {
+  AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
+}
+
+const AuthenticatedatsCandidatesRouteChildren: AuthenticatedatsCandidatesRouteChildren =
+  {
+    AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
+  }
+
+const AuthenticatedatsCandidatesRouteWithChildren =
+  AuthenticatedatsCandidatesRoute._addFileChildren(
+    AuthenticatedatsCandidatesRouteChildren,
+  )
+
 interface AuthenticatedatsJobsRouteChildren {
   AuthenticatedatsJobsIdRoute: typeof AuthenticatedatsJobsIdRoute
 }
@@ -5607,7 +5641,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
-  AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRoute
+  AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRouteWithChildren
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
@@ -5677,7 +5711,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
-  AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRoute,
+  AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRouteWithChildren,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
