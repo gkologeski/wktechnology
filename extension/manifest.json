@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TechHire Hunter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Capture candidatos do LinkedIn direto pro TechHire ATS.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
@@ -23,11 +23,14 @@
       "js": ["content.js"],
       "css": ["sidebar.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.lovable.app/auth/extension-link*",
+        "https://*.wktechnology.com.br/auth/extension-link*"
+      ],
+      "js": ["pair-bridge.js"],
+      "run_at": "document_idle"
     }
-  ],
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  }
+  ]
 }

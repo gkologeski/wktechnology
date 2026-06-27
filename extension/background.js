@@ -46,6 +46,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       } else if (msg.type === "LOG_OUTREACH") {
         const out = await apiCall("/api/public/hunting/log-outreach", msg.payload);
         sendResponse({ ok: true, data: out });
+      } else if (msg.type === "PAIR_FROM_WEB") {
+        const apiBase = String(msg.apiBase || "").trim().replace(/\/$/, "");
+        const apiKey = String(msg.apiKey || "").trim();
+        if (!apiBase || !apiKey) {
+          sendResponse({ ok: false, error: "missing_fields" });
+          return;
+        }
+        await chrome.storage.local.set({ apiBase, apiKey });
+        sendResponse({ ok: true });
       } else if (msg.type === "PING") {
         const cfg = await getConfig();
         sendResponse({ ok: true, paired: Boolean(cfg.apiKey), apiBase: cfg.apiBase });
