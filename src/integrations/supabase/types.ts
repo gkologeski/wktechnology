@@ -1072,6 +1072,110 @@ export type Database = {
           },
         ]
       }
+      ats_interviewer_availability: {
+        Row: {
+          created_at: string
+          end_minute: number
+          id: string
+          interviewer_id: string
+          owner_id: string
+          start_minute: number
+          timezone: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_minute: number
+          id?: string
+          interviewer_id: string
+          owner_id: string
+          start_minute: number
+          timezone?: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_minute?: number
+          id?: string
+          interviewer_id?: string
+          owner_id?: string
+          start_minute?: number
+          timezone?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
+      ats_interviewer_pool_members: {
+        Row: {
+          created_at: string
+          id: string
+          interviewer_id: string
+          owner_id: string
+          pool_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interviewer_id: string
+          owner_id: string
+          pool_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interviewer_id?: string
+          owner_id?: string
+          pool_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_interviewer_pool_members_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "ats_interviewer_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_interviewer_pools: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          load_window_days: number
+          name: string
+          owner_id: string
+          rotation_cursor: number
+          rotation_strategy: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          load_window_days?: number
+          name: string
+          owner_id: string
+          rotation_cursor?: number
+          rotation_strategy?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          load_window_days?: number
+          name?: string
+          owner_id?: string
+          rotation_cursor?: number
+          rotation_strategy?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ats_interviews: {
         Row: {
           ai_concerns: Json | null
@@ -1084,6 +1188,7 @@ export type Database = {
           ai_summary: string | null
           application_id: string
           async_questions_snapshot: Json | null
+          auto_rescheduled_from: string | null
           candidate_id: string
           created_at: string
           duration_min: number
@@ -1097,6 +1202,8 @@ export type Database = {
           notes: string | null
           offered_slots: Json
           owner_id: string
+          panel_interviewer_ids: string[]
+          pool_id: string | null
           reminder_1h_sent_at: string | null
           reminder_d1_sent_at: string | null
           scheduled_at: string | null
@@ -1120,6 +1227,7 @@ export type Database = {
           ai_summary?: string | null
           application_id: string
           async_questions_snapshot?: Json | null
+          auto_rescheduled_from?: string | null
           candidate_id: string
           created_at?: string
           duration_min?: number
@@ -1133,6 +1241,8 @@ export type Database = {
           notes?: string | null
           offered_slots?: Json
           owner_id: string
+          panel_interviewer_ids?: string[]
+          pool_id?: string | null
           reminder_1h_sent_at?: string | null
           reminder_d1_sent_at?: string | null
           scheduled_at?: string | null
@@ -1156,6 +1266,7 @@ export type Database = {
           ai_summary?: string | null
           application_id?: string
           async_questions_snapshot?: Json | null
+          auto_rescheduled_from?: string | null
           candidate_id?: string
           created_at?: string
           duration_min?: number
@@ -1169,6 +1280,8 @@ export type Database = {
           notes?: string | null
           offered_slots?: Json
           owner_id?: string
+          panel_interviewer_ids?: string[]
+          pool_id?: string | null
           reminder_1h_sent_at?: string | null
           reminder_d1_sent_at?: string | null
           scheduled_at?: string | null
@@ -1190,6 +1303,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ats_interviews_auto_rescheduled_from_fkey"
+            columns: ["auto_rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "ats_interviews"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ats_interviews_candidate_id_fkey"
             columns: ["candidate_id"]
             isOneToOne: false
@@ -1208,6 +1328,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_interviews_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "ats_interviewer_pools"
             referencedColumns: ["id"]
           },
         ]

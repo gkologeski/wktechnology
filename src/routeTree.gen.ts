@@ -172,6 +172,7 @@ import { Route as AuthenticatedAdminBugReportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAlertsRouteImport } from './routes/_authenticated/admin.alerts'
 import { Route as AuthenticatedatsStageEmailsRouteImport } from './routes/_authenticated/(ats)/stage-emails'
 import { Route as AuthenticatedatsScorecardsRouteImport } from './routes/_authenticated/(ats)/scorecards'
+import { Route as AuthenticatedatsSchedulingRouteImport } from './routes/_authenticated/(ats)/scheduling'
 import { Route as AuthenticatedatsPipelinesRouteImport } from './routes/_authenticated/(ats)/pipelines'
 import { Route as AuthenticatedatsOffersRouteImport } from './routes/_authenticated/(ats)/offers'
 import { Route as AuthenticatedatsNotetakerRouteImport } from './routes/_authenticated/(ats)/notetaker'
@@ -1174,6 +1175,12 @@ const AuthenticatedatsScorecardsRoute =
     path: '/scorecards',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsSchedulingRoute =
+  AuthenticatedatsSchedulingRouteImport.update({
+    id: '/(ats)/scheduling',
+    path: '/scheduling',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsPipelinesRoute =
   AuthenticatedatsPipelinesRouteImport.update({
     id: '/(ats)/pipelines',
@@ -1726,6 +1733,7 @@ export interface FileRoutesByFullPath {
   '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
+  '/scheduling': typeof AuthenticatedatsSchedulingRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -1972,6 +1980,7 @@ export interface FileRoutesByTo {
   '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
+  '/scheduling': typeof AuthenticatedatsSchedulingRoute
   '/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -2222,6 +2231,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/_authenticated/(ats)/offers': typeof AuthenticatedatsOffersRoute
   '/_authenticated/(ats)/pipelines': typeof AuthenticatedatsPipelinesRoute
+  '/_authenticated/(ats)/scheduling': typeof AuthenticatedatsSchedulingRoute
   '/_authenticated/(ats)/scorecards': typeof AuthenticatedatsScorecardsRoute
   '/_authenticated/(ats)/stage-emails': typeof AuthenticatedatsStageEmailsRoute
   '/_authenticated/admin/alerts': typeof AuthenticatedAdminAlertsRoute
@@ -2473,6 +2483,7 @@ export interface FileRouteTypes {
     | '/notetaker'
     | '/offers'
     | '/pipelines'
+    | '/scheduling'
     | '/scorecards'
     | '/stage-emails'
     | '/admin/alerts'
@@ -2719,6 +2730,7 @@ export interface FileRouteTypes {
     | '/notetaker'
     | '/offers'
     | '/pipelines'
+    | '/scheduling'
     | '/scorecards'
     | '/stage-emails'
     | '/admin/alerts'
@@ -2968,6 +2980,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/notetaker'
     | '/_authenticated/(ats)/offers'
     | '/_authenticated/(ats)/pipelines'
+    | '/_authenticated/(ats)/scheduling'
     | '/_authenticated/(ats)/scorecards'
     | '/_authenticated/(ats)/stage-emails'
     | '/_authenticated/admin/alerts'
@@ -4391,6 +4404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsScorecardsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/scheduling': {
+      id: '/_authenticated/(ats)/scheduling'
+      path: '/scheduling'
+      fullPath: '/scheduling'
+      preLoaderRoute: typeof AuthenticatedatsSchedulingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/pipelines': {
       id: '/_authenticated/(ats)/pipelines'
       path: '/pipelines'
@@ -5411,6 +5431,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsNotetakerRoute: typeof AuthenticatedatsNotetakerRoute
   AuthenticatedatsOffersRoute: typeof AuthenticatedatsOffersRoute
   AuthenticatedatsPipelinesRoute: typeof AuthenticatedatsPipelinesRoute
+  AuthenticatedatsSchedulingRoute: typeof AuthenticatedatsSchedulingRoute
   AuthenticatedatsScorecardsRoute: typeof AuthenticatedatsScorecardsRoute
   AuthenticatedatsStageEmailsRoute: typeof AuthenticatedatsStageEmailsRoute
   AuthenticatedAdminAlertsRoute: typeof AuthenticatedAdminAlertsRoute
@@ -5475,6 +5496,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsNotetakerRoute: AuthenticatedatsNotetakerRoute,
   AuthenticatedatsOffersRoute: AuthenticatedatsOffersRoute,
   AuthenticatedatsPipelinesRoute: AuthenticatedatsPipelinesRoute,
+  AuthenticatedatsSchedulingRoute: AuthenticatedatsSchedulingRoute,
   AuthenticatedatsScorecardsRoute: AuthenticatedatsScorecardsRoute,
   AuthenticatedatsStageEmailsRoute: AuthenticatedatsStageEmailsRoute,
   AuthenticatedAdminAlertsRoute: AuthenticatedAdminAlertsRoute,
