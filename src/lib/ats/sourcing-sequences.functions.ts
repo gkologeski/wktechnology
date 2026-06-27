@@ -90,6 +90,11 @@ export const updateSequence = createServerFn({ method: "POST" })
         description: z.string().max(500).nullable().optional(),
         enabled: z.boolean().optional(),
         pool_id: z.string().uuid().nullable().optional(),
+        daily_send_limit: z.number().int().min(0).max(10000).nullable().optional(),
+        quiet_hours_start: z.number().int().min(0).max(23).nullable().optional(),
+        quiet_hours_end: z.number().int().min(0).max(23).nullable().optional(),
+        timezone: z.string().min(1).max(64).optional(),
+        send_days: z.array(z.number().int().min(0).max(6)).max(7).optional(),
       })
       .parse(input),
   )
