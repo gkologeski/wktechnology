@@ -59,12 +59,9 @@
 
   const sanitizeCompany = (line) =>
     clean(line)
-      .replace(/^empresa atual\s*:?
-/i, "")
-      .replace(/^current company\s*:?
-/i, "")
-      .replace(/^empresa actual\s*:?
-/i, "")
+      .replace(/^empresa atual\s*:?\s*/i, "")
+      .replace(/^current company\s*:?\s*/i, "")
+      .replace(/^empresa actual\s*:?\s*/i, "")
       .replace(/\s+(logo|logotipo)$/i, "")
       .replace(/^[•·\-–]+\s*/, "");
 
