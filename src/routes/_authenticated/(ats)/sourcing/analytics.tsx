@@ -76,7 +76,7 @@ function SourcingAnalyticsPage() {
         eyebrow="ATS · Sourcing"
         title="Analytics de Sourcing"
         description="Performance das cadências, canais e funil de engajamento de candidatos."
-        actions={
+        secondaryActions={
           <div className="flex items-center gap-2">
             <div className="inline-flex rounded-md border border-border-subtle bg-surface-1 p-0.5">
               {WINDOWS.map((w) => (
