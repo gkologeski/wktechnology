@@ -167,11 +167,12 @@ export const markStepHandled = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
-      name: "ats.sequence.task_handled",
-      entityType: "step_log",
-      entityId: data.log_id,
-      payload: { enrollment_id: row.enrollment_id, channel: row.channel, step: row.step_order },
+      name: "ats.sequence.step_sent",
+      entityType: "enrollment",
+      entityId: row.enrollment_id,
+      payload: { handled: true, channel: row.channel, step: row.step_order, log_id: data.log_id },
     });
+
     return { ok: true };
   });
 
