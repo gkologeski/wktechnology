@@ -148,9 +148,17 @@ function SequenceDetailPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                          Step {s.step_order} · {s.channel}
-                          {s.delay_days ? ` · +${s.delay_days}d` : ""}
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <span>
+                            Step {s.step_order} · {s.channel}
+                            {s.delay_days ? ` · +${s.delay_days}d` : ""}
+                          </span>
+                          <Badge variant="outline" className="text-[10px]">
+                            Variante {(s as { variant_label?: string }).variant_label ?? "A"}
+                            {((s as { variant_weight?: number }).variant_weight ?? 1) > 1
+                              ? ` · peso ${(s as { variant_weight?: number }).variant_weight}`
+                              : ""}
+                          </Badge>
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {s.subject || s.task_instructions || s.body || "—"}
