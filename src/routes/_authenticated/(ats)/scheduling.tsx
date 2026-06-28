@@ -143,6 +143,10 @@ function SchedulingPage() {
         description="Pools de entrevistadores com rotação automática, disponibilidade semanal e cálculo de horários em comum para painéis."
       />
 
+      <SlaMonitorSection />
+
+
+
       {/* ----- Pools ----- */}
       <section className="space-y-3">
         <AtsSectionHeader
