@@ -124,7 +124,16 @@ function CandidatesPage() {
   const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
+  const archiveCandidate = useServerFn(setCandidateArchived);
   const queryClient = useQueryClient();
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<DerivedCandidateStatus | null>(null);
+  const [associateState, setAssociateState] = useState<{
+    open: boolean;
+    candidateId?: string;
+    candidateName?: string;
+  }>({ open: false });
+
   const [view, setView] = useState<"cards" | "table" | "kanban">(
     () => (typeof window !== "undefined"
       ? ((localStorage.getItem("candidates:view") as "cards" | "table" | "kanban") ?? "cards")
