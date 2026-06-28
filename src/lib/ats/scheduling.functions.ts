@@ -385,3 +385,86 @@ export const findCommonSlots = createServerFn({ method: "POST" })
     }
     return { slots };
   });
+
+// ----- SLA monitor ---------------------------------------------------------
+
+export type SlaBreach = {
+  application_id: string;
+  candidate_id: string;
+  job_id: string;
+  stage_value: string;
+  moved_at: string;
+  hours_stuck: number;
+  candidate_name: string | null;
+  job_title: string | null;
+};
+
+/** Applications stuck in interview-bound stages without a scheduled interview. */
+export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        threshold_hours: z.number().int().min(1).max(720).default(48),
+        stages: z.array(z.string()).default(["interview", "onsite", "panel"]),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<SlaBreach[]> => {
+    const { supabase } = context;
+    const { data: apps, error } = await supabase
+      .from("ats_applications")
+      .select("id, candidate_id, job_id, stage_value, moved_at, status")
+      .in("stage_value", data.stages)
+      .eq("status", "active")
+      .order("moved_at", { ascending: true })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    const list = (apps ?? []) as Array<{
+      id: string;
+      candidate_id: string;
+      job_id: string;
+      stage_value: string;
+      moved_at: string;
+    }>;
+    if (list.length === 0) return [];
+
+    const appIds = list.map((a) => a.id);
+    const { data: scheduled } = await supabase
+      .from("ats_interviews")
+      .select("application_id")
+      .in("application_id", appIds)
+      .in("status", ["scheduled", "completed"]);
+    const hasInterview = new Set((scheduled ?? []).map((r) => r.application_id as string));
+
+    const now = Date.now();
+    const breaches: Array<{ a: typeof list[number]; hours: number }> = [];
+    for (const a of list) {
+      if (hasInterview.has(a.id)) continue;
+      const hours = (now - new Date(a.moved_at).getTime()) / 3_600_000;
+      if (hours >= data.threshold_hours) breaches.push({ a, hours });
+    }
+    if (breaches.length === 0) return [];
+
+    const candIds = Array.from(new Set(breaches.map((b) => b.a.candidate_id)));
+    const jobIds = Array.from(new Set(breaches.map((b) => b.a.job_id)));
+    const [cands, jobs] = await Promise.all([
+      supabase.from("ats_candidates").select("id, full_name").in("id", candIds),
+      supabase.from("ats_jobs").select("id, title").in("id", jobIds),
+    ]);
+    const cMap = new Map((cands.data ?? []).map((c) => [c.id as string, (c.full_name as string | null) ?? null]));
+    const jMap = new Map((jobs.data ?? []).map((j) => [j.id as string, (j.title as string | null) ?? null]));
+
+    return breaches
+      .map(({ a, hours }) => ({
+        application_id: a.id,
+        candidate_id: a.candidate_id,
+        job_id: a.job_id,
+        stage_value: a.stage_value,
+        moved_at: a.moved_at,
+        hours_stuck: Math.round(hours * 10) / 10,
+        candidate_name: cMap.get(a.candidate_id) ?? null,
+        job_title: jMap.get(a.job_id) ?? null,
+      }))
+      .sort((x, y) => y.hours_stuck - x.hours_stuck);
+  });
