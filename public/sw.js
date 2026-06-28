@@ -50,7 +50,24 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
-  // Hashed assets: cache first.
+  // JS/CSS: NetworkFirst para evitar chunks lazy obsoletos após novo build.
+  const isScript = /\.(?:js|mjs|css)(?:\?|$)/.test(url.pathname);
+  if (isScript) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches
+            .open(RUNTIME)
+            .then((c) => c.put(req, copy))
+            .catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
+    return;
+  }
+  // Outros assets (imagens, fontes): cache first.
   event.respondWith(
     caches.match(req).then(
       (cached) =>
