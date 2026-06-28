@@ -13,7 +13,9 @@ import {
   Briefcase,
   LayoutGrid,
   Rows3,
+  Columns3,
   ExternalLink,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -59,7 +61,9 @@ import {
   SourceBadge,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates/")({
   component: CandidatesPage,
@@ -118,11 +122,12 @@ function CandidatesPage() {
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
   const queryClient = useQueryClient();
-  const [view, setView] = useState<"cards" | "table">(
+  const [view, setView] = useState<"cards" | "table" | "kanban">(
     () => (typeof window !== "undefined"
-      ? ((localStorage.getItem("candidates:view") as "cards" | "table") ?? "cards")
+      ? ((localStorage.getItem("candidates:view") as "cards" | "table" | "kanban") ?? "cards")
       : "cards"),
   );
+
   const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
@@ -492,7 +497,7 @@ function CandidatesPage() {
           </>
         }
         actions={
-          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table")}>
+          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table" | "kanban")}>
             <TabsList className="h-8">
               <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
                 <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
@@ -500,8 +505,12 @@ function CandidatesPage() {
               <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
                 <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
               </TabsTrigger>
+              <TabsTrigger value="kanban" className="h-7 px-2 text-xs gap-1">
+                <Columns3 className="h-3.5 w-3.5" aria-hidden /> Kanban
+              </TabsTrigger>
             </TabsList>
           </Tabs>
+
         }
       />
 
@@ -625,7 +634,8 @@ function CandidatesPage() {
             );
           })}
         </div>
-      ) : (
+      ) : view === "table" ? (
+
         <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
           <Table>
             <TableHeader>
@@ -700,7 +710,92 @@ function CandidatesPage() {
             </TableBody>
           </Table>
         </div>
+      ) : (
+        <KanbanScrollContainer ariaLabel="Quadro de candidatos">
+          <div className="flex gap-2 pb-4">
+            {STATUS_ORDER.map((s) => {
+              const colRows = rows.filter(
+                (r) => (statuses[r.id as string] ?? "new") === s,
+              );
+              return (
+                <div
+                  key={s}
+                  data-kanban-column-root={s}
+                  className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
+                >
+                  <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <CandidateStatusPill status={s} />
+                      <span className="text-[11px] tabular-nums text-text-tertiary">
+                        {colRows.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
+                    {colRows.map((c) => {
+                      const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+                      return (
+                        <Link
+                          key={c.id as string}
+                          to="/candidates/$id"
+                          params={{ id: c.id as string }}
+                          data-kanban-card
+                          data-kanban-column={s}
+                          className={cn(
+                            "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
+                            "transition-all hover:border-border-strong hover:shadow-sm",
+                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          )}
+                        >
+                          <div className="truncate text-sm font-medium text-text-primary">
+                            {c.full_name as string}
+                          </div>
+                          {c.current_position ? (
+                            <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
+                              <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden />
+                              <span className="truncate">
+                                {c.current_position}
+                                {c.current_company ? ` @ ${c.current_company}` : ""}
+                              </span>
+                            </div>
+                          ) : null}
+                          {c.location ? (
+                            <div className="mt-0.5 flex items-center gap-1 text-xs text-text-tertiary">
+                              <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                              <span className="truncate">{c.location as string}</span>
+                            </div>
+                          ) : null}
+                          {skills.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {skills.slice(0, 3).map((sk) => (
+                                <MetaPill key={sk}>{sk}</MetaPill>
+                              ))}
+                              {skills.length > 3 ? (
+                                <MetaPill>+{skills.length - 3}</MetaPill>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          {c.source ? (
+                            <div className="mt-2 border-t border-border-subtle pt-2">
+                              <SourceBadge source={c.source as string} />
+                            </div>
+                          ) : null}
+                        </Link>
+                      );
+                    })}
+                    {colRows.length === 0 ? (
+                      <p className="px-2 py-6 text-center text-xs text-text-tertiary">
+                        Vazio
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </KanbanScrollContainer>
       )}
+
 
     </div>
   );
