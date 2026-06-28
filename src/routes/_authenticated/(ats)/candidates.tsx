@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -11,6 +11,9 @@ import {
   MapPin,
   Mail,
   Briefcase,
+  LayoutGrid,
+  Rows3,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +28,15 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   listAtsCandidates,
   saveAtsCandidate,
@@ -33,6 +45,11 @@ import {
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
+import {
+  getCandidateStatuses,
+  DERIVED_STATUS_LABELS,
+  type DerivedCandidateStatus,
+} from "@/lib/ats/candidate-status.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
 import {
   AtsPageHeader,
@@ -50,6 +67,37 @@ export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
 
 type Cand = Awaited<ReturnType<typeof listAtsCandidates>>[number];
 
+const STATUS_ORDER: DerivedCandidateStatus[] = [
+  "new",
+  "in_process",
+  "interview",
+  "offer",
+  "hired",
+  "archived",
+];
+
+const STATUS_CLS: Record<DerivedCandidateStatus, string> = {
+  new: "border-border-subtle bg-surface-sunken text-text-secondary",
+  in_process: "border-stage-screen/30 bg-stage-screen/10 text-stage-screen",
+  interview: "border-stage-interview/30 bg-stage-interview/10 text-stage-interview",
+  offer: "border-stage-offer/30 bg-stage-offer/10 text-stage-offer",
+  hired: "border-stage-hired/30 bg-stage-hired/10 text-stage-hired",
+  archived: "border-stage-rejected/30 bg-stage-rejected/10 text-stage-rejected",
+};
+
+function CandidateStatusPill({ status }: { status: DerivedCandidateStatus }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-none whitespace-nowrap",
+        STATUS_CLS[status],
+      )}
+    >
+      {DERIVED_STATUS_LABELS[status]}
+    </span>
+  );
+}
+
 function CandidatesGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -60,6 +108,7 @@ function CandidatesGridSkeleton() {
   );
 }
 
+
 function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
   const save = useServerFn(saveAtsCandidate);
@@ -67,13 +116,21 @@ function CandidatesPage() {
   const parse = useServerFn(parseCv);
   const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
+  const getStatuses = useServerFn(getCandidateStatuses);
   const queryClient = useQueryClient();
+  const [view, setView] = useState<"cards" | "table">(
+    () => (typeof window !== "undefined"
+      ? ((localStorage.getItem("candidates:view") as "cards" | "table") ?? "cards")
+      : "cards"),
+  );
+  const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
@@ -104,6 +161,34 @@ function CandidatesPage() {
   const loading = q.isLoading;
   const error = q.error ? (q.error instanceof Error ? q.error.message : "Falha ao listar") : null;
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("candidates:view", view);
+  }, [view]);
+
+  const ids = useMemo(() => rows.map((r) => r.id as string), [rows]);
+  const idsKey = ids.join(",");
+  const statusQ = useQuery({
+    queryKey: ["ats-candidate-statuses", idsKey],
+    queryFn: () => getStatuses({ data: { ids } }),
+    enabled: ids.length > 0,
+    staleTime: 30_000,
+  });
+  const statuses: Record<string, DerivedCandidateStatus> = statusQ.data ?? {};
+
+  const visibleRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    return rows.filter((r) => (statuses[r.id as string] ?? "new") === statusFilter);
+  }, [rows, statuses, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const c: Record<DerivedCandidateStatus, number> = {
+      new: 0, in_process: 0, interview: 0, offer: 0, hired: 0, archived: 0,
+    };
+    for (const r of rows) c[statuses[r.id as string] ?? "new"]++;
+    return c;
+  }, [rows, statuses]);
+
 
   const handleCreate = async () => {
     if (!form.full_name.trim()) {
@@ -374,6 +459,50 @@ function CandidatesPage() {
           onChange: setSearch,
           placeholder: "Buscar por nome, email, cargo ou skill…",
         }}
+        chips={
+          <>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium",
+                statusFilter === "all"
+                  ? "border-border-strong bg-surface-1 text-text-primary"
+                  : "border-border-subtle bg-surface-sunken text-text-secondary hover:text-text-primary",
+              )}
+            >
+              Todos <span className="tabular-nums opacity-70">{rows.length}</span>
+            </button>
+            {STATUS_ORDER.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium",
+                  statusFilter === s
+                    ? "border-border-strong bg-surface-1 text-text-primary"
+                    : "border-border-subtle bg-surface-sunken text-text-secondary hover:text-text-primary",
+                )}
+              >
+                {DERIVED_STATUS_LABELS[s]}{" "}
+                <span className="tabular-nums opacity-70">{statusCounts[s]}</span>
+              </button>
+            ))}
+          </>
+        }
+        actions={
+          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table")}>
+            <TabsList className="h-8">
+              <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
+                <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
+              </TabsTrigger>
+              <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
+                <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
       />
 
       {loading ? (
@@ -385,19 +514,29 @@ function CandidatesPage() {
           description={error}
           action={<Button onClick={refresh}>Tentar novamente</Button>}
         />
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={search ? "Nenhum candidato encontrado" : "Nenhum candidato cadastrado"}
+          title={
+            search || statusFilter !== "all"
+              ? "Nenhum candidato encontrado"
+              : "Nenhum candidato cadastrado"
+          }
           description={
-            search
-              ? "Tente outros termos ou limpe o filtro de busca."
+            search || statusFilter !== "all"
+              ? "Tente outros termos ou limpe o filtro."
               : "Cadastre um candidato manualmente ou use o parsing de CV (IA) para importar a partir de um currículo."
           }
           action={
-            search ? (
-              <Button variant="outline" onClick={() => setSearch("")}>
-                Limpar busca
+            search || statusFilter !== "all" ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                Limpar filtros
               </Button>
             ) : (
               <Button onClick={() => setOpen(true)}>
@@ -407,10 +546,11 @@ function CandidatesPage() {
             )
           }
         />
-      ) : (
+      ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((c) => {
+          {visibleRows.map((c) => {
             const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+            const status = statuses[c.id as string] ?? "new";
             return (
               <article
                 key={c.id as string}
@@ -466,7 +606,6 @@ function CandidatesPage() {
                   ) : null}
                 </div>
 
-
                 {skills.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1">
                     {skills.slice(0, 6).map((s) => (
@@ -478,16 +617,91 @@ function CandidatesPage() {
                   </div>
                 ) : null}
 
-                {c.source ? (
-                  <div className="mt-3 pt-3 border-t border-border-subtle">
-                    <SourceBadge source={c.source as string} />
-                  </div>
-                ) : null}
+                <div className="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <CandidateStatusPill status={status} />
+                  {c.source ? <SourceBadge source={c.source as string} /> : <span />}
+                </div>
               </article>
             );
           })}
         </div>
+      ) : (
+        <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Localização</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleRows.map((c) => {
+                const status = statuses[c.id as string] ?? "new";
+                return (
+                  <TableRow key={c.id as string} className="group">
+                    <TableCell className="font-medium">
+                      <Link
+                        to="/candidates/$id"
+                        params={{ id: c.id as string }}
+                        className="text-text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {c.full_name as string}
+                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60" aria-hidden />
+                      </Link>
+                      {c.email ? (
+                        <div className="text-xs text-text-tertiary truncate max-w-[240px]">
+                          {c.email as string}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {c.current_position ? (
+                        <span className="text-sm">
+                          {c.current_position}
+                          {c.current_company ? (
+                            <span className="text-text-tertiary"> @ {c.current_company}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {c.location ? (c.location as string) : <span className="text-text-tertiary">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      <CandidateStatusPill status={status} />
+                    </TableCell>
+                    <TableCell>
+                      {c.source ? (
+                        <SourceBadge source={c.source as string} />
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                        aria-label={`Excluir candidato ${c.full_name}`}
+                        onClick={() => handleDelete(c.id as string)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
+
     </div>
   );
 }
