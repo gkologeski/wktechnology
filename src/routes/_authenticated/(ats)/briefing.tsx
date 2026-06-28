@@ -186,7 +186,7 @@ function ItemSection({
               className={
                 "rounded-lg border p-3 text-sm " +
                 (tone === "warning"
-                  ? "border-warning-border bg-warning-bg/40"
+                  ? "border-warning/40 bg-warning/10"
                   : "border-border-subtle bg-surface-2")
               }
             >
