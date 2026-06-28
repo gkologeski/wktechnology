@@ -258,7 +258,7 @@ function CandidateDetailPage() {
       }
       center={
         <div className="space-y-6">
-          <ApplicationsCard detail={data} />
+          <ApplicationsCard detail={data} onChanged={load} />
           <InterviewsCard detail={data} />
           <OffersCard detail={data} />
           <EventsCard detail={data} />
