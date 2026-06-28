@@ -11,6 +11,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Plus,
   Trash2,
   Users,
   Flag,
