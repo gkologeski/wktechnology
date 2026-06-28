@@ -32,6 +32,7 @@ import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
 import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
+import { JobCopilotPanel } from "@/components/ats/job-copilot-panel";
 import {
   AtsPageHeader,
   AtsSectionHeader,
@@ -380,6 +381,16 @@ function JobDetailPage() {
       )}
 
       <JobPostingsPanel jobId={String(id)} />
+
+      <JobCopilotPanel
+        jobId={String(id)}
+        candidates={apps
+          .filter((a) => a.candidate)
+          .map((a) => ({
+            id: a.candidate_id as string,
+            full_name: (a.candidate as { full_name: string } | null)?.full_name ?? "Candidato",
+          }))}
+      />
 
       <section className="flex flex-col gap-3">
         <AtsSectionHeader
