@@ -21,6 +21,7 @@ import {
   AtsSectionHeader,
   EmptyState,
   FormSection,
+  MetricCard,
 } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
