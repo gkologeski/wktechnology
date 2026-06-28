@@ -112,7 +112,7 @@ function BriefingPage() {
             <MetricCard
               label="Stale (>14d)"
               value={String(m.stale_applications ?? 0)}
-              tone={(m.stale_applications ?? 0) > 0 ? "warning" : "default"}
+              tone={(m.stale_applications ?? 0) > 0 ? "warning" : "neutral"}
             />
             <MetricCard label="Entrevistas 7d" value={String(m.upcoming_interviews_7d ?? 0)} />
             <MetricCard label="Ofertas abertas" value={String(m.open_offers ?? 0)} />
