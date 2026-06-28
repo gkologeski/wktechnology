@@ -648,101 +648,109 @@ function JobDetailPage() {
   );
 
   return (
-    <RecordLayout
-      header={header}
-      left={
-        <JobPropertiesPanel
-          job={job}
-          onSaved={refresh}
-          save={async (patch) => {
-            await saveJobFn({
-              data: {
-                id: jobAny.id,
-                title: patch.title ?? jobAny.title,
-                description: patch.description ?? jobAny.description ?? null,
-                requirements: patch.requirements ?? jobAny.requirements ?? null,
-                seniority: (patch.seniority ?? jobAny.seniority) as never,
-                employment_type: (patch.employment_type ?? jobAny.employment_type) as never,
-                location: patch.location ?? jobAny.location ?? null,
-                remote_mode: (patch.remote_mode ?? jobAny.remote_mode) as never,
-                salary_min: patch.salary_min ?? jobAny.salary_min ?? null,
-                salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
-                status: (patch.status ?? jobAny.status) as never,
-              },
-            });
-          }}
-        />
-      }
-      center={
-        <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Visão geral</TabsTrigger>
-            <TabsTrigger value="pipeline">
-              Pipeline <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
-            </TabsTrigger>
-            <TabsTrigger value="candidates">Candidatos</TabsTrigger>
-            <TabsTrigger value="interviews">
-              Entrevistas{" "}
-              <span className="ml-1 text-[10px] text-text-tertiary">({interviews.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="postings">Postagens</TabsTrigger>
-            <TabsTrigger value="activity">Atividade</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="mt-0">
-            {overviewSection}
-          </TabsContent>
-          <TabsContent value="pipeline" className="mt-0">
-            <AtsSectionHeader
-              title="Pipeline"
-              description="Arraste candidatos entre etapas para atualizar o status."
-            />
-            <div className="mt-3">{pipelineSection}</div>
-          </TabsContent>
-          <TabsContent value="candidates" className="mt-0">
-            {candidatesSection}
-          </TabsContent>
-          <TabsContent value="interviews" className="mt-0">
-            {interviewsSection}
-          </TabsContent>
-          <TabsContent value="postings" className="mt-0">
-            <JobPostingsPanel jobId={String(id)} />
-          </TabsContent>
-          <TabsContent value="activity" className="mt-0">
-            {eventsSection}
-          </TabsContent>
-        </Tabs>
-      }
-      right={
-        <div className="space-y-4">
-          <JobCopilotPanel
-            jobId={String(id)}
-            candidates={apps
-              .filter((a) => a.candidate)
-              .map((a) => ({
-                id: a.candidate_id as string,
-                full_name:
-                  (a.candidate as { full_name: string } | null)?.full_name ?? "Candidato",
-              }))}
+    <>
+      <RecordLayout
+        header={header}
+        left={
+          <JobPropertiesPanel
+            job={job}
+            onSaved={refresh}
+            save={async (patch) => {
+              await saveJobFn({
+                data: {
+                  id: jobAny.id,
+                  title: patch.title ?? jobAny.title,
+                  description: patch.description ?? jobAny.description ?? null,
+                  requirements: patch.requirements ?? jobAny.requirements ?? null,
+                  seniority: (patch.seniority ?? jobAny.seniority) as never,
+                  employment_type: (patch.employment_type ?? jobAny.employment_type) as never,
+                  location: patch.location ?? jobAny.location ?? null,
+                  remote_mode: (patch.remote_mode ?? jobAny.remote_mode) as never,
+                  salary_min: patch.salary_min ?? jobAny.salary_min ?? null,
+                  salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
+                  status: (patch.status ?? jobAny.status) as never,
+                },
+              });
+            }}
           />
-          {department ? (
-            <section className="rounded-lg border border-border-subtle bg-surface-1 p-4">
-              <AtsSectionHeader title="Departamento" />
-              <div className="mt-2 inline-flex items-center gap-1.5 text-sm text-text-secondary">
-                <Building2 className="h-3.5 w-3.5 text-text-tertiary" aria-hidden />
-                {department}
-              </div>
-            </section>
-          ) : null}
-        </div>
-      }
-    />
-  );
+        }
+        center={
+          <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="overview">Visão geral</TabsTrigger>
+              <TabsTrigger value="pipeline">
+                Pipeline{" "}
+                <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
+              </TabsTrigger>
+              <TabsTrigger value="candidates">Candidatos</TabsTrigger>
+              <TabsTrigger value="interviews">
+                Entrevistas{" "}
+                <span className="ml-1 text-[10px] text-text-tertiary">
+                  ({interviews.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="postings">Postagens</TabsTrigger>
+              <TabsTrigger value="activity">Atividade</TabsTrigger>
+            </TabsList>
 
-  function _unused() {
-    return evalApp;
-  }
+            <TabsContent value="overview" className="mt-0">
+              {overviewSection}
+            </TabsContent>
+            <TabsContent value="pipeline" className="mt-0">
+              <AtsSectionHeader
+                title="Pipeline"
+                description="Arraste candidatos entre etapas para atualizar o status."
+              />
+              <div className="mt-3">{pipelineSection}</div>
+            </TabsContent>
+            <TabsContent value="candidates" className="mt-0">
+              {candidatesSection}
+            </TabsContent>
+            <TabsContent value="interviews" className="mt-0">
+              {interviewsSection}
+            </TabsContent>
+            <TabsContent value="postings" className="mt-0">
+              <JobPostingsPanel jobId={String(id)} />
+            </TabsContent>
+            <TabsContent value="activity" className="mt-0">
+              {eventsSection}
+            </TabsContent>
+          </Tabs>
+        }
+        right={
+          <div className="space-y-4">
+            <JobCopilotPanel
+              jobId={String(id)}
+              candidates={apps
+                .filter((a) => a.candidate)
+                .map((a) => ({
+                  id: a.candidate_id as string,
+                  full_name:
+                    (a.candidate as { full_name: string } | null)?.full_name ?? "Candidato",
+                }))}
+            />
+            {department ? (
+              <section className="rounded-lg border border-border-subtle bg-surface-1 p-4">
+                <AtsSectionHeader title="Departamento" />
+                <div className="mt-2 inline-flex items-center gap-1.5 text-sm text-text-secondary">
+                  <Building2 className="h-3.5 w-3.5 text-text-tertiary" aria-hidden />
+                  {department}
+                </div>
+              </section>
+            ) : null}
+          </div>
+        }
+      />
+      <MountEvalDialog
+        evalApp={evalApp}
+        jobId={id}
+        onClose={() => setEvalApp(null)}
+        refresh={refresh}
+      />
+    </>
+  );
 }
+
 
 /* ---------- Left: Properties (inline editor) ---------- */
 type JobPatch = {
