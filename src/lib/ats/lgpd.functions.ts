@@ -108,7 +108,15 @@ export const exportCandidateData = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const cid = data.candidate_id;
 
-    const [cand, apps, cons, scor, intv] = await Promise.all([
+    // Fetch applications first so we can fan out to scorecard responses by application_id.
+    const { data: appsData } = await supabase
+      .from("ats_applications")
+      .select("*")
+      .eq("owner_id", userId)
+      .eq("candidate_id", cid);
+    const appIds = (appsData ?? []).map((a: { id: string }) => a.id);
+
+    const [cand, cons, scor, intv] = await Promise.all([
       supabase
         .from("ats_candidates")
         .select("*")
@@ -116,32 +124,34 @@ export const exportCandidateData = createServerFn({ method: "POST" })
         .eq("id", cid)
         .maybeSingle(),
       supabase
-        .from("ats_applications")
-        .select("*")
-        .eq("owner_id", userId)
-        .eq("candidate_id", cid),
-      supabase
         .from("ats_candidate_consents")
         .select("*")
         .eq("owner_id", userId)
         .eq("candidate_id", cid),
-      supabase
-        .from("ats_scorecards")
-        .select("*")
-        .eq("candidate_id", cid),
+      appIds.length
+        ? supabase
+            .from("ats_scorecard_responses")
+            .select("*")
+            .in("application_id", appIds)
+        : Promise.resolve({ data: [] as unknown[] }),
       supabase
         .from("ats_interviews")
         .select("*")
         .eq("candidate_id", cid),
     ]);
 
+    const applicationsList = (appsData ?? []) as unknown as Json;
+    const consentsList = (cons.data ?? []) as unknown as Json;
+    const scorecardsList = ((scor as { data?: unknown[] }).data ?? []) as unknown as Json;
+    const interviewsList = (intv.data ?? []) as unknown as Json;
+
     const snapshot: CandidateExportSnapshot = {
       exported_at: new Date().toISOString(),
-      candidate: (cand.data as Record<string, unknown> | null) ?? null,
-      applications: (apps.data as unknown[]) ?? [],
-      consents: (cons.data as unknown[]) ?? [],
-      scorecards: (scor.data as unknown[]) ?? [],
-      interviews: (intv.data as unknown[]) ?? [],
+      candidate: (cand.data ?? null) as unknown as Json,
+      applications: applicationsList,
+      consents: consentsList,
+      scorecards: scorecardsList,
+      interviews: interviewsList,
     };
 
     if (data.dsar_id) {
@@ -151,12 +161,15 @@ export const exportCandidateData = createServerFn({ method: "POST" })
           status: "completed",
           processed_at: new Date().toISOString(),
           processed_by: userId,
-          result: { kind: "export", counts: {
-            applications: snapshot.applications.length,
-            consents: snapshot.consents.length,
-            scorecards: snapshot.scorecards.length,
-            interviews: snapshot.interviews.length,
-          } },
+          result: {
+            kind: "export",
+            counts: {
+              applications: (appsData ?? []).length,
+              consents: (cons.data ?? []).length,
+              scorecards: ((scor as { data?: unknown[] }).data ?? []).length,
+              interviews: (intv.data ?? []).length,
+            },
+          },
         })
         .eq("id", data.dsar_id)
         .eq("owner_id", userId);
@@ -164,6 +177,7 @@ export const exportCandidateData = createServerFn({ method: "POST" })
 
     return snapshot;
   });
+
 
 export const eraseCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
