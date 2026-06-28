@@ -180,11 +180,11 @@ import { Route as AuthenticatedatsNotetakerRouteImport } from './routes/_authent
 import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
 import { Route as AuthenticatedatsInterviewKitsRouteImport } from './routes/_authenticated/(ats)/interview-kits'
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
-import { Route as AuthenticatedatsCandidatesRouteImport } from './routes/_authenticated/(ats)/candidates'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
 import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
+import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -1231,12 +1231,6 @@ const AuthenticatedatsInsightsRoute =
     path: '/insights',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedatsCandidatesRoute =
-  AuthenticatedatsCandidatesRouteImport.update({
-    id: '/(ats)/candidates',
-    path: '/candidates',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedSettingsRolesIndexRoute =
   AuthenticatedSettingsRolesIndexRouteImport.update({
     id: '/',
@@ -1259,6 +1253,12 @@ const AuthenticatedatsHuntingIndexRoute =
   AuthenticatedatsHuntingIndexRouteImport.update({
     id: '/(ats)/hunting/',
     path: '/hunting/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsCandidatesIndexRoute =
+  AuthenticatedatsCandidatesIndexRouteImport.update({
+    id: '/(ats)/candidates/',
+    path: '/candidates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const LovableEmailTransactionalSendRoute =
@@ -1643,9 +1643,9 @@ const AuthenticatedatsHuntingCapturesRoute =
   } as any)
 const AuthenticatedatsCandidatesIdRoute =
   AuthenticatedatsCandidatesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedatsCandidatesRoute,
+    id: '/(ats)/candidates/$id',
+    path: '/candidates/$id',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiPublicZapierUnsubscribeIdRoute =
   ApiPublicZapierUnsubscribeIdRouteImport.update({
@@ -1795,7 +1795,6 @@ export interface FileRoutesByFullPath {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
-  '/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -1979,6 +1978,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -2052,7 +2052,6 @@ export interface FileRoutesByTo {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
-  '/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2235,6 +2234,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/candidates': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -2313,7 +2313,6 @@ export interface FileRoutesById {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
-  '/_authenticated/(ats)/candidates': typeof AuthenticatedatsCandidatesRouteWithChildren
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
   '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
@@ -2497,6 +2496,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/(ats)/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -2575,7 +2575,6 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
-    | '/candidates'
     | '/insights'
     | '/interview-kits'
     | '/jobs'
@@ -2759,6 +2758,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/candidates/'
     | '/hunting/'
     | '/sourcing/'
     | '/prospecting/campaigns/'
@@ -2832,7 +2832,6 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers'
     | '/kb'
-    | '/candidates'
     | '/insights'
     | '/interview-kits'
     | '/jobs'
@@ -3015,6 +3014,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/candidates'
     | '/hunting'
     | '/sourcing'
     | '/prospecting/campaigns'
@@ -3092,7 +3092,6 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
-    | '/_authenticated/(ats)/candidates'
     | '/_authenticated/(ats)/insights'
     | '/_authenticated/(ats)/interview-kits'
     | '/_authenticated/(ats)/jobs'
@@ -3276,6 +3275,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/(ats)/candidates/'
     | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/prospecting/campaigns/'
@@ -4593,13 +4593,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsInsightsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/(ats)/candidates': {
-      id: '/_authenticated/(ats)/candidates'
-      path: '/candidates'
-      fullPath: '/candidates'
-      preLoaderRoute: typeof AuthenticatedatsCandidatesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/settings/roles/': {
       id: '/_authenticated/settings/roles/'
       path: '/'
@@ -4626,6 +4619,13 @@ declare module '@tanstack/react-router' {
       path: '/hunting'
       fullPath: '/hunting/'
       preLoaderRoute: typeof AuthenticatedatsHuntingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/candidates/': {
+      id: '/_authenticated/(ats)/candidates/'
+      path: '/candidates'
+      fullPath: '/candidates/'
+      preLoaderRoute: typeof AuthenticatedatsCandidatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/lovable/email/transactional/send': {
@@ -5092,10 +5092,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/(ats)/candidates/$id': {
       id: '/_authenticated/(ats)/candidates/$id'
-      path: '/$id'
+      path: '/candidates/$id'
       fullPath: '/candidates/$id'
       preLoaderRoute: typeof AuthenticatedatsCandidatesIdRouteImport
-      parentRoute: typeof AuthenticatedatsCandidatesRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/zapier/unsubscribe/$id': {
       id: '/api/public/zapier/unsubscribe/$id'
@@ -5567,20 +5567,6 @@ const AuthenticatedTicketsRouteChildren: AuthenticatedTicketsRouteChildren = {
 const AuthenticatedTicketsRouteWithChildren =
   AuthenticatedTicketsRoute._addFileChildren(AuthenticatedTicketsRouteChildren)
 
-interface AuthenticatedatsCandidatesRouteChildren {
-  AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
-}
-
-const AuthenticatedatsCandidatesRouteChildren: AuthenticatedatsCandidatesRouteChildren =
-  {
-    AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
-  }
-
-const AuthenticatedatsCandidatesRouteWithChildren =
-  AuthenticatedatsCandidatesRoute._addFileChildren(
-    AuthenticatedatsCandidatesRouteChildren,
-  )
-
 interface AuthenticatedatsJobsRouteChildren {
   AuthenticatedatsJobsIdRoute: typeof AuthenticatedatsJobsIdRoute
 }
@@ -5641,7 +5627,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
-  AuthenticatedatsCandidatesRoute: typeof AuthenticatedatsCandidatesRouteWithChildren
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
   AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
@@ -5674,6 +5659,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
+  AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
   AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
   AuthenticatedatsHuntingInstallRoute: typeof AuthenticatedatsHuntingInstallRoute
   AuthenticatedatsHuntingTemplatesRoute: typeof AuthenticatedatsHuntingTemplatesRoute
@@ -5682,6 +5668,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
+  AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
@@ -5711,7 +5698,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
-  AuthenticatedatsCandidatesRoute: AuthenticatedatsCandidatesRouteWithChildren,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
   AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
@@ -5745,6 +5731,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
+  AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
   AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
   AuthenticatedatsHuntingInstallRoute: AuthenticatedatsHuntingInstallRoute,
   AuthenticatedatsHuntingTemplatesRoute: AuthenticatedatsHuntingTemplatesRoute,
@@ -5756,6 +5743,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingReferralsRoute,
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
+  AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
