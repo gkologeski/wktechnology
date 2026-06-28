@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -11,6 +11,9 @@ import {
   MapPin,
   Mail,
   Briefcase,
+  LayoutGrid,
+  Rows3,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +28,15 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   listAtsCandidates,
   saveAtsCandidate,
@@ -33,6 +45,11 @@ import {
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
+import {
+  getCandidateStatuses,
+  DERIVED_STATUS_LABELS,
+  type DerivedCandidateStatus,
+} from "@/lib/ats/candidate-status.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
 import {
   AtsPageHeader,
@@ -50,6 +67,37 @@ export const Route = createFileRoute("/_authenticated/(ats)/candidates")({
 
 type Cand = Awaited<ReturnType<typeof listAtsCandidates>>[number];
 
+const STATUS_ORDER: DerivedCandidateStatus[] = [
+  "new",
+  "in_process",
+  "interview",
+  "offer",
+  "hired",
+  "archived",
+];
+
+const STATUS_CLS: Record<DerivedCandidateStatus, string> = {
+  new: "border-border-subtle bg-surface-sunken text-text-secondary",
+  in_process: "border-stage-screen/30 bg-stage-screen/10 text-stage-screen",
+  interview: "border-stage-interview/30 bg-stage-interview/10 text-stage-interview",
+  offer: "border-stage-offer/30 bg-stage-offer/10 text-stage-offer",
+  hired: "border-stage-hired/30 bg-stage-hired/10 text-stage-hired",
+  archived: "border-stage-rejected/30 bg-stage-rejected/10 text-stage-rejected",
+};
+
+function CandidateStatusPill({ status }: { status: DerivedCandidateStatus }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-none whitespace-nowrap",
+        STATUS_CLS[status],
+      )}
+    >
+      {DERIVED_STATUS_LABELS[status]}
+    </span>
+  );
+}
+
 function CandidatesGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -59,6 +107,7 @@ function CandidatesGridSkeleton() {
     </div>
   );
 }
+
 
 function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
