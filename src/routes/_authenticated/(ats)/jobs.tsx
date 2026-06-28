@@ -43,7 +43,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { listAtsJobs, saveAtsJob } from "@/lib/ats/ats.functions";
+import {
+  listAtsJobs,
+  saveAtsJob,
+  setAtsJobStatus,
+  setAtsJobDepartment,
+} from "@/lib/ats/ats.functions";
+
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
   AtsPageHeader,
