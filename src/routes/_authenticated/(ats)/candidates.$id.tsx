@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
+import { CandidateCopilotPanel } from "@/components/ats/candidate-copilot-panel";
 import {
   getCandidateDetail,
   removeCandidateFromPool,
@@ -265,6 +266,7 @@ function CandidateDetailPage() {
       }
       right={
         <div className="space-y-4">
+          <CandidateCopilotPanel candidateId={data.candidate.id} />
           <PoolsCard
             detail={data}
             onRemove={async (mid) => {
