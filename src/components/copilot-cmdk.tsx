@@ -55,8 +55,20 @@ export function CopilotCmdK() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Sparkles className="h-4 w-4" /> Copilot · pergunte sobre seus dados
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Sparkles className="h-4 w-4" /> Copilot · pergunte sobre seus dados
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                window.dispatchEvent(new CustomEvent("ats:associate-open"));
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              Associar candidato a vaga
+            </button>
           </div>
           <div className="flex gap-2">
             <Input
