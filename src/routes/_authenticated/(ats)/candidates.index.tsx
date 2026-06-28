@@ -497,7 +497,7 @@ function CandidatesPage() {
           </>
         }
         actions={
-          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table")}>
+          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table" | "kanban")}>
             <TabsList className="h-8">
               <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
                 <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
@@ -505,8 +505,12 @@ function CandidatesPage() {
               <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
                 <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
               </TabsTrigger>
+              <TabsTrigger value="kanban" className="h-7 px-2 text-xs gap-1">
+                <Columns3 className="h-3.5 w-3.5" aria-hidden /> Kanban
+              </TabsTrigger>
             </TabsList>
           </Tabs>
+
         }
       />
 
