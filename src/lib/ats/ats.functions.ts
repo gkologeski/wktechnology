@@ -137,10 +137,12 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     };
     return ((rows ?? []) as unknown as JobRow[]).map((r) => ({
       ...r,
-      department: (r.metadata?.department as string | null | undefined) ?? null,
+      metadata: undefined,
+      department: ((r.metadata as { department?: string } | null)?.department) ?? null,
       active_applications: counts[r.id] ?? 0,
     }));
   });
+
 
 
 export const getAtsJob = createServerFn({ method: "POST" })
