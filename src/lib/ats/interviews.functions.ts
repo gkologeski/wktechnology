@@ -87,6 +87,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         notes: z.string().max(4000).nullable().optional(),
         stage_value: z.string().max(80).nullable().optional(),
         interview_kit_id: z.string().uuid().nullable().optional(),
+        panel_interviewer_ids: z.array(z.string().uuid()).max(8).optional(),
       })
       .parse(d),
   )
