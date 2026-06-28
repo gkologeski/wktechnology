@@ -123,12 +123,14 @@ function HuntingCapturesPage() {
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-medium">{cand?.full_name ?? "—"}</p>
                           <Badge variant="outline" className="text-xs">LinkedIn</Badge>
-                          {Array.isArray(cand?.skills) && cand.skills.length > 0 && (
-                            <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-600">
-                              enriquecido
-                            </Badge>
-                          )}
+                          {Array.isArray((cand as { skills?: unknown } | null)?.skills) &&
+                            ((cand as { skills: unknown[] }).skills).length > 0 && (
+                              <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-600">
+                                enriquecido
+                              </Badge>
+                            )}
                         </div>
+
                         <p className="truncate text-xs text-muted-foreground">
                           {cand?.current_position ?? "—"}
                           {cand?.current_company ? ` · ${cand.current_company}` : ""}
