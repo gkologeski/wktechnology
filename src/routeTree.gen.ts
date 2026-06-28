@@ -30,6 +30,7 @@ import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as ScheduleTokenRouteImport } from './routes/schedule.$token'
+import { Route as ReferSlugRouteImport } from './routes/refer.$slug'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as OfferTokenRouteImport } from './routes/offer.$token'
@@ -247,6 +248,7 @@ import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_au
 import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
 import { Route as AuthenticatedatsSourcingReferralsRouteImport } from './routes/_authenticated/(ats)/sourcing/referrals'
 import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_authenticated/(ats)/sourcing/pools'
+import { Route as AuthenticatedatsSourcingMultiPostingRouteImport } from './routes/_authenticated/(ats)/sourcing/multi-posting'
 import { Route as AuthenticatedatsSourcingInboxRouteImport } from './routes/_authenticated/(ats)/sourcing/inbox'
 import { Route as AuthenticatedatsSourcingAnalyticsRouteImport } from './routes/_authenticated/(ats)/sourcing/analytics'
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
@@ -374,6 +376,11 @@ const SignTokenRoute = SignTokenRouteImport.update({
 const ScheduleTokenRoute = ScheduleTokenRouteImport.update({
   id: '/schedule/$token',
   path: '/schedule/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferSlugRoute = ReferSlugRouteImport.update({
+  id: '/refer/$slug',
+  path: '/refer/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuoteTokenRoute = QuoteTokenRouteImport.update({
@@ -1620,6 +1627,12 @@ const AuthenticatedatsSourcingPoolsRoute =
     path: '/sourcing/pools',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsSourcingMultiPostingRoute =
+  AuthenticatedatsSourcingMultiPostingRouteImport.update({
+    id: '/(ats)/sourcing/multi-posting',
+    path: '/sourcing/multi-posting',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsSourcingInboxRoute =
   AuthenticatedatsSourcingInboxRouteImport.update({
     id: '/(ats)/sourcing/inbox',
@@ -1807,6 +1820,7 @@ export interface FileRoutesByFullPath {
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -1938,6 +1952,7 @@ export interface FileRoutesByFullPath {
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
+  '/sourcing/multi-posting': typeof AuthenticatedatsSourcingMultiPostingRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2067,6 +2082,7 @@ export interface FileRoutesByTo {
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -2197,6 +2213,7 @@ export interface FileRoutesByTo {
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
+  '/sourcing/multi-posting': typeof AuthenticatedatsSourcingMultiPostingRoute
   '/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2331,6 +2348,7 @@ export interface FileRoutesById {
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -2462,6 +2480,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
   '/_authenticated/(ats)/sourcing/analytics': typeof AuthenticatedatsSourcingAnalyticsRoute
   '/_authenticated/(ats)/sourcing/inbox': typeof AuthenticatedatsSourcingInboxRoute
+  '/_authenticated/(ats)/sourcing/multi-posting': typeof AuthenticatedatsSourcingMultiPostingRoute
   '/_authenticated/(ats)/sourcing/pools': typeof AuthenticatedatsSourcingPoolsRoute
   '/_authenticated/(ats)/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
@@ -2596,6 +2615,7 @@ export interface FileRouteTypes {
     | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/refer/$slug'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -2727,6 +2747,7 @@ export interface FileRouteTypes {
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
+    | '/sourcing/multi-posting'
     | '/sourcing/pools'
     | '/sourcing/referrals'
     | '/sourcing/sequences'
@@ -2856,6 +2877,7 @@ export interface FileRouteTypes {
     | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/refer/$slug'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -2986,6 +3008,7 @@ export interface FileRouteTypes {
     | '/jobs/$id'
     | '/sourcing/analytics'
     | '/sourcing/inbox'
+    | '/sourcing/multi-posting'
     | '/sourcing/pools'
     | '/sourcing/referrals'
     | '/sourcing/sequences'
@@ -3119,6 +3142,7 @@ export interface FileRouteTypes {
     | '/offer/$token'
     | '/portal/$token'
     | '/quote/$token'
+    | '/refer/$slug'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -3250,6 +3274,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/jobs/$id'
     | '/_authenticated/(ats)/sourcing/analytics'
     | '/_authenticated/(ats)/sourcing/inbox'
+    | '/_authenticated/(ats)/sourcing/multi-posting'
     | '/_authenticated/(ats)/sourcing/pools'
     | '/_authenticated/(ats)/sourcing/referrals'
     | '/_authenticated/(ats)/sourcing/sequences'
@@ -3360,6 +3385,7 @@ export interface RootRouteChildren {
   OfferTokenRoute: typeof OfferTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
+  ReferSlugRoute: typeof ReferSlugRoute
   ScheduleTokenRoute: typeof ScheduleTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
@@ -3581,6 +3607,13 @@ declare module '@tanstack/react-router' {
       path: '/schedule/$token'
       fullPath: '/schedule/$token'
       preLoaderRoute: typeof ScheduleTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refer/$slug': {
+      id: '/refer/$slug'
+      path: '/refer/$slug'
+      fullPath: '/refer/$slug'
+      preLoaderRoute: typeof ReferSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quote/$token': {
@@ -5102,6 +5135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingPoolsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/sourcing/multi-posting': {
+      id: '/_authenticated/(ats)/sourcing/multi-posting'
+      path: '/sourcing/multi-posting'
+      fullPath: '/sourcing/multi-posting'
+      preLoaderRoute: typeof AuthenticatedatsSourcingMultiPostingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/sourcing/inbox': {
       id: '/_authenticated/(ats)/sourcing/inbox'
       path: '/sourcing/inbox'
@@ -5726,6 +5766,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsHuntingTemplatesRoute: typeof AuthenticatedatsHuntingTemplatesRoute
   AuthenticatedatsSourcingAnalyticsRoute: typeof AuthenticatedatsSourcingAnalyticsRoute
   AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
+  AuthenticatedatsSourcingMultiPostingRoute: typeof AuthenticatedatsSourcingMultiPostingRoute
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
@@ -5799,6 +5840,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsSourcingAnalyticsRoute:
     AuthenticatedatsSourcingAnalyticsRoute,
   AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
+  AuthenticatedatsSourcingMultiPostingRoute:
+    AuthenticatedatsSourcingMultiPostingRoute,
   AuthenticatedatsSourcingPoolsRoute: AuthenticatedatsSourcingPoolsRoute,
   AuthenticatedatsSourcingReferralsRoute:
     AuthenticatedatsSourcingReferralsRoute,
@@ -5910,6 +5953,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfferTokenRoute: OfferTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
+  ReferSlugRoute: ReferSlugRoute,
   ScheduleTokenRoute: ScheduleTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
