@@ -122,11 +122,12 @@ function CandidatesPage() {
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
   const queryClient = useQueryClient();
-  const [view, setView] = useState<"cards" | "table">(
+  const [view, setView] = useState<"cards" | "table" | "kanban">(
     () => (typeof window !== "undefined"
-      ? ((localStorage.getItem("candidates:view") as "cards" | "table") ?? "cards")
+      ? ((localStorage.getItem("candidates:view") as "cards" | "table" | "kanban") ?? "cards")
       : "cards"),
   );
+
   const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
