@@ -779,3 +779,90 @@ export const listJobInterviews = createServerFn({ method: "POST" })
   });
 
 
+// ---------- patches leves (DnD nos kanbans) --------------------------------
+
+export const setAtsJobStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["draft", "published", "on_hold", "filled", "closed"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.status === "published") patch.opened_at = new Date().toISOString();
+    const { error } = await supabase
+      .from("ats_jobs")
+      .update(patch as never)
+      .eq("id", data.id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    if (data.status === "published") {
+      await emitEvent(supabase, {
+        ownerId: userId,
+        eventName: "ats.job.opened",
+        entityType: "ats_job",
+        entityId: data.id,
+        dedupeKey: `ats.job.opened:${data.id}`,
+        payload: { jobId: data.id },
+      }).catch(() => undefined);
+    }
+    return { id: data.id, status: data.status };
+  });
+
+export const setAtsJobDepartment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        department: z.string().trim().min(1).max(120).nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: cur, error: readErr } = await supabase
+      .from("ats_jobs")
+      .select("metadata")
+      .eq("id", data.id)
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    const metaSrc =
+      (cur?.metadata as Record<string, unknown> | null | undefined) ?? {};
+    const next: Record<string, unknown> = { ...metaSrc };
+    if (data.department === null) {
+      delete next.department;
+    } else {
+      next.department = data.department;
+    }
+    const { error } = await supabase
+      .from("ats_jobs")
+      .update({ metadata: next } as never)
+      .eq("id", data.id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { id: data.id, department: data.department };
+  });
+
+export const setCandidateArchived = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("ats_candidates")
+      .update({ archived: data.archived } as never)
+      .eq("id", data.id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { id: data.id, archived: data.archived };
+  });
+
