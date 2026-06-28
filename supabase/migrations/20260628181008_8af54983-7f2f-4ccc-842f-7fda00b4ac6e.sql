@@ -1,0 +1,2 @@
+ALTER TABLE public.ats_candidates ADD COLUMN IF NOT EXISTS archived boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS ats_candidates_owner_archived_idx ON public.ats_candidates (owner_id, archived);
