@@ -634,7 +634,8 @@ function CandidatesPage() {
             );
           })}
         </div>
-      ) : (
+      ) : view === "table" ? (
+
         <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
           <Table>
             <TableHeader>
