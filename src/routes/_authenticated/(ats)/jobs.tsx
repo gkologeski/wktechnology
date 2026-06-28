@@ -247,6 +247,11 @@ function JobsGridSkeleton() {
 function AtsJobsPage() {
   const list = useServerFn(listAtsJobs);
   const save = useServerFn(saveAtsJob);
+  const updateJobStatus = useServerFn(setAtsJobStatus);
+  const updateJobDepartment = useServerFn(setAtsJobDepartment);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
   const navigate = useNavigate();
   const [rows, setRows] = useState<JobRow[]>([]);
   const [search, setSearch] = useState("");
