@@ -176,15 +176,34 @@ function JobCard({ job }: { job: JobRow }) {
   );
 }
 
-function JobKanbanCard({ job }: { job: JobRow }) {
+function JobKanbanCard({
+  job,
+  onDragStart,
+  onDragEnd,
+  dragging,
+}: {
+  job: JobRow;
+  onDragStart?: (jobId: string) => void;
+  onDragEnd?: () => void;
+  dragging?: boolean;
+}) {
   return (
     <Link
       to="/jobs/$id"
       params={{ id: job.id }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", job.id);
+        onDragStart?.(job.id);
+      }}
+      onDragEnd={() => onDragEnd?.()}
       className={cn(
         "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
         "transition-all hover:border-border-strong hover:shadow-sm",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "cursor-grab active:cursor-grabbing",
+        dragging && "opacity-50",
       )}
     >
       <div className="truncate text-sm font-medium text-text-primary">{job.title}</div>
@@ -213,6 +232,7 @@ function JobKanbanCard({ job }: { job: JobRow }) {
     </Link>
   );
 }
+
 
 function JobsGridSkeleton() {
   return (
