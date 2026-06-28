@@ -835,6 +835,59 @@ export type Database = {
           },
         ]
       }
+      ats_candidate_consents: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          evidence: Json | null
+          expires_at: string | null
+          granted: boolean
+          granted_at: string
+          id: string
+          legal_basis: string | null
+          owner_id: string
+          purpose: string
+          revoked_at: string | null
+          source: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          evidence?: Json | null
+          expires_at?: string | null
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          legal_basis?: string | null
+          owner_id: string
+          purpose: string
+          revoked_at?: string | null
+          source?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          evidence?: Json | null
+          expires_at?: string | null
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          legal_basis?: string | null
+          owner_id?: string
+          purpose?: string
+          revoked_at?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_candidate_consents_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ats_candidate_email_queue: {
         Row: {
           application_id: string | null
@@ -954,6 +1007,7 @@ export type Database = {
           full_name: string
           id: string
           last_touch_at: string | null
+          lgpd_redacted_at: string | null
           linkedin_url: string | null
           location: string | null
           next_action_at: string | null
@@ -962,6 +1016,7 @@ export type Database = {
           phone: string | null
           relationship_owner_id: string | null
           relationship_status: string
+          retention_until: string | null
           score: number | null
           skills: string[]
           source: string
@@ -983,6 +1038,7 @@ export type Database = {
           full_name: string
           id?: string
           last_touch_at?: string | null
+          lgpd_redacted_at?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action_at?: string | null
@@ -991,6 +1047,7 @@ export type Database = {
           phone?: string | null
           relationship_owner_id?: string | null
           relationship_status?: string
+          retention_until?: string | null
           score?: number | null
           skills?: string[]
           source?: string
@@ -1012,6 +1069,7 @@ export type Database = {
           full_name?: string
           id?: string
           last_touch_at?: string | null
+          lgpd_redacted_at?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action_at?: string | null
@@ -1020,6 +1078,7 @@ export type Database = {
           phone?: string | null
           relationship_owner_id?: string | null
           relationship_status?: string
+          retention_until?: string | null
           score?: number | null
           skills?: string[]
           source?: string
@@ -1027,6 +1086,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ats_dsar_requests: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          owner_id: string
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requested_by: string | null
+          result: Json | null
+          status: string
+          subject_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type: string
+          requested_by?: string | null
+          result?: Json | null
+          status?: string
+          subject_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_by?: string | null
+          result?: Json | null
+          status?: string
+          subject_email?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_dsar_requests_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ats_hunting_captures: {
         Row: {
@@ -12260,6 +12375,10 @@ export type Database = {
           p_interval: Database["public"]["Enums"]["billing_interval"]
         }
         Returns: string
+      }
+      anonymize_ats_candidate: {
+        Args: { _candidate_id: string }
+        Returns: undefined
       }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
       companies_facets: {
