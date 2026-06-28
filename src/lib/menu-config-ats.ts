@@ -99,4 +99,11 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "DEI Analytics", url: "/dei-analytics", icon: Heart },
     ],
   },
+  {
+    label: "Compliance",
+    items: [
+      { title: "LGPD & DSAR", url: "/compliance", icon: Shield },
+    ],
+  },
 ];
+
