@@ -25,7 +25,9 @@ import {
   CalendarClock,
   Search,
   Download,
+  Shield,
 } from "lucide-react";
+
 
 import type { SidebarGroup } from "@/lib/menu-config";
 
