@@ -162,6 +162,34 @@ function CandidatesPage() {
   const error = q.error ? (q.error instanceof Error ? q.error.message : "Falha ao listar") : null;
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
 
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("candidates:view", view);
+  }, [view]);
+
+  const ids = useMemo(() => rows.map((r) => r.id as string), [rows]);
+  const idsKey = ids.join(",");
+  const statusQ = useQuery({
+    queryKey: ["ats-candidate-statuses", idsKey],
+    queryFn: () => getStatuses({ data: { ids } }),
+    enabled: ids.length > 0,
+    staleTime: 30_000,
+  });
+  const statuses: Record<string, DerivedCandidateStatus> = statusQ.data ?? {};
+
+  const visibleRows = useMemo(() => {
+    if (statusFilter === "all") return rows;
+    return rows.filter((r) => (statuses[r.id as string] ?? "new") === statusFilter);
+  }, [rows, statuses, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const c: Record<DerivedCandidateStatus, number> = {
+      new: 0, in_process: 0, interview: 0, offer: 0, hired: 0, archived: 0,
+    };
+    for (const r of rows) c[statuses[r.id as string] ?? "new"]++;
+    return c;
+  }, [rows, statuses]);
+
+
   const handleCreate = async () => {
     if (!form.full_name.trim()) {
       toast.error("Informe o nome");
