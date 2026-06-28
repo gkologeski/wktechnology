@@ -91,7 +91,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, owner_id, hiring_manager_id, recruiter_id",
+        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, hiring_manager_id, recruiter_id, metadata",
       )
       .or(
         `owner_id.eq.${userId},hiring_manager_id.eq.${userId},recruiter_id.eq.${userId}`,
@@ -132,12 +132,16 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       opened_at: string | null;
       filled_at: string | null;
       updated_at: string;
+      created_at: string;
+      metadata: Record<string, unknown> | null;
     };
     return ((rows ?? []) as unknown as JobRow[]).map((r) => ({
       ...r,
+      department: (r.metadata?.department as string | null | undefined) ?? null,
       active_applications: counts[r.id] ?? 0,
     }));
   });
+
 
 export const getAtsJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
