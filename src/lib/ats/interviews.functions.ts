@@ -130,6 +130,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         stage_value: data.stage_value ?? (app.stage_value as string | null),
         interview_kit_id: data.interview_kit_id ?? null,
         async_questions_snapshot: snapshot as never,
+        panel_interviewer_ids: (data.panel_interviewer_ids ?? []) as never,
       } as never)
       .select("id")
       .single();
