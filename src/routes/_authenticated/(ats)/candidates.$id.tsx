@@ -23,6 +23,7 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { CandidateCopilotPanel } from "@/components/ats/candidate-copilot-panel";
+import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
 import {
   getCandidateDetail,
   removeCandidateFromPool,
