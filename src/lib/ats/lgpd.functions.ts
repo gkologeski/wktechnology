@@ -34,12 +34,13 @@ export interface CandidateConsent {
 
 export interface CandidateExportSnapshot {
   exported_at: string;
-  candidate: unknown;
-  applications: unknown[];
-  consents: unknown[];
-  scorecards: unknown[];
-  interviews: unknown[];
+  candidate: Json;
+  applications: Json;
+  consents: Json;
+  scorecards: Json;
+  interviews: Json;
 }
+
 
 
 const createSchema = z.object({
