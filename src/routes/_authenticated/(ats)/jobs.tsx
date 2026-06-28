@@ -1,7 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Briefcase, MapPin, Users, AlertCircle, Link2 } from "lucide-react";
+import {
+  Plus,
+  Briefcase,
+  MapPin,
+  Users,
+  AlertCircle,
+  Link2,
+  LayoutGrid,
+  Rows3,
+  Columns3,
+  Building2,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { listAtsJobs, saveAtsJob } from "@/lib/ats/ats.functions";
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
@@ -32,6 +53,8 @@ import {
   Skeletons,
   type JobStatus,
 } from "@/components/ats/ui";
+import { MetaPill } from "@/components/techhire/ui";
+import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs")({
@@ -39,12 +62,12 @@ export const Route = createFileRoute("/_authenticated/(ats)/jobs")({
 });
 
 type JobRow = Awaited<ReturnType<typeof listAtsJobs>>[number];
+type ViewKind = "cards" | "table" | "kanban_status" | "kanban_department";
 
 const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   ATS_JOB_STATUSES.map((s) => [s.value, s.label]),
 );
 
-/** Map ATS backend statuses → design-system StatusBadge variants. */
 const STATUS_TO_BADGE: Record<string, JobStatus> = {
   published: "open",
   draft: "draft",
@@ -73,10 +96,6 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
   internship: "Estágio",
   temporary: "Temporário",
 };
-
-// MetaPill foi promovido para a camada global do TechHire.
-// Mantemos o re-export local para preservar imports e nomes existentes neste arquivo.
-import { MetaPill } from "@/components/techhire/ui";
 
 function JobCard({ job }: { job: JobRow }) {
   const badgeStatus = STATUS_TO_BADGE[job.status] ?? "draft";
@@ -114,6 +133,9 @@ function JobCard({ job }: { job: JobRow }) {
         {job.employment_type ? (
           <MetaPill>{EMPLOYMENT_LABEL[job.employment_type] ?? job.employment_type}</MetaPill>
         ) : null}
+        {(job as { department?: string | null }).department ? (
+          <MetaPill>{(job as { department?: string | null }).department}</MetaPill>
+        ) : null}
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-2 text-xs text-text-secondary">
@@ -148,10 +170,47 @@ function JobCard({ job }: { job: JobRow }) {
   );
 }
 
+function JobKanbanCard({ job }: { job: JobRow }) {
+  return (
+    <Link
+      to="/jobs/$id"
+      params={{ id: job.id }}
+      className={cn(
+        "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
+        "transition-all hover:border-border-strong hover:shadow-sm",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
+    >
+      <div className="truncate text-sm font-medium text-text-primary">{job.title}</div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {job.seniority ? (
+          <MetaPill>{SENIORITY_LABEL[job.seniority] ?? job.seniority}</MetaPill>
+        ) : null}
+        {job.remote_mode ? (
+          <MetaPill>{REMOTE_LABEL[job.remote_mode] ?? job.remote_mode}</MetaPill>
+        ) : null}
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-text-tertiary">
+        {job.location ? (
+          <span className="inline-flex min-w-0 items-center gap-1 truncate">
+            <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{job.location}</span>
+          </span>
+        ) : (
+          <span />
+        )}
+        <span className="inline-flex items-center gap-1 tabular-nums text-text-secondary">
+          <Users className="h-3 w-3" aria-hidden />
+          {job.active_applications}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 function JobsGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-
       {Array.from({ length: 6 }).map((_, i) => (
         <Skeletons.Card key={i} lines={3} />
       ))}
@@ -169,6 +228,11 @@ function AtsJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<ViewKind>(() =>
+    typeof window !== "undefined"
+      ? ((localStorage.getItem("jobs:view") as ViewKind) ?? "cards")
+      : "cards",
+  );
   const [form, setForm] = useState({
     title: "",
     seniority: "",
@@ -180,12 +244,16 @@ function AtsJobsPage() {
     status: "draft",
   });
 
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
+  }, [view]);
+
   const refresh = async () => {
     setLoading(true);
     setError(null);
     try {
       const r = await list({ data: { search, status } });
-      setRows(r);
+      setRows(r as JobRow[]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao listar vagas";
       setError(msg);
@@ -200,7 +268,6 @@ function AtsJobsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  // Debounced search refresh
   useEffect(() => {
     const t = setTimeout(() => {
       refresh();
@@ -269,6 +336,27 @@ function AtsJobsPage() {
     if (total === 0) return "Crie a primeira vaga para iniciar o pipeline.";
     return `${total} ${total === 1 ? "vaga" : "vagas"} no workspace`;
   }, [loading, error, total, search, status]);
+
+  // Group rows for kanban views
+  const byStatus = useMemo(() => {
+    const groups: Record<string, JobRow[]> = {};
+    for (const s of ATS_JOB_STATUSES) groups[s.value] = [];
+    for (const r of rows) {
+      if (!groups[r.status]) groups[r.status] = [];
+      groups[r.status].push(r);
+    }
+    return groups;
+  }, [rows]);
+
+  const byDepartment = useMemo(() => {
+    const groups: Record<string, JobRow[]> = {};
+    for (const r of rows) {
+      const dep = (r as { department?: string | null }).department || "Sem departamento";
+      if (!groups[dep]) groups[dep] = [];
+      groups[dep].push(r);
+    }
+    return groups;
+  }, [rows]);
 
   const newJobButton = (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -417,19 +505,37 @@ function AtsJobsPage() {
         }}
         chips={statusFilterChip}
         actions={
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-8 w-40 border-border-subtle bg-surface-1 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos status</SelectItem>
-              {ATS_JOB_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-8 w-40 border-border-subtle bg-surface-1 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos status</SelectItem>
+                {ATS_JOB_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Tabs value={view} onValueChange={(v) => setView(v as ViewKind)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
+                  <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
+                </TabsTrigger>
+                <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
+                  <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
+                </TabsTrigger>
+                <TabsTrigger value="kanban_status" className="h-7 px-2 text-xs gap-1">
+                  <Columns3 className="h-3.5 w-3.5" aria-hidden /> Status
+                </TabsTrigger>
+                <TabsTrigger value="kanban_department" className="h-7 px-2 text-xs gap-1">
+                  <Building2 className="h-3.5 w-3.5" aria-hidden /> Depto
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         }
       />
 
@@ -450,9 +556,7 @@ function AtsJobsPage() {
         <EmptyState
           icon={Briefcase}
           title={
-            search || status !== "all"
-              ? "Nenhuma vaga encontrada"
-              : "Nenhuma vaga ainda"
+            search || status !== "all" ? "Nenhuma vaga encontrada" : "Nenhuma vaga ainda"
           }
           description={
             search || status !== "all"
@@ -478,12 +582,132 @@ function AtsJobsPage() {
             )
           }
         />
-      ) : (
+      ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((j) => (
             <JobCard key={j.id} job={j} />
           ))}
         </div>
+      ) : view === "table" ? (
+        <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Senioridade</TableHead>
+                <TableHead>Modalidade</TableHead>
+                <TableHead>Local</TableHead>
+                <TableHead>Depto</TableHead>
+                <TableHead className="text-right">Ativos</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((j) => (
+                <TableRow key={j.id} className="group">
+                  <TableCell className="font-medium">
+                    <Link
+                      to="/jobs/$id"
+                      params={{ id: j.id }}
+                      className="text-text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      {j.title}
+                      <ExternalLink
+                        className="h-3 w-3 opacity-0 group-hover:opacity-60"
+                        aria-hidden
+                      />
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge
+                      status={STATUS_TO_BADGE[j.status] ?? "draft"}
+                      label={STATUS_LABEL[j.status] ?? j.status}
+                    />
+                  </TableCell>
+                  <TableCell className="text-text-secondary text-sm">
+                    {j.seniority ? SENIORITY_LABEL[j.seniority] ?? j.seniority : "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary text-sm">
+                    {j.remote_mode ? REMOTE_LABEL[j.remote_mode] ?? j.remote_mode : "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary text-sm">
+                    {j.location ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary text-sm">
+                    {(j as { department?: string | null }).department ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">
+                    {j.active_applications}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : view === "kanban_status" ? (
+        <KanbanScrollContainer ariaLabel="Vagas por status">
+          <div className="flex gap-2 pb-4">
+            {ATS_JOB_STATUSES.map((s) => {
+              const colRows = byStatus[s.value] ?? [];
+              return (
+                <div
+                  key={s.value}
+                  className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
+                >
+                  <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <StatusBadge
+                        status={STATUS_TO_BADGE[s.value] ?? "draft"}
+                        label={s.label}
+                      />
+                      <span className="text-[11px] tabular-nums text-text-tertiary">
+                        {colRows.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
+                    {colRows.map((j) => (
+                      <JobKanbanCard key={j.id} job={j} />
+                    ))}
+                    {colRows.length === 0 && (
+                      <p className="px-2 py-6 text-center text-xs text-text-tertiary">
+                        Vazio
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </KanbanScrollContainer>
+      ) : (
+        <KanbanScrollContainer ariaLabel="Vagas por departamento">
+          <div className="flex gap-2 pb-4">
+            {Object.entries(byDepartment).map(([dep, items]) => (
+              <div
+                key={dep}
+                className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
+              >
+                <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary uppercase tracking-wide">
+                      <Building2 className="h-3 w-3 text-text-tertiary" aria-hidden />
+                      {dep}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-text-tertiary">
+                      {items.length}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
+                  {items.map((j) => (
+                    <JobKanbanCard key={j.id} job={j} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </KanbanScrollContainer>
       )}
     </div>
   );
