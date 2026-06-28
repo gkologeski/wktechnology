@@ -13,7 +13,9 @@ import {
   Briefcase,
   LayoutGrid,
   Rows3,
+  Columns3,
   ExternalLink,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
