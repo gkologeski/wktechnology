@@ -25,7 +25,9 @@ import {
   CalendarClock,
   Search,
   Download,
+  Shield,
 } from "lucide-react";
+
 
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -97,4 +99,11 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "DEI Analytics", url: "/dei-analytics", icon: Heart },
     ],
   },
+  {
+    label: "Compliance",
+    items: [
+      { title: "LGPD & DSAR", url: "/compliance", icon: Shield },
+    ],
+  },
 ];
+
