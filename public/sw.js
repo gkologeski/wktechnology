@@ -1,6 +1,7 @@
-// Service worker v2: NetworkFirst para HTML, CacheFirst para assets, push notifications.
-const CACHE = "crm-v2";
-const RUNTIME = "crm-runtime-v2";
+// Service worker v3: NetworkFirst para HTML, NetworkFirst para assets JS/CSS
+// (evita servir chunks lazy obsoletos após novo build), push notifications.
+const CACHE = "crm-v3";
+const RUNTIME = "crm-runtime-v3";
 const SHELL = ["/", "/favicon.ico", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -49,7 +50,24 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
-  // Hashed assets: cache first.
+  // JS/CSS: NetworkFirst para evitar chunks lazy obsoletos após novo build.
+  const isScript = /\.(?:js|mjs|css)(?:\?|$)/.test(url.pathname);
+  if (isScript) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches
+            .open(RUNTIME)
+            .then((c) => c.put(req, copy))
+            .catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
+    return;
+  }
+  // Outros assets (imagens, fontes): cache first.
   event.respondWith(
     caches.match(req).then(
       (cached) =>

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -30,8 +30,45 @@ import { saveAtsCandidate, deleteAtsCandidate } from "@/lib/ats/ats.functions";
 import { formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 
+function CandidateLoading() {
+  return (
+    <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>
+  );
+}
+
+function CandidateError({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  console.error(error);
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="max-w-md text-center bg-surface-1 border border-border-subtle rounded-xl p-6 shadow-xs">
+        <h2 className="text-base font-semibold text-text-primary">
+          Não foi possível abrir este candidato
+        </h2>
+        <p className="mt-2 text-sm text-text-secondary">{error.message}</p>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+          >
+            Tentar novamente
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/candidates">Voltar para candidatos</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/(ats)/candidates/$id")({
   component: CandidateDetailPage,
+  pendingComponent: CandidateLoading,
+  errorComponent: CandidateError,
 });
 
 const STATUS_LABELS: Record<CandidateDetail["derived_status"], { label: string; cls: string }> = {

@@ -16,6 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { I18nProvider } from "@/lib/i18n";
 import { BrandingProvider } from "@/lib/branding";
 import { NewVersionWatcher } from "@/components/new-version-watcher";
+import { installChunkReloadGuard } from "@/lib/chunk-reload";
+
+if (typeof window !== "undefined") {
+  installChunkReloadGuard();
+}
 
 function NotFoundComponent() {
   return (
