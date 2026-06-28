@@ -217,12 +217,18 @@ export const updateDsarStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: DsarStatus;
+      notes?: string | null;
+      processed_at?: string;
+      processed_by?: string;
+    } = { status: data.status };
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.status === "completed" || data.status === "rejected") {
       patch.processed_at = new Date().toISOString();
       patch.processed_by = userId;
     }
+
     const { error } = await supabase
       .from("ats_dsar_requests")
       .update(patch)
