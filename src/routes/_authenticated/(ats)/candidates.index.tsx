@@ -43,7 +43,10 @@ import {
   listAtsCandidates,
   saveAtsCandidate,
   deleteAtsCandidate,
+  setCandidateArchived,
 } from "@/lib/ats/ats.functions";
+import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
+
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
