@@ -459,6 +459,50 @@ function CandidatesPage() {
           onChange: setSearch,
           placeholder: "Buscar por nome, email, cargo ou skill…",
         }}
+        chips={
+          <>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium",
+                statusFilter === "all"
+                  ? "border-border-strong bg-surface-1 text-text-primary"
+                  : "border-border-subtle bg-surface-sunken text-text-secondary hover:text-text-primary",
+              )}
+            >
+              Todos <span className="tabular-nums opacity-70">{rows.length}</span>
+            </button>
+            {STATUS_ORDER.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium",
+                  statusFilter === s
+                    ? "border-border-strong bg-surface-1 text-text-primary"
+                    : "border-border-subtle bg-surface-sunken text-text-secondary hover:text-text-primary",
+                )}
+              >
+                {DERIVED_STATUS_LABELS[s]}{" "}
+                <span className="tabular-nums opacity-70">{statusCounts[s]}</span>
+              </button>
+            ))}
+          </>
+        }
+        actions={
+          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table")}>
+            <TabsList className="h-8">
+              <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
+                <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
+              </TabsTrigger>
+              <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
+                <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
       />
 
       {loading ? (
@@ -470,19 +514,29 @@ function CandidatesPage() {
           description={error}
           action={<Button onClick={refresh}>Tentar novamente</Button>}
         />
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={search ? "Nenhum candidato encontrado" : "Nenhum candidato cadastrado"}
+          title={
+            search || statusFilter !== "all"
+              ? "Nenhum candidato encontrado"
+              : "Nenhum candidato cadastrado"
+          }
           description={
-            search
-              ? "Tente outros termos ou limpe o filtro de busca."
+            search || statusFilter !== "all"
+              ? "Tente outros termos ou limpe o filtro."
               : "Cadastre um candidato manualmente ou use o parsing de CV (IA) para importar a partir de um currículo."
           }
           action={
-            search ? (
-              <Button variant="outline" onClick={() => setSearch("")}>
-                Limpar busca
+            search || statusFilter !== "all" ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                Limpar filtros
               </Button>
             ) : (
               <Button onClick={() => setOpen(true)}>
@@ -492,10 +546,11 @@ function CandidatesPage() {
             )
           }
         />
-      ) : (
+      ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((c) => {
+          {visibleRows.map((c) => {
             const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+            const status = statuses[c.id as string] ?? "new";
             return (
               <article
                 key={c.id as string}
@@ -551,7 +606,6 @@ function CandidatesPage() {
                   ) : null}
                 </div>
 
-
                 {skills.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1">
                     {skills.slice(0, 6).map((s) => (
@@ -563,16 +617,91 @@ function CandidatesPage() {
                   </div>
                 ) : null}
 
-                {c.source ? (
-                  <div className="mt-3 pt-3 border-t border-border-subtle">
-                    <SourceBadge source={c.source as string} />
-                  </div>
-                ) : null}
+                <div className="mt-3 pt-3 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <CandidateStatusPill status={status} />
+                  {c.source ? <SourceBadge source={c.source as string} /> : <span />}
+                </div>
               </article>
             );
           })}
         </div>
+      ) : (
+        <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Localização</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleRows.map((c) => {
+                const status = statuses[c.id as string] ?? "new";
+                return (
+                  <TableRow key={c.id as string} className="group">
+                    <TableCell className="font-medium">
+                      <Link
+                        to="/candidates/$id"
+                        params={{ id: c.id as string }}
+                        className="text-text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {c.full_name as string}
+                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60" aria-hidden />
+                      </Link>
+                      {c.email ? (
+                        <div className="text-xs text-text-tertiary truncate max-w-[240px]">
+                          {c.email as string}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {c.current_position ? (
+                        <span className="text-sm">
+                          {c.current_position}
+                          {c.current_company ? (
+                            <span className="text-text-tertiary"> @ {c.current_company}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {c.location ? (c.location as string) : <span className="text-text-tertiary">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      <CandidateStatusPill status={status} />
+                    </TableCell>
+                    <TableCell>
+                      {c.source ? (
+                        <SourceBadge source={c.source as string} />
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                        aria-label={`Excluir candidato ${c.full_name}`}
+                        onClick={() => handleDelete(c.id as string)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
+
     </div>
   );
 }
