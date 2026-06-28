@@ -19,6 +19,7 @@ export type AtsEventName =
   | "ats.candidate.added_to_pool"
   | "ats.candidate.relationship_changed"
   | "ats.candidate.silver_medalist"
+  | "ats.candidate.enriched"
   | "ats.sequence.started"
   | "ats.sequence.step_sent"
   | "ats.sequence.replied"
