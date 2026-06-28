@@ -116,13 +116,21 @@ function CandidatesPage() {
   const parse = useServerFn(parseCv);
   const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
+  const getStatuses = useServerFn(getCandidateStatuses);
   const queryClient = useQueryClient();
+  const [view, setView] = useState<"cards" | "table">(
+    () => (typeof window !== "undefined"
+      ? ((localStorage.getItem("candidates:view") as "cards" | "table") ?? "cards")
+      : "cards"),
+  );
+  const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
   const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
