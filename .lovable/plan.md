@@ -1,65 +1,100 @@
-# Associar candidato ↔ vaga (a partir do candidato e atalho global)
+## Elevar Vaga (Job) a entidade completa — padrão Candidato/Contato
 
-## Contexto
+Atualmente:
+- `/jobs` já usa AtsPageHeader + FilterBar + grid de cards, mas só uma visão.
+- `/jobs/$id` mostra header + kanban de candidaturas em coluna única.
 
-Hoje só dá para criar uma `ats_application` partindo da **vaga** (`/jobs/$id` → "Adicionar candidato"). Na tela do candidato (`/candidates/$id`) o card "Aplicações" só lista. O Quick Create (`+` no header) e o Copilot (⌘K) não têm essa ação. A server function `addApp` (em `ats.functions.ts`) já existe e aceita `{ jobId, candidateId, source }` — vamos reusar.
+Objetivo: tratar Vaga como entidade de primeira classe (igual Candidato), com lista multi-view e detalhe em 3 colunas, **sem alterar regra de negócio, RLS, schema ou remover funcionalidades**.
 
-## Escopo
+---
 
-1. **Diálogo reutilizável** `AssociateCandidateJobDialog`
-   - Novo componente em `src/components/ats/associate-candidate-job-dialog.tsx`.
-   - Props: `open`, `onOpenChange`, `presetCandidateId?`, `presetJobId?`, `onSuccess?`.
-   - Mostra apenas o(s) seletor(es) que faltam:
-     - sem candidato → combobox de candidatos (busca em `ats_candidates` por nome/email, debounced).
-     - sem vaga → combobox de vagas **abertas** (`status in ('open','active')`) com `title`, `seniority`, `location`.
-   - Campos extras: `Estágio inicial` (default = primeiro estágio do pipeline da vaga) e `Origem` (default `manual`).
-   - Botão primário: "Associar". Chama `addApp({ data: { jobId, candidateId, source, stage_value? } })`.
-   - Trata erro de duplicidade (já existe application desse candidato nessa vaga) com toast amigável e link "Abrir aplicação".
-   - Estados: loading, empty (sem vagas abertas), error.
+### Entrega 1 — Lista `/jobs` multi-view
 
-2. **Ação na tela do candidato** (`src/routes/_authenticated/(ats)/candidates.$id.tsx`)
-   - No `ApplicationsCard`, header recebe `action`: botão `Associar a vaga` (ícone `Plus`).
-   - Abre o diálogo com `presetCandidateId = detail.id`.
-   - `onSuccess`: invalida a query do detalhe (refetch) + toast.
+Refatorar `src/routes/_authenticated/(ats)/jobs.tsx`:
+- Manter AtsPageHeader, FilterBar, busca e filtros existentes.
+- Adicionar **ViewSwitcher** (Table · Cards · Kanban por status · Kanban por departamento) — padrão idêntico ao usado em `/candidates`.
+- Persistir a view escolhida em URL via `validateSearch` (`?view=table|cards|kanban-status|kanban-dept`), seguindo o padrão TanStack já usado no projeto.
+- Views:
+  - **Tabela**: DataTable com colunas Título, Status (StatusBadge), Pipeline, Departamento, Localização, Hiring Manager, Recrutador, Nº candidatos ativos, Aberta há (dias), Última movimentação. Linha clicável → `/jobs/$id`.
+  - **Cards**: o grid atual (mantém o que existe hoje, só extraído como `JobsCardsView`).
+  - **Kanban por status**: colunas Rascunho · Publicada · Pausada · Fechada · Arquivada. Drag-and-drop chama `saveAtsJob` para alterar `status` (mesmo server fn já usado pelo formulário).
+  - **Kanban por departamento/squad**: colunas dinâmicas a partir do campo `department` da vaga; sem drag-and-drop (apenas agrupamento visual) na primeira versão, para não introduzir mutação de campo que hoje só é editável via form.
+- EmptyState/LoadingSkeleton específicos por view (Skeletons.Table, Skeletons.CardsGrid, Skeletons.Kanban) reutilizando o que já existe em `@/components/ats/ui`.
 
-3. **Quick Create global** (`src/components/quick-create-menu.tsx`)
-   - Novo item "Candidatura" (ícone `Briefcase` + `UserPlus`) na categoria TechHire.
-   - Como o item não navega para uma rota com `?create=1`, abrir o diálogo via estado local do `QuickCreateMenu` (sem `presetCandidateId`/`presetJobId`).
-   - Visível apenas quando o módulo ativo é ATS (`useActiveModule() === 'ats'`) para não poluir o CRM.
+Nenhuma mudança em `ats.functions.ts` para a lista — `listAtsJobs` já retorna os campos necessários; counts ativos virão de uma extensão pequena já existente (`listJobApplications` agregada) ou de um novo `listAtsJobsWithCounts` aditivo se necessário (server fn nova, sem mexer em policies, lendo apenas `ats_jobs` + `ats_applications` via `requireSupabaseAuth`).
 
-4. **Atalho no Copilot ⌘K** (`src/components/copilot-cmdk.tsx`)
-   - Nova ação "Associar candidato a uma vaga" no grupo de ações ATS.
-   - Dispara um `window.dispatchEvent(new CustomEvent("ats:associate-open"))`.
-   - O `QuickCreateMenu` (ou um listener leve no shell ATS) escuta o evento e abre o mesmo diálogo neutro. Mantém uma única fonte de UI.
+### Entrega 2 — Detalhe `/jobs/$id` em 3 colunas
 
-5. **Refatorar `/jobs/$id`** (opcional, mesma PR)
-   - Substituir o diálogo inline atual pelo `AssociateCandidateJobDialog` com `presetJobId = id`. Mantém o mesmo comportamento e remove duplicação.
+Refatorar `src/routes/_authenticated/(ats)/jobs.$id.tsx` para usar o `record-layout.tsx` (mesmo componente usado em `/candidates/$id`).
 
-## Detalhes técnicos
+**Coluna esquerda — Ficha da vaga**
+- Card "Vaga": título, StatusBadge, pipeline, departamento, seniority, localização, modelo (remoto/híbrido/presencial), faixa salarial, abertura, última movimentação, botão "Editar".
+- Card "Equipe de hiring": hiring manager, recrutador, entrevistadores (lista de membros do pool quando vinculado).
+- Card "Distribuição": link público da vaga, postagens (`ats_job_postings`), botão "Copiar link", "Compartilhar".
 
-- **Server fn**: reusar `addApp` existente. Se ela ainda não aceita `stage_value` opcional, estender o `inputValidator` para `stage_value: z.string().optional()` e, no handler, usar o estágio recebido ou o primeiro do pipeline. Sem mudança de RLS / schema.
-- **Listagens dentro do diálogo**: usar server fns já existentes (`listCands` para candidatos, `listJobs` filtrado por status aberto). Limitar a 50 com busca server-side se a lista for grande.
-- **Invalidação**: `queryClient.invalidateQueries({ queryKey: ["candidate-detail", candidateId] })` e, quando vier de `/jobs/$id`, `["job-pipeline", jobId]`.
-- **A11y / UX**: foco inicial no combobox que falta, Enter envia, Esc fecha, `aria-live` para erros. Seguir Quiet Premium: `AtsPageHeader` não se aplica (é dialog) — usar `DialogHeader` + `FormSection` interno.
-- **Tokens**: nenhum hardcoded; só componentes oficiais (`Dialog`, `Combobox`/`Command`, `Button`, `Select`).
+**Coluna central — abas (Tabs do design system)**
+1. **Pipeline** (default) — kanban de candidaturas exatamente como hoje, com toda a lógica de DnD/move/scoring/export CSV preservada.
+2. **Candidatos** — lista tabular das `ats_applications` da vaga (nome, estágio, score IA, origem, dias no estágio, última atividade) com filtros.
+3. **Entrevistas** — agenda das `ats_interviews` ligadas a essa vaga.
+4. **Scorecards** — template + resumo de avaliações (`listJobScorecardSummary` já existe).
+5. **Atividade / Timeline** — usa `activity-timeline.tsx` filtrado por `entity_type='job'`.
+6. **Postagens** — `ats_job_postings` (multi-posting; mantém banner "mock" quando aplicável).
 
-## Não-escopo
+**Coluna direita — Auxiliares**
+- **Job Copilot** (IA): adapta o `CandidateCopilotPanel` para vaga — insights de funil, gargalos, recomendações de sourcing. Cria `src/components/ats/job-copilot-panel.tsx` reaproveitando `copilot_sessions`/`copilot_messages` já existentes; sem novo schema.
+- **Match Score**: top 5 candidatos com maior `ai_match_score` (já calculado), com link para a aplicação.
+- **DEI Snapshot**: KPIs do funil dessa vaga (já existe componente reutilizável).
+- **Próximas entrevistas** (resumo das próximas 7 dias).
 
-- Não criar bulk associate (vários candidatos de uma vez).
-- Não mexer em schema, RLS, ou no fluxo de candidatura pública (`/careers/$slug`).
-- Não adicionar atalho no CRM Quick Create.
-- Não trocar a forma de mover entre estágios.
+Botão "Adicionar candidato" no header continua funcionando — passa a abrir o `AssociateCandidateJobDialog` reutilizável criado na rodada anterior, com `presetJobId`.
 
-## Validação manual
+### Entrega 3 — Quick Create + atalhos
 
-1. `/candidates/<id>` → card "Aplicações" → "Associar a vaga" → escolher vaga aberta → confirma → aparece na lista e na vaga.
-2. Tentar associar o mesmo candidato à mesma vaga → toast de duplicidade.
-3. `+` no header (em contexto ATS) → "Candidatura" → escolher candidato + vaga → criada.
-4. ⌘K → "Associar candidato a uma vaga" → abre mesmo diálogo neutro.
-5. `/jobs/<id>` → "Adicionar candidato" continua funcionando (agora pelo diálogo unificado).
-6. Verificar dark mode, responsivo (mobile) e foco visível.
+- Item "Vaga" no QuickCreateMenu já existe para `/jobs?create=1`. Verificar que o modal de criação abre automaticamente quando `search.create === 1` (padrão das outras entidades).
+- Adicionar entrada "Ir para vagas" no ⌘K Copilot.
 
-## Riscos / Pendências
+---
 
-- Listas grandes de candidatos/vagas: combobox precisa de busca server-side; se ainda não existir, adicionar `query` opcional em `listCands`/`listJobs`.
-- Se `addApp` não retornar a application criada, ajustar para retornar `{ id, stage_value }` para permitir "Abrir aplicação" no toast de sucesso.
+### Detalhes técnicos
+
+- **Sem alteração de schema, RLS, policies ou GRANTs.** Toda contagem agregada feita via server fn nova `listAtsJobsWithCounts` (opcional, aditiva) sob `requireSupabaseAuth`, reaproveitando policies existentes em `ats_jobs` e `ats_applications`.
+- **Sem remover funcionalidades**: kanban atual, export CSV, scorecards summary, evaluation dialog — todos preservados, apenas movidos para dentro de abas.
+- **URL state** via `validateSearch` (`view`, `tab`, filtros), nunca `useState` para coisas compartilháveis.
+- **Componentes oficiais** do TechHire Design Foundation: `AtsPageHeader`, `FilterBar`, `MetricCard`, `DataTable`, `EmptyState`, `Skeletons`, `StatusBadge`, `StageBadge`, `ScoreBadge`, `MetaPill`, `Tabs`, `record-layout`.
+- **Acessibilidade**: foco visível em DnD, aria-labels nos botões de view, navegação por teclado nas tabs.
+- **Light/dark mode** validado via tokens semânticos de `src/styles.css`.
+- **Loading/empty/error states** dedicados em cada view e cada aba.
+
+### Arquivos previstos
+
+Criados:
+- `src/routes/_authenticated/(ats)/jobs.$id.tsx` (refatoração grande — pode ser dividido em sub-componentes em `src/components/ats/job-detail/`).
+- `src/components/ats/job-detail/` (left-card, tabs, applications-table, postings-card, etc.).
+- `src/components/ats/job-copilot-panel.tsx`.
+- `src/components/ats/jobs-table-view.tsx`, `jobs-kanban-status.tsx`, `jobs-kanban-department.tsx`.
+
+Alterados:
+- `src/routes/_authenticated/(ats)/jobs.tsx` (ViewSwitcher + `validateSearch`).
+- `src/lib/ats/ats.functions.ts` (aditivo: `listAtsJobsWithCounts`, se necessário).
+- `src/components/copilot-cmdk.tsx` (atalho "Vagas").
+
+Não alterados:
+- `ats_jobs`, `ats_applications`, policies, GRANTs, RLS, server fns existentes.
+
+### Como validar
+
+1. `/jobs` — alternar Table/Cards/Kanban por status/Kanban por departamento; URL reflete a view; drag entre colunas de status atualiza a vaga.
+2. `/jobs/$id` — 3 colunas; abrir todas as 6 abas; mover candidato no Pipeline; exportar CSV; abrir scorecards; ver timeline.
+3. Botão "Adicionar candidato" abre dialog reutilizável com vaga pré-selecionada.
+4. Light/dark mode + responsivo (desktop, tablet, mobile colapsa para coluna única com tabs no topo).
+5. `bunx tsgo --noEmit` limpo.
+
+### Riscos / pendências
+
+- Refator grande no detalhe — manter PR mental dividido em sub-componentes para reduzir blast radius.
+- Kanban por departamento só agrupa (não move) na primeira versão; mover entre deptos pode entrar depois.
+- Job Copilot reusa storage existente; prompts específicos de vaga ficam configurados em código (sem migration).
+
+### Próximo passo
+
+Executar Entrega 1 (lista multi-view) e Entrega 2 (detalhe 3 colunas) em sequência, na mesma rodada, sem alterar regra de negócio.

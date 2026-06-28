@@ -1,9 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Download, ClipboardCheck, Briefcase, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Download,
+  ClipboardCheck,
+  Briefcase,
+  Users,
+  Calendar,
+  Building2,
+  ExternalLink,
+  Save,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -20,19 +33,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getAtsJob,
   listJobApplications,
   moveApplication,
   addApplication,
   listAtsCandidates,
+  saveAtsJob,
+  listJobEvents,
+  listJobInterviews,
 } from "@/lib/ats/ats.functions";
-import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
+import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
 import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
 import { JobCopilotPanel } from "@/components/ats/job-copilot-panel";
+import { RecordLayout } from "@/components/record/record-layout";
 import {
   AtsPageHeader,
   AtsSectionHeader,
@@ -60,6 +78,9 @@ const STATUS_TO_BADGE: Record<string, JobStatus> = {
   filled: "closed",
   closed: "closed",
 };
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  ATS_JOB_STATUSES.map((s) => [s.value, s.label]),
+);
 
 const SENIORITY_LABEL: Record<string, string> = {
   intern: "Estágio",
@@ -88,18 +109,11 @@ function JobDetailSkeleton() {
       <div className="space-y-3">
         <div className="h-4 w-32 rounded-md bg-surface-sunken animate-pulse" />
         <div className="h-7 w-72 rounded-md bg-surface-sunken animate-pulse" />
-        <div className="flex gap-2">
-          <div className="h-5 w-16 rounded-md bg-surface-sunken animate-pulse" />
-          <div className="h-5 w-20 rounded-md bg-surface-sunken animate-pulse" />
-          <div className="h-5 w-24 rounded-md bg-surface-sunken animate-pulse" />
-        </div>
       </div>
-      <div className="flex gap-3 overflow-hidden">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="w-72 flex-shrink-0">
-            <Skeletons.Card />
-          </div>
-        ))}
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+        <Skeletons.Card lines={6} />
+        <Skeletons.Card lines={10} />
+        <Skeletons.Card lines={6} />
       </div>
     </div>
   );
@@ -114,17 +128,27 @@ function JobDetailPage() {
   const listCands = useServerFn(listAtsCandidates);
   const listSummary = useServerFn(listJobScorecardSummary);
   const exportCsv = useServerFn(exportJobApplicationsCsv);
+  const saveJobFn = useServerFn(saveAtsJob);
+  const listEventsFn = useServerFn(listJobEvents);
+  const listInterviewsFn = useServerFn(listJobInterviews);
 
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
+  const [events, setEvents] = useState<Awaited<ReturnType<typeof listJobEvents>>>([]);
+  const [interviews, setInterviews] = useState<Awaited<ReturnType<typeof listJobInterviews>>>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCand, setSelectedCand] = useState<string>("");
-  const [scoreSummary, setScoreSummary] = useState<Record<string, { avg: number; count: number }>>({});
+  const [scoreSummary, setScoreSummary] = useState<
+    Record<string, { avg: number; count: number }>
+  >({});
   const [evalApp, setEvalApp] = useState<App | null>(null);
+  const [tab, setTab] = useState<string>("pipeline");
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
@@ -143,10 +167,19 @@ function JobDetailPage() {
         try {
           const s = await listSummary({ data: { application_ids: ids } });
           setScoreSummary(s as Record<string, { avg: number; count: number }>);
-        } catch { /* noop */ }
+        } catch {
+          /* noop */
+        }
       } else {
         setScoreSummary({});
       }
+      // background secondary fetches
+      listEventsFn({ data: { jobId: id, limit: 50 } })
+        .then((rs) => setEvents(rs))
+        .catch(() => undefined);
+      listInterviewsFn({ data: { jobId: id, limit: 100 } })
+        .then((rs) => setInterviews(rs))
+        .catch(() => undefined);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao carregar";
       setError(msg);
@@ -256,6 +289,7 @@ function JobDetailPage() {
   }
 
   const jobAny = job as unknown as {
+    id: string;
     title: string;
     seniority: string | null;
     remote_mode: string | null;
@@ -264,101 +298,326 @@ function JobDetailPage() {
     description: string | null;
     requirements: string | null;
     status: string;
-    department?: string | null;
+    metadata?: { department?: string | null } | null;
+    salary_min?: number | null;
+    salary_max?: number | null;
   };
+  const department = jobAny.metadata?.department ?? null;
 
   const statusVariant = STATUS_TO_BADGE[jobAny.status] ?? "draft";
   const metaItems: Array<{ key: string; label: string }> = [];
-  if (jobAny.seniority) metaItems.push({ key: "sen", label: SENIORITY_LABEL[jobAny.seniority] ?? jobAny.seniority });
-  if (jobAny.remote_mode) metaItems.push({ key: "rem", label: REMOTE_LABEL[jobAny.remote_mode] ?? jobAny.remote_mode });
-  if (jobAny.employment_type) metaItems.push({ key: "emp", label: EMPLOYMENT_LABEL[jobAny.employment_type] ?? jobAny.employment_type });
+  if (jobAny.seniority)
+    metaItems.push({ key: "sen", label: SENIORITY_LABEL[jobAny.seniority] ?? jobAny.seniority });
+  if (jobAny.remote_mode)
+    metaItems.push({ key: "rem", label: REMOTE_LABEL[jobAny.remote_mode] ?? jobAny.remote_mode });
+  if (jobAny.employment_type)
+    metaItems.push({
+      key: "emp",
+      label: EMPLOYMENT_LABEL[jobAny.employment_type] ?? jobAny.employment_type,
+    });
   if (jobAny.location) metaItems.push({ key: "loc", label: jobAny.location });
-  if (jobAny.department) metaItems.push({ key: "dep", label: jobAny.department });
+  if (department) metaItems.push({ key: "dep", label: department });
 
-  return (
-    <div className="flex flex-col gap-6">
-      <AtsPageHeader
-        eyebrow="Vagas"
-        title={jobAny.title}
-        description={
-          <span className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/jobs"
-              className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <ArrowLeft className="h-3 w-3" aria-hidden="true" />
-              Voltar
-            </Link>
-            <StatusBadge status={statusVariant} />
-            {metaItems.map((m) => (
-              <MetaPill key={m.key}>{m.label}</MetaPill>
-            ))}
-            <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
-              <Users className="h-3 w-3" aria-hidden="true" />
-              {totalApps} {totalApps === 1 ? "candidato" : "candidatos"}
-            </span>
+  const header = (
+    <AtsPageHeader
+      eyebrow="Vagas"
+      title={jobAny.title}
+      description={
+        <span className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/jobs"
+            className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" aria-hidden />
+            Voltar
+          </Link>
+          <StatusBadge status={statusVariant} label={STATUS_LABEL[jobAny.status] ?? jobAny.status} />
+          {metaItems.map((m) => (
+            <MetaPill key={m.key}>{m.label}</MetaPill>
+          ))}
+          <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
+            <Users className="h-3 w-3" aria-hidden />
+            {totalApps} {totalApps === 1 ? "candidato" : "candidatos"}
           </span>
-        }
-        secondaryActions={
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" aria-hidden="true" />
-            CSV
-          </Button>
-        }
-        primaryAction={
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openAdd}>
-                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Adicionar candidato
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Adicionar candidato à vaga</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2">
-                  <Label htmlFor="job-detail-add-candidate">Candidato</Label>
-                  <Select value={selectedCand} onValueChange={setSelectedCand}>
-                    <SelectTrigger id="job-detail-add-candidate">
-                      <SelectValue placeholder="Escolha um candidato cadastrado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {candidates.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-text-tertiary">
-                          Nenhum candidato cadastrado. Cadastre em /candidates.
-                        </div>
-                      ) : (
-                        candidates.map((c) => (
-                          <SelectItem key={c.id} value={c.id as string}>
-                            {c.full_name as string}
-                            {c.email ? ` — ${c.email}` : ""}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAdd} disabled={!selectedCand}>
-                    Adicionar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-        }
-      />
+        </span>
+      }
+      secondaryActions={
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" aria-hidden />
+          CSV
+        </Button>
+      }
+      primaryAction={
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openAdd}>
+              <Plus className="h-4 w-4 mr-2" aria-hidden />
+              Adicionar candidato
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Adicionar candidato à vaga</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="job-detail-add-candidate">Candidato</Label>
+              <Select value={selectedCand} onValueChange={setSelectedCand}>
+                <SelectTrigger id="job-detail-add-candidate">
+                  <SelectValue placeholder="Escolha um candidato cadastrado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-text-tertiary">
+                      Nenhum candidato cadastrado.
+                    </div>
+                  ) : (
+                    candidates.map((c) => (
+                      <SelectItem key={c.id} value={c.id as string}>
+                        {c.full_name as string}
+                        {c.email ? ` — ${c.email}` : ""}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAdd} disabled={!selectedCand}>
+                Adicionar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      }
+    />
+  );
 
-      {(jobAny.description || jobAny.requirements) && (
-        <section
-          className={cn(
-            "rounded-lg border border-border-subtle bg-surface-1",
-            "shadow-xs",
-          )}
+  const pipelineSection = totalApps === 0 ? (
+    <EmptyState
+      icon={Users}
+      title="Nenhum candidato nesta vaga"
+      description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
+      action={
+        <Button onClick={openAdd}>
+          <Plus className="h-4 w-4 mr-2" aria-hidden />
+          Adicionar candidato
+        </Button>
+      }
+    />
+  ) : (
+    <div className="overflow-x-auto -mx-1 px-1">
+      <div className="flex gap-3 min-w-max pb-2">
+        {stages.map((s) => {
+          const items = byStage[s.value] ?? [];
+          return (
+            <div
+              key={s.value}
+              className="w-72 flex-shrink-0"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => onDrop(s.value)}
+            >
+              <div className="rounded-lg border border-border-subtle bg-surface-sunken h-full flex flex-col">
+                <div className="px-3 py-2.5 border-b border-border-subtle flex items-center justify-between">
+                  <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                    {s.label}
+                  </span>
+                  <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-md bg-surface-1 border border-border-subtle text-[11px] font-medium text-text-secondary tabular-nums">
+                    {items.length}
+                  </span>
+                </div>
+                <div className="space-y-2 p-2 min-h-[200px] flex-1">
+                  {items.length === 0 ? (
+                    <div className="h-full min-h-[180px] flex items-center justify-center text-[11px] text-text-tertiary">
+                      Solte aqui
+                    </div>
+                  ) : (
+                    items.map((a) => (
+                      <div
+                        key={a.id}
+                        draggable
+                        onDragStart={() => setDragging(a.id)}
+                        onDragEnd={() => setDragging(null)}
+                        className={cn(
+                          "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
+                          "cursor-grab active:cursor-grabbing",
+                          "hover:border-border-strong hover:shadow-xs transition-all",
+                        )}
+                      >
+                        <Link
+                          to="/candidates/$id"
+                          params={{ id: a.candidate_id as string }}
+                          onClick={(e) => e.stopPropagation()}
+                          draggable={false}
+                          onDragStart={(e) => e.stopPropagation()}
+                          className="font-medium text-text-primary truncate hover:underline block"
+                        >
+                          {a.candidate?.full_name ?? "Candidato"}
+                        </Link>
+                        {a.candidate?.current_position && (
+                          <div className="text-xs text-text-tertiary truncate mt-0.5">
+                            {a.candidate.current_position}
+                            {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
+                          </div>
+                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {a.ai_match_score != null && (
+                            <ScoreBadge score={Number(a.ai_match_score)} />
+                          )}
+                          {scoreSummary[a.id] && (
+                            <MetaPill>
+                              Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                            </MetaPill>
+                          )}
+                        </div>
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEvalApp(a);
+                            }}
+                            draggable={false}
+                            onDragStart={(e) => e.stopPropagation()}
+                          >
+                            <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
+                            Avaliar
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const candidatesSection = totalApps === 0 ? (
+    <EmptyState
+      icon={Users}
+      title="Sem candidatos"
+      description="Adicione um candidato para esta vaga."
+      action={
+        <Button onClick={openAdd}>
+          <Plus className="h-4 w-4 mr-2" aria-hidden />
+          Adicionar candidato
+        </Button>
+      }
+    />
+  ) : (
+    <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
+      {apps.map((a) => (
+        <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+          <div className="min-w-0 flex-1">
+            <Link
+              to="/candidates/$id"
+              params={{ id: a.candidate_id as string }}
+              className="font-medium text-text-primary hover:underline inline-flex items-center gap-1"
+            >
+              {a.candidate?.full_name ?? "Candidato"}
+              <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
+            </Link>
+            <div className="text-xs text-text-tertiary truncate">
+              {a.candidate?.current_position}
+              {a.candidate?.current_company ? ` @ ${a.candidate.current_company}` : ""}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <MetaPill>{a.stage_value}</MetaPill>
+            {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const interviewsSection = interviews.length === 0 ? (
+    <EmptyState
+      icon={Calendar}
+      title="Nenhuma entrevista agendada"
+      description="As entrevistas dos candidatos desta vaga aparecerão aqui."
+    />
+  ) : (
+    <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
+      {interviews.map((iv) => (
+        <div key={iv.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-text-primary truncate">
+              {iv.candidate_name ?? "Candidato"}
+            </div>
+            <div className="text-xs text-text-tertiary truncate">
+              {iv.kind ?? "Entrevista"} · {iv.stage_value ?? "—"}
+              {iv.location ? ` · ${iv.location}` : ""}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <MetaPill>{iv.status}</MetaPill>
+            <span className="text-xs text-text-tertiary tabular-nums">
+              {iv.scheduled_at
+                ? new Date(iv.scheduled_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "—"}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const eventsSection = events.length === 0 ? (
+    <EmptyState
+      icon={Calendar}
+      title="Sem atividade ainda"
+      description="Movimentações no pipeline e eventos da vaga aparecerão aqui."
+    />
+  ) : (
+    <ol className="space-y-2">
+      {events.map((ev) => (
+        <li
+          key={ev.id}
+          className="flex items-start gap-3 rounded-md border border-border-subtle bg-surface-1 p-3 text-sm"
         >
+          <div className="mt-1 h-2 w-2 rounded-full bg-primary/70 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-text-primary">
+              <span className="font-medium">{ev.candidate_name ?? "Candidato"}</span>{" "}
+              <span className="text-text-tertiary">— {ev.event_type}</span>
+            </div>
+            {(ev.from_stage || ev.to_stage) && (
+              <div className="mt-0.5 text-xs text-text-tertiary">
+                {ev.from_stage ?? "—"} → {ev.to_stage ?? "—"}
+              </div>
+            )}
+          </div>
+          <span className="text-xs text-text-tertiary tabular-nums shrink-0">
+            {new Date(ev.created_at).toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+
+  const overviewSection = (
+    <div className="space-y-4">
+      {(jobAny.description || jobAny.requirements) ? (
+        <section className="rounded-lg border border-border-subtle bg-surface-1 shadow-xs">
           <div className="grid md:grid-cols-2 gap-6 p-5 text-sm">
             {jobAny.description && (
               <div>
@@ -378,140 +637,408 @@ function JobDetailPage() {
             )}
           </div>
         </section>
-      )}
-
-      <JobPostingsPanel jobId={String(id)} />
-
-      <JobCopilotPanel
-        jobId={String(id)}
-        candidates={apps
-          .filter((a) => a.candidate)
-          .map((a) => ({
-            id: a.candidate_id as string,
-            full_name: (a.candidate as { full_name: string } | null)?.full_name ?? "Candidato",
-          }))}
-      />
-
-      <section className="flex flex-col gap-3">
-        <AtsSectionHeader
-          title="Pipeline"
-          description="Arraste candidatos entre etapas para atualizar o status."
-        />
-        {totalApps === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="Nenhum candidato nesta vaga"
-            description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
-            action={<Button onClick={openAdd}><Plus className="h-4 w-4 mr-2" aria-hidden="true" />Adicionar candidato</Button>}
-          />
-        ) : (
-          <div className="overflow-x-auto -mx-1 px-1">
-            <div className="flex gap-3 min-w-max pb-2">
-              {stages.map((s) => {
-                const items = byStage[s.value] ?? [];
-                return (
-                  <div
-                    key={s.value}
-                    className="w-72 flex-shrink-0"
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => onDrop(s.value)}
-                  >
-                    <div className="rounded-lg border border-border-subtle bg-surface-sunken h-full flex flex-col">
-                      <div className="px-3 py-2.5 border-b border-border-subtle flex items-center justify-between">
-                        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
-                          {s.label}
-                        </span>
-                        <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-md bg-surface-1 border border-border-subtle text-[11px] font-medium text-text-secondary tabular-nums">
-                          {items.length}
-                        </span>
-                      </div>
-                      <div className="space-y-2 p-2 min-h-[200px] flex-1">
-                        {items.length === 0 ? (
-                          <div className="h-full min-h-[180px] flex items-center justify-center text-[11px] text-text-tertiary">
-                            Solte aqui
-                          </div>
-                        ) : (
-                          items.map((a) => (
-                            <div
-                              key={a.id}
-                              draggable
-                              onDragStart={() => setDragging(a.id)}
-                              onDragEnd={() => setDragging(null)}
-                              className={cn(
-                                "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
-                                "cursor-grab active:cursor-grabbing",
-                                "hover:border-border-strong hover:shadow-xs transition-all",
-                                "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
-                              )}
-                            >
-                              <Link
-                                to="/candidates/$id"
-                                params={{ id: a.candidate_id as string }}
-                                onClick={(e) => e.stopPropagation()}
-                                draggable={false}
-                                onDragStart={(e) => e.stopPropagation()}
-                                className="font-medium text-text-primary truncate hover:underline block"
-                              >
-                                {a.candidate?.full_name ?? "Candidato"}
-                              </Link>
-                              {a.candidate?.current_position && (
-                                <div className="text-xs text-text-tertiary truncate mt-0.5">
-                                  {a.candidate.current_position}
-                                  {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
-                                </div>
-                              )}
-                              {a.candidate?.email && (
-                                <div className="text-xs text-text-tertiary truncate">
-                                  {a.candidate.email}
-                                </div>
-                              )}
-                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                {a.ai_match_score != null && (
-                                  <ScoreBadge score={Number(a.ai_match_score)} />
-                                )}
-                                {scoreSummary[a.id] && (
-                                  <MetaPill>
-                                    Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
-                                  </MetaPill>
-                                )}
-                              </div>
-                              <div className="mt-2 flex justify-end">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-[11px]"
-                                  onClick={(e) => { e.stopPropagation(); setEvalApp(a); }}
-                                  draggable={false}
-                                  onDragStart={(e) => e.stopPropagation()}
-                                >
-                                  <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden="true" />
-                                  Avaliar
-                                </Button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {evalApp && (
-        <ScorecardEvalDialog
-          open={!!evalApp}
-          onOpenChange={(v) => { if (!v) setEvalApp(null); }}
-          applicationId={evalApp.id}
-          jobId={id}
-          candidateId={evalApp.candidate_id}
-          candidateName={evalApp.candidate?.full_name ?? "Candidato"}
-          onSaved={refresh}
+      ) : (
+        <EmptyState
+          icon={Briefcase}
+          title="Sem descrição"
+          description="Edite a vaga no painel à esquerda para adicionar descrição e requisitos."
         />
       )}
     </div>
+  );
+
+  return (
+    <>
+      <RecordLayout
+        header={header}
+        left={
+          <JobPropertiesPanel
+            job={job}
+            onSaved={refresh}
+            save={async (patch) => {
+              await saveJobFn({
+                data: {
+                  id: jobAny.id,
+                  title: patch.title ?? jobAny.title,
+                  description: patch.description ?? jobAny.description ?? null,
+                  requirements: patch.requirements ?? jobAny.requirements ?? null,
+                  seniority: (patch.seniority ?? jobAny.seniority) as never,
+                  employment_type: (patch.employment_type ?? jobAny.employment_type) as never,
+                  location: patch.location ?? jobAny.location ?? null,
+                  remote_mode: (patch.remote_mode ?? jobAny.remote_mode) as never,
+                  salary_min: patch.salary_min ?? jobAny.salary_min ?? null,
+                  salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
+                  status: (patch.status ?? jobAny.status) as never,
+                },
+              });
+            }}
+          />
+        }
+        center={
+          <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="overview">Visão geral</TabsTrigger>
+              <TabsTrigger value="pipeline">
+                Pipeline{" "}
+                <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
+              </TabsTrigger>
+              <TabsTrigger value="candidates">Candidatos</TabsTrigger>
+              <TabsTrigger value="interviews">
+                Entrevistas{" "}
+                <span className="ml-1 text-[10px] text-text-tertiary">
+                  ({interviews.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="postings">Postagens</TabsTrigger>
+              <TabsTrigger value="activity">Atividade</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="mt-0">
+              {overviewSection}
+            </TabsContent>
+            <TabsContent value="pipeline" className="mt-0">
+              <AtsSectionHeader
+                title="Pipeline"
+                description="Arraste candidatos entre etapas para atualizar o status."
+              />
+              <div className="mt-3">{pipelineSection}</div>
+            </TabsContent>
+            <TabsContent value="candidates" className="mt-0">
+              {candidatesSection}
+            </TabsContent>
+            <TabsContent value="interviews" className="mt-0">
+              {interviewsSection}
+            </TabsContent>
+            <TabsContent value="postings" className="mt-0">
+              <JobPostingsPanel jobId={String(id)} />
+            </TabsContent>
+            <TabsContent value="activity" className="mt-0">
+              {eventsSection}
+            </TabsContent>
+          </Tabs>
+        }
+        right={
+          <div className="space-y-4">
+            <JobCopilotPanel
+              jobId={String(id)}
+              candidates={apps
+                .filter((a) => a.candidate)
+                .map((a) => ({
+                  id: a.candidate_id as string,
+                  full_name:
+                    (a.candidate as { full_name: string } | null)?.full_name ?? "Candidato",
+                }))}
+            />
+            {department ? (
+              <section className="rounded-lg border border-border-subtle bg-surface-1 p-4">
+                <AtsSectionHeader title="Departamento" />
+                <div className="mt-2 inline-flex items-center gap-1.5 text-sm text-text-secondary">
+                  <Building2 className="h-3.5 w-3.5 text-text-tertiary" aria-hidden />
+                  {department}
+                </div>
+              </section>
+            ) : null}
+          </div>
+        }
+      />
+      <MountEvalDialog
+        evalApp={evalApp}
+        jobId={id}
+        onClose={() => setEvalApp(null)}
+        refresh={refresh}
+      />
+    </>
+  );
+}
+
+
+/* ---------- Left: Properties (inline editor) ---------- */
+type JobPatch = {
+  title?: string;
+  description?: string | null;
+  requirements?: string | null;
+  seniority?: string | null;
+  employment_type?: string | null;
+  location?: string | null;
+  remote_mode?: string | null;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  status?: string;
+};
+
+function JobPropertiesPanel({
+  job,
+  save,
+  onSaved,
+}: {
+  job: Job;
+  save: (patch: JobPatch) => Promise<unknown>;
+  onSaved: () => void;
+}) {
+  const j = job as unknown as {
+    title: string;
+    seniority: string | null;
+    remote_mode: string | null;
+    employment_type: string | null;
+    location: string | null;
+    description: string | null;
+    requirements: string | null;
+    status: string;
+    salary_min: number | null;
+    salary_max: number | null;
+  };
+  const [form, setForm] = useState({
+    title: j.title,
+    seniority: j.seniority ?? "",
+    employment_type: j.employment_type ?? "",
+    remote_mode: j.remote_mode ?? "",
+    location: j.location ?? "",
+    description: j.description ?? "",
+    requirements: j.requirements ?? "",
+    status: j.status,
+    salary_min: j.salary_min?.toString() ?? "",
+    salary_max: j.salary_max?.toString() ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      title: j.title,
+      seniority: j.seniority ?? "",
+      employment_type: j.employment_type ?? "",
+      remote_mode: j.remote_mode ?? "",
+      location: j.location ?? "",
+      description: j.description ?? "",
+      requirements: j.requirements ?? "",
+      status: j.status,
+      salary_min: j.salary_min?.toString() ?? "",
+      salary_max: j.salary_max?.toString() ?? "",
+    });
+  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max]);
+
+  const dirty =
+    form.title !== j.title ||
+    (form.seniority || null) !== j.seniority ||
+    (form.employment_type || null) !== j.employment_type ||
+    (form.remote_mode || null) !== j.remote_mode ||
+    (form.location || null) !== (j.location ?? null) ||
+    (form.description || null) !== (j.description ?? null) ||
+    (form.requirements || null) !== (j.requirements ?? null) ||
+    form.status !== j.status ||
+    (form.salary_min ? Number(form.salary_min) : null) !== j.salary_min ||
+    (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max;
+
+  const onSubmit = async () => {
+    setSaving(true);
+    try {
+      await save({
+        title: form.title,
+        description: form.description || null,
+        requirements: form.requirements || null,
+        seniority: form.seniority || null,
+        employment_type: form.employment_type || null,
+        location: form.location || null,
+        remote_mode: form.remote_mode || null,
+        salary_min: form.salary_min ? Number(form.salary_min) : null,
+        salary_max: form.salary_max ? Number(form.salary_max) : null,
+        status: form.status,
+      });
+      toast.success("Vaga atualizada");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
+      <AtsSectionHeader title="Propriedades" />
+      <div className="space-y-2 text-sm">
+        <div>
+          <Label htmlFor="prop-title" className="text-xs text-text-tertiary">
+            Título
+          </Label>
+          <Input
+            id="prop-title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label htmlFor="prop-status" className="text-xs text-text-tertiary">
+            Status
+          </Label>
+          <Select
+            value={form.status}
+            onValueChange={(v) => setForm({ ...form, status: v })}
+          >
+            <SelectTrigger id="prop-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ATS_JOB_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor="prop-sen" className="text-xs text-text-tertiary">
+              Senioridade
+            </Label>
+            <Select
+              value={form.seniority}
+              onValueChange={(v) => setForm({ ...form, seniority: v })}
+            >
+              <SelectTrigger id="prop-sen">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(SENIORITY_LABEL).map(([v, l]) => (
+                  <SelectItem key={v} value={v}>
+                    {l}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="prop-rem" className="text-xs text-text-tertiary">
+              Modalidade
+            </Label>
+            <Select
+              value={form.remote_mode}
+              onValueChange={(v) => setForm({ ...form, remote_mode: v })}
+            >
+              <SelectTrigger id="prop-rem">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(REMOTE_LABEL).map(([v, l]) => (
+                  <SelectItem key={v} value={v}>
+                    {l}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="prop-emp" className="text-xs text-text-tertiary">
+            Vínculo
+          </Label>
+          <Select
+            value={form.employment_type}
+            onValueChange={(v) => setForm({ ...form, employment_type: v })}
+          >
+            <SelectTrigger id="prop-emp">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(EMPLOYMENT_LABEL).map(([v, l]) => (
+                <SelectItem key={v} value={v}>
+                  {l}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="prop-loc" className="text-xs text-text-tertiary">
+            Localização
+          </Label>
+          <Input
+            id="prop-loc"
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor="prop-min" className="text-xs text-text-tertiary">
+              Salário mín
+            </Label>
+            <Input
+              id="prop-min"
+              type="number"
+              value={form.salary_min}
+              onChange={(e) => setForm({ ...form, salary_min: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="prop-max" className="text-xs text-text-tertiary">
+              Salário máx
+            </Label>
+            <Input
+              id="prop-max"
+              type="number"
+              value={form.salary_max}
+              onChange={(e) => setForm({ ...form, salary_max: e.target.value })}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="prop-desc" className="text-xs text-text-tertiary">
+            Descrição
+          </Label>
+          <Textarea
+            id="prop-desc"
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label htmlFor="prop-req" className="text-xs text-text-tertiary">
+            Requisitos
+          </Label>
+          <Textarea
+            id="prop-req"
+            rows={3}
+            value={form.requirements}
+            onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button size="sm" onClick={onSubmit} disabled={!dirty || saving}>
+          <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+          {saving ? "Salvando…" : "Salvar"}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+/* Eval dialog mount point (kept for parity) */
+function MountEvalDialog({
+  evalApp,
+  jobId,
+  onClose,
+  refresh,
+}: {
+  evalApp: App | null;
+  jobId: string;
+  onClose: () => void;
+  refresh: () => void;
+}) {
+  if (!evalApp) return null;
+  return (
+    <ScorecardEvalDialog
+      open={!!evalApp}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+      applicationId={evalApp.id}
+      jobId={jobId}
+      candidateId={evalApp.candidate_id}
+      candidateName={evalApp.candidate?.full_name ?? "Candidato"}
+      onSaved={refresh}
+    />
   );
 }

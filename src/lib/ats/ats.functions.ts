@@ -91,7 +91,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, owner_id, hiring_manager_id, recruiter_id",
+        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, hiring_manager_id, recruiter_id, metadata",
       )
       .or(
         `owner_id.eq.${userId},hiring_manager_id.eq.${userId},recruiter_id.eq.${userId}`,
@@ -132,12 +132,18 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       opened_at: string | null;
       filled_at: string | null;
       updated_at: string;
+      created_at: string;
+      metadata: Record<string, unknown> | null;
     };
     return ((rows ?? []) as unknown as JobRow[]).map((r) => ({
       ...r,
+      metadata: undefined,
+      department: ((r.metadata as { department?: string } | null)?.department) ?? null,
       active_applications: counts[r.id] ?? 0,
     }));
   });
+
+
 
 export const getAtsJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -661,4 +667,115 @@ export const moveApplication = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ---------- job activity feed & interviews -------------------------------
+
+export const listJobEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        jobId: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("ats_application_events")
+      .select(
+        "id, event_type, from_stage, to_stage, application_id, candidate_id, metadata, created_at",
+      )
+      .eq("job_id", data.jobId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    type Row = {
+      id: string;
+      event_type: string;
+      from_stage: string | null;
+      to_stage: string | null;
+      application_id: string;
+      candidate_id: string | null;
+      metadata: Record<string, unknown> | null;
+      created_at: string;
+    };
+    const candIds = Array.from(
+      new Set(
+        ((rows ?? []) as unknown as Row[])
+          .map((r) => r.candidate_id)
+          .filter((v): v is string => Boolean(v)),
+      ),
+    );
+    const map: Record<string, string> = {};
+    if (candIds.length) {
+      const { data: cs } = await supabase
+        .from("ats_candidates")
+        .select("id, full_name")
+        .in("id", candIds);
+      for (const c of (cs ?? []) as Array<{ id: string; full_name: string }>) {
+        map[c.id] = c.full_name;
+      }
+    }
+    return ((rows ?? []) as unknown as Row[]).map((r) => ({
+      id: r.id,
+      event_type: r.event_type,
+      from_stage: r.from_stage,
+      to_stage: r.to_stage,
+      application_id: r.application_id,
+      candidate_id: r.candidate_id,
+      candidate_name: r.candidate_id ? map[r.candidate_id] ?? null : null,
+      created_at: r.created_at,
+    }));
+  });
+
+export const listJobInterviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ jobId: z.string().uuid(), limit: z.number().int().min(1).max(200).default(100) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("ats_interviews")
+      .select(
+        "id, application_id, candidate_id, interviewer_id, stage_value, kind, status, scheduled_at, duration_min, meet_url, location",
+      )
+      .eq("job_id", data.jobId)
+      .order("scheduled_at", { ascending: false, nullsFirst: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    type Row = {
+      id: string;
+      application_id: string;
+      candidate_id: string;
+      interviewer_id: string | null;
+      stage_value: string | null;
+      kind: string | null;
+      status: string;
+      scheduled_at: string | null;
+      duration_min: number | null;
+      meet_url: string | null;
+      location: string | null;
+    };
+    const candIds = Array.from(
+      new Set(((rows ?? []) as unknown as Row[]).map((r) => r.candidate_id)),
+    );
+    const map: Record<string, string> = {};
+    if (candIds.length) {
+      const { data: cs } = await supabase
+        .from("ats_candidates")
+        .select("id, full_name")
+        .in("id", candIds);
+      for (const c of (cs ?? []) as Array<{ id: string; full_name: string }>) {
+        map[c.id] = c.full_name;
+      }
+    }
+    return ((rows ?? []) as unknown as Row[]).map((r) => ({
+      ...r,
+      candidate_name: map[r.candidate_id] ?? null,
+    }));
+  });
+
 
