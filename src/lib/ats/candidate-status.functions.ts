@@ -34,6 +34,19 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
     const result: Record<string, DerivedCandidateStatus> = {};
     for (const id of ids) result[id] = "new";
 
+    // Flag persistida de arquivamento (sobrescreve qualquer derivação)
+    const { data: candRows } = await supabase
+      .from("ats_candidates")
+      .select("id, archived")
+      .in("id", ids);
+    const archivedSet = new Set<string>(
+      ((candRows ?? []) as Array<{ id: string; archived: boolean | null }>)
+        .filter((r) => r.archived === true)
+        .map((r) => r.id),
+    );
+
+
+
     // Offers (hired/offer)
     const { data: offers } = await supabase
       .from("ats_offers")
@@ -85,6 +98,9 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
       else if (statuses.every((s) => s === "rejected" || s === "withdrawn"))
         result[cid] = "archived";
     }
+    // Aplica flag arquivado por último — sobrepõe demais classificações.
+    for (const id of archivedSet) result[id] = "archived";
 
     return result;
   });
+

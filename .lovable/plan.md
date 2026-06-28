@@ -1,100 +1,75 @@
-## Elevar Vaga (Job) a entidade completa — padrão Candidato/Contato
 
-Atualmente:
-- `/jobs` já usa AtsPageHeader + FilterBar + grid de cards, mas só uma visão.
-- `/jobs/$id` mostra header + kanban de candidaturas em coluna única.
+## Diagnóstico
 
-Objetivo: tratar Vaga como entidade de primeira classe (igual Candidato), com lista multi-view e detalhe em 3 colunas, **sem alterar regra de negócio, RLS, schema ou remover funcionalidades**.
+**1. Vagas não abrem para detalhes**
+- A rota `/_authenticated/(ats)/jobs/$id` existe e a página renderiza (você está nela: `/jobs/3213bc9a…`).
+- O erro presente no console é `Failed to fetch dynamically imported module … virtual:tanstack-start-client-entry`. Isso é um chunk obsoleto: depois das últimas reescritas de `jobs.tsx` e `jobs.$id.tsx`, abas antigas (com bundle anterior) tentam carregar um arquivo que não existe mais e o clique em "Detalhes" falha silenciosamente.
+- A correção precisa atuar em duas frentes: tornar o `<Link>` resistente a falha de import dinâmico (fallback para `window.location` quando o lazy import rejeita) e adicionar um listener global que recarrega a aba quando um `chunk load error` é detectado.
 
----
+**2. Kanbans não permitem mover cards**
+- `/_authenticated/(ats)/jobs.tsx` (Kanban por Status e por Departamento) usa `JobKanbanCard` apenas como `<Link>` — sem `draggable`, sem `onDragStart`, e as colunas sem `onDragOver`/`onDrop`.
+- `/_authenticated/(ats)/candidates.index.tsx` (Kanban por status derivado) idem.
+- Apenas o pipeline dentro de `jobs.$id.tsx` (candidatos por estágio) já tem DnD funcional.
 
-### Entrega 1 — Lista `/jobs` multi-view
+## Escopo do que será feito
 
-Refatorar `src/routes/_authenticated/(ats)/jobs.tsx`:
-- Manter AtsPageHeader, FilterBar, busca e filtros existentes.
-- Adicionar **ViewSwitcher** (Table · Cards · Kanban por status · Kanban por departamento) — padrão idêntico ao usado em `/candidates`.
-- Persistir a view escolhida em URL via `validateSearch` (`?view=table|cards|kanban-status|kanban-dept`), seguindo o padrão TanStack já usado no projeto.
-- Views:
-  - **Tabela**: DataTable com colunas Título, Status (StatusBadge), Pipeline, Departamento, Localização, Hiring Manager, Recrutador, Nº candidatos ativos, Aberta há (dias), Última movimentação. Linha clicável → `/jobs/$id`.
-  - **Cards**: o grid atual (mantém o que existe hoje, só extraído como `JobsCardsView`).
-  - **Kanban por status**: colunas Rascunho · Publicada · Pausada · Fechada · Arquivada. Drag-and-drop chama `saveAtsJob` para alterar `status` (mesmo server fn já usado pelo formulário).
-  - **Kanban por departamento/squad**: colunas dinâmicas a partir do campo `department` da vaga; sem drag-and-drop (apenas agrupamento visual) na primeira versão, para não introduzir mutação de campo que hoje só é editável via form.
-- EmptyState/LoadingSkeleton específicos por view (Skeletons.Table, Skeletons.CardsGrid, Skeletons.Kanban) reutilizando o que já existe em `@/components/ats/ui`.
+### A. Abertura de detalhes de vagas (correção de regressão)
+1. Em `src/router.tsx` (ou `src/routes/__root.tsx`, onde já existe wiring global): registrar `window.addEventListener('vite:preloadError', …)` e `window.addEventListener('error', …)` para detectar `ChunkLoadError` / `Failed to fetch dynamically imported module` e fazer **um único** `window.location.reload()` (com flag em `sessionStorage` para não cair em loop). Padrão recomendado pela própria Vite.
+2. Em `JobCard` e `JobKanbanCard` (lista de vagas): manter `<Link>` mas adicionar `onClick` defensivo que, em caso de exceção do router, faz `window.location.assign('/jobs/' + job.id)` como último recurso.
+3. Nenhuma mudança em rotas ou no server-side; é apenas tolerância a chunks obsoletos.
 
-Nenhuma mudança em `ats.functions.ts` para a lista — `listAtsJobs` já retorna os campos necessários; counts ativos virão de uma extensão pequena já existente (`listJobApplications` agregada) ou de um novo `listAtsJobsWithCounts` aditivo se necessário (server fn nova, sem mexer em policies, lendo apenas `ats_jobs` + `ats_applications` via `requireSupabaseAuth`).
+### B. Kanban de Vagas — drag-and-drop
+1. Tornar cada `JobKanbanCard` arrastável (`draggable`, `onDragStart` setando `dragging`) e cada coluna receptiva (`onDragOver`, `onDrop`).
+2. Ao soltar no Kanban por **Status**: optimistic update local + `saveAtsJob({ id, status: novoStatus })` (server fn já existente). Toast de sucesso / rollback em erro.
+3. Ao soltar no Kanban por **Departamento**: optimistic update + `saveAtsJob({ id, metadata: { ...metadata, department: novoDepto } })`. Verificar se `saveAtsJob` aceita `metadata`; se não aceitar, estender a server fn de forma aditiva (apenas mesclando o campo `department` no JSONB existente — sem tocar em outros campos).
+4. Garantir feedback visual (opacity no card sendo arrastado, ring na coluna destino), foco visível e `aria-label` nas colunas.
+5. Persistir estado consistente: refetch leve apenas no card afetado em caso de erro.
 
-### Entrega 2 — Detalhe `/jobs/$id` em 3 colunas
+### C. Kanban de Candidatos — drag-and-drop com transições seguras
+Status é **derivado** de ofertas/entrevistas/aplicações. Conforme decidido, só aceitar transições mutáveis e mostrar aviso nas demais:
 
-Refatorar `src/routes/_authenticated/(ats)/jobs.$id.tsx` para usar o `record-layout.tsx` (mesmo componente usado em `/candidates/$id`).
+| De → Para         | Ação                                                              |
+| ----------------- | ----------------------------------------------------------------- |
+| `* → archived`    | `UPDATE ats_candidates SET archived = true` (ou flag equivalente) |
+| `archived → new`  | `UPDATE ats_candidates SET archived = false`                      |
+| `new → in_process`| Mostrar toast: "Para mover para Em processo, associe o candidato a uma vaga." + abrir o dialog `AssociateCandidateJobDialog` já existente |
+| `in_process → new`| Toast informativo: "Em processo é derivado de aplicações ativas. Encerre as aplicações para retornar a Novo." |
+| Demais            | Toast: "Esta transição é derivada automaticamente e não pode ser ajustada manualmente." e rollback visual |
 
-**Coluna esquerda — Ficha da vaga**
-- Card "Vaga": título, StatusBadge, pipeline, departamento, seniority, localização, modelo (remoto/híbrido/presencial), faixa salarial, abertura, última movimentação, botão "Editar".
-- Card "Equipe de hiring": hiring manager, recrutador, entrevistadores (lista de membros do pool quando vinculado).
-- Card "Distribuição": link público da vaga, postagens (`ats_job_postings`), botão "Copiar link", "Compartilhar".
+1. Verificar/adicionar coluna `archived boolean default false` em `ats_candidates` se ainda não existir (migration aditiva apenas se necessário). Atualizar `candidate-status.functions.ts` para considerar `archived = true` como status `archived` antes das demais derivações.
+2. Criar server fn `setCandidateArchived({ id, archived })` em `src/lib/ats/ats.functions.ts`.
+3. Tornar cada card do kanban arrastável e colunas receptivas. Centralizar a lógica de transição em um helper `attemptCandidateStatusTransition(from, to, candidate)` no próprio arquivo de rota.
+4. Após operação bem-sucedida, refetch só do status do candidato movido (já existe `getCandidateStatuses`).
 
-**Coluna central — abas (Tabs do design system)**
-1. **Pipeline** (default) — kanban de candidaturas exatamente como hoje, com toda a lógica de DnD/move/scoring/export CSV preservada.
-2. **Candidatos** — lista tabular das `ats_applications` da vaga (nome, estágio, score IA, origem, dias no estágio, última atividade) com filtros.
-3. **Entrevistas** — agenda das `ats_interviews` ligadas a essa vaga.
-4. **Scorecards** — template + resumo de avaliações (`listJobScorecardSummary` já existe).
-5. **Atividade / Timeline** — usa `activity-timeline.tsx` filtrado por `entity_type='job'`.
-6. **Postagens** — `ats_job_postings` (multi-posting; mantém banner "mock" quando aplicável).
+### D. Revisão e validações obrigatórias
+- Rodar `tsgo --noEmit` ao final.
+- Reproduzir manualmente cada kanban (drop, rollback, toasts).
+- Conferir foco visível, contraste, `aria-label`, dark mode e responsividade.
+- Garantir que nenhuma funcionalidade pré-existente (filtros, navegação, criação de vagas, scorecards) seja afetada.
 
-**Coluna direita — Auxiliares**
-- **Job Copilot** (IA): adapta o `CandidateCopilotPanel` para vaga — insights de funil, gargalos, recomendações de sourcing. Cria `src/components/ats/job-copilot-panel.tsx` reaproveitando `copilot_sessions`/`copilot_messages` já existentes; sem novo schema.
-- **Match Score**: top 5 candidatos com maior `ai_match_score` (já calculado), com link para a aplicação.
-- **DEI Snapshot**: KPIs do funil dessa vaga (já existe componente reutilizável).
-- **Próximas entrevistas** (resumo das próximas 7 dias).
+## Fora de escopo
+- Redesign visual dos kanbans.
+- Mudanças em RLS, autenticação, ou regras de derivação além do necessário para `archived`.
+- DnD em outras telas (Pipelines `/pipelines`, Talent Pools, etc.).
+- Migração de "status do candidato" para campo persistido full — apenas `archived` será persistido.
 
-Botão "Adicionar candidato" no header continua funcionando — passa a abrir o `AssociateCandidateJobDialog` reutilizável criado na rodada anterior, com `presetJobId`.
+## Detalhes técnicos (referência)
 
-### Entrega 3 — Quick Create + atalhos
+```text
+Arquivos a editar:
+- src/routes/__root.tsx               → listener global de chunk error (1 reload guard)
+- src/routes/_authenticated/(ats)/jobs.tsx
+                                      → DnD nos kanbans Status e Departamento
+- src/routes/_authenticated/(ats)/candidates.index.tsx
+                                      → DnD com transições seguras
+- src/lib/ats/ats.functions.ts        → setCandidateArchived; possível extensão
+                                        de saveAtsJob para aceitar `metadata`
+- src/lib/ats/candidate-status.functions.ts
+                                      → considerar archived antes das demais
 
-- Item "Vaga" no QuickCreateMenu já existe para `/jobs?create=1`. Verificar que o modal de criação abre automaticamente quando `search.create === 1` (padrão das outras entidades).
-- Adicionar entrada "Ir para vagas" no ⌘K Copilot.
+Arquivos a criar:
+- (nenhum novo componente; reuso de AssociateCandidateJobDialog já existente)
 
----
-
-### Detalhes técnicos
-
-- **Sem alteração de schema, RLS, policies ou GRANTs.** Toda contagem agregada feita via server fn nova `listAtsJobsWithCounts` (opcional, aditiva) sob `requireSupabaseAuth`, reaproveitando policies existentes em `ats_jobs` e `ats_applications`.
-- **Sem remover funcionalidades**: kanban atual, export CSV, scorecards summary, evaluation dialog — todos preservados, apenas movidos para dentro de abas.
-- **URL state** via `validateSearch` (`view`, `tab`, filtros), nunca `useState` para coisas compartilháveis.
-- **Componentes oficiais** do TechHire Design Foundation: `AtsPageHeader`, `FilterBar`, `MetricCard`, `DataTable`, `EmptyState`, `Skeletons`, `StatusBadge`, `StageBadge`, `ScoreBadge`, `MetaPill`, `Tabs`, `record-layout`.
-- **Acessibilidade**: foco visível em DnD, aria-labels nos botões de view, navegação por teclado nas tabs.
-- **Light/dark mode** validado via tokens semânticos de `src/styles.css`.
-- **Loading/empty/error states** dedicados em cada view e cada aba.
-
-### Arquivos previstos
-
-Criados:
-- `src/routes/_authenticated/(ats)/jobs.$id.tsx` (refatoração grande — pode ser dividido em sub-componentes em `src/components/ats/job-detail/`).
-- `src/components/ats/job-detail/` (left-card, tabs, applications-table, postings-card, etc.).
-- `src/components/ats/job-copilot-panel.tsx`.
-- `src/components/ats/jobs-table-view.tsx`, `jobs-kanban-status.tsx`, `jobs-kanban-department.tsx`.
-
-Alterados:
-- `src/routes/_authenticated/(ats)/jobs.tsx` (ViewSwitcher + `validateSearch`).
-- `src/lib/ats/ats.functions.ts` (aditivo: `listAtsJobsWithCounts`, se necessário).
-- `src/components/copilot-cmdk.tsx` (atalho "Vagas").
-
-Não alterados:
-- `ats_jobs`, `ats_applications`, policies, GRANTs, RLS, server fns existentes.
-
-### Como validar
-
-1. `/jobs` — alternar Table/Cards/Kanban por status/Kanban por departamento; URL reflete a view; drag entre colunas de status atualiza a vaga.
-2. `/jobs/$id` — 3 colunas; abrir todas as 6 abas; mover candidato no Pipeline; exportar CSV; abrir scorecards; ver timeline.
-3. Botão "Adicionar candidato" abre dialog reutilizável com vaga pré-selecionada.
-4. Light/dark mode + responsivo (desktop, tablet, mobile colapsa para coluna única com tabs no topo).
-5. `bunx tsgo --noEmit` limpo.
-
-### Riscos / pendências
-
-- Refator grande no detalhe — manter PR mental dividido em sub-componentes para reduzir blast radius.
-- Kanban por departamento só agrupa (não move) na primeira versão; mover entre deptos pode entrar depois.
-- Job Copilot reusa storage existente; prompts específicos de vaga ficam configurados em código (sem migration).
-
-### Próximo passo
-
-Executar Entrega 1 (lista multi-view) e Entrega 2 (detalhe 3 colunas) em sequência, na mesma rodada, sem alterar regra de negócio.
+Migration (aditiva, somente se a coluna não existir hoje):
+- ALTER TABLE public.ats_candidates ADD COLUMN IF NOT EXISTS archived boolean NOT NULL DEFAULT false;
+```

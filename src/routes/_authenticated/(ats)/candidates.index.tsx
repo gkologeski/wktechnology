@@ -43,7 +43,10 @@ import {
   listAtsCandidates,
   saveAtsCandidate,
   deleteAtsCandidate,
+  setCandidateArchived,
 } from "@/lib/ats/ats.functions";
+import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
+
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
@@ -121,7 +124,16 @@ function CandidatesPage() {
   const parsePdf = useServerFn(parseCvFromPdf);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
+  const archiveCandidate = useServerFn(setCandidateArchived);
   const queryClient = useQueryClient();
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<DerivedCandidateStatus | null>(null);
+  const [associateState, setAssociateState] = useState<{
+    open: boolean;
+    candidateId?: string;
+    candidateName?: string;
+  }>({ open: false });
+
   const [view, setView] = useState<"cards" | "table" | "kanban">(
     () => (typeof window !== "undefined"
       ? ((localStorage.getItem("candidates:view") as "cards" | "table" | "kanban") ?? "cards")
@@ -717,11 +729,80 @@ function CandidatesPage() {
               const colRows = rows.filter(
                 (r) => (statuses[r.id as string] ?? "new") === s,
               );
+              const isOver = dragOverCol === s;
+              const handleDrop = async (jobId: string) => {
+                const candidateId = jobId; // dataTransfer carrega o id do candidato
+                const candidate = rows.find((r) => r.id === candidateId);
+                if (!candidate) return;
+                const from = (statuses[candidateId] ?? "new") as DerivedCandidateStatus;
+                if (from === s) return;
+
+                // *  →  archived  → mutação segura
+                if (s === "archived") {
+                  try {
+                    await archiveCandidate({ data: { id: candidateId, archived: true } });
+                    toast.success(`${candidate.full_name as string} arquivado`);
+                    void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
+                    void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Falha ao arquivar");
+                  }
+                  return;
+                }
+                // archived → new  → desarquivar
+                if (from === "archived" && s === "new") {
+                  try {
+                    await archiveCandidate({ data: { id: candidateId, archived: false } });
+                    toast.success(`${candidate.full_name as string} desarquivado`);
+                    void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
+                    void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Falha ao desarquivar");
+                  }
+                  return;
+                }
+                // new → in_process  → exige associação a uma vaga (abre diálogo)
+                if (from === "new" && s === "in_process") {
+                  setAssociateState({
+                    open: true,
+                    candidateId,
+                    candidateName: candidate.full_name as string,
+                  });
+                  toast.message("Associe o candidato a uma vaga para movê-lo para 'Em processo'");
+                  return;
+                }
+                // demais transições — não há mutação direta segura
+                toast.warning(
+                  `Transição "${DERIVED_STATUS_LABELS[from]}" → "${DERIVED_STATUS_LABELS[s]}" precisa ser feita pelo fluxo da vaga (entrevista, oferta, etc.).`,
+                );
+              };
               return (
                 <div
                   key={s}
                   data-kanban-column-root={s}
-                  className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
+                  onDragOver={(e) => {
+                    if (!draggingId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverCol !== s) setDragOverCol(s);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
+                      setDragOverCol((c) => (c === s ? null : c));
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/plain") || draggingId;
+                    setDragOverCol(null);
+                    setDraggingId(null);
+                    if (id) void handleDrop(id);
+                  }}
+                  className={cn(
+                    "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
+                    isOver
+                      ? "border-primary/60 ring-1 ring-primary/30"
+                      : "border-border-subtle",
+                  )}
                 >
                   <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
@@ -734,17 +815,30 @@ function CandidatesPage() {
                   <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
                     {colRows.map((c) => {
                       const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+                      const cid = c.id as string;
                       return (
                         <Link
-                          key={c.id as string}
+                          key={cid}
                           to="/candidates/$id"
-                          params={{ id: c.id as string }}
+                          params={{ id: cid }}
                           data-kanban-card
                           data-kanban-column={s}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", cid);
+                            setDraggingId(cid);
+                          }}
+                          onDragEnd={() => {
+                            setDraggingId(null);
+                            setDragOverCol(null);
+                          }}
                           className={cn(
                             "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
                             "transition-all hover:border-border-strong hover:shadow-sm",
                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            "cursor-grab active:cursor-grabbing",
+                            draggingId === cid && "opacity-50",
                           )}
                         >
                           <div className="truncate text-sm font-medium text-text-primary">
@@ -785,7 +879,7 @@ function CandidatesPage() {
                     })}
                     {colRows.length === 0 ? (
                       <p className="px-2 py-6 text-center text-xs text-text-tertiary">
-                        Vazio
+                        {isOver ? "Solte aqui" : "Vazio"}
                       </p>
                     ) : null}
                   </div>
@@ -796,7 +890,18 @@ function CandidatesPage() {
         </KanbanScrollContainer>
       )}
 
+      <AssociateCandidateJobDialog
+        open={associateState.open}
+        onOpenChange={(v) => setAssociateState((s) => ({ ...s, open: v }))}
+        presetCandidateId={associateState.candidateId}
+        presetCandidateName={associateState.candidateName}
+        onSuccess={() => {
+          void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
+          void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+        }}
+      />
 
     </div>
+
   );
 }

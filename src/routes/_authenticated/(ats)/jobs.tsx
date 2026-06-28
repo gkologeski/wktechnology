@@ -43,7 +43,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { listAtsJobs, saveAtsJob } from "@/lib/ats/ats.functions";
+import {
+  listAtsJobs,
+  saveAtsJob,
+  setAtsJobStatus,
+  setAtsJobDepartment,
+} from "@/lib/ats/ats.functions";
+
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
   AtsPageHeader,
@@ -170,15 +176,34 @@ function JobCard({ job }: { job: JobRow }) {
   );
 }
 
-function JobKanbanCard({ job }: { job: JobRow }) {
+function JobKanbanCard({
+  job,
+  onDragStart,
+  onDragEnd,
+  dragging,
+}: {
+  job: JobRow;
+  onDragStart?: (jobId: string) => void;
+  onDragEnd?: () => void;
+  dragging?: boolean;
+}) {
   return (
     <Link
       to="/jobs/$id"
       params={{ id: job.id }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", job.id);
+        onDragStart?.(job.id);
+      }}
+      onDragEnd={() => onDragEnd?.()}
       className={cn(
         "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
         "transition-all hover:border-border-strong hover:shadow-sm",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "cursor-grab active:cursor-grabbing",
+        dragging && "opacity-50",
       )}
     >
       <div className="truncate text-sm font-medium text-text-primary">{job.title}</div>
@@ -208,6 +233,7 @@ function JobKanbanCard({ job }: { job: JobRow }) {
   );
 }
 
+
 function JobsGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -221,6 +247,11 @@ function JobsGridSkeleton() {
 function AtsJobsPage() {
   const list = useServerFn(listAtsJobs);
   const save = useServerFn(saveAtsJob);
+  const updateJobStatus = useServerFn(setAtsJobStatus);
+  const updateJobDepartment = useServerFn(setAtsJobDepartment);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
   const navigate = useNavigate();
   const [rows, setRows] = useState<JobRow[]>([]);
   const [search, setSearch] = useState("");
@@ -649,10 +680,56 @@ function AtsJobsPage() {
           <div className="flex gap-2 pb-4">
             {ATS_JOB_STATUSES.map((s) => {
               const colRows = byStatus[s.value] ?? [];
+              const isOver = dragOverCol === `status:${s.value}`;
               return (
                 <div
                   key={s.value}
-                  className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
+                  onDragOver={(e) => {
+                    if (!draggingId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverCol !== `status:${s.value}`)
+                      setDragOverCol(`status:${s.value}`);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
+                      setDragOverCol((c) => (c === `status:${s.value}` ? null : c));
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setDragOverCol(null);
+                    const jobId =
+                      e.dataTransfer.getData("text/plain") || draggingId;
+                    setDraggingId(null);
+                    if (!jobId) return;
+                    const current = rows.find((r) => r.id === jobId);
+                    if (!current || current.status === s.value) return;
+                    const prevStatus = current.status;
+                    setRows((rs) =>
+                      rs.map((r) =>
+                        r.id === jobId ? { ...r, status: s.value as JobRow["status"] } : r,
+                      ),
+                    );
+                    try {
+                      await updateJobStatus({
+                        data: { id: jobId, status: s.value as never },
+                      });
+                      toast.success(`Vaga movida para "${s.label}"`);
+                    } catch (err) {
+                      setRows((rs) =>
+                        rs.map((r) => (r.id === jobId ? { ...r, status: prevStatus } : r)),
+                      );
+                      toast.error(
+                        err instanceof Error ? err.message : "Falha ao mover vaga",
+                      );
+                    }
+                  }}
+                  className={cn(
+                    "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
+                    isOver
+                      ? "border-primary/60 ring-1 ring-primary/30"
+                      : "border-border-subtle",
+                  )}
                 >
                   <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
@@ -667,11 +744,20 @@ function AtsJobsPage() {
                   </div>
                   <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
                     {colRows.map((j) => (
-                      <JobKanbanCard key={j.id} job={j} />
+                      <JobKanbanCard
+                        key={j.id}
+                        job={j}
+                        dragging={draggingId === j.id}
+                        onDragStart={(id) => setDraggingId(id)}
+                        onDragEnd={() => {
+                          setDraggingId(null);
+                          setDragOverCol(null);
+                        }}
+                      />
                     ))}
                     {colRows.length === 0 && (
                       <p className="px-2 py-6 text-center text-xs text-text-tertiary">
-                        Vazio
+                        {isOver ? "Solte aqui" : "Vazio"}
                       </p>
                     )}
                   </div>
@@ -683,32 +769,110 @@ function AtsJobsPage() {
       ) : (
         <KanbanScrollContainer ariaLabel="Vagas por departamento">
           <div className="flex gap-2 pb-4">
-            {Object.entries(byDepartment).map(([dep, items]) => (
-              <div
-                key={dep}
-                className="flex w-[280px] shrink-0 flex-col rounded-md border border-border-subtle bg-surface-sunken"
-              >
-                <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary uppercase tracking-wide">
-                      <Building2 className="h-3 w-3 text-text-tertiary" aria-hidden />
-                      {dep}
-                    </span>
-                    <span className="text-[11px] tabular-nums text-text-tertiary">
-                      {items.length}
-                    </span>
+            {Object.entries(byDepartment).map(([dep, items]) => {
+              const isOver = dragOverCol === `dept:${dep}`;
+              const targetDept = dep === "Sem departamento" ? null : dep;
+              return (
+                <div
+                  key={dep}
+                  onDragOver={(e) => {
+                    if (!draggingId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverCol !== `dept:${dep}`) setDragOverCol(`dept:${dep}`);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
+                      setDragOverCol((c) => (c === `dept:${dep}` ? null : c));
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setDragOverCol(null);
+                    const jobId =
+                      e.dataTransfer.getData("text/plain") || draggingId;
+                    setDraggingId(null);
+                    if (!jobId) return;
+                    const current = rows.find((r) => r.id === jobId) as
+                      | (JobRow & { department?: string | null })
+                      | undefined;
+                    if (!current) return;
+                    const prevDept = current.department ?? null;
+                    if ((prevDept ?? null) === (targetDept ?? null)) return;
+                    setRows((rs) =>
+                      rs.map((r) =>
+                        r.id === jobId
+                          ? ({ ...r, department: targetDept } as JobRow)
+                          : r,
+                      ),
+                    );
+                    try {
+                      await updateJobDepartment({
+                        data: { id: jobId, department: targetDept },
+                      });
+                      toast.success(
+                        targetDept
+                          ? `Vaga movida para "${targetDept}"`
+                          : "Departamento removido da vaga",
+                      );
+                    } catch (err) {
+                      setRows((rs) =>
+                        rs.map((r) =>
+                          r.id === jobId
+                            ? ({ ...r, department: prevDept } as JobRow)
+                            : r,
+                        ),
+                      );
+                      toast.error(
+                        err instanceof Error
+                          ? err.message
+                          : "Falha ao mover vaga",
+                      );
+                    }
+                  }}
+                  className={cn(
+                    "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
+                    isOver
+                      ? "border-primary/60 ring-1 ring-primary/30"
+                      : "border-border-subtle",
+                  )}
+                >
+                  <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary uppercase tracking-wide">
+                        <Building2 className="h-3 w-3 text-text-tertiary" aria-hidden />
+                        {dep}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-text-tertiary">
+                        {items.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
+                    {items.map((j) => (
+                      <JobKanbanCard
+                        key={j.id}
+                        job={j}
+                        dragging={draggingId === j.id}
+                        onDragStart={(id) => setDraggingId(id)}
+                        onDragEnd={() => {
+                          setDraggingId(null);
+                          setDragOverCol(null);
+                        }}
+                      />
+                    ))}
+                    {items.length === 0 && (
+                      <p className="px-2 py-6 text-center text-xs text-text-tertiary">
+                        {isOver ? "Solte aqui" : "Vazio"}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
-                  {items.map((j) => (
-                    <JobKanbanCard key={j.id} job={j} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </KanbanScrollContainer>
       )}
+
     </div>
   );
 }

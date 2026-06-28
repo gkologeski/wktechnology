@@ -85,4 +85,11 @@ export function installChunkReloadGuard() {
       void handleChunkError();
     }
   });
+  // Vite dispara este evento antes da rejeição da promise, dando o sinal
+  // mais confiável de chunk obsoleto após um novo build.
+  window.addEventListener("vite:preloadError", (event) => {
+    event.preventDefault();
+    void handleChunkError();
+  });
 }
+
