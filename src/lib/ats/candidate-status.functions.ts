@@ -98,6 +98,9 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
       else if (statuses.every((s) => s === "rejected" || s === "withdrawn"))
         result[cid] = "archived";
     }
+    // Aplica flag arquivado por último — sobrepõe demais classificações.
+    for (const id of archivedSet) result[id] = "archived";
 
     return result;
   });
+
