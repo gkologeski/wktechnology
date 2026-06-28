@@ -87,6 +87,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         notes: z.string().max(4000).nullable().optional(),
         stage_value: z.string().max(80).nullable().optional(),
         interview_kit_id: z.string().uuid().nullable().optional(),
+        panel_interviewer_ids: z.array(z.string().uuid()).max(8).optional(),
       })
       .parse(d),
   )
@@ -129,6 +130,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         stage_value: data.stage_value ?? (app.stage_value as string | null),
         interview_kit_id: data.interview_kit_id ?? null,
         async_questions_snapshot: snapshot as never,
+        panel_interviewer_ids: (data.panel_interviewer_ids ?? []) as never,
       } as never)
       .select("id")
       .single();

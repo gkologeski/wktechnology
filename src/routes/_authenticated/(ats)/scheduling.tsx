@@ -13,12 +13,15 @@ import {
   Clock3,
   Search,
   X,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import {
   AtsPageHeader,
   AtsSectionHeader,
   EmptyState,
   FormSection,
+  MetricCard,
 } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,11 +45,14 @@ import {
   findCommonSlots,
   listAvailability,
   listPools,
+  listOpenSchedulingSlaBreaches,
   removePoolMember,
   upsertAvailability,
   upsertPool,
   type Pool,
+  type SlaBreach,
 } from "@/lib/ats/scheduling.functions";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/(ats)/scheduling")({
   component: SchedulingPage,
@@ -136,6 +142,10 @@ function SchedulingPage() {
         title="Scheduling avançado"
         description="Pools de entrevistadores com rotação automática, disponibilidade semanal e cálculo de horários em comum para painéis."
       />
+
+      <SlaMonitorSection />
+
+
 
       {/* ----- Pools ----- */}
       <section className="space-y-3">
@@ -692,5 +702,113 @@ function CommonSlotsFinder({
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+// ====== SLA monitor =========================================================
+
+function SlaMonitorSection() {
+  const fetchBreaches = useServerFn(listOpenSchedulingSlaBreaches);
+  const [threshold, setThreshold] = useState(48);
+  const q = useQuery<SlaBreach[]>({
+    queryKey: ["ats-sla-breaches", threshold],
+    queryFn: () => fetchBreaches({ data: { threshold_hours: threshold } }),
+  });
+
+  const breaches = q.data ?? [];
+  const critical = breaches.filter((b) => b.hours_stuck >= threshold * 2).length;
+
+  return (
+    <section className="space-y-3">
+      <AtsSectionHeader
+        title="SLA de agendamento"
+        description="Candidaturas em estágios de entrevista sem horário marcado além do limite."
+      />
+      <div className="grid gap-3 md:grid-cols-3">
+        <MetricCard
+          label="Pendentes (acima do SLA)"
+          value={breaches.length}
+          icon={AlertTriangle}
+          tone={breaches.length > 0 ? "warning" : "positive"}
+          loading={q.isLoading}
+        />
+        <MetricCard
+          label="Críticas (>2× SLA)"
+          value={critical}
+          icon={AlertTriangle}
+          tone={critical > 0 ? "negative" : "neutral"}
+          loading={q.isLoading}
+        />
+        <MetricCard
+          label="Limite atual"
+          value={`${threshold}h`}
+          hint={
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={720}
+                value={threshold}
+                onChange={(e) =>
+                  setThreshold(Math.max(1, Number(e.target.value) || 48))
+                }
+                className="h-7 w-20"
+              />
+              <span className="text-xs text-text-tertiary">horas</span>
+            </div>
+          }
+          icon={Clock3}
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {q.isLoading ? (
+            <div className="p-4 text-sm text-text-tertiary">Carregando…</div>
+          ) : breaches.length === 0 ? (
+            <EmptyState
+              icon={CalendarClock}
+              title="Tudo em dia"
+              description="Nenhuma candidatura ultrapassou o SLA de agendamento."
+              compact
+            />
+          ) : (
+            <ul className="divide-y divide-border-subtle">
+              {breaches.map((b) => (
+                <li
+                  key={b.application_id}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary truncate">
+                        {b.candidate_name ?? "Candidato"}
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {b.stage_value}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-text-tertiary truncate">
+                      {b.job_title ?? "Vaga"} · parado há{" "}
+                      <span className="font-medium text-text-secondary">
+                        {b.hours_stuck.toFixed(1)}h
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    to="/candidates/$id"
+                    params={{ id: b.candidate_id }}
+                    className="inline-flex items-center gap-1 rounded-md border border-border-subtle px-2.5 py-1 text-xs hover:bg-surface-sunken"
+                  >
+                    Abrir
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
