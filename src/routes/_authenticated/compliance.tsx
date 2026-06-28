@@ -316,17 +316,16 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
 }
 
 function DsarStatusBadge({ status }: { status: DsarRequest["status"] }) {
-  switch (status) {
-    case "pending":
-      return <StatusBadge tone="warning" label="Pendente" />;
-    case "in_progress":
-      return <StatusBadge tone="info" label="Em andamento" />;
-    case "completed":
-      return <StatusBadge tone="positive" label="Concluída" />;
-    case "rejected":
-      return <StatusBadge tone="negative" label="Rejeitada" />;
-  }
+  const map: Record<DsarRequest["status"], { label: string; cls: string }> = {
+    pending: { label: "Pendente", cls: "bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900" },
+    in_progress: { label: "Em andamento", cls: "bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-900" },
+    completed: { label: "Concluída", cls: "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900" },
+    rejected: { label: "Rejeitada", cls: "bg-rose-100 text-rose-900 border-rose-200 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-900" },
+  };
+  const { label, cls } = map[status];
+  return <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>;
 }
+
 
 function NewDsarButton({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
