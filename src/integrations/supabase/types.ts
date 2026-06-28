@@ -1772,10 +1772,14 @@ export type Database = {
           currency: string
           default_bonus_cents: number
           eligibility_rules: Json
+          enable_public_form: boolean
           enabled: boolean
           id: string
+          landing_body: string | null
+          landing_headline: string | null
           name: string
           owner_id: string
+          public_slug: string | null
           terms_url: string | null
           updated_at: string
         }
@@ -1785,10 +1789,14 @@ export type Database = {
           currency?: string
           default_bonus_cents?: number
           eligibility_rules?: Json
+          enable_public_form?: boolean
           enabled?: boolean
           id?: string
+          landing_body?: string | null
+          landing_headline?: string | null
           name: string
           owner_id: string
+          public_slug?: string | null
           terms_url?: string | null
           updated_at?: string
         }
@@ -1798,10 +1806,14 @@ export type Database = {
           currency?: string
           default_bonus_cents?: number
           eligibility_rules?: Json
+          enable_public_form?: boolean
           enabled?: boolean
           id?: string
+          landing_body?: string | null
+          landing_headline?: string | null
           name?: string
           owner_id?: string
+          public_slug?: string | null
           terms_url?: string | null
           updated_at?: string
         }
@@ -1826,8 +1838,11 @@ export type Database = {
           notes: string | null
           owner_id: string
           program_id: string | null
-          referrer_user_id: string
+          referrer_email: string | null
+          referrer_name: string | null
+          referrer_user_id: string | null
           relationship: string | null
+          source: string
           status: string
           submitted_at: string
           updated_at: string
@@ -1850,8 +1865,11 @@ export type Database = {
           notes?: string | null
           owner_id: string
           program_id?: string | null
-          referrer_user_id: string
+          referrer_email?: string | null
+          referrer_name?: string | null
+          referrer_user_id?: string | null
           relationship?: string | null
+          source?: string
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -1874,8 +1892,11 @@ export type Database = {
           notes?: string | null
           owner_id?: string
           program_id?: string | null
-          referrer_user_id?: string
+          referrer_email?: string | null
+          referrer_name?: string | null
+          referrer_user_id?: string | null
           relationship?: string | null
+          source?: string
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -1900,6 +1921,13 @@ export type Database = {
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "ats_referral_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_referrals_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "ats_referral_programs_public"
             referencedColumns: ["id"]
           },
         ]
@@ -12163,6 +12191,33 @@ export type Database = {
       }
     }
     Views: {
+      ats_referral_programs_public: {
+        Row: {
+          id: string | null
+          landing_body: string | null
+          landing_headline: string | null
+          name: string | null
+          public_slug: string | null
+          terms_url: string | null
+        }
+        Insert: {
+          id?: string | null
+          landing_body?: string | null
+          landing_headline?: string | null
+          name?: string | null
+          public_slug?: string | null
+          terms_url?: string | null
+        }
+        Update: {
+          id?: string | null
+          landing_body?: string | null
+          landing_headline?: string | null
+          name?: string | null
+          public_slug?: string | null
+          terms_url?: string | null
+        }
+        Relationships: []
+      }
       workspace_branding_public: {
         Row: {
           accent_color: string | null
@@ -12226,6 +12281,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      ensure_silver_medalist_pool: { Args: { _owner: string }; Returns: string }
       esign_verify_hash: {
         Args: { _hash: string }
         Returns: {
@@ -12245,6 +12301,7 @@ export type Database = {
         }
         Returns: string
       }
+      generate_referral_slug: { Args: never; Returns: string }
       get_entitlement_limit: {
         Args: { _key: string; _workspace: string }
         Returns: number

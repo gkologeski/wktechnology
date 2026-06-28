@@ -54,6 +54,29 @@ export const upsertReferralProgram = createServerFn({ method: "POST" })
     return { id: saved.id };
   });
 
+export const updateReferralProgramPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        public_slug: z.string().min(3).max(40).regex(/^[a-z0-9-]+$/).nullable().optional(),
+        landing_headline: z.string().max(200).nullable().optional(),
+        landing_body: z.string().max(4000).nullable().optional(),
+        enable_public_form: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { id, ...patch } = data;
+    const { error } = await context.supabase
+      .from("ats_referral_programs")
+      .update(patch as never)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listReferrals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

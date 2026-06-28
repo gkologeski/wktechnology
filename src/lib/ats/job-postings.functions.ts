@@ -57,6 +57,47 @@ export const listJobPostings = createServerFn({ method: "POST" })
     return { postings: rows ?? [] };
   });
 
+export const listAllJobPostings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        provider: PROVIDER.optional(),
+        status: z.enum(["published", "unpublished", "failed", "pending"]).optional(),
+        limit: z.number().int().min(1).max(200).default(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    let q = context.supabase
+      .from("ats_job_postings")
+      .select(
+        "id, provider, status, external_id, external_url, is_mock, last_synced_at, last_error, updated_at, job_id, job:ats_jobs(id, title, status)",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
+    if (data.provider) q = q.eq("provider", data.provider);
+    if (data.status) q = q.eq("status", data.status);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    // contagens por provider
+    const counts = {
+      linkedin: { active: 0, mock: 0, failed: 0 },
+      indeed: { active: 0, mock: 0, failed: 0 },
+      vagas_com: { active: 0, mock: 0, failed: 0 },
+    } as Record<string, { active: number; mock: number; failed: number }>;
+    for (const r of rows ?? []) {
+      const k = r.provider as keyof typeof counts;
+      if (!counts[k]) continue;
+      if (r.status === "published") counts[k].active += 1;
+      if (r.status === "failed") counts[k].failed += 1;
+      if (r.is_mock) counts[k].mock += 1;
+    }
+    return { postings: rows ?? [], counts };
+  });
+
+
 export const publishJobToProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

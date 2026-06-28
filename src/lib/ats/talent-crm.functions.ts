@@ -245,3 +245,56 @@ export const getCandidatePools = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { pools: rows ?? [] };
   });
+
+/**
+ * Re-engaja membros de um pool em uma sequência existente (Onda 5 / 5.5).
+ * Loop com cap 200 membros para evitar runs longos.
+ */
+export const enqueueReEngageNurture = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        pool_id: z.string().uuid(),
+        sequence_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: members, error } = await context.supabase
+      .from("ats_talent_pool_members")
+      .select("candidate_id")
+      .eq("pool_id", data.pool_id)
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    const candidateIds = (members ?? []).map((m) => m.candidate_id as string);
+    if (candidateIds.length === 0) return { enrolled: 0 };
+
+    const rows = candidateIds.map((cid) => ({
+      sequence_id: data.sequence_id,
+      candidate_id: cid,
+      owner_id: context.userId,
+      status: "active",
+      current_step: 0,
+      next_run_at: new Date().toISOString(),
+      started_by: context.userId,
+    }));
+    const { error: insErr } = await context.supabase
+      .from("ats_sourcing_enrollments")
+      .upsert(rows as never, {
+        onConflict: "sequence_id,candidate_id",
+        ignoreDuplicates: true,
+      });
+    if (insErr) throw new Error(insErr.message);
+
+    await recordAtsEvent(context.supabase, {
+      ownerId: context.userId,
+      name: "ats.sequence.started",
+      entityType: "talent_pool",
+      entityId: data.pool_id,
+      payload: { sequence_id: data.sequence_id, count: candidateIds.length },
+    });
+    return { enrolled: candidateIds.length };
+  });
+

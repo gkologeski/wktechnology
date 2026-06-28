@@ -197,6 +197,7 @@ import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/dea
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
+import { Route as ApiPublicReferSlugRouteImport } from './routes/api/public/refer/$slug'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
@@ -205,6 +206,7 @@ import { Route as ApiPublicHuntingTemplatesRouteImport } from './routes/api/publ
 import { Route as ApiPublicHuntingRenderTemplateRouteImport } from './routes/api/public/hunting/render-template'
 import { Route as ApiPublicHuntingLogOutreachRouteImport } from './routes/api/public/hunting/log-outreach'
 import { Route as ApiPublicHuntingCaptureRouteImport } from './routes/api/public/hunting/capture'
+import { Route as ApiPublicHuntingBulkCaptureRouteImport } from './routes/api/public/hunting/bulk-capture'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -258,6 +260,7 @@ import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/a
 import { Route as ApiPublicV1AtsApplicationsRouteImport } from './routes/api/public/v1/ats/applications'
 import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
 import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
+import { Route as ApiPublicReferSlugSubmitRouteImport } from './routes/api/public/refer/$slug.submit'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -1326,6 +1329,11 @@ const ApiPublicTwilioRecordingStatusRoute =
     path: '/api/public/twilio/recording-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicReferSlugRoute = ApiPublicReferSlugRouteImport.update({
+  id: '/api/public/refer/$slug',
+  path: '/api/public/refer/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -1372,6 +1380,12 @@ const ApiPublicHuntingCaptureRoute = ApiPublicHuntingCaptureRouteImport.update({
   path: '/api/public/hunting/capture',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHuntingBulkCaptureRoute =
+  ApiPublicHuntingBulkCaptureRouteImport.update({
+    id: '/api/public/hunting/bulk-capture',
+    path: '/api/public/hunting/bulk-capture',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -1680,6 +1694,12 @@ const ApiPublicScimV2GroupsRoute = ApiPublicScimV2GroupsRouteImport.update({
   path: '/api/public/scim/v2/Groups',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicReferSlugSubmitRoute =
+  ApiPublicReferSlugSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicReferSlugRoute,
+  } as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
     id: '/api/public/payments/br-webhook/$provider',
@@ -1958,6 +1978,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
@@ -1966,6 +1987,7 @@ export interface FileRoutesByFullPath {
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
@@ -1991,6 +2013,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
@@ -2214,6 +2237,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
@@ -2222,6 +2246,7 @@ export interface FileRoutesByTo {
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
@@ -2247,6 +2272,7 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
@@ -2476,6 +2502,7 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
@@ -2484,6 +2511,7 @@ export interface FileRoutesById {
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
@@ -2509,6 +2537,7 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
@@ -2738,6 +2767,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
     | '/api/public/hunting/render-template'
@@ -2746,6 +2776,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
@@ -2771,6 +2802,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
@@ -2994,6 +3026,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
     | '/api/public/hunting/render-template'
@@ -3002,6 +3035,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
@@ -3027,6 +3061,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
@@ -3255,6 +3290,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
     | '/api/public/hunting/render-template'
@@ -3263,6 +3299,7 @@ export interface FileRouteTypes {
     | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
+    | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/v1/contacts'
@@ -3288,6 +3325,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
@@ -3362,6 +3400,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicHuntingBulkCaptureRoute: typeof ApiPublicHuntingBulkCaptureRoute
   ApiPublicHuntingCaptureRoute: typeof ApiPublicHuntingCaptureRoute
   ApiPublicHuntingLogOutreachRoute: typeof ApiPublicHuntingLogOutreachRoute
   ApiPublicHuntingRenderTemplateRoute: typeof ApiPublicHuntingRenderTemplateRoute
@@ -3370,6 +3409,7 @@ export interface RootRouteChildren {
   ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicReferSlugRoute: typeof ApiPublicReferSlugRouteWithChildren
   ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
@@ -4712,6 +4752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTwilioRecordingStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/refer/$slug': {
+      id: '/api/public/refer/$slug'
+      path: '/api/public/refer/$slug'
+      fullPath: '/api/public/refer/$slug'
+      preLoaderRoute: typeof ApiPublicReferSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -4766,6 +4813,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hunting/capture'
       fullPath: '/api/public/hunting/capture'
       preLoaderRoute: typeof ApiPublicHuntingCaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hunting/bulk-capture': {
+      id: '/api/public/hunting/bulk-capture'
+      path: '/api/public/hunting/bulk-capture'
+      fullPath: '/api/public/hunting/bulk-capture'
+      preLoaderRoute: typeof ApiPublicHuntingBulkCaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/workflows-tick': {
@@ -5138,6 +5192,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/scim/v2/Groups'
       preLoaderRoute: typeof ApiPublicScimV2GroupsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/refer/$slug/submit': {
+      id: '/api/public/refer/$slug/submit'
+      path: '/submit'
+      fullPath: '/api/public/refer/$slug/submit'
+      preLoaderRoute: typeof ApiPublicReferSlugSubmitRouteImport
+      parentRoute: typeof ApiPublicReferSlugRoute
     }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
@@ -5788,6 +5849,17 @@ const ApiPublicFormsSlugRouteChildren: ApiPublicFormsSlugRouteChildren = {
 const ApiPublicFormsSlugRouteWithChildren =
   ApiPublicFormsSlugRoute._addFileChildren(ApiPublicFormsSlugRouteChildren)
 
+interface ApiPublicReferSlugRouteChildren {
+  ApiPublicReferSlugSubmitRoute: typeof ApiPublicReferSlugSubmitRoute
+}
+
+const ApiPublicReferSlugRouteChildren: ApiPublicReferSlugRouteChildren = {
+  ApiPublicReferSlugSubmitRoute: ApiPublicReferSlugSubmitRoute,
+}
+
+const ApiPublicReferSlugRouteWithChildren =
+  ApiPublicReferSlugRoute._addFileChildren(ApiPublicReferSlugRouteChildren)
+
 interface ApiPublicScimV2UsersRouteChildren {
   ApiPublicScimV2UsersIdRoute: typeof ApiPublicScimV2UsersIdRoute
 }
@@ -5885,6 +5957,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicHuntingBulkCaptureRoute: ApiPublicHuntingBulkCaptureRoute,
   ApiPublicHuntingCaptureRoute: ApiPublicHuntingCaptureRoute,
   ApiPublicHuntingLogOutreachRoute: ApiPublicHuntingLogOutreachRoute,
   ApiPublicHuntingRenderTemplateRoute: ApiPublicHuntingRenderTemplateRoute,
@@ -5893,6 +5966,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicReferSlugRoute: ApiPublicReferSlugRouteWithChildren,
   ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
