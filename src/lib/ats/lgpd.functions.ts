@@ -32,12 +32,13 @@ export interface CandidateConsent {
 
 export interface CandidateExportSnapshot {
   exported_at: string;
-  candidate: Record<string, unknown> | null;
+  candidate: unknown;
   applications: unknown[];
   consents: unknown[];
   scorecards: unknown[];
   interviews: unknown[];
 }
+
 
 const createSchema = z.object({
   candidate_id: z.string().uuid(),
