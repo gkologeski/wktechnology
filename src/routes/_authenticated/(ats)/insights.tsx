@@ -23,6 +23,7 @@ import {
   SourceBadge,
   Skeletons,
 } from "@/components/ats/ui";
+import { PipelineInsightsPanel } from "@/components/ats/pipeline-insights-panel";
 
 export const Route = createFileRoute("/_authenticated/(ats)/insights")({
   component: AtsInsightsPage,
@@ -210,6 +211,8 @@ function InsightsContent({
           </div>
         </section>
       </div>
+
+      <PipelineInsightsPanel />
     </div>
   );
 }
