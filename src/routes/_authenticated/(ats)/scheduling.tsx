@@ -13,6 +13,8 @@ import {
   Clock3,
   Search,
   X,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import {
   AtsPageHeader,
