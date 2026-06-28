@@ -1,7 +1,9 @@
 // ATS LGPD/DSAR: candidate-scoped data subject requests, consent tracking and retention.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { z } from "zod";
+
 
 export type DsarType = "export" | "erasure" | "rectification" | "access";
 export type DsarStatus = "pending" | "in_progress" | "completed" | "rejected";
