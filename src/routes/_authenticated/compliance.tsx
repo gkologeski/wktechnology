@@ -74,8 +74,8 @@ function ComplianceHub() {
         eyebrow="ATS · Compliance"
         title="LGPD & DSAR"
         description="Solicitações de titulares (DSAR), retenção de dados e auditoria de anonimização para candidatos."
-        icon={Shield}
       />
+
 
       <Tabs defaultValue="dsar" className="space-y-4">
         <TabsList>
