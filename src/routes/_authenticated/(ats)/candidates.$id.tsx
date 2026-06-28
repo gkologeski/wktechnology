@@ -11,6 +11,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Plus,
   Trash2,
   Users,
   Flag,
@@ -22,6 +23,7 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { CandidateCopilotPanel } from "@/components/ats/candidate-copilot-panel";
+import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
 import {
   getCandidateDetail,
   removeCandidateFromPool,
@@ -258,7 +260,7 @@ function CandidateDetailPage() {
       }
       center={
         <div className="space-y-6">
-          <ApplicationsCard detail={data} />
+          <ApplicationsCard detail={data} onChanged={load} />
           <InterviewsCard detail={data} />
           <OffersCard detail={data} />
           <EventsCard detail={data} />
@@ -461,38 +463,60 @@ function EmptyRow({ children }: { children: React.ReactNode }) {
   return <div className="px-4 py-6 text-xs text-text-tertiary">{children}</div>;
 }
 
-function ApplicationsCard({ detail }: { detail: CandidateDetail }) {
+function ApplicationsCard({
+  detail,
+  onChanged,
+}: {
+  detail: CandidateDetail;
+  onChanged?: () => void | Promise<void>;
+}) {
+  const [assocOpen, setAssocOpen] = useState(false);
   return (
-    <Card
-      title="Aplicações"
-      icon={<Briefcase className="h-4 w-4 text-text-secondary" />}
-      count={detail.applications.length}
-    >
-      {detail.applications.length === 0 ? (
-        <EmptyRow>Nenhuma aplicação ainda.</EmptyRow>
-      ) : (
-        detail.applications.map((a) => (
-          <div key={a.id} className="px-4 py-3 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <Link
-                to="/jobs/$id"
-                params={{ id: a.job_id }}
-                className="text-sm font-medium text-text-primary hover:underline truncate block"
-              >
-                {a.job_title ?? "Vaga"}
-              </Link>
-              <div className="text-xs text-text-tertiary mt-0.5 flex flex-wrap items-center gap-2">
-                <MetaPill>{a.stage_value}</MetaPill>
-                <MetaPill>{a.status}</MetaPill>
-                {a.source && <span>via {a.source}</span>}
-                {a.moved_at && <span>· {formatDateTime(a.moved_at)}</span>}
+    <>
+      <Card
+        title="Aplicações"
+        icon={<Briefcase className="h-4 w-4 text-text-secondary" />}
+        count={detail.applications.length}
+        action={
+          <Button size="sm" variant="outline" onClick={() => setAssocOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+            Associar a vaga
+          </Button>
+        }
+      >
+        {detail.applications.length === 0 ? (
+          <EmptyRow>Nenhuma aplicação ainda.</EmptyRow>
+        ) : (
+          detail.applications.map((a) => (
+            <div key={a.id} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <Link
+                  to="/jobs/$id"
+                  params={{ id: a.job_id }}
+                  className="text-sm font-medium text-text-primary hover:underline truncate block"
+                >
+                  {a.job_title ?? "Vaga"}
+                </Link>
+                <div className="text-xs text-text-tertiary mt-0.5 flex flex-wrap items-center gap-2">
+                  <MetaPill>{a.stage_value}</MetaPill>
+                  <MetaPill>{a.status}</MetaPill>
+                  {a.source && <span>via {a.source}</span>}
+                  {a.moved_at && <span>· {formatDateTime(a.moved_at)}</span>}
+                </div>
               </div>
+              {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
             </div>
-            {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
-          </div>
-        ))
-      )}
-    </Card>
+          ))
+        )}
+      </Card>
+      <AssociateCandidateJobDialog
+        open={assocOpen}
+        onOpenChange={setAssocOpen}
+        presetCandidateId={detail.candidate.id}
+        presetCandidateName={detail.candidate.full_name}
+        onSuccess={() => onChanged?.()}
+      />
+    </>
   );
 }
 
