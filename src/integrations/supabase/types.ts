@@ -1087,6 +1087,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ats_daily_briefings: {
+        Row: {
+          created_at: string
+          generated_at: string
+          headline: string | null
+          id: string
+          metrics: Json
+          owner_id: string
+          period_end: string
+          period_start: string
+          priorities: Json
+          recommendations: Json
+          risks: Json
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          headline?: string | null
+          id?: string
+          metrics?: Json
+          owner_id: string
+          period_end: string
+          period_start: string
+          priorities?: Json
+          recommendations?: Json
+          risks?: Json
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          headline?: string | null
+          id?: string
+          metrics?: Json
+          owner_id?: string
+          period_end?: string
+          period_start?: string
+          priorities?: Json
+          recommendations?: Json
+          risks?: Json
+          summary?: string | null
+        }
+        Relationships: []
+      }
       ats_dsar_requests: {
         Row: {
           candidate_id: string

@@ -87,6 +87,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Inteligência (IA)",
     items: [
+      { title: "Briefing diário", url: "/briefing", icon: Sparkles },
       { title: "Recruiter Copilot", url: "/copilot", icon: Sparkles },
       { title: "Match Scores", url: "/match-scores", icon: Sparkles },
       { title: "Flags de risco", url: "/fraud-flags", icon: ShieldAlert },
