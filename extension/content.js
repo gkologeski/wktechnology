@@ -713,12 +713,31 @@
 
   function extractCurrentCompanyData(card) {
     return safe(() => {
-      const link = card?.querySelector('a[href*="/company/"]');
-      const url = link?.getAttribute("href") || null;
-      const name = clean(link?.textContent || "");
-      return name || url ? { name: name || null, url: url ? new URL(url, location.origin).toString() : null } : null;
+      // Tenta no top-card primeiro; fallback para 1ª experiência
+      const scopes = [
+        card,
+        findSection("experience", /^(experiência|experiencia|experience)/i),
+      ].filter(Boolean);
+      for (const scope of scopes) {
+        const link = scope.querySelector('a[href*="/company/"]');
+        if (!link) continue;
+        const url = link.getAttribute("href") || null;
+        const name =
+          clean(link.querySelector('span[aria-hidden="true"]')?.textContent) ||
+          clean(link.textContent || "");
+        const logo = link.querySelector("img")?.getAttribute("src") || null;
+        if (name || url) {
+          return {
+            name: name || null,
+            url: url ? new URL(url, location.origin).toString() : null,
+            logo_url: logo && /^https?:/i.test(logo) ? logo : null,
+          };
+        }
+      }
+      return null;
     });
   }
+
 
   function extractRecentActivity() {
     return safe(() => {
