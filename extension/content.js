@@ -665,9 +665,10 @@
   ];
 
   async function enrichProfileFromDetails(profile) {
-    const m = (location.pathname || "").match(/\/in\/([^/]+)/);
+    const m = (location.pathname || "").match(/\/in\/([^/?#]+)/i);
     if (!m) return profile;
-    const slug = decodeURIComponent(m[1]);
+    const slug = decodeURIComponent(m[1]).replace(/\/+$/, "");
+    if (!slug) return profile;
 
     await Promise.all(
       DETAILS_SECTIONS.map(async ([field, path, mapper, limit]) => {
@@ -675,7 +676,8 @@
           if (Array.isArray(profile[field]) && profile[field].length > 0) return;
           const doc = await fetchDetailsHtml(slug, path);
           if (!doc) return;
-          const items = extractListItemsFromDoc(doc).slice(0, limit);
+          let items = extractListItemsFromDoc(doc).slice(0, limit);
+          if (!items.length) items = extractListItemsFromCodeJson(doc, path).slice(0, limit);
           const mapped = items
             .map(mapper)
             .filter((x) => Object.values(x).some((v) => v));
@@ -688,6 +690,7 @@
 
     return profile;
   }
+
 
 
 
