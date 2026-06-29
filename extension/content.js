@@ -680,11 +680,23 @@
     const partial = opts?.partial
       ? `<div class="thh-warn" style="margin-top:6px">Ainda faltam: ${escapeHtml(missing.join(", ") || "detalhes")}. Role até o topo, aguarde o perfil carregar e tente novamente.</div>`
       : "";
+    const richBits = [];
+    if (profile.open_to_work) richBits.push("OpenToWork");
+    if (profile.connection_degree) richBits.push(`Conexão ${profile.connection_degree}`);
+    if (profile.experiences?.length) richBits.push(`${profile.experiences.length} exp.`);
+    if (profile.education?.length) richBits.push(`${profile.education.length} edu.`);
+    if (profile.skills_detailed?.length) richBits.push(`${profile.skills_detailed.length} skills`);
+    if (profile.languages?.length) richBits.push(`${profile.languages.length} idiomas`);
+    if (profile.certifications?.length) richBits.push(`${profile.certifications.length} certs`);
+    if (profile.recent_activity?.length) richBits.push(`${profile.recent_activity.length} posts`);
+    const richLine = richBits.length
+      ? `<div class="thh-muted" style="margin-top:4px;font-size:11px">📊 ${escapeHtml(richBits.join(" · "))}</div>`
+      : "";
     el.innerHTML = `
       <div><b>${escapeHtml(profile.full_name)}</b></div>
       <div class="thh-muted">${escapeHtml(profile.current_position) || "—"}</div>
       <div class="thh-muted">${escapeHtml(profile.current_company) || "—"}</div>
-      <div class="thh-muted">${escapeHtml(profile.location) || "—"}</div>${partial}`;
+      <div class="thh-muted">${escapeHtml(profile.location) || "—"}</div>${richLine}${partial}`;
   }
 
   function isComplete(p) {
