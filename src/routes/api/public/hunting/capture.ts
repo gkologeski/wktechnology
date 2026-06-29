@@ -29,13 +29,31 @@ const Payload = z.object({
   projects: z.array(z.any()).max(50).optional().nullable(),
   publications: z.array(z.any()).max(50).optional().nullable(),
   volunteering: z.array(z.any()).max(50).optional().nullable(),
-  // Sinais de recrutamento
-  open_to_work: z.boolean().optional().nullable(),
+  // Sinais de recrutamento — tolerantes a versões antigas da extensão que enviam strings
+  open_to_work: z
+    .preprocess((v) => {
+      if (typeof v === "boolean") return v;
+      if (v == null || v === "") return null;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        if (["true", "1", "yes", "sim"].includes(s)) return true;
+        if (["false", "0", "no", "nao", "não"].includes(s)) return false;
+        return null;
+      }
+      return null;
+    }, z.boolean().nullable())
+    .optional(),
   connection_degree: z.string().max(10).optional().nullable(),
-  available_actions: z.record(z.any()).optional().nullable(),
+  available_actions: z
+    .preprocess(coerceObject, z.record(z.any()).nullable())
+    .optional(),
   // Links/empresa/atividade
-  external_links: z.record(z.any()).optional().nullable(),
-  current_company_data: z.record(z.any()).optional().nullable(),
+  external_links: z
+    .preprocess(coerceObject, z.record(z.any()).nullable())
+    .optional(),
+  current_company_data: z
+    .preprocess(coerceObject, z.record(z.any()).nullable())
+    .optional(),
   recent_activity: z.array(z.any()).max(20).optional().nullable(),
   recommendations: z.array(z.any()).max(20).optional().nullable(),
   // Metadados
