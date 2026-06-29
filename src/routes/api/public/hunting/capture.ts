@@ -10,7 +10,6 @@ import {
 } from "@/lib/ats/hunting-public.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
 
-const Payload = z.object({
 const coerceObject = (v: unknown): unknown => {
   if (v == null || v === "") return null;
   if (typeof v === "object") return v;
