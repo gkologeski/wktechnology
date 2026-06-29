@@ -643,14 +643,27 @@
 
   function extractOpenToWork(card) {
     return safe(() => {
-      const text = (card ? getVisibleText(card) : "") + " " + getVisibleText(document.querySelector("main"));
+      const text =
+        (card ? getVisibleText(card) : "") +
+        " " +
+        getVisibleText(document.querySelector("main"));
       if (/#OpenToWork|aberto a oportunidades|open to work/i.test(text)) return true;
-      // Frame de foto OpenToWork
-      const photoFrame = document.querySelector('img[alt*="OpenToWork" i], [data-test-icon*="open-to-work" i]');
-      if (photoFrame) return true;
+      const selectors = [
+        'img[alt*="OpenToWork" i]',
+        'img[alt*="#OPENTOWORK" i]',
+        '[data-test-icon*="open-to-work" i]',
+        '[aria-label*="Open to work" i]',
+        '[aria-label*="aberto a oportunidades" i]',
+        '.pv-open-to-frame',
+        '[data-test-id*="OPEN_TO_WORK" i]',
+      ];
+      for (const sel of selectors) {
+        if (document.querySelector(sel)) return true;
+      }
       return false;
     });
   }
+
 
   function extractConnectionDegree(card) {
     return safe(() => {
