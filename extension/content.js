@@ -254,6 +254,10 @@
   }
 
   function extractHeadline(card, person, fullName) {
+    // 1. JSON SSR included[] do documento atual
+    const fromSSR = ssrTopCard()?.headline;
+    if (fromSSR && lower(fromSSR) !== lower(fullName)) return clean(fromSSR);
+
     if (card) {
       const sels = [
         ".text-body-medium.break-words",
@@ -285,6 +289,15 @@
     if (meta) {
       const head = clean(meta.split(/[·•|]/)[0]);
       if (looksLikeHeadline(head)) return head;
+    }
+    // og:title: "Nome - Cargo | LinkedIn"
+    const ogt = safe(() => document.querySelector('meta[property="og:title"]')?.content);
+    if (ogt) {
+      const parts = ogt.replace(/\s*\|\s*LinkedIn.*$/i, "").split(/\s+-\s+/);
+      if (parts.length >= 2) {
+        const head = clean(parts.slice(1).join(" - "));
+        if (head && head.length > 4 && lower(head) !== lower(fullName)) return head;
+      }
     }
     return "";
   }
