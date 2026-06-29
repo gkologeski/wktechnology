@@ -30,6 +30,23 @@ import {
   type CandidateDetail,
 } from "@/lib/ats/candidate-detail.functions";
 import { saveAtsCandidate, deleteAtsCandidate } from "@/lib/ats/ats.functions";
+import {
+  AboutBlock,
+  CaptureMetaBlock,
+  CertificationsLanguagesBlock,
+  CurrentCompanyBlock,
+  EducationBlock,
+  ExperienceBlock,
+  ExternalLinksBlock,
+  IdentityBlock,
+  ProjectsPublicationsBlock,
+  RecentActivityBlock,
+  RecommendationsBlock,
+  SignalsBlock,
+  SkillsDetailedBlock,
+  VolunteeringBlock,
+  hasDetailedSkills,
+} from "@/components/ats/candidate/rich-profile-blocks";
 import { formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 
@@ -235,32 +252,43 @@ function CandidateDetailPage() {
     <RecordLayout
       header={header}
       left={
-        <PropertiesPanel
-          candidate={c}
-          onSave={async (patch) => {
-            await saveFn({
-              data: {
-                id: c.id,
-                full_name: patch.full_name ?? c.full_name,
-                email: patch.email ?? c.email ?? "",
-                phone: patch.phone ?? c.phone ?? null,
-                linkedin_url: patch.linkedin_url ?? c.linkedin_url ?? "",
-                location: patch.location ?? c.location ?? null,
-                current_position: patch.current_position ?? c.current_position ?? null,
-                current_company: patch.current_company ?? c.current_company ?? null,
-                skills: patch.skills ?? c.skills,
-                tags: patch.tags ?? c.tags,
-                source: (c.source as never) ?? "manual",
-                notes: patch.notes ?? c.notes ?? null,
-              },
-            });
-            await load();
-          }}
-        />
+        <div className="space-y-4">
+          <IdentityBlock candidate={c} />
+          <PropertiesPanel
+            candidate={c}
+            onSave={async (patch) => {
+              await saveFn({
+                data: {
+                  id: c.id,
+                  full_name: patch.full_name ?? c.full_name,
+                  email: patch.email ?? c.email ?? "",
+                  phone: patch.phone ?? c.phone ?? null,
+                  linkedin_url: patch.linkedin_url ?? c.linkedin_url ?? "",
+                  location: patch.location ?? c.location ?? null,
+                  current_position: patch.current_position ?? c.current_position ?? null,
+                  current_company: patch.current_company ?? c.current_company ?? null,
+                  skills: patch.skills ?? c.skills,
+                  tags: patch.tags ?? c.tags,
+                  source: (c.source as never) ?? "manual",
+                  notes: patch.notes ?? c.notes ?? null,
+                },
+              });
+              await load();
+            }}
+          />
+          <ExternalLinksBlock candidate={c} />
+        </div>
       }
       center={
         <div className="space-y-6">
+          <AboutBlock candidate={c} />
           <ApplicationsCard detail={data} onChanged={load} />
+          <ExperienceBlock candidate={c} />
+          <EducationBlock candidate={c} />
+          <ProjectsPublicationsBlock candidate={c} />
+          <VolunteeringBlock candidate={c} />
+          <RecommendationsBlock candidate={c} />
+          <RecentActivityBlock candidate={c} />
           <InterviewsCard detail={data} />
           <OffersCard detail={data} />
           <EventsCard detail={data} />
@@ -269,6 +297,8 @@ function CandidateDetailPage() {
       right={
         <div className="space-y-4">
           <CandidateCopilotPanel candidateId={data.candidate.id} />
+          <SignalsBlock candidate={c} />
+          <CurrentCompanyBlock candidate={c} />
           <PoolsCard
             detail={data}
             onRemove={async (mid) => {
@@ -277,13 +307,20 @@ function CandidateDetailPage() {
             }}
           />
           <FlagsCard detail={data} />
-          <SkillsCard detail={data} />
+          {hasDetailedSkills(c) ? (
+            <SkillsDetailedBlock candidate={c} />
+          ) : (
+            <SkillsCard detail={data} />
+          )}
+          <CertificationsLanguagesBlock candidate={c} />
           <TagsCard detail={data} />
+          <CaptureMetaBlock candidate={c} />
         </div>
       }
     />
   );
 }
+
 
 /* ---------- Left: Properties ---------- */
 type EditablePatch = Partial<CandidateDetail["candidate"]>;

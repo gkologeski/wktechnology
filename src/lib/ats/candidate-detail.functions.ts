@@ -62,6 +62,15 @@ export type CandidateEvent = {
   metadata_json: string | null;
 };
 
+export type RichJson =
+  | string
+  | number
+  | boolean
+  | null
+  | RichJson[]
+  | { [key: string]: RichJson };
+
+
 export type CandidateDetail = {
   candidate: {
     id: string;
@@ -82,6 +91,27 @@ export type CandidateDetail = {
     updated_at: string;
     last_touch_at: string | null;
     next_action_at: string | null;
+    // Rich profile data (LinkedIn capture v2.0+)
+    headline: string | null;
+    about: string | null;
+    photo_url: string | null;
+    open_to_work: boolean | null;
+    connection_degree: string | null;
+    capture_version: string | null;
+    captured_at: string | null;
+    experiences: RichJson;
+    education: RichJson;
+    certifications: RichJson;
+    languages: RichJson;
+    skills_detailed: RichJson;
+    projects: RichJson;
+    publications: RichJson;
+    volunteering: RichJson;
+    external_links: RichJson;
+    available_actions: RichJson;
+    current_company_data: RichJson;
+    recent_activity: RichJson;
+    recommendations: RichJson;
   };
   derived_status:
     | "hired"
@@ -98,6 +128,7 @@ export type CandidateDetail = {
   events: CandidateEvent[];
 };
 
+
 export const getCandidateDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => IdInput.parse(d))
@@ -107,7 +138,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const { data: cand, error: candErr } = await supabase
       .from("ats_candidates")
       .select(
-        "id, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at",
+        "id, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at, headline, about, photo_url, open_to_work, connection_degree, capture_version, captured_at, experiences, education, certifications, languages, skills_detailed, projects, publications, volunteering, external_links, available_actions, current_company_data, recent_activity, recommendations",
       )
       .eq("id", data.id)
       .eq("owner_id", userId)
@@ -357,6 +388,33 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         updated_at: cand.updated_at as string,
         last_touch_at: (cand.last_touch_at as string | null) ?? null,
         next_action_at: (cand.next_action_at as string | null) ?? null,
+        headline: ((cand as Record<string, unknown>).headline as string | null) ?? null,
+        about: ((cand as Record<string, unknown>).about as string | null) ?? null,
+        photo_url: ((cand as Record<string, unknown>).photo_url as string | null) ?? null,
+        open_to_work: ((cand as Record<string, unknown>).open_to_work as boolean | null) ?? null,
+        connection_degree:
+          ((cand as Record<string, unknown>).connection_degree as string | null) ?? null,
+        capture_version:
+          ((cand as Record<string, unknown>).capture_version as string | null) ?? null,
+        captured_at: ((cand as Record<string, unknown>).captured_at as string | null) ?? null,
+        experiences: ((cand as Record<string, unknown>).experiences as RichJson) ?? null,
+        education: ((cand as Record<string, unknown>).education as RichJson) ?? null,
+        certifications: ((cand as Record<string, unknown>).certifications as RichJson) ?? null,
+        languages: ((cand as Record<string, unknown>).languages as RichJson) ?? null,
+        skills_detailed:
+          ((cand as Record<string, unknown>).skills_detailed as RichJson) ?? null,
+        projects: ((cand as Record<string, unknown>).projects as RichJson) ?? null,
+        publications: ((cand as Record<string, unknown>).publications as RichJson) ?? null,
+        volunteering: ((cand as Record<string, unknown>).volunteering as RichJson) ?? null,
+        external_links: ((cand as Record<string, unknown>).external_links as RichJson) ?? null,
+        available_actions:
+          ((cand as Record<string, unknown>).available_actions as RichJson) ?? null,
+        current_company_data:
+          ((cand as Record<string, unknown>).current_company_data as RichJson) ?? null,
+        recent_activity:
+          ((cand as Record<string, unknown>).recent_activity as RichJson) ?? null,
+        recommendations:
+          ((cand as Record<string, unknown>).recommendations as RichJson) ?? null,
       },
       derived_status: derived,
       applications,
