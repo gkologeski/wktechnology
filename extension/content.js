@@ -253,7 +253,124 @@
     });
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // SSR reader (v2.3): LinkedIn embute o estado inicial em
+  // <code id="bpr-guid-*"> dentro de `included[]`. Lemos esses
+  // objetos como FONTE PRIMÁRIA — DOM e /details/* viram fallback.
+  // ──────────────────────────────────────────────────────────────
+  let _ssrCache = null;
+  function ssrIncluded(doc = document) {
+    if (doc === document && _ssrCache) return _ssrCache;
+    const items = [];
+    const codes = doc.querySelectorAll(
+      'code[id^="bpr-guid"], code[style*="display:none"], code[style*="display: none"]',
+    );
+    for (const c of codes) {
+      const raw = (c.textContent || "").trim();
+      if (raw.length < 50 || raw[0] !== "{") continue;
+      try {
+        const json = JSON.parse(raw);
+        if (Array.isArray(json?.included)) items.push(...json.included);
+      } catch { /* ignore */ }
+    }
+    if (doc === document) _ssrCache = items;
+    return items;
+  }
+
+  const SSR_TYPES = {
+    position: /\.Position($|[A-Z])/,
+    education: /\.Education($|[A-Z])/,
+    skill: /\.Skill($|[A-Z])/,
+    certification: /\.Certification($|[A-Z])/,
+    language: /\.Language($|[A-Z])/,
+    topCard: /(\.ProfileTopCard|\.MiniProfile|\.Profile)$/,
+  };
+
+  const ssrFind = (kind, doc) =>
+    ssrIncluded(doc).filter((it) => {
+      const t = it?.$type || it?.["$type"] || "";
+      return typeof t === "string" && SSR_TYPES[kind].test(t);
+    });
+
+  function ssrText(node) {
+    if (!node) return "";
+    if (typeof node === "string") return clean(node);
+    if (typeof node === "object") return clean(node.text || node.localizedName || node.value || "");
+    return "";
+  }
+  function ssrDateRange(dr) {
+    if (!dr || typeof dr !== "object") return "";
+    const fmt = (d) => {
+      if (!d) return "";
+      const m = d.month ? String(d.month).padStart(2, "0") : "";
+      const y = d.year || "";
+      return [m, y].filter(Boolean).join("/");
+    };
+    const a = fmt(dr.start);
+    const b = fmt(dr.end) || "presente";
+    return a ? `${a} – ${b}` : "";
+  }
+
+  function ssrTopCard() {
+    const arr = ssrFind("topCard");
+    for (const it of arr) {
+      const headline = ssrText(it.headline) || ssrText(it.occupation) || ssrText(it.subline);
+      if (headline) {
+        return {
+          headline,
+          location:
+            ssrText(it.geoLocationName) ||
+            ssrText(it.locationName) ||
+            ssrText(it.location) ||
+            "",
+        };
+      }
+    }
+    return null;
+  }
+
+  function ssrExperiences() {
+    return ssrFind("position").map((it) => ({
+      title: ssrText(it.title) || null,
+      company: ssrText(it.companyName) || ssrText(it.company) || null,
+      period: ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || null,
+      location: ssrText(it.locationName) || null,
+      description: ssrText(it.description) || null,
+    })).filter((x) => x.title || x.company);
+  }
+  function ssrEducation() {
+    return ssrFind("education").map((it) => ({
+      school: ssrText(it.schoolName) || ssrText(it.school) || null,
+      degree: [ssrText(it.degreeName), ssrText(it.fieldOfStudy)].filter(Boolean).join(" · ") || null,
+      period: ssrDateRange(it.dateRange) || null,
+      description: ssrText(it.description) || null,
+    })).filter((x) => x.school);
+  }
+  function ssrSkills() {
+    return ssrFind("skill").map((it) => ({
+      name: ssrText(it.name) || null,
+      endorsements: null,
+    })).filter((x) => x.name);
+  }
+  function ssrCertifications() {
+    return ssrFind("certification").map((it) => ({
+      name: ssrText(it.name) || null,
+      issuer: ssrText(it.authority) || ssrText(it.issuer) || null,
+      issued: ssrDateRange(it.timePeriod) || ssrText(it.issueDate) || null,
+    })).filter((x) => x.name);
+  }
+  function ssrLanguages() {
+    return ssrFind("language").map((it) => ({
+      name: ssrText(it.name) || null,
+      proficiency: ssrText(it.proficiency) || null,
+    })).filter((x) => x.name);
+  }
+
   function extractHeadline(card, person, fullName) {
+    // 1. JSON SSR included[] do documento atual
+    const fromSSR = ssrTopCard()?.headline;
+    if (fromSSR && lower(fromSSR) !== lower(fullName)) return clean(fromSSR);
+
     if (card) {
       const sels = [
         ".text-body-medium.break-words",
@@ -286,6 +403,15 @@
       const head = clean(meta.split(/[·•|]/)[0]);
       if (looksLikeHeadline(head)) return head;
     }
+    // og:title: "Nome - Cargo | LinkedIn"
+    const ogt = safe(() => document.querySelector('meta[property="og:title"]')?.content);
+    if (ogt) {
+      const parts = ogt.replace(/\s*\|\s*LinkedIn.*$/i, "").split(/\s+-\s+/);
+      if (parts.length >= 2) {
+        const head = clean(parts.slice(1).join(" - "));
+        if (head && head.length > 4 && lower(head) !== lower(fullName)) return head;
+      }
+    }
     return "";
   }
 
@@ -305,6 +431,9 @@
   }
 
   function extractCompany(card, person, headline, fullName) {
+    // SSR primary: 1ª experiência cobre o "atual" na maioria dos perfis
+    const ssrExp = ssrExperiences();
+    if (ssrExp[0]?.company) return clean(ssrExp[0].company);
     try {
       const wf = person?.worksFor;
       if (Array.isArray(wf) && wf[0]?.name) return clean(wf[0].name);
@@ -336,6 +465,8 @@
   }
 
   function extractLocation(card, person, fullName) {
+    const ssrLoc = ssrTopCard()?.location;
+    if (ssrLoc) return ssrLoc;
     try {
       const addr = person?.address;
       if (typeof addr === "string" && addr.trim()) return clean(addr);
@@ -555,6 +686,8 @@
   }
 
   function extractExperiences() {
+    const ssr = ssrExperiences();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
       const items = extractListItems(sec);
@@ -563,6 +696,8 @@
   }
 
   function extractEducation() {
+    const ssr = ssrEducation();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
       const items = extractListItems(sec);
@@ -571,6 +706,8 @@
   }
 
   function extractCertifications() {
+    const ssr = ssrCertifications();
+    if (ssr.length) return ssr.slice(0, 30);
     return safe(() => {
       const sec = findSection("certifications", /(licen[çc]as|certifica|licenses|certifications)/i);
       const items = extractListItems(sec);
@@ -579,6 +716,8 @@
   }
 
   function extractLanguages() {
+    const ssr = ssrLanguages();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("languages", /^(idiomas|languages)/i);
       const items = extractListItems(sec);
@@ -587,6 +726,8 @@
   }
 
   function extractSkills() {
+    const ssr = ssrSkills();
+    if (ssr.length) return ssr.slice(0, 100);
     return safe(() => {
       const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
       const items = extractListItems(sec);
@@ -860,7 +1001,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.2",
+      capture_version: "2.3",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,
@@ -1283,6 +1424,7 @@
   setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
+      _ssrCache = null;
       stopExtractionLoops();
       const old = document.getElementById(SIDEBAR_ID);
       if (old) old.remove();

@@ -1,93 +1,113 @@
 ## Diagnóstico
 
-**Erro 1 — `about` > 8000 caracteres (bmsoares, filipekuhnen)**
-O schema em `src/routes/api/public/hunting/capture.ts` declara `about: z.string().max(8000)`. Quando o LinkedIn entrega um "Sobre" mais longo (resumos extensos são comuns em perfis sêniores), o Zod rejeita o payload inteiro com HTTP 400 e **nada** é gravado — o usuário perde a captura por causa de um único campo.
+**Problema 1 — bmsoares / filipekuhnen sem Experiência, Educação e Skills**
 
-**Erro 2 — campos vazios (daniela-santana-4a9658236)**
-O perfil tem layout completo no LinkedIn, mas chega vazio no banco. Causas prováveis, em ordem:
-1. O perfil tem `?locale=pt` ou URL canônica diferente, e o `enrichProfileFromDetails` monta `/in/<slug>/details/...` a partir de `location.pathname` — se houver querystring ou trailing slash, o slug pode sair errado.
-2. Headline/cargo no topo do card agora vem dentro de `div.text-body-medium.break-words` sem âncora estável; o extractor atual depende de `h2` ou de classes que mudam.
-3. As páginas `/details/experience/` e `/details/education/` exigem cookies de 1ª parte e às vezes retornam HTML com `<code>` JSON embutido (estrutura SSR do LinkedIn) em vez de DOM renderizado — o `DOMParser` atual não lê esse JSON.
-4. O `triggerLazyLoad` espera 800ms fixos; em perfis longos isso é insuficiente e a extração roda antes do render.
+A v1.0.3 introduziu `extractListItemsFromCodeJson` para ler o JSON SSR das páginas `/details/<section>/`. Na prática, quando o content script faz `fetch('/in/<slug>/details/experience/')`, o LinkedIn devolve apenas o **shell SPA** — o HTML não traz `<li>` renderizado **nem** o `included[]` da seção. Os dados reais chegam só depois, via XHR para `/voyager-api/` autenticado por CSRF token + cookies — algo que a extensão não consegue replicar.
+
+Resultado: o DOMParser vê 0 itens, o fallback JSON também vê 0, e a seção fica vazia. Não é o `$type` regex; é que o payload simplesmente não existe na resposta HTML.
+
+Porém, a página principal (`/in/<slug>/`) já vem com **todo o `included[]` embutido em `<code id="bpr-guid-*">`** no SSR inicial — é dali que o próprio LinkedIn hidrata a UI. Hoje só lemos esse JSON dentro de `enrichProfileFromDetails` (depois do fetch), não no documento corrente.
+
+**Problema 2 — daniela-santana: "faltam cargo/headline"**
+
+`extractHeadline` depende de seletores DOM (`.text-body-medium.break-words`, etc.) e cai para `og:description`/`meta[name=description]`. Em perfis novos ou layouts A/B, o LinkedIn às vezes não popula `og:description` antes do hidrate e o `.text-body-medium` aparece dentro de um wrapper inesperado. Sem fallback no JSON SSR (mesmo `included[]`), o headline não é detectado e o `isComplete()` falha → toast "Ainda faltam: cargo/headline".
+
+A solução para ambos é a mesma: **parsear o JSON SSR `included[]` do próprio `document` atual**, usando-o como fonte primária para headline, empresa, localização, experiências, educação e skills. O DOM continua como fallback.
 
 ## Escopo
 
-Dois pontos cirúrgicos, sem mexer em render, schema do banco, RLS ou outros módulos:
+Apenas dois arquivos:
 
-1. `src/routes/api/public/hunting/capture.ts` — tolerância no campo `about` (e outros textos longos).
-2. `extension/content.js` — robustecer slug, headline/cargo, lazy-load e parser das páginas `/details/*`. Repackage de `public/techhire-hunter.zip` + bump `manifest.json` → `1.0.3`.
+1. `extension/content.js` — adicionar leitor robusto do `included[]` no `document`, com mappers específicos por `$type`, e plugá-lo em `extractHeadline`, `extractCompany`, `extractLocation`, e `extractExperiences/Education/Skills/Certifications/Languages` como **fonte primária**.
+2. `extension/manifest.json` — bump `1.0.3` → `1.0.4`.
+3. Repackage `public/techhire-hunter.zip`.
 
-Sem alterações em backend além do schema do endpoint público. Sem mudanças em outros endpoints.
+Sem mudança em `capture.ts`, sem mudança em RLS/schema/server functions/UI do app.
 
 ## Plano técnico
 
-### 1. Backend — `capture.ts` deixa de rejeitar por tamanho
+### 1. Novo módulo: leitor unificado do SSR `included[]`
 
-Trocar `max(8000)` por **truncagem tolerante** nos campos de texto longo, preservando o resto do payload:
+Adicionar em `content.js`:
 
-- `about`: `z.preprocess((v) => typeof v === "string" ? v.slice(0, 8000) : v, z.string().max(8000).nullable().optional())`
-- `headline`: idem com 500.
-- `current_position`: idem com 400.
-- Aplicar o mesmo padrão em `location` (200) e `current_company` (200) por simetria.
+```js
+function collectIncludedFromDoc(doc = document) {
+  const items = [];
+  const codes = doc.querySelectorAll('code[id^="bpr-guid"], code[style*="display:none"]');
+  for (const c of codes) {
+    const raw = (c.textContent || "").trim();
+    if (!raw.startsWith("{") || raw.length < 50) continue;
+    try {
+      const json = JSON.parse(raw);
+      if (Array.isArray(json?.included)) items.push(...json.included);
+    } catch { /* ignore */ }
+  }
+  return items;
+}
+```
 
-Adicionar no response um campo `warnings: string[]` listando quais campos foram truncados, para o usuário ter feedback (a extensão já mostra `setStatus`). Sem mudança de contrato — `warnings` é aditivo e ignorado por clients antigos.
+Cache na captura para evitar reparsing.
 
-### 2. Extensão — slug robusto
+### 2. Mappers por `$type` (regex amplas, tolerantes a versão dash/voyager)
 
-Em `extractProfile` / `enrichProfileFromDetails`:
-- Derivar o slug ignorando querystring, hash e trailing slash:
-  ```js
-  const m = location.pathname.match(/\/in\/([^/?#]+)/i);
-  const slug = m?.[1];
+```js
+const TYPE_MATCHERS = {
+  position:      /\.Position$/,
+  education:     /\.Education$/,
+  skill:         /\.Skill$/,
+  certification: /\.Certification$/,
+  language:      /\.Language$/,
+  topCard:       /\.ProfileTopCard|MiniProfile|\.Profile$/,
+};
+```
+
+Mappers extraem `title/companyName/locationName/dateRange/description/schoolName/degreeName/fieldOfStudy/name/proficiency` direto dos campos do voyager, sem depender de DOM.
+
+### 3. Plugar no `extractProfile`
+
+- `extractHeadline`: ANTES dos seletores DOM, procurar em `included[]` algo com `$type` casando `ProfileTopCard|Profile` e ler `headline` / `occupation` / `subline`.
+- `extractCompany` / `extractLocation`: idem, lendo `companyName`/`location.basicLocation.countryCode + city`.
+- `extractExperiences` / `Education` / `Skills` / `Certifications` / `Languages`: **fonte primária** = mappers do `included[]`; DOM e enrichment via `/details/*` viram fallback caso o `included[]` tenha 0 itens daquele tipo.
+
+### 4. Manter o enrichment via `/details/*` apenas como fallback
+
+Em `enrichProfileFromDetails`, só executar para campos que continuaram vazios após `extractProfile`. Mesmo comportamento atual, mas agora raramente disparará.
+
+### 5. Reforçar headline com `og:title`
+
+`og:title` no LinkedIn vem como `Nome - Cargo | LinkedIn` em vários layouts. Adicionar parser que extrai a parte após ` - ` e antes de ` | LinkedIn` como fallback final, antes de reportar "faltam cargo/headline".
+
+### 6. Lazy-load adaptativo já existe (v1.0.3), manter.
+
+### 7. Versão e empacotamento
+
+- `manifest.json` → `1.0.4`.
+- `capture_version` → `2.3`.
+- Repackage:
+  ```bash
+  rm -f public/techhire-hunter.zip
+  cd extension && nix run nixpkgs#zip -- -r ../public/techhire-hunter.zip .
   ```
-- Se `slug` ausente, abortar enrichment silenciosamente em vez de gerar URLs malformadas.
 
-### 3. Extensão — headline/cargo no topo
+### 8. Validação manual
 
-Adicionar fallbacks em `extractHeadline` e `extractCurrentPosition`:
-- `main section:first-of-type div.text-body-medium`
-- `main section:first-of-type .pv-text-details__left-panel div:nth-child(2)`
-- `meta[name="description"]` (a primeira linha geralmente é "Cargo na Empresa · Cidade").
-- Para `current_position`/`current_company`, se a 1ª experiência existir, usar `experiences[0].title` e `experiences[0].company` como último fallback.
-
-### 4. Extensão — parser das páginas `/details/*`
-
-O LinkedIn entrega essas páginas com `<code id="...">` contendo JSON SSR. Adicionar em `fetchDetailsHtml`:
-- Após `DOMParser`, varrer todos os `<code>` com JSON parseável e, se o DOM principal vier vazio, extrair itens de `included[]` com `$type` em (`com.linkedin.voyager.dash.identity.profile.Position`, `Education`, `Skill`, `Certification`, `Language`).
-- Mapear para o formato já consumido pelos blocos: `{ title, company, start_date, end_date, description }` etc.
-- Manter fallback DOM atual; só usar JSON se DOM vier com 0 itens.
-
-### 5. Extensão — lazy-load adaptativo
-
-Substituir `await wait(800)` por loop curto:
-- até 5 iterações de `scrollTo(bottom) → wait(400) → scrollTo(top) → wait(200)`;
-- parar antes se `document.querySelector('#experience')` e `#education` já tiverem `li` filhos.
-
-### 6. Versão e empacotamento
-
-- `extension/manifest.json` → `1.0.3`.
-- `capture_version` no payload → `2.2`.
-- Repackage: `cd extension && nix run nixpkgs#zip -- -r ../public/techhire-hunter.zip .`
-
-### 7. Validação manual
-
-1. Recarregar extensão (`chrome://extensions` → Recarregar; deve mostrar 1.0.3).
-2. Capturar `bmsoares` e `filipekuhnen` → esperado: salvar com sucesso, status mostra "about truncado".
-3. Capturar `daniela-santana-4a9658236` → esperado: cargo, experiências, educação, skills preenchidos no `/candidates/<id>`.
-4. Recapturar `wendelmarcosdossantos` para garantir não-regressão.
+1. Recarregar extensão em `chrome://extensions` (deve mostrar **1.0.4**).
+2. Recapturar `bmsoares` → Experiência, Educação e Skills preenchidos no `/candidates/<id>`.
+3. Recapturar `filipekuhnen` → idem.
+4. Capturar `daniela-santana-4a9658236` → headline detectado, sem toast vermelho; ao salvar, demais blocos preenchidos.
+5. Regressão: recapturar `wendelmarcosdossantos` para garantir que continua completo.
 
 ## Fora do escopo
 
-- Render dos blocos em `rich-profile-blocks.tsx` (já funciona quando o dado chega).
-- Schema do banco (`ats_candidates.about` é `text`, sem limite).
+- `capture.ts` (já tolera truncagem desde v1.0.3).
+- Schema do banco, RLS, server functions internas, UI do app.
 - Outras rotas de hunting (`bulk-capture`, `enrich`).
 
 ## Risco
 
-- Truncagem silenciosa de `about`: mitigado por `warnings[]` retornado ao cliente e exibido no status da sidebar.
-- Parser JSON SSR do LinkedIn pode mudar: o fallback é o DOM atual, então a regressão máxima é voltar ao comportamento de hoje.
-- Sem alterações em RLS, auth, schema, server functions internas ou outros módulos.
+- A estrutura do `included[]` do voyager pode mudar; mantemos DOM + `/details/*` como fallback, então o pior caso é voltar ao comportamento atual.
+- Sem alteração de auth/RLS/schema.
 
-## Relatório final (a entregar após build)
+## Relatório final (pós-build)
 
-Resumo, arquivos alterados (`capture.ts`, `content.js`, `manifest.json`, `techhire-hunter.zip`), validação manual com os 3 perfis citados, riscos remanescentes e próximo passo recomendado (telemetria opcional de quais campos mais truncam).
+Resumo, arquivos alterados (`content.js`, `manifest.json`, `techhire-hunter.zip`), validação manual com os 3 perfis citados, riscos remanescentes e próximo passo recomendado (telemetria opcional de quantos perfis ainda dependem do fallback DOM).
