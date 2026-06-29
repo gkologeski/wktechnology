@@ -353,21 +353,27 @@
   }
 
   function extractAvatar(card) {
-    if (card) {
-      const sels = [
-        "img.pv-top-card-profile-picture__image",
-        "img.pv-top-card-profile-picture__image--show",
-        'img[width="200"]',
-        'button img.profile-photo-edit__preview',
-      ];
+    const scopes = [card, document.querySelector("main"), document].filter(Boolean);
+    const sels = [
+      "img.pv-top-card-profile-picture__image",
+      "img.pv-top-card-profile-picture__image--show",
+      "img.evi-image.profile-photo-edit__preview",
+      ".pv-top-card-profile-picture img",
+      ".pv-top-card__photo img",
+      'button[aria-label*="foto" i] img',
+      'button[aria-label*="photo" i] img',
+      'img[width="200"]',
+      "button img.profile-photo-edit__preview",
+    ];
+    for (const scope of scopes) {
       for (const sel of sels) {
-        const el = card.querySelector(sel);
-        const src = el?.getAttribute("src");
-        if (src && /^https?:/i.test(src)) return src;
+        const el = scope.querySelector?.(sel);
+        const src = el?.getAttribute?.("src");
+        if (src && /^https?:/i.test(src) && !/ghosts\/person/i.test(src)) return src;
       }
     }
     const og = safe(() => document.querySelector('meta[property="og:image"]')?.content);
-    if (og && /^https?:/i.test(og)) return og;
+    if (og && /^https?:/i.test(og) && !/ghosts\/person/i.test(og)) return og;
     return "";
   }
 
@@ -376,19 +382,50 @@
   // Cada um é isolado e tolerante a falhas (LinkedIn muda DOM com frequência)
   // ──────────────────────────────────────────────────────────────
 
-  function findSectionByTitle(titleRegex) {
-    const sections = document.querySelectorAll("main section");
-    for (const s of sections) {
-      const h2 = s.querySelector("h2, .pvs-header__title, .pvs-header__container h2");
-      const txt = clean(h2?.textContent || "");
-      if (txt && titleRegex.test(txt)) return s;
+  const ANCHOR_IDS = {
+    experience: ["experience"],
+    education: ["education"],
+    skills: ["skills"],
+    certifications: ["licenses_and_certifications", "certifications"],
+    languages: ["languages"],
+    projects: ["projects"],
+    publications: ["publications"],
+    volunteering: ["volunteer_experience", "volunteering"],
+    recommendations: ["recommendations_received", "recommendations"],
+    activity: ["content_collections", "activity"],
+  };
+
+  function findSectionByAnchor(ids) {
+    for (const id of ids) {
+      const a = document.getElementById(id);
+      if (a) return a.closest("section") || a.parentElement;
     }
     return null;
   }
 
+  function findSectionByTitle(titleRegex) {
+    const sections = document.querySelectorAll("main section, main div.artdeco-card");
+    for (const s of sections) {
+      const headers = s.querySelectorAll(
+        "h2, h2 span[aria-hidden='true'], .pvs-header__title span, .pvs-header__title, .pv-profile-card__header h2, header h2",
+      );
+      for (const h of headers) {
+        const txt = clean(h.textContent || "");
+        if (txt && titleRegex.test(txt)) return s;
+      }
+    }
+    return null;
+  }
+
+  function findSection(kind, titleRegex) {
+    return findSectionByAnchor(ANCHOR_IDS[kind] || []) || findSectionByTitle(titleRegex);
+  }
+
   function extractListItems(section) {
     if (!section) return [];
-    const items = section.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity");
+    const items = section.querySelectorAll(
+      "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity",
+    );
     const out = [];
     for (const li of items) {
       const lines = uniqueLines(getLines(li).filter((l) => !isNoiseLine(l)));
@@ -396,6 +433,57 @@
       if (lines.length) out.push(lines);
     }
     return out;
+  }
+
+  // Para documentos parseados via fetch (sem layout — innerText não funciona)
+  function extractListItemsFromDoc(doc) {
+    if (!doc) return [];
+    const main = doc.querySelector("main") || doc.body;
+    if (!main) return [];
+    const items = main.querySelectorAll(
+      "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity",
+    );
+    const out = [];
+    for (const li of items) {
+      const spans = li.querySelectorAll('span[aria-hidden="true"]');
+      const lines = [];
+      spans.forEach((s) => {
+        const t = clean(s.textContent || "");
+        if (t) lines.push(t);
+      });
+      const filtered = uniqueLines(lines.filter((l) => !isNoiseLine(l)));
+      if (filtered.length) out.push(filtered);
+    }
+    return out;
+  }
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function triggerLazyLoad() {
+    return safe(async () => {
+      const origin = window.scrollY;
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(600);
+      window.scrollTo(0, Math.floor(document.body.scrollHeight / 2));
+      await wait(400);
+      window.scrollTo(0, origin);
+      await wait(200);
+    });
+  }
+
+  async function fetchDetailsHtml(slug, sectionPath) {
+    try {
+      const url = `https://www.linkedin.com/in/${encodeURIComponent(slug)}/details/${sectionPath}/`;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
+      clearTimeout(t);
+      if (!resp.ok) return null;
+      const html = await resp.text();
+      return new DOMParser().parseFromString(html, "text/html");
+    } catch {
+      return null;
+    }
   }
 
   function extractAbout() {
@@ -409,111 +497,173 @@
 
   function extractExperiences() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(experiência|experiencia|experience)/i);
+      const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        title: lines[0] || null,
-        company: lines[1] || null,
-        period: lines[2] || null,
-        location: lines[3] || null,
-        description: lines.slice(4).join(" · ") || null,
-      }));
+      return items.slice(0, 20).map(mapExperience);
     }) || [];
   }
 
   function extractEducation() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(formação|formacao|educação|educacao|education)/i);
+      const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        school: lines[0] || null,
-        degree: lines[1] || null,
-        period: lines[2] || null,
-        description: lines.slice(3).join(" · ") || null,
-      }));
+      return items.slice(0, 20).map(mapEducation);
     }) || [];
   }
 
   function extractCertifications() {
     return safe(() => {
-      const sec = findSectionByTitle(/(licen[çc]as|certifica|licenses|certifications)/i);
+      const sec = findSection("certifications", /(licen[çc]as|certifica|licenses|certifications)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        name: lines[0] || null,
-        issuer: lines[1] || null,
-        issued: lines[2] || null,
-      }));
+      return items.slice(0, 30).map(mapCertification);
     }) || [];
   }
 
   function extractLanguages() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(idiomas|languages)/i);
+      const sec = findSection("languages", /^(idiomas|languages)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        name: lines[0] || null,
-        proficiency: lines[1] || null,
-      }));
+      return items.slice(0, 20).map(mapLanguage);
     }) || [];
   }
 
   function extractSkills() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(compet[êe]ncias|skills|habilidades)/i);
+      const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 100).map((lines) => ({
-        name: lines[0] || null,
-        endorsements: lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
-      })).filter((s) => s.name);
+      return items.slice(0, 100).map(mapSkill).filter((s) => s.name);
     }) || [];
   }
 
   function extractProjects() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(projetos|projects)/i);
+      const sec = findSection("projects", /^(projetos|projects)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        name: lines[0] || null,
-        period: lines[1] || null,
-        description: lines.slice(2).join(" · ") || null,
-      }));
+      return items.slice(0, 30).map(mapProject);
     }) || [];
   }
 
   function extractPublications() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(publica[çc][õo]es|publications)/i);
+      const sec = findSection("publications", /^(publica[çc][õo]es|publications)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        title: lines[0] || null,
-        publisher: lines[1] || null,
-        date: lines[2] || null,
-      }));
+      return items.slice(0, 30).map(mapPublication);
     }) || [];
   }
 
   function extractVolunteering() {
     return safe(() => {
-      const sec = findSectionByTitle(/(volunt|volunteer)/i);
+      const sec = findSection("volunteering", /(volunt|volunteer)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        role: lines[0] || null,
-        organization: lines[1] || null,
-        period: lines[2] || null,
-      }));
+      return items.slice(0, 20).map(mapVolunteering);
     }) || [];
   }
 
+  // ───── Mappers reutilizados pelo enrichment via /details/* ─────
+  const mapExperience = (lines) => ({
+    title: lines[0] || null,
+    company: lines[1] || null,
+    period: lines[2] || null,
+    location: lines[3] || null,
+    description: lines.slice(4).join(" · ") || null,
+  });
+  const mapEducation = (lines) => ({
+    school: lines[0] || null,
+    degree: lines[1] || null,
+    period: lines[2] || null,
+    description: lines.slice(3).join(" · ") || null,
+  });
+  const mapCertification = (lines) => ({
+    name: lines[0] || null,
+    issuer: lines[1] || null,
+    issued: lines[2] || null,
+  });
+  const mapLanguage = (lines) => ({
+    name: lines[0] || null,
+    proficiency: lines[1] || null,
+  });
+  const mapSkill = (lines) => ({
+    name: lines[0] || null,
+    endorsements:
+      lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
+  });
+  const mapProject = (lines) => ({
+    name: lines[0] || null,
+    period: lines[1] || null,
+    description: lines.slice(2).join(" · ") || null,
+  });
+  const mapPublication = (lines) => ({
+    title: lines[0] || null,
+    publisher: lines[1] || null,
+    date: lines[2] || null,
+  });
+  const mapVolunteering = (lines) => ({
+    role: lines[0] || null,
+    organization: lines[1] || null,
+    period: lines[2] || null,
+  });
+
+  const DETAILS_SECTIONS = [
+    ["experiences", "experience", (l) => mapExperience(l), 20],
+    ["education", "education", (l) => mapEducation(l), 20],
+    ["skills_detailed", "skills", (l) => mapSkill(l), 100],
+    ["certifications", "certifications", (l) => mapCertification(l), 30],
+    ["languages", "languages", (l) => mapLanguage(l), 20],
+    ["projects", "projects", (l) => mapProject(l), 30],
+    ["publications", "publications", (l) => mapPublication(l), 30],
+    ["volunteering", "volunteering", (l) => mapVolunteering(l), 20],
+  ];
+
+  async function enrichProfileFromDetails(profile) {
+    const m = (location.pathname || "").match(/\/in\/([^/]+)/);
+    if (!m) return profile;
+    const slug = decodeURIComponent(m[1]);
+
+    await Promise.all(
+      DETAILS_SECTIONS.map(async ([field, path, mapper, limit]) => {
+        try {
+          if (Array.isArray(profile[field]) && profile[field].length > 0) return;
+          const doc = await fetchDetailsHtml(slug, path);
+          if (!doc) return;
+          const items = extractListItemsFromDoc(doc).slice(0, limit);
+          const mapped = items
+            .map(mapper)
+            .filter((x) => Object.values(x).some((v) => v));
+          if (mapped.length) profile[field] = mapped;
+        } catch {
+          /* falha isolada por seção */
+        }
+      }),
+    );
+
+    return profile;
+  }
+
+
+
   function extractOpenToWork(card) {
     return safe(() => {
-      const text = (card ? getVisibleText(card) : "") + " " + getVisibleText(document.querySelector("main"));
+      const text =
+        (card ? getVisibleText(card) : "") +
+        " " +
+        getVisibleText(document.querySelector("main"));
       if (/#OpenToWork|aberto a oportunidades|open to work/i.test(text)) return true;
-      // Frame de foto OpenToWork
-      const photoFrame = document.querySelector('img[alt*="OpenToWork" i], [data-test-icon*="open-to-work" i]');
-      if (photoFrame) return true;
+      const selectors = [
+        'img[alt*="OpenToWork" i]',
+        'img[alt*="#OPENTOWORK" i]',
+        '[data-test-icon*="open-to-work" i]',
+        '[aria-label*="Open to work" i]',
+        '[aria-label*="aberto a oportunidades" i]',
+        '.pv-open-to-frame',
+        '[data-test-id*="OPEN_TO_WORK" i]',
+      ];
+      for (const sel of selectors) {
+        if (document.querySelector(sel)) return true;
+      }
       return false;
     });
   }
+
 
   function extractConnectionDegree(card) {
     return safe(() => {
@@ -563,12 +713,31 @@
 
   function extractCurrentCompanyData(card) {
     return safe(() => {
-      const link = card?.querySelector('a[href*="/company/"]');
-      const url = link?.getAttribute("href") || null;
-      const name = clean(link?.textContent || "");
-      return name || url ? { name: name || null, url: url ? new URL(url, location.origin).toString() : null } : null;
+      // Tenta no top-card primeiro; fallback para 1ª experiência
+      const scopes = [
+        card,
+        findSection("experience", /^(experiência|experiencia|experience)/i),
+      ].filter(Boolean);
+      for (const scope of scopes) {
+        const link = scope.querySelector('a[href*="/company/"]');
+        if (!link) continue;
+        const url = link.getAttribute("href") || null;
+        const name =
+          clean(link.querySelector('span[aria-hidden="true"]')?.textContent) ||
+          clean(link.textContent || "");
+        const logo = link.querySelector("img")?.getAttribute("src") || null;
+        if (name || url) {
+          return {
+            name: name || null,
+            url: url ? new URL(url, location.origin).toString() : null,
+            logo_url: logo && /^https?:/i.test(logo) ? logo : null,
+          };
+        }
+      }
+      return null;
     });
   }
+
 
   function extractRecentActivity() {
     return safe(() => {
@@ -629,7 +798,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.0",
+      capture_version: "2.1",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,
@@ -844,6 +1013,16 @@
       }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
+      try {
+        btn.textContent = "Coletando perfil…";
+        await triggerLazyLoad();
+        latestProfile = extractProfile();
+        btn.textContent = "Enriquecendo…";
+        latestProfile = await enrichProfileFromDetails(latestProfile);
+        renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
+      } catch {
+        /* segue para salvar mesmo se enrichment falhar */
+      }
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
         btn.disabled = false;
@@ -857,6 +1036,7 @@
         }
       });
     };
+
 
     function loadTemplates() {
       sendRuntimeMessage({ type: "LIST_TEMPLATES" }, (resp) => {

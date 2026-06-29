@@ -1,70 +1,94 @@
-## Objetivo
+# Correção da Captura — Experiências, Educação, Skills e Sinais
 
-Exibir, em `/candidates/$id`, os 20 novos campos de dados ricos capturados pela extensão TechHire Hunter (Sobre, Experiências, Educação, Skills detalhadas, Sinais de recrutamento, Atividade, Links externos etc.), preservando o layout 3-colunas e os componentes oficiais do TechHire.
+## Diagnóstico
+
+Consultei o candidato `b23f4a4a-…` no banco. Os dados confirmam que o problema é **na captura, não no render**:
+
+| Campo                | Estado no DB                                   |
+| -------------------- | ---------------------------------------------- |
+| `headline`, `about`  | Preenchidos corretamente                       |
+| `available_actions`  | Objeto preenchido                              |
+| `experiences`        | Array **vazio** (`length = 0`)                 |
+| `education`          | Array **vazio**                                |
+| `skills_detailed`    | Array **vazio**                                |
+| `certifications`     | Array **vazio**                                |
+| `photo_url`          | `null`                                         |
+| `open_to_work`       | `null` (deveria ser boolean)                   |
+| `current_company_data` | `null`                                       |
+
+Os blocos `ExperienceBlock`, `EducationBlock`, `SkillsDetailedBlock` e `SignalsBlock` em `rich-profile-blocks.tsx` já tratam estado vazio com mensagem "Sem … capturadas." — então o que o usuário vê reflete fielmente o banco.
+
+A causa raiz está em `extension/content.js`:
+
+1. `findSectionByTitle` procura `main section` e exige `h2` no topo. O LinkedIn atual envolve as seções em `section.artdeco-card` e o título fica em `div.pvs-header__container h2 span[aria-hidden="true"]`, frequentemente não detectado pela regex.
+2. As seções de Experiências/Educação/Skills no perfil principal vêm **truncadas** ("Mostrar todas as N experiências") e os itens completos só existem em `/details/experience`, `/details/education`, `/details/skills`. A extensão não navega para essas páginas nem aguarda a lazy-load.
+3. `extractOpenToWork` depende de texto visível — quando o badge `#OpenToWork` está no avatar como overlay/SVG, não é capturado.
+4. `extractAvatar` usa seletores antigos (`pv-top-card-profile-picture__image`); o LinkedIn migrou para `img.evi-image.profile-photo-edit__preview` e wrappers `EntityPhoto`.
 
 ## Escopo
 
-- Somente UI: leitura dos campos já persistidos em `ats_candidates`.
-- Sem alterar schema, server functions, RLS, captura ou lógica de negócio.
-- Sem mexer em outras rotas/telas.
+Apenas `extension/content.js` (extratores) + repackage do ZIP em `public/techhire-hunter.zip`. Sem mexer em backend, API, schema, RLS, render ou tipos.
 
-## Arquivos
+## Plano técnico
 
-- Edita: `src/routes/_authenticated/(ats)/candidates.$id.tsx`
-- Cria: `src/components/ats/candidate/rich-profile-blocks.tsx` (apresentacional, sem fetch)
-- Edita (apenas tipo): `src/lib/ats/ats.functions.ts` (ampliar `CandidateDetail.candidate` para incluir os novos campos retornados pelo `select('*')` já existente — se o select hoje for explícito, adicionar os campos).
+### 1. Robustecer `findSectionByTitle`
+- Ampliar o seletor para `main section, main div.artdeco-card`.
+- Procurar o título em qualquer descendente: `h2, h2 span[aria-hidden="true"], .pvs-header__container, .pv-profile-card__header`.
+- Considerar também a presença de âncoras: `div#experience`, `div#education`, `div#skills`, `div#licenses_and_certifications`, `div#languages`, `div#projects`, `div#publications`, `div#volunteer_experience` — quando achados, retornar o `closest("section")` ou o próximo container irmão.
+- Fallback: se a seção for encontrada via âncora, dispensar o regex de título.
 
-## Distribuição no layout 3-colunas
+### 2. Coletar dados das páginas `/details/*`
+Para superar a truncagem do perfil principal:
 
-Coluna esquerda (Propriedades — já existe):
-- Adicionar abaixo do bloco atual: `photo_url` como avatar maior + `headline` em uma linha discreta.
-- Adicionar pequenos chips informativos: `connection_degree` (1st/2nd/3rd) e `open_to_work` (badge verde "Open to work") quando presentes.
-- Bloco "Links externos" listando `external_links` (github, portfolio, twitter, site, etc.) como ícones+url.
+- Detectar o slug do perfil a partir de `location.pathname` (`/in/<slug>/`).
+- Para cada seção que retornar 0 itens na página principal, fazer `fetch` em segundo plano de:
+  - `/in/<slug>/details/experience/`
+  - `/in/<slug>/details/education/`
+  - `/in/<slug>/details/skills/`
+  - `/in/<slug>/details/certifications/`
+  - `/in/<slug>/details/languages/`
+  - `/in/<slug>/details/projects/`
+  - `/in/<slug>/details/publications/`
+  - `/in/<slug>/details/volunteering/`
+- Parsear o HTML retornado com `DOMParser` e rodar `extractListItems` sobre `main`.
+- Limitar a 8 requisições paralelas com `Promise.all` e timeout de 8s por request; falhas silenciosas (mantém array vazio).
+- Cabeçalho: usa cookies da sessão do usuário (mesma origem `linkedin.com`), o que já funciona dentro do content script.
 
-Coluna central (após `ApplicationsCard`/`InterviewsCard`/`OffersCard`/`EventsCard`, em ordem):
-1. `AboutBlock` — `about` em texto longo, com clamp + "ver mais".
-2. `ExperienceBlock` — timeline a partir de `experiences[]` (empresa, cargo, período, descrição). Vazio → EmptyState compacto.
-3. `EducationBlock` — lista de `education[]` (instituição, curso, período).
-4. `ProjectsPublicationsBlock` — duas listas compactas: `projects[]` e `publications[]`.
-5. `VolunteeringBlock` — `volunteering[]`.
-6. `RecentActivityBlock` — últimos itens de `recent_activity[]` (texto + link + data) com limite de 5 e "ver tudo".
-7. `RecommendationsBlock` — `recommendations[]` com autor + trecho.
+### 3. Pequena melhoria de scroll/lazy-load
+Antes da extração principal, fazer `window.scrollTo(0, document.body.scrollHeight)` seguido de `scrollTo(0,0)` com um `await wait(800ms)` para forçar render das seções lazy. Já evita boa parte dos casos em que o usuário não rolou a página.
 
-Coluna direita (após cards já existentes):
-- `SignalsBlock` — empilha:
-  - `open_to_work` (badge),
-  - `connection_degree`,
-  - `available_actions` (chips: Mensagem, Conectar, InMail) — somente leitura.
-- `SkillsDetailedBlock` — substitui visualmente `SkillsCard` quando `skills_detailed[]` existir (com endorsements), caindo para `SkillsCard` clássico quando vazio.
-- `CertificationsLanguagesBlock` — duas listas curtas: `certifications[]` e `languages[]`.
-- `CurrentCompanyBlock` — card pequeno com `current_company_data` (tamanho, setor, localização, tempo na vaga calculado a partir das datas de `experiences[0]` quando disponível).
-- `CaptureMetaBlock` — rodapé discreto: `captured_at`, `capture_version`, link "Ver no LinkedIn".
+### 4. `extractOpenToWork`
+- Além do regex no texto, verificar:
+  - `document.querySelector('[aria-label*="Open to work"], [aria-label*="aberto a oportunidades"]')`
+  - `img[alt*="#OPENTOWORK" i]`
+  - Frame SVG do badge: `.pv-top-card-profile-picture__container .pv-open-to-frame, [data-test-id*="OPEN_TO_WORK"]`
+- Retornar `true` se qualquer um existir; `false` quando explicitamente não encontrado (em vez de `null`) somente após confirmar que a seção topo carregou.
 
-## Regras de UX/UI
+### 5. `extractAvatar`
+- Adicionar seletores novos: `img.evi-image.profile-photo-edit__preview`, `.pv-top-card-profile-picture img`, `button[aria-label*="foto" i] img`, e fallback `meta[property="og:image"]`.
 
-- Usar `SectionHeader`, `EmptyState`, `LoadingSkeleton`, badges oficiais (`StatusBadge`/`SourceBadge`/`MetaPill`) e `Card` composto do TechHire.
-- Tokens semânticos de `src/styles.css` — sem cores hardcoded.
-- Cada bloco com 3 estados: vazio (EmptyState com microcopy "Sem dados — capture pelo TechHire Hunter"), preenchido, e parcial (alguns campos ausentes).
-- Responsivo: em viewports < `lg`, empilhar tudo numa coluna mantendo a ordem (esquerda → centro → direita).
-- Acessibilidade: links externos com `rel="noopener noreferrer"`, `aria-label` em ícones, foco visível.
-- Sem queries/mutations dentro dos novos componentes — eles recebem `candidate` por props.
+### 6. `current_company_data`
+- Quando a 1ª experiência tiver `company` + link, extrair `name`, `linkedin_url` (`a[href*="/company/"]`) e logo (`img` dentro do `<li>`).
 
-## Detalhes técnicos
+### 7. Versão e bump
+- `capture_version` → `2.1`.
+- `manifest.json` → `1.0.2`.
+- Repackagem do ZIP via `nix run nixpkgs#zip` em `public/techhire-hunter.zip`.
 
-- Tipos: estender `CandidateDetail['candidate']` localmente com os campos JSONB (`experiences`, `education`, `skills_detailed`, `external_links`, `available_actions`, `current_company_data`, `recent_activity`, `recommendations`, `certifications`, `languages`, `projects`, `publications`, `volunteering`) usando shapes tolerantes (`unknown[]` + parsers defensivos). Render sempre via type guards — campo desconhecido cai pra empty silencioso.
-- Parser utilitário em `rich-profile-blocks.tsx`: `asArray`, `asString`, `asRecord` para normalizar JSONB sem quebrar quando vier de versões antigas da extensão (`capture_version != "2.0"`).
-- "Tempo na empresa atual" calculado client-side a partir de `experiences[0].start_date` (sem mutar dado).
-- Ordem visual respeitando a Design Foundation (densidade alta na coluna direita, leitura confortável na central).
+### 8. Validação manual
+1. Recarregar a extensão (`chrome://extensions` → Recarregar).
+2. Abrir `https://www.linkedin.com/in/wendelmarcosdossantos/`.
+3. Disparar a captura na sidebar.
+4. Verificar no `/candidates/<id>`: Experiências, Educação, Skills, Sinais e foto.
+5. Repetir em mais 2 perfis com layouts diferentes (1º grau e 3º grau).
 
-## Validação manual
+## Fora do escopo
 
-1. `/candidates/$id` de candidato capturado com a extensão v1.0.1 → todos os blocos aparecem populados.
-2. Candidato manual sem dados ricos → blocos exibem EmptyState e não quebram layout.
-3. Candidato com captura antiga (v1.0.0) → blocos novos vazios, blocos clássicos (Skills/Tags) inalterados.
-4. Light/dark mode e viewport mobile/tablet/desktop.
+- Mudanças no endpoint `/api/public/hunting/capture.ts` (já tolera arrays/objetos/strings após o fix anterior).
+- Render dos blocos (`rich-profile-blocks.tsx`) — está correto, apenas reflete dados vazios.
+- Schema do banco e RLS.
 
-## Fora de escopo (próximas entregas)
+## Risco
 
-- Editar inline os novos campos.
-- Sincronizar atualizações automáticas via re-captura.
-- Match score reaproveitando `skills_detailed`/`experiences`.
+- O `fetch` para `/in/<slug>/details/*` é feito pelo browser do usuário com a sessão dele — sem violar ToS além do que a captura principal já faz.
+- Se o LinkedIn alterar a estrutura das páginas `/details/*`, cada extractor falha de forma isolada e o restante continua funcionando.
