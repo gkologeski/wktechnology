@@ -1,11 +1,12 @@
 # TechHire Hunter — Extensão Chrome
 
-Versão atual: 0.3.0
+Versão atual: 1.0.5
 
 Extensão Manifest V3 que injeta uma sidebar nos perfis do LinkedIn (`linkedin.com/in/*`
 e `linkedin.com/sales/lead/*`) permitindo:
 
 - Capturar o candidato (nome, cargo, empresa, localização, URL) direto pro TechHire ATS.
+- Capturar detalhes ricos quando disponíveis: experiência, educação, skills, idiomas, certificações e sinais de recrutamento.
 - Listar templates de mensagem e renderizar com variáveis do perfil.
 - **Preparar a mensagem dentro do LinkedIn** — abre o composer correto (mensagem
   direta, convite com nota ou InMail), pré-preenche o texto e respeita o limite
