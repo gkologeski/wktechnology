@@ -277,9 +277,18 @@
     const jt = clean(person?.jobTitle);
     if (jt) return jt;
     const og = safe(() => document.querySelector('meta[property="og:description"]')?.content);
-    if (og) return clean(og.split(/[·•]/)[0]);
+    if (og) {
+      const head = clean(og.split(/[·•|]/)[0]);
+      if (looksLikeHeadline(head)) return head;
+    }
+    const meta = safe(() => document.querySelector('meta[name="description"]')?.content);
+    if (meta) {
+      const head = clean(meta.split(/[·•|]/)[0]);
+      if (looksLikeHeadline(head)) return head;
+    }
     return "";
   }
+
 
   function companyFromHeadline(headline) {
     if (!headline) return "";
