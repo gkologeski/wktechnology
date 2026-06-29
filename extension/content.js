@@ -497,100 +497,149 @@
 
   function extractExperiences() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(experiência|experiencia|experience)/i);
+      const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        title: lines[0] || null,
-        company: lines[1] || null,
-        period: lines[2] || null,
-        location: lines[3] || null,
-        description: lines.slice(4).join(" · ") || null,
-      }));
+      return items.slice(0, 20).map(mapExperience);
     }) || [];
   }
 
   function extractEducation() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(formação|formacao|educação|educacao|education)/i);
+      const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        school: lines[0] || null,
-        degree: lines[1] || null,
-        period: lines[2] || null,
-        description: lines.slice(3).join(" · ") || null,
-      }));
+      return items.slice(0, 20).map(mapEducation);
     }) || [];
   }
 
   function extractCertifications() {
     return safe(() => {
-      const sec = findSectionByTitle(/(licen[çc]as|certifica|licenses|certifications)/i);
+      const sec = findSection("certifications", /(licen[çc]as|certifica|licenses|certifications)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        name: lines[0] || null,
-        issuer: lines[1] || null,
-        issued: lines[2] || null,
-      }));
+      return items.slice(0, 30).map(mapCertification);
     }) || [];
   }
 
   function extractLanguages() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(idiomas|languages)/i);
+      const sec = findSection("languages", /^(idiomas|languages)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        name: lines[0] || null,
-        proficiency: lines[1] || null,
-      }));
+      return items.slice(0, 20).map(mapLanguage);
     }) || [];
   }
 
   function extractSkills() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(compet[êe]ncias|skills|habilidades)/i);
+      const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 100).map((lines) => ({
-        name: lines[0] || null,
-        endorsements: lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
-      })).filter((s) => s.name);
+      return items.slice(0, 100).map(mapSkill).filter((s) => s.name);
     }) || [];
   }
 
   function extractProjects() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(projetos|projects)/i);
+      const sec = findSection("projects", /^(projetos|projects)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        name: lines[0] || null,
-        period: lines[1] || null,
-        description: lines.slice(2).join(" · ") || null,
-      }));
+      return items.slice(0, 30).map(mapProject);
     }) || [];
   }
 
   function extractPublications() {
     return safe(() => {
-      const sec = findSectionByTitle(/^(publica[çc][õo]es|publications)/i);
+      const sec = findSection("publications", /^(publica[çc][õo]es|publications)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 30).map((lines) => ({
-        title: lines[0] || null,
-        publisher: lines[1] || null,
-        date: lines[2] || null,
-      }));
+      return items.slice(0, 30).map(mapPublication);
     }) || [];
   }
 
   function extractVolunteering() {
     return safe(() => {
-      const sec = findSectionByTitle(/(volunt|volunteer)/i);
+      const sec = findSection("volunteering", /(volunt|volunteer)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 20).map((lines) => ({
-        role: lines[0] || null,
-        organization: lines[1] || null,
-        period: lines[2] || null,
-      }));
+      return items.slice(0, 20).map(mapVolunteering);
     }) || [];
   }
+
+  // ───── Mappers reutilizados pelo enrichment via /details/* ─────
+  const mapExperience = (lines) => ({
+    title: lines[0] || null,
+    company: lines[1] || null,
+    period: lines[2] || null,
+    location: lines[3] || null,
+    description: lines.slice(4).join(" · ") || null,
+  });
+  const mapEducation = (lines) => ({
+    school: lines[0] || null,
+    degree: lines[1] || null,
+    period: lines[2] || null,
+    description: lines.slice(3).join(" · ") || null,
+  });
+  const mapCertification = (lines) => ({
+    name: lines[0] || null,
+    issuer: lines[1] || null,
+    issued: lines[2] || null,
+  });
+  const mapLanguage = (lines) => ({
+    name: lines[0] || null,
+    proficiency: lines[1] || null,
+  });
+  const mapSkill = (lines) => ({
+    name: lines[0] || null,
+    endorsements:
+      lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
+  });
+  const mapProject = (lines) => ({
+    name: lines[0] || null,
+    period: lines[1] || null,
+    description: lines.slice(2).join(" · ") || null,
+  });
+  const mapPublication = (lines) => ({
+    title: lines[0] || null,
+    publisher: lines[1] || null,
+    date: lines[2] || null,
+  });
+  const mapVolunteering = (lines) => ({
+    role: lines[0] || null,
+    organization: lines[1] || null,
+    period: lines[2] || null,
+  });
+
+  const DETAILS_SECTIONS = [
+    ["experiences", "experience", (l) => mapExperience(l), 20],
+    ["education", "education", (l) => mapEducation(l), 20],
+    ["skills_detailed", "skills", (l) => mapSkill(l), 100],
+    ["certifications", "certifications", (l) => mapCertification(l), 30],
+    ["languages", "languages", (l) => mapLanguage(l), 20],
+    ["projects", "projects", (l) => mapProject(l), 30],
+    ["publications", "publications", (l) => mapPublication(l), 30],
+    ["volunteering", "volunteering", (l) => mapVolunteering(l), 20],
+  ];
+
+  async function enrichProfileFromDetails(profile) {
+    const m = (location.pathname || "").match(/\/in\/([^/]+)/);
+    if (!m) return profile;
+    const slug = decodeURIComponent(m[1]);
+
+    await Promise.all(
+      DETAILS_SECTIONS.map(async ([field, path, mapper, limit]) => {
+        try {
+          if (Array.isArray(profile[field]) && profile[field].length > 0) return;
+          const doc = await fetchDetailsHtml(slug, path);
+          if (!doc) return;
+          const items = extractListItemsFromDoc(doc).slice(0, limit);
+          const mapped = items
+            .map(mapper)
+            .filter((x) => Object.values(x).some((v) => v));
+          if (mapped.length) profile[field] = mapped;
+        } catch {
+          /* falha isolada por seção */
+        }
+      }),
+    );
+
+    return profile;
+  }
+
+
 
   function extractOpenToWork(card) {
     return safe(() => {
