@@ -686,6 +686,8 @@
   }
 
   function extractExperiences() {
+    const ssr = ssrExperiences();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
       const items = extractListItems(sec);
@@ -694,6 +696,8 @@
   }
 
   function extractEducation() {
+    const ssr = ssrEducation();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
       const items = extractListItems(sec);
@@ -702,6 +706,8 @@
   }
 
   function extractCertifications() {
+    const ssr = ssrCertifications();
+    if (ssr.length) return ssr.slice(0, 30);
     return safe(() => {
       const sec = findSection("certifications", /(licen[çc]as|certifica|licenses|certifications)/i);
       const items = extractListItems(sec);
@@ -710,6 +716,8 @@
   }
 
   function extractLanguages() {
+    const ssr = ssrLanguages();
+    if (ssr.length) return ssr.slice(0, 20);
     return safe(() => {
       const sec = findSection("languages", /^(idiomas|languages)/i);
       const items = extractListItems(sec);
@@ -718,6 +726,8 @@
   }
 
   function extractSkills() {
+    const ssr = ssrSkills();
+    if (ssr.length) return ssr.slice(0, 100);
     return safe(() => {
       const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
       const items = extractListItems(sec);
