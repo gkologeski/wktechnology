@@ -11,6 +11,21 @@ import {
 import { recordAtsEvent } from "@/lib/ats/audit.server";
 
 const Payload = z.object({
+const coerceObject = (v: unknown): unknown => {
+  if (v == null || v === "") return null;
+  if (typeof v === "object") return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return typeof parsed === "object" && parsed !== null ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
+const Payload = z.object({
   linkedin_url: z.string().url().max(500),
   full_name: z.string().min(1).max(200).optional().default(""),
   current_position: z.string().max(400).optional().nullable(),
