@@ -67,12 +67,39 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           .ilike("linkedin_url", linkedinUrl)
           .maybeSingle();
 
+        const richFields = {
+          headline: parsed.data.headline ?? undefined,
+          about: parsed.data.about ?? undefined,
+          photo_url: parsed.data.photo_url ?? undefined,
+          experiences: parsed.data.experiences ?? undefined,
+          education: parsed.data.education ?? undefined,
+          certifications: parsed.data.certifications ?? undefined,
+          languages: parsed.data.languages ?? undefined,
+          skills_detailed: parsed.data.skills_detailed ?? undefined,
+          projects: parsed.data.projects ?? undefined,
+          publications: parsed.data.publications ?? undefined,
+          volunteering: parsed.data.volunteering ?? undefined,
+          open_to_work: parsed.data.open_to_work ?? undefined,
+          connection_degree: parsed.data.connection_degree ?? undefined,
+          available_actions: parsed.data.available_actions ?? undefined,
+          external_links: parsed.data.external_links ?? undefined,
+          current_company_data: parsed.data.current_company_data ?? undefined,
+          recent_activity: parsed.data.recent_activity ?? undefined,
+          recommendations: parsed.data.recommendations ?? undefined,
+        };
+        const definedRich = Object.fromEntries(
+          Object.entries(richFields).filter(([, v]) => v !== undefined),
+        );
+
         let candidateId: string;
         let created = false;
         if (existing) {
           candidateId = existing.id as string;
           const patch: Record<string, unknown> = {
+            ...definedRich,
             last_touch_at: new Date().toISOString(),
+            captured_at: new Date().toISOString(),
+            capture_version: parsed.data.capture_version ?? "2.0",
           };
           if (parsed.data.current_position)
             patch.current_position = parsed.data.current_position;
@@ -95,6 +122,9 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
               location: parsed.data.location ?? null,
               source: parsed.data.source ?? "linkedin_extension",
               last_touch_at: new Date().toISOString(),
+              captured_at: new Date().toISOString(),
+              capture_version: parsed.data.capture_version ?? "2.0",
+              ...definedRich,
             } as never)
             .select("id")
             .single();
@@ -115,7 +145,7 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           candidate_id: candidateId,
           source_url: parsed.data.linkedin_url,
           raw_payload: parsed.data as never,
-          parser_version: "ext-v1",
+          parser_version: parsed.data.capture_version ?? "ext-v2",
           captured_by: null,
         } as never);
 
