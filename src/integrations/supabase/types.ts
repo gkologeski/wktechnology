@@ -993,10 +993,17 @@ export type Database = {
       }
       ats_candidates: {
         Row: {
+          about: string | null
           archived: boolean
+          available_actions: Json | null
+          capture_version: string | null
+          captured_at: string | null
+          certifications: Json | null
+          connection_degree: string | null
           created_at: string
           created_by: string | null
           current_company: string | null
+          current_company_data: Json | null
           current_position: string | null
           cv_parsed: Json | null
           cv_url: string | null
@@ -1004,31 +1011,51 @@ export type Database = {
           dei_gender: string | null
           dei_lgbtqia: string | null
           dei_race: string | null
+          education: Json | null
           email: string | null
+          experiences: Json | null
+          external_links: Json | null
           full_name: string
+          headline: string | null
           id: string
+          languages: Json | null
           last_touch_at: string | null
           lgpd_redacted_at: string | null
           linkedin_url: string | null
           location: string | null
           next_action_at: string | null
           notes: string | null
+          open_to_work: boolean | null
           owner_id: string
           phone: string | null
+          photo_url: string | null
+          projects: Json | null
+          publications: Json | null
+          recent_activity: Json | null
+          recommendations: Json | null
           relationship_owner_id: string | null
           relationship_status: string
           retention_until: string | null
           score: number | null
           skills: string[]
+          skills_detailed: Json | null
           source: string
           tags: string[]
           updated_at: string
+          volunteering: Json | null
         }
         Insert: {
+          about?: string | null
           archived?: boolean
+          available_actions?: Json | null
+          capture_version?: string | null
+          captured_at?: string | null
+          certifications?: Json | null
+          connection_degree?: string | null
           created_at?: string
           created_by?: string | null
           current_company?: string | null
+          current_company_data?: Json | null
           current_position?: string | null
           cv_parsed?: Json | null
           cv_url?: string | null
@@ -1036,31 +1063,51 @@ export type Database = {
           dei_gender?: string | null
           dei_lgbtqia?: string | null
           dei_race?: string | null
+          education?: Json | null
           email?: string | null
+          experiences?: Json | null
+          external_links?: Json | null
           full_name: string
+          headline?: string | null
           id?: string
+          languages?: Json | null
           last_touch_at?: string | null
           lgpd_redacted_at?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action_at?: string | null
           notes?: string | null
+          open_to_work?: boolean | null
           owner_id: string
           phone?: string | null
+          photo_url?: string | null
+          projects?: Json | null
+          publications?: Json | null
+          recent_activity?: Json | null
+          recommendations?: Json | null
           relationship_owner_id?: string | null
           relationship_status?: string
           retention_until?: string | null
           score?: number | null
           skills?: string[]
+          skills_detailed?: Json | null
           source?: string
           tags?: string[]
           updated_at?: string
+          volunteering?: Json | null
         }
         Update: {
+          about?: string | null
           archived?: boolean
+          available_actions?: Json | null
+          capture_version?: string | null
+          captured_at?: string | null
+          certifications?: Json | null
+          connection_degree?: string | null
           created_at?: string
           created_by?: string | null
           current_company?: string | null
+          current_company_data?: Json | null
           current_position?: string | null
           cv_parsed?: Json | null
           cv_url?: string | null
@@ -1068,25 +1115,38 @@ export type Database = {
           dei_gender?: string | null
           dei_lgbtqia?: string | null
           dei_race?: string | null
+          education?: Json | null
           email?: string | null
+          experiences?: Json | null
+          external_links?: Json | null
           full_name?: string
+          headline?: string | null
           id?: string
+          languages?: Json | null
           last_touch_at?: string | null
           lgpd_redacted_at?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action_at?: string | null
           notes?: string | null
+          open_to_work?: boolean | null
           owner_id?: string
           phone?: string | null
+          photo_url?: string | null
+          projects?: Json | null
+          publications?: Json | null
+          recent_activity?: Json | null
+          recommendations?: Json | null
           relationship_owner_id?: string | null
           relationship_status?: string
           retention_until?: string | null
           score?: number | null
           skills?: string[]
+          skills_detailed?: Json | null
           source?: string
           tags?: string[]
           updated_at?: string
+          volunteering?: Json | null
         }
         Relationships: []
       }

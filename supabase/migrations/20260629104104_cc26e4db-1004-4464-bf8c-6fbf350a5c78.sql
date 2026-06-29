@@ -1,0 +1,22 @@
+
+ALTER TABLE public.ats_candidates
+  ADD COLUMN IF NOT EXISTS headline text,
+  ADD COLUMN IF NOT EXISTS about text,
+  ADD COLUMN IF NOT EXISTS photo_url text,
+  ADD COLUMN IF NOT EXISTS experiences jsonb,
+  ADD COLUMN IF NOT EXISTS education jsonb,
+  ADD COLUMN IF NOT EXISTS certifications jsonb,
+  ADD COLUMN IF NOT EXISTS languages jsonb,
+  ADD COLUMN IF NOT EXISTS skills_detailed jsonb,
+  ADD COLUMN IF NOT EXISTS projects jsonb,
+  ADD COLUMN IF NOT EXISTS publications jsonb,
+  ADD COLUMN IF NOT EXISTS volunteering jsonb,
+  ADD COLUMN IF NOT EXISTS open_to_work boolean,
+  ADD COLUMN IF NOT EXISTS connection_degree text,
+  ADD COLUMN IF NOT EXISTS available_actions jsonb,
+  ADD COLUMN IF NOT EXISTS external_links jsonb,
+  ADD COLUMN IF NOT EXISTS current_company_data jsonb,
+  ADD COLUMN IF NOT EXISTS recent_activity jsonb,
+  ADD COLUMN IF NOT EXISTS recommendations jsonb,
+  ADD COLUMN IF NOT EXISTS captured_at timestamptz,
+  ADD COLUMN IF NOT EXISTS capture_version text;
