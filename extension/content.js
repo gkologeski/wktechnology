@@ -353,21 +353,27 @@
   }
 
   function extractAvatar(card) {
-    if (card) {
-      const sels = [
-        "img.pv-top-card-profile-picture__image",
-        "img.pv-top-card-profile-picture__image--show",
-        'img[width="200"]',
-        'button img.profile-photo-edit__preview',
-      ];
+    const scopes = [card, document.querySelector("main"), document].filter(Boolean);
+    const sels = [
+      "img.pv-top-card-profile-picture__image",
+      "img.pv-top-card-profile-picture__image--show",
+      "img.evi-image.profile-photo-edit__preview",
+      ".pv-top-card-profile-picture img",
+      ".pv-top-card__photo img",
+      'button[aria-label*="foto" i] img',
+      'button[aria-label*="photo" i] img',
+      'img[width="200"]',
+      "button img.profile-photo-edit__preview",
+    ];
+    for (const scope of scopes) {
       for (const sel of sels) {
-        const el = card.querySelector(sel);
-        const src = el?.getAttribute("src");
-        if (src && /^https?:/i.test(src)) return src;
+        const el = scope.querySelector?.(sel);
+        const src = el?.getAttribute?.("src");
+        if (src && /^https?:/i.test(src) && !/ghosts\/person/i.test(src)) return src;
       }
     }
     const og = safe(() => document.querySelector('meta[property="og:image"]')?.content);
-    if (og && /^https?:/i.test(og)) return og;
+    if (og && /^https?:/i.test(og) && !/ghosts\/person/i.test(og)) return og;
     return "";
   }
 
