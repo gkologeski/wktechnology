@@ -17,6 +17,29 @@ const Payload = z.object({
   current_company: z.string().max(200).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
   source: z.string().max(60).optional(),
+  // Perfil profissional
+  headline: z.string().max(500).optional().nullable(),
+  about: z.string().max(8000).optional().nullable(),
+  photo_url: z.string().max(1000).optional().nullable(),
+  experiences: z.array(z.any()).max(50).optional().nullable(),
+  education: z.array(z.any()).max(50).optional().nullable(),
+  certifications: z.array(z.any()).max(50).optional().nullable(),
+  languages: z.array(z.any()).max(50).optional().nullable(),
+  skills_detailed: z.array(z.any()).max(200).optional().nullable(),
+  projects: z.array(z.any()).max(50).optional().nullable(),
+  publications: z.array(z.any()).max(50).optional().nullable(),
+  volunteering: z.array(z.any()).max(50).optional().nullable(),
+  // Sinais de recrutamento
+  open_to_work: z.boolean().optional().nullable(),
+  connection_degree: z.string().max(10).optional().nullable(),
+  available_actions: z.record(z.any()).optional().nullable(),
+  // Links/empresa/atividade
+  external_links: z.record(z.any()).optional().nullable(),
+  current_company_data: z.record(z.any()).optional().nullable(),
+  recent_activity: z.array(z.any()).max(20).optional().nullable(),
+  recommendations: z.array(z.any()).max(20).optional().nullable(),
+  // Metadados
+  capture_version: z.string().max(20).optional(),
 });
 
 export const Route = createFileRoute("/api/public/hunting/capture")({
