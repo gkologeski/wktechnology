@@ -793,7 +793,27 @@
     return m?.[1] || "";
   }
 
-  async function fetchVoyagerProfile(slug) {
+  function discoverVoyagerRequests() {
+    const urls = [];
+    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    document.querySelectorAll('code[id^="datalet-bpr-guid"], code[id^="bpr-guid"], code[style*="display: none"], code[style*="display:none"]').forEach((c) => {
+      const raw = (c.textContent || "").trim();
+      if (!raw.startsWith("{")) return;
+      try {
+        const json = JSON.parse(raw);
+        const req = clean(json?.request || json?.url || "");
+        if (!req || !/voyager\/api/i.test(req)) return;
+        if (!/(profile|skill|education|position|experience)/i.test(req)) return;
+        if (slug && !decodeURIComponent(req).toLowerCase().includes(slug) && /profiles\//i.test(req)) return;
+        urls.push(req.startsWith("http") ? req : `https://www.linkedin.com${req.startsWith("/") ? "" : "/"}${req}`);
+      } catch {
+        /* ignore */
+      }
+    });
+    return uniqueLines(urls);
+  }
+
+  async function fetchVoyagerJson(url) {
     try {
       const csrf = linkedInCsrfToken();
       const headers = {
@@ -803,7 +823,7 @@
       if (csrf) headers["csrf-token"] = csrf;
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
-      const resp = await fetch(`https://www.linkedin.com/voyager/api/identity/profiles/${encodeURIComponent(slug)}/profileView`, {
+      const resp = await fetch(url, {
         credentials: "include",
         headers,
         signal: ctrl.signal,
@@ -814,6 +834,18 @@
     } catch {
       return null;
     }
+  }
+
+  async function fetchVoyagerProfile(slug) {
+    const candidates = [
+      ...discoverVoyagerRequests(),
+      `https://www.linkedin.com/voyager/api/identity/profiles/${encodeURIComponent(slug)}/profileView`,
+    ];
+    for (const url of uniqueLines(candidates)) {
+      const json = await fetchVoyagerJson(url);
+      if (json) return json;
+    }
+    return null;
   }
 
   async function enrichProfileFromVoyager(profile) {
@@ -1594,6 +1626,7 @@
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       _ssrCache = null;
+      _ssrExtraItems = [];
       stopExtractionLoops();
       const old = document.getElementById(SIDEBAR_ID);
       if (old) old.remove();
