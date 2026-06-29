@@ -371,6 +371,237 @@
     return "";
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // Extratores ricos (v2.0) — perfil completo, sinais, atividade
+  // Cada um é isolado e tolerante a falhas (LinkedIn muda DOM com frequência)
+  // ──────────────────────────────────────────────────────────────
+
+  function findSectionByTitle(titleRegex) {
+    const sections = document.querySelectorAll("main section");
+    for (const s of sections) {
+      const h2 = s.querySelector("h2, .pvs-header__title, .pvs-header__container h2");
+      const txt = clean(h2?.textContent || "");
+      if (txt && titleRegex.test(txt)) return s;
+    }
+    return null;
+  }
+
+  function extractListItems(section) {
+    if (!section) return [];
+    const items = section.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity");
+    const out = [];
+    for (const li of items) {
+      const lines = uniqueLines(getLines(li).filter((l) => !isNoiseLine(l)));
+      // LinkedIn duplica visualmente cada texto (aria-hidden); pegamos pares únicos
+      if (lines.length) out.push(lines);
+    }
+    return out;
+  }
+
+  function extractAbout() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(sobre|about)$/i);
+      if (!sec) return "";
+      const span = sec.querySelector("div.display-flex.ph5.pv3 span[aria-hidden='true'], .inline-show-more-text span[aria-hidden='true']");
+      return clean(span?.textContent || getVisibleText(sec).replace(/^(sobre|about)\s*/i, ""));
+    });
+  }
+
+  function extractExperiences() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(experiência|experiencia|experience)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 20).map((lines) => ({
+        title: lines[0] || null,
+        company: lines[1] || null,
+        period: lines[2] || null,
+        location: lines[3] || null,
+        description: lines.slice(4).join(" · ") || null,
+      }));
+    }) || [];
+  }
+
+  function extractEducation() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(formação|formacao|educação|educacao|education)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 20).map((lines) => ({
+        school: lines[0] || null,
+        degree: lines[1] || null,
+        period: lines[2] || null,
+        description: lines.slice(3).join(" · ") || null,
+      }));
+    }) || [];
+  }
+
+  function extractCertifications() {
+    return safe(() => {
+      const sec = findSectionByTitle(/(licen[çc]as|certifica|licenses|certifications)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 30).map((lines) => ({
+        name: lines[0] || null,
+        issuer: lines[1] || null,
+        issued: lines[2] || null,
+      }));
+    }) || [];
+  }
+
+  function extractLanguages() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(idiomas|languages)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 20).map((lines) => ({
+        name: lines[0] || null,
+        proficiency: lines[1] || null,
+      }));
+    }) || [];
+  }
+
+  function extractSkills() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(compet[êe]ncias|skills|habilidades)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 100).map((lines) => ({
+        name: lines[0] || null,
+        endorsements: lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
+      })).filter((s) => s.name);
+    }) || [];
+  }
+
+  function extractProjects() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(projetos|projects)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 30).map((lines) => ({
+        name: lines[0] || null,
+        period: lines[1] || null,
+        description: lines.slice(2).join(" · ") || null,
+      }));
+    }) || [];
+  }
+
+  function extractPublications() {
+    return safe(() => {
+      const sec = findSectionByTitle(/^(publica[çc][õo]es|publications)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 30).map((lines) => ({
+        title: lines[0] || null,
+        publisher: lines[1] || null,
+        date: lines[2] || null,
+      }));
+    }) || [];
+  }
+
+  function extractVolunteering() {
+    return safe(() => {
+      const sec = findSectionByTitle(/(volunt|volunteer)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 20).map((lines) => ({
+        role: lines[0] || null,
+        organization: lines[1] || null,
+        period: lines[2] || null,
+      }));
+    }) || [];
+  }
+
+  function extractOpenToWork(card) {
+    return safe(() => {
+      const text = (card ? getVisibleText(card) : "") + " " + getVisibleText(document.querySelector("main"));
+      if (/#OpenToWork|aberto a oportunidades|open to work/i.test(text)) return true;
+      // Frame de foto OpenToWork
+      const photoFrame = document.querySelector('img[alt*="OpenToWork" i], [data-test-icon*="open-to-work" i]');
+      if (photoFrame) return true;
+      return false;
+    });
+  }
+
+  function extractConnectionDegree(card) {
+    return safe(() => {
+      const span = card?.querySelector(".dist-value, .distance-badge, .pv-text-details__distance-text");
+      const txt = clean(span?.textContent || "");
+      const m = txt.match(/(1|2|3)\s*(?:st|nd|rd|º)/i);
+      if (m) return `${m[1]}${m[1] === "1" ? "st" : m[1] === "2" ? "nd" : "rd"}`;
+      const main = getVisibleText(card);
+      if (/fora da sua rede|out of network/i.test(main)) return "out";
+      return null;
+    });
+  }
+
+  function extractAvailableActions(card) {
+    return safe(() => {
+      const scope = card || document.querySelector("main");
+      if (!scope) return null;
+      const text = getVisibleText(scope);
+      return {
+        message: /\b(message|mensagem)\b/i.test(text) && !!scope.querySelector('button[aria-label*="Message" i], a[aria-label*="Message" i], button[aria-label*="Mensagem" i]'),
+        connect: !!scope.querySelector('button[aria-label*="Connect" i], button[aria-label*="Conectar" i]'),
+        inmail: /\bInMail\b/.test(text),
+        follow: !!scope.querySelector('button[aria-label*="Follow" i], button[aria-label*="Seguir" i]'),
+      };
+    });
+  }
+
+  function extractExternalLinks() {
+    return safe(() => {
+      const links = {};
+      const anchors = document.querySelectorAll('main a[href]');
+      for (const a of anchors) {
+        const href = a.getAttribute("href") || "";
+        if (!/^https?:/i.test(href)) continue;
+        if (/linkedin\.com/i.test(href)) continue;
+        if (/github\.com/i.test(href) && !links.github) links.github = href;
+        else if (/(twitter\.com|x\.com)/i.test(href) && !links.twitter) links.twitter = href;
+        else if (/behance\.net/i.test(href) && !links.behance) links.behance = href;
+        else if (/dribbble\.com/i.test(href) && !links.dribbble) links.dribbble = href;
+        else if (/medium\.com/i.test(href) && !links.medium) links.medium = href;
+        else if (/(youtube\.com|youtu\.be)/i.test(href) && !links.youtube) links.youtube = href;
+        else if (!links.website && /(portfolio|\.dev|\.io|\.me|\.com|\.com\.br)/i.test(href)) links.website = href;
+      }
+      return Object.keys(links).length ? links : null;
+    });
+  }
+
+  function extractCurrentCompanyData(card) {
+    return safe(() => {
+      const link = card?.querySelector('a[href*="/company/"]');
+      const url = link?.getAttribute("href") || null;
+      const name = clean(link?.textContent || "");
+      return name || url ? { name: name || null, url: url ? new URL(url, location.origin).toString() : null } : null;
+    });
+  }
+
+  function extractRecentActivity() {
+    return safe(() => {
+      const sec = findSectionByTitle(/(atividade|activity)/i);
+      if (!sec) return [];
+      const posts = sec.querySelectorAll(".feed-shared-update-v2, .occludable-update, .pvs-list__item--line-separated");
+      const out = [];
+      for (const p of posts) {
+        if (out.length >= 5) break;
+        const txt = clean(getVisibleText(p)).slice(0, 280);
+        const link = p.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
+        if (txt) out.push({
+          excerpt: txt,
+          url: link?.href || null,
+          type: /comment|comentou/i.test(txt) ? "comment" : "post",
+        });
+      }
+      return out;
+    }) || [];
+  }
+
+  function extractRecommendations() {
+    return safe(() => {
+      const sec = findSectionByTitle(/(recomenda|recommendation)/i);
+      const items = extractListItems(sec);
+      return items.slice(0, 10).map((lines) => ({
+        author: lines[0] || null,
+        relationship: lines[1] || null,
+        text: lines.slice(2).join(" ") || null,
+      }));
+    }) || [];
+  }
+
   function extractProfile() {
     const url = (location.href.split("?")[0] || "").replace(/\/+$/, "");
     const person = getJsonLdPerson();
@@ -398,6 +629,28 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
+      capture_version: "2.0",
+      // Perfil rico
+      headline: headline || null,
+      about: extractAbout() || null,
+      photo_url: avatar || null,
+      experiences: extractExperiences(),
+      education: extractEducation(),
+      certifications: extractCertifications(),
+      languages: extractLanguages(),
+      skills_detailed: extractSkills(),
+      projects: extractProjects(),
+      publications: extractPublications(),
+      volunteering: extractVolunteering(),
+      // Sinais
+      open_to_work: extractOpenToWork(card),
+      connection_degree: extractConnectionDegree(card),
+      available_actions: extractAvailableActions(card),
+      // Links/empresa/atividade
+      external_links: extractExternalLinks(),
+      current_company_data: extractCurrentCompanyData(card),
+      recent_activity: extractRecentActivity(),
+      recommendations: extractRecommendations(),
     };
   }
 
