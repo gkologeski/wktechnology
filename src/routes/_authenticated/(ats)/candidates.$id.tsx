@@ -30,6 +30,23 @@ import {
   type CandidateDetail,
 } from "@/lib/ats/candidate-detail.functions";
 import { saveAtsCandidate, deleteAtsCandidate } from "@/lib/ats/ats.functions";
+import {
+  AboutBlock,
+  CaptureMetaBlock,
+  CertificationsLanguagesBlock,
+  CurrentCompanyBlock,
+  EducationBlock,
+  ExperienceBlock,
+  ExternalLinksBlock,
+  IdentityBlock,
+  ProjectsPublicationsBlock,
+  RecentActivityBlock,
+  RecommendationsBlock,
+  SignalsBlock,
+  SkillsDetailedBlock,
+  VolunteeringBlock,
+  hasDetailedSkills,
+} from "@/components/ats/candidate/rich-profile-blocks";
 import { formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 
