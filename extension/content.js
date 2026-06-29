@@ -1013,6 +1013,16 @@
       }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
+      try {
+        btn.textContent = "Coletando perfil…";
+        await triggerLazyLoad();
+        latestProfile = extractProfile();
+        btn.textContent = "Enriquecendo…";
+        latestProfile = await enrichProfileFromDetails(latestProfile);
+        renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
+      } catch {
+        /* segue para salvar mesmo se enrichment falhar */
+      }
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
         btn.disabled = false;
@@ -1026,6 +1036,7 @@
         }
       });
     };
+
 
     function loadTemplates() {
       sendRuntimeMessage({ type: "LIST_TEMPLATES" }, (resp) => {
