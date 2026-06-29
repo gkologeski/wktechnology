@@ -1424,6 +1424,7 @@
   setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
+      _ssrCache = null;
       stopExtractionLoops();
       const old = document.getElementById(SIDEBAR_ID);
       if (old) old.remove();
