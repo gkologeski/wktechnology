@@ -62,6 +62,8 @@ export type CandidateEvent = {
   metadata_json: string | null;
 };
 
+export type RichJson = unknown;
+
 export type CandidateDetail = {
   candidate: {
     id: string;
@@ -82,6 +84,27 @@ export type CandidateDetail = {
     updated_at: string;
     last_touch_at: string | null;
     next_action_at: string | null;
+    // Rich profile data (LinkedIn capture v2.0+)
+    headline: string | null;
+    about: string | null;
+    photo_url: string | null;
+    open_to_work: boolean | null;
+    connection_degree: string | null;
+    capture_version: string | null;
+    captured_at: string | null;
+    experiences: RichJson;
+    education: RichJson;
+    certifications: RichJson;
+    languages: RichJson;
+    skills_detailed: RichJson;
+    projects: RichJson;
+    publications: RichJson;
+    volunteering: RichJson;
+    external_links: RichJson;
+    available_actions: RichJson;
+    current_company_data: RichJson;
+    recent_activity: RichJson;
+    recommendations: RichJson;
   };
   derived_status:
     | "hired"
@@ -97,6 +120,7 @@ export type CandidateDetail = {
   flags: CandidateFlag[];
   events: CandidateEvent[];
 };
+
 
 export const getCandidateDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
