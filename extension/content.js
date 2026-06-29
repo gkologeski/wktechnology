@@ -259,6 +259,7 @@
   // objetos como FONTE PRIMÁRIA — DOM e /details/* viram fallback.
   // ──────────────────────────────────────────────────────────────
   let _ssrCache = null;
+  let _ssrExtraItems = [];
   function collectSsrObjects(value, out = [], seen = new WeakSet()) {
     if (!value || typeof value !== "object") return out;
     if (seen.has(value)) return out;
@@ -295,8 +296,32 @@
       seen.add(key);
       deduped.push(item);
     }
-    if (doc === document) _ssrCache = deduped;
+    const merged = doc === document ? dedupeSsrItems([...deduped, ..._ssrExtraItems]) : deduped;
+    if (doc === document) _ssrCache = merged;
+    return merged;
+  }
+
+  function dedupeSsrItems(items) {
+    const deduped = [];
+    const seen = new Set();
+    items.forEach((item, index) => {
+      if (!item || typeof item !== "object") return;
+      const key = item.entityUrn || item.urn || item.objectUrn || item.trackingId || `${item.$type || "unknown"}:${index}:${JSON.stringify(item).slice(0, 220)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      deduped.push(item);
+    });
     return deduped;
+  }
+
+  function mergeSsrJson(json) {
+    const items = [];
+    if (Array.isArray(json?.included)) items.push(...json.included);
+    collectSsrObjects(json, items);
+    if (!items.length) return 0;
+    _ssrExtraItems = dedupeSsrItems([..._ssrExtraItems, ...items]);
+    _ssrCache = null;
+    return items.length;
   }
 
   const SSR_TYPES = {
@@ -761,6 +786,60 @@
     } catch {
       return null;
     }
+  }
+
+  function linkedInCsrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)JSESSIONID="?([^";]+)"?/i);
+    return m?.[1] || "";
+  }
+
+  async function fetchVoyagerProfile(slug) {
+    try {
+      const csrf = linkedInCsrfToken();
+      const headers = {
+        accept: "application/vnd.linkedin.normalized+json+2.1",
+        "x-restli-protocol-version": "2.0.0",
+      };
+      if (csrf) headers["csrf-token"] = csrf;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(`https://www.linkedin.com/voyager/api/identity/profiles/${encodeURIComponent(slug)}/profileView`, {
+        credentials: "include",
+        headers,
+        signal: ctrl.signal,
+      });
+      clearTimeout(t);
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async function enrichProfileFromVoyager(profile) {
+    const m = (location.pathname || "").match(/\/in\/([^/?#]+)/i);
+    if (!m) return profile;
+    const slug = decodeURIComponent(m[1]).replace(/\/+$/, "");
+    if (!slug) return profile;
+    const json = await fetchVoyagerProfile(slug);
+    if (!json || !mergeSsrJson(json)) return profile;
+
+    const top = ssrTopCard(profile.full_name || "");
+    if (!profile.current_position && top?.headline) profile.current_position = top.headline;
+    if (!profile.headline && top?.headline) profile.headline = top.headline;
+    if (!profile.location && top?.location) profile.location = top.location;
+    const exp = ssrExperiences();
+    if (!profile.current_company && exp[0]?.company) profile.current_company = exp[0].company;
+    if (!Array.isArray(profile.experiences) || !profile.experiences.length) profile.experiences = exp.slice(0, 20);
+    const edu = ssrEducation();
+    if (!Array.isArray(profile.education) || !profile.education.length) profile.education = edu.slice(0, 20);
+    const skills = ssrSkills();
+    if (!Array.isArray(profile.skills_detailed) || !profile.skills_detailed.length) profile.skills_detailed = skills.slice(0, 100);
+    const certs = ssrCertifications();
+    if (!Array.isArray(profile.certifications) || !profile.certifications.length) profile.certifications = certs.slice(0, 30);
+    const langs = ssrLanguages();
+    if (!Array.isArray(profile.languages) || !profile.languages.length) profile.languages = langs.slice(0, 20);
+    return profile;
   }
 
 
@@ -1294,25 +1373,27 @@
     });
 
     document.getElementById("thh-capture").onclick = async () => {
-      latestProfile = extractProfile();
-      renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
-      if (!isComplete(latestProfile) && !allowPartialOnce) {
-        allowPartialOnce = true;
-        const missing = missingFields(latestProfile).filter((field) => field !== "nome");
-        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
-        return;
-      }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
       try {
         btn.textContent = "Coletando perfil…";
         await triggerLazyLoad();
         latestProfile = extractProfile();
+        btn.textContent = "Consultando detalhes…";
+        latestProfile = await enrichProfileFromVoyager(latestProfile);
         btn.textContent = "Enriquecendo…";
         latestProfile = await enrichProfileFromDetails(latestProfile);
         renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
+      }
+      if (!isComplete(latestProfile) && !allowPartialOnce) {
+        allowPartialOnce = true;
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        const missing = missingFields(latestProfile).filter((field) => field !== "nome");
+        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
+        return;
       }
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
