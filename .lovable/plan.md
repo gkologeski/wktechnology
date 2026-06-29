@@ -1,94 +1,93 @@
-# Correção da Captura — Experiências, Educação, Skills e Sinais
-
 ## Diagnóstico
 
-Consultei o candidato `b23f4a4a-…` no banco. Os dados confirmam que o problema é **na captura, não no render**:
+**Erro 1 — `about` > 8000 caracteres (bmsoares, filipekuhnen)**
+O schema em `src/routes/api/public/hunting/capture.ts` declara `about: z.string().max(8000)`. Quando o LinkedIn entrega um "Sobre" mais longo (resumos extensos são comuns em perfis sêniores), o Zod rejeita o payload inteiro com HTTP 400 e **nada** é gravado — o usuário perde a captura por causa de um único campo.
 
-| Campo                | Estado no DB                                   |
-| -------------------- | ---------------------------------------------- |
-| `headline`, `about`  | Preenchidos corretamente                       |
-| `available_actions`  | Objeto preenchido                              |
-| `experiences`        | Array **vazio** (`length = 0`)                 |
-| `education`          | Array **vazio**                                |
-| `skills_detailed`    | Array **vazio**                                |
-| `certifications`     | Array **vazio**                                |
-| `photo_url`          | `null`                                         |
-| `open_to_work`       | `null` (deveria ser boolean)                   |
-| `current_company_data` | `null`                                       |
-
-Os blocos `ExperienceBlock`, `EducationBlock`, `SkillsDetailedBlock` e `SignalsBlock` em `rich-profile-blocks.tsx` já tratam estado vazio com mensagem "Sem … capturadas." — então o que o usuário vê reflete fielmente o banco.
-
-A causa raiz está em `extension/content.js`:
-
-1. `findSectionByTitle` procura `main section` e exige `h2` no topo. O LinkedIn atual envolve as seções em `section.artdeco-card` e o título fica em `div.pvs-header__container h2 span[aria-hidden="true"]`, frequentemente não detectado pela regex.
-2. As seções de Experiências/Educação/Skills no perfil principal vêm **truncadas** ("Mostrar todas as N experiências") e os itens completos só existem em `/details/experience`, `/details/education`, `/details/skills`. A extensão não navega para essas páginas nem aguarda a lazy-load.
-3. `extractOpenToWork` depende de texto visível — quando o badge `#OpenToWork` está no avatar como overlay/SVG, não é capturado.
-4. `extractAvatar` usa seletores antigos (`pv-top-card-profile-picture__image`); o LinkedIn migrou para `img.evi-image.profile-photo-edit__preview` e wrappers `EntityPhoto`.
+**Erro 2 — campos vazios (daniela-santana-4a9658236)**
+O perfil tem layout completo no LinkedIn, mas chega vazio no banco. Causas prováveis, em ordem:
+1. O perfil tem `?locale=pt` ou URL canônica diferente, e o `enrichProfileFromDetails` monta `/in/<slug>/details/...` a partir de `location.pathname` — se houver querystring ou trailing slash, o slug pode sair errado.
+2. Headline/cargo no topo do card agora vem dentro de `div.text-body-medium.break-words` sem âncora estável; o extractor atual depende de `h2` ou de classes que mudam.
+3. As páginas `/details/experience/` e `/details/education/` exigem cookies de 1ª parte e às vezes retornam HTML com `<code>` JSON embutido (estrutura SSR do LinkedIn) em vez de DOM renderizado — o `DOMParser` atual não lê esse JSON.
+4. O `triggerLazyLoad` espera 800ms fixos; em perfis longos isso é insuficiente e a extração roda antes do render.
 
 ## Escopo
 
-Apenas `extension/content.js` (extratores) + repackage do ZIP em `public/techhire-hunter.zip`. Sem mexer em backend, API, schema, RLS, render ou tipos.
+Dois pontos cirúrgicos, sem mexer em render, schema do banco, RLS ou outros módulos:
+
+1. `src/routes/api/public/hunting/capture.ts` — tolerância no campo `about` (e outros textos longos).
+2. `extension/content.js` — robustecer slug, headline/cargo, lazy-load e parser das páginas `/details/*`. Repackage de `public/techhire-hunter.zip` + bump `manifest.json` → `1.0.3`.
+
+Sem alterações em backend além do schema do endpoint público. Sem mudanças em outros endpoints.
 
 ## Plano técnico
 
-### 1. Robustecer `findSectionByTitle`
-- Ampliar o seletor para `main section, main div.artdeco-card`.
-- Procurar o título em qualquer descendente: `h2, h2 span[aria-hidden="true"], .pvs-header__container, .pv-profile-card__header`.
-- Considerar também a presença de âncoras: `div#experience`, `div#education`, `div#skills`, `div#licenses_and_certifications`, `div#languages`, `div#projects`, `div#publications`, `div#volunteer_experience` — quando achados, retornar o `closest("section")` ou o próximo container irmão.
-- Fallback: se a seção for encontrada via âncora, dispensar o regex de título.
+### 1. Backend — `capture.ts` deixa de rejeitar por tamanho
 
-### 2. Coletar dados das páginas `/details/*`
-Para superar a truncagem do perfil principal:
+Trocar `max(8000)` por **truncagem tolerante** nos campos de texto longo, preservando o resto do payload:
 
-- Detectar o slug do perfil a partir de `location.pathname` (`/in/<slug>/`).
-- Para cada seção que retornar 0 itens na página principal, fazer `fetch` em segundo plano de:
-  - `/in/<slug>/details/experience/`
-  - `/in/<slug>/details/education/`
-  - `/in/<slug>/details/skills/`
-  - `/in/<slug>/details/certifications/`
-  - `/in/<slug>/details/languages/`
-  - `/in/<slug>/details/projects/`
-  - `/in/<slug>/details/publications/`
-  - `/in/<slug>/details/volunteering/`
-- Parsear o HTML retornado com `DOMParser` e rodar `extractListItems` sobre `main`.
-- Limitar a 8 requisições paralelas com `Promise.all` e timeout de 8s por request; falhas silenciosas (mantém array vazio).
-- Cabeçalho: usa cookies da sessão do usuário (mesma origem `linkedin.com`), o que já funciona dentro do content script.
+- `about`: `z.preprocess((v) => typeof v === "string" ? v.slice(0, 8000) : v, z.string().max(8000).nullable().optional())`
+- `headline`: idem com 500.
+- `current_position`: idem com 400.
+- Aplicar o mesmo padrão em `location` (200) e `current_company` (200) por simetria.
 
-### 3. Pequena melhoria de scroll/lazy-load
-Antes da extração principal, fazer `window.scrollTo(0, document.body.scrollHeight)` seguido de `scrollTo(0,0)` com um `await wait(800ms)` para forçar render das seções lazy. Já evita boa parte dos casos em que o usuário não rolou a página.
+Adicionar no response um campo `warnings: string[]` listando quais campos foram truncados, para o usuário ter feedback (a extensão já mostra `setStatus`). Sem mudança de contrato — `warnings` é aditivo e ignorado por clients antigos.
 
-### 4. `extractOpenToWork`
-- Além do regex no texto, verificar:
-  - `document.querySelector('[aria-label*="Open to work"], [aria-label*="aberto a oportunidades"]')`
-  - `img[alt*="#OPENTOWORK" i]`
-  - Frame SVG do badge: `.pv-top-card-profile-picture__container .pv-open-to-frame, [data-test-id*="OPEN_TO_WORK"]`
-- Retornar `true` se qualquer um existir; `false` quando explicitamente não encontrado (em vez de `null`) somente após confirmar que a seção topo carregou.
+### 2. Extensão — slug robusto
 
-### 5. `extractAvatar`
-- Adicionar seletores novos: `img.evi-image.profile-photo-edit__preview`, `.pv-top-card-profile-picture img`, `button[aria-label*="foto" i] img`, e fallback `meta[property="og:image"]`.
+Em `extractProfile` / `enrichProfileFromDetails`:
+- Derivar o slug ignorando querystring, hash e trailing slash:
+  ```js
+  const m = location.pathname.match(/\/in\/([^/?#]+)/i);
+  const slug = m?.[1];
+  ```
+- Se `slug` ausente, abortar enrichment silenciosamente em vez de gerar URLs malformadas.
 
-### 6. `current_company_data`
-- Quando a 1ª experiência tiver `company` + link, extrair `name`, `linkedin_url` (`a[href*="/company/"]`) e logo (`img` dentro do `<li>`).
+### 3. Extensão — headline/cargo no topo
 
-### 7. Versão e bump
-- `capture_version` → `2.1`.
-- `manifest.json` → `1.0.2`.
-- Repackagem do ZIP via `nix run nixpkgs#zip` em `public/techhire-hunter.zip`.
+Adicionar fallbacks em `extractHeadline` e `extractCurrentPosition`:
+- `main section:first-of-type div.text-body-medium`
+- `main section:first-of-type .pv-text-details__left-panel div:nth-child(2)`
+- `meta[name="description"]` (a primeira linha geralmente é "Cargo na Empresa · Cidade").
+- Para `current_position`/`current_company`, se a 1ª experiência existir, usar `experiences[0].title` e `experiences[0].company` como último fallback.
 
-### 8. Validação manual
-1. Recarregar a extensão (`chrome://extensions` → Recarregar).
-2. Abrir `https://www.linkedin.com/in/wendelmarcosdossantos/`.
-3. Disparar a captura na sidebar.
-4. Verificar no `/candidates/<id>`: Experiências, Educação, Skills, Sinais e foto.
-5. Repetir em mais 2 perfis com layouts diferentes (1º grau e 3º grau).
+### 4. Extensão — parser das páginas `/details/*`
+
+O LinkedIn entrega essas páginas com `<code id="...">` contendo JSON SSR. Adicionar em `fetchDetailsHtml`:
+- Após `DOMParser`, varrer todos os `<code>` com JSON parseável e, se o DOM principal vier vazio, extrair itens de `included[]` com `$type` em (`com.linkedin.voyager.dash.identity.profile.Position`, `Education`, `Skill`, `Certification`, `Language`).
+- Mapear para o formato já consumido pelos blocos: `{ title, company, start_date, end_date, description }` etc.
+- Manter fallback DOM atual; só usar JSON se DOM vier com 0 itens.
+
+### 5. Extensão — lazy-load adaptativo
+
+Substituir `await wait(800)` por loop curto:
+- até 5 iterações de `scrollTo(bottom) → wait(400) → scrollTo(top) → wait(200)`;
+- parar antes se `document.querySelector('#experience')` e `#education` já tiverem `li` filhos.
+
+### 6. Versão e empacotamento
+
+- `extension/manifest.json` → `1.0.3`.
+- `capture_version` no payload → `2.2`.
+- Repackage: `cd extension && nix run nixpkgs#zip -- -r ../public/techhire-hunter.zip .`
+
+### 7. Validação manual
+
+1. Recarregar extensão (`chrome://extensions` → Recarregar; deve mostrar 1.0.3).
+2. Capturar `bmsoares` e `filipekuhnen` → esperado: salvar com sucesso, status mostra "about truncado".
+3. Capturar `daniela-santana-4a9658236` → esperado: cargo, experiências, educação, skills preenchidos no `/candidates/<id>`.
+4. Recapturar `wendelmarcosdossantos` para garantir não-regressão.
 
 ## Fora do escopo
 
-- Mudanças no endpoint `/api/public/hunting/capture.ts` (já tolera arrays/objetos/strings após o fix anterior).
-- Render dos blocos (`rich-profile-blocks.tsx`) — está correto, apenas reflete dados vazios.
-- Schema do banco e RLS.
+- Render dos blocos em `rich-profile-blocks.tsx` (já funciona quando o dado chega).
+- Schema do banco (`ats_candidates.about` é `text`, sem limite).
+- Outras rotas de hunting (`bulk-capture`, `enrich`).
 
 ## Risco
 
-- O `fetch` para `/in/<slug>/details/*` é feito pelo browser do usuário com a sessão dele — sem violar ToS além do que a captura principal já faz.
-- Se o LinkedIn alterar a estrutura das páginas `/details/*`, cada extractor falha de forma isolada e o restante continua funcionando.
+- Truncagem silenciosa de `about`: mitigado por `warnings[]` retornado ao cliente e exibido no status da sidebar.
+- Parser JSON SSR do LinkedIn pode mudar: o fallback é o DOM atual, então a regressão máxima é voltar ao comportamento de hoje.
+- Sem alterações em RLS, auth, schema, server functions internas ou outros módulos.
+
+## Relatório final (a entregar após build)
+
+Resumo, arquivos alterados (`capture.ts`, `content.js`, `manifest.json`, `techhire-hunter.zip`), validação manual com os 3 perfis citados, riscos remanescentes e próximo passo recomendado (telemetria opcional de quais campos mais truncam).

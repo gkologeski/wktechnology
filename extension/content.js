@@ -277,9 +277,18 @@
     const jt = clean(person?.jobTitle);
     if (jt) return jt;
     const og = safe(() => document.querySelector('meta[property="og:description"]')?.content);
-    if (og) return clean(og.split(/[·•]/)[0]);
+    if (og) {
+      const head = clean(og.split(/[·•|]/)[0]);
+      if (looksLikeHeadline(head)) return head;
+    }
+    const meta = safe(() => document.querySelector('meta[name="description"]')?.content);
+    if (meta) {
+      const head = clean(meta.split(/[·•|]/)[0]);
+      if (looksLikeHeadline(head)) return head;
+    }
     return "";
   }
+
 
   function companyFromHeadline(headline) {
     if (!headline) return "";
@@ -462,13 +471,62 @@
   async function triggerLazyLoad() {
     return safe(async () => {
       const origin = window.scrollY;
-      window.scrollTo(0, document.body.scrollHeight);
-      await wait(600);
+      for (let i = 0; i < 5; i++) {
+        window.scrollTo(0, document.body.scrollHeight);
+        await wait(400);
+        const exp = document.getElementById("experience");
+        const edu = document.getElementById("education");
+        const hasItems = (el) =>
+          el?.closest("section")?.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity").length;
+        if (hasItems(exp) && hasItems(edu)) break;
+      }
       window.scrollTo(0, Math.floor(document.body.scrollHeight / 2));
-      await wait(400);
-      window.scrollTo(0, origin);
       await wait(200);
+      window.scrollTo(0, origin);
+      await wait(150);
     });
+  }
+
+  // Parser auxiliar: LinkedIn SSR embute JSON em <code> com array `included`.
+  // Quando o DOM da página /details/* vier sem spans renderizados, caímos para o JSON.
+  function extractListItemsFromCodeJson(doc, kind) {
+    if (!doc) return [];
+    const typeMatchers = {
+      experience: /Position($|\b)/,
+      education: /Education($|\b)/,
+      skills: /\.Skill($|\b)/,
+      certifications: /Certification($|\b)/,
+      languages: /Language($|\b)/,
+      projects: /Project($|\b)/,
+      publications: /Publication($|\b)/,
+      volunteering: /Volunteer/,
+    };
+    const re = typeMatchers[kind];
+    if (!re) return [];
+    const codes = doc.querySelectorAll('code[id^="bpr-guid"], code[style*="display: none"]');
+    const out = [];
+    for (const c of codes) {
+      const raw = c.textContent || "";
+      if (raw.length < 50 || !raw.includes("{")) continue;
+      let json;
+      try { json = JSON.parse(raw); } catch { continue; }
+      const included = Array.isArray(json?.included) ? json.included : [];
+      for (const it of included) {
+        const t = it?.$type || it?.["$type"] || "";
+        if (!re.test(t)) continue;
+        const lines = [];
+        const push = (v) => { const s = clean(v); if (s) lines.push(s); };
+        // Coletar campos textuais comuns
+        push(it.title || it.name || it.schoolName);
+        push(it.companyName || it.subtitle || it.degreeName || it.fieldOfStudy || it.issuer || it.publisher);
+        push(it.dateRange || it.timePeriod || it.issuedOn || it.publishedOn);
+        push(it.locationName);
+        push(it.description);
+        if (lines.length) out.push(lines);
+      }
+      if (out.length) break;
+    }
+    return out;
   }
 
   async function fetchDetailsHtml(slug, sectionPath) {
@@ -485,6 +543,7 @@
       return null;
     }
   }
+
 
   function extractAbout() {
     return safe(() => {
@@ -615,9 +674,10 @@
   ];
 
   async function enrichProfileFromDetails(profile) {
-    const m = (location.pathname || "").match(/\/in\/([^/]+)/);
+    const m = (location.pathname || "").match(/\/in\/([^/?#]+)/i);
     if (!m) return profile;
-    const slug = decodeURIComponent(m[1]);
+    const slug = decodeURIComponent(m[1]).replace(/\/+$/, "");
+    if (!slug) return profile;
 
     await Promise.all(
       DETAILS_SECTIONS.map(async ([field, path, mapper, limit]) => {
@@ -625,7 +685,8 @@
           if (Array.isArray(profile[field]) && profile[field].length > 0) return;
           const doc = await fetchDetailsHtml(slug, path);
           if (!doc) return;
-          const items = extractListItemsFromDoc(doc).slice(0, limit);
+          let items = extractListItemsFromDoc(doc).slice(0, limit);
+          if (!items.length) items = extractListItemsFromCodeJson(doc, path).slice(0, limit);
           const mapped = items
             .map(mapper)
             .filter((x) => Object.values(x).some((v) => v));
@@ -638,6 +699,7 @@
 
     return profile;
   }
+
 
 
 
@@ -798,7 +860,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.1",
+      capture_version: "2.2",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,

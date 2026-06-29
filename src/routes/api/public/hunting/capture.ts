@@ -24,17 +24,26 @@ const coerceObject = (v: unknown): unknown => {
   return {};
 };
 
+const truncStr = (max: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" ? v.slice(0, max) : v),
+    z.string().max(max).nullable().optional(),
+  );
+
 const Payload = z.object({
   linkedin_url: z.string().url().max(500),
-  full_name: z.string().min(1).max(200).optional().default(""),
-  current_position: z.string().max(400).optional().nullable(),
-  current_company: z.string().max(200).optional().nullable(),
-  location: z.string().max(200).optional().nullable(),
+  full_name: z.preprocess(
+    (v) => (typeof v === "string" ? v.slice(0, 200) : v),
+    z.string().min(1).max(200).optional().default(""),
+  ),
+  current_position: truncStr(400),
+  current_company: truncStr(200),
+  location: truncStr(200),
   source: z.string().max(60).optional(),
   // Perfil profissional
-  headline: z.string().max(500).optional().nullable(),
-  about: z.string().max(8000).optional().nullable(),
-  photo_url: z.string().max(1000).optional().nullable(),
+  headline: truncStr(500),
+  about: truncStr(8000),
+  photo_url: truncStr(1000),
   experiences: z.array(z.any()).max(50).optional().nullable(),
   education: z.array(z.any()).max(50).optional().nullable(),
   certifications: z.array(z.any()).max(50).optional().nullable(),
@@ -43,6 +52,7 @@ const Payload = z.object({
   projects: z.array(z.any()).max(50).optional().nullable(),
   publications: z.array(z.any()).max(50).optional().nullable(),
   volunteering: z.array(z.any()).max(50).optional().nullable(),
+
   // Sinais de recrutamento — tolerantes a versões antigas da extensão que enviam strings
   open_to_work: z
     .preprocess((v) => {
@@ -85,9 +95,21 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
         if (denied) return denied;
 
         const body = await request.json().catch(() => null);
+        const warnings: string[] = [];
+        if (body && typeof body === "object") {
+          const checks: Array<[string, number]> = [
+            ["about", 8000], ["headline", 500], ["current_position", 400],
+            ["current_company", 200], ["location", 200], ["photo_url", 1000],
+          ];
+          for (const [k, max] of checks) {
+            const v = (body as Record<string, unknown>)[k];
+            if (typeof v === "string" && v.length > max) warnings.push(`${k}_truncated_${v.length}_to_${max}`);
+          }
+        }
         const parsed = Payload.safeParse(body);
         if (!parsed.success)
-          return jsonResponse({ error: parsed.error.flatten() }, { status: 400 });
+          return jsonResponse({ error: parsed.error.flatten(), warnings }, { status: 400 });
+
 
         const linkedinUrl = normalizeLinkedinUrl(parsed.data.linkedin_url);
         const ownerId = auth.ownerId;
@@ -181,7 +203,7 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           captured_by: null,
         } as never);
 
-        return jsonResponse({ capture_id: candidateId, candidate_id: candidateId, created });
+        return jsonResponse({ capture_id: candidateId, candidate_id: candidateId, created, warnings });
       },
     },
   },
