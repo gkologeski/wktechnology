@@ -1,75 +1,70 @@
+# Documentação TechHire — com Print Screens
 
-## Diagnóstico
+## Objetivo
+Gerar um documento de referência (PDF + Markdown) cobrindo **todas as funcionalidades atuais do TechHire ATS**, com capturas de tela reais de cada módulo, descrição funcional, fluxos principais e dicas de uso.
 
-**1. Vagas não abrem para detalhes**
-- A rota `/_authenticated/(ats)/jobs/$id` existe e a página renderiza (você está nela: `/jobs/3213bc9a…`).
-- O erro presente no console é `Failed to fetch dynamically imported module … virtual:tanstack-start-client-entry`. Isso é um chunk obsoleto: depois das últimas reescritas de `jobs.tsx` e `jobs.$id.tsx`, abas antigas (com bundle anterior) tentam carregar um arquivo que não existe mais e o clique em "Detalhes" falha silenciosamente.
-- A correção precisa atuar em duas frentes: tornar o `<Link>` resistente a falha de import dinâmico (fallback para `window.location` quando o lazy import rejeita) e adicionar um listener global que recarrega a aba quando um `chunk load error` é detectado.
+## Entregáveis
+1. `/mnt/documents/techhire-handbook.pdf` — documento navegável com sumário, seções e screenshots embutidos.
+2. `/mnt/documents/techhire-handbook.md` — versão Markdown editável.
+3. `/mnt/documents/techhire-screenshots/` — pasta com todos os PNGs capturados (referenciados pelo PDF/MD).
 
-**2. Kanbans não permitem mover cards**
-- `/_authenticated/(ats)/jobs.tsx` (Kanban por Status e por Departamento) usa `JobKanbanCard` apenas como `<Link>` — sem `draggable`, sem `onDragStart`, e as colunas sem `onDragOver`/`onDrop`.
-- `/_authenticated/(ats)/candidates.index.tsx` (Kanban por status derivado) idem.
-- Apenas o pipeline dentro de `jobs.$id.tsx` (candidatos por estágio) já tem DnD funcional.
+## Estrutura do documento
+1. **Visão Geral** — o que é o TechHire, posicionamento (quiet premium), arquitetura host/workspace.
+2. **Primeiros Passos** — login, troca de módulo (Module Switcher), Hub `/workspace`, onboarding.
+3. **Dashboard & Insights** (`/insights`) — KPIs, gráficos, AI insights.
+4. **Vagas** (`/jobs`, `/jobs/$id`) — lista, kanban por status e por departamento (DnD), detalhes 3 colunas, pipeline, scorecards, copilot, multi-posting, credenciais de job boards, página de carreiras (`/careers`).
+5. **Candidatos** (`/candidates`, `/candidates/$id`) — lista/cards/kanban, DnD com transições seguras, detalhes 3 colunas, CV parser (Gemini/PDF), copilot, async video, scorecards.
+6. **Pipelines** (`/pipelines`) — editor visual, estágios, default.
+7. **Entrevistas** — agendamento, painel, self-scheduling, kits de entrevista, vídeo gravado.
+8. **Ofertas & eSign** (`/offer/$token`) — criação, envio, aceite público.
+9. **Sourcing & Talent CRM** (`/sourcing/*`) — Inbox, Pools, Sequências, Indicações, Analytics.
+10. **Hunting LinkedIn** (`/hunting`) — extensão, pairing, captura, templates.
+11. **Inteligência (IA)** — Match score, JD Generator, AI Recruiter Copilot, Notetaker (`/notetaker`).
+12. **Programa de Indicações 2.0** — referrals, bônus, tracking.
+13. **DEI & Analytics Avançado** — dashboards, painel scheduling.
+14. **LGPD Hub** — consentimentos, retenção, exportação.
+15. **Workspace & Configurações** — membros, convites brancos, branding, API keys, calendários (sync gravações), SLA, billing.
+16. **Integrações & API Pública** (`/api/public/v1/ats/*`) — jobs, applications, hire, chaves.
+17. **Timeline Unificada & Associações** — timeline pins, espelhamento.
+18. **Segurança** — RLS por workspace, audit trail, posturas aplicadas.
+19. **Roadmap atual** (resumo) — Ondas 5–11 conforme `.lovable/plan.md` e backlog.
 
-## Escopo do que será feito
+Cada seção segue o template: **O que é · Para que serve · Como acessar (rota) · Print(s) · Passo a passo · Dicas / limitações**.
 
-### A. Abertura de detalhes de vagas (correção de regressão)
-1. Em `src/router.tsx` (ou `src/routes/__root.tsx`, onde já existe wiring global): registrar `window.addEventListener('vite:preloadError', …)` e `window.addEventListener('error', …)` para detectar `ChunkLoadError` / `Failed to fetch dynamically imported module` e fazer **um único** `window.location.reload()` (com flag em `sessionStorage` para não cair em loop). Padrão recomendado pela própria Vite.
-2. Em `JobCard` e `JobKanbanCard` (lista de vagas): manter `<Link>` mas adicionar `onClick` defensivo que, em caso de exceção do router, faz `window.location.assign('/jobs/' + job.id)` como último recurso.
-3. Nenhuma mudança em rotas ou no server-side; é apenas tolerância a chunks obsoletos.
+## Como os screenshots serão capturados
+Via Playwright headless no sandbox (já documentado em `<browser-use>`), restaurando sessão Supabase quando `LOVABLE_BROWSER_AUTH_STATUS=injected`. Para cada rota da lista acima:
+- viewport 1280×1800;
+- `await page.goto("http://localhost:8080<rota>", wait_until="networkidle")`;
+- aguardar seletor estável (heading principal) antes do `page.screenshot`;
+- salvar em `/tmp/browser/handbook/screenshots/` e copiar para `/mnt/documents/techhire-screenshots/`;
+- para fluxos que dependem de dados (ex.: detalhes de vaga, kanban com cards), pegar o **primeiro** registro existente via DOM; se vazio, capturar o EmptyState e anotar isso na legenda.
+- rotas públicas (carreiras, offer, interview, schedule, book) capturadas sem sessão.
 
-### B. Kanban de Vagas — drag-and-drop
-1. Tornar cada `JobKanbanCard` arrastável (`draggable`, `onDragStart` setando `dragging`) e cada coluna receptiva (`onDragOver`, `onDrop`).
-2. Ao soltar no Kanban por **Status**: optimistic update local + `saveAtsJob({ id, status: novoStatus })` (server fn já existente). Toast de sucesso / rollback em erro.
-3. Ao soltar no Kanban por **Departamento**: optimistic update + `saveAtsJob({ id, metadata: { ...metadata, department: novoDepto } })`. Verificar se `saveAtsJob` aceita `metadata`; se não aceitar, estender a server fn de forma aditiva (apenas mesclando o campo `department` no JSONB existente — sem tocar em outros campos).
-4. Garantir feedback visual (opacity no card sendo arrastado, ring na coluna destino), foco visível e `aria-label` nas colunas.
-5. Persistir estado consistente: refetch leve apenas no card afetado em caso de erro.
+Se `LOVABLE_BROWSER_AUTH_STATUS` ≠ `injected`, paro e peço o login no preview antes de continuar — não invento screenshots.
 
-### C. Kanban de Candidatos — drag-and-drop com transições seguras
-Status é **derivado** de ofertas/entrevistas/aplicações. Conforme decidido, só aceitar transições mutáveis e mostrar aviso nas demais:
+## Geração do PDF
+Usar a skill **pdf** com ReportLab (Platypus):
+- Capa com nome do produto, versão, data.
+- Sumário automático.
+- Tipografia: Helvetica/Arial; títulos 18/14/12; corpo 10.
+- Cada seção: H1 do módulo, subseções com prints (largura máx 6.5"), legendas, bullets.
+- Rodapé com paginação.
+- QA obrigatório: `pdftoppm` → inspeção visual de **todas** as páginas, corrigir overflow/clipping antes de entregar.
 
-| De → Para         | Ação                                                              |
-| ----------------- | ----------------------------------------------------------------- |
-| `* → archived`    | `UPDATE ats_candidates SET archived = true` (ou flag equivalente) |
-| `archived → new`  | `UPDATE ats_candidates SET archived = false`                      |
-| `new → in_process`| Mostrar toast: "Para mover para Em processo, associe o candidato a uma vaga." + abrir o dialog `AssociateCandidateJobDialog` já existente |
-| `in_process → new`| Toast informativo: "Em processo é derivado de aplicações ativas. Encerre as aplicações para retornar a Novo." |
-| Demais            | Toast: "Esta transição é derivada automaticamente e não pode ser ajustada manualmente." e rollback visual |
-
-1. Verificar/adicionar coluna `archived boolean default false` em `ats_candidates` se ainda não existir (migration aditiva apenas se necessário). Atualizar `candidate-status.functions.ts` para considerar `archived = true` como status `archived` antes das demais derivações.
-2. Criar server fn `setCandidateArchived({ id, archived })` em `src/lib/ats/ats.functions.ts`.
-3. Tornar cada card do kanban arrastável e colunas receptivas. Centralizar a lógica de transição em um helper `attemptCandidateStatusTransition(from, to, candidate)` no próprio arquivo de rota.
-4. Após operação bem-sucedida, refetch só do status do candidato movido (já existe `getCandidateStatuses`).
-
-### D. Revisão e validações obrigatórias
-- Rodar `tsgo --noEmit` ao final.
-- Reproduzir manualmente cada kanban (drop, rollback, toasts).
-- Conferir foco visível, contraste, `aria-label`, dark mode e responsividade.
-- Garantir que nenhuma funcionalidade pré-existente (filtros, navegação, criação de vagas, scorecards) seja afetada.
+A versão Markdown referencia os mesmos PNGs com caminhos relativos.
 
 ## Fora de escopo
-- Redesign visual dos kanbans.
-- Mudanças em RLS, autenticação, ou regras de derivação além do necessário para `archived`.
-- DnD em outras telas (Pipelines `/pipelines`, Talent Pools, etc.).
-- Migração de "status do candidato" para campo persistido full — apenas `archived` será persistido.
+- Nenhuma alteração de código, rotas, schema, RLS, design system ou conteúdo do produto.
+- Sem tradução para outros idiomas (PT-BR apenas).
+- Sem vídeo/gif animado — somente PNGs estáticos.
+- Não documentar telas removidas ou módulos não-TechHire (CRM, TechSales) salvo o necessário para explicar o Module Switcher.
 
-## Detalhes técnicos (referência)
+## Riscos / pendências
+- Telas que exigem dados de demonstração inexistentes aparecerão como EmptyState — será sinalizado na legenda.
+- Se a sessão Supabase não estiver injetada, a captura das rotas autenticadas fica bloqueada até o usuário logar no preview.
+- Funcionalidades dependentes de credenciais externas (LinkedIn, Indeed, eSign provider real) serão documentadas com o estado atual (mock/integration-ready), sem simular sucesso.
 
-```text
-Arquivos a editar:
-- src/routes/__root.tsx               → listener global de chunk error (1 reload guard)
-- src/routes/_authenticated/(ats)/jobs.tsx
-                                      → DnD nos kanbans Status e Departamento
-- src/routes/_authenticated/(ats)/candidates.index.tsx
-                                      → DnD com transições seguras
-- src/lib/ats/ats.functions.ts        → setCandidateArchived; possível extensão
-                                        de saveAtsJob para aceitar `metadata`
-- src/lib/ats/candidate-status.functions.ts
-                                      → considerar archived antes das demais
-
-Arquivos a criar:
-- (nenhum novo componente; reuso de AssociateCandidateJobDialog já existente)
-
-Migration (aditiva, somente se a coluna não existir hoje):
-- ALTER TABLE public.ats_candidates ADD COLUMN IF NOT EXISTS archived boolean NOT NULL DEFAULT false;
-```
+## Confirmação rápida antes de executar
+1. Profundidade: **handbook completo** (todas as rotas listadas) — confirma? Se preferir um guia mais enxuto (só os 6–8 módulos principais), avise.
+2. Formato: **PDF + Markdown + pasta de PNGs**, salvos em `/mnt/documents/`. OK?
+3. Idioma: **PT-BR**. OK?
