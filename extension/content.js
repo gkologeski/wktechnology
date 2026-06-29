@@ -382,19 +382,50 @@
   // Cada um é isolado e tolerante a falhas (LinkedIn muda DOM com frequência)
   // ──────────────────────────────────────────────────────────────
 
-  function findSectionByTitle(titleRegex) {
-    const sections = document.querySelectorAll("main section");
-    for (const s of sections) {
-      const h2 = s.querySelector("h2, .pvs-header__title, .pvs-header__container h2");
-      const txt = clean(h2?.textContent || "");
-      if (txt && titleRegex.test(txt)) return s;
+  const ANCHOR_IDS = {
+    experience: ["experience"],
+    education: ["education"],
+    skills: ["skills"],
+    certifications: ["licenses_and_certifications", "certifications"],
+    languages: ["languages"],
+    projects: ["projects"],
+    publications: ["publications"],
+    volunteering: ["volunteer_experience", "volunteering"],
+    recommendations: ["recommendations_received", "recommendations"],
+    activity: ["content_collections", "activity"],
+  };
+
+  function findSectionByAnchor(ids) {
+    for (const id of ids) {
+      const a = document.getElementById(id);
+      if (a) return a.closest("section") || a.parentElement;
     }
     return null;
   }
 
+  function findSectionByTitle(titleRegex) {
+    const sections = document.querySelectorAll("main section, main div.artdeco-card");
+    for (const s of sections) {
+      const headers = s.querySelectorAll(
+        "h2, h2 span[aria-hidden='true'], .pvs-header__title span, .pvs-header__title, .pv-profile-card__header h2, header h2",
+      );
+      for (const h of headers) {
+        const txt = clean(h.textContent || "");
+        if (txt && titleRegex.test(txt)) return s;
+      }
+    }
+    return null;
+  }
+
+  function findSection(kind, titleRegex) {
+    return findSectionByAnchor(ANCHOR_IDS[kind] || []) || findSectionByTitle(titleRegex);
+  }
+
   function extractListItems(section) {
     if (!section) return [];
-    const items = section.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity");
+    const items = section.querySelectorAll(
+      "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity",
+    );
     const out = [];
     for (const li of items) {
       const lines = uniqueLines(getLines(li).filter((l) => !isNoiseLine(l)));
@@ -402,6 +433,57 @@
       if (lines.length) out.push(lines);
     }
     return out;
+  }
+
+  // Para documentos parseados via fetch (sem layout — innerText não funciona)
+  function extractListItemsFromDoc(doc) {
+    if (!doc) return [];
+    const main = doc.querySelector("main") || doc.body;
+    if (!main) return [];
+    const items = main.querySelectorAll(
+      "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity",
+    );
+    const out = [];
+    for (const li of items) {
+      const spans = li.querySelectorAll('span[aria-hidden="true"]');
+      const lines = [];
+      spans.forEach((s) => {
+        const t = clean(s.textContent || "");
+        if (t) lines.push(t);
+      });
+      const filtered = uniqueLines(lines.filter((l) => !isNoiseLine(l)));
+      if (filtered.length) out.push(filtered);
+    }
+    return out;
+  }
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function triggerLazyLoad() {
+    return safe(async () => {
+      const origin = window.scrollY;
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(600);
+      window.scrollTo(0, Math.floor(document.body.scrollHeight / 2));
+      await wait(400);
+      window.scrollTo(0, origin);
+      await wait(200);
+    });
+  }
+
+  async function fetchDetailsHtml(slug, sectionPath) {
+    try {
+      const url = `https://www.linkedin.com/in/${encodeURIComponent(slug)}/details/${sectionPath}/`;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
+      clearTimeout(t);
+      if (!resp.ok) return null;
+      const html = await resp.text();
+      return new DOMParser().parseFromString(html, "text/html");
+    } catch {
+      return null;
+    }
   }
 
   function extractAbout() {
