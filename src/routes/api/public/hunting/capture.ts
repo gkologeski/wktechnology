@@ -203,7 +203,7 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           captured_by: null,
         } as never);
 
-        return jsonResponse({ capture_id: candidateId, candidate_id: candidateId, created });
+        return jsonResponse({ capture_id: candidateId, candidate_id: candidateId, created, warnings });
       },
     },
   },
