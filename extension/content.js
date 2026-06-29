@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v0.2.5)
+// TechHire Hunter — Content script (v1.0.5)
 // Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
@@ -123,7 +123,7 @@
       !isNoiseLine(value) &&
       (/\|/.test(value) ||
         /\bat\b|\bem\b|\bna\b|\bno\b|@/i.test(value) ||
-        /\b(account|sales|marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|recruiter|growth|designer|product|software|programador|arquiteto|telecom|cloud|infra|government|governo)\b/i.test(
+        /\b(account|sales|marketing|developer|engineer|analyst|analista|especialista|consultor|manager|diretor|founder|recruiter|growth|designer|product|software|programador|arquiteto|telecom|cloud|infra|government|governo|professor|professora|docente|educador|educadora|pesquisador|pesquisadora|coordenador|coordenadora|estudante|teacher|lecturer|researcher)\b/i.test(
           value,
         ))
     );
@@ -259,6 +259,20 @@
   // objetos como FONTE PRIMÁRIA — DOM e /details/* viram fallback.
   // ──────────────────────────────────────────────────────────────
   let _ssrCache = null;
+  let _ssrExtraItems = [];
+  function collectSsrObjects(value, out = [], seen = new WeakSet()) {
+    if (!value || typeof value !== "object") return out;
+    if (seen.has(value)) return out;
+    seen.add(value);
+    if (typeof value.$type === "string" || typeof value["$type"] === "string") out.push(value);
+    if (Array.isArray(value)) {
+      for (const item of value) collectSsrObjects(item, out, seen);
+      return out;
+    }
+    for (const v of Object.values(value)) collectSsrObjects(v, out, seen);
+    return out;
+  }
+
   function ssrIncluded(doc = document) {
     if (doc === document && _ssrCache) return _ssrCache;
     const items = [];
@@ -271,19 +285,52 @@
       try {
         const json = JSON.parse(raw);
         if (Array.isArray(json?.included)) items.push(...json.included);
+        collectSsrObjects(json, items);
       } catch { /* ignore */ }
     }
-    if (doc === document) _ssrCache = items;
-    return items;
+    const deduped = [];
+    const seen = new Set();
+    for (const item of items) {
+      const key = item?.entityUrn || item?.urn || item?.trackingId || JSON.stringify(item).slice(0, 300);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+    }
+    const merged = doc === document ? dedupeSsrItems([...deduped, ..._ssrExtraItems]) : deduped;
+    if (doc === document) _ssrCache = merged;
+    return merged;
+  }
+
+  function dedupeSsrItems(items) {
+    const deduped = [];
+    const seen = new Set();
+    items.forEach((item, index) => {
+      if (!item || typeof item !== "object") return;
+      const key = item.entityUrn || item.urn || item.objectUrn || item.trackingId || `${item.$type || "unknown"}:${index}:${JSON.stringify(item).slice(0, 220)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      deduped.push(item);
+    });
+    return deduped;
+  }
+
+  function mergeSsrJson(json) {
+    const items = [];
+    if (Array.isArray(json?.included)) items.push(...json.included);
+    collectSsrObjects(json, items);
+    if (!items.length) return 0;
+    _ssrExtraItems = dedupeSsrItems([..._ssrExtraItems, ...items]);
+    _ssrCache = null;
+    return items.length;
   }
 
   const SSR_TYPES = {
-    position: /\.Position($|[A-Z])/,
-    education: /\.Education($|[A-Z])/,
-    skill: /\.Skill($|[A-Z])/,
-    certification: /\.Certification($|[A-Z])/,
-    language: /\.Language($|[A-Z])/,
-    topCard: /(\.ProfileTopCard|\.MiniProfile|\.Profile)$/,
+    position: /(\.Position|ProfilePosition|PositionView|PositionGroup)/,
+    education: /(\.Education|EducationView|ProfileEducation)/,
+    skill: /(\.Skill|SkillView|StandardizedSkill)/,
+    certification: /(\.Certification|CertificationView)/,
+    language: /(\.Language|LanguageView)/,
+    topCard: /(\.ProfileTopCard|\.MiniProfile|\.Profile|TopCard)/,
   };
 
   const ssrFind = (kind, doc) =>
@@ -292,10 +339,32 @@
       return typeof t === "string" && SSR_TYPES[kind].test(t);
     });
 
-  function ssrText(node) {
+  function ssrText(node, depth = 0) {
     if (!node) return "";
     if (typeof node === "string") return clean(node);
-    if (typeof node === "object") return clean(node.text || node.localizedName || node.value || "");
+    if (typeof node === "number") return clean(String(node));
+    if (typeof node === "object" && depth < 4) {
+      const direct = clean(
+        node.text ||
+          node.localizedName ||
+          node.value ||
+          node.name ||
+          node.title ||
+          node.headline ||
+          node.description ||
+          "",
+      );
+      if (direct) return direct;
+      if (Array.isArray(node.attributes)) {
+        const joined = node.attributes.map((a) => ssrText(a, depth + 1)).filter(Boolean).join(" ");
+        if (joined) return clean(joined);
+      }
+      for (const [key, value] of Object.entries(node)) {
+        if (/urn|tracking|control|navigation|image|logo|vector|paging/i.test(key)) continue;
+        const txt = ssrText(value, depth + 1);
+        if (txt && !/^\{/.test(txt)) return txt;
+      }
+    }
     return "";
   }
   function ssrDateRange(dr) {
@@ -311,22 +380,30 @@
     return a ? `${a} – ${b}` : "";
   }
 
-  function ssrTopCard() {
+  function ssrTopCard(fullName = "") {
     const arr = ssrFind("topCard");
+    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    let best = null;
+    let bestScore = -999;
     for (const it of arr) {
-      const headline = ssrText(it.headline) || ssrText(it.occupation) || ssrText(it.subline);
-      if (headline) {
-        return {
-          headline,
-          location:
-            ssrText(it.geoLocationName) ||
-            ssrText(it.locationName) ||
-            ssrText(it.location) ||
-            "",
-        };
+      const first = ssrText(it.firstName);
+      const last = ssrText(it.lastName);
+      const name = clean(ssrText(it.fullName) || ssrText(it.name) || [first, last].filter(Boolean).join(" "));
+      const publicIdentifier = clean(it.publicIdentifier || it.publicProfileUrl || "").toLowerCase();
+      const headline = ssrText(it.headline) || ssrText(it.occupation) || ssrText(it.subline) || ssrText(it.summary);
+      const location = ssrText(it.geoLocationName) || ssrText(it.locationName) || ssrText(it.address);
+      let score = 0;
+      if (headline) score += 8;
+      if (location) score += 4;
+      if (name && lower(name) === lower(fullName)) score += 20;
+      if (slug && publicIdentifier.includes(slug)) score += 30;
+      if (/MiniProfile/i.test(it.$type || "")) score -= 6;
+      if (score > bestScore) {
+        bestScore = score;
+        best = { headline, location, name };
       }
     }
-    return null;
+    return best?.headline || best?.location ? best : null;
   }
 
   function ssrExperiences() {
@@ -368,8 +445,30 @@
 
   function extractHeadline(card, person, fullName) {
     // 1. JSON SSR included[] do documento atual
-    const fromSSR = ssrTopCard()?.headline;
+    const fromSSR = ssrTopCard(fullName)?.headline;
     if (fromSSR && lower(fromSSR) !== lower(fullName)) return clean(fromSSR);
+
+    const fromH1Block = safe(() => {
+      const h1 = document.querySelector("main h1") || document.querySelector("h1");
+      if (!h1) return "";
+      const scopes = [
+        h1.closest(".pv-text-details__left-panel"),
+        h1.closest(".ph5.pb5"),
+        h1.closest(".mt2.relative"),
+        h1.parentElement,
+        h1.parentElement?.parentElement,
+      ].filter(Boolean);
+      for (const scope of scopes) {
+        const lines = uniqueLines(getLines(scope).filter((line) => !isNoiseLine(line)));
+        const idx = lines.findIndex((line) => lower(line.replace(/\s*[·•]\s*\d+º?.*$/i, "")) === lower(fullName));
+        const candidates = idx >= 0 ? lines.slice(idx + 1, idx + 5) : lines.slice(0, 5);
+        for (const line of candidates) {
+          if (line && lower(line) !== lower(fullName) && !looksLikeLocation(line)) return line;
+        }
+      }
+      return "";
+    });
+    if (fromH1Block && looksLikeHeadline(fromH1Block)) return clean(fromH1Block);
 
     if (card) {
       const sels = [
@@ -441,6 +540,10 @@
     } catch {
       /* ignore */
     }
+
+    const fromHeadline = companyFromHeadline(headline);
+    if (fromHeadline) return fromHeadline;
+
     if (card) {
       const btn = card.querySelector(
         'button[aria-label*="Empresa atual"], button[aria-label*="Current company"], button[aria-label*="Empresa actual"], a[aria-label*="Empresa atual"], a[aria-label*="Current company"], a[aria-label*="Empresa actual"]',
@@ -456,17 +559,14 @@
       if (txt && !isNoiseLine(txt)) return txt;
     }
 
-    const fromHeadline = companyFromHeadline(headline);
-    if (fromHeadline) return fromHeadline;
-
     const lines = extractProfileLines(card, fullName);
     const companyLine = lines.find((line) => line !== headline && looksLikeCompany(line));
     return companyLine ? sanitizeCompany(companyLine) : "";
   }
 
   function extractLocation(card, person, fullName) {
-    const ssrLoc = ssrTopCard()?.location;
-    if (ssrLoc) return ssrLoc;
+    const ssrLoc = ssrTopCard(fullName)?.location;
+    if (ssrLoc && looksLikeLocation(ssrLoc)) return ssrLoc;
     try {
       const addr = person?.address;
       if (typeof addr === "string" && addr.trim()) return clean(addr);
@@ -538,7 +638,20 @@
   function findSectionByAnchor(ids) {
     for (const id of ids) {
       const a = document.getElementById(id);
-      if (a) return a.closest("section") || a.parentElement;
+      if (!a) continue;
+      const ownSection = a.closest("section");
+      if (ownSection) return ownSection;
+      let node = a.nextElementSibling || a.parentElement?.nextElementSibling;
+      for (let i = 0; node && i < 8; i += 1, node = node.nextElementSibling) {
+        if (node.matches?.("section, .artdeco-card, div.pv-profile-card")) return node;
+        const nested = node.querySelector?.("section, .artdeco-card, div.pv-profile-card");
+        if (nested) return nested;
+      }
+      let parent = a.parentElement;
+      for (let i = 0; parent && i < 4; i += 1, parent = parent.parentElement) {
+        const sibling = parent.nextElementSibling;
+        if (sibling?.matches?.("section, .artdeco-card, div.pv-profile-card")) return sibling;
+      }
     }
     return null;
   }
@@ -673,6 +786,92 @@
     } catch {
       return null;
     }
+  }
+
+  function linkedInCsrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)JSESSIONID="?([^";]+)"?/i);
+    return m?.[1] || "";
+  }
+
+  function discoverVoyagerRequests() {
+    const urls = [];
+    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    document.querySelectorAll('code[id^="datalet-bpr-guid"], code[id^="bpr-guid"], code[style*="display: none"], code[style*="display:none"]').forEach((c) => {
+      const raw = (c.textContent || "").trim();
+      if (!raw.startsWith("{")) return;
+      try {
+        const json = JSON.parse(raw);
+        const req = clean(json?.request || json?.url || "");
+        if (!req || !/voyager\/api/i.test(req)) return;
+        if (!/(profile|skill|education|position|experience)/i.test(req)) return;
+        if (slug && !decodeURIComponent(req).toLowerCase().includes(slug) && /profiles\//i.test(req)) return;
+        urls.push(req.startsWith("http") ? req : `https://www.linkedin.com${req.startsWith("/") ? "" : "/"}${req}`);
+      } catch {
+        /* ignore */
+      }
+    });
+    return uniqueLines(urls);
+  }
+
+  async function fetchVoyagerJson(url) {
+    try {
+      const csrf = linkedInCsrfToken();
+      const headers = {
+        accept: "application/vnd.linkedin.normalized+json+2.1",
+        "x-restli-protocol-version": "2.0.0",
+      };
+      if (csrf) headers["csrf-token"] = csrf;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(url, {
+        credentials: "include",
+        headers,
+        signal: ctrl.signal,
+      });
+      clearTimeout(t);
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchVoyagerProfile(slug) {
+    const candidates = [
+      ...discoverVoyagerRequests(),
+      `https://www.linkedin.com/voyager/api/identity/profiles/${encodeURIComponent(slug)}/profileView`,
+    ];
+    for (const url of uniqueLines(candidates)) {
+      const json = await fetchVoyagerJson(url);
+      if (json) return json;
+    }
+    return null;
+  }
+
+  async function enrichProfileFromVoyager(profile) {
+    const m = (location.pathname || "").match(/\/in\/([^/?#]+)/i);
+    if (!m) return profile;
+    const slug = decodeURIComponent(m[1]).replace(/\/+$/, "");
+    if (!slug) return profile;
+    const json = await fetchVoyagerProfile(slug);
+    if (!json || !mergeSsrJson(json)) return profile;
+
+    const top = ssrTopCard(profile.full_name || "");
+    if (!profile.current_position && top?.headline) profile.current_position = top.headline;
+    if (!profile.headline && top?.headline) profile.headline = top.headline;
+    if (!profile.location && top?.location) profile.location = top.location;
+    const exp = ssrExperiences();
+    if (!profile.current_company && exp[0]?.company) profile.current_company = exp[0].company;
+    if (!Array.isArray(profile.experiences) || !profile.experiences.length) profile.experiences = exp.slice(0, 20);
+    const edu = ssrEducation();
+    if (!Array.isArray(profile.education) || !profile.education.length) profile.education = edu.slice(0, 20);
+    const skills = ssrSkills();
+    if (!Array.isArray(profile.skills_detailed) || !profile.skills_detailed.length) profile.skills_detailed = skills.slice(0, 100);
+    const certs = ssrCertifications();
+    if (!Array.isArray(profile.certifications) || !profile.certifications.length) profile.certifications = certs.slice(0, 30);
+    const langs = ssrLanguages();
+    if (!Array.isArray(profile.languages) || !profile.languages.length) profile.languages = langs.slice(0, 20);
+    return profile;
   }
 
 
@@ -1001,7 +1200,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.3",
+      capture_version: "2.4",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,
@@ -1206,25 +1405,27 @@
     });
 
     document.getElementById("thh-capture").onclick = async () => {
-      latestProfile = extractProfile();
-      renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
-      if (!isComplete(latestProfile) && !allowPartialOnce) {
-        allowPartialOnce = true;
-        const missing = missingFields(latestProfile).filter((field) => field !== "nome");
-        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
-        return;
-      }
       const btn = document.getElementById("thh-capture");
       btn.disabled = true;
       try {
         btn.textContent = "Coletando perfil…";
         await triggerLazyLoad();
         latestProfile = extractProfile();
+        btn.textContent = "Consultando detalhes…";
+        latestProfile = await enrichProfileFromVoyager(latestProfile);
         btn.textContent = "Enriquecendo…";
         latestProfile = await enrichProfileFromDetails(latestProfile);
         renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
+      }
+      if (!isComplete(latestProfile) && !allowPartialOnce) {
+        allowPartialOnce = true;
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        const missing = missingFields(latestProfile).filter((field) => field !== "nome");
+        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
+        return;
       }
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
@@ -1425,6 +1626,7 @@
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       _ssrCache = null;
+      _ssrExtraItems = [];
       stopExtractionLoops();
       const old = document.getElementById(SIDEBAR_ID);
       if (old) old.remove();
