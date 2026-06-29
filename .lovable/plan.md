@@ -1,70 +1,100 @@
-# Documentação TechHire — com Print Screens
+# Expansão da Captura da Extensão LinkedIn Hunter
 
-## Objetivo
-Gerar um documento de referência (PDF + Markdown) cobrindo **todas as funcionalidades atuais do TechHire ATS**, com capturas de tela reais de cada módulo, descrição funcional, fluxos principais e dicas de uso.
+Hoje a extensão captura apenas 6 campos básicos (nome, cargo, empresa, localização, URL, source). Vou expandir para coletar perfil profissional completo, sinais de recrutamento, contatos, dados da empresa e atividade — respeitando LGPD/TOS (só dados visíveis ao recrutador autenticado, sem scraping em massa).
 
-## Entregáveis
-1. `/mnt/documents/techhire-handbook.pdf` — documento navegável com sumário, seções e screenshots embutidos.
-2. `/mnt/documents/techhire-handbook.md` — versão Markdown editável.
-3. `/mnt/documents/techhire-screenshots/` — pasta com todos os PNGs capturados (referenciados pelo PDF/MD).
+## 1. Banco de dados (migration)
 
-## Estrutura do documento
-1. **Visão Geral** — o que é o TechHire, posicionamento (quiet premium), arquitetura host/workspace.
-2. **Primeiros Passos** — login, troca de módulo (Module Switcher), Hub `/workspace`, onboarding.
-3. **Dashboard & Insights** (`/insights`) — KPIs, gráficos, AI insights.
-4. **Vagas** (`/jobs`, `/jobs/$id`) — lista, kanban por status e por departamento (DnD), detalhes 3 colunas, pipeline, scorecards, copilot, multi-posting, credenciais de job boards, página de carreiras (`/careers`).
-5. **Candidatos** (`/candidates`, `/candidates/$id`) — lista/cards/kanban, DnD com transições seguras, detalhes 3 colunas, CV parser (Gemini/PDF), copilot, async video, scorecards.
-6. **Pipelines** (`/pipelines`) — editor visual, estágios, default.
-7. **Entrevistas** — agendamento, painel, self-scheduling, kits de entrevista, vídeo gravado.
-8. **Ofertas & eSign** (`/offer/$token`) — criação, envio, aceite público.
-9. **Sourcing & Talent CRM** (`/sourcing/*`) — Inbox, Pools, Sequências, Indicações, Analytics.
-10. **Hunting LinkedIn** (`/hunting`) — extensão, pairing, captura, templates.
-11. **Inteligência (IA)** — Match score, JD Generator, AI Recruiter Copilot, Notetaker (`/notetaker`).
-12. **Programa de Indicações 2.0** — referrals, bônus, tracking.
-13. **DEI & Analytics Avançado** — dashboards, painel scheduling.
-14. **LGPD Hub** — consentimentos, retenção, exportação.
-15. **Workspace & Configurações** — membros, convites brancos, branding, API keys, calendários (sync gravações), SLA, billing.
-16. **Integrações & API Pública** (`/api/public/v1/ats/*`) — jobs, applications, hire, chaves.
-17. **Timeline Unificada & Associações** — timeline pins, espelhamento.
-18. **Segurança** — RLS por workspace, audit trail, posturas aplicadas.
-19. **Roadmap atual** (resumo) — Ondas 5–11 conforme `.lovable/plan.md` e backlog.
+Adicionar colunas à tabela `ats_candidates` (todas nullable, aditivas — sem impacto em código existente):
 
-Cada seção segue o template: **O que é · Para que serve · Como acessar (rota) · Print(s) · Passo a passo · Dicas / limitações**.
+**Perfil profissional**
 
-## Como os screenshots serão capturados
-Via Playwright headless no sandbox (já documentado em `<browser-use>`), restaurando sessão Supabase quando `LOVABLE_BROWSER_AUTH_STATUS=injected`. Para cada rota da lista acima:
-- viewport 1280×1800;
-- `await page.goto("http://localhost:8080<rota>", wait_until="networkidle")`;
-- aguardar seletor estável (heading principal) antes do `page.screenshot`;
-- salvar em `/tmp/browser/handbook/screenshots/` e copiar para `/mnt/documents/techhire-screenshots/`;
-- para fluxos que dependem de dados (ex.: detalhes de vaga, kanban com cards), pegar o **primeiro** registro existente via DOM; se vazio, capturar o EmptyState e anotar isso na legenda.
-- rotas públicas (carreiras, offer, interview, schedule, book) capturadas sem sessão.
+- `headline` (text), `about` (text), `photo_url` (text)
+- `experiences` (jsonb) — `[{company, title, start, end, description, location}]`
+- `education` (jsonb) — `[{school, degree, field, start, end}]`
+- `certifications` (jsonb), `languages` (jsonb), `skills` (jsonb)
+- `projects` (jsonb), `publications` (jsonb), `volunteering` (jsonb)
 
-Se `LOVABLE_BROWSER_AUTH_STATUS` ≠ `injected`, paro e peço o login no preview antes de continuar — não invento screenshots.
+**Sinais de recrutamento**
 
-## Geração do PDF
-Usar a skill **pdf** com ReportLab (Platypus):
-- Capa com nome do produto, versão, data.
-- Sumário automático.
-- Tipografia: Helvetica/Arial; títulos 18/14/12; corpo 10.
-- Cada seção: H1 do módulo, subseções com prints (largura máx 6.5"), legendas, bullets.
-- Rodapé com paginação.
-- QA obrigatório: `pdftoppm` → inspeção visual de **todas** as páginas, corrigir overflow/clipping antes de entregar.
+- `open_to_work` (bool), `connection_degree` (text: `1st|2nd|3rd|out`)
+- `available_actions` (jsonb) — `{message, connect, inmail}`
 
-A versão Markdown referencia os mesmos PNGs com caminhos relativos.
+**Contatos/links**
 
-## Fora de escopo
-- Nenhuma alteração de código, rotas, schema, RLS, design system ou conteúdo do produto.
-- Sem tradução para outros idiomas (PT-BR apenas).
-- Sem vídeo/gif animado — somente PNGs estáticos.
-- Não documentar telas removidas ou módulos não-TechHire (CRM, TechSales) salvo o necessário para explicar o Module Switcher.
+- `external_links` (jsonb) — `{github, portfolio, twitter, website, ...}`
+- (email/phone já existem)
 
-## Riscos / pendências
-- Telas que exigem dados de demonstração inexistentes aparecerão como EmptyState — será sinalizado na legenda.
-- Se a sessão Supabase não estiver injetada, a captura das rotas autenticadas fica bloqueada até o usuário logar no preview.
-- Funcionalidades dependentes de credenciais externas (LinkedIn, Indeed, eSign provider real) serão documentadas com o estado atual (mock/integration-ready), sem simular sucesso.
+**Empresa atual**
 
-## Confirmação rápida antes de executar
-1. Profundidade: **handbook completo** (todas as rotas listadas) — confirma? Se preferir um guia mais enxuto (só os 6–8 módulos principais), avise.
-2. Formato: **PDF + Markdown + pasta de PNGs**, salvos em `/mnt/documents/`. OK?
-3. Idioma: **PT-BR**. OK?
+- `current_company_data` (jsonb) — `{size, industry, location, tenure_months}`
+
+**Atividade**
+
+- `recent_activity` (jsonb) — `[{type: post|comment, url, excerpt, posted_at}]` (últimos 5)
+- `recommendations` (jsonb) — `[{author, relationship, text}]`
+
+**Metadados de captura**
+
+- `captured_at` (timestamptz), `capture_version` (text)
+
+Sem alteração em RLS/policies/grants — a tabela já está protegida por workspace.
+
+## 2. Extensão Chrome (`extension/`)
+
+`**content.js` / scraper LinkedIn** — adicionar extratores para cada bloco do perfil:
+
+- Headline, About, foto (já no DOM do `/in/`)
+- Experiências/Educação/Skills/Languages/Certifications — iterar nas seções `section[data-section]`
+- `#OpenToWork` — detectar badge/overlay na foto
+- Grau de conexão — span `.dist-value`
+- Botões disponíveis — presença de "Message", "Connect", "InMail"
+- Empresa atual: navegar (opcional) ou ler dados visíveis do hovercard
+- Atividade recente: ler até 5 itens da seção "Activity"
+- Recomendações: ler bloco "Recommendations received"
+
+Cada extrator isolado e tolerante a falhas (try/catch + fallback `null`) — LinkedIn muda DOM com frequência.
+
+`**popup.html` / `popup.js**` — mostrar preview dos dados capturados antes de enviar (checkboxes para o recrutador escolher o que persistir).
+
+`**manifest.json**` — sem novas permissões (já tem acesso a `linkedin.com/*`).
+
+## 3. Endpoint de captura
+
+`src/routes/api/public/hunting/capture.ts` (já existe) — estender Zod schema para aceitar os novos campos opcionais e gravar em `ats_candidates` via upsert por `linkedin_url`. Manter deduplicação atual. Bump `capture_version` para `"2.0"`.
+
+## 4. UI TechHire (visualização)
+
+Estender o painel lateral/3-col do candidato em `/candidates/$id` para renderizar as novas seções quando presentes:
+
+- Bloco "Sobre" (about + headline)
+- Timeline de Experiências e Educação
+- Chips de Skills/Languages/Certifications
+- Badge `OpenToWork` no header
+- Bloco "Atividade recente" (links para posts)
+- Bloco "Links externos"
+
+Usa componentes oficiais (`SectionHeader`, `StatusBadge`, etc.) — sem novos paradigmas visuais.
+
+## 5. Empacotar nova versão
+
+Rebuild do zip em `public/techhire-hunter.zip` e bump da versão no `manifest.json` para `1.1.0`.
+
+## Conformidade
+
+- Só dados visíveis na sessão autenticada do recrutador (sem APIs internas do LinkedIn).
+- Sem captura em massa — extensão age só na aba ativa quando o recrutador clica.
+- Banner no popup: "Você é responsável pelo uso conforme LGPD e Termos do LinkedIn."
+- Campos sensíveis (idade, etnia, religião, saúde) **não** são capturados.
+
+## Não incluído (fora do escopo)
+
+- Envio automatizado de mensagens (mantém comportamento atual: abre composer pré-preenchido).
+- Enriquecimento via APIs pagas (Apollo, RocketReach).
+- Re-scrape periódico — captura permanece manual por perfil.
+
+## Validação manual
+
+1. Recarregar a extensão (`chrome://extensions` → reload).
+2. Abrir um perfil `/in/...` no LinkedIn.
+3. Conferir preview no popup com os novos blocos.
+4. Capturar e abrir o candidato em `/candidates/$id` — verificar render das novas seções.
