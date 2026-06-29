@@ -388,6 +388,33 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         updated_at: cand.updated_at as string,
         last_touch_at: (cand.last_touch_at as string | null) ?? null,
         next_action_at: (cand.next_action_at as string | null) ?? null,
+        headline: ((cand as Record<string, unknown>).headline as string | null) ?? null,
+        about: ((cand as Record<string, unknown>).about as string | null) ?? null,
+        photo_url: ((cand as Record<string, unknown>).photo_url as string | null) ?? null,
+        open_to_work: ((cand as Record<string, unknown>).open_to_work as boolean | null) ?? null,
+        connection_degree:
+          ((cand as Record<string, unknown>).connection_degree as string | null) ?? null,
+        capture_version:
+          ((cand as Record<string, unknown>).capture_version as string | null) ?? null,
+        captured_at: ((cand as Record<string, unknown>).captured_at as string | null) ?? null,
+        experiences: ((cand as Record<string, unknown>).experiences as RichJson) ?? null,
+        education: ((cand as Record<string, unknown>).education as RichJson) ?? null,
+        certifications: ((cand as Record<string, unknown>).certifications as RichJson) ?? null,
+        languages: ((cand as Record<string, unknown>).languages as RichJson) ?? null,
+        skills_detailed:
+          ((cand as Record<string, unknown>).skills_detailed as RichJson) ?? null,
+        projects: ((cand as Record<string, unknown>).projects as RichJson) ?? null,
+        publications: ((cand as Record<string, unknown>).publications as RichJson) ?? null,
+        volunteering: ((cand as Record<string, unknown>).volunteering as RichJson) ?? null,
+        external_links: ((cand as Record<string, unknown>).external_links as RichJson) ?? null,
+        available_actions:
+          ((cand as Record<string, unknown>).available_actions as RichJson) ?? null,
+        current_company_data:
+          ((cand as Record<string, unknown>).current_company_data as RichJson) ?? null,
+        recent_activity:
+          ((cand as Record<string, unknown>).recent_activity as RichJson) ?? null,
+        recommendations:
+          ((cand as Record<string, unknown>).recommendations as RichJson) ?? null,
       },
       derived_status: derived,
       applications,
