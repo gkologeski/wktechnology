@@ -62,7 +62,14 @@ export type CandidateEvent = {
   metadata_json: string | null;
 };
 
-export type RichJson = unknown;
+export type RichJson =
+  | string
+  | number
+  | boolean
+  | null
+  | RichJson[]
+  | { [key: string]: RichJson };
+
 
 export type CandidateDetail = {
   candidate: {
