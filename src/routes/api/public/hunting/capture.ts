@@ -95,9 +95,21 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
         if (denied) return denied;
 
         const body = await request.json().catch(() => null);
+        const warnings: string[] = [];
+        if (body && typeof body === "object") {
+          const checks: Array<[string, number]> = [
+            ["about", 8000], ["headline", 500], ["current_position", 400],
+            ["current_company", 200], ["location", 200], ["photo_url", 1000],
+          ];
+          for (const [k, max] of checks) {
+            const v = (body as Record<string, unknown>)[k];
+            if (typeof v === "string" && v.length > max) warnings.push(`${k}_truncated_${v.length}_to_${max}`);
+          }
+        }
         const parsed = Payload.safeParse(body);
         if (!parsed.success)
-          return jsonResponse({ error: parsed.error.flatten() }, { status: 400 });
+          return jsonResponse({ error: parsed.error.flatten(), warnings }, { status: 400 });
+
 
         const linkedinUrl = normalizeLinkedinUrl(parsed.data.linkedin_url);
         const ownerId = auth.ownerId;
