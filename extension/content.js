@@ -431,6 +431,9 @@
   }
 
   function extractCompany(card, person, headline, fullName) {
+    // SSR primary: 1ª experiência cobre o "atual" na maioria dos perfis
+    const ssrExp = ssrExperiences();
+    if (ssrExp[0]?.company) return clean(ssrExp[0].company);
     try {
       const wf = person?.worksFor;
       if (Array.isArray(wf) && wf[0]?.name) return clean(wf[0].name);
@@ -462,6 +465,8 @@
   }
 
   function extractLocation(card, person, fullName) {
+    const ssrLoc = ssrTopCard()?.location;
+    if (ssrLoc) return ssrLoc;
     try {
       const addr = person?.address;
       if (typeof addr === "string" && addr.trim()) return clean(addr);
