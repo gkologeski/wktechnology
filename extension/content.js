@@ -798,7 +798,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.0",
+      capture_version: "2.1",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,
