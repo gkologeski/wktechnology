@@ -17,6 +17,29 @@ const Payload = z.object({
   current_company: z.string().max(200).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
   source: z.string().max(60).optional(),
+  // Perfil profissional
+  headline: z.string().max(500).optional().nullable(),
+  about: z.string().max(8000).optional().nullable(),
+  photo_url: z.string().max(1000).optional().nullable(),
+  experiences: z.array(z.any()).max(50).optional().nullable(),
+  education: z.array(z.any()).max(50).optional().nullable(),
+  certifications: z.array(z.any()).max(50).optional().nullable(),
+  languages: z.array(z.any()).max(50).optional().nullable(),
+  skills_detailed: z.array(z.any()).max(200).optional().nullable(),
+  projects: z.array(z.any()).max(50).optional().nullable(),
+  publications: z.array(z.any()).max(50).optional().nullable(),
+  volunteering: z.array(z.any()).max(50).optional().nullable(),
+  // Sinais de recrutamento
+  open_to_work: z.boolean().optional().nullable(),
+  connection_degree: z.string().max(10).optional().nullable(),
+  available_actions: z.record(z.any()).optional().nullable(),
+  // Links/empresa/atividade
+  external_links: z.record(z.any()).optional().nullable(),
+  current_company_data: z.record(z.any()).optional().nullable(),
+  recent_activity: z.array(z.any()).max(20).optional().nullable(),
+  recommendations: z.array(z.any()).max(20).optional().nullable(),
+  // Metadados
+  capture_version: z.string().max(20).optional(),
 });
 
 export const Route = createFileRoute("/api/public/hunting/capture")({
@@ -44,12 +67,39 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           .ilike("linkedin_url", linkedinUrl)
           .maybeSingle();
 
+        const richFields = {
+          headline: parsed.data.headline ?? undefined,
+          about: parsed.data.about ?? undefined,
+          photo_url: parsed.data.photo_url ?? undefined,
+          experiences: parsed.data.experiences ?? undefined,
+          education: parsed.data.education ?? undefined,
+          certifications: parsed.data.certifications ?? undefined,
+          languages: parsed.data.languages ?? undefined,
+          skills_detailed: parsed.data.skills_detailed ?? undefined,
+          projects: parsed.data.projects ?? undefined,
+          publications: parsed.data.publications ?? undefined,
+          volunteering: parsed.data.volunteering ?? undefined,
+          open_to_work: parsed.data.open_to_work ?? undefined,
+          connection_degree: parsed.data.connection_degree ?? undefined,
+          available_actions: parsed.data.available_actions ?? undefined,
+          external_links: parsed.data.external_links ?? undefined,
+          current_company_data: parsed.data.current_company_data ?? undefined,
+          recent_activity: parsed.data.recent_activity ?? undefined,
+          recommendations: parsed.data.recommendations ?? undefined,
+        };
+        const definedRich = Object.fromEntries(
+          Object.entries(richFields).filter(([, v]) => v !== undefined),
+        );
+
         let candidateId: string;
         let created = false;
         if (existing) {
           candidateId = existing.id as string;
           const patch: Record<string, unknown> = {
+            ...definedRich,
             last_touch_at: new Date().toISOString(),
+            captured_at: new Date().toISOString(),
+            capture_version: parsed.data.capture_version ?? "2.0",
           };
           if (parsed.data.current_position)
             patch.current_position = parsed.data.current_position;
@@ -72,6 +122,9 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
               location: parsed.data.location ?? null,
               source: parsed.data.source ?? "linkedin_extension",
               last_touch_at: new Date().toISOString(),
+              captured_at: new Date().toISOString(),
+              capture_version: parsed.data.capture_version ?? "2.0",
+              ...definedRich,
             } as never)
             .select("id")
             .single();
@@ -92,7 +145,7 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           candidate_id: candidateId,
           source_url: parsed.data.linkedin_url,
           raw_payload: parsed.data as never,
-          parser_version: "ext-v1",
+          parser_version: parsed.data.capture_version ?? "ext-v2",
           captured_by: null,
         } as never);
 
