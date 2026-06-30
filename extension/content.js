@@ -1886,6 +1886,24 @@
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
       }
+      // Guard rígido: se não veio SSR, nenhuma âncora hidratou e os arrays ricos
+      // estão todos vazios, o parser só achou shell+footer. Abortar a gravação
+      // para não salvar lixo (ex.: lista de idiomas do footer no "about").
+      const d = latestProfile?.parser_diagnostics || {};
+      const anchorsOk =
+        d.anchors && Object.values(d.anchors).some((v) => v === true);
+      const richCount =
+        (latestProfile?.experiences?.length || 0) +
+        (latestProfile?.educations?.length || 0) +
+        (latestProfile?.skills?.length || 0);
+      const ssrOk = (d.ssr_code_count || 0) > 0;
+      if (!ssrOk && !anchorsOk && richCount === 0 && !allowPartialOnce) {
+        allowPartialOnce = true;
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        setStatus("Perfil sem dados estruturados (LinkedIn não hidratou as seções). Role a página até o fim, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim, clique em Salvar de novo.", true);
+        return;
+      }
       if (!isComplete(latestProfile) && !allowPartialOnce) {
         allowPartialOnce = true;
         btn.disabled = false;
