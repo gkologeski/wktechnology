@@ -116,7 +116,10 @@ function sanitizeAbout(raw: string | null | undefined) {
   const looksLikeWholePage =
     text.length > 1800 ||
     /\b(dados de contato|contact info|enviar mensagem|send message|mais de \d+ conex|connections|atividade|activity|publica[çc][õo]es|comments|coment[áa]rios|imagens)\b/i.test(text);
-  if (!looksLikeWholePage) return text.slice(0, 8000);
+  if (!looksLikeWholePage)
+    return cleanText(
+      text.replace(/\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i, ""),
+    ).slice(0, 8000);
   const section = sliceProfileSection(
     text,
     /\b(sobre|about)\b\s*/i,
