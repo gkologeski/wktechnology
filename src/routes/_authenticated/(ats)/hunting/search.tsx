@@ -357,6 +357,60 @@ function HuntingSearchPage() {
   );
 }
 
+function ImportProgressCard({
+  progress,
+  onCancel,
+  onDismiss,
+}: {
+  progress: ImportProgress;
+  onCancel: () => void;
+  onDismiss: () => void;
+}) {
+  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const running = !progress.finished;
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {running ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            )}
+            <p className="truncate text-sm font-medium">
+              {running
+                ? `Importando ${progress.done + 1} de ${progress.total}${progress.current ? ` · ${progress.current}` : ""}`
+                : `Importação concluída · ${progress.done} de ${progress.total}`}
+            </p>
+          </div>
+          {running ? (
+            <Button size="sm" variant="ghost" onClick={onCancel}>
+              <X className="mr-1 h-3.5 w-3.5" /> Cancelar
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={onDismiss}>
+              <X className="mr-1 h-3.5 w-3.5" /> Fechar
+            </Button>
+          )}
+        </div>
+        <Progress value={pct} className="h-1.5" />
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Badge variant="secondary">Novos: {progress.created}</Badge>
+          <Badge variant="outline">Já existiam: {progress.deduped}</Badge>
+          <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-400">
+            <Sparkles className="mr-1 h-3 w-3" /> Enriquecidos: {progress.enriched}
+          </Badge>
+          {progress.errors > 0 && (
+            <Badge variant="destructive">Falhas: {progress.errors}</Badge>
+          )}
+          <span className="ml-auto text-muted-foreground">{pct}%</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Field(props: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
