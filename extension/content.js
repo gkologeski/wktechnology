@@ -807,6 +807,63 @@
     return out;
   }
 
+  function splitConcatenatedProfileText(text) {
+    const raw = clean(text);
+    if (!raw) return [];
+    const markers = [
+      "Sobre",
+      "About",
+      "Principais competências",
+      "Key skills and technologies",
+      "Experiência",
+      "Experience",
+      "Formação",
+      "Education",
+      "Licenças e certificados",
+      "Licenses & certifications",
+      "Competências",
+      "Skills",
+      "Atividades",
+      "Activity",
+      "Publicações",
+      "Posts",
+      "Comentários",
+      "Comments",
+      "Imagens",
+      "Images",
+    ];
+    const markerRe = new RegExp(`\\b(${markers.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "gi");
+    return uniqueLines(
+      raw
+        .replace(/([a-zá-ú0-9])([A-ZÁ-Ú][a-zá-ú])/g, "$1\n$2")
+        .replace(markerRe, "\n$1\n")
+        .split(/\n+|\s{2,}|[·•]\s*/)
+        .map(clean)
+        .filter(Boolean),
+    );
+  }
+
+  function profileMainLines() {
+    const main = document.querySelector("main");
+    if (!main) return [];
+    const domLines = getLines(main).map(clean).filter(Boolean);
+    const textLines = splitConcatenatedProfileText(main.textContent || "");
+    return uniqueLines([...domLines, ...textLines].filter((line) => !isLinkedInUiLine(line)));
+  }
+
+  function sliceMainSectionLines(startRe, endRe) {
+    const lines = profileMainLines();
+    const start = lines.findIndex((line) => startRe.test(line));
+    if (start < 0) return [];
+    const out = [];
+    for (const line of lines.slice(start + 1)) {
+      if (endRe.test(line)) break;
+      if (!line || isLinkedInUiLine(line)) continue;
+      out.push(line);
+    }
+    return uniqueLines(out);
+  }
+
   // Para documentos parseados via fetch (sem layout — innerText não funciona)
   function extractListItemsFromDoc(doc) {
     if (!doc) return [];
