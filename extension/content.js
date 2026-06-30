@@ -1204,6 +1204,18 @@
     if (!profile.current_position && top?.headline) profile.current_position = top.headline;
     if (!profile.headline && top?.headline) profile.headline = top.headline;
     if (!profile.location && top?.location) profile.location = top.location;
+
+    // v3.0: SSR summary é autoritativo para "Sobre".
+    // Sobrescreve DOM se o SSR tiver dados OU se o DOM extraiu lixo.
+    const ssrAbout = ssrProfileSummary(profile.full_name || "");
+    if (ssrAbout) {
+      profile.about = ssrAbout;
+      profile.__about_source = "voyager_ssr";
+    } else if (looksLikeJunkAbout(profile.about)) {
+      profile.about = null;
+      profile.__about_source = "discarded_junk";
+    }
+
     const exp = ssrExperiences();
     if (!profile.current_company && exp[0]?.company) profile.current_company = exp[0].company;
     if (!Array.isArray(profile.experiences) || !profile.experiences.length) profile.experiences = exp.slice(0, 20);
