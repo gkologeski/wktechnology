@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v1.0.6)
+// TechHire Hunter — Content script (v1.0.7)
 // Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
@@ -13,6 +13,12 @@
 
   const clean = (s) => (s == null ? "" : String(s)).replace(/\s+/g, " ").trim();
   const lower = (s) => clean(s).toLowerCase();
+  const normalizedName = (s) =>
+    clean(s)
+      .replace(/\s*(?:verificado|verified)\s*/gi, " ")
+      .replace(/\s*[·•]\s*\d+\s*(?:º|st|nd|rd).*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
   const escapeHtml = (s) =>
     clean(s)
       .replace(/&/g, "&amp;")
@@ -106,6 +112,12 @@
         value,
       )
     );
+  };
+
+  const looksLikeNameLine = (line, fullName) => {
+    const a = lower(normalizedName(line));
+    const b = lower(normalizedName(fullName));
+    return Boolean(a && b && (a === b || a.startsWith(`${b} `) || b.startsWith(`${a} `)));
   };
 
   const looksLikeLocation = (line) => {
@@ -522,10 +534,10 @@
       ].filter(Boolean);
       for (const scope of scopes) {
         const lines = uniqueLines(getLines(scope).filter((line) => !isNoiseLine(line)));
-        const idx = lines.findIndex((line) => lower(line.replace(/\s*[·•]\s*\d+º?.*$/i, "")) === lower(fullName));
+        const idx = lines.findIndex((line) => looksLikeNameLine(line, fullName));
         const candidates = idx >= 0 ? lines.slice(idx + 1, idx + 5) : lines.slice(0, 5);
         for (const line of candidates) {
-          if (line && lower(line) !== lower(fullName) && !looksLikeLocation(line)) return line;
+          if (line && !looksLikeNameLine(line, fullName) && looksLikeHeadline(line)) return line;
         }
       }
       return "";
@@ -685,6 +697,7 @@
   // ──────────────────────────────────────────────────────────────
 
   const ANCHOR_IDS = {
+    about: ["about"],
     experience: ["experience"],
     education: ["education"],
     skills: ["skills"],
@@ -734,6 +747,48 @@
 
   function findSection(kind, titleRegex) {
     return findSectionByAnchor(ANCHOR_IDS[kind] || []) || findSectionByTitle(titleRegex);
+  }
+
+  const SECTION_BOUNDARY_RE = /^(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|compet[êe]ncias|skills|principais compet[êe]ncias|idiomas|languages|recomenda|recommendations|publica[çc][õo]es|publications|projetos|projects|voluntariado|volunteering|mais perfis|people also viewed)\b/i;
+
+  function cleanAboutCandidate(value, fullName = "") {
+    const text = clean(value)
+      .replace(/^(sobre|about)\s+/i, "")
+      .replace(/\s*…\s*mais\s*$/i, "")
+      .trim();
+    if (!text) return "";
+    if (looksLikeNameLine(text, fullName)) return "";
+    if (text.length > 1800) return "";
+    if (/\b(dados de contato|contact info|mais de \d+ conex|connections|enviar mensagem|send message|conectar|connect|atividade|activity|publica[çc][õo]es|posts)\b/i.test(text)) return "";
+    return text;
+  }
+
+  function extractAboutFromSection(sec, fullName = "") {
+    if (!sec) return "";
+    const directSelectors = [
+      ".pv-shared-text-with-see-more span[aria-hidden='true']",
+      ".inline-show-more-text span[aria-hidden='true']",
+      ".inline-show-more-text--is-collapsed span[aria-hidden='true']",
+      "div.display-flex.ph5.pv3 span[aria-hidden='true']",
+    ];
+    for (const sel of directSelectors) {
+      const candidates = Array.from(sec.querySelectorAll(sel))
+        .map((el) => cleanAboutCandidate(el.textContent || "", fullName))
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length);
+      if (candidates[0]) return candidates[0];
+    }
+
+    const lines = getLines(sec).filter((line) => !isNoiseLine(line));
+    const start = lines.findIndex((line) => /^(sobre|about)$/i.test(line));
+    const afterTitle = start >= 0 ? lines.slice(start + 1) : lines;
+    const body = [];
+    for (const line of afterTitle) {
+      if (SECTION_BOUNDARY_RE.test(line)) break;
+      const candidate = cleanAboutCandidate(line, fullName);
+      if (candidate) body.push(candidate);
+    }
+    return cleanAboutCandidate(body.join("\n"), fullName);
   }
 
   function extractListItems(section) {
@@ -950,12 +1005,10 @@
   }
 
 
-  function extractAbout() {
+  function extractAbout(fullName = "") {
     return safe(() => {
-      const sec = findSectionByTitle(/^(sobre|about)$/i);
-      if (!sec) return "";
-      const span = sec.querySelector("div.display-flex.ph5.pv3 span[aria-hidden='true'], .inline-show-more-text span[aria-hidden='true']");
-      return clean(span?.textContent || getVisibleText(sec).replace(/^(sobre|about)\s*/i, ""));
+      const sec = findSection("about", /^(sobre|about)$/i);
+      return extractAboutFromSection(sec, fullName);
     });
   }
 
@@ -1275,10 +1328,10 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.5",
+      capture_version: "2.6",
       // Perfil rico
       headline: headline || null,
-      about: extractAbout() || null,
+      about: extractAbout(full_name) || null,
       photo_url: avatar || null,
       experiences: extractExperiences(),
       education: extractEducation(),
