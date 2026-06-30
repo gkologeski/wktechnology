@@ -281,8 +281,8 @@ function HuntingSearchPage() {
                     : `${hits.length} resultados`}
                 </span>
               </div>
-              <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importMut.isPending}>
-                {importMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+              <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importing}>
+                {importing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
                 Importar selecionados
               </Button>
             </div>
