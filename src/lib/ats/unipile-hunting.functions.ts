@@ -297,20 +297,34 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           .ilike("linkedin_url", url)
           .maybeSingle();
 
-        const enrichUpdate: Record<string, unknown> = {
+        // ── Fallback garantido: nome, headline, link, localização, empresa ─
+        // mesmo se o enrich falhar/estiver vazio, mantemos o mínimo do hit.
+        const baseFallback: Record<string, unknown> = {
           last_touch_at: new Date().toISOString(),
         };
-        if (enrich.headline) enrichUpdate.headline = enrich.headline;
-        if (enrich.location) enrichUpdate.location = enrich.location;
-        if (enrich.current_company) enrichUpdate.current_company = enrich.current_company;
-        if (enrich.current_position) enrichUpdate.current_position = enrich.current_position;
-        if (enrich.photo_url) enrichUpdate.photo_url = enrich.photo_url;
-        if (enrich.skills?.length) enrichUpdate.skills = enrich.skills;
-        if (enrich.skills_detailed) enrichUpdate.skills_detailed = enrich.skills_detailed;
-        if (enrich.education) enrichUpdate.education = enrich.education;
-        if (enrich.experiences) enrichUpdate.experiences = enrich.experiences;
-        if (enrich.languages) enrichUpdate.languages = enrich.languages;
-        if (enrich.certifications) enrichUpdate.certifications = enrich.certifications;
+        const fallbackHeadline = enrich.headline ?? it.headline ?? null;
+        const fallbackLocation = enrich.location ?? it.location ?? null;
+        const fallbackCompany = enrich.current_company ?? it.current_company ?? null;
+        const fallbackPosition =
+          enrich.current_position ?? it.current_position ?? it.headline ?? null;
+        const fallbackPhoto = enrich.photo_url ?? it.photo_url ?? null;
+
+        if (fallbackHeadline) baseFallback.headline = fallbackHeadline;
+        if (fallbackLocation) baseFallback.location = fallbackLocation;
+        if (fallbackCompany) baseFallback.current_company = fallbackCompany;
+        if (fallbackPosition) baseFallback.current_position = fallbackPosition;
+        if (fallbackPhoto) baseFallback.photo_url = fallbackPhoto;
+
+        // Campos enriquecidos só entram quando o enrich realmente trouxe dado.
+        const enrichExtras: Record<string, unknown> = {};
+        if (enrich.skills?.length) enrichExtras.skills = enrich.skills;
+        if (enrich.skills_detailed) enrichExtras.skills_detailed = enrich.skills_detailed;
+        if (enrich.education) enrichExtras.education = enrich.education;
+        if (enrich.experiences) enrichExtras.experiences = enrich.experiences;
+        if (enrich.languages) enrichExtras.languages = enrich.languages;
+        if (enrich.certifications) enrichExtras.certifications = enrich.certifications;
+
+        const updatePayload = { ...baseFallback, ...enrichExtras };
 
         let candidateId: string;
         if (existing) {
@@ -318,22 +332,16 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           deduped += 1;
           await supabase
             .from("ats_candidates")
-            .update(enrichUpdate as never)
+            .update(updatePayload as never)
             .eq("id", candidateId);
         } else {
           const insertRow = {
             owner_id: userId,
             created_by: userId,
-            full_name: it.full_name,
+            full_name: it.full_name || "Sem nome",
             linkedin_url: url,
-            location: enrich.location ?? it.location ?? null,
-            current_company: enrich.current_company ?? it.current_company ?? null,
-            current_position:
-              enrich.current_position ?? it.current_position ?? it.headline ?? null,
-            headline: enrich.headline ?? it.headline ?? null,
-            photo_url: enrich.photo_url ?? it.photo_url ?? null,
             source: "linkedin_unipile_search",
-            ...enrichUpdate,
+            ...updatePayload,
           };
           const { data: ins, error } = await supabase
             .from("ats_candidates")
@@ -353,9 +361,10 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           candidate_id: candidateId,
           source_url: it.linkedin_url,
           raw_payload: (enrich.raw ?? it) as never,
-          parser_version: "unipile-search-v2-enriched",
+          parser_version: enrich.raw ? "unipile-search-v2-enriched" : "unipile-search-v2-fallback",
           captured_by: userId,
         } as never);
+
       } catch (e) {
         errors.push({ url: it.linkedin_url, message: (e as Error).message });
       }
