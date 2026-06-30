@@ -101,7 +101,7 @@
     }
   }
 
-  const isNoiseLine = (line) => {
+  const isLinkedInUiLine = (line) => {
     const value = lower(line);
     return (
       !value ||
@@ -113,6 +113,8 @@
       )
     );
   };
+
+  const isNoiseLine = (line) => isLinkedInUiLine(line);
 
   const looksLikeNameLine = (line, fullName) => {
     const a = lower(normalizedName(line));
