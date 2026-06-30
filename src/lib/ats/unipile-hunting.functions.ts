@@ -41,7 +41,6 @@ const ImportItem = z.object({
   current_position: z.string().max(200).nullish(),
   public_identifier: z.string().max(200).nullish(),
   photo_url: z.string().url().max(800).nullish(),
-  raw: z.record(z.unknown()).optional(),
 });
 
 const ImportInput = z.object({
