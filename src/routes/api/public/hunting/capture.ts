@@ -87,6 +87,80 @@ const Payload = z.object({
   capture_version: z.string().max(20).optional(),
 });
 
+type PayloadData = z.infer<typeof Payload>;
+
+const cleanText = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
+
+function uniqueStrings(values: string[]) {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = value.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sliceProfileSection(text: string, start: RegExp, end: RegExp) {
+  const startMatch = text.match(start);
+  if (!startMatch?.index && startMatch?.index !== 0) return "";
+  const from = startMatch.index + startMatch[0].length;
+  const rest = text.slice(from);
+  const endMatch = rest.match(end);
+  return cleanText((endMatch?.index != null ? rest.slice(0, endMatch.index) : rest).replace(/…\s*mais/gi, ""));
+}
+
+function sanitizeAbout(raw: string | null | undefined) {
+  const text = cleanText(raw);
+  if (!text) return null;
+  const looksLikeWholePage =
+    text.length > 1800 ||
+    /\b(dados de contato|contact info|enviar mensagem|send message|mais de \d+ conex|connections|atividade|activity|publica[çc][õo]es|comments|coment[áa]rios|imagens)\b/i.test(text);
+  if (!looksLikeWholePage)
+    return cleanText(
+      text.replace(/\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i, ""),
+    ).slice(0, 8000);
+  const section = sliceProfileSection(
+    text,
+    /\b(sobre|about)\b\s*/i,
+    /\b(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills|idiomas|languages|mais perfis|people also viewed)\b/i,
+  );
+  return (section || text).slice(0, 8000) || null;
+}
+
+function skillsFromText(text: string | null | undefined) {
+  const raw = cleanText(text);
+  if (!raw) return [];
+  const chunks = [
+    sliceProfileSection(raw, /\b(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:?\s*/i, /\b(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|comments|coment[áa]rios)\b/i),
+  ].filter(Boolean);
+  return uniqueStrings(
+    chunks
+      .join(" · ")
+      .split(/[·•,;|]/)
+      .map((s) => cleanText(s.replace(/…\s*mais/gi, "")))
+      .filter((s) => s.length >= 2 && s.length <= 80 && !/^(key skills and technologies|principais compet[êe]ncias|skills)$/i.test(s)),
+  ).slice(0, 100);
+}
+
+function mapSkills(values: string[]) {
+  return values.map((name) => ({ name, endorsements: null }));
+}
+
+function normalizePayload(data: PayloadData): PayloadData & { legacySkills?: string[] } {
+  const safeAbout = sanitizeAbout(data.about);
+  const derivedSkillNames = skillsFromText(data.about || safeAbout || "");
+  const hasDetailedSkills = Array.isArray(data.skills_detailed) && data.skills_detailed.length > 0;
+  return {
+    ...data,
+    about: safeAbout,
+    current_position: data.current_position || data.headline || null,
+    headline: data.headline || data.current_position || null,
+    skills_detailed: hasDetailedSkills ? data.skills_detailed : mapSkills(derivedSkillNames),
+    legacySkills: derivedSkillNames,
+  };
+}
+
 export const Route = createFileRoute("/api/public/hunting/capture")({
   server: {
     handlers: {
@@ -114,7 +188,8 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           return jsonResponse({ error: parsed.error.flatten(), warnings }, { status: 400 });
 
 
-        const linkedinUrl = normalizeLinkedinUrl(parsed.data.linkedin_url);
+        const payload = normalizePayload(parsed.data);
+        const linkedinUrl = normalizeLinkedinUrl(payload.linkedin_url);
         const ownerId = auth.ownerId;
 
         const { data: existing } = await supabaseAdmin
@@ -125,27 +200,31 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           .maybeSingle();
 
         const richFields = {
-          headline: parsed.data.headline ?? undefined,
-          about: parsed.data.about ?? undefined,
-          photo_url: parsed.data.photo_url ?? undefined,
-          experiences: parsed.data.experiences ?? undefined,
-          education: parsed.data.education ?? undefined,
-          certifications: parsed.data.certifications ?? undefined,
-          languages: parsed.data.languages ?? undefined,
-          skills_detailed: parsed.data.skills_detailed ?? undefined,
-          projects: parsed.data.projects ?? undefined,
-          publications: parsed.data.publications ?? undefined,
-          volunteering: parsed.data.volunteering ?? undefined,
-          open_to_work: parsed.data.open_to_work ?? undefined,
-          connection_degree: parsed.data.connection_degree ?? undefined,
-          available_actions: parsed.data.available_actions ?? undefined,
-          external_links: parsed.data.external_links ?? undefined,
-          current_company_data: parsed.data.current_company_data ?? undefined,
-          recent_activity: parsed.data.recent_activity ?? undefined,
-          recommendations: parsed.data.recommendations ?? undefined,
+          headline: payload.headline ?? undefined,
+          about: payload.about ?? undefined,
+          photo_url: payload.photo_url ?? undefined,
+          experiences: payload.experiences ?? undefined,
+          education: payload.education ?? undefined,
+          certifications: payload.certifications ?? undefined,
+          languages: payload.languages ?? undefined,
+          skills_detailed: payload.skills_detailed ?? undefined,
+          projects: payload.projects ?? undefined,
+          publications: payload.publications ?? undefined,
+          volunteering: payload.volunteering ?? undefined,
+          open_to_work: payload.open_to_work ?? undefined,
+          connection_degree: payload.connection_degree ?? undefined,
+          available_actions: payload.available_actions ?? undefined,
+          external_links: payload.external_links ?? undefined,
+          current_company_data: payload.current_company_data ?? undefined,
+          recent_activity: payload.recent_activity ?? undefined,
+          recommendations: payload.recommendations ?? undefined,
         };
         const definedRich = Object.fromEntries(
-          Object.entries(richFields).filter(([, v]) => v !== undefined),
+          Object.entries(richFields).filter(([, v]) => {
+            if (v === undefined) return false;
+            if (Array.isArray(v)) return v.length > 0;
+            return true;
+          }),
         );
 
         let candidateId: string;
@@ -156,13 +235,14 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
             ...definedRich,
             last_touch_at: new Date().toISOString(),
             captured_at: new Date().toISOString(),
-            capture_version: parsed.data.capture_version ?? "2.0",
+            capture_version: payload.capture_version ?? "2.0",
           };
-          if (parsed.data.current_position)
-            patch.current_position = parsed.data.current_position;
-          if (parsed.data.current_company)
-            patch.current_company = parsed.data.current_company;
-          if (parsed.data.location) patch.location = parsed.data.location;
+          if (payload.current_position)
+            patch.current_position = payload.current_position;
+          if (payload.current_company)
+            patch.current_company = payload.current_company;
+          if (payload.location) patch.location = payload.location;
+          if (payload.legacySkills?.length) patch.skills = payload.legacySkills;
           await supabaseAdmin
             .from("ats_candidates")
             .update(patch as never)
@@ -172,15 +252,16 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
             .from("ats_candidates")
             .insert({
               owner_id: ownerId,
-              full_name: parsed.data.full_name || "Sem nome",
+              full_name: payload.full_name || "Sem nome",
               linkedin_url: linkedinUrl,
-              current_position: parsed.data.current_position ?? null,
-              current_company: parsed.data.current_company ?? null,
-              location: parsed.data.location ?? null,
-              source: parsed.data.source ?? "linkedin_extension",
+              current_position: payload.current_position ?? null,
+              current_company: payload.current_company ?? null,
+              location: payload.location ?? null,
+              source: payload.source ?? "linkedin_extension",
+              skills: payload.legacySkills ?? [],
               last_touch_at: new Date().toISOString(),
               captured_at: new Date().toISOString(),
-              capture_version: parsed.data.capture_version ?? "2.0",
+              capture_version: payload.capture_version ?? "2.0",
               ...definedRich,
             } as never)
             .select("id")
@@ -200,9 +281,9 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
         await supabaseAdmin.from("ats_hunting_captures").insert({
           owner_id: ownerId,
           candidate_id: candidateId,
-          source_url: parsed.data.linkedin_url,
-          raw_payload: parsed.data as never,
-          parser_version: parsed.data.capture_version ?? "ext-v2",
+          source_url: payload.linkedin_url,
+          raw_payload: payload as never,
+          parser_version: payload.capture_version ?? "ext-v2",
           captured_by: null,
         } as never);
 
