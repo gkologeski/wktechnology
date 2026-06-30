@@ -27,14 +27,32 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
   return j.choices?.[0]?.message?.content ?? "";
 }
 
-async function buildJobContext(supabase: any, jobId: string) {
-  const { data: job, error } = await supabase
+async function buildJobContext(supabase: any, jobId: string, userId?: string) {
+  const cols = "title, seniority, remote_mode, employment_type, location, description, requirements, metadata, owner_id, hiring_manager_id, recruiter_id";
+  let { data: job, error } = await supabase
     .from("ats_jobs")
-    .select("title, seniority, remote_mode, employment_type, location, description, requirements, metadata")
+    .select(cols)
     .eq("id", jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!job) throw new Error("Vaga não encontrada");
+  if (!job) {
+    // Fallback: usuário pode ter acesso via role admin ou membership futura.
+    // Lê via admin e valida que o caller é owner/HM/recruiter ou admin.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: full } = await supabaseAdmin
+      .from("ats_jobs")
+      .select(cols)
+      .eq("id", jobId)
+      .maybeSingle();
+    if (!full) throw new Error("Vaga não encontrada");
+    let allowed = userId != null && (full.owner_id === userId || full.hiring_manager_id === userId || full.recruiter_id === userId);
+    if (!allowed && userId) {
+      const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user: userId });
+      allowed = Boolean(isAdmin);
+    }
+    if (!allowed) throw new Error("Sem permissão para acessar esta vaga");
+    job = full;
+  }
   const department = (job.metadata as { department?: string } | null)?.department ?? null;
   const lines: string[] = [];
   lines.push(`Vaga: ${job.title}`);
@@ -53,7 +71,7 @@ export const rankPipelineCandidates = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ job_id: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
 
     const { data: apps } = await supabase
       .from("ats_applications")
@@ -114,7 +132,7 @@ export const suggestInterviewQuestions = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
 
     let candBlock = "";
     if (data.candidate_id) {
@@ -166,7 +184,7 @@ export const draftOutreach = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
     const { data: c } = await supabase
       .from("ats_candidates")
       .select("full_name, current_position, current_company, skills, location")
