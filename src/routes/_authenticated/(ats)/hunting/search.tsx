@@ -3,8 +3,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Search, Download, ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { useRef, useState } from "react";
+import { Search, Download, ExternalLink, Loader2, AlertCircle, X, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AtsPageHeader, EmptyState } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +14,23 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import {
   searchLinkedinPeople,
   importLinkedinSearchResults,
   type NormalizedSearchHit,
 } from "@/lib/ats/unipile-hunting.functions";
+
+interface ImportProgress {
+  total: number;
+  done: number;
+  created: number;
+  deduped: number;
+  enriched: number;
+  errors: number;
+  current?: string;
+  finished: boolean;
+}
 
 export const Route = createFileRoute("/_authenticated/(ats)/hunting/search")({
   component: HuntingSearchPage,
@@ -56,6 +68,8 @@ function HuntingSearchPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cursor, setCursor] = useState<string | null>(null);
   const [warning, setWarning] = useState<{ title: string; message: string } | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const cancelRef = useRef(false);
 
   const searchMut = useMutation({
     mutationFn: async (input: { cursor?: string }) => {
@@ -91,31 +105,83 @@ function HuntingSearchPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const importMut = useMutation({
-    mutationFn: async (items: NormalizedSearchHit[]) => {
-      const payload = items
-        .filter((h) => h.linkedin_url)
-        .map((h) => ({
-          linkedin_url: h.linkedin_url as string,
-          full_name: h.full_name,
-          headline: h.headline,
-          location: h.location,
-          current_company: h.current_company,
-          current_position: h.current_position,
-          public_identifier: h.public_identifier,
-          photo_url: h.photo_url,
-        }));
-      return await importFn({ data: { items: payload } });
-    },
-    onSuccess: (r) => {
-      toast.success(`Importados: ${r.created} · já existiam: ${r.deduped}`);
-      if (r.errors.length) toast.error(`${r.errors.length} falharam`);
-      setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["hunting-captures"] });
-      qc.invalidateQueries({ queryKey: ["hunting-stats"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  async function runImport() {
+    const items = hits.filter((h) => h.linkedin_url && selected.has(h.linkedin_url));
+    if (!items.length) return;
+
+    cancelRef.current = false;
+    setProgress({
+      total: items.length,
+      done: 0,
+      created: 0,
+      deduped: 0,
+      enriched: 0,
+      errors: 0,
+      finished: false,
+    });
+
+    let created = 0;
+    let deduped = 0;
+    let enriched = 0;
+    let errors = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      if (cancelRef.current) break;
+      const h = items[i];
+      setProgress((p) =>
+        p ? { ...p, current: h.full_name } : p,
+      );
+      try {
+        const r = await importFn({
+          data: {
+            items: [
+              {
+                linkedin_url: h.linkedin_url as string,
+                full_name: h.full_name,
+                headline: h.headline,
+                location: h.location,
+                current_company: h.current_company,
+                current_position: h.current_position,
+                public_identifier: h.public_identifier,
+                photo_url: h.photo_url,
+              },
+            ],
+          },
+        });
+        created += r.created;
+        deduped += r.deduped;
+        enriched += r.enriched;
+        errors += r.errors.length;
+      } catch (e) {
+        errors += 1;
+        toast.error(`Falhou: ${h.full_name} — ${(e as Error).message}`);
+      }
+      setProgress({
+        total: items.length,
+        done: i + 1,
+        created,
+        deduped,
+        enriched,
+        errors,
+        current: h.full_name,
+        finished: false,
+      });
+    }
+
+    setProgress((p) =>
+      p ? { ...p, finished: true, current: undefined } : p,
+    );
+    toast.success(
+      `Importação concluída · ${created} novos · ${deduped} já existiam · ${enriched} enriquecidos${errors ? ` · ${errors} falhas` : ""}`,
+    );
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["hunting-captures"] });
+    qc.invalidateQueries({ queryKey: ["hunting-stats"] });
+  }
+
+  function cancelImport() {
+    cancelRef.current = true;
+  }
 
   function toggle(url: string) {
     setSelected((prev) => {
@@ -130,11 +196,9 @@ function HuntingSearchPage() {
     else setSelected(new Set(hits.map((h) => h.linkedin_url ?? "").filter(Boolean)));
   }
 
-  function runImport() {
-    const items = hits.filter((h) => h.linkedin_url && selected.has(h.linkedin_url));
-    if (!items.length) return;
-    importMut.mutate(items);
-  }
+  const importing = !!progress && !progress.finished;
+
+
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -194,6 +258,8 @@ function HuntingSearchPage() {
         </Alert>
       )}
 
+      {progress && <ImportProgressCard progress={progress} onCancel={cancelImport} onDismiss={() => setProgress(null)} />}
+
       {/* Resultados */}
       {hits.length === 0 && !searchMut.isPending ? (
         <EmptyState
@@ -217,8 +283,8 @@ function HuntingSearchPage() {
                     : `${hits.length} resultados`}
                 </span>
               </div>
-              <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importMut.isPending}>
-                {importMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+              <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importing}>
+                {importing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
                 Importar selecionados
               </Button>
             </div>
@@ -288,6 +354,60 @@ function HuntingSearchPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function ImportProgressCard({
+  progress,
+  onCancel,
+  onDismiss,
+}: {
+  progress: ImportProgress;
+  onCancel: () => void;
+  onDismiss: () => void;
+}) {
+  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const running = !progress.finished;
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {running ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            )}
+            <p className="truncate text-sm font-medium">
+              {running
+                ? `Importando ${progress.done + 1} de ${progress.total}${progress.current ? ` · ${progress.current}` : ""}`
+                : `Importação concluída · ${progress.done} de ${progress.total}`}
+            </p>
+          </div>
+          {running ? (
+            <Button size="sm" variant="ghost" onClick={onCancel}>
+              <X className="mr-1 h-3.5 w-3.5" /> Cancelar
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={onDismiss}>
+              <X className="mr-1 h-3.5 w-3.5" /> Fechar
+            </Button>
+          )}
+        </div>
+        <Progress value={pct} className="h-1.5" />
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Badge variant="secondary">Novos: {progress.created}</Badge>
+          <Badge variant="outline">Já existiam: {progress.deduped}</Badge>
+          <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-400">
+            <Sparkles className="mr-1 h-3 w-3" /> Enriquecidos: {progress.enriched}
+          </Badge>
+          {progress.errors > 0 && (
+            <Badge variant="destructive">Falhas: {progress.errors}</Badge>
+          )}
+          <span className="ml-auto text-muted-foreground">{pct}%</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
