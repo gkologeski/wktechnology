@@ -492,3 +492,37 @@ export async function fetchProfile(ctx: ThrottleCtx, publicIdentifier: string) {
     query: { account_id: ctx.unipileAccountId, linkedin_sections: "*" },
   });
 }
+
+/**
+ * Resolve texto livre (ex.: "São Paulo") em IDs/URNs aceitos pela busca
+ * Classic do LinkedIn via Unipile. Retorna array de IDs (string) — vazio se nada bater.
+ */
+export async function resolveSearchParameter(
+  ctx: ThrottleCtx,
+  type: "LOCATION" | "INDUSTRY" | "COMPANY" | "SCHOOL" | "LANGUAGE",
+  keywords: string,
+  limit = 5,
+): Promise<string[]> {
+  if (!keywords?.trim()) return [];
+  try {
+    const data = (await call(ctx, {
+      endpoint: "chat.list", // budget leve — não é fetch de perfil
+      method: "GET",
+      path: "/api/v1/linkedin/search/parameters",
+      query: {
+        account_id: ctx.unipileAccountId,
+        type,
+        keywords: keywords.trim(),
+        limit,
+      },
+    })) as { items?: Array<{ id?: string | number; entity_urn?: string }> } | null;
+    const items = data?.items ?? [];
+    const ids = items
+      .map((it) => (it.id != null ? String(it.id) : it.entity_urn ?? null))
+      .filter((v): v is string => !!v && /^\d{3,}$/.test(v));
+    return ids.slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
