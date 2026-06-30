@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as UnipileConnectedRouteImport } from './routes/unipile-connected'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -282,6 +283,11 @@ import { Route as ApiPublicV1AtsApplicationsIdHireRouteImport } from './routes/a
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnipileConnectedRoute = UnipileConnectedRouteImport.update({
+  id: '/unipile-connected',
+  path: '/unipile-connected',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -1818,6 +1824,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -2088,6 +2095,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -2356,6 +2364,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
@@ -2628,6 +2637,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unipile-connected'
     | '/unsubscribe'
     | '/analytics'
     | '/communications'
@@ -2898,6 +2908,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unipile-connected'
     | '/unsubscribe'
     | '/analytics'
     | '/communications'
@@ -3165,6 +3176,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms'
+    | '/unipile-connected'
     | '/unsubscribe'
     | '/_authenticated/analytics'
     | '/_authenticated/communications'
@@ -3437,6 +3449,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  UnipileConnectedRoute: typeof UnipileConnectedRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
@@ -3531,6 +3544,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unipile-connected': {
+      id: '/unipile-connected'
+      path: '/unipile-connected'
+      fullPath: '/unipile-connected'
+      preLoaderRoute: typeof UnipileConnectedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -6041,6 +6061,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  UnipileConnectedRoute: UnipileConnectedRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
