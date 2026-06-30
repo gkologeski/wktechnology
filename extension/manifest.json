@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TechHire Hunter",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Capture perfis completos do LinkedIn (experiência, educação, skills, OpenToWork, atividade) direto pro TechHire ATS.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
