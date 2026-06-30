@@ -1010,7 +1010,10 @@
       volunteering: /(volunt|volunteer)/i,
     }[kind];
     const start = titleRe ? lines.findIndex((line) => titleRe.test(line)) : -1;
-    const scoped = start >= 0 ? lines.slice(start + 1) : lines;
+    // v3.1: sem o marcador da seção no documento /details/*, o conteúdo é
+    // navegação/rodapé/anúncios — devolver vazio em vez de inventar items.
+    if (start < 0) return [];
+    const scoped = lines.slice(start + 1);
     if (kind === "skills") {
       return scoped
         .filter((line) => line.length <= 120 && !SECTION_BOUNDARY_RE.test(line))
