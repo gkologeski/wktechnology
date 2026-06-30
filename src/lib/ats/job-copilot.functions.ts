@@ -28,19 +28,21 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
 }
 
 async function buildJobContext(supabase: any, jobId: string) {
-  const { data: job } = await supabase
+  const { data: job, error } = await supabase
     .from("ats_jobs")
-    .select("title, seniority, remote_mode, employment_type, location, description, requirements, department")
+    .select("title, seniority, remote_mode, employment_type, location, description, requirements, metadata")
     .eq("id", jobId)
     .maybeSingle();
+  if (error) throw new Error(error.message);
   if (!job) throw new Error("Vaga não encontrada");
+  const department = (job.metadata as { department?: string } | null)?.department ?? null;
   const lines: string[] = [];
   lines.push(`Vaga: ${job.title}`);
   if (job.seniority) lines.push(`Senioridade: ${job.seniority}`);
   if (job.remote_mode) lines.push(`Modo: ${job.remote_mode}`);
   if (job.employment_type) lines.push(`Contrato: ${job.employment_type}`);
   if (job.location) lines.push(`Local: ${job.location}`);
-  if (job.department) lines.push(`Departamento: ${job.department}`);
+  if (department) lines.push(`Departamento: ${department}`);
   if (job.description) lines.push(`Descrição:\n${String(job.description).slice(0, 2500)}`);
   if (job.requirements) lines.push(`Requisitos:\n${String(job.requirements).slice(0, 2500)}`);
   return { context: lines.join("\n"), job };
