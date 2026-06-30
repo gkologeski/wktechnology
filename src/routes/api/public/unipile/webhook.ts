@@ -97,20 +97,29 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
           String(status).toLowerCase().includes("credentials_invalid");
 
         if (row) {
-          const patch: Record<string, unknown> = { last_seen_at: new Date().toISOString() };
-          if (isSuccess && unipileAccountId) {
-            patch.status = "connected";
-            patch.unipile_account_id = unipileAccountId;
-            patch.connected_at = new Date().toISOString();
-            patch.last_error = null;
-          } else if (isDisconnect) {
-            patch.status = "disconnected";
-            patch.last_error = errorMsg ?? null;
-          } else if (isFailure) {
-            patch.status = "error";
-            patch.last_error = errorMsg ?? "Falha na conexão";
-          }
-          await supabaseAdmin.from("unipile_accounts").update(patch).eq("id", row.id);
+          const nowIso = new Date().toISOString();
+          let status: "connected" | "disconnected" | "error" | null = null;
+          if (isSuccess && unipileAccountId) status = "connected";
+          else if (isDisconnect) status = "disconnected";
+          else if (isFailure) status = "error";
+
+          await supabaseAdmin
+            .from("unipile_accounts")
+            .update({
+              last_seen_at: nowIso,
+              ...(status ? { status } : {}),
+              ...(status === "connected"
+                ? {
+                    unipile_account_id: unipileAccountId,
+                    connected_at: nowIso,
+                    last_error: null,
+                  }
+                : {}),
+              ...(status === "error" || status === "disconnected"
+                ? { last_error: errorMsg ?? (status === "error" ? "Falha na conexão" : null) }
+                : {}),
+            })
+            .eq("id", row.id);
         }
 
         return new Response(JSON.stringify({ ok: true }), {
