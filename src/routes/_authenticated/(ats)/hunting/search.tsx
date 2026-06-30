@@ -68,6 +68,8 @@ function HuntingSearchPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cursor, setCursor] = useState<string | null>(null);
   const [warning, setWarning] = useState<{ title: string; message: string } | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const cancelRef = useRef(false);
 
   const searchMut = useMutation({
     mutationFn: async (input: { cursor?: string }) => {
@@ -103,50 +105,84 @@ function HuntingSearchPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const importMut = useMutation({
-    mutationFn: async (items: NormalizedSearchHit[]) => {
-      const payload = items
-        .filter((h) => h.linkedin_url)
-        .map((h) => ({
-          linkedin_url: h.linkedin_url as string,
-          full_name: h.full_name,
-          headline: h.headline,
-          location: h.location,
-          current_company: h.current_company,
-          current_position: h.current_position,
-          public_identifier: h.public_identifier,
-          photo_url: h.photo_url,
-        }));
-      return await importFn({ data: { items: payload } });
-    },
-    onSuccess: (r) => {
-      toast.success(`Importados: ${r.created} · já existiam: ${r.deduped}`);
-      if (r.errors.length) toast.error(`${r.errors.length} falharam`);
-      setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["hunting-captures"] });
-      qc.invalidateQueries({ queryKey: ["hunting-stats"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  function toggle(url: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(url) ? next.delete(url) : next.add(url);
-      return next;
-    });
-  }
-
-  function toggleAll() {
-    if (selected.size === hits.length) setSelected(new Set());
-    else setSelected(new Set(hits.map((h) => h.linkedin_url ?? "").filter(Boolean)));
-  }
-
-  function runImport() {
+  async function runImport() {
     const items = hits.filter((h) => h.linkedin_url && selected.has(h.linkedin_url));
     if (!items.length) return;
-    importMut.mutate(items);
+
+    cancelRef.current = false;
+    setProgress({
+      total: items.length,
+      done: 0,
+      created: 0,
+      deduped: 0,
+      enriched: 0,
+      errors: 0,
+      finished: false,
+    });
+
+    let created = 0;
+    let deduped = 0;
+    let enriched = 0;
+    let errors = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      if (cancelRef.current) break;
+      const h = items[i];
+      setProgress((p) =>
+        p ? { ...p, current: h.full_name } : p,
+      );
+      try {
+        const r = await importFn({
+          data: {
+            items: [
+              {
+                linkedin_url: h.linkedin_url as string,
+                full_name: h.full_name,
+                headline: h.headline,
+                location: h.location,
+                current_company: h.current_company,
+                current_position: h.current_position,
+                public_identifier: h.public_identifier,
+                photo_url: h.photo_url,
+              },
+            ],
+          },
+        });
+        created += r.created;
+        deduped += r.deduped;
+        enriched += r.enriched;
+        errors += r.errors.length;
+      } catch (e) {
+        errors += 1;
+        toast.error(`Falhou: ${h.full_name} — ${(e as Error).message}`);
+      }
+      setProgress({
+        total: items.length,
+        done: i + 1,
+        created,
+        deduped,
+        enriched,
+        errors,
+        current: h.full_name,
+        finished: false,
+      });
+    }
+
+    setProgress((p) =>
+      p ? { ...p, finished: true, current: undefined } : p,
+    );
+    toast.success(
+      `Importação concluída · ${created} novos · ${deduped} já existiam · ${enriched} enriquecidos${errors ? ` · ${errors} falhas` : ""}`,
+    );
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["hunting-captures"] });
+    qc.invalidateQueries({ queryKey: ["hunting-stats"] });
   }
+
+  function cancelImport() {
+    cancelRef.current = true;
+  }
+
 
   return (
     <div className="flex flex-col gap-6 pb-10">
