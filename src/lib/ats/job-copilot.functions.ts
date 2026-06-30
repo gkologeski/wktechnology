@@ -47,7 +47,7 @@ async function buildJobContext(supabase: any, jobId: string, userId?: string) {
     if (!full) throw new Error("Vaga não encontrada");
     let allowed = userId != null && (full.owner_id === userId || full.hiring_manager_id === userId || full.recruiter_id === userId);
     if (!allowed && userId) {
-      const { data: isAdmin } = await supabaseAdmin.rpc("has_role", { _user_id: userId, _role: "admin" });
+      const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user: userId });
       allowed = Boolean(isAdmin);
     }
     if (!allowed) throw new Error("Sem permissão para acessar esta vaga");
