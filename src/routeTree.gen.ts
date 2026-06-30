@@ -179,7 +179,6 @@ import { Route as AuthenticatedatsSchedulingRouteImport } from './routes/_authen
 import { Route as AuthenticatedatsPipelinesRouteImport } from './routes/_authenticated/(ats)/pipelines'
 import { Route as AuthenticatedatsOffersRouteImport } from './routes/_authenticated/(ats)/offers'
 import { Route as AuthenticatedatsNotetakerRouteImport } from './routes/_authenticated/(ats)/notetaker'
-import { Route as AuthenticatedatsJobsRouteImport } from './routes/_authenticated/(ats)/jobs'
 import { Route as AuthenticatedatsInterviewKitsRouteImport } from './routes/_authenticated/(ats)/interview-kits'
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
 import { Route as AuthenticatedatsCopilotRouteImport } from './routes/_authenticated/(ats)/copilot'
@@ -187,6 +186,7 @@ import { Route as AuthenticatedatsBriefingRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
+import { Route as AuthenticatedatsJobsIndexRouteImport } from './routes/_authenticated/(ats)/jobs.index'
 import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
 import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -1232,11 +1232,6 @@ const AuthenticatedatsNotetakerRoute =
     path: '/notetaker',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedatsJobsRoute = AuthenticatedatsJobsRouteImport.update({
-  id: '/(ats)/jobs',
-  path: '/jobs',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedatsInterviewKitsRoute =
   AuthenticatedatsInterviewKitsRouteImport.update({
     id: '/(ats)/interview-kits',
@@ -1276,6 +1271,12 @@ const AuthenticatedatsSourcingIndexRoute =
   AuthenticatedatsSourcingIndexRouteImport.update({
     id: '/(ats)/sourcing/',
     path: '/sourcing/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedatsJobsIndexRoute =
+  AuthenticatedatsJobsIndexRouteImport.update({
+    id: '/(ats)/jobs/',
+    path: '/jobs/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedatsHuntingIndexRoute =
@@ -1665,9 +1666,9 @@ const AuthenticatedatsSourcingAnalyticsRoute =
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedatsJobsIdRoute = AuthenticatedatsJobsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedatsJobsRoute,
+  id: '/(ats)/jobs/$id',
+  path: '/jobs/$id',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedatsHuntingTemplatesRoute =
   AuthenticatedatsHuntingTemplatesRouteImport.update({
@@ -1853,7 +1854,6 @@ export interface FileRoutesByFullPath {
   '/copilot': typeof AuthenticatedatsCopilotRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
-  '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
@@ -2039,6 +2039,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
+  '/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2118,7 +2119,6 @@ export interface FileRoutesByTo {
   '/copilot': typeof AuthenticatedatsCopilotRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
   '/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
-  '/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/offers': typeof AuthenticatedatsOffersRoute
   '/pipelines': typeof AuthenticatedatsPipelinesRoute
@@ -2303,6 +2303,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/candidates': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting': typeof AuthenticatedatsHuntingIndexRoute
+  '/jobs': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2387,7 +2388,6 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/copilot': typeof AuthenticatedatsCopilotRoute
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
   '/_authenticated/(ats)/interview-kits': typeof AuthenticatedatsInterviewKitsRoute
-  '/_authenticated/(ats)/jobs': typeof AuthenticatedatsJobsRouteWithChildren
   '/_authenticated/(ats)/notetaker': typeof AuthenticatedatsNotetakerRoute
   '/_authenticated/(ats)/offers': typeof AuthenticatedatsOffersRoute
   '/_authenticated/(ats)/pipelines': typeof AuthenticatedatsPipelinesRoute
@@ -2573,6 +2573,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/(ats)/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
+  '/_authenticated/(ats)/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
@@ -2657,7 +2658,6 @@ export interface FileRouteTypes {
     | '/copilot'
     | '/insights'
     | '/interview-kits'
-    | '/jobs'
     | '/notetaker'
     | '/offers'
     | '/pipelines'
@@ -2843,6 +2843,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/candidates/'
     | '/hunting/'
+    | '/jobs/'
     | '/sourcing/'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
@@ -2922,7 +2923,6 @@ export interface FileRouteTypes {
     | '/copilot'
     | '/insights'
     | '/interview-kits'
-    | '/jobs'
     | '/notetaker'
     | '/offers'
     | '/pipelines'
@@ -3107,6 +3107,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/candidates'
     | '/hunting'
+    | '/jobs'
     | '/sourcing'
     | '/prospecting/campaigns'
     | '/settings/roles'
@@ -3190,7 +3191,6 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/copilot'
     | '/_authenticated/(ats)/insights'
     | '/_authenticated/(ats)/interview-kits'
-    | '/_authenticated/(ats)/jobs'
     | '/_authenticated/(ats)/notetaker'
     | '/_authenticated/(ats)/offers'
     | '/_authenticated/(ats)/pipelines'
@@ -3376,6 +3376,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/_authenticated/(ats)/candidates/'
     | '/_authenticated/(ats)/hunting/'
+    | '/_authenticated/(ats)/jobs/'
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
@@ -4689,13 +4690,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsNotetakerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/(ats)/jobs': {
-      id: '/_authenticated/(ats)/jobs'
-      path: '/jobs'
-      fullPath: '/jobs'
-      preLoaderRoute: typeof AuthenticatedatsJobsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/(ats)/interview-kits': {
       id: '/_authenticated/(ats)/interview-kits'
       path: '/interview-kits'
@@ -4743,6 +4737,13 @@ declare module '@tanstack/react-router' {
       path: '/sourcing'
       fullPath: '/sourcing/'
       preLoaderRoute: typeof AuthenticatedatsSourcingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/(ats)/jobs/': {
+      id: '/_authenticated/(ats)/jobs/'
+      path: '/jobs'
+      fullPath: '/jobs/'
+      preLoaderRoute: typeof AuthenticatedatsJobsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/(ats)/hunting/': {
@@ -5216,10 +5217,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/(ats)/jobs/$id': {
       id: '/_authenticated/(ats)/jobs/$id'
-      path: '/$id'
+      path: '/jobs/$id'
       fullPath: '/jobs/$id'
       preLoaderRoute: typeof AuthenticatedatsJobsIdRouteImport
-      parentRoute: typeof AuthenticatedatsJobsRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/(ats)/hunting/templates': {
       id: '/_authenticated/(ats)/hunting/templates'
@@ -5726,17 +5727,6 @@ const AuthenticatedTicketsRouteChildren: AuthenticatedTicketsRouteChildren = {
 const AuthenticatedTicketsRouteWithChildren =
   AuthenticatedTicketsRoute._addFileChildren(AuthenticatedTicketsRouteChildren)
 
-interface AuthenticatedatsJobsRouteChildren {
-  AuthenticatedatsJobsIdRoute: typeof AuthenticatedatsJobsIdRoute
-}
-
-const AuthenticatedatsJobsRouteChildren: AuthenticatedatsJobsRouteChildren = {
-  AuthenticatedatsJobsIdRoute: AuthenticatedatsJobsIdRoute,
-}
-
-const AuthenticatedatsJobsRouteWithChildren =
-  AuthenticatedatsJobsRoute._addFileChildren(AuthenticatedatsJobsRouteChildren)
-
 interface AuthenticatedAdminWorkspacesRouteChildren {
   AuthenticatedAdminWorkspacesIdRoute: typeof AuthenticatedAdminWorkspacesIdRoute
 }
@@ -5791,7 +5781,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsCopilotRoute: typeof AuthenticatedatsCopilotRoute
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
   AuthenticatedatsInterviewKitsRoute: typeof AuthenticatedatsInterviewKitsRoute
-  AuthenticatedatsJobsRoute: typeof AuthenticatedatsJobsRouteWithChildren
   AuthenticatedatsNotetakerRoute: typeof AuthenticatedatsNotetakerRoute
   AuthenticatedatsOffersRoute: typeof AuthenticatedatsOffersRoute
   AuthenticatedatsPipelinesRoute: typeof AuthenticatedatsPipelinesRoute
@@ -5825,6 +5814,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
   AuthenticatedatsHuntingInstallRoute: typeof AuthenticatedatsHuntingInstallRoute
   AuthenticatedatsHuntingTemplatesRoute: typeof AuthenticatedatsHuntingTemplatesRoute
+  AuthenticatedatsJobsIdRoute: typeof AuthenticatedatsJobsIdRoute
   AuthenticatedatsSourcingAnalyticsRoute: typeof AuthenticatedatsSourcingAnalyticsRoute
   AuthenticatedatsSourcingInboxRoute: typeof AuthenticatedatsSourcingInboxRoute
   AuthenticatedatsSourcingMultiPostingRoute: typeof AuthenticatedatsSourcingMultiPostingRoute
@@ -5833,6 +5823,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
+  AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
 }
@@ -5866,7 +5857,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsCopilotRoute: AuthenticatedatsCopilotRoute,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,
   AuthenticatedatsInterviewKitsRoute: AuthenticatedatsInterviewKitsRoute,
-  AuthenticatedatsJobsRoute: AuthenticatedatsJobsRouteWithChildren,
   AuthenticatedatsNotetakerRoute: AuthenticatedatsNotetakerRoute,
   AuthenticatedatsOffersRoute: AuthenticatedatsOffersRoute,
   AuthenticatedatsPipelinesRoute: AuthenticatedatsPipelinesRoute,
@@ -5901,6 +5891,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
   AuthenticatedatsHuntingInstallRoute: AuthenticatedatsHuntingInstallRoute,
   AuthenticatedatsHuntingTemplatesRoute: AuthenticatedatsHuntingTemplatesRoute,
+  AuthenticatedatsJobsIdRoute: AuthenticatedatsJobsIdRoute,
   AuthenticatedatsSourcingAnalyticsRoute:
     AuthenticatedatsSourcingAnalyticsRoute,
   AuthenticatedatsSourcingInboxRoute: AuthenticatedatsSourcingInboxRoute,
@@ -5913,6 +5904,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingSequencesRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
+  AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
