@@ -10887,6 +10887,201 @@ export type Database = {
           },
         ]
       }
+      unipile_accounts: {
+        Row: {
+          connect_token: string | null
+          connected_at: string | null
+          created_at: string
+          daily_window: Json
+          display_name: string | null
+          id: string
+          last_error: string | null
+          last_seen_at: string | null
+          owner_id: string
+          provider: string
+          status: string
+          unipile_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          connect_token?: string | null
+          connected_at?: string | null
+          created_at?: string
+          daily_window?: Json
+          display_name?: string | null
+          id?: string
+          last_error?: string | null
+          last_seen_at?: string | null
+          owner_id: string
+          provider?: string
+          status?: string
+          unipile_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connect_token?: string | null
+          connected_at?: string | null
+          created_at?: string
+          daily_window?: Json
+          display_name?: string | null
+          id?: string
+          last_error?: string | null
+          last_seen_at?: string | null
+          owner_id?: string
+          provider?: string
+          status?: string
+          unipile_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      unipile_message_log: {
+        Row: {
+          account_id: string
+          body: string | null
+          candidate_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          idempotency_key: string | null
+          kind: string
+          owner_id: string
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          target_identifier: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          body?: string | null
+          candidate_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind: string
+          owner_id: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_identifier: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          body?: string | null
+          candidate_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind?: string
+          owner_id?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_identifier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_message_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unipile_rate_buckets: {
+        Row: {
+          account_id: string
+          count: number
+          created_at: string
+          day_utc: string
+          endpoint: string
+          id: string
+          last_request_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          count?: number
+          created_at?: string
+          day_utc?: string
+          endpoint: string
+          id?: string
+          last_request_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          count?: number
+          created_at?: string
+          day_utc?: string
+          endpoint?: string
+          id?: string
+          last_request_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_rate_buckets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unipile_request_log: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          endpoint: string
+          error: string | null
+          id: number
+          latency_ms: number | null
+          method: string
+          owner_id: string | null
+          payload_hash: string | null
+          status: number | null
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          id?: number
+          latency_ms?: number | null
+          method?: string
+          owner_id?: string | null
+          payload_hash?: string | null
+          status?: number | null
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          id?: number
+          latency_ms?: number | null
+          method?: string
+          owner_id?: string | null
+          payload_hash?: string | null
+          status?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_request_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_counters: {
         Row: {
           key: string
