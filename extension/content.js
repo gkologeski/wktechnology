@@ -1168,7 +1168,7 @@
   function extractAbout(fullName = "") {
     return safe(() => {
       const sec = findSection("about", /^(sobre|about)$/i);
-      return extractAboutFromSection(sec, fullName);
+      return extractAboutFromSection(sec, fullName) || extractAboutFromMainText(fullName);
     });
   }
 
@@ -1218,7 +1218,8 @@
     return safe(() => {
       const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
       const items = extractListItems(sec);
-      return items.slice(0, 100).map(mapSkill).filter((s) => s.name);
+      const fromSection = items.slice(0, 100).map(mapSkill).filter((s) => s.name);
+      return fromSection.length ? fromSection : extractSkillsFromMainText();
     }) || [];
   }
 
