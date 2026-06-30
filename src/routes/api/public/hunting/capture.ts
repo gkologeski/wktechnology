@@ -220,7 +220,11 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           recommendations: payload.recommendations ?? undefined,
         };
         const definedRich = Object.fromEntries(
-          Object.entries(richFields).filter(([, v]) => v !== undefined),
+          Object.entries(richFields).filter(([, v]) => {
+            if (v === undefined) return false;
+            if (Array.isArray(v)) return v.length > 0;
+            return true;
+          }),
         );
 
         let candidateId: string;
