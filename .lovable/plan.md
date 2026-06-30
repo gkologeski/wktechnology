@@ -1,142 +1,90 @@
+# Integração Unipile — LinkedIn no TechHire
 
-# Plano — Corrigir scraping do TechHire Hunter e adicionar captura em lote a partir de busca
+Substitui o Hunter (extensão Chrome + scraping) pela API oficial da Unipile. Busca **somente LinkedIn Classic** (sem Sales Navigator / Recruiter por enquanto).
 
-## 1. O que aprendi das referências
+## Objetivos
 
-**Scrapfly (how-to-scrape-linkedin)** e **luminati-io/LinkedIn-Scraper**
-- O HTML público do LinkedIn é ofuscado (classes hash, lazy-load, virtualização). Raspar o DOM "renderizado" gera exatamente o tipo de lixo que estamos vendo no print (linhas misturadas de "Atividade", "Mais perfis", footer).
-- A fonte confiável é o **payload SSR embutido** (`<code id="bpr-guid-*">`) que segue o modelo Voyager: `com.linkedin.voyager.dash.identity.profile.Profile`, `...Position`, `...Education`, `...Skill`, `...Certification`, `...Language`, `...Project`, `...Publication`, `...VolunteerExperience`, `...Honor`.
-- Para perfis logados, as **rotas `/details/<section>/`** (experience, education, skills, certifications, languages, projects, publications, volunteering, honors, recommendations) retornam HTML com SSR completo da seção — é assim que o Voyager hidrata em produção.
-- Headers obrigatórios em fetch interno: `csrf-token` (cookie `JSESSIONID` sem aspas), `x-restli-protocol-version: 2.0.0`, `accept: application/vnd.linkedin.normalized+json+2.1`.
+1. Conectar conta LinkedIn do usuário via Unipile (Hosted Auth) e armazenar `account_id`.
+2. Buscar perfis (LinkedIn Classic People Search) com os mesmos filtros da URL nativa (`keywords`, `geoUrn`, indústria, empresa, escola, conexões, etc.).
+3. Extrair perfil completo (profile.fetch) e salvar como candidato em `ats_candidates` (mesmo schema atual, mantendo `hunting_runs` para auditoria).
+4. Enviar mensagens, convites e sincronizar conversas (fase 2 desta integração).
+5. Throttling **human-like** para proteger as contas LinkedIn conectadas.
 
-**joeyism/linkedin_scraper**
-- Modelo de dados canônico por seção (Experience, Education, Interest, Accomplishment, Contact). Vamos espelhar esse shape no `ats_candidates` para padronizar.
-- Estratégia de "abrir cada `/details/...` em background" antes de extrair — exatamente o que falta hoje (hoje só fazemos um fetch best-effort).
+## Escopo confirmado
 
-**Extensão "Profile Scraper for LinkedIn" (Chrome Store)**
-- Fluxo: usuário roda uma busca no LinkedIn → extensão enfileira os resultados → para cada perfil abre aba oculta → espera SSR/hidratação → extrai → fecha. Progresso e resultado salvo ao final.
-- Não usa Sales Navigator obrigatoriamente — funciona em `/search/results/people/` e `/in/<slug>`.
+- Busca: **somente LinkedIn Classic** (não Sales Navigator nem Recruiter).
+- Perfis: profile.fetch via Unipile (substitui scraping).
+- Mensagens: DM + convites de conexão + inbox sync.
+- Credenciais: API key da Unipile (DSN + API key) como secret global do workspace; `account_id` por usuário em `/settings/integrations/linkedin`.
+- Hunter atual (extensão Chrome): **depreciado** — manter código por 1 release atrás de feature flag, remover depois.
 
-## 2. Problemas concretos na nossa extensão hoje
+## Throttling human-like (não-fixo)
 
-Diagnóstico do `extension/content.js` (2.133 linhas) frente ao print:
-1. O `about`/`headline` cai no fallback `innerText` da página inteira quando o SSR não bate de primeira → captura blocos de "Atividade", "Mais perfis", rodapé.
-2. `skills`, `education`, `experience` dependem de `extractListItemsFromDetailsText` (regex em texto puro do `/details/...`) — funciona às vezes, mas perdemos campos estruturados (datas, empresa, URL, descrição).
-3. Não há varredura por **todas** as âncoras Voyager conhecidas — só algumas. Sem Position/Education/Skill estruturados, caímos no parser de texto.
-4. Não temos fila de captura em lote a partir de uma página de busca.
-5. `parser_diagnostics` registra falhas mas não bloqueia salvar payload ruim — o guard atual ("rigid data guard" v1.0.9) só checa "existe algum SSR", não "tem Position/Education".
+Não usar intervalo cravado. Camadas combinadas:
 
-## 3. Nova arquitetura de extração (perfil único)
+- **profile.fetch**: cap mínimo 4s + **jitter uniforme 1–4s** entre requisições (intervalo real ~5–8s), **máx 80/dia por account_id**.
+- **profile.search**: cap mínimo 10s + **jitter 2–5s**, **máx 20/dia por account_id**.
+- **Pausa de café**: a cada 8–12 requisições (aleatório), dormir **30–90s**.
+- **Janela humana**: por padrão executar apenas **8h–20h no fuso do usuário**; fora disso, enfileirar para a próxima janela. Configurável por workspace.
+- **Backoff exponencial** em 429/erro provider (base 30s, fator 2, teto 15min, jitter ±20%).
+- Contadores persistidos em `unipile_rate_buckets` (por `account_id` + endpoint + dia UTC).
 
-Pipeline determinístico, em ordem, **sem cair pro innerText**:
+## Arquitetura
 
 ```text
-1. Coletar TODOS os <code id="bpr-guid-*"> da página + responses já em cache.
-2. Indexar por urn (Profile, Position, Education, Skill, Certification,
-   Language, Project, Publication, VolunteerExperience, Honor, Recommendation).
-3. Buscar /in/<slug>/details/<section>/ em paralelo (experience, education,
-   skills, certifications, languages, projects, publications, volunteering,
-   honors, recommendations, contact-info) — reaproveitando csrf-token do
-   cookie JSESSIONID e headers Voyager.
-4. Re-extrair âncoras SSR de cada resposta de /details/.
-5. Montar objetos canônicos (shape joeyism):
-   - experiences[]: { title, company, company_url, location, start, end,
-     duration, description, employment_type }
-   - education[]:   { school, school_url, degree, field, start, end,
-     activities, description }
-   - skills[]:      { name, endorsements, top_skill }
-   - certifications[], languages[], projects[], publications[],
-     volunteering[], honors[], recommendations[]
-6. Top-card a partir do Profile urn + photo (vector image highest res).
-7. About = Profile.summary do SSR. NUNCA recortar do innerText.
-8. Sinais: openToWork, hiring, premium, connectionDegree, contactInfo
-   (quando /details/contact-info estiver acessível).
+Browser  ──►  TanStack server fn (auth + RLS)
+                    │
+                    ▼
+            unipile-client.server.ts  (throttle + jitter + budget + janela humana)
+                    │
+                    ▼
+            Unipile API (DSN)
+                    │
+                    ▼
+            Persistência: ats_candidates / hunting_runs / unipile_message_log
 ```
 
-**Guard rígido novo**: só envia ao backend se `experiences.length > 0` OU `education.length > 0` OU `about` veio do SSR. Caso contrário, a sidebar mostra erro com diagnóstico e botão "Re-tentar com auto-scroll".
+## Schema (migrations)
 
-## 4. Captura em lote a partir de busca → salva direto no TechHire
+- `unipile_accounts` — `id, owner_id, user_id, provider ('linkedin'), unipile_account_id, status, connected_at, last_seen_at, daily_window jsonb`.
+- `unipile_rate_buckets` — `account_id, endpoint, day_utc, count, last_request_at` (UNIQUE composto).
+- `unipile_request_log` — `account_id, endpoint, status, latency_ms, error, payload_hash, created_at` (observabilidade).
+- `unipile_message_log` — envios de DM/convite (auditoria + idempotência).
+- Reuso de `ats_candidates` (sem novas colunas) e `ats_hunting_captures` para auditoria das execuções de busca.
+- GRANTs + RLS por `owner_id` em todas; service_role para o cliente server.
 
-Nova feature **"Capturar resultados da busca"** (igual à extensão de referência), porém **sem export local — tudo é persistido no TechHire em tempo real**:
+## Server functions / rotas
 
-- Detectar quando a URL casa `linkedin.com/search/results/people/*` ou `linkedin.com/sales/search/people*`.
-- Sidebar ganha aba **Busca** com: total estimado, slider "quantos perfis", campo opcional "Talent pool de destino", campo opcional "Tag da run", botão "Iniciar".
-- Coletar slugs `/in/<slug>` por página (paginar via `start=` ou clicar "Próxima" simulando humano).
-- Enfileirar em IndexedDB (`hunting_queue`) com status `pending|running|done|error` — apenas controle local de execução, **não é o armazenamento final**.
-- Worker no background.js abre uma `chrome.tabs` por vez (com jitter 4-9s), injeta o content script no modo "headless capture", roda o pipeline da seção 3, e **POST imediato em `/api/public/hunting/capture`** (perfil completo, igual fluxo individual) com o campo extra `hunting_run_id`. Fecha a aba ao receber 2xx.
-- Concorrência fixa = 1 aba, respeitando rate. Pausa automática se aparecer challenge/captcha.
-- UI mostra progresso (X/Y salvos no TechHire, X/Y com erro), link "Abrir no TechHire" que leva para `/candidates?hunting_run=<id>` filtrado pela run.
-- Sem botão de export CSV — o resultado vive no TechHire.
+- `connectLinkedinAccount` — gera URL Hosted Auth da Unipile e retorna ao usuário.
+- `/api/public/unipile/webhook` — recebe callback `account.connected` (verifica HMAC com secret Unipile) e grava `unipile_accounts`.
+- `searchLinkedinPeople({ filters, cursor })` — chama `POST /api/v1/linkedin/search` com `category: "people"`, `api: "classic"`. Filtros: `keywords`, `location` (geoUrn), `industry`, `current_company`, `school`, `network` (1º/2º/3º), `language`. Paginação por cursor.
+- `fetchLinkedinProfile({ public_identifier })` — chama `GET /api/v1/users/{identifier}` e mapeia para `ats_candidates` (upsert por linkedin_url).
+- `bulkImportFromSearch({ search_id, limit })` — enfileira N perfis para fetch respeitando budget diário/jitter; cada um persiste direto no TechHire.
+- `sendLinkedinMessage`, `sendLinkedinInvite`, `listLinkedinChats` (fase 2 desta integração).
 
-## 5. Backend / endpoints
+## UI
 
-Reaproveitamos `/api/public/hunting/capture` (já valida `experiences`, `education`, etc. via Zod). Ajustes:
-- Aceitar campos opcionais `hunting_run_id` (uuid) e `contact_info` (jsonb) no Zod.
-- Persistir `hunting_run_id` em `ats_hunting_captures` (nova coluna) e marcar `ats_candidates.source = 'linkedin_bulk'` quando vier de run em lote.
-- Novo endpoint `POST /api/public/hunting/runs` (cria run com nome/tag/pool opcional e devolve `run_id`) e `POST /api/public/hunting/runs/:id/finish` (marca conclusão e totais). Autenticação por API key (mesmo middleware da `capture`).
-- Nova tabela `ats_hunting_runs` (id, owner_id, label, source_url, status, totals_jsonb, started_at, finished_at) com RLS por `owner_id` e GRANTs padrão.
-- Coluna aditiva `contact_info jsonb` em `ats_candidates`.
-- Filtro `?hunting_run=<id>` na lista `/candidates` (já existe paginação; só adicionar where).
-- **Bulk-capture antigo (`/api/public/hunting/bulk-capture`) fica deprecated** — a nova captura em lote usa o mesmo `/capture` por perfil, garantindo dados ricos.
+- `/settings/integrations/linkedin` — conectar/desconectar conta, ver status, último uso, contadores do dia, janela humana configurável.
+- `/hunting` — reescrita: aba **Busca** (form de filtros Classic + tabela de resultados + ação "Importar selecionados"), aba **Execuções** (histórico `hunting_runs`), aba **Conta LinkedIn**.
+- Toasts e estados claros: `rate_limited`, `out_of_window`, `daily_budget_reached`, `account_disconnected`.
 
-Nenhuma alteração de RLS de tabelas existentes, auth, schema fora das colunas/tabela aditivas acima.
+## Segurança
 
-## 6. Entregas faseadas
+- API key Unipile via `add_secret` (`UNIPILE_API_KEY`, `UNIPILE_DSN`, `UNIPILE_WEBHOOK_SECRET`).
+- Cliente `unipile.server.ts` **só** em handlers de server fn / rotas; nunca importado em `*.functions.ts` no topo.
+- Webhook valida HMAC + idempotência.
+- RLS por `owner_id` em todas as tabelas novas.
+- Logs sem PII além do necessário; payloads grandes via hash.
 
-**Fase A — Extrator confiável de perfil único**
-- Reescrever `extension/content.js` em módulos: `voyager-index.js`, `details-fetcher.js`, `profile-builder.js`, `guard.js`.
-- Remover heurísticas de innerText do caminho feliz (manter só como diagnóstico).
-- Atualizar `capture_version` para `3.0`.
-- Validar manualmente em 5 perfis (1º grau, 2º grau, fora da rede, Premium, OpenToWork) e anexar diagnóstico.
+## Entregas (fases)
 
-**Fase B — `contact_info`, `ats_hunting_runs` e endpoints de run**
-- Migration aditiva: `alter table ats_candidates add column contact_info jsonb`; `create table ats_hunting_runs (...)` com RLS + GRANT; `alter table ats_hunting_captures add column hunting_run_id uuid`.
-- Estender Zod do `capture.ts` para aceitar `contact_info` e `hunting_run_id`.
-- Criar `runs.ts` (POST create + POST finish).
-- Renderizar `contact_info` na tela de detalhes do candidato (read-only).
-- Adicionar filtro `?hunting_run=<id>` em `/candidates`.
+1. **F1 — Fundamentos**: migrations, secrets, cliente server com throttle/jitter/janela humana, `/settings/integrations/linkedin` + Hosted Auth + webhook.
+2. **F2 — Busca + Perfil (Classic)**: `searchLinkedinPeople`, `fetchLinkedinProfile`, nova `/hunting` (aba Busca + Importar). Hunter Chrome marcado como depreciado (feature flag).
+3. **F3 — Bulk import + Observabilidade**: `bulkImportFromSearch`, painel de execuções, métricas (budget restante, sucesso/erro/latência).
+4. **F4 — Mensageria**: DM, convites, sync de inbox, templates.
 
-**Fase C — Captura em lote da busca (salva no TechHire)**
-- Detector de página de busca + nova aba "Busca" na sidebar.
-- Fila em IndexedDB + worker no background.js.
-- Cria `hunting_run` ao iniciar, posta cada perfil completo em `/capture` com `hunting_run_id`, finaliza a run ao terminar.
-- Progresso/erros visíveis na sidebar com link "Abrir no TechHire" filtrado pela run.
-- Throttle, jitter e pausa em captcha.
-- Botão "Parar" (marca run como `aborted`).
+## Perguntas abertas (preciso da sua resposta para iniciar a F1)
 
-**Fase D — Refinos**
-- Toggle "modo silencioso" (abas em background sem foco).
-- Tela `/hunting/runs` no app com histórico de runs (lista, KPIs por run, link para candidatos da run).
-- Documentar em `extension/README.md` v2.0 e atualizar página `/hunting` no app.
-
-## 7. Limites e honestidade
-
-- O LinkedIn rejeita scraping em massa; manteremos concorrência 1 e jitter humano. Mesmo assim o usuário pode tomar challenge/restrição — vamos comunicar isso na UI ("você é o responsável pela conta usada").
-- Não vamos burlar login, paywall do Sales Navigator nem captcha.
-- Sem credenciais novas, sem secrets, sem mudança de auth/RLS de tabelas existentes.
-- Nada de IA nesta entrega — extração é puramente determinística.
-- Sem export CSV — todo dado capturado é gravado no TechHire (ats_candidates + ats_hunting_captures + ats_hunting_runs).
-
-## 8. Arquivos previstos
-
-Criar: `extension/lib/voyager-index.js`, `extension/lib/details-fetcher.js`, `extension/lib/profile-builder.js`, `extension/lib/guard.js`, `extension/lib/search-queue.js`, `extension/sidebar-search.html` (parcial), migration `*_ats_hunting_runs_and_contact_info.sql`, `src/routes/api/public/hunting/runs.ts`, `src/routes/_authenticated/(ats)/hunting.runs.tsx` (Fase D).
-
-Alterar: `extension/content.js` (reduzir drasticamente), `extension/background.js` (worker da fila + chamadas de run), `extension/manifest.json` (versão 2.0.0), `extension/sidebar.css`, `extension/popup.html/js` (toggle headless), `src/routes/api/public/hunting/capture.ts` (Zod + `contact_info` + `hunting_run_id`), `src/routes/_authenticated/(ats)/candidates.$id.tsx` (render `contact_info`), `src/routes/_authenticated/(ats)/candidates.index.tsx` (filtro `?hunting_run=<id>`), `extension/README.md`.
-
-Deprecar (sem remover ainda): `src/routes/api/public/hunting/bulk-capture.ts` — adicionar header de deprecação no response e log.
-
-Sem alterações em RLS, auth ou schema de tabelas existentes além das colunas aditivas acima.
-
-## 9. Como validar manualmente
-
-1. Recarregar a extensão em `chrome://extensions`.
-2. Abrir um perfil e conferir no painel "Diagnóstico" que `experiences` e `education` vieram de `voyager` (não `text-fallback`).
-3. Conferir em `/candidates/<id>` que About, Experiência, Educação, Skills e Contact Info aparecem estruturados.
-4. Ir em `linkedin.com/search/results/people/?keywords=...`, clicar "Capturar resultados", definir 5 perfis, iniciar.
-5. Acompanhar progresso na sidebar (5/5 salvos no TechHire).
-6. Clicar "Abrir no TechHire" e ver os 5 candidatos da run com dados completos em `/candidates?hunting_run=<id>`.
-7. (Fase D) Conferir a run em `/hunting/runs` com totais e timestamps.
-
-## 10. Próximo passo recomendado
-
-Aprovar este plano para eu iniciar pela **Fase A** (extrator confiável de perfil único) — é o que resolve o print que você mandou. Fases B/C/D em sequência, sem misturar com a Fase A.
+1. **DSN + API key da Unipile**: você vai me passar via `add_secret` quando eu pedir, certo? (não cole no chat agora)
+2. **Janela humana padrão**: 8h–20h no fuso `America/Sao_Paulo` está OK como default?
+3. **Hunter Chrome**: pode marcar como depreciado já na F2 (mantém código atrás de flag) ou prefere remover só depois de validar a F2 em produção?
