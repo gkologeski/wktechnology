@@ -18,7 +18,12 @@ import {
 } from "@/lib/unipile/accounts.functions";
 
 const searchSchema = z
-  .object({ connected: z.union([z.literal("1"), z.literal("0")]).optional() })
+  .object({
+    connected: z
+      .union([z.string(), z.number(), z.boolean()])
+      .transform((v) => (v === true || v === 1 || v === "1" ? "1" : "0"))
+      .optional(),
+  })
   .passthrough();
 
 export const Route = createFileRoute("/_authenticated/settings/integrations/linkedin")({
