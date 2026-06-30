@@ -97,10 +97,10 @@ function normalizeHit(it: UnipileSearchItem): NormalizedSearchHit {
   const url =
     pickStr(it.public_profile_url, it.profile_url) ??
     (publicId ? `https://www.linkedin.com/in/${publicId}` : null);
-  const name =
+  const composed =
     pickStr(it.name) ??
-    [pickStr(it.first_name), pickStr(it.last_name)].filter(Boolean).join(" ").trim() ||
-    "Sem nome";
+    ([pickStr(it.first_name), pickStr(it.last_name)].filter(Boolean).join(" ").trim() || null);
+  const name = composed ?? "Sem nome";
 
   const currentArr = Array.isArray(it.current_positions) ? it.current_positions[0] : undefined;
   const currentObj =
