@@ -199,6 +199,7 @@ import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
+import { Route as ApiPublicUnipileWebhookRouteImport } from './routes/api/public/unipile/webhook'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
 import { Route as ApiPublicReferSlugRouteImport } from './routes/api/public/refer/$slug'
@@ -245,6 +246,7 @@ import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/p
 import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
+import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
@@ -1345,6 +1347,11 @@ const ApiPublicV1ContactsRoute = ApiPublicV1ContactsRouteImport.update({
   path: '/api/public/v1/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicUnipileWebhookRoute = ApiPublicUnipileWebhookRouteImport.update({
+  id: '/api/public/unipile/webhook',
+  path: '/api/public/unipile/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
   id: '/api/public/twilio/voice',
   path: '/api/public/twilio/voice',
@@ -1611,6 +1618,12 @@ const AuthenticatedSettingsNotificationsSlackRoute =
     id: '/slack',
     path: '/slack',
     getParentRoute: () => AuthenticatedSettingsNotificationsRoute,
+  } as any)
+const AuthenticatedSettingsIntegrationsLinkedinRoute =
+  AuthenticatedSettingsIntegrationsLinkedinRouteImport.update({
+    id: '/integrations/linkedin',
+    path: '/integrations/linkedin',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
   AuthenticatedProspectingCampaignsIdRouteImport.update({
@@ -1981,6 +1994,7 @@ export interface FileRoutesByFullPath {
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
@@ -2027,6 +2041,7 @@ export interface FileRoutesByFullPath {
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
@@ -2245,6 +2260,7 @@ export interface FileRoutesByTo {
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
@@ -2291,6 +2307,7 @@ export interface FileRoutesByTo {
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
@@ -2515,6 +2532,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
@@ -2561,6 +2579,7 @@ export interface FileRoutesById {
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
@@ -2785,6 +2804,7 @@ export interface FileRouteTypes {
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
+    | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
@@ -2831,6 +2851,7 @@ export interface FileRouteTypes {
     | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
+    | '/api/public/unipile/webhook'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
@@ -3049,6 +3070,7 @@ export interface FileRouteTypes {
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/prospecting/campaigns/$id'
+    | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
@@ -3095,6 +3117,7 @@ export interface FileRouteTypes {
     | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
+    | '/api/public/unipile/webhook'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
@@ -3318,6 +3341,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/prospecting/campaigns/$id'
+    | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
     | '/_authenticated/settings/roles/matrix'
@@ -3364,6 +3388,7 @@ export interface FileRouteTypes {
     | '/api/public/refer/$slug'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
+    | '/api/public/unipile/webhook'
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
@@ -3476,6 +3501,7 @@ export interface RootRouteChildren {
   ApiPublicReferSlugRoute: typeof ApiPublicReferSlugRouteWithChildren
   ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
+  ApiPublicUnipileWebhookRoute: typeof ApiPublicUnipileWebhookRoute
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
@@ -4830,6 +4856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1ContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/unipile/webhook': {
+      id: '/api/public/unipile/webhook'
+      path: '/api/public/unipile/webhook'
+      fullPath: '/api/public/unipile/webhook'
+      preLoaderRoute: typeof ApiPublicUnipileWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/twilio/voice': {
       id: '/api/public/twilio/voice'
       path: '/api/public/twilio/voice'
@@ -5151,6 +5184,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/notifications/slack'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsSlackRouteImport
       parentRoute: typeof AuthenticatedSettingsNotificationsRoute
+    }
+    '/_authenticated/settings/integrations/linkedin': {
+      id: '/_authenticated/settings/integrations/linkedin'
+      path: '/integrations/linkedin'
+      fullPath: '/settings/integrations/linkedin'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/prospecting/campaigns/$id': {
       id: '/_authenticated/prospecting/campaigns/$id'
@@ -5593,6 +5633,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsIntegrationsLinkedinRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -5681,6 +5722,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsZapierRoute: AuthenticatedSettingsZapierRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsIntegrationsLinkedinRoute:
+    AuthenticatedSettingsIntegrationsLinkedinRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
@@ -6069,6 +6112,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicReferSlugRoute: ApiPublicReferSlugRouteWithChildren,
   ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
+  ApiPublicUnipileWebhookRoute: ApiPublicUnipileWebhookRoute,
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,

@@ -219,6 +219,7 @@ const sections: Section[] = [
     label: "Integrações",
     tabs: [
       { to: "/integrations", label: "Conectores", icon: Plug, need: "admin" },
+      { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Briefcase },
       { to: "/settings/webhooks", label: "Webhooks", icon: Webhook, need: "admin" },
       { to: "/settings/zapier", label: "Zapier", icon: Zap, need: "admin" },
       { to: "/settings/notifications/slack", label: "Slack", icon: Bell, need: "admin" },
