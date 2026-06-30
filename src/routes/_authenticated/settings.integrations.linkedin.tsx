@@ -65,6 +65,7 @@ function LinkedinIntegrationPage() {
   const startConnect = useServerFn(startLinkedinConnect);
   const disconnect = useServerFn(disconnectLinkedinAccount);
   const saveWindow = useServerFn(updateDailyWindow);
+  const reconcile = useServerFn(reconcileLinkedinAccount);
 
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [buckets, setBuckets] = useState<Bucket[]>([]);
