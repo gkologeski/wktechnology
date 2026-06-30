@@ -1401,7 +1401,7 @@
           if (!items.length) items = extractListItemsFromDetailsText(doc, path).slice(0, limit);
           const mapped = items
             .map(mapper)
-            .filter((x) => Object.values(x).some((v) => v));
+            .filter((x) => Object.values(x).some((v) => v) && !itemHasJunk(x));
           if (mapped.length) profile[field] = mapped;
         } catch {
           /* falha isolada por seção */
