@@ -201,13 +201,95 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ImportInput.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const { loadAccountCtx, fetchProfile, UnipileError } = await import(
+      "@/lib/unipile/client.server"
+    );
+
+    let enrichCtx: Awaited<ReturnType<typeof loadAccountCtx>> | null = null;
+    try {
+      enrichCtx = await loadAccountCtx(userId);
+    } catch {
+      enrichCtx = null; // segue sem enriquecer — import básico ainda funciona
+    }
+
     let created = 0;
     let deduped = 0;
+    let enriched = 0;
     const errors: Array<{ url: string; message: string }> = [];
 
     for (const it of data.items) {
       try {
         const url = normalizeLinkedinUrl(it.linkedin_url);
+
+        // ── Enriquecimento via Unipile (skills, education, experiences) ─────
+        type EnrichPayload = {
+          headline?: string | null;
+          location?: string | null;
+          current_company?: string | null;
+          current_position?: string | null;
+          photo_url?: string | null;
+          skills?: string[];
+          skills_detailed?: unknown;
+          education?: unknown;
+          experiences?: unknown;
+          languages?: unknown;
+          certifications?: unknown;
+          raw?: unknown;
+        };
+        const enrich: EnrichPayload = {};
+        if (enrichCtx && it.public_identifier) {
+          try {
+            const profile = (await fetchProfile(enrichCtx, it.public_identifier)) as
+              | Record<string, unknown>
+              | null;
+            if (profile) {
+              const p = profile as Record<string, any>;
+              enrich.raw = profile;
+              enrich.headline = (p.headline as string) ?? null;
+              enrich.location = (p.location as string) ?? (p.location_name as string) ?? null;
+              enrich.photo_url =
+                (p.profile_picture_url as string) ?? (p.picture_url as string) ?? null;
+
+              const exps = Array.isArray(p.work_experience)
+                ? p.work_experience
+                : Array.isArray(p.experiences)
+                  ? p.experiences
+                  : Array.isArray(p.experience)
+                    ? p.experience
+                    : [];
+              enrich.experiences = exps;
+              if (exps[0]) {
+                enrich.current_company =
+                  (exps[0].company as string) ?? (exps[0].company_name as string) ?? null;
+                enrich.current_position =
+                  (exps[0].position as string) ??
+                  (exps[0].role as string) ??
+                  (exps[0].title as string) ??
+                  null;
+              }
+
+              const edu = Array.isArray(p.education) ? p.education : [];
+              enrich.education = edu;
+
+              const skillsRaw = Array.isArray(p.skills) ? p.skills : [];
+              enrich.skills_detailed = skillsRaw;
+              enrich.skills = skillsRaw
+                .map((s: any) => (typeof s === "string" ? s : (s?.name as string)))
+                .filter((v: string | undefined): v is string => !!v && v.trim().length > 0)
+                .slice(0, 50);
+
+              enrich.languages = Array.isArray(p.languages) ? p.languages : [];
+              enrich.certifications = Array.isArray(p.certifications) ? p.certifications : [];
+              enriched += 1;
+            }
+          } catch (e) {
+            // Não derruba o import se o enrich falhar (rate limit, perfil privado, etc.)
+            if (e instanceof UnipileError && e.code === "daily_budget_reached") {
+              enrichCtx = null; // para de tentar enriquecer no resto do loop
+            }
+          }
+        }
+
         const { data: existing } = await supabase
           .from("ats_candidates")
           .select("id")
@@ -215,30 +297,47 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           .ilike("linkedin_url", url)
           .maybeSingle();
 
+        const enrichUpdate: Record<string, unknown> = {
+          last_touch_at: new Date().toISOString(),
+        };
+        if (enrich.headline) enrichUpdate.headline = enrich.headline;
+        if (enrich.location) enrichUpdate.location = enrich.location;
+        if (enrich.current_company) enrichUpdate.current_company = enrich.current_company;
+        if (enrich.current_position) enrichUpdate.current_position = enrich.current_position;
+        if (enrich.photo_url) enrichUpdate.photo_url = enrich.photo_url;
+        if (enrich.skills?.length) enrichUpdate.skills = enrich.skills;
+        if (enrich.skills_detailed) enrichUpdate.skills_detailed = enrich.skills_detailed;
+        if (enrich.education) enrichUpdate.education = enrich.education;
+        if (enrich.experiences) enrichUpdate.experiences = enrich.experiences;
+        if (enrich.languages) enrichUpdate.languages = enrich.languages;
+        if (enrich.certifications) enrichUpdate.certifications = enrich.certifications;
+
         let candidateId: string;
         if (existing) {
           candidateId = existing.id as string;
           deduped += 1;
           await supabase
             .from("ats_candidates")
-            .update({ last_touch_at: new Date().toISOString() } as never)
+            .update(enrichUpdate as never)
             .eq("id", candidateId);
         } else {
+          const insertRow = {
+            owner_id: userId,
+            created_by: userId,
+            full_name: it.full_name,
+            linkedin_url: url,
+            location: enrich.location ?? it.location ?? null,
+            current_company: enrich.current_company ?? it.current_company ?? null,
+            current_position:
+              enrich.current_position ?? it.current_position ?? it.headline ?? null,
+            headline: enrich.headline ?? it.headline ?? null,
+            photo_url: enrich.photo_url ?? it.photo_url ?? null,
+            source: "linkedin_unipile_search",
+            ...enrichUpdate,
+          };
           const { data: ins, error } = await supabase
             .from("ats_candidates")
-            .insert({
-              owner_id: userId,
-              created_by: userId,
-              full_name: it.full_name,
-              linkedin_url: url,
-              location: it.location ?? null,
-              current_company: it.current_company ?? null,
-              current_position: it.current_position ?? it.headline ?? null,
-              headline: it.headline ?? null,
-              photo_url: it.photo_url ?? null,
-              source: "linkedin_unipile_search",
-              last_touch_at: new Date().toISOString(),
-            } as never)
+            .insert(insertRow as never)
             .select("id")
             .single();
           if (error) {
@@ -253,8 +352,8 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           owner_id: userId,
           candidate_id: candidateId,
           source_url: it.linkedin_url,
-          raw_payload: it as never,
-          parser_version: "unipile-search-v1",
+          raw_payload: (enrich.raw ?? it) as never,
+          parser_version: "unipile-search-v2-enriched",
           captured_by: userId,
         } as never);
       } catch (e) {
@@ -262,5 +361,5 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
       }
     }
 
-    return { created, deduped, errors };
+    return { created, deduped, enriched, errors };
   });
