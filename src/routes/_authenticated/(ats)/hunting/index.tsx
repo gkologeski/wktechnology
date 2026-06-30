@@ -20,10 +20,16 @@ export const Route = createFileRoute("/_authenticated/(ats)/hunting/")({
 
 const TILES = [
   {
+    to: "/hunting/search",
+    icon: Search,
+    title: "Buscar no LinkedIn",
+    description: "Pesquisa via Unipile com throttling humano. Selecione perfis e importe direto pro ATS.",
+  },
+  {
     to: "/hunting/captures",
     icon: Inbox,
     title: "Capturados",
-    description: "Candidatos trazidos do LinkedIn pela extensão — pronto pra mover pra vaga ou pool.",
+    description: "Candidatos trazidos do LinkedIn — pronto pra mover pra vaga ou pool.",
   },
   {
     to: "/hunting/templates",
@@ -34,8 +40,8 @@ const TILES = [
   {
     to: "/hunting/install",
     icon: Download,
-    title: "Instalar extensão",
-    description: "Baixe a extensão TechHire Hunter pra Chrome/Edge e ative a sidebar no LinkedIn.",
+    title: "Instalar extensão (legado)",
+    description: "Extensão Chrome descontinuada — use a busca via Unipile.",
   },
 ] as const;
 
