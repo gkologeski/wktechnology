@@ -993,17 +993,32 @@
   async function triggerLazyLoad() {
     return safe(async () => {
       const origin = window.scrollY;
-      for (let i = 0; i < 5; i++) {
-        window.scrollTo(0, document.body.scrollHeight);
-        await wait(400);
-        const exp = document.getElementById("experience");
-        const edu = document.getElementById("education");
-        const hasItems = (el) =>
-          el?.closest("section")?.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity").length;
-        if (hasItems(exp) && hasItems(edu)) break;
+      const totalHeight = () => Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      );
+      const hasItems = (id) => {
+        const el = document.getElementById(id);
+        return !!el?.closest("section")?.querySelectorAll(
+          "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity"
+        ).length;
+      };
+      // Sweep 1: step-scroll through the whole page so every section's
+      // IntersectionObserver fires and hydrates (about, experience, education, skills, ...).
+      const step = Math.max(400, Math.floor(window.innerHeight * 0.6));
+      for (let y = 0; y <= totalHeight(); y += step) {
+        window.scrollTo(0, y);
+        await wait(280);
       }
-      window.scrollTo(0, Math.floor(document.body.scrollHeight / 2));
-      await wait(200);
+      // Sweep 2: keep nudging bottom + mid-page until exp/edu have items
+      // or we hit a hard cap (~12s).
+      for (let i = 0; i < 18; i++) {
+        window.scrollTo(0, totalHeight());
+        await wait(380);
+        if (hasItems("experience") && hasItems("education")) break;
+        window.scrollTo(0, Math.floor(totalHeight() / 2));
+        await wait(220);
+      }
       window.scrollTo(0, origin);
       await wait(150);
     });
