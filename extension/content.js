@@ -475,6 +475,44 @@
     return best?.headline || best?.location ? best : null;
   }
 
+  // v3.0 — about/summary autoritativo: lê Profile.summary do SSR.
+  // É a única forma confiável de obter o "Sobre" sem misturar com
+  // "Atividade", "Mais perfis" e rodapé. Quando isto vier preenchido,
+  // ele DEVE sobrescrever qualquer about extraído do DOM.
+  function ssrProfileSummary(fullName = "") {
+    const items = ssrIncluded();
+    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    let best = "";
+    let bestScore = -999;
+    for (const it of items) {
+      if (!it || typeof it !== "object") continue;
+      const type = String(it.$type || it["$type"] || "");
+      if (!/\.Profile($|[^A-Za-z])/i.test(type) && !/MiniProfile/i.test(type)) continue;
+      const summary = ssrText(it.summary) || ssrText(it.about) || "";
+      if (!summary || summary.length < 12) continue;
+      const publicIdentifier = clean(it.publicIdentifier || it.publicProfileUrl || "").toLowerCase();
+      const name = clean(ssrText(it.fullName) || ssrText(it.name) || "");
+      let score = summary.length > 60 ? 4 : 1;
+      if (slug && publicIdentifier.includes(slug)) score += 30;
+      if (name && lower(name) === lower(fullName)) score += 20;
+      if (/MiniProfile/i.test(type)) score -= 6;
+      if (score > bestScore) {
+        bestScore = score;
+        best = summary;
+      }
+    }
+    return best || "";
+  }
+
+  // Detector de "about lixo": quando o DOM scrape capturou a página
+  // inteira (Atividade/Mais perfis/footer) em vez do Sobre real.
+  function looksLikeJunkAbout(text) {
+    const t = clean(text);
+    if (!t) return true;
+    if (t.length > 1800) return true;
+    return /(mais perfis para voc|people also viewed|atividade\s+\d|activity\s+\d|publica[çc][õo]es?\s+do\s+|posts?\s+de\s+|dados de contato|contact info|enviar mensagem|send message|seguidores?\b|followers?\b|conex[õo]es?\s+m[úu]tuas?|mutual connections?|abrir menu|open menu|languages?\s*$|portugu[êe]s\s*\(brasil\)|english\s*\(us\)|para neg[óo]cios|for business|principais compet[êe]ncias|key skills and technologies)/i.test(t);
+  }
+
   function ssrExperiences(doc = document) {
     return ssrFind("position", doc).map((it) => {
       const title = ssrText(it.title) || ssrText(it.profilePosition?.title) || ssrText(it.position?.title) || ssrFirstLine(it);
