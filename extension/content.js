@@ -1936,17 +1936,26 @@
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
       }
-      // Guard rígido: se não veio SSR, nenhuma âncora hidratou e os arrays ricos
-      // estão todos vazios, o parser só achou shell+footer. Abortar a gravação
-      // para não salvar lixo (ex.: lista de idiomas do footer no "about").
+      // v3.0 — Guard rígido: aborta se não temos sinal estruturado real
+      // (about do SSR, experiências OU educação). Sem isso o parser
+      // está pegando shell/footer e mandando lixo pro TechHire.
       const d = latestProfile?.parser_diagnostics || {};
       const anchorsOk =
         d.anchors && Object.values(d.anchors).some((v) => v === true);
       const richCount =
         (latestProfile?.experiences?.length || 0) +
-        (latestProfile?.educations?.length || 0) +
-        (latestProfile?.skills?.length || 0);
+        (latestProfile?.education?.length || 0) +
+        (latestProfile?.skills_detailed?.length || 0);
+      const aboutFromSsr = latestProfile?.__about_source === "voyager_ssr";
+      const structuredOk = aboutFromSsr || (latestProfile?.experiences?.length || 0) > 0 || (latestProfile?.education?.length || 0) > 0;
       const ssrOk = (d.ssr_code_count || 0) > 0;
+      if (!structuredOk && !allowPartialOnce) {
+        allowPartialOnce = true;
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        setStatus("Sem dados estruturados (Voyager não retornou Profile/Position/Education). Role a página inteira, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim parcial, clique em Salvar novamente.", true);
+        return;
+      }
       if (!ssrOk && !anchorsOk && richCount === 0 && !allowPartialOnce) {
         allowPartialOnce = true;
         btn.disabled = false;
@@ -1962,6 +1971,13 @@
         setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
         return;
       }
+      // Sanity final: nunca deixa "about lixo" sair pro backend.
+      if (looksLikeJunkAbout(latestProfile?.about)) {
+        latestProfile.about = null;
+        latestProfile.__about_source = latestProfile.__about_source || "discarded_pre_send";
+      }
+      // Limpa marcadores internos
+      delete latestProfile.__about_source;
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
         btn.disabled = false;
