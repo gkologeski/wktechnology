@@ -121,10 +121,7 @@ function normalizeHit(it: UnipileSearchItem): NormalizedSearchHit {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _unused() {
-  };
-}
+
 
 function normalizeLinkedinUrl(url: string): string {
   try {
