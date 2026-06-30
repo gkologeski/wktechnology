@@ -25,6 +25,11 @@
     details: { attempted: 0, ok: 0, failed: 0, status: [] },
   };
 
+  function pushDiagnosticStatus(bucket, entry) {
+    bucket.status.push(entry);
+    if (bucket.status.length > 12) bucket.status.splice(0, bucket.status.length - 12);
+  }
+
   const safe = (fn) => {
     try {
       return fn() || "";
@@ -838,7 +843,7 @@
       const t = setTimeout(() => ctrl.abort(), 8000);
       const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
       clearTimeout(t);
-      parserDiagnostics.details.status.push({ section: sectionPath, status: resp.status });
+      pushDiagnosticStatus(parserDiagnostics.details, { section: sectionPath, status: resp.status });
       if (!resp.ok) {
         parserDiagnostics.details.failed += 1;
         return null;
@@ -893,7 +898,7 @@
         signal: ctrl.signal,
       });
       clearTimeout(t);
-      parserDiagnostics.voyager.status.push({ status: resp.status, path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160) });
+      pushDiagnosticStatus(parserDiagnostics.voyager, { status: resp.status, path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160) });
       if (!resp.ok) {
         parserDiagnostics.voyager.failed += 1;
         return null;
