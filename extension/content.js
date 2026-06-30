@@ -101,20 +101,33 @@
     }
   }
 
+  // v3.1: junk patterns do rodapé/anúncios do LinkedIn que contaminam fallback
+  // de texto quando /details/* vem sem SSR renderizado.
+  const LINKEDIN_JUNK_RE = /(op[çc][õo]es de an[úu]ncios|por que estou vendo este an[úu]ncio|ocultar ou denunciar|n[ãa]o quero ver|j[áa] vi este mesmo an[úu]ncio|seu feedback nos ajudar[áa]|denunciar este an[úu]ncio|solu[çc][õo]es de marketing|solu[çc][õo]es de vendas|solu[çc][õo]es de talentos|prefer[êe]ncias de an[úu]ncios|termos e privacidade|diretrizes da comunidade|central de ajuda|central de seguran[çc]a|acesse suas configura[çc][õo]es|visibilidade da recomenda[çc][ãa]o|linked\s*in corporation|©\s*20\d{2}|dispositivo m[óo]vel|pequenas empresas|pol[íi]ticas para comunidades|gerencie sua conta|gerencie suas prefer[êe]ncias|d[úu]vidas\?|comunidades profissionais|servi[çc]os ao consumidor)/i;
+
   const isLinkedInUiLine = (line) => {
     const value = lower(line);
     return (
       !value ||
-      /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada|português|portugues|english|inglês|ingles|para negócios|para negocios|anunciar|minha rede|vagas|notificações|notificacoes|eu)$/.test(
+      /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada|português|portugues|english|inglês|ingles|para negócios|para negocios|anunciar|minha rede|vagas|notificações|notificacoes|eu|enviar|sobre|publicidade|carreiras|acessibilidade|linked)$/.test(
         value,
       ) ||
       /seguidores|followers|seguidor|conexões|conexoes|connections|connection|mútuo|mutual|grau|degree|perfis para você|people also viewed|mais perfis|destaques|highlights/.test(
         value,
-      )
+      ) ||
+      LINKEDIN_JUNK_RE.test(line)
     );
   };
 
   const isNoiseLine = (line) => isLinkedInUiLine(line);
+
+  // Heurística: um item mapeado é "lixo" se qualquer campo bate no junk regex.
+  const itemHasJunk = (obj) => {
+    if (!obj || typeof obj !== "object") return false;
+    return Object.values(obj).some(
+      (v) => typeof v === "string" && (LINKEDIN_JUNK_RE.test(v) || isLinkedInUiLine(v)),
+    );
+  };
 
   const looksLikeNameLine = (line, fullName) => {
     const a = lower(normalizedName(line));
@@ -997,7 +1010,10 @@
       volunteering: /(volunt|volunteer)/i,
     }[kind];
     const start = titleRe ? lines.findIndex((line) => titleRe.test(line)) : -1;
-    const scoped = start >= 0 ? lines.slice(start + 1) : lines;
+    // v3.1: sem o marcador da seção no documento /details/*, o conteúdo é
+    // navegação/rodapé/anúncios — devolver vazio em vez de inventar items.
+    if (start < 0) return [];
+    const scoped = lines.slice(start + 1);
     if (kind === "skills") {
       return scoped
         .filter((line) => line.length <= 120 && !SECTION_BOUNDARY_RE.test(line))
@@ -1385,7 +1401,7 @@
           if (!items.length) items = extractListItemsFromDetailsText(doc, path).slice(0, limit);
           const mapped = items
             .map(mapper)
-            .filter((x) => Object.values(x).some((v) => v));
+            .filter((x) => Object.values(x).some((v) => v) && !itemHasJunk(x));
           if (mapped.length) profile[field] = mapped;
         } catch {
           /* falha isolada por seção */
@@ -1556,7 +1572,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "3.0",
+      capture_version: "3.1",
       // Perfil rico
       headline: headline || null,
       about: extractAbout(full_name) || null,
@@ -1936,6 +1952,39 @@
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
       }
+      // v3.1 — Sanitização final: remove items de qualquer seção que
+      // tenham caído no rodapé/anúncios do LinkedIn (Opções de anúncios,
+      // Termos e Privacidade, LinkedIn Corporation, etc.).
+      try {
+        const arrFields = [
+          "experiences",
+          "education",
+          "certifications",
+          "languages",
+          "skills_detailed",
+          "projects",
+          "publications",
+          "volunteering",
+          "recent_activity",
+          "recommendations",
+        ];
+        for (const f of arrFields) {
+          if (Array.isArray(latestProfile?.[f])) {
+            latestProfile[f] = latestProfile[f].filter((x) => !itemHasJunk(x));
+          }
+        }
+        if (latestProfile?.about && LINKEDIN_JUNK_RE.test(latestProfile.about)) {
+          latestProfile.about = null;
+        }
+        // Recalcula contagens do diagnóstico após o filtro.
+        if (latestProfile?.parser_diagnostics?.extracted_counts) {
+          latestProfile.parser_diagnostics.extracted_counts = {
+            experiences: latestProfile.experiences?.length || 0,
+            education: latestProfile.education?.length || 0,
+            skills: latestProfile.skills_detailed?.length || 0,
+          };
+        }
+      } catch { /* não bloquear captura por falha do filtro */ }
       // v3.0 — Guard rígido: aborta se não temos sinal estruturado real
       // (about do SSR, experiências OU educação). Sem isso o parser
       // está pegando shell/footer e mandando lixo pro TechHire.
