@@ -1646,6 +1646,8 @@
         </div>
         <div id="thh-status" class="thh-status">Carregando…</div>
         <div id="thh-preview" class="thh-preview"><div class="thh-muted">Detectando perfil…</div></div>
+        <label class="thh-debug-toggle"><input type="checkbox" id="thh-debug-toggle"/> Modo debug (mostrar diagnóstico de seletores)</label>
+        <div id="thh-debug-panel" class="thh-debug-panel" style="display:none"></div>
         <div class="thh-actions">
           <button id="thh-recheck" class="thh-btn">Re-detectar</button>
           <button id="thh-capture" class="thh-btn thh-primary">Salvar candidato</button>
