@@ -1952,6 +1952,39 @@
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
       }
+      // v3.1 — Sanitização final: remove items de qualquer seção que
+      // tenham caído no rodapé/anúncios do LinkedIn (Opções de anúncios,
+      // Termos e Privacidade, LinkedIn Corporation, etc.).
+      try {
+        const arrFields = [
+          "experiences",
+          "education",
+          "certifications",
+          "languages",
+          "skills_detailed",
+          "projects",
+          "publications",
+          "volunteering",
+          "recent_activity",
+          "recommendations",
+        ];
+        for (const f of arrFields) {
+          if (Array.isArray(latestProfile?.[f])) {
+            latestProfile[f] = latestProfile[f].filter((x) => !itemHasJunk(x));
+          }
+        }
+        if (latestProfile?.about && LINKEDIN_JUNK_RE.test(latestProfile.about)) {
+          latestProfile.about = null;
+        }
+        // Recalcula contagens do diagnóstico após o filtro.
+        if (latestProfile?.parser_diagnostics?.extracted_counts) {
+          latestProfile.parser_diagnostics.extracted_counts = {
+            experiences: latestProfile.experiences?.length || 0,
+            education: latestProfile.education?.length || 0,
+            skills: latestProfile.skills_detailed?.length || 0,
+          };
+        }
+      } catch { /* não bloquear captura por falha do filtro */ }
       // v3.0 — Guard rígido: aborta se não temos sinal estruturado real
       // (about do SSR, experiências OU educação). Sem isso o parser
       // está pegando shell/footer e mandando lixo pro TechHire.
