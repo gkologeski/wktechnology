@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v1.0.7)
+// TechHire Hunter — Content script (v1.0.8 — modo debug)
 // Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
@@ -1580,6 +1580,120 @@
       <div class="thh-muted">${escapeHtml(profile.current_position) || "—"}</div>
       <div class="thh-muted">${escapeHtml(profile.current_company) || "—"}</div>
       <div class="thh-muted">${escapeHtml(profile.location) || "—"}</div>${richLine}${partial}`;
+    renderDebug(profile);
+  }
+
+  function debugEnabled() {
+    return document.getElementById("thh-debug-toggle")?.checked === true;
+  }
+
+  function fieldRow(label, value, opts) {
+    const status = opts?.status;
+    const detail = opts?.detail ? ` <span class="thh-muted" style="color:#94a3b8">${escapeHtml(opts.detail)}</span>` : "";
+    let cls = "thh-debug-ok";
+    let text = "ok";
+    if (status === "missing") { cls = "thh-debug-miss"; text = "vazio"; }
+    else if (status === "warn") { cls = "thh-debug-warn"; text = opts?.text || "parcial"; }
+    else if (status === "ok") { cls = "thh-debug-ok"; text = opts?.text || "ok"; }
+    return `<div class="thh-debug-row"><span class="thh-debug-key">${escapeHtml(label)}${detail}</span><span class="${cls}">${escapeHtml(String(value ?? text))}</span></div>`;
+  }
+
+  function renderDebug(profile) {
+    const panel = document.getElementById("thh-debug-panel");
+    if (!panel) return;
+    if (!debugEnabled()) { panel.style.display = "none"; return; }
+    panel.style.display = "block";
+
+    const d = profile?.parser_diagnostics || {};
+    const counts = d.extracted_counts || {};
+    const anchors = {
+      about: !!document.querySelector('#about, [id="about"], section[data-section="summary"]'),
+      experience: !!document.querySelector('#experience, [id="experience"]'),
+      education: !!document.querySelector('#education, [id="education"]'),
+      skills: !!document.querySelector('#skills, [id="skills"]'),
+      languages: !!document.querySelector('#languages, [id="languages"]'),
+      certifications: !!document.querySelector('#licenses_and_certifications, [id="licenses_and_certifications"]'),
+      activity: !!document.querySelector('#content_collections, [id="content_collections"], section[data-section="recent-activity"]'),
+    };
+
+    const coreFields = [
+      ["full_name", profile?.full_name],
+      ["current_position", profile?.current_position],
+      ["current_company", profile?.current_company],
+      ["location", profile?.location],
+      ["avatar_url", profile?.avatar_url],
+      ["about", profile?.about ? `${String(profile.about).length} chars` : ""],
+    ];
+    const richFields = [
+      ["experiences", counts.experiences || (profile?.experiences?.length ?? 0)],
+      ["education", counts.education || (profile?.education?.length ?? 0)],
+      ["skills_detailed", counts.skills || (profile?.skills_detailed?.length ?? 0)],
+      ["languages", profile?.languages?.length ?? 0],
+      ["certifications", profile?.certifications?.length ?? 0],
+      ["projects", profile?.projects?.length ?? 0],
+      ["recent_activity", profile?.recent_activity?.length ?? 0],
+      ["external_links", profile?.external_links?.length ?? 0],
+    ];
+
+    const renderFields = (rows, kind) =>
+      rows.map(([k, v]) => {
+        if (kind === "core") {
+          const status = v ? "ok" : "missing";
+          return fieldRow(k, v || "—", { status });
+        }
+        const n = Number(v) || 0;
+        const anchorKey = k === "skills_detailed" ? "skills" : k === "recent_activity" ? "activity" : k;
+        const anchorOk = anchors[anchorKey];
+        const detail = anchorKey in anchors ? `anchor#${anchorKey}: ${anchorOk ? "✓" : "✗"}` : "";
+        const status = n > 0 ? "ok" : (anchorOk ? "warn" : "missing");
+        const text = n > 0 ? `${n} itens` : (anchorOk ? "anchor visto, 0 extraídos" : "sem anchor / 0");
+        return fieldRow(k, "", { status, text, detail });
+      }).join("");
+
+    const voyager = d.voyager || { attempted: 0, ok: 0, failed: 0, status: [] };
+    const details = d.details || { attempted: 0, ok: 0, failed: 0, status: [] };
+    const fetchStatus = (b) => `${b.ok}/${b.attempted} ok · ${b.failed} fail`;
+    const lastStatus = (arr) => (arr && arr.length
+      ? arr.slice(-6).map((s) => {
+          const code = s.code ?? s.status ?? "?";
+          const name = s.url || s.endpoint || s.target || "";
+          return `<div class="thh-debug-row"><span class="thh-debug-key">${escapeHtml(String(name).slice(0, 48))}</span><span class="${code === 200 ? "thh-debug-ok" : "thh-debug-miss"}">${escapeHtml(String(code))}</span></div>`;
+        }).join("")
+      : `<div class="thh-muted" style="color:#94a3b8">sem tentativas</div>`);
+
+    panel.innerHTML = `
+      <h4>Página</h4>
+      ${fieldRow("url_path", d.url_path || location.pathname, { status: "ok" })}
+      ${fieldRow("has_main", String(d.has_main ?? !!document.querySelector("main")), { status: d.has_main ? "ok" : "missing" })}
+      ${fieldRow("ssr_code_count", d.ssr_code_count ?? 0, { status: (d.ssr_code_count || 0) > 0 ? "ok" : "missing" })}
+      ${fieldRow("ssr_with_included", d.ssr_code_with_included_count ?? 0, { status: (d.ssr_code_with_included_count || 0) > 0 ? "ok" : "warn" })}
+      ${fieldRow("ssr_objects", d.ssr_object_count ?? 0, { status: (d.ssr_object_count || 0) > 0 ? "ok" : "warn" })}
+      <h4>Campos principais</h4>
+      ${renderFields(coreFields, "core")}
+      <h4>Dados ricos (extrator × anchor)</h4>
+      ${renderFields(richFields, "rich")}
+      <h4>Voyager (${escapeHtml(fetchStatus(voyager))})</h4>
+      ${lastStatus(voyager.status)}
+      <h4>Details fetch (${escapeHtml(fetchStatus(details))})</h4>
+      ${lastStatus(details.status)}
+      <div class="thh-debug-actions">
+        <button class="thh-btn" id="thh-debug-copy">Copiar JSON</button>
+        <button class="thh-btn" id="thh-debug-log">Log no console</button>
+      </div>`;
+
+    document.getElementById("thh-debug-copy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify({ profile, diagnostics: d, anchors }, null, 2));
+        setStatus("Diagnóstico copiado para a área de transferência.");
+      } catch (e) {
+        setStatus("Não foi possível copiar: " + (e?.message || e), true);
+      }
+    };
+    document.getElementById("thh-debug-log").onclick = () => {
+      // eslint-disable-next-line no-console
+      console.log("[TechHire Hunter] debug", { profile, diagnostics: d, anchors });
+      setStatus("Diagnóstico enviado para o console (DevTools).");
+    };
   }
 
   function isComplete(p) {
@@ -1646,6 +1760,8 @@
         </div>
         <div id="thh-status" class="thh-status">Carregando…</div>
         <div id="thh-preview" class="thh-preview"><div class="thh-muted">Detectando perfil…</div></div>
+        <label class="thh-debug-toggle"><input type="checkbox" id="thh-debug-toggle"/> Modo debug (mostrar diagnóstico de seletores)</label>
+        <div id="thh-debug-panel" class="thh-debug-panel" style="display:none"></div>
         <div class="thh-actions">
           <button id="thh-recheck" class="thh-btn">Re-detectar</button>
           <button id="thh-capture" class="thh-btn thh-primary">Salvar candidato</button>
@@ -1692,6 +1808,21 @@
       if (isComplete(p)) allowPartialOnce = false;
       renderPreview(p, opts);
     });
+
+    const debugToggle = document.getElementById("thh-debug-toggle");
+    try {
+      chrome.storage?.local?.get?.(["thh:debug"], (res) => {
+        if (debugToggle && res && res["thh:debug"]) debugToggle.checked = true;
+        renderDebug(latestProfile);
+      });
+    } catch { /* storage indisponível */ }
+    debugToggle?.addEventListener("change", () => {
+      try { chrome.storage?.local?.set?.({ "thh:debug": debugToggle.checked }); } catch { /* ignore */ }
+      renderDebug(latestProfile);
+    });
+
+
+
 
     document.getElementById("thh-recheck").onclick = () => {
       allowPartialOnce = false;
