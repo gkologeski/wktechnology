@@ -89,7 +89,6 @@ export interface NormalizedSearchHit {
   current_position: string | null;
   photo_url: string | null;
   network_distance: string | null;
-  raw: Record<string, unknown>;
 }
 
 function normalizeHit(it: UnipileSearchItem): NormalizedSearchHit {
