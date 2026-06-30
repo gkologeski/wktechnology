@@ -134,7 +134,8 @@ function getEnv() {
       "missing_credentials",
     );
   }
-  return { dsn: dsn.replace(/\/$/, ""), key };
+  const normalized = /^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`;
+  return { dsn: normalized.replace(/\/$/, ""), key };
 }
 
 function hashPayload(input: unknown): string {
