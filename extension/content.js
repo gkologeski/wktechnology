@@ -101,20 +101,33 @@
     }
   }
 
+  // v3.1: junk patterns do rodapé/anúncios do LinkedIn que contaminam fallback
+  // de texto quando /details/* vem sem SSR renderizado.
+  const LINKEDIN_JUNK_RE = /(op[çc][õo]es de an[úu]ncios|por que estou vendo este an[úu]ncio|ocultar ou denunciar|n[ãa]o quero ver|j[áa] vi este mesmo an[úu]ncio|seu feedback nos ajudar[áa]|denunciar este an[úu]ncio|solu[çc][õo]es de marketing|solu[çc][õo]es de vendas|solu[çc][õo]es de talentos|prefer[êe]ncias de an[úu]ncios|termos e privacidade|diretrizes da comunidade|central de ajuda|central de seguran[çc]a|acesse suas configura[çc][õo]es|visibilidade da recomenda[çc][ãa]o|linked\s*in corporation|©\s*20\d{2}|dispositivo m[óo]vel|pequenas empresas|pol[íi]ticas para comunidades|gerencie sua conta|gerencie suas prefer[êe]ncias|d[úu]vidas\?|comunidades profissionais|servi[çc]os ao consumidor)/i;
+
   const isLinkedInUiLine = (line) => {
     const value = lower(line);
     return (
       !value ||
-      /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada|português|portugues|english|inglês|ingles|para negócios|para negocios|anunciar|minha rede|vagas|notificações|notificacoes|eu)$/.test(
+      /^(conectar|connect|seguir|follow|mensagem|message|mais|more|dados de contato|contact info|salvar candidato|re-detectar|template|copiar mensagem|marcar como enviada|português|portugues|english|inglês|ingles|para negócios|para negocios|anunciar|minha rede|vagas|notificações|notificacoes|eu|enviar|sobre|publicidade|carreiras|acessibilidade|linked)$/.test(
         value,
       ) ||
       /seguidores|followers|seguidor|conexões|conexoes|connections|connection|mútuo|mutual|grau|degree|perfis para você|people also viewed|mais perfis|destaques|highlights/.test(
         value,
-      )
+      ) ||
+      LINKEDIN_JUNK_RE.test(line)
     );
   };
 
   const isNoiseLine = (line) => isLinkedInUiLine(line);
+
+  // Heurística: um item mapeado é "lixo" se qualquer campo bate no junk regex.
+  const itemHasJunk = (obj) => {
+    if (!obj || typeof obj !== "object") return false;
+    return Object.values(obj).some(
+      (v) => typeof v === "string" && (LINKEDIN_JUNK_RE.test(v) || isLinkedInUiLine(v)),
+    );
+  };
 
   const looksLikeNameLine = (line, fullName) => {
     const a = lower(normalizedName(line));
