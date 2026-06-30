@@ -17,12 +17,12 @@ import {
   getRateUsage,
 } from "@/lib/unipile/accounts.functions";
 
-const searchSchema = z.object({
-  connected: z.union([z.literal("1"), z.literal("0")]).optional(),
-});
+const searchSchema = z
+  .object({ connected: z.union([z.literal("1"), z.literal("0")]).optional() })
+  .passthrough();
 
 export const Route = createFileRoute("/_authenticated/settings/integrations/linkedin")({
-  validateSearch: (s) => searchSchema.parse(s),
+  validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
   component: LinkedinIntegrationPage,
 });
 

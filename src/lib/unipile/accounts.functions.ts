@@ -85,8 +85,8 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     const link = await createHostedAuthLink({
       ownerId: userId,
       notifyUrl: `${baseUrl}/api/public/unipile/webhook`,
-      successRedirect: `${baseUrl}/settings/integrations/linkedin?connected=1`,
-      failureRedirect: `${baseUrl}/settings/integrations/linkedin?connected=0`,
+      successRedirect: `${baseUrl}/unipile-connected?connected=1`,
+      failureRedirect: `${baseUrl}/unipile-connected?connected=0`,
       connectToken,
     });
     return { url: link.url };
