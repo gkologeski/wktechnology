@@ -20,6 +20,11 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  const parserDiagnostics = {
+    voyager: { attempted: 0, ok: 0, failed: 0, status: [] },
+    details: { attempted: 0, ok: 0, failed: 0, status: [] },
+  };
+
   const safe = (fn) => {
     try {
       return fn() || "";
@@ -812,12 +817,12 @@
         if (!re.test(t)) continue;
         const lines = [];
         const push = (v) => { const s = clean(v); if (s) lines.push(s); };
-        // Coletar campos textuais comuns
-        push(it.title || it.name || it.schoolName);
-        push(it.companyName || it.subtitle || it.degreeName || it.fieldOfStudy || it.issuer || it.publisher);
-        push(it.dateRange || it.timePeriod || it.issuedOn || it.publishedOn);
-        push(it.locationName);
-        push(it.description);
+        // Coletar campos textuais comuns, incluindo objetos nested do Voyager.
+        push(ssrText(it.title) || ssrText(it.name) || ssrText(it.schoolName));
+        push(ssrText(it.companyName) || ssrText(it.subtitle) || ssrText(it.degreeName) || ssrText(it.fieldOfStudy) || ssrText(it.issuer) || ssrText(it.publisher));
+        push(ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || ssrText(it.issuedOn) || ssrText(it.publishedOn));
+        push(ssrText(it.locationName));
+        push(ssrText(it.description));
         if (lines.length) out.push(lines);
       }
       if (out.length) break;
@@ -828,11 +833,17 @@
   async function fetchDetailsHtml(slug, sectionPath) {
     try {
       const url = `https://www.linkedin.com/in/${encodeURIComponent(slug)}/details/${sectionPath}/`;
+      parserDiagnostics.details.attempted += 1;
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
       const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
       clearTimeout(t);
-      if (!resp.ok) return null;
+      parserDiagnostics.details.status.push({ section: sectionPath, status: resp.status });
+      if (!resp.ok) {
+        parserDiagnostics.details.failed += 1;
+        return null;
+      }
+      parserDiagnostics.details.ok += 1;
       const html = await resp.text();
       return new DOMParser().parseFromString(html, "text/html");
     } catch {
@@ -875,15 +886,22 @@
       if (csrf) headers["csrf-token"] = csrf;
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
+      parserDiagnostics.voyager.attempted += 1;
       const resp = await fetch(url, {
         credentials: "include",
         headers,
         signal: ctrl.signal,
       });
       clearTimeout(t);
-      if (!resp.ok) return null;
+      parserDiagnostics.voyager.status.push({ status: resp.status, path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160) });
+      if (!resp.ok) {
+        parserDiagnostics.voyager.failed += 1;
+        return null;
+      }
+      parserDiagnostics.voyager.ok += 1;
       return await resp.json();
     } catch {
+      parserDiagnostics.voyager.failed += 1;
       return null;
     }
   }
@@ -1244,7 +1262,7 @@
     const location_ = extractLocation(card, person, full_name);
     const avatar = extractAvatar(card);
 
-    return {
+    const profile = {
       linkedin_url: url,
       full_name,
       current_position: headline,
@@ -1274,6 +1292,27 @@
       current_company_data: extractCurrentCompanyData(card),
       recent_activity: extractRecentActivity(),
       recommendations: extractRecommendations(),
+    };
+    profile.parser_diagnostics = buildParserDiagnostics(profile);
+    return profile;
+  }
+
+  function buildParserDiagnostics(profile) {
+    const codes = Array.from(document.querySelectorAll('code[id^="bpr-guid"], code[id^="datalet-bpr-guid"], code[style*="display"]'));
+    return {
+      url_path: location.pathname,
+      title: document.title || "",
+      has_main: Boolean(document.querySelector("main")),
+      ssr_code_count: codes.length,
+      ssr_code_with_included_count: codes.filter((c) => /"included"\s*:/.test(c.textContent || "")).length,
+      ssr_object_count: ssrIncluded().length,
+      extracted_counts: {
+        experiences: Array.isArray(profile.experiences) ? profile.experiences.length : 0,
+        education: Array.isArray(profile.education) ? profile.education.length : 0,
+        skills: Array.isArray(profile.skills_detailed) ? profile.skills_detailed.length : 0,
+      },
+      voyager: parserDiagnostics.voyager,
+      details: parserDiagnostics.details,
     };
   }
 
