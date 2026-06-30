@@ -1800,6 +1800,18 @@
       root.remove();
     };
 
+    const debugToggle = document.getElementById("thh-debug-toggle");
+    try {
+      chrome.storage?.local?.get?.(["thh:debug"], (res) => {
+        if (debugToggle && res && res["thh:debug"]) debugToggle.checked = true;
+        renderDebug(latestProfile);
+      });
+    } catch { /* storage indisponível */ }
+    debugToggle?.addEventListener("change", () => {
+      try { chrome.storage?.local?.set?.({ "thh:debug": debugToggle.checked }); } catch { /* ignore */ }
+      renderDebug(latestProfile);
+    });
+
     let latestProfile = extractProfile();
     let allowPartialOnce = false;
     renderPreview(latestProfile, { partial: false });
@@ -1808,6 +1820,7 @@
       if (isComplete(p)) allowPartialOnce = false;
       renderPreview(p, opts);
     });
+
 
     document.getElementById("thh-recheck").onclick = () => {
       allowPartialOnce = false;
