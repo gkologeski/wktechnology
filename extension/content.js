@@ -1818,6 +1818,15 @@
     let latestProfile = extractProfile();
     let allowPartialOnce = false;
     renderPreview(latestProfile, { partial: false });
+    // Auto rola a página inteira uma vez para hidratar todas as seções (about,
+    // experience, education, skills, ...). Sem isso, perfis abertos em background
+    // ficam só com o shell + footer e a captura grava lixo.
+    (async () => {
+      await triggerLazyLoad();
+      latestProfile = extractProfile();
+      renderPreview(latestProfile, { partial: !isComplete(latestProfile) });
+      renderDebug(latestProfile);
+    })();
     startExtractionLoop((p, opts) => {
       latestProfile = p;
       if (isComplete(p)) allowPartialOnce = false;
