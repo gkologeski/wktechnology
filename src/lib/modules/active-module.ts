@@ -11,6 +11,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { MODULES, type ModuleId } from "./registry";
+import { ATS_ROUTE_PREFIXES } from "@/lib/menu-config-ats";
 
 const HOST_MATCHERS: Array<{ id: ModuleId; pattern: RegExp }> = [
   { id: "ats", pattern: /^ats\./i },
@@ -25,33 +26,16 @@ export function detectModuleFromHost(hostname: string | undefined | null): Modul
   return null;
 }
 
-// Paths que pertencem exclusivamente ao módulo ATS (fallback usado em
-// preview/local quando o subdomínio `ats.*` não está disponível).
-const ATS_PATH_PREFIXES = [
-  "/jobs",
-  "/candidates",
-  "/ats",
-  "/pipelines",
-  "/scorecards",
-  "/interview-kits",
-  "/offers",
-  "/stage-emails",
-  "/match-scores",
-  "/fraud-flags",
-  "/insights",
-  "/dei-analytics",
-  "/notetaker",
-  "/sourcing",
-  "/hunting",
-  "/scheduling",
-];
-
+// Paths que pertencem exclusivamente ao módulo ATS. Derivado de
+// `ATS_ROUTE_PREFIXES` em `menu-config-ats.ts` — fonte única de verdade.
+// Inclui fallback estático para o caso de import circular em SSR.
 export function detectModuleFromPath(pathname: string): ModuleId | null {
-  for (const p of ATS_PATH_PREFIXES) {
+  for (const p of ATS_ROUTE_PREFIXES) {
     if (pathname === p || pathname.startsWith(p + "/")) return "ats";
   }
   return null;
 }
+
 
 /**
  * Hook React: retorna o módulo ativo levando em conta host primeiro,
