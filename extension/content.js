@@ -756,6 +756,7 @@
   function cleanAboutCandidate(value, fullName = "") {
     const text = clean(value)
       .replace(/^(sobre|about)\s+/i, "")
+      .replace(/\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i, "")
       .replace(/\s*…\s*mais\s*$/i, "")
       .trim();
     if (!text) return "";
