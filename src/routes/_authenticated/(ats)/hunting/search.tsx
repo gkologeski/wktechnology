@@ -3,8 +3,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Search, Download, ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { useRef, useState } from "react";
+import { Search, Download, ExternalLink, Loader2, AlertCircle, X, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AtsPageHeader, EmptyState } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +14,23 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import {
   searchLinkedinPeople,
   importLinkedinSearchResults,
   type NormalizedSearchHit,
 } from "@/lib/ats/unipile-hunting.functions";
+
+interface ImportProgress {
+  total: number;
+  done: number;
+  created: number;
+  deduped: number;
+  enriched: number;
+  errors: number;
+  current?: string;
+  finished: boolean;
+}
 
 export const Route = createFileRoute("/_authenticated/(ats)/hunting/search")({
   component: HuntingSearchPage,
