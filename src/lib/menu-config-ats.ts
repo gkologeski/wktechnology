@@ -109,3 +109,53 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   },
 ];
 
+// Prefixos de rota considerados "do ATS" para detecção de módulo
+// (`detectModuleFromPath`) e para o `HostRouterGuard`. Derivado dos URLs
+// do menu para evitar drift quando novos itens são adicionados.
+// Itens marcados como `external: true` (ex.: site público de Carreiras) são
+// excluídos para não capturar visitantes anônimos.
+//
+// IMPORTANTE: novos itens neutros (Settings/Account/Workspace/Admin) NÃO
+// devem ser adicionados a este menu como `<Link to>` simples — devem usar
+// `buildWorkspaceUrl(...)` (cross-host em produção, SPA em preview).
+function collectPrefixes(): string[] {
+  const set = new Set<string>([
+    "/jobs",
+    "/candidates",
+    "/ats",
+    "/pipelines",
+    "/scorecards",
+    "/interview-kits",
+    "/offers",
+    "/stage-emails",
+    "/match-scores",
+    "/fraud-flags",
+    "/insights",
+    "/dei-analytics",
+    "/notetaker",
+    "/sourcing",
+    "/hunting",
+    "/scheduling",
+  ]);
+  for (const g of ATS_SIDEBAR_GROUPS) {
+    for (const it of g.items) {
+      if (it.external) continue;
+      if (!it.url || !it.url.startsWith("/")) continue;
+      // Usa o top-level (1º segmento) como prefixo para cobrir filhos.
+      const top = "/" + it.url.split("/").filter(Boolean)[0];
+      if (top !== "/") set.add(top);
+      for (const c of it.children ?? []) {
+        if (c.external) continue;
+        if (c.url?.startsWith("/")) {
+          const ct = "/" + c.url.split("/").filter(Boolean)[0];
+          if (ct !== "/") set.add(ct);
+        }
+      }
+    }
+  }
+  return Array.from(set);
+}
+
+export const ATS_ROUTE_PREFIXES: readonly string[] = collectPrefixes();
+
+
