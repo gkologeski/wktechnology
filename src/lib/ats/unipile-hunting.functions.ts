@@ -140,18 +140,33 @@ export const searchLinkedinPeople = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SearchInput.parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    const { loadAccountCtx, searchPeopleClassic, UnipileError } = await import(
-      "@/lib/unipile/client.server"
-    );
+    const { loadAccountCtx, searchPeopleClassic, resolveSearchParameter, UnipileError } =
+      await import("@/lib/unipile/client.server");
 
     try {
       const ctx = await loadAccountCtx(userId);
+
+      // Resolve textos livres → IDs (URNs) que a Unipile aceita em filtros estruturados.
+      // Se a resolução falhar/voltar vazia, o próprio searchPeopleClassic mescla o texto em keywords.
+      const [locationIds, industryIds, companyIds, schoolIds] = await Promise.all([
+        data.location ? resolveSearchParameter(ctx, "LOCATION", data.location) : Promise.resolve([]),
+        data.industry ? resolveSearchParameter(ctx, "INDUSTRY", data.industry) : Promise.resolve([]),
+        data.current_company
+          ? resolveSearchParameter(ctx, "COMPANY", data.current_company)
+          : Promise.resolve([]),
+        data.school ? resolveSearchParameter(ctx, "SCHOOL", data.school) : Promise.resolve([]),
+      ]);
+
       const result = (await searchPeopleClassic(ctx, {
         keywords: data.keywords,
-        location: data.location ? [data.location] : undefined,
-        industry: data.industry ? [data.industry] : undefined,
-        current_company: data.current_company ? [data.current_company] : undefined,
-        school: data.school ? [data.school] : undefined,
+        location: locationIds.length ? locationIds : data.location ? [data.location] : undefined,
+        industry: industryIds.length ? industryIds : data.industry ? [data.industry] : undefined,
+        current_company: companyIds.length
+          ? companyIds
+          : data.current_company
+            ? [data.current_company]
+            : undefined,
+        school: schoolIds.length ? schoolIds : data.school ? [data.school] : undefined,
         network: data.network,
         language: data.language ? [data.language] : undefined,
         cursor: data.cursor,
@@ -175,6 +190,7 @@ export const searchLinkedinPeople = createServerFn({ method: "POST" })
       throw err;
     }
   });
+
 
 // ────────────────────────────────────────────────────────────────────────────
 // Import (cria/atualiza ats_candidates + registra ats_hunting_captures)
