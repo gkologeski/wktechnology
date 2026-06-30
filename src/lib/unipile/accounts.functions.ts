@@ -104,6 +104,69 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Fallback de reconciliação: quando o webhook não chegou ainda mas o usuário
+ * voltou do Hosted Auth, consultamos a API Unipile e procuramos uma conta
+ * cujo `name` bate com o connect_token salvo. Marca status=connected.
+ */
+export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("unipile_accounts")
+      .select("id, status, connect_token, unipile_account_id")
+      .eq("owner_id", userId)
+      .eq("provider", "linkedin")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!row) return { ok: false, reason: "no_account" };
+    if (row.status === "connected" && row.unipile_account_id) {
+      return { ok: true, already: true };
+    }
+
+    const dsn = process.env.UNIPILE_DSN;
+    const key = process.env.UNIPILE_API_KEY;
+    if (!dsn || !key) return { ok: false, reason: "missing_credentials" };
+    const baseUrl = (/^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`).replace(/\/$/, "");
+
+    const res = await fetch(`${baseUrl}/api/v1/accounts?limit=50`, {
+      headers: { "X-API-KEY": key, Accept: "application/json" },
+    });
+    if (!res.ok) return { ok: false, reason: `unipile_${res.status}` };
+    const json: any = await res.json().catch(() => ({}));
+    const items: any[] = json?.items ?? json?.data ?? json?.accounts ?? [];
+
+    // Procura por name == connect_token; senão, pega a conta LinkedIn mais recente
+    let match = items.find((a) => a?.name && row.connect_token && a.name === row.connect_token);
+    if (!match) {
+      match = items
+        .filter((a) =>
+          String(a?.type ?? a?.provider ?? "").toUpperCase().includes("LINKEDIN"),
+        )
+        .sort((a, b) =>
+          String(b?.created_at ?? "").localeCompare(String(a?.created_at ?? "")),
+        )[0];
+    }
+    if (!match?.id) return { ok: false, reason: "no_match" };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const nowIso = new Date().toISOString();
+    await supabaseAdmin
+      .from("unipile_accounts")
+      .update({
+        status: "connected",
+        unipile_account_id: match.id,
+        connected_at: nowIso,
+        last_seen_at: nowIso,
+        last_error: null,
+        display_name: match?.name ?? match?.display_name ?? null,
+      })
+      .eq("id", row.id);
+    return { ok: true, account_id: match.id };
+  });
+
 export const updateDailyWindow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tz?: string; start_hour: number; end_hour: number }) =>

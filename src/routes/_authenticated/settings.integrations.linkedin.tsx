@@ -15,6 +15,7 @@ import {
   disconnectLinkedinAccount,
   updateDailyWindow,
   getRateUsage,
+  reconcileLinkedinAccount,
 } from "@/lib/unipile/accounts.functions";
 
 const searchSchema = z
@@ -64,6 +65,7 @@ function LinkedinIntegrationPage() {
   const startConnect = useServerFn(startLinkedinConnect);
   const disconnect = useServerFn(disconnectLinkedinAccount);
   const saveWindow = useServerFn(updateDailyWindow);
+  const reconcile = useServerFn(reconcileLinkedinAccount);
 
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [buckets, setBuckets] = useState<Bucket[]>([]);
@@ -95,7 +97,16 @@ function LinkedinIntegrationPage() {
   }, []);
 
   useEffect(() => {
-    if (search.connected === "1") toast.success("Conta LinkedIn conectada via Unipile.");
+    if (search.connected === "1") {
+      toast.success("Conta LinkedIn conectada via Unipile.");
+      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API
+      (async () => {
+        try {
+          await reconcile({});
+        } catch {}
+        await refresh();
+      })();
+    }
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
   }, [search.connected]);
 
