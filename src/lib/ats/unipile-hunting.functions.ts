@@ -118,7 +118,11 @@ function normalizeHit(it: UnipileSearchItem): NormalizedSearchHit {
     current_position: pickStr(currentObj?.role, currentObj?.title) ?? pickStr(it.headline),
     photo_url: pickStr(it.profile_picture_url, it.picture_url),
     network_distance: pickStr(it.network_distance),
-    raw: it as unknown as Record<string, unknown>,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _unused() {
   };
 }
 
