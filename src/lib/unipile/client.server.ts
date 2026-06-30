@@ -437,8 +437,8 @@ export async function searchPeopleClassic(
     endpoint: "profile.search",
     method: "POST",
     path: "/api/v1/linkedin/search",
+    query: { account_id: ctx.unipileAccountId },
     body: {
-      account_id: ctx.unipileAccountId,
       api: "classic",
       category: "people",
       keywords: filters.keywords,
