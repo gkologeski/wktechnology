@@ -1800,6 +1800,15 @@
       root.remove();
     };
 
+    let latestProfile = extractProfile();
+    let allowPartialOnce = false;
+    renderPreview(latestProfile, { partial: false });
+    startExtractionLoop((p, opts) => {
+      latestProfile = p;
+      if (isComplete(p)) allowPartialOnce = false;
+      renderPreview(p, opts);
+    });
+
     const debugToggle = document.getElementById("thh-debug-toggle");
     try {
       chrome.storage?.local?.get?.(["thh:debug"], (res) => {
@@ -1812,14 +1821,7 @@
       renderDebug(latestProfile);
     });
 
-    let latestProfile = extractProfile();
-    let allowPartialOnce = false;
-    renderPreview(latestProfile, { partial: false });
-    startExtractionLoop((p, opts) => {
-      latestProfile = p;
-      if (isComplete(p)) allowPartialOnce = false;
-      renderPreview(p, opts);
-    });
+
 
 
     document.getElementById("thh-recheck").onclick = () => {
