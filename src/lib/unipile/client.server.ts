@@ -423,34 +423,61 @@ export async function searchPeopleClassic(
   ctx: ThrottleCtx,
   filters: {
     keywords?: string;
-    location?: string[]; // geoUrns
-    industry?: string[];
-    current_company?: string[];
-    school?: string[];
-    network?: ("F" | "S" | "O")[]; // 1st/2nd/3rd
+    location?: string[]; // geoUrns (IDs numéricos) — texto livre vai para keywords
+    industry?: string[]; // industry IDs — texto livre vai para keywords
+    current_company?: string[]; // company IDs — texto livre vai para keywords
+    school?: string[]; // school IDs — texto livre vai para keywords
+    network?: ("F" | "S" | "O")[];
     language?: string[];
     cursor?: string;
     limit?: number;
   },
 ) {
+  // LinkedIn Classic search exige IDs (URNs) para location/industry/company/school.
+  // Quando o usuário envia texto livre, mesclamos no `keywords` para não quebrar
+  // o schema da Unipile (que rejeita strings não-numéricas nesses campos).
+  const isId = (v: string) => /^\d{3,}$/.test(v.trim());
+  const splitIds = (arr?: string[]) => {
+    const ids: string[] = [];
+    const text: string[] = [];
+    for (const v of arr ?? []) {
+      if (!v) continue;
+      (isId(v) ? ids : text).push(v.trim());
+    }
+    return { ids: ids.length ? ids : undefined, text };
+  };
+
+  const loc = splitIds(filters.location);
+  const ind = splitIds(filters.industry);
+  const comp = splitIds(filters.current_company);
+  const sch = splitIds(filters.school);
+
+  const extraKeywords = [...loc.text, ...ind.text, ...comp.text, ...sch.text]
+    .filter(Boolean)
+    .join(" ");
+  const mergedKeywords =
+    [filters.keywords?.trim(), extraKeywords].filter(Boolean).join(" ").trim() || undefined;
+
+  const body: Record<string, unknown> = {
+    api: "classic",
+    category: "people",
+    limit: filters.limit ?? 10,
+  };
+  if (mergedKeywords) body.keywords = mergedKeywords;
+  if (loc.ids) body.location = loc.ids;
+  if (ind.ids) body.industry = ind.ids;
+  if (comp.ids) body.current_company = comp.ids;
+  if (sch.ids) body.school = sch.ids;
+  if (filters.network?.length) body.network = filters.network;
+  if (filters.language?.length) body.profile_language = filters.language;
+  if (filters.cursor) body.cursor = filters.cursor;
+
   return call(ctx, {
     endpoint: "profile.search",
     method: "POST",
     path: "/api/v1/linkedin/search",
     query: { account_id: ctx.unipileAccountId },
-    body: {
-      api: "classic",
-      category: "people",
-      keywords: filters.keywords,
-      location: filters.location,
-      industry: filters.industry,
-      current_company: filters.current_company,
-      school: filters.school,
-      network: filters.network,
-      profile_language: filters.language,
-      limit: filters.limit ?? 10,
-      cursor: filters.cursor,
-    },
+    body,
   });
 }
 
