@@ -96,7 +96,16 @@ function LinkedinIntegrationPage() {
   }, []);
 
   useEffect(() => {
-    if (search.connected === "1") toast.success("Conta LinkedIn conectada via Unipile.");
+    if (search.connected === "1") {
+      toast.success("Conta LinkedIn conectada via Unipile.");
+      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API
+      (async () => {
+        try {
+          await reconcile({});
+        } catch {}
+        await refresh();
+      })();
+    }
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
   }, [search.connected]);
 
