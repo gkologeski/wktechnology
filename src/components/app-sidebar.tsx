@@ -21,6 +21,7 @@ import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
+import { getHostKind } from "@/lib/hosts";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
