@@ -258,6 +258,8 @@ function HuntingSearchPage() {
         </Alert>
       )}
 
+      {progress && <ImportProgressCard progress={progress} onCancel={cancelImport} onDismiss={() => setProgress(null)} />}
+
       {/* Resultados */}
       {hits.length === 0 && !searchMut.isPending ? (
         <EmptyState
