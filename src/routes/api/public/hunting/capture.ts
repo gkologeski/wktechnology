@@ -120,7 +120,7 @@ function sanitizeAbout(raw: string | null | undefined) {
   const section = sliceProfileSection(
     text,
     /\b(sobre|about)\b\s*/i,
-    /\b(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|principais compet[êe]ncias|compet[êe]ncias|skills|idiomas|languages|mais perfis|people also viewed)\b/i,
+    /\b(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills|idiomas|languages|mais perfis|people also viewed)\b/i,
   );
   return (section || text).slice(0, 8000) || null;
 }
