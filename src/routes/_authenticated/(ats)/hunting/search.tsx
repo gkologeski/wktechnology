@@ -183,6 +183,22 @@ function HuntingSearchPage() {
     cancelRef.current = true;
   }
 
+  function toggle(url: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(url) ? next.delete(url) : next.add(url);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === hits.length) setSelected(new Set());
+    else setSelected(new Set(hits.map((h) => h.linkedin_url ?? "").filter(Boolean)));
+  }
+
+  const importing = !!progress && !progress.finished;
+
+
 
   return (
     <div className="flex flex-col gap-6 pb-10">
