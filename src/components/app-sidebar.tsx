@@ -21,7 +21,7 @@ import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
-import { getHostKind } from "@/lib/hosts";
+
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -36,12 +36,11 @@ export function AppSidebar() {
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
-  // Em produção (ats.* / crm.*) o host é determinístico: usa direto, evita
-  // qualquer flicker do menu durante navegação para rotas neutras. Em
-  // preview/localhost cai no path-based `activeModuleId`.
-  const hostKind = typeof window !== "undefined" ? getHostKind(window.location.hostname) : "preview";
-  const effectiveModuleId =
-    hostKind === "ats" || hostKind === "crm" ? hostKind : activeModuleId;
+  // `useActiveModule` já é path-first com fallback de host — usa direto.
+  // (Antes forçávamos pelo host em produção, mas isso impedia o sidebar de
+  // refletir o módulo escolhido no switcher quando a navegação acabava
+  // ficando same-host — ex.: cross-host inacessível por DNS/SSL.)
+  const effectiveModuleId = activeModuleId;
   const groupsSource = effectiveModuleId === "ats" ? ATS_SIDEBAR_GROUPS : SIDEBAR_GROUPS;
 
   const visibleGroups = useMemo(() => {
