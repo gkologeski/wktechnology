@@ -811,20 +811,89 @@
     const main = doc.querySelector("main") || doc.body;
     if (!main) return [];
     const items = main.querySelectorAll(
-      "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity",
+      [
+        "li.artdeco-list__item",
+        "li.pvs-list__paged-list-item",
+        ".pvs-entity",
+        ".pvs-list__item--line-separated",
+        "[data-view-name*='profile-component-entity']",
+        "[data-view-name*='profile-component'] li",
+      ].join(", "),
     );
     const out = [];
     for (const li of items) {
-      const spans = li.querySelectorAll('span[aria-hidden="true"]');
+      const spans = li.querySelectorAll('span[aria-hidden="true"], span[dir="ltr"], .visually-hidden, time, a[href]');
       const lines = [];
       spans.forEach((s) => {
         const t = clean(s.textContent || "");
         if (t) lines.push(t);
       });
-      const filtered = uniqueLines(lines.filter((l) => !isNoiseLine(l)));
+      if (!lines.length) {
+        const fallbackLines = clean(li.textContent || "")
+          .split(/(?<=\.)\s+|\n+|\s{2,}/)
+          .map(clean)
+          .filter(Boolean);
+        lines.push(...fallbackLines);
+      }
+      const filtered = uniqueLines(lines.filter((l) => !isNoiseLine(l) && !/^urn:li:/i.test(l)));
       if (filtered.length) out.push(filtered);
     }
     return out;
+  }
+
+  function extractDetailsTextLines(doc) {
+    const root = doc?.querySelector?.("main") || doc?.body;
+    if (!root) return [];
+    return uniqueLines(
+      clean(root.textContent || "")
+        .replace(/([a-zá-ú])([A-ZÁ-Ú])/g, "$1\n$2")
+        .split(/\n+|\s{2,}|(?<=\.)\s+(?=[A-ZÁ-Ú])/)
+        .map(clean)
+        .filter((line) => line && !isNoiseLine(line) && !/^urn:li:/i.test(line)),
+    );
+  }
+
+  function extractListItemsFromDetailsText(doc, kind) {
+    const lines = extractDetailsTextLines(doc);
+    if (!lines.length) return [];
+    const titleRe = {
+      experience: /^(experi[êe]ncia|experience)$/i,
+      education: /^(forma[çc][ãa]o|education)$/i,
+      skills: /^(compet[êe]ncias|skills|principais compet[êe]ncias)$/i,
+      certifications: /(licen[çc]as|certifica|licenses|certifications)/i,
+      languages: /^(idiomas|languages)$/i,
+      projects: /^(projetos|projects)$/i,
+      publications: /^(publica[çc][õo]es|publications)$/i,
+      volunteering: /(volunt|volunteer)/i,
+    }[kind];
+    const start = titleRe ? lines.findIndex((line) => titleRe.test(line)) : -1;
+    const scoped = start >= 0 ? lines.slice(start + 1) : lines;
+    if (kind === "skills") {
+      return scoped
+        .filter((line) => line.length <= 120 && !SECTION_BOUNDARY_RE.test(line))
+        .slice(0, 100)
+        .map((line) => [line]);
+    }
+    const groups = [];
+    let current = [];
+    for (const line of scoped) {
+      if (SECTION_BOUNDARY_RE.test(line) && current.length) break;
+      const beginsNew =
+        current.length >= 2 &&
+        (kind === "experience" ? looksLikeHeadline(line) : kind === "education" ? /universidade|university|faculdade|college|instituto|school|escola/i.test(line) : false);
+      if (beginsNew) {
+        groups.push(current);
+        current = [];
+      }
+      if (line.length <= 500) current.push(line);
+      if (current.length >= 8) {
+        groups.push(current);
+        current = [];
+      }
+      if (groups.length >= 100) break;
+    }
+    if (current.length) groups.push(current);
+    return groups;
   }
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1155,6 +1224,7 @@
           if (!doc) return;
           let items = extractListItemsFromDoc(doc).slice(0, limit);
           if (!items.length) items = extractListItemsFromCodeJson(doc, path).slice(0, limit);
+          if (!items.length) items = extractListItemsFromDetailsText(doc, path).slice(0, limit);
           const mapped = items
             .map(mapper)
             .filter((x) => Object.values(x).some((v) => v));
