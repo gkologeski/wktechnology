@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v1.0.5)
+// TechHire Hunter — Content script (v1.0.6)
 // Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
@@ -11,7 +11,7 @@
   const CONTEXT_INVALIDATED = "Extensão recarregada. Recarregue a aba do LinkedIn.";
   const extractionStops = new Set();
 
-  const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const clean = (s) => (s == null ? "" : String(s)).replace(/\s+/g, " ").trim();
   const lower = (s) => clean(s).toLowerCase();
   const escapeHtml = (s) =>
     clean(s)
@@ -20,6 +20,16 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  const parserDiagnostics = {
+    voyager: { attempted: 0, ok: 0, failed: 0, status: [] },
+    details: { attempted: 0, ok: 0, failed: 0, status: [] },
+  };
+
+  function pushDiagnosticStatus(bucket, entry) {
+    bucket.status.push(entry);
+    if (bucket.status.length > 12) bucket.status.splice(0, bucket.status.length - 12);
+  }
+
   const safe = (fn) => {
     try {
       return fn() || "";
@@ -325,34 +335,51 @@
   }
 
   const SSR_TYPES = {
-    position: /(\.Position|ProfilePosition|PositionView|PositionGroup)/,
-    education: /(\.Education|EducationView|ProfileEducation)/,
-    skill: /(\.Skill|SkillView|StandardizedSkill)/,
-    certification: /(\.Certification|CertificationView)/,
-    language: /(\.Language|LanguageView)/,
+    position: /(\.Position|ProfilePosition|PositionView|PositionGroup|Experience)/i,
+    education: /(\.Education|EducationView|ProfileEducation|School)/i,
+    skill: /(\.Skill|SkillView|StandardizedSkill|EndorsedSkill)/i,
+    certification: /(\.Certification|CertificationView|License)/i,
+    language: /(\.Language|LanguageView)/i,
     topCard: /(\.ProfileTopCard|\.MiniProfile|\.Profile|TopCard)/,
   };
 
-  const ssrFind = (kind, doc) =>
-    ssrIncluded(doc).filter((it) => {
-      const t = it?.$type || it?.["$type"] || "";
-      return typeof t === "string" && SSR_TYPES[kind].test(t);
-    });
+  function looksLikeSsrKind(it, kind) {
+    if (!it || typeof it !== "object") return false;
+    const t = String(it.$type || it["$type"] || it.entityUrn || it.urn || it.objectUrn || "");
+    if (SSR_TYPES[kind]?.test(t)) return true;
+    if (kind === "position") return Boolean((it.title || it.profilePosition || it.position) && (it.companyName || it.company || it.companyUrn || it.dateRange || it.timePeriod));
+    if (kind === "education") return Boolean(it.schoolName || it.school || it.schoolUrn || it.degreeName || it.fieldOfStudy);
+    if (kind === "skill") return Boolean((it.name || it.skillName) && /skill/i.test(t));
+    if (kind === "certification") return Boolean((it.name || it.title) && (it.authority || it.issuer || it.licenseNumber || /certif|license/i.test(t)));
+    if (kind === "language") return Boolean((it.name || it.language) && (it.proficiency || /language/i.test(t)));
+    return false;
+  }
+
+  const ssrFind = (kind, doc) => ssrIncluded(doc).filter((it) => looksLikeSsrKind(it, kind));
+
+  function firstScalar(...values) {
+    for (const value of values) {
+      if (typeof value === "string" || typeof value === "number") {
+        const text = clean(value);
+        if (text && text !== "[object Object]") return text;
+      }
+    }
+    return "";
+  }
 
   function ssrText(node, depth = 0) {
     if (!node) return "";
     if (typeof node === "string") return clean(node);
     if (typeof node === "number") return clean(String(node));
     if (typeof node === "object" && depth < 4) {
-      const direct = clean(
-        node.text ||
-          node.localizedName ||
-          node.value ||
-          node.name ||
-          node.title ||
-          node.headline ||
-          node.description ||
-          "",
+      const direct = firstScalar(
+        node.text,
+        node.localizedName,
+        node.value,
+        node.name,
+        node.title,
+        node.headline,
+        node.description,
       );
       if (direct) return direct;
       if (Array.isArray(node.attributes)) {
@@ -367,6 +394,34 @@
     }
     return "";
   }
+
+  function ssrTextLines(node, depth = 0, out = []) {
+    if (!node || depth > 5) return out;
+    if (typeof node === "string" || typeof node === "number") {
+      const value = clean(node);
+      if (value && value !== "[object Object]" && !/^urn:li:/i.test(value)) out.push(value);
+      return out;
+    }
+    if (Array.isArray(node)) {
+      node.forEach((item) => ssrTextLines(item, depth + 1, out));
+      return out;
+    }
+    if (typeof node === "object") {
+      const direct = firstScalar(node.text, node.localizedName, node.value, node.name, node.title, node.headline, node.description);
+      if (direct) out.push(direct);
+      for (const [key, value] of Object.entries(node)) {
+        if (/urn|tracking|control|navigation|image|logo|vector|paging|dash|video|entity/i.test(key)) continue;
+        ssrTextLines(value, depth + 1, out);
+      }
+    }
+    return uniqueLines(out.filter((line) => !isNoiseLine(line)));
+  }
+
+  function ssrFirstLine(it, used = []) {
+    const usedSet = new Set(used.map(lower).filter(Boolean));
+    return ssrTextLines(it).find((line) => !usedSet.has(lower(line))) || "";
+  }
+
   function ssrDateRange(dr) {
     if (!dr || typeof dr !== "object") return "";
     const fmt = (d) => {
@@ -406,39 +461,46 @@
     return best?.headline || best?.location ? best : null;
   }
 
-  function ssrExperiences() {
-    return ssrFind("position").map((it) => ({
-      title: ssrText(it.title) || null,
-      company: ssrText(it.companyName) || ssrText(it.company) || null,
+  function ssrExperiences(doc = document) {
+    return ssrFind("position", doc).map((it) => {
+      const title = ssrText(it.title) || ssrText(it.profilePosition?.title) || ssrText(it.position?.title) || ssrFirstLine(it);
+      const company = ssrText(it.companyName) || ssrText(it.company) || ssrText(it.company?.name) || ssrText(it.profilePosition?.companyName) || ssrFirstLine(it, [title]);
+      return {
+      title: title || null,
+      company: company || null,
       period: ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || null,
       location: ssrText(it.locationName) || null,
       description: ssrText(it.description) || null,
-    })).filter((x) => x.title || x.company);
+    };
+    }).filter((x) => x.title || x.company);
   }
-  function ssrEducation() {
-    return ssrFind("education").map((it) => ({
-      school: ssrText(it.schoolName) || ssrText(it.school) || null,
+  function ssrEducation(doc = document) {
+    return ssrFind("education", doc).map((it) => {
+      const school = ssrText(it.schoolName) || ssrText(it.school) || ssrText(it.school?.name) || ssrFirstLine(it);
+      return {
+      school: school || null,
       degree: [ssrText(it.degreeName), ssrText(it.fieldOfStudy)].filter(Boolean).join(" · ") || null,
       period: ssrDateRange(it.dateRange) || null,
       description: ssrText(it.description) || null,
-    })).filter((x) => x.school);
+    };
+    }).filter((x) => x.school);
   }
-  function ssrSkills() {
-    return ssrFind("skill").map((it) => ({
-      name: ssrText(it.name) || null,
+  function ssrSkills(doc = document) {
+    return ssrFind("skill", doc).map((it) => ({
+      name: ssrText(it.name) || ssrText(it.skillName) || ssrFirstLine(it) || null,
       endorsements: null,
     })).filter((x) => x.name);
   }
-  function ssrCertifications() {
-    return ssrFind("certification").map((it) => ({
-      name: ssrText(it.name) || null,
+  function ssrCertifications(doc = document) {
+    return ssrFind("certification", doc).map((it) => ({
+      name: ssrText(it.name) || ssrText(it.title) || ssrFirstLine(it) || null,
       issuer: ssrText(it.authority) || ssrText(it.issuer) || null,
       issued: ssrDateRange(it.timePeriod) || ssrText(it.issueDate) || null,
     })).filter((x) => x.name);
   }
-  function ssrLanguages() {
-    return ssrFind("language").map((it) => ({
-      name: ssrText(it.name) || null,
+  function ssrLanguages(doc = document) {
+    return ssrFind("language", doc).map((it) => ({
+      name: ssrText(it.name) || ssrText(it.language) || ssrFirstLine(it) || null,
       proficiency: ssrText(it.proficiency) || null,
     })).filter((x) => x.name);
   }
@@ -760,12 +822,12 @@
         if (!re.test(t)) continue;
         const lines = [];
         const push = (v) => { const s = clean(v); if (s) lines.push(s); };
-        // Coletar campos textuais comuns
-        push(it.title || it.name || it.schoolName);
-        push(it.companyName || it.subtitle || it.degreeName || it.fieldOfStudy || it.issuer || it.publisher);
-        push(it.dateRange || it.timePeriod || it.issuedOn || it.publishedOn);
-        push(it.locationName);
-        push(it.description);
+        // Coletar campos textuais comuns, incluindo objetos nested do Voyager.
+        push(ssrText(it.title) || ssrText(it.name) || ssrText(it.schoolName));
+        push(ssrText(it.companyName) || ssrText(it.subtitle) || ssrText(it.degreeName) || ssrText(it.fieldOfStudy) || ssrText(it.issuer) || ssrText(it.publisher));
+        push(ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || ssrText(it.issuedOn) || ssrText(it.publishedOn));
+        push(ssrText(it.locationName));
+        push(ssrText(it.description));
         if (lines.length) out.push(lines);
       }
       if (out.length) break;
@@ -776,11 +838,17 @@
   async function fetchDetailsHtml(slug, sectionPath) {
     try {
       const url = `https://www.linkedin.com/in/${encodeURIComponent(slug)}/details/${sectionPath}/`;
+      parserDiagnostics.details.attempted += 1;
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
       const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
       clearTimeout(t);
-      if (!resp.ok) return null;
+      pushDiagnosticStatus(parserDiagnostics.details, { section: sectionPath, status: resp.status });
+      if (!resp.ok) {
+        parserDiagnostics.details.failed += 1;
+        return null;
+      }
+      parserDiagnostics.details.ok += 1;
       const html = await resp.text();
       return new DOMParser().parseFromString(html, "text/html");
     } catch {
@@ -823,15 +891,22 @@
       if (csrf) headers["csrf-token"] = csrf;
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
+      parserDiagnostics.voyager.attempted += 1;
       const resp = await fetch(url, {
         credentials: "include",
         headers,
         signal: ctrl.signal,
       });
       clearTimeout(t);
-      if (!resp.ok) return null;
+      pushDiagnosticStatus(parserDiagnostics.voyager, { status: resp.status, path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160) });
+      if (!resp.ok) {
+        parserDiagnostics.voyager.failed += 1;
+        return null;
+      }
+      parserDiagnostics.voyager.ok += 1;
       return await resp.json();
     } catch {
+      parserDiagnostics.voyager.failed += 1;
       return null;
     }
   }
@@ -1192,7 +1267,7 @@
     const location_ = extractLocation(card, person, full_name);
     const avatar = extractAvatar(card);
 
-    return {
+    const profile = {
       linkedin_url: url,
       full_name,
       current_position: headline,
@@ -1200,7 +1275,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.4",
+      capture_version: "2.5",
       // Perfil rico
       headline: headline || null,
       about: extractAbout() || null,
@@ -1222,6 +1297,27 @@
       current_company_data: extractCurrentCompanyData(card),
       recent_activity: extractRecentActivity(),
       recommendations: extractRecommendations(),
+    };
+    profile.parser_diagnostics = buildParserDiagnostics(profile);
+    return profile;
+  }
+
+  function buildParserDiagnostics(profile) {
+    const codes = Array.from(document.querySelectorAll('code[id^="bpr-guid"], code[id^="datalet-bpr-guid"], code[style*="display"]'));
+    return {
+      url_path: location.pathname,
+      title: document.title || "",
+      has_main: Boolean(document.querySelector("main")),
+      ssr_code_count: codes.length,
+      ssr_code_with_included_count: codes.filter((c) => /"included"\s*:/.test(c.textContent || "")).length,
+      ssr_object_count: ssrIncluded().length,
+      extracted_counts: {
+        experiences: Array.isArray(profile.experiences) ? profile.experiences.length : 0,
+        education: Array.isArray(profile.education) ? profile.education.length : 0,
+        skills: Array.isArray(profile.skills_detailed) ? profile.skills_detailed.length : 0,
+      },
+      voyager: parserDiagnostics.voyager,
+      details: parserDiagnostics.details,
     };
   }
 

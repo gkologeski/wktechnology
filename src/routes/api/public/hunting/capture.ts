@@ -80,6 +80,9 @@ const Payload = z.object({
     .optional(),
   recent_activity: z.array(z.any()).max(20).optional().nullable(),
   recommendations: z.array(z.any()).max(20).optional().nullable(),
+  parser_diagnostics: z
+    .preprocess(coerceObject, z.record(z.any()).nullable())
+    .optional(),
   // Metadados
   capture_version: z.string().max(20).optional(),
 });
