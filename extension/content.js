@@ -475,6 +475,44 @@
     return best?.headline || best?.location ? best : null;
   }
 
+  // v3.0 — about/summary autoritativo: lê Profile.summary do SSR.
+  // É a única forma confiável de obter o "Sobre" sem misturar com
+  // "Atividade", "Mais perfis" e rodapé. Quando isto vier preenchido,
+  // ele DEVE sobrescrever qualquer about extraído do DOM.
+  function ssrProfileSummary(fullName = "") {
+    const items = ssrIncluded();
+    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    let best = "";
+    let bestScore = -999;
+    for (const it of items) {
+      if (!it || typeof it !== "object") continue;
+      const type = String(it.$type || it["$type"] || "");
+      if (!/\.Profile($|[^A-Za-z])/i.test(type) && !/MiniProfile/i.test(type)) continue;
+      const summary = ssrText(it.summary) || ssrText(it.about) || "";
+      if (!summary || summary.length < 12) continue;
+      const publicIdentifier = clean(it.publicIdentifier || it.publicProfileUrl || "").toLowerCase();
+      const name = clean(ssrText(it.fullName) || ssrText(it.name) || "");
+      let score = summary.length > 60 ? 4 : 1;
+      if (slug && publicIdentifier.includes(slug)) score += 30;
+      if (name && lower(name) === lower(fullName)) score += 20;
+      if (/MiniProfile/i.test(type)) score -= 6;
+      if (score > bestScore) {
+        bestScore = score;
+        best = summary;
+      }
+    }
+    return best || "";
+  }
+
+  // Detector de "about lixo": quando o DOM scrape capturou a página
+  // inteira (Atividade/Mais perfis/footer) em vez do Sobre real.
+  function looksLikeJunkAbout(text) {
+    const t = clean(text);
+    if (!t) return true;
+    if (t.length > 1800) return true;
+    return /(mais perfis para voc|people also viewed|atividade\s+\d|activity\s+\d|publica[çc][õo]es?\s+do\s+|posts?\s+de\s+|dados de contato|contact info|enviar mensagem|send message|seguidores?\b|followers?\b|conex[õo]es?\s+m[úu]tuas?|mutual connections?|abrir menu|open menu|languages?\s*$|portugu[êe]s\s*\(brasil\)|english\s*\(us\)|para neg[óo]cios|for business|principais compet[êe]ncias|key skills and technologies)/i.test(t);
+  }
+
   function ssrExperiences(doc = document) {
     return ssrFind("position", doc).map((it) => {
       const title = ssrText(it.title) || ssrText(it.profilePosition?.title) || ssrText(it.position?.title) || ssrFirstLine(it);
@@ -1166,6 +1204,18 @@
     if (!profile.current_position && top?.headline) profile.current_position = top.headline;
     if (!profile.headline && top?.headline) profile.headline = top.headline;
     if (!profile.location && top?.location) profile.location = top.location;
+
+    // v3.0: SSR summary é autoritativo para "Sobre".
+    // Sobrescreve DOM se o SSR tiver dados OU se o DOM extraiu lixo.
+    const ssrAbout = ssrProfileSummary(profile.full_name || "");
+    if (ssrAbout) {
+      profile.about = ssrAbout;
+      profile.__about_source = "voyager_ssr";
+    } else if (looksLikeJunkAbout(profile.about)) {
+      profile.about = null;
+      profile.__about_source = "discarded_junk";
+    }
+
     const exp = ssrExperiences();
     if (!profile.current_company && exp[0]?.company) profile.current_company = exp[0].company;
     if (!Array.isArray(profile.experiences) || !profile.experiences.length) profile.experiences = exp.slice(0, 20);
@@ -1506,7 +1556,7 @@
       location: location_,
       avatar_url: avatar,
       source: "linkedin_extension",
-      capture_version: "2.8",
+      capture_version: "3.0",
       // Perfil rico
       headline: headline || null,
       about: extractAbout(full_name) || null,
@@ -1886,17 +1936,26 @@
       } catch {
         /* segue para salvar mesmo se enrichment falhar */
       }
-      // Guard rígido: se não veio SSR, nenhuma âncora hidratou e os arrays ricos
-      // estão todos vazios, o parser só achou shell+footer. Abortar a gravação
-      // para não salvar lixo (ex.: lista de idiomas do footer no "about").
+      // v3.0 — Guard rígido: aborta se não temos sinal estruturado real
+      // (about do SSR, experiências OU educação). Sem isso o parser
+      // está pegando shell/footer e mandando lixo pro TechHire.
       const d = latestProfile?.parser_diagnostics || {};
       const anchorsOk =
         d.anchors && Object.values(d.anchors).some((v) => v === true);
       const richCount =
         (latestProfile?.experiences?.length || 0) +
-        (latestProfile?.educations?.length || 0) +
-        (latestProfile?.skills?.length || 0);
+        (latestProfile?.education?.length || 0) +
+        (latestProfile?.skills_detailed?.length || 0);
+      const aboutFromSsr = latestProfile?.__about_source === "voyager_ssr";
+      const structuredOk = aboutFromSsr || (latestProfile?.experiences?.length || 0) > 0 || (latestProfile?.education?.length || 0) > 0;
       const ssrOk = (d.ssr_code_count || 0) > 0;
+      if (!structuredOk && !allowPartialOnce) {
+        allowPartialOnce = true;
+        btn.disabled = false;
+        btn.textContent = "Salvar candidato";
+        setStatus("Sem dados estruturados (Voyager não retornou Profile/Position/Education). Role a página inteira, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim parcial, clique em Salvar novamente.", true);
+        return;
+      }
       if (!ssrOk && !anchorsOk && richCount === 0 && !allowPartialOnce) {
         allowPartialOnce = true;
         btn.disabled = false;
@@ -1912,6 +1971,13 @@
         setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
         return;
       }
+      // Sanity final: nunca deixa "about lixo" sair pro backend.
+      if (looksLikeJunkAbout(latestProfile?.about)) {
+        latestProfile.about = null;
+        latestProfile.__about_source = latestProfile.__about_source || "discarded_pre_send";
+      }
+      // Limpa marcadores internos
+      delete latestProfile.__about_source;
       btn.textContent = "Salvando…";
       sendRuntimeMessage({ type: "CAPTURE_CANDIDATE", payload: latestProfile }, (resp) => {
         btn.disabled = false;
