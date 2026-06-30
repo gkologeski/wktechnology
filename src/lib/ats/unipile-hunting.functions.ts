@@ -237,7 +237,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           owner_id: userId,
           candidate_id: candidateId,
           source_url: it.linkedin_url,
-          raw_payload: (it.raw ?? {}) as never,
+          raw_payload: it as never,
           parser_version: "unipile-search-v1",
           captured_by: userId,
         } as never);
