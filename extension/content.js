@@ -793,6 +793,38 @@
     return cleanAboutCandidate(body.join("\n"), fullName);
   }
 
+  function extractAboutFromMainText(fullName = "") {
+    const lines = sliceMainSectionLines(
+      /^(sobre|about)$/i,
+      /^(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills|licen[çc]as|certifica|licenses|idiomas|languages|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b/i,
+    );
+    return cleanAboutCandidate(lines.join(" "), fullName);
+  }
+
+  function extractSkillsFromMainText() {
+    const skillLines = [
+      ...sliceMainSectionLines(
+        /^(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)$/i,
+        /^(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images|idiomas|languages|licen[çc]as|certifica)\b/i,
+      ),
+    ];
+    const aboutLines = sliceMainSectionLines(
+      /^(sobre|about)$/i,
+      /^(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b/i,
+    );
+    const aboutSkillLine = aboutLines.find((line) => /key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills/i.test(line));
+    if (aboutSkillLine) skillLines.push(aboutSkillLine.replace(/.*?(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:*/i, ""));
+    return uniqueLines(
+      skillLines
+        .join(" · ")
+        .split(/[·•,;|]/)
+        .map((s) => clean(s.replace(/…\s*mais/gi, "")))
+        .filter((s) => s.length >= 2 && s.length <= 80 && !SECTION_BOUNDARY_RE.test(s) && !isLinkedInUiLine(s)),
+    )
+      .slice(0, 100)
+      .map((name) => ({ name, endorsements: null }));
+  }
+
   function extractListItems(section) {
     if (!section) return [];
     const items = section.querySelectorAll(
