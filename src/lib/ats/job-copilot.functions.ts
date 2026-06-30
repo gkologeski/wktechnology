@@ -71,7 +71,7 @@ export const rankPipelineCandidates = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ job_id: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
 
     const { data: apps } = await supabase
       .from("ats_applications")
@@ -132,7 +132,7 @@ export const suggestInterviewQuestions = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
 
     let candBlock = "";
     if (data.candidate_id) {
@@ -184,7 +184,7 @@ export const draftOutreach = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { context: jobCtx } = await buildJobContext(supabase, data.job_id);
+    const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
     const { data: c } = await supabase
       .from("ats_candidates")
       .select("full_name, current_position, current_company, skills, location")
