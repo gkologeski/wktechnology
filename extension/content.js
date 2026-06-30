@@ -1,4 +1,4 @@
-// TechHire Hunter — Content script (v1.0.7)
+// TechHire Hunter — Content script (v1.0.8 — modo debug)
 // Extrai dados de perfil do LinkedIn via DOM visível + <title> + og:meta + JSON-LD.
 // Mantém MutationObserver ativo até preencher headline/empresa/local OU timeout.
 
