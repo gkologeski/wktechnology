@@ -12,7 +12,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recordAtsEvent } from "./audit.server";
 
-const CHANNEL = z.enum(["email", "whatsapp", "linkedin_task", "wait"]);
+const CHANNEL = z.enum([
+  "email",
+  "whatsapp",
+  "linkedin_task",
+  "linkedin_invite",
+  "linkedin_message",
+  "wait",
+]);
 
 export const listSequences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
