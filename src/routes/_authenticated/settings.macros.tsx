@@ -209,7 +209,23 @@ function MacrosPage() {
                 minHeight={200}
                 placeholder="Olá {{contact_first_name}}, recebemos seu chamado…"
               />
+              <TokenPills
+                tokens={MACRO_TOKENS}
+                onInsert={(t) => {
+                  const active = typeof document !== "undefined" ? document.activeElement : null;
+                  if (active && (active as HTMLElement).isContentEditable) {
+                    try {
+                      document.execCommand("insertText", false, t);
+                      return;
+                    } catch {
+                      /* fallback */
+                    }
+                  }
+                  setDraft((prev) => ({ ...prev, body: (prev.body ?? "") + t }));
+                }}
+              />
             </div>
+
             <div className="flex items-center gap-2">
               <Switch
                 checked={draft.enabled ?? true}
