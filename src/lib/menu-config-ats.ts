@@ -61,9 +61,10 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Hunting (LinkedIn)",
     items: [
       { title: "Hub", url: "/hunting", icon: Search },
+      { title: "Buscar perfis", url: "/hunting/search", icon: Search },
       { title: "Capturados", url: "/hunting/captures", icon: Inbox },
       { title: "Templates", url: "/hunting/templates", icon: Mail },
-      { title: "Instalar extensão", url: "/hunting/install", icon: Download },
+      { title: "Observabilidade", url: "/hunting/observability", icon: Activity },
     ],
   },
   {
