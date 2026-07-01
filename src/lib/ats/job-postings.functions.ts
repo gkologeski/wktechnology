@@ -31,10 +31,22 @@ async function loadAdapter(provider: z.infer<typeof PROVIDER>): Promise<JobBoard
   return VagasComJobBoardAdapter;
 }
 
-async function detectIsMock(provider: z.infer<typeof PROVIDER>): Promise<boolean> {
+async function detectIsMock(
+  provider: z.infer<typeof PROVIDER>,
+  ownerId: string,
+): Promise<boolean> {
   if (provider === "linkedin") {
-    const m = await import("./adapters/linkedin/job-board");
-    return !m.__linkedinIsLive();
+    // LinkedIn é live quando existe conta Unipile conectada para o workspace.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("unipile_accounts")
+      .select("id")
+      .eq("owner_id", ownerId)
+      .eq("provider", "linkedin")
+      .eq("status", "connected")
+      .limit(1)
+      .maybeSingle();
+    return !data?.id;
   }
   if (provider === "indeed") {
     const m = await import("./adapters/indeed/job-board");
@@ -43,6 +55,7 @@ async function detectIsMock(provider: z.infer<typeof PROVIDER>): Promise<boolean
   const m = await import("./adapters/vagas_com/job-board");
   return !m.__vagasIsLive();
 }
+
 
 export const listJobPostings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
