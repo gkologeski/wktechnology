@@ -1,83 +1,53 @@
-# Pills de variáveis clicáveis em campos de mensagem
+## Diagnóstico
 
-Hoje o sistema já suporta tokens `{{first_name}}`, `{{company}}`, etc. via `src/lib/email-tokens.ts` e `renderTokens`. Porém, o usuário precisa digitá-los manualmente. Em vários lugares há apenas um texto de "Dica" listando tokens disponíveis. Vamos padronizar com **pills clicáveis** que inserem o token no cursor.
+O `/dashboard` chama duas coisas em paralelo:
 
-## 1. Componente reutilizável
+1. **RPC `public.dashboard_metrics()`** — hoje faz `count(*)`, `sum(value)` e agregações em `deals` e `leads` **sem filtrar por `owner_id`**. Como é `SECURITY INVOKER`, o RLS filtra linha a linha em cada agregação. Com 2k deals + 5.7k leads é aceitável, mas o pior é o agrupamento `deals_last_30_days` e `value_by_stage` que percorrem toda a tabela sob RLS.
+2. **Query em `activities`** — `WHERE completed=false AND due_date IS NOT NULL ORDER BY due_date LIMIT 10` **sem `owner_id`** em uma tabela com **433.530 linhas**. O `pg_stat_statements` mostra essa query com média de 248 ms e picos > 1 s. É o principal ofensor do dashboard.
 
-Criar `src/components/ui/token-pills.tsx`:
+Não há problema no worker/edge — o gargalo é banco.
 
-- Props: `tokens: { token: string; label: string; group?: string }[]`, `onInsert: (token: string) => void`, `label?: string` (default "Variáveis"), `className?`.
-- Render: linha compacta com `MetaPill` (já existe em `src/components/techhire/ui/meta-pill.tsx`) clicável como `<button>` — hover destacado, `title` = token literal, texto = label amigável (ex.: "Nome").
-- Agrupamento opcional (Contato / Empresa / Vendedor / Vaga) via separador sutil.
-- Acessibilidade: `aria-label="Inserir {label}"`, foco visível.
+## Plano
 
-Criar helper `src/lib/token-insert.ts`:
+### 1. Reescrever `dashboard_metrics()` para filtrar por `auth.uid()`
+- Adicionar `WHERE owner_id = auth.uid()` (ou `relationship_owner_id` quando aplicável) em todos os agregados.
+- Manter `SECURITY INVOKER` e `STABLE`.
+- Resultado: reduz cada agregação de "toda a tabela" para "linhas do usuário", eliminando o custo de RLS por linha.
 
-- `insertAtCursor(el: HTMLTextAreaElement | HTMLInputElement, text: string, setValue: (v: string) => void)`: insere no `selectionStart`, mantém foco, reposiciona cursor após o token inserido. Fallback: append.
-- `useTokenInserter()`: hook que retorna `{ ref, insert }` para plugar em qualquer `<Textarea ref={ref} />` / `<Input>`.
+### 2. Otimizar a query de tasks no componente
+- Passar a filtrar `activities` também por `owner_id = <auth user>` no cliente, além de `completed=false` e `due_date not null`.
+- Reaproveita o índice parcial existente `activities_pending_due_date_idx` combinado com `activities_owner_idx`.
+- Criar índice composto de apoio:
+  ```sql
+  CREATE INDEX IF NOT EXISTS activities_owner_pending_due_idx
+    ON public.activities (owner_id, due_date)
+    WHERE completed = false AND due_date IS NOT NULL;
+  ```
 
-## 2. Catálogo central de tokens
+### 3. Cache mais agressivo no cliente
+- Elevar `staleTime` do query `["dashboard"]` de 60s para 5 min.
+- Marcar `gcTime` 30 min.
+- Efeito: navegações repetidas ao dashboard não refazem RPC.
 
-Criar `src/lib/message-tokens-catalog.ts` com presets por contexto:
+### 4. Verificação
+- Rodar `EXPLAIN ANALYZE` da nova query de activities para confirmar uso do índice.
+- Medir latência do RPC antes/depois via `pg_stat_statements`.
 
-- `EMAIL_TOKENS` — first_name, last_name, full_name, email, company, agent.name, agent.email.
-- `WHATSAPP_TOKENS` — first_name, full_name, company.
-- `LINKEDIN_TOKENS` — first_name, full_name, company, headline (se disponível no candidato).
-- `ATS_CANDIDATE_TOKENS` — candidate.first_name, candidate.full_name, job.title, job.department, company.name.
-- `SEQUENCE_TOKENS` — union de contato + agente.
+## Arquivos afetados
 
-Cada entrada: `{ token: "{{first_name}}", label: "Nome", group: "Contato" }`. Isso alinha os catálogos que hoje estão duplicados em `settings.email-templates.tsx`, `campaigns.email.tsx`, `settings.macros.tsx`, `workflow-builder.tsx`, `sequences_.$id.tsx`, `sequence-builder.tsx`.
+- `supabase/migrations/<novo>.sql` — nova versão do `dashboard_metrics()` + índice composto.
+- `src/routes/_authenticated/dashboard.tsx` — filtro por `owner_id` na query de activities + `staleTime`/`gcTime`.
 
-## 3. Locais que recebem as pills
+## Fora do escopo
 
-Escopo do rollout (varredura já feita nos dois módulos):
+- Redesign visual do dashboard.
+- Mudar métricas exibidas.
+- Alterar RLS de `deals`/`leads`/`activities`.
 
-TechSales / CRM:
-- `src/components/email/send-email-dialog.tsx` — corpo e assunto.
-- `src/routes/_authenticated/campaigns.email.tsx` — subject e body do template (substitui o `<code>` estático atual).
-- `src/routes/_authenticated/settings.email-templates.tsx` — subject e body.
-- `src/routes/_authenticated/settings.macros.tsx` — body do macro.
-- `src/components/whatsapp/send-whatsapp-dialog.tsx` — textarea "Mensagem" (livre; não aplica em HSM oficial).
-- `src/components/whatsapp/whatsapp-templates-editor.tsx` — corpo do template.
-- `src/components/sequences/sequence-builder.tsx` — corpo do passo.
-- `src/components/workflows/workflow-builder.tsx` — campos `subject`/`body` de ações (remove a "Dica" atual).
-- `src/components/bulk-create-activity-dialog.tsx` — assunto/descrição, se usarem tokens.
+## Riscos
 
-TechHire / ATS:
-- `src/components/ats/send-linkedin-dialog.tsx` — textareas "Mensagem" e "Mensagem do convite".
-- `src/routes/_authenticated/(ats)/sourcing/sequences_.$id.tsx` — body/subject dos steps (email, linkedin_invite, linkedin_message).
-- `src/components/ats/create-offer-dialog.tsx` — se houver corpo de e-mail de oferta.
-- `src/components/ats/schedule-interview-dialog.tsx` — mensagem ao candidato, se aplicável.
+- Se algum usuário depende de ver métricas de deals que não são dele (ex.: admin), a mudança #1 esconderá esses dados. Atual comportamento já é limitado pelo RLS, então o efeito prático deve ser o mesmo, mas vale confirmar antes de aplicar.
 
-Não incluídos (têm token picker próprio já adequado):
-- `src/components/quote-templates/template-editor.tsx` (usa `QUOTE_TEMPLATE_TOKENS`).
-- Editor visual de proposals.
+## Pergunta antes de implementar
 
-## 4. Padrão de integração
-
-Em cada campo:
-
-```tsx
-<div className="space-y-2">
-  <Label>Mensagem</Label>
-  <Textarea ref={ref} value={body} onChange={...} />
-  <TokenPills tokens={WHATSAPP_TOKENS} onInsert={insert} />
-</div>
-```
-
-- Renderiza logo **abaixo** do textarea, tipografia sm, wrap responsivo.
-- Não altera a lógica de envio nem `renderTokens` no backend.
-- Mantém `placeholder` existente.
-
-## 5. Revisão pós-implementação
-
-- Typecheck + build.
-- Verificar dark mode e foco visível nas pills.
-- Confirmar que inserção posiciona cursor corretamente em `<Textarea>` e `<Input>`.
-- Nenhuma alteração em RLS, schema, server functions ou lógica de negócio.
-
-## Detalhes técnicos
-
-- Reutiliza `MetaPill` para consistência visual TechHire; no CRM aplicamos o mesmo componente para uniformidade (é neutro).
-- Como o `RichHtmlEditor` (contenteditable) não expõe `selectionStart`, para editores ricos usaremos `document.execCommand('insertText', false, token)` como fallback e, se falhar, `append`. Escopo inicial cobre apenas os `Textarea`/`Input` listados — editores ricos ficam como follow-up se necessário.
-- Sem novas dependências.
+O dashboard deve mostrar **somente os dados do usuário logado** (owner) ou **todos os dados do workspace** aos quais ele tem acesso via RLS? A resposta muda como escrevo o filtro no RPC.
