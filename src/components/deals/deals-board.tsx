@@ -134,6 +134,7 @@ export function DealsBoard({
                       }
                       ownerName={lookups.owners.get(d.owner_id) ?? "—"}
                       fields={pipeline.config?.card_fields}
+                      nextActivityDate={nextActivities?.get(d.id) ?? null}
                       onClick={() => onOpen(d)}
                     />
                   ))}
