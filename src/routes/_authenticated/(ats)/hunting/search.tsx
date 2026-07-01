@@ -157,8 +157,9 @@ function HuntingSearchPage() {
         enriched += r.enriched;
         errors += r.errors.length;
       } catch (e) {
+        if (handleForceReload(e)) return;
         errors += 1;
-        toast.error(`Falhou: ${h.full_name} — ${(e as Error).message}`);
+        toast.error(`Falhou: ${h.full_name} — ${formatErrorMessage(e)}`);
       }
       setProgress({
         total: items.length,
