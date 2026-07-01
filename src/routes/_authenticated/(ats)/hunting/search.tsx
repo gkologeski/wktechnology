@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { Search, Download, ExternalLink, Loader2, AlertCircle, X, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { formatErrorMessage, handleForceReload } from "@/lib/errors/format";
 import { AtsPageHeader, EmptyState } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,10 @@ function HuntingSearchPage() {
         toast.info("Nenhum resultado para os filtros informados.");
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      if (handleForceReload(e)) return;
+      toast.error(formatErrorMessage(e, "Falha na busca."));
+    },
   });
 
   async function runImport() {
@@ -153,8 +157,9 @@ function HuntingSearchPage() {
         enriched += r.enriched;
         errors += r.errors.length;
       } catch (e) {
+        if (handleForceReload(e)) return;
         errors += 1;
-        toast.error(`Falhou: ${h.full_name} — ${(e as Error).message}`);
+        toast.error(`Falhou: ${h.full_name} — ${formatErrorMessage(e)}`);
       }
       setProgress({
         total: items.length,
