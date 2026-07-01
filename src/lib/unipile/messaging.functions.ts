@@ -165,7 +165,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     try {
       const res = (await sendLinkedinMessage(ctx, {
         attendeeProviderId: providerId,
-        text: data.text,
+        text: renderedText,
       })) as any;
       const providerMessageId =
         res?.message_id ?? res?.id ?? res?.chat_id ?? null;
