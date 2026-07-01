@@ -73,7 +73,15 @@ const BUDGETS: Record<UnipileEndpoint, ThrottleBudget> = {
     coffeeBreakEvery: [50, 100],
     coffeeBreakMs: [0, 0],
   },
+  "job.publish": {
+    minIntervalMs: 30_000,
+    jitterMs: [2_000, 6_000],
+    dailyLimit: 5,
+    coffeeBreakEvery: [3, 5],
+    coffeeBreakMs: [30_000, 90_000],
+  },
 };
+
 
 export class UnipileError extends Error {
   constructor(
