@@ -273,7 +273,7 @@ function DealsPage() {
         </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
-            <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} onOpen={openEdit} />
+            <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} nextActivities={nextActivities} onOpen={openEdit} />
           ) : (
             <p className="text-sm text-muted-foreground">Carregando pipeline…</p>
           )}
