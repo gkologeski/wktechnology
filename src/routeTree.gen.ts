@@ -260,6 +260,7 @@ import { Route as AuthenticatedatsSourcingAnalyticsRouteImport } from './routes/
 import { Route as AuthenticatedatsJobsIdRouteImport } from './routes/_authenticated/(ats)/jobs.$id'
 import { Route as AuthenticatedatsHuntingTemplatesRouteImport } from './routes/_authenticated/(ats)/hunting/templates'
 import { Route as AuthenticatedatsHuntingSearchRouteImport } from './routes/_authenticated/(ats)/hunting/search'
+import { Route as AuthenticatedatsHuntingObservabilityRouteImport } from './routes/_authenticated/(ats)/hunting/observability'
 import { Route as AuthenticatedatsHuntingInstallRouteImport } from './routes/_authenticated/(ats)/hunting/install'
 import { Route as AuthenticatedatsHuntingCapturesRouteImport } from './routes/_authenticated/(ats)/hunting/captures'
 import { Route as AuthenticatedatsCandidatesIdRouteImport } from './routes/_authenticated/(ats)/candidates.$id'
@@ -1702,6 +1703,12 @@ const AuthenticatedatsHuntingSearchRoute =
     path: '/hunting/search',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsHuntingObservabilityRoute =
+  AuthenticatedatsHuntingObservabilityRouteImport.update({
+    id: '/(ats)/hunting/observability',
+    path: '/hunting/observability',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsHuntingInstallRoute =
   AuthenticatedatsHuntingInstallRouteImport.update({
     id: '/(ats)/hunting/install',
@@ -1997,6 +2004,7 @@ export interface FileRoutesByFullPath {
   '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/hunting/observability': typeof AuthenticatedatsHuntingObservabilityRoute
   '/hunting/search': typeof AuthenticatedatsHuntingSearchRoute
   '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
@@ -2265,6 +2273,7 @@ export interface FileRoutesByTo {
   '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/hunting/observability': typeof AuthenticatedatsHuntingObservabilityRoute
   '/hunting/search': typeof AuthenticatedatsHuntingSearchRoute
   '/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/jobs/$id': typeof AuthenticatedatsJobsIdRoute
@@ -2539,6 +2548,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
   '/_authenticated/(ats)/hunting/captures': typeof AuthenticatedatsHuntingCapturesRoute
   '/_authenticated/(ats)/hunting/install': typeof AuthenticatedatsHuntingInstallRoute
+  '/_authenticated/(ats)/hunting/observability': typeof AuthenticatedatsHuntingObservabilityRoute
   '/_authenticated/(ats)/hunting/search': typeof AuthenticatedatsHuntingSearchRoute
   '/_authenticated/(ats)/hunting/templates': typeof AuthenticatedatsHuntingTemplatesRoute
   '/_authenticated/(ats)/jobs/$id': typeof AuthenticatedatsJobsIdRoute
@@ -2813,6 +2823,7 @@ export interface FileRouteTypes {
     | '/candidates/$id'
     | '/hunting/captures'
     | '/hunting/install'
+    | '/hunting/observability'
     | '/hunting/search'
     | '/hunting/templates'
     | '/jobs/$id'
@@ -3081,6 +3092,7 @@ export interface FileRouteTypes {
     | '/candidates/$id'
     | '/hunting/captures'
     | '/hunting/install'
+    | '/hunting/observability'
     | '/hunting/search'
     | '/hunting/templates'
     | '/jobs/$id'
@@ -3354,6 +3366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/candidates/$id'
     | '/_authenticated/(ats)/hunting/captures'
     | '/_authenticated/(ats)/hunting/install'
+    | '/_authenticated/(ats)/hunting/observability'
     | '/_authenticated/(ats)/hunting/search'
     | '/_authenticated/(ats)/hunting/templates'
     | '/_authenticated/(ats)/jobs/$id'
@@ -5309,6 +5322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsHuntingSearchRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/hunting/observability': {
+      id: '/_authenticated/(ats)/hunting/observability'
+      path: '/hunting/observability'
+      fullPath: '/hunting/observability'
+      preLoaderRoute: typeof AuthenticatedatsHuntingObservabilityRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/hunting/install': {
       id: '/_authenticated/(ats)/hunting/install'
       path: '/hunting/install'
@@ -5896,6 +5916,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
   AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
   AuthenticatedatsHuntingInstallRoute: typeof AuthenticatedatsHuntingInstallRoute
+  AuthenticatedatsHuntingObservabilityRoute: typeof AuthenticatedatsHuntingObservabilityRoute
   AuthenticatedatsHuntingSearchRoute: typeof AuthenticatedatsHuntingSearchRoute
   AuthenticatedatsHuntingTemplatesRoute: typeof AuthenticatedatsHuntingTemplatesRoute
   AuthenticatedatsJobsIdRoute: typeof AuthenticatedatsJobsIdRoute
@@ -5974,6 +5995,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
   AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
   AuthenticatedatsHuntingInstallRoute: AuthenticatedatsHuntingInstallRoute,
+  AuthenticatedatsHuntingObservabilityRoute:
+    AuthenticatedatsHuntingObservabilityRoute,
   AuthenticatedatsHuntingSearchRoute: AuthenticatedatsHuntingSearchRoute,
   AuthenticatedatsHuntingTemplatesRoute: AuthenticatedatsHuntingTemplatesRoute,
   AuthenticatedatsJobsIdRoute: AuthenticatedatsJobsIdRoute,

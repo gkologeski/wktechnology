@@ -9,6 +9,7 @@ import {
   Download,
   Inbox,
   Sparkles,
+  Activity,
 } from "lucide-react";
 import { AtsPageHeader, MetricCard, MetricsGridSkeleton } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +31,12 @@ const TILES = [
     icon: Inbox,
     title: "Capturados",
     description: "Candidatos trazidos do LinkedIn — pronto pra mover pra vaga ou pool.",
+  },
+  {
+    to: "/hunting/observability",
+    icon: Activity,
+    title: "Execuções & métricas",
+    description: "Budgets diários, latência, taxa de sucesso e log de chamadas Unipile.",
   },
   {
     to: "/hunting/templates",
