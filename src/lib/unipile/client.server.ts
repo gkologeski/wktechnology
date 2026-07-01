@@ -18,7 +18,9 @@ export type UnipileEndpoint =
   | "message.send"
   | "invite.send"
   | "chat.list"
-  | "hosted.link";
+  | "hosted.link"
+  | "job.publish";
+
 
 export interface ThrottleBudget {
   minIntervalMs: number;
