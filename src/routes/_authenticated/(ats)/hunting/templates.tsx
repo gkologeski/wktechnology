@@ -239,6 +239,13 @@ function HuntingTemplatesPage() {
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
                     placeholder="Oportunidade {{vaga}} na {{empresa_atual}}"
                   />
+                  <TokenPills
+                    className="mt-1.5"
+                    tokens={HUNTING_TOKENS}
+                    onInsert={(t) =>
+                      setForm((f) => ({ ...f, subject: (f.subject ?? "") + t }))
+                    }
+                  />
                 </div>
               )}
               <div>
@@ -250,12 +257,18 @@ function HuntingTemplatesPage() {
                   onChange={(e) => setForm({ ...form, body: e.target.value })}
                   placeholder={`Oi {{primeiro_nome}}, tudo bem?\n\nVi seu perfil e achei sua experiência em {{cargo_atual}} muito relevante pra uma vaga de {{vaga}} que estamos com aberta. Faz sentido conversar?`}
                 />
+                <TokenPills
+                  className="mt-1.5"
+                  tokens={HUNTING_TOKENS}
+                  onInsert={(t) => setForm((f) => ({ ...f, body: (f.body ?? "") + t }))}
+                />
                 <p className="mt-1 text-xs text-muted-foreground">
                   Limite do InMail: ~1900 caracteres. Pedido de conexão: 300.
                 </p>
               </div>
             </div>
           </FormSection>
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancelar
