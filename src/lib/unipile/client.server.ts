@@ -537,7 +537,6 @@ export async function sendLinkedinMessage(
   params: { attendeeProviderId: string; text: string },
 ) {
   const body = {
-  const body = {
     account_id: ctx.unipileAccountId,
     attendees_ids: [params.attendeeProviderId],
     text: params.text,
