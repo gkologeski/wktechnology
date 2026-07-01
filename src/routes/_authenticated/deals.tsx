@@ -88,17 +88,34 @@ function DealsPage() {
   const { data: nextActivities = new Map<string, string>() } = useQuery({
     queryKey: ["deals", "next-activities"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const nowIso = new Date().toISOString();
+      const map = new Map<string, string>();
+      // 1) Próximas atividades futuras (mais próximas primeiro), por deal.
+      const future = await supabase
         .from("activities")
         .select("related_deal_id,due_date")
         .eq("completed", false)
         .not("related_deal_id", "is", null)
-        .not("due_date", "is", null)
+        .gte("due_date", nowIso)
         .order("due_date", { ascending: true })
-        .range(0, 2000);
-      if (error) throw error;
-      const map = new Map<string, string>();
-      for (const a of (data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
+        .range(0, 5000);
+      if (future.error) throw future.error;
+      for (const a of (future.data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
+        if (a.related_deal_id && a.due_date && !map.has(a.related_deal_id)) {
+          map.set(a.related_deal_id, a.due_date);
+        }
+      }
+      // 2) Para deals sem atividade futura, pega a mais recente vencida.
+      const overdue = await supabase
+        .from("activities")
+        .select("related_deal_id,due_date")
+        .eq("completed", false)
+        .not("related_deal_id", "is", null)
+        .lt("due_date", nowIso)
+        .order("due_date", { ascending: false })
+        .range(0, 5000);
+      if (overdue.error) throw overdue.error;
+      for (const a of (overdue.data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
         if (a.related_deal_id && a.due_date && !map.has(a.related_deal_id)) {
           map.set(a.related_deal_id, a.due_date);
         }
@@ -107,6 +124,7 @@ function DealsPage() {
     },
     staleTime: 60_000,
   });
+
 
 
 
