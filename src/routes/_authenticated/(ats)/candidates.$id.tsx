@@ -242,6 +242,13 @@ function CandidateDetailPage() {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {c.linkedin_url && (
+          <SendLinkedinDialog
+            candidateId={c.id}
+            linkedinUrl={c.linkedin_url}
+            candidateName={c.full_name}
+          />
+        )}
         <Button variant="outline" size="sm" onClick={handleDelete}>
           <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
         </Button>
