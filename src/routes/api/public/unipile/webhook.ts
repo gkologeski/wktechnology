@@ -75,14 +75,33 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
           statusStr.includes("message_received") ||
           statusStr.includes("new_message") ||
           statusStr === "message.received" ||
-          statusStr === "messaging.received";
+          statusStr === "messaging.received" ||
+          statusStr === "message";
         if (isIncomingMessage && unipileAccountId) {
+          // Guard 1: ignora echo do próprio outbound.
+          // Unipile envia is_sender=1/true e/ou direction="out" quando a mensagem
+          // partiu da conta conectada (nossos envios de sourcing).
+          const isSelfSent =
+            payload.is_sender === true ||
+            payload.is_sender === 1 ||
+            payload.is_sender === "1" ||
+            String(payload.direction ?? "").toLowerCase() === "out" ||
+            String(payload.direction ?? "").toLowerCase() === "outgoing" ||
+            payload.sender?.is_self === true;
+          if (isSelfSent) {
+            return new Response(JSON.stringify({ ok: true, event: "self_echo_ignored" }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
           // provider_id do remetente (candidato)
           const senderId =
             payload.sender?.provider_id ??
             payload.sender_id ??
             payload.from?.provider_id ??
             payload.attendee_provider_id ??
+            payload.sender?.attendee_provider_id ??
             null;
           if (senderId) {
             const { data: acc } = await supabaseAdmin
@@ -91,6 +110,11 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
               .eq("unipile_account_id", unipileAccountId)
               .maybeSingle();
             if (acc) {
+              // Guard 2: se o "sender" for a própria conta conectada, ignora.
+              // (Unipile pode espelhar mensagens enviadas via outros dispositivos.)
+              // O identificador da conta em unipile_accounts pode ou não bater com o
+              // provider_id do remetente; a checagem principal continua sendo is_sender.
+
               // localiza candidato pelo último log de mensagem/convite enviado a esse provider_id
               const { data: log } = await supabaseAdmin
                 .from("unipile_message_log")
@@ -102,19 +126,46 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
                 .limit(1)
                 .maybeSingle();
               if (log?.candidate_id) {
-                await supabaseAdmin
+                // Pausa qualquer enrollment ativo desse candidato para esse owner.
+                // status=replied + finished_at impede que processDueEnrollments
+                // pegue novamente (o worker filtra por status='active').
+                const { data: updated } = await supabaseAdmin
                   .from("ats_sourcing_enrollments")
                   .update({
                     status: "replied",
                     finished_at: new Date().toISOString(),
+                    next_run_at: null,
+                    last_error: "Opt-out automático: candidato respondeu no LinkedIn",
                   } as never)
                   .eq("owner_id", acc.owner_id)
                   .eq("candidate_id", log.candidate_id)
-                  .eq("status", "active");
+                  .eq("status", "active")
+                  .select("id");
+
+                // Registra a resposta no log de mensagens para auditoria/timeline
+                await supabaseAdmin.from("unipile_message_log").insert({
+                  account_id: acc.id,
+                  owner_id: acc.owner_id,
+                  kind: "reply",
+                  target_identifier: String(senderId),
+                  candidate_id: log.candidate_id,
+                  body: (payload.text ?? payload.message ?? payload.body ?? "").slice(0, 4000) || null,
+                  status: "received",
+                  sent_at: new Date().toISOString(),
+                } as never);
+
+                return new Response(
+                  JSON.stringify({
+                    ok: true,
+                    event: "reply_processed",
+                    paused_enrollments: updated?.length ?? 0,
+                  }),
+                  { status: 200, headers: { "Content-Type": "application/json" } },
+                );
               }
             }
           }
-          return new Response(JSON.stringify({ ok: true, event: "reply_processed" }), {
+          return new Response(JSON.stringify({ ok: true, event: "reply_no_match" }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
