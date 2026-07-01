@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import type { Deal } from "@/lib/db-types";
-import { Building2, CalendarDays, User as UserIcon } from "lucide-react";
+import { Building2, CalendarDays, Clock, User as UserIcon } from "lucide-react";
 
 function initials(s?: string | null) {
   if (!s) return "??";
