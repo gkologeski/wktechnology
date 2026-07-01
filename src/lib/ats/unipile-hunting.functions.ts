@@ -228,6 +228,8 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           current_company?: string | null;
           current_position?: string | null;
           photo_url?: string | null;
+          email?: string | null;
+          phone?: string | null;
           skills?: string[];
           skills_detailed?: unknown;
           education?: unknown;
@@ -249,6 +251,43 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
               enrich.location = (p.location as string) ?? (p.location_name as string) ?? null;
               enrich.photo_url =
                 (p.profile_picture_url as string) ?? (p.picture_url as string) ?? null;
+
+              // ── Contact info (só vem quando é conexão 1º grau / perfil expôs) ─
+              const ci = (p.contact_info ?? p.contactInfo ?? {}) as Record<string, any>;
+              const emailCandidates: unknown[] = [
+                p.email,
+                p.primary_email,
+                ci.email,
+                ...(Array.isArray(ci.emails) ? ci.emails : []),
+                ...(Array.isArray(p.emails) ? p.emails : []),
+              ];
+              const pickString = (v: unknown): string | null => {
+                if (typeof v === "string" && v.trim()) return v.trim();
+                if (v && typeof v === "object") {
+                  const o = v as Record<string, unknown>;
+                  const s =
+                    (o.address as string) ??
+                    (o.email as string) ??
+                    (o.value as string) ??
+                    (o.number as string) ??
+                    (o.phone as string) ??
+                    null;
+                  if (typeof s === "string" && s.trim()) return s.trim();
+                }
+                return null;
+              };
+              const email = emailCandidates.map(pickString).find((v) => !!v) ?? null;
+              const phoneCandidates: unknown[] = [
+                p.phone,
+                p.primary_phone,
+                ci.phone,
+                ...(Array.isArray(ci.phones) ? ci.phones : []),
+                ...(Array.isArray(ci.phone_numbers) ? ci.phone_numbers : []),
+                ...(Array.isArray(p.phone_numbers) ? p.phone_numbers : []),
+              ];
+              const phone = phoneCandidates.map(pickString).find((v) => !!v) ?? null;
+              enrich.email = email && /.+@.+\..+/.test(email) ? email.toLowerCase() : null;
+              enrich.phone = phone;
 
               const exps = Array.isArray(p.work_experience)
                 ? p.work_experience
@@ -292,7 +331,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
 
         const { data: existing } = await supabase
           .from("ats_candidates")
-          .select("id")
+          .select("id, email, phone")
           .eq("owner_id", userId)
           .ilike("linkedin_url", url)
           .maybeSingle();
@@ -324,7 +363,13 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         if (enrich.languages) enrichExtras.languages = enrich.languages;
         if (enrich.certifications) enrichExtras.certifications = enrich.certifications;
 
-        const updatePayload = { ...baseFallback, ...enrichExtras };
+        const updatePayload: Record<string, unknown> = { ...baseFallback, ...enrichExtras };
+
+        // Email/telefone: não sobrescreve se já existir; grava quando enrich trouxe.
+        const existingEmail = (existing?.email as string | null) ?? null;
+        const existingPhone = (existing?.phone as string | null) ?? null;
+        if (enrich.email && !existingEmail) updatePayload.email = enrich.email;
+        if (enrich.phone && !existingPhone) updatePayload.phone = enrich.phone;
 
         let candidateId: string;
         if (existing) {
@@ -335,7 +380,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
             .update(updatePayload as never)
             .eq("id", candidateId);
         } else {
-          const insertRow = {
+          const insertRow: Record<string, unknown> = {
             owner_id: userId,
             created_by: userId,
             full_name: it.full_name || "Sem nome",
@@ -343,6 +388,8 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
             source: "linkedin_unipile_search",
             ...updatePayload,
           };
+          if (enrich.email) insertRow.email = enrich.email;
+          if (enrich.phone) insertRow.phone = enrich.phone;
           const { data: ins, error } = await supabase
             .from("ats_candidates")
             .insert(insertRow as never)
