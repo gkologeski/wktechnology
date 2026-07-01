@@ -14,6 +14,45 @@ function extractPublicIdentifier(linkedinUrl: string | null | undefined): string
   return m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
 }
 
+function firstNameOf(full?: string | null): string {
+  if (!full) return "";
+  return String(full).trim().split(/\s+/)[0] ?? "";
+}
+
+async function renderLinkedinTokens(
+  text: string,
+  opts: { candidateId?: string | null; profileRaw?: any },
+): Promise<string> {
+  if (!text || text.indexOf("{{") === -1) return text;
+  let candidate: any = null;
+  if (opts.candidateId) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("ats_candidates")
+      .select("full_name, current_company, headline, email")
+      .eq("id", opts.candidateId)
+      .maybeSingle();
+    candidate = data ?? null;
+  }
+  const p = opts.profileRaw ?? {};
+  const fullName =
+    candidate?.full_name ??
+    [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim() ??
+    p?.name ??
+    "";
+  const values: Record<string, string> = {
+    first_name: firstNameOf(fullName) || (p?.first_name ?? ""),
+    full_name: fullName || "",
+    company: candidate?.current_company ?? p?.company ?? p?.current_company ?? "",
+    headline: candidate?.headline ?? p?.headline ?? "",
+    email: candidate?.email ?? "",
+  };
+  return text.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_m, key) => {
+    const v = values[key as string];
+    return v == null ? "" : String(v);
+  });
+}
+
 function idemKey(parts: Array<string | undefined | null>): string {
   return createHash("sha256").update(parts.filter(Boolean).join("|")).digest("hex").slice(0, 40);
 }
