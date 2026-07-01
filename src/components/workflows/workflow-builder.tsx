@@ -350,8 +350,21 @@ function ActionCard({
   onRemove: () => void;
   onMoveUp?: () => void;
 }) {
+  const subjectInserter = useTokenInserter<HTMLInputElement>(
+    () => ("subject" in action ? (action.subject ?? "") : ""),
+    (v) => onChange({ ...action, subject: v } as WorkflowAction),
+  );
+  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(
+    () => ("body" in action ? (action.body ?? "") : ""),
+    (v) => onChange({ ...action, body: v } as WorkflowAction),
+  );
+  const titleInserter = useTokenInserter<HTMLInputElement>(
+    () => ("title" in action ? (action.title ?? "") : ""),
+    (v) => onChange({ ...action, title: v } as WorkflowAction),
+  );
   return (
     <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+
       <div className="flex items-center gap-2">
         <button
           type="button"
