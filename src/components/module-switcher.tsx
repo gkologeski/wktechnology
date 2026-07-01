@@ -2,6 +2,7 @@
 // Em produção navega para o subdomínio do módulo; em preview/local,
 // navega para a rota padrão dentro da mesma aplicação.
 
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,10 @@ import { cn } from "@/lib/utils";
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   const handleSelect = (moduleId: typeof active) => {
+    setOpen(false);
     if (moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
@@ -45,7 +48,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -98,3 +101,4 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     </Popover>
   );
 }
+
