@@ -34,8 +34,18 @@ const CHANNEL_ICON = {
   email: Mail,
   whatsapp: MessageSquare,
   linkedin_task: Linkedin,
+  linkedin_invite: Linkedin,
+  linkedin_message: Linkedin,
   wait: Clock,
 } as const;
+
+type Channel =
+  | "email"
+  | "whatsapp"
+  | "linkedin_task"
+  | "linkedin_invite"
+  | "linkedin_message"
+  | "wait";
 
 function SequenceDetailPage() {
   const { id } = useParams({ from: "/_authenticated/(ats)/sourcing/sequences_/$id" });
