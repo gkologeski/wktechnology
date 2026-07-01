@@ -28,7 +28,7 @@ const SearchInput = z.object({
     .max(3)
     .optional(),
   language: z.string().max(40).optional(),
-  cursor: z.string().max(200).optional(),
+  cursor: z.string().max(4000).optional(),
   limit: z.number().int().min(1).max(50).optional().default(10),
 });
 
