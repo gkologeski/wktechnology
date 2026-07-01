@@ -35,17 +35,22 @@ type DashboardMetrics = {
 function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      const tasksQuery = supabase
+        .from("activities")
+        .select("id,subject,due_date,completed,type")
+        .eq("completed", false)
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: true })
+        .limit(10);
+      if (uid) tasksQuery.eq("owner_id", uid);
       const [metricsRes, tasksRes] = await Promise.all([
         supabase.rpc("dashboard_metrics"),
-        supabase
-          .from("activities")
-          .select("id,subject,due_date,completed,type")
-          .eq("completed", false)
-          .not("due_date", "is", null)
-          .order("due_date", { ascending: true })
-          .limit(10),
+        tasksQuery,
       ]);
       const metrics = (metricsRes.data as DashboardMetrics | null) ?? {
         open_leads: 0,
