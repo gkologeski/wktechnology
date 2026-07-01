@@ -241,7 +241,9 @@ function SequenceDetailPage() {
                   <SelectContent>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp (tarefa)</SelectItem>
-                    <SelectItem value="linkedin_task">LinkedIn (tarefa)</SelectItem>
+                    <SelectItem value="linkedin_invite">LinkedIn — Convite (Unipile)</SelectItem>
+                    <SelectItem value="linkedin_message">LinkedIn — Mensagem (Unipile)</SelectItem>
+                    <SelectItem value="linkedin_task">LinkedIn (tarefa manual)</SelectItem>
                     <SelectItem value="wait">Espera</SelectItem>
                   </SelectContent>
                 </Select>
