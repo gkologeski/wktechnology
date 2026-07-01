@@ -19,6 +19,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { TokenPills } from "@/components/ui/token-pills";
+import { MACRO_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 export const Route = createFileRoute("/_authenticated/settings/macros")({
   component: MacrosPage,

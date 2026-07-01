@@ -48,6 +48,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
+import { TokenPills } from "@/components/ui/token-pills";
+import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 
 export const Route = createFileRoute("/_authenticated/campaigns/email")({
   component: EmailBroadcastsPage,
@@ -119,6 +123,22 @@ function EmailBroadcastsPage() {
   const [scheduleType, setScheduleType] = useState<"now" | "later">("now");
   const [scheduledAt, setScheduledAt] = useState("");
   const [testTo, setTestTo] = useState("");
+
+  const subjectInserter = useTokenInserter<HTMLInputElement>(() => subject, setSubject);
+  const bodyTextInserter = useTokenInserter<HTMLTextAreaElement>(() => bodyText, setBodyText);
+  const insertBodyHtmlToken = (token: string) => {
+    const active = typeof document !== "undefined" ? document.activeElement : null;
+    if (active && (active as HTMLElement).isContentEditable) {
+      try {
+        document.execCommand("insertText", false, token);
+        return;
+      } catch {
+        /* fallback */
+      }
+    }
+    setBodyHtml((prev) => (prev ?? "") + token);
+  };
+
 
   function resetForm() {
     setName("");
@@ -270,9 +290,15 @@ function EmailBroadcastsPage() {
               <div>
                 <Label>Assunto</Label>
                 <Input
+                  ref={subjectInserter.ref}
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Olá {{first_name}}!"
+                />
+                <TokenPills
+                  className="mt-2"
+                  tokens={EMAIL_TOKENS}
+                  onInsert={subjectInserter.insert}
                 />
               </div>
               <div>
@@ -286,11 +312,27 @@ function EmailBroadcastsPage() {
                   minHeight={220}
                   placeholder="Conteúdo do email…"
                 />
+                <TokenPills
+                  className="mt-2"
+                  tokens={EMAIL_TOKENS}
+                  onInsert={insertBodyHtmlToken}
+                />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>
-                <Textarea rows={3} value={bodyText} onChange={(e) => setBodyText(e.target.value)} />
+                <Textarea
+                  ref={bodyTextInserter.ref}
+                  rows={3}
+                  value={bodyText}
+                  onChange={(e) => setBodyText(e.target.value)}
+                />
+                <TokenPills
+                  className="mt-2"
+                  tokens={EMAIL_TOKENS}
+                  onInsert={bodyTextInserter.insert}
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Envios por minuto</Label>
