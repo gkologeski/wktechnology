@@ -64,7 +64,7 @@ function SequenceDetailPage() {
     step_order: 0, // 0 = novo step (auto), >0 = variante de step existente
     variant_label: "A",
     variant_weight: 1,
-    channel: "email" as "email" | "whatsapp" | "linkedin_task" | "wait",
+    channel: "email" as Channel,
     delay_days: 0,
     subject: "",
     body: "",
