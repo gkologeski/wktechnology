@@ -312,13 +312,13 @@ export function WorkflowBuilder({
           </section>
 
           <p className="text-xs text-muted-foreground">
-            Dica: use tokens como <code>{`{{first_name}}`}</code>, <code>{`{{email}}`}</code>,{" "}
-            <code>{`{{name}}`}</code> em assuntos e corpos de ação — são substituídos pelos campos
-            do registro.
+            Use os pills de variáveis abaixo dos campos de assunto e corpo para inserir tokens do
+            registro.
           </p>
 
           {/* Preview do fluxo */}
           <FlowPreview state={state} />
+
         </div>
 
         <SheetFooter>
