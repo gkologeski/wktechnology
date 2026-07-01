@@ -1,0 +1,2 @@
+ALTER TABLE public.ats_sourcing_sequence_steps DROP CONSTRAINT IF EXISTS ats_sourcing_sequence_steps_channel_check;
+ALTER TABLE public.ats_sourcing_sequence_steps ADD CONSTRAINT ats_sourcing_sequence_steps_channel_check CHECK (channel = ANY (ARRAY['email'::text, 'whatsapp'::text, 'linkedin_task'::text, 'linkedin_invite'::text, 'linkedin_message'::text, 'wait'::text]));

@@ -12,7 +12,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recordAtsEvent } from "./audit.server";
 
-const CHANNEL = z.enum(["email", "whatsapp", "linkedin_task", "wait"]);
+const CHANNEL = z.enum([
+  "email",
+  "whatsapp",
+  "linkedin_task",
+  "linkedin_invite",
+  "linkedin_message",
+  "wait",
+]);
 
 export const listSequences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -248,7 +255,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
-      "id, owner_id, sequence_id, candidate_id, current_step, status, candidate:ats_candidates(id, full_name, email, phone)",
+      "id, owner_id, sequence_id, candidate_id, current_step, status, candidate:ats_candidates(id, full_name, email, phone, linkedin_url)",
     )
     .eq("status", "active")
     .lte("next_run_at", new Date().toISOString())
@@ -418,7 +425,11 @@ export async function processDueEnrollments(limit = 50): Promise<{
         }
       }
 
-      const candidate = e.candidate as { full_name?: string; email?: string } | null;
+      const candidate = e.candidate as {
+        full_name?: string;
+        email?: string;
+        linkedin_url?: string | null;
+      } | null;
       let logStatus: "sent" | "task_created" | "failed" | "skipped" = "skipped";
       let logError: string | null = null;
 
@@ -432,6 +443,63 @@ export async function processDueEnrollments(limit = 50): Promise<{
           logStatus = "sent";
           result.sent += 1;
           meta.sentToday += 1;
+        }
+      } else if (next.channel === "linkedin_invite" || next.channel === "linkedin_message") {
+        // Envio nativo via Unipile. Sem linkedin_url não há como resolver o alvo.
+        if (!candidate?.linkedin_url) {
+          logStatus = "failed";
+          logError = "Candidato sem linkedin_url";
+        } else {
+          try {
+            const {
+              loadAccountCtx,
+              sendLinkedinInvite,
+              sendLinkedinMessage,
+              fetchProfile,
+              UnipileError,
+            } = await import("@/lib/unipile/client.server");
+            const ctx = await loadAccountCtx(e.owner_id);
+            const m = candidate.linkedin_url.match(/linkedin\.com\/in\/([^/?#]+)/i);
+            const publicId = m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
+            if (!publicId) throw new UnipileError("linkedin_url inválido", "provider_error");
+            const profile: any = await fetchProfile(ctx, publicId);
+            const providerId =
+              profile?.provider_id ??
+              profile?.user?.provider_id ??
+              profile?.public_profile_url_id ??
+              profile?.member_urn ??
+              null;
+            if (!providerId) throw new UnipileError("provider_id não resolvido", "provider_error");
+            const body = (next.body ?? next.task_instructions ?? "").slice(0, 8000);
+            if (next.channel === "linkedin_invite") {
+              await sendLinkedinInvite(ctx, {
+                providerId: String(providerId),
+                message: body.slice(0, 300) || undefined,
+              });
+            } else {
+              await sendLinkedinMessage(ctx, {
+                attendeeProviderId: String(providerId),
+                text: body || `Olá ${candidate.full_name ?? ""}`.trim(),
+              });
+            }
+            // registra também no unipile_message_log para dedupe/observabilidade
+            await supabaseAdmin.from("unipile_message_log").insert({
+              account_id: ctx.accountId,
+              owner_id: e.owner_id,
+              kind: next.channel === "linkedin_invite" ? "invite" : "message",
+              target_identifier: String(providerId),
+              candidate_id: e.candidate_id,
+              body: body || null,
+              status: "sent",
+              sent_at: new Date().toISOString(),
+            } as never);
+            logStatus = "sent";
+            result.sent += 1;
+            meta.sentToday += 1;
+          } catch (err) {
+            logStatus = "failed";
+            logError = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+          }
         }
       } else {
         logStatus = "task_created";

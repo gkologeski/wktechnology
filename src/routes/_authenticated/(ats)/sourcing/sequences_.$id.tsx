@@ -34,8 +34,18 @@ const CHANNEL_ICON = {
   email: Mail,
   whatsapp: MessageSquare,
   linkedin_task: Linkedin,
+  linkedin_invite: Linkedin,
+  linkedin_message: Linkedin,
   wait: Clock,
 } as const;
+
+type Channel =
+  | "email"
+  | "whatsapp"
+  | "linkedin_task"
+  | "linkedin_invite"
+  | "linkedin_message"
+  | "wait";
 
 function SequenceDetailPage() {
   const { id } = useParams({ from: "/_authenticated/(ats)/sourcing/sequences_/$id" });
@@ -54,7 +64,7 @@ function SequenceDetailPage() {
     step_order: 0, // 0 = novo step (auto), >0 = variante de step existente
     variant_label: "A",
     variant_weight: 1,
-    channel: "email" as "email" | "whatsapp" | "linkedin_task" | "wait",
+    channel: "email" as Channel,
     delay_days: 0,
     subject: "",
     body: "",
@@ -231,7 +241,9 @@ function SequenceDetailPage() {
                   <SelectContent>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp (tarefa)</SelectItem>
-                    <SelectItem value="linkedin_task">LinkedIn (tarefa)</SelectItem>
+                    <SelectItem value="linkedin_invite">LinkedIn — Convite (Unipile)</SelectItem>
+                    <SelectItem value="linkedin_message">LinkedIn — Mensagem (Unipile)</SelectItem>
+                    <SelectItem value="linkedin_task">LinkedIn (tarefa manual)</SelectItem>
                     <SelectItem value="wait">Espera</SelectItem>
                   </SelectContent>
                 </Select>
@@ -264,7 +276,26 @@ function SequenceDetailPage() {
                   />
                 </div>
               </>
-            ) : draft.channel === "wait" ? null : (
+            ) : draft.channel === "wait" ? null : draft.channel === "linkedin_invite" ||
+              draft.channel === "linkedin_message" ? (
+              <div className="space-y-1.5">
+                <Label>
+                  {draft.channel === "linkedin_invite"
+                    ? "Mensagem do convite (máx. 300 caracteres)"
+                    : "Mensagem do LinkedIn"}
+                </Label>
+                <Textarea
+                  rows={4}
+                  maxLength={draft.channel === "linkedin_invite" ? 300 : 8000}
+                  value={draft.body}
+                  onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                  placeholder="Olá {{first_name}}, ..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enviado automaticamente via Unipile. Requer LinkedIn conectado em Configurações → Integrações.
+                </p>
+              </div>
+            ) : (
               <div className="space-y-1.5">
                 <Label>Instruções para o recrutador</Label>
                 <Textarea

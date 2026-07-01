@@ -61,12 +61,64 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         //  - creation_success / account.connected => grava unipile_account_id
         //  - creation_failed                       => marca error
         //  - credentials_invalid / account.disconnected => marca disconnected
+        //  - message_received / new_message        => pausa enrollments (opt-out on reply)
         const status =
           payload.status ?? payload.event ?? payload.type ?? payload.account_status ?? "";
         const unipileAccountId =
           payload.account_id ?? payload.id ?? payload.account?.id ?? null;
         const connectToken = payload.name ?? payload.connect_token ?? null;
         const errorMsg = payload.error ?? payload.message ?? null;
+
+        // --- Opt-out on reply: detecta mensagem recebida no LinkedIn ---
+        const statusStr = String(status).toLowerCase();
+        const isIncomingMessage =
+          statusStr.includes("message_received") ||
+          statusStr.includes("new_message") ||
+          statusStr === "message.received" ||
+          statusStr === "messaging.received";
+        if (isIncomingMessage && unipileAccountId) {
+          // provider_id do remetente (candidato)
+          const senderId =
+            payload.sender?.provider_id ??
+            payload.sender_id ??
+            payload.from?.provider_id ??
+            payload.attendee_provider_id ??
+            null;
+          if (senderId) {
+            const { data: acc } = await supabaseAdmin
+              .from("unipile_accounts")
+              .select("id, owner_id")
+              .eq("unipile_account_id", unipileAccountId)
+              .maybeSingle();
+            if (acc) {
+              // localiza candidato pelo último log de mensagem/convite enviado a esse provider_id
+              const { data: log } = await supabaseAdmin
+                .from("unipile_message_log")
+                .select("candidate_id")
+                .eq("account_id", acc.id)
+                .eq("target_identifier", String(senderId))
+                .not("candidate_id", "is", null)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              if (log?.candidate_id) {
+                await supabaseAdmin
+                  .from("ats_sourcing_enrollments")
+                  .update({
+                    status: "replied",
+                    finished_at: new Date().toISOString(),
+                  } as never)
+                  .eq("owner_id", acc.owner_id)
+                  .eq("candidate_id", log.candidate_id)
+                  .eq("status", "active");
+              }
+            }
+          }
+          return new Response(JSON.stringify({ ok: true, event: "reply_processed" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
 
         if (!connectToken && !unipileAccountId) {
           return new Response("Missing identifiers", { status: 200 });
