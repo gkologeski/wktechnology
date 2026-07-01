@@ -558,7 +558,6 @@ export async function sendLinkedinInvite(
   params: { providerId: string; message?: string },
 ) {
   const body: Record<string, unknown> = {
-    account_id: ctx.unipileAccountId,
     provider_id: params.providerId,
   };
   if (params.message?.trim()) body.message = params.message.trim();
@@ -566,6 +565,7 @@ export async function sendLinkedinInvite(
     endpoint: "invite.send",
     method: "POST",
     path: "/api/v1/users/invite",
+    query: { account_id: ctx.unipileAccountId },
     body,
   });
 }
