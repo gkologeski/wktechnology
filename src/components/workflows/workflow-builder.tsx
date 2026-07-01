@@ -17,6 +17,10 @@ import { Plus, Trash2, GripVertical, Zap, Filter, ArrowDown, PlayCircle } from "
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { TokenPills } from "@/components/ui/token-pills";
+import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 import {
   ENTITY_FIELDS,
   ENTITY_LABELS,
