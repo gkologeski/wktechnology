@@ -28,6 +28,9 @@ import {
   type SequenceStep,
   type SequenceEntity,
 } from "@/lib/sequences/types";
+import { TokenPills } from "@/components/ui/token-pills";
+import { SEQUENCE_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 export interface SequenceDraft {
   id?: string;
