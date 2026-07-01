@@ -458,13 +458,6 @@ export async function processDueEnrollments(limit = 50): Promise<{
           logError = "Candidato sem linkedin_url";
         } else {
           try {
-            const {
-              loadAccountCtx,
-              sendLinkedinInvite,
-              sendLinkedinMessage,
-              fetchProfile,
-              UnipileError,
-            } = await import("@/lib/unipile/client.server");
             const ctx = await loadAccountCtx(e.owner_id);
             const m = candidate.linkedin_url.match(/linkedin\.com\/in\/([^/?#]+)/i);
             const publicId = m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
