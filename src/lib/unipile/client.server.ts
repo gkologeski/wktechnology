@@ -603,4 +603,26 @@ export async function listLinkedinChatMessages(
   });
 }
 
+/**
+ * Lista convites de conexão pendentes (enviados) na conta LinkedIn.
+ * Usado para detectar aceite: se um `provider_invite_id` deixa de aparecer
+ * na lista de pendentes, o convite foi aceito ou retirado.
+ */
+export async function listSentInvitations(
+  ctx: ThrottleCtx,
+  params: { cursor?: string; limit?: number } = {},
+) {
+  return call(ctx, {
+    endpoint: "chat.list",
+    method: "GET",
+    path: "/api/v1/users/invite/sent",
+    query: {
+      account_id: ctx.unipileAccountId,
+      limit: params.limit ?? 100,
+      cursor: params.cursor,
+    },
+  });
+}
+
+
 
