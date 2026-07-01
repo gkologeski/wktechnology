@@ -24,7 +24,7 @@ import {
   Inbox,
   CalendarClock,
   Search,
-  Download,
+  Activity,
   Shield,
 } from "lucide-react";
 
