@@ -19,7 +19,10 @@ const CHANNEL = z.enum([
   "linkedin_invite",
   "linkedin_message",
   "wait",
+  "wait_invite_accept",
 ]);
+
+const ON_TIMEOUT = z.enum(["skip_messages", "end_sequence", "continue"]);
 
 export const listSequences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -142,10 +145,14 @@ export const upsertStep = createServerFn({ method: "POST" })
         task_instructions: z.string().max(2000).nullable().optional(),
         variant_label: z.string().min(1).max(8).default("A"),
         variant_weight: z.number().int().min(1).max(100).default(1),
+        max_wait_days: z.number().int().min(1).max(30).nullable().optional(),
+        poll_interval_hours: z.number().int().min(6).max(48).nullable().optional(),
+        on_timeout: ON_TIMEOUT.nullable().optional(),
       })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
+    const isWaitAccept = data.channel === "wait_invite_accept";
     const row = {
       ...(data.id ? { id: data.id } : {}),
       sequence_id: data.sequence_id,
@@ -158,6 +165,9 @@ export const upsertStep = createServerFn({ method: "POST" })
       task_instructions: data.task_instructions ?? null,
       variant_label: data.variant_label,
       variant_weight: data.variant_weight,
+      max_wait_days: isWaitAccept ? (data.max_wait_days ?? 14) : null,
+      poll_interval_hours: isWaitAccept ? (data.poll_interval_hours ?? 12) : null,
+      on_timeout: isWaitAccept ? (data.on_timeout ?? "end_sequence") : null,
     };
     const { data: saved, error } = await context.supabase
       .from("ats_sourcing_sequence_steps")

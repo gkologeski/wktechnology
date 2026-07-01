@@ -24,7 +24,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
-      "id, owner_id, sequence_id, candidate_id, current_step, status, candidate:ats_candidates(id, full_name, email, phone, linkedin_url)",
+      "id, owner_id, sequence_id, candidate_id, current_step, status, waiting_since, candidate:ats_candidates(id, full_name, email, phone, linkedin_url)",
     )
     .eq("status", "active")
     .lte("next_run_at", new Date().toISOString())
@@ -165,6 +165,9 @@ export async function processDueEnrollments(limit = 50): Promise<{
         task_instructions: string | null;
         variant_label: string | null;
         variant_weight: number | null;
+        max_wait_days: number | null;
+        poll_interval_hours: number | null;
+        on_timeout: string | null;
       }>;
       const nextOrder = e.current_step + 1;
       const variants = stepList.filter((s) => s.step_order === nextOrder);
@@ -185,6 +188,136 @@ export async function processDueEnrollments(limit = 50): Promise<{
           break;
         }
       }
+
+      // ---- Gate: aguardar aceite do convite antes de avançar ----
+      if (next.channel === "wait_invite_accept") {
+        const maxWaitDays = next.max_wait_days ?? 14;
+        const pollHours = Math.max(6, next.poll_interval_hours ?? 12);
+        const onTimeout = (next.on_timeout ?? "end_sequence") as
+          | "skip_messages"
+          | "end_sequence"
+          | "continue";
+
+        // Localiza último convite enviado desta enrollment
+        const { data: lastInvite } = await supabaseAdmin
+          .from("unipile_message_log")
+          .select("id, status, sent_at, accepted_at")
+          .eq("candidate_id", e.candidate_id)
+          .eq("owner_id", e.owner_id)
+          .eq("kind", "invite")
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const inviteRow = lastInvite as
+          | { id: string; status: string; sent_at: string | null; accepted_at: string | null }
+          | null;
+
+        if (inviteRow?.status === "accepted") {
+          // Avança normalmente para o próximo step
+          await supabaseAdmin.from("ats_sourcing_step_log").insert({
+            enrollment_id: e.id,
+            owner_id: e.owner_id,
+            step_order: next.step_order,
+            channel: next.channel,
+            status: "sent",
+            error: null,
+            metadata: { accepted_at: inviteRow.accepted_at, gate: "invite_accepted" },
+          } as never);
+
+          const followingVariants = stepList.filter((s) => s.step_order === next.step_order + 1);
+          const followingDelay = followingVariants[0]?.delay_days ?? 0;
+          await supabaseAdmin
+            .from("ats_sourcing_enrollments")
+            .update({
+              current_step: next.step_order,
+              waiting_since: null,
+              waiting_for_invite_log_id: null,
+              next_run_at: followingVariants.length
+                ? new Date(Date.now() + followingDelay * 86400_000).toISOString()
+                : null,
+              status: followingVariants.length ? "active" : "completed",
+              finished_at: followingVariants.length ? null : new Date().toISOString(),
+            } as never)
+            .eq("id", e.id);
+          continue;
+        }
+
+        const sentAt = inviteRow?.sent_at ? new Date(inviteRow.sent_at).getTime() : Date.now();
+        const deadline = sentAt + maxWaitDays * 86400_000;
+
+        if (!inviteRow || Date.now() < deadline) {
+          // Ainda dentro da janela — reagenda poll
+          const nextPoll = new Date(Date.now() + pollHours * 3600_000).toISOString();
+          await supabaseAdmin
+            .from("ats_sourcing_enrollments")
+            .update({
+              waiting_since: e.waiting_since ?? new Date().toISOString(),
+              waiting_for_invite_log_id: inviteRow?.id ?? null,
+              next_run_at: nextPoll,
+            } as never)
+            .eq("id", e.id);
+          result.throttled += 1;
+          continue;
+        }
+
+        // Timeout — aplica política
+        await supabaseAdmin.from("ats_sourcing_step_log").insert({
+          enrollment_id: e.id,
+          owner_id: e.owner_id,
+          step_order: next.step_order,
+          channel: next.channel,
+          status: "failed",
+          error: "invite_not_accepted",
+          metadata: { on_timeout: onTimeout, max_wait_days: maxWaitDays },
+        } as never);
+
+        if (onTimeout === "end_sequence") {
+          await supabaseAdmin
+            .from("ats_sourcing_enrollments")
+            .update({
+              status: "completed",
+              finished_at: new Date().toISOString(),
+              waiting_since: null,
+              waiting_for_invite_log_id: null,
+              last_error: "invite_not_accepted",
+            } as never)
+            .eq("id", e.id);
+          continue;
+        }
+
+        // skip_messages: pula todos os próximos linkedin_message consecutivos
+        let advanceTo = next.step_order;
+        if (onTimeout === "skip_messages") {
+          let cursor = next.step_order + 1;
+          while (
+            stepList.some(
+              (s) => s.step_order === cursor && s.channel === "linkedin_message",
+            )
+          ) {
+            cursor += 1;
+          }
+          advanceTo = cursor - 1;
+        }
+
+        const followingVariants = stepList.filter((s) => s.step_order === advanceTo + 1);
+        const followingDelay = followingVariants[0]?.delay_days ?? 0;
+        await supabaseAdmin
+          .from("ats_sourcing_enrollments")
+          .update({
+            current_step: advanceTo,
+            waiting_since: null,
+            waiting_for_invite_log_id: null,
+            next_run_at: followingVariants.length
+              ? new Date(Date.now() + followingDelay * 86400_000).toISOString()
+              : null,
+            status: followingVariants.length ? "active" : "completed",
+            finished_at: followingVariants.length ? null : new Date().toISOString(),
+          } as never)
+          .eq("id", e.id);
+        continue;
+      }
+
 
       const candidate = e.candidate as {
         full_name?: string;
@@ -224,8 +357,9 @@ export async function processDueEnrollments(limit = 50): Promise<{
               null;
             if (!providerId) throw new UnipileError("provider_id não resolvido", "provider_error");
             const body = (next.body ?? next.task_instructions ?? "").slice(0, 8000);
+            let inviteResp: any = null;
             if (next.channel === "linkedin_invite") {
-              await sendLinkedinInvite(ctx, {
+              inviteResp = await sendLinkedinInvite(ctx, {
                 providerId: String(providerId),
                 message: body.slice(0, 300) || undefined,
               });
@@ -235,14 +369,25 @@ export async function processDueEnrollments(limit = 50): Promise<{
                 text: body || `Olá ${candidate.full_name ?? ""}`.trim(),
               });
             }
+            const providerInviteId =
+              next.channel === "linkedin_invite"
+                ? String(
+                    inviteResp?.invitation_id ??
+                      inviteResp?.invite_id ??
+                      inviteResp?.id ??
+                      "",
+                  ) || null
+                : null;
+            const isInvite = next.channel === "linkedin_invite";
             await supabaseAdmin.from("unipile_message_log").insert({
               account_id: ctx.accountId,
               owner_id: e.owner_id,
-              kind: next.channel === "linkedin_invite" ? "invite" : "message",
+              kind: isInvite ? "invite" : "message",
               target_identifier: String(providerId),
               candidate_id: e.candidate_id,
               body: body || null,
-              status: "sent",
+              status: isInvite ? "pending" : "sent",
+              provider_invite_id: providerInviteId,
               sent_at: new Date().toISOString(),
             } as never);
             logStatus = "sent";

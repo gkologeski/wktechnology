@@ -2271,6 +2271,8 @@ export type Database = {
           started_by: string | null
           status: string
           updated_at: string
+          waiting_for_invite_log_id: string | null
+          waiting_since: string | null
         }
         Insert: {
           candidate_id: string
@@ -2286,6 +2288,8 @@ export type Database = {
           started_by?: string | null
           status?: string
           updated_at?: string
+          waiting_for_invite_log_id?: string | null
+          waiting_since?: string | null
         }
         Update: {
           candidate_id?: string
@@ -2301,6 +2305,8 @@ export type Database = {
           started_by?: string | null
           status?: string
           updated_at?: string
+          waiting_for_invite_log_id?: string | null
+          waiting_since?: string | null
         }
         Relationships: [
           {
@@ -2326,7 +2332,10 @@ export type Database = {
           created_at: string
           delay_days: number
           id: string
+          max_wait_days: number | null
+          on_timeout: string | null
           owner_id: string
+          poll_interval_hours: number | null
           sequence_id: string
           step_order: number
           subject: string | null
@@ -2341,7 +2350,10 @@ export type Database = {
           created_at?: string
           delay_days?: number
           id?: string
+          max_wait_days?: number | null
+          on_timeout?: string | null
           owner_id: string
+          poll_interval_hours?: number | null
           sequence_id: string
           step_order: number
           subject?: string | null
@@ -2356,7 +2368,10 @@ export type Database = {
           created_at?: string
           delay_days?: number
           id?: string
+          max_wait_days?: number | null
+          on_timeout?: string | null
           owner_id?: string
+          poll_interval_hours?: number | null
           sequence_id?: string
           step_order?: number
           subject?: string | null
@@ -10937,6 +10952,7 @@ export type Database = {
       }
       unipile_message_log: {
         Row: {
+          accepted_at: string | null
           account_id: string
           body: string | null
           candidate_id: string | null
@@ -10946,6 +10962,7 @@ export type Database = {
           idempotency_key: string | null
           kind: string
           owner_id: string
+          provider_invite_id: string | null
           provider_message_id: string | null
           sent_at: string | null
           status: string
@@ -10953,6 +10970,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           account_id: string
           body?: string | null
           candidate_id?: string | null
@@ -10962,6 +10980,7 @@ export type Database = {
           idempotency_key?: string | null
           kind: string
           owner_id: string
+          provider_invite_id?: string | null
           provider_message_id?: string | null
           sent_at?: string | null
           status?: string
@@ -10969,6 +10988,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           account_id?: string
           body?: string | null
           candidate_id?: string | null
@@ -10978,6 +10998,7 @@ export type Database = {
           idempotency_key?: string | null
           kind?: string
           owner_id?: string
+          provider_invite_id?: string | null
           provider_message_id?: string | null
           sent_at?: string | null
           status?: string

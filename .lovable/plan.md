@@ -1,53 +1,84 @@
-## Diagnóstico
+## Objetivo
 
-O `/dashboard` chama duas coisas em paralelo:
+Adicionar um novo tipo de passo `wait_invite_accept` nas sequências de sourcing (Unipile/LinkedIn) que pausa o avanço até o convite anterior ser aceito, com janela máxima configurável em dias. Se expirar sem aceite, a sequência segue um caminho definido (pular passos de mensagem, encerrar ou continuar).
 
-1. **RPC `public.dashboard_metrics()`** — hoje faz `count(*)`, `sum(value)` e agregações em `deals` e `leads` **sem filtrar por `owner_id`**. Como é `SECURITY INVOKER`, o RLS filtra linha a linha em cada agregação. Com 2k deals + 5.7k leads é aceitável, mas o pior é o agrupamento `deals_last_30_days` e `value_by_stage` que percorrem toda a tabela sob RLS.
-2. **Query em `activities`** — `WHERE completed=false AND due_date IS NOT NULL ORDER BY due_date LIMIT 10` **sem `owner_id`** em uma tabela com **433.530 linhas**. O `pg_stat_statements` mostra essa query com média de 248 ms e picos > 1 s. É o principal ofensor do dashboard.
+## Modelo de dados
 
-Não há problema no worker/edge — o gargalo é banco.
+**`ats_sourcing_sequence_steps`** — novo canal e campos de configuração:
+- `channel` aceita novo valor: `wait_invite_accept`
+- Novas colunas (nullable, aplicam-se ao passo `wait_invite_accept`):
+  - `max_wait_days` int — janela de monitoramento (default 14, limite 30)
+  - `poll_interval_hours` int — frequência de checagem (default 12, mínimo 6 para respeitar rate limit Unipile)
+  - `on_timeout` text — enum `skip_messages` | `end_sequence` | `continue` (default `end_sequence`)
 
-## Plano
+**`unipile_message_log`** — passa a persistir o convite para permitir consulta de status:
+- `provider_invite_id` text
+- `accepted_at` timestamptz
+- `status` já existe (`sent` | `accepted` | `failed`); acrescentar `pending`
 
-### 1. Reescrever `dashboard_metrics()` para filtrar por `auth.uid()`
-- Adicionar `WHERE owner_id = auth.uid()` (ou `relationship_owner_id` quando aplicável) em todos os agregados.
-- Manter `SECURITY INVOKER` e `STABLE`.
-- Resultado: reduz cada agregação de "toda a tabela" para "linhas do usuário", eliminando o custo de RLS por linha.
+**`ats_sourcing_enrollments`** — controle do gate:
+- `waiting_since` timestamptz — quando entrou no passo de espera
+- `waiting_for_invite_log_id` uuid — referência ao convite monitorado
 
-### 2. Otimizar a query de tasks no componente
-- Passar a filtrar `activities` também por `owner_id = <auth user>` no cliente, além de `completed=false` e `due_date not null`.
-- Reaproveita o índice parcial existente `activities_pending_due_date_idx` combinado com `activities_owner_idx`.
-- Criar índice composto de apoio:
-  ```sql
-  CREATE INDEX IF NOT EXISTS activities_owner_pending_due_idx
-    ON public.activities (owner_id, due_date)
-    WHERE completed = false AND due_date IS NOT NULL;
-  ```
+## Worker (`sourcing-sequences-worker.server.ts`)
 
-### 3. Cache mais agressivo no cliente
-- Elevar `staleTime` do query `["dashboard"]` de 60s para 5 min.
-- Marcar `gcTime` 30 min.
-- Efeito: navegações repetidas ao dashboard não refazem RPC.
+1. Ao processar um passo `linkedin_invite`, capturar `provider_invite_id` retornado pela Unipile e gravar em `unipile_message_log` com `status='pending'`.
+2. Ao encontrar um passo `wait_invite_accept`:
+   - Localiza o último `linkedin_invite` da mesma enrollment.
+   - Se `status='accepted'` → avança para o próximo passo imediatamente.
+   - Se `status='pending'` e `now - sent_at < max_wait_days`:
+     - Reagenda `next_run_at = now + poll_interval_hours`.
+     - Não conta como envio (não incrementa daily limit).
+   - Se expirou (`> max_wait_days`):
+     - `skip_messages` → pula todos os próximos passos `linkedin_message` até achar outro canal ou fim.
+     - `end_sequence` → marca enrollment `completed` com `last_error='invite_not_accepted'`.
+     - `continue` → segue normalmente.
 
-### 4. Verificação
-- Rodar `EXPLAIN ANALYZE` da nova query de activities para confirmar uso do índice.
-- Medir latência do RPC antes/depois via `pg_stat_statements`.
+## Sincronização de aceites (novo cron)
 
-## Arquivos afetados
+- Nova rota `src/routes/api/public/hooks/unipile-invites-sync.ts` (autenticada via `requireCronAuth`).
+- Executa a cada 2h via `pg_cron`.
+- Busca `unipile_message_log` com `kind='invite'` e `status='pending'` dos últimos 30 dias.
+- Consulta relação/status via Unipile (endpoint de `relations` ou `invitations/sent`) agrupado por `account_id` para respeitar rate limit.
+- Atualiza `status='accepted'` + `accepted_at` quando detectado.
+- Registra evento `ats.invite.accepted` em `domain_events` para timeline.
 
-- `supabase/migrations/<novo>.sql` — nova versão do `dashboard_metrics()` + índice composto.
-- `src/routes/_authenticated/dashboard.tsx` — filtro por `owner_id` na query de activities + `staleTime`/`gcTime`.
+## Respeito a limites do LinkedIn/Unipile
 
-## Fora do escopo
+- `poll_interval_hours` mínimo 6h, default 12h.
+- Batch por `account_id` no cron, com `unipile_rate_buckets` já existente.
+- Passo `wait_invite_accept` não consome quota diária (`daily_send_limit`).
+- `max_wait_days` limitado a 30 (padrão LinkedIn de expiração de convite).
 
-- Redesign visual do dashboard.
-- Mudar métricas exibidas.
-- Alterar RLS de `deals`/`leads`/`activities`.
+## UI
 
-## Riscos
+**Sequence Builder (`src/components/sequences/sequence-builder.tsx` + editor de sourcing)**:
+- Novo tipo "Aguardar aceite do convite" na lista de passos.
+- Campos configuráveis: janela máxima (dias), intervalo de checagem (horas), ação no timeout (select).
+- Validação: só pode ser adicionado após um passo `linkedin_invite`.
 
-- Se algum usuário depende de ver métricas de deals que não são dele (ex.: admin), a mudança #1 esconderá esses dados. Atual comportamento já é limitado pelo RLS, então o efeito prático deve ser o mesmo, mas vale confirmar antes de aplicar.
+**Timeline/Detalhes da enrollment**:
+- Badge "Aguardando aceite (Xd restantes)" enquanto em espera.
+- Badge "Convite aceito em DD/MM" quando sincronizado.
+- Badge "Convite expirou — X" quando timeout.
 
-## Pergunta antes de implementar
+**Catálogo de passos** (`STEP_LABELS` em `src/lib/ats/sourcing/types.ts` equivalente): incluir o novo tipo.
 
-O dashboard deve mostrar **somente os dados do usuário logado** (owner) ou **todos os dados do workspace** aos quais ele tem acesso via RLS? A resposta muda como escrevo o filtro no RPC.
+## Detalhes técnicos
+
+- Migração cria colunas nullable + CHECK do enum `on_timeout`.
+- `processDueEnrollments` ganha branch dedicado antes do `switch` atual de canais.
+- Log de step gravado como `status='waiting'` (novo valor) quando reagendado, para auditoria sem poluir métricas de envio.
+- Feature flag opcional `sourcing_wait_accept_enabled` para rollout controlado.
+
+## Fora de escopo
+
+- Detecção de aceite via webhook Unipile em tempo real (fica como evolução futura; começamos com polling).
+- Reenvio automático de convite expirado.
+
+## Entregáveis
+
+1. Migração SQL (colunas + enum).
+2. Worker atualizado + novo cron de sync.
+3. UI do builder e badges de status.
+4. Documentação curta em `docs/backlog-pendencias.md` ou runbook.

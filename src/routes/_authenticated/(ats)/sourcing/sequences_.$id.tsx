@@ -43,6 +43,7 @@ const CHANNEL_ICON = {
   linkedin_invite: Linkedin,
   linkedin_message: Linkedin,
   wait: Clock,
+  wait_invite_accept: Clock,
 } as const;
 
 type Channel =
@@ -51,7 +52,8 @@ type Channel =
   | "linkedin_task"
   | "linkedin_invite"
   | "linkedin_message"
-  | "wait";
+  | "wait"
+  | "wait_invite_accept";
 
 function SequenceDetailPage() {
   const { id } = useParams({ from: "/_authenticated/(ats)/sourcing/sequences_/$id" });
@@ -75,6 +77,9 @@ function SequenceDetailPage() {
     subject: "",
     body: "",
     task_instructions: "",
+    max_wait_days: 14,
+    poll_interval_hours: 12,
+    on_timeout: "end_sequence" as "skip_messages" | "end_sequence" | "continue",
   });
 
   const maxStepOrder = data?.steps.reduce((m, s) => Math.max(m, s.step_order), 0) ?? 0;
@@ -93,6 +98,11 @@ function SequenceDetailPage() {
           task_instructions: draft.task_instructions.trim() || null,
           variant_label: draft.variant_label.trim().toUpperCase().slice(0, 8) || "A",
           variant_weight: draft.variant_weight,
+          max_wait_days:
+            draft.channel === "wait_invite_accept" ? draft.max_wait_days : null,
+          poll_interval_hours:
+            draft.channel === "wait_invite_accept" ? draft.poll_interval_hours : null,
+          on_timeout: draft.channel === "wait_invite_accept" ? draft.on_timeout : null,
         },
       }),
     onSuccess: () => {
@@ -106,6 +116,9 @@ function SequenceDetailPage() {
         subject: "",
         body: "",
         task_instructions: "",
+        max_wait_days: 14,
+        poll_interval_hours: 12,
+        on_timeout: "end_sequence",
       });
       qc.invalidateQueries({ queryKey: ["ats-sequence", id] });
     },
@@ -250,7 +263,8 @@ function SequenceDetailPage() {
                     <SelectItem value="linkedin_invite">LinkedIn — Convite (Unipile)</SelectItem>
                     <SelectItem value="linkedin_message">LinkedIn — Mensagem (Unipile)</SelectItem>
                     <SelectItem value="linkedin_task">LinkedIn (tarefa manual)</SelectItem>
-                    <SelectItem value="wait">Espera</SelectItem>
+                    <SelectItem value="wait">Espera (dias fixos)</SelectItem>
+                    <SelectItem value="wait_invite_accept">Aguardar aceite do convite</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -294,7 +308,65 @@ function SequenceDetailPage() {
                   />
                 </div>
               </>
-            ) : draft.channel === "wait" ? null : draft.channel === "linkedin_invite" ||
+            ) : draft.channel === "wait" ? null : draft.channel === "wait_invite_accept" ? (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label>Janela máxima (dias)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={draft.max_wait_days}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        max_wait_days: Math.min(30, Math.max(1, Number(e.target.value) || 1)),
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Checar a cada (horas)</Label>
+                  <Input
+                    type="number"
+                    min={6}
+                    max={48}
+                    value={draft.poll_interval_hours}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        poll_interval_hours: Math.min(
+                          48,
+                          Math.max(6, Number(e.target.value) || 6),
+                        ),
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Se não aceitar</Label>
+                  <Select
+                    value={draft.on_timeout}
+                    onValueChange={(v) =>
+                      setDraft({ ...draft, on_timeout: v as typeof draft.on_timeout })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="end_sequence">Encerrar sequência</SelectItem>
+                      <SelectItem value="skip_messages">Pular mensagens LinkedIn</SelectItem>
+                      <SelectItem value="continue">Continuar mesmo assim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Só pode ser adicionado depois de um step de LinkedIn — Convite. Respeita o rate
+                  limit do Unipile e não consome sua cota diária de envios.
+                </p>
+              </div>
+            ) : draft.channel === "linkedin_invite" ||
               draft.channel === "linkedin_message" ? (
               <div className="space-y-1.5">
                 <Label>
