@@ -18,6 +18,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TokenPills } from "@/components/ui/token-pills";
+import {
+  ATS_CANDIDATE_TOKENS,
+  LINKEDIN_TOKENS,
+} from "@/lib/message-tokens-catalog";
+
 import {
   Select,
   SelectContent,
