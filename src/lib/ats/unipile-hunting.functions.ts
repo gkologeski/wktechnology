@@ -331,7 +331,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
 
         const { data: existing } = await supabase
           .from("ats_candidates")
-          .select("id")
+          .select("id, email, phone")
           .eq("owner_id", userId)
           .ilike("linkedin_url", url)
           .maybeSingle();
@@ -363,7 +363,13 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         if (enrich.languages) enrichExtras.languages = enrich.languages;
         if (enrich.certifications) enrichExtras.certifications = enrich.certifications;
 
-        const updatePayload = { ...baseFallback, ...enrichExtras };
+        const updatePayload: Record<string, unknown> = { ...baseFallback, ...enrichExtras };
+
+        // Email/telefone: não sobrescreve se já existir; grava quando enrich trouxe.
+        const existingEmail = (existing?.email as string | null) ?? null;
+        const existingPhone = (existing?.phone as string | null) ?? null;
+        if (enrich.email && !existingEmail) updatePayload.email = enrich.email;
+        if (enrich.phone && !existingPhone) updatePayload.phone = enrich.phone;
 
         let candidateId: string;
         if (existing) {
@@ -374,7 +380,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
             .update(updatePayload as never)
             .eq("id", candidateId);
         } else {
-          const insertRow = {
+          const insertRow: Record<string, unknown> = {
             owner_id: userId,
             created_by: userId,
             full_name: it.full_name || "Sem nome",
@@ -382,6 +388,8 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
             source: "linkedin_unipile_search",
             ...updatePayload,
           };
+          if (enrich.email) insertRow.email = enrich.email;
+          if (enrich.phone) insertRow.phone = enrich.phone;
           const { data: ins, error } = await supabase
             .from("ats_candidates")
             .insert(insertRow as never)
