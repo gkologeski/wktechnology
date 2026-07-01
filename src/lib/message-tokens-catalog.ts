@@ -64,3 +64,15 @@ export const MACRO_TOKENS: MessageToken[] = [
   { token: "{{agent_name}}", label: "Agente", group: "Remetente" },
 ];
 
+// Templates de LinkedIn hunting (extension) — em português.
+export const HUNTING_TOKENS: MessageToken[] = [
+  { token: "{{primeiro_nome}}", label: "Primeiro nome", group: "Perfil" },
+  { token: "{{nome_completo}}", label: "Nome completo", group: "Perfil" },
+  { token: "{{cargo_atual}}", label: "Cargo atual", group: "Perfil" },
+  { token: "{{empresa_atual}}", label: "Empresa atual", group: "Perfil" },
+  { token: "{{headline}}", label: "Headline", group: "Perfil" },
+  { token: "{{vaga}}", label: "Vaga", group: "Contexto" },
+  { token: "{{recrutador}}", label: "Recrutador", group: "Remetente" },
+];
+
+
