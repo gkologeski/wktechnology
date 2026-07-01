@@ -49,6 +49,7 @@ import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
 import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
+import { LinkedinJobConfigPanel } from "@/components/ats/linkedin-job-config-panel";
 import { JobCopilotPanel } from "@/components/ats/job-copilot-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import {
@@ -709,7 +710,8 @@ function JobDetailPage() {
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
             </TabsContent>
-            <TabsContent value="postings" className="mt-0">
+            <TabsContent value="postings" className="mt-0 space-y-4">
+              <LinkedinJobConfigPanel jobId={String(id)} />
               <JobPostingsPanel jobId={String(id)} />
             </TabsContent>
             <TabsContent value="activity" className="mt-0">

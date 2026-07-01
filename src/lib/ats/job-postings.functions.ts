@@ -31,10 +31,22 @@ async function loadAdapter(provider: z.infer<typeof PROVIDER>): Promise<JobBoard
   return VagasComJobBoardAdapter;
 }
 
-async function detectIsMock(provider: z.infer<typeof PROVIDER>): Promise<boolean> {
+async function detectIsMock(
+  provider: z.infer<typeof PROVIDER>,
+  ownerId: string,
+): Promise<boolean> {
   if (provider === "linkedin") {
-    const m = await import("./adapters/linkedin/job-board");
-    return !m.__linkedinIsLive();
+    // LinkedIn é live quando existe conta Unipile conectada para o workspace.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("unipile_accounts")
+      .select("id")
+      .eq("owner_id", ownerId)
+      .eq("provider", "linkedin")
+      .eq("status", "connected")
+      .limit(1)
+      .maybeSingle();
+    return !data?.id;
   }
   if (provider === "indeed") {
     const m = await import("./adapters/indeed/job-board");
@@ -43,6 +55,7 @@ async function detectIsMock(provider: z.infer<typeof PROVIDER>): Promise<boolean
   const m = await import("./adapters/vagas_com/job-board");
   return !m.__vagasIsLive();
 }
+
 
 export const listJobPostings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -108,7 +121,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     const { data: job, error: jobErr } = await context.supabase
       .from("ats_jobs")
       .select(
-        "id, owner_id, title, description, location, remote_mode, employment_type, salary_min, salary_max",
+        "id, owner_id, title, description, location, remote_mode, employment_type, salary_min, salary_max, linkedin_company_id, linkedin_company_name, linkedin_location_id, linkedin_workplace, linkedin_employment_status, linkedin_apply_type, linkedin_apply_url, linkedin_notification_email",
       )
       .eq("id", data.job_id)
       .maybeSingle();
@@ -119,6 +132,30 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     if (!descriptor) throw new Error("Provider desconhecido");
 
     const adapter = await loadAdapter(data.provider);
+    const jobAny = job as typeof job & {
+      linkedin_company_id: string | null;
+      linkedin_company_name: string | null;
+      linkedin_location_id: string | null;
+      linkedin_workplace: string | null;
+      linkedin_employment_status: string | null;
+      linkedin_apply_type: string | null;
+      linkedin_apply_url: string | null;
+      linkedin_notification_email: string | null;
+    };
+    const providerConfig =
+      data.provider === "linkedin"
+        ? {
+            companyId: jobAny.linkedin_company_id,
+            companyName: jobAny.linkedin_company_name,
+            locationId: jobAny.linkedin_location_id,
+            workplace: jobAny.linkedin_workplace,
+            employmentStatus: jobAny.linkedin_employment_status,
+            applyType: jobAny.linkedin_apply_type ?? "linkedin",
+            applyUrl: jobAny.linkedin_apply_url,
+            notificationEmail: jobAny.linkedin_notification_email,
+          }
+        : undefined;
+
     const payload: JobPostPayload = {
       jobId: job.id,
       title: job.title,
@@ -129,6 +166,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       salaryMin: job.salary_min,
       salaryMax: job.salary_max,
       currency: "BRL",
+      providerConfig,
     };
 
     const result = await adapter.postJob(
@@ -153,7 +191,9 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       throw new Error(result.error);
     }
 
-    const isMock = await detectIsMock(data.provider);
+    const isMock = await detectIsMock(data.provider, context.userId);
+
+
 
     const { data: row, error } = await context.supabase
       .from("ats_job_postings")

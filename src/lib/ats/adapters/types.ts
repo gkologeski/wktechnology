@@ -51,8 +51,11 @@ export type JobPostPayload = {
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string | null;
+  /** Config específica do provider (ex.: LinkedIn Company ID, geo, apply). */
+  providerConfig?: Record<string, unknown>;
 };
 export type JobPostResult = { externalId: string; url: string };
+
 
 export interface JobBoardAdapter {
   capabilities: AdapterCapability[];

@@ -18,7 +18,9 @@ export type UnipileEndpoint =
   | "message.send"
   | "invite.send"
   | "chat.list"
-  | "hosted.link";
+  | "hosted.link"
+  | "job.publish";
+
 
 export interface ThrottleBudget {
   minIntervalMs: number;
@@ -71,7 +73,15 @@ const BUDGETS: Record<UnipileEndpoint, ThrottleBudget> = {
     coffeeBreakEvery: [50, 100],
     coffeeBreakMs: [0, 0],
   },
+  "job.publish": {
+    minIntervalMs: 30_000,
+    jitterMs: [2_000, 6_000],
+    dailyLimit: 5,
+    coffeeBreakEvery: [3, 5],
+    coffeeBreakMs: [30_000, 90_000],
+  },
 };
+
 
 export class UnipileError extends Error {
   constructor(
@@ -622,6 +632,80 @@ export async function listSentInvitations(
       cursor: params.cursor,
     },
   });
+}
+
+
+/**
+ * Cria uma vaga (Job Posting) nativa no LinkedIn via Unipile.
+ * Endpoint: POST /api/v1/linkedin/jobs
+ *
+ * Requer que a Company Page (`companyId`) seja administrada pela conta
+ * conectada, e que `locationId` seja um geo ID válido do LinkedIn.
+ */
+export async function createLinkedinJob(
+  ctx: ThrottleCtx,
+  params: {
+    title: string;
+    companyId: string;
+    companyName?: string;
+    locationId: string;
+    workplace: "REMOTE" | "HYBRID" | "ON_SITE";
+    employmentStatus:
+      | "FULL_TIME"
+      | "PART_TIME"
+      | "CONTRACT"
+      | "INTERNSHIP"
+      | "TEMPORARY"
+      | "VOLUNTEER"
+      | "OTHER";
+    description: string;
+    applyMethod:
+      | { type: "linkedin"; notificationEmail: string }
+      | { type: "external"; url: string };
+  },
+) {
+  const body: Record<string, unknown> = {
+    account_id: ctx.unipileAccountId,
+    job_title: { text: params.title },
+    company: { id: params.companyId, text: params.companyName ?? "" },
+    workplace: params.workplace,
+    location: params.locationId,
+    employment_status: params.employmentStatus,
+    description: params.description,
+    apply_method:
+      params.applyMethod.type === "linkedin"
+        ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
+        : { type: "external", url: params.applyMethod.url },
+  };
+  return call(ctx, {
+    endpoint: "job.publish",
+    method: "POST",
+    path: "/api/v1/linkedin/jobs",
+    body,
+  }) as Promise<{
+    id?: string;
+    provider_id?: string;
+    url?: string;
+    object?: string;
+    [k: string]: unknown;
+  }>;
+}
+
+/**
+ * Fecha (despublica) uma vaga previamente criada no LinkedIn via Unipile.
+ * Alguns tenants Unipile só suportam DELETE — se falhar, o caller deve
+ * apenas marcar a `ats_job_postings` como unpublished localmente.
+ */
+export async function closeLinkedinJob(
+  ctx: ThrottleCtx,
+  providerJobId: string,
+) {
+  return call(ctx, {
+    endpoint: "job.publish",
+    method: "DELETE",
+    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
+    query: { account_id: ctx.unipileAccountId },
+  }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
 
 
