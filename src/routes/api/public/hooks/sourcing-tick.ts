@@ -2,7 +2,7 @@
 // com next_run_at vencido. Chamado por pg_cron via supabase--cron-schedule.
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
-import { processDueEnrollments } from "@/lib/ats/sourcing-sequences.functions";
+import { processDueEnrollments } from "@/lib/ats/sourcing-sequences-worker.server";
 
 export const Route = createFileRoute("/api/public/hooks/sourcing-tick")({
   server: {
