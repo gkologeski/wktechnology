@@ -488,16 +488,27 @@ function ActionCard({
       {action.type === "send_notification" && (
         <div className="space-y-2">
           <Input
+            ref={titleInserter.ref}
             value={action.title}
             onChange={(e) => onChange({ ...action, title: e.target.value })}
             placeholder="Título"
           />
           <Textarea
+            ref={bodyInserter.ref}
             value={action.body ?? ""}
             onChange={(e) => onChange({ ...action, body: e.target.value })}
             placeholder="Corpo (opcional)"
             rows={2}
           />
+          <TokenPills
+            tokens={WORKFLOW_TOKENS}
+            onInsert={(t) => {
+              const active = typeof document !== "undefined" ? document.activeElement : null;
+              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
+              else titleInserter.insert(t);
+            }}
+          />
+
         </div>
       )}
 
