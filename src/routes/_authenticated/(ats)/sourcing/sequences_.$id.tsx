@@ -276,7 +276,26 @@ function SequenceDetailPage() {
                   />
                 </div>
               </>
-            ) : draft.channel === "wait" ? null : (
+            ) : draft.channel === "wait" ? null : draft.channel === "linkedin_invite" ||
+              draft.channel === "linkedin_message" ? (
+              <div className="space-y-1.5">
+                <Label>
+                  {draft.channel === "linkedin_invite"
+                    ? "Mensagem do convite (máx. 300 caracteres)"
+                    : "Mensagem do LinkedIn"}
+                </Label>
+                <Textarea
+                  rows={4}
+                  maxLength={draft.channel === "linkedin_invite" ? 300 : 8000}
+                  value={draft.body}
+                  onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                  placeholder="Olá {{first_name}}, ..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enviado automaticamente via Unipile. Requer LinkedIn conectado em Configurações → Integrações.
+                </p>
+              </div>
+            ) : (
               <div className="space-y-1.5">
                 <Label>Instruções para o recrutador</Label>
                 <Textarea
