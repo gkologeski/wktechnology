@@ -103,7 +103,10 @@ function HuntingSearchPage() {
         toast.info("Nenhum resultado para os filtros informados.");
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      if (handleForceReload(e)) return;
+      toast.error(formatErrorMessage(e, "Falha na busca."));
+    },
   });
 
   async function runImport() {
