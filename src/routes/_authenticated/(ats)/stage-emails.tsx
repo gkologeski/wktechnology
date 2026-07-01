@@ -53,6 +53,16 @@ function StageEmailsPage() {
     body: "Olá {{candidate_name}},\n\nObrigado pelo interesse na vaga {{job_title}}. Em breve seguiremos com o próximo passo.\n\nAbraços,\nEquipe de recrutamento",
   });
 
+  const subjectInserter = useTokenInserter<HTMLInputElement>(
+    () => form.subject,
+    (v) => setForm((f) => ({ ...f, subject: v })),
+  );
+  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(
+    () => form.body,
+    (v) => setForm((f) => ({ ...f, body: v })),
+  );
+
+
   const onSelectStage = (v: string) => {
     setStage(v);
     const found = rows.find((r) => r.stage_value === v);
