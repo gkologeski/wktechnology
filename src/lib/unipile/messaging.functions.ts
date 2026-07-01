@@ -14,6 +14,45 @@ function extractPublicIdentifier(linkedinUrl: string | null | undefined): string
   return m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
 }
 
+function firstNameOf(full?: string | null): string {
+  if (!full) return "";
+  return String(full).trim().split(/\s+/)[0] ?? "";
+}
+
+async function renderLinkedinTokens(
+  text: string,
+  opts: { candidateId?: string | null; profileRaw?: any },
+): Promise<string> {
+  if (!text || text.indexOf("{{") === -1) return text;
+  let candidate: any = null;
+  if (opts.candidateId) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("ats_candidates")
+      .select("full_name, current_company, headline, email")
+      .eq("id", opts.candidateId)
+      .maybeSingle();
+    candidate = data ?? null;
+  }
+  const p = opts.profileRaw ?? {};
+  const fullName =
+    candidate?.full_name ??
+    [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim() ??
+    p?.name ??
+    "";
+  const values: Record<string, string> = {
+    first_name: firstNameOf(fullName) || (p?.first_name ?? ""),
+    full_name: fullName || "",
+    company: candidate?.current_company ?? p?.company ?? p?.current_company ?? "",
+    headline: candidate?.headline ?? p?.headline ?? "",
+    email: candidate?.email ?? "",
+  };
+  return text.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_m, key) => {
+    const v = values[key as string];
+    return v == null ? "" : String(v);
+  });
+}
+
 function idemKey(parts: Array<string | undefined | null>): string {
   return createHash("sha256").update(parts.filter(Boolean).join("|")).digest("hex").slice(0, 40);
 }
@@ -58,6 +97,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
+    let profileRaw: any = null;
     if (!providerId) {
       const publicId =
         data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
@@ -70,6 +110,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       try {
         const resolved = await resolveProviderId(ctx, publicId);
         providerId = resolved.providerId;
+        profileRaw = resolved.raw;
       } catch (err) {
         if (err instanceof UnipileError) {
           return { ok: false as const, error: err.message, code: err.code };
@@ -81,7 +122,12 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       }
     }
 
-    const key = idemKey([ctx.accountId, "message", providerId, data.text]);
+    const renderedText = await renderLinkedinTokens(data.text, {
+      candidateId: data.candidateId ?? null,
+      profileRaw,
+    });
+
+    const key = idemKey([ctx.accountId, "message", providerId, renderedText]);
 
     // idempotência: se já foi enviada, retornar sucesso do log anterior
     const { data: existing } = await supabaseAdmin
@@ -107,7 +153,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
           kind: "message",
           target_identifier: providerId,
           candidate_id: data.candidateId ?? null,
-          body: data.text,
+          body: renderedText,
           status: "queued",
           idempotency_key: key,
         },
@@ -119,7 +165,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     try {
       const res = (await sendLinkedinMessage(ctx, {
         attendeeProviderId: providerId,
-        text: data.text,
+        text: renderedText,
       })) as any;
       const providerMessageId =
         res?.message_id ?? res?.id ?? res?.chat_id ?? null;
@@ -173,6 +219,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
+    let profileRaw: any = null;
     if (!providerId) {
       const publicId =
         data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
@@ -182,6 +229,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       try {
         const resolved = await resolveProviderId(ctx, publicId);
         providerId = resolved.providerId;
+        profileRaw = resolved.raw;
       } catch (err) {
         if (err instanceof UnipileError) {
           return { ok: false as const, error: err.message, code: err.code };
@@ -193,7 +241,14 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       }
     }
 
-    const key = idemKey([ctx.accountId, "invite", providerId, data.message ?? ""]);
+    const renderedMessage = data.message
+      ? await renderLinkedinTokens(data.message, {
+          candidateId: data.candidateId ?? null,
+          profileRaw,
+        })
+      : undefined;
+
+    const key = idemKey([ctx.accountId, "invite", providerId, renderedMessage ?? ""]);
 
     const { data: existing } = await supabaseAdmin
       .from("unipile_message_log")
@@ -214,7 +269,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
           kind: "invite",
           target_identifier: providerId,
           candidate_id: data.candidateId ?? null,
-          body: data.message ?? null,
+          body: renderedMessage ?? null,
           status: "queued",
           idempotency_key: key,
         },
@@ -224,7 +279,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      await sendLinkedinInvite(ctx, { providerId, message: data.message });
+      await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
