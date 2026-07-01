@@ -174,8 +174,14 @@ function StageEmailsPage() {
             <Label htmlFor="se-subject">Assunto</Label>
             <Input
               id="se-subject"
+              ref={subjectInserter.ref}
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            />
+            <TokenPills
+              className="mt-1.5"
+              tokens={ATS_CANDIDATE_TOKENS}
+              onInsert={subjectInserter.insert}
             />
           </div>
 
@@ -183,11 +189,18 @@ function StageEmailsPage() {
             <Label htmlFor="se-body">Corpo do e-mail</Label>
             <Textarea
               id="se-body"
+              ref={bodyInserter.ref}
               rows={10}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
             />
+            <TokenPills
+              className="mt-1.5"
+              tokens={ATS_CANDIDATE_TOKENS}
+              onInsert={bodyInserter.insert}
+            />
           </div>
+
 
           <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border-subtle">
             {current && (
