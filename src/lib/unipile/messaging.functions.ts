@@ -219,6 +219,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
+    let profileRaw: any = null;
     if (!providerId) {
       const publicId =
         data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
@@ -228,6 +229,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       try {
         const resolved = await resolveProviderId(ctx, publicId);
         providerId = resolved.providerId;
+        profileRaw = resolved.raw;
       } catch (err) {
         if (err instanceof UnipileError) {
           return { ok: false as const, error: err.message, code: err.code };
@@ -239,7 +241,14 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       }
     }
 
-    const key = idemKey([ctx.accountId, "invite", providerId, data.message ?? ""]);
+    const renderedMessage = data.message
+      ? await renderLinkedinTokens(data.message, {
+          candidateId: data.candidateId ?? null,
+          profileRaw,
+        })
+      : undefined;
+
+    const key = idemKey([ctx.accountId, "invite", providerId, renderedMessage ?? ""]);
 
     const { data: existing } = await supabaseAdmin
       .from("unipile_message_log")
@@ -260,7 +269,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
           kind: "invite",
           target_identifier: providerId,
           candidate_id: data.candidateId ?? null,
-          body: data.message ?? null,
+          body: renderedMessage ?? null,
           status: "queued",
           idempotency_key: key,
         },
@@ -270,7 +279,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      await sendLinkedinInvite(ctx, { providerId, message: data.message });
+      await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
