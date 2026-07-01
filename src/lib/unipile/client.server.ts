@@ -526,3 +526,81 @@ export async function resolveSearchParameter(
   }
 }
 
+// --------- Mensageria (Fase 4) ---------
+
+/**
+ * Envia DM em uma conversa 1:1 no LinkedIn (cria a conversa se necessário).
+ * `attendeeProviderId` é o `provider_id` do destinatário (obtido via fetchProfile).
+ */
+export async function sendLinkedinMessage(
+  ctx: ThrottleCtx,
+  params: { attendeeProviderId: string; text: string },
+) {
+  const body = {
+    account_id: ctx.unipileAccountId,
+    attendees_ids: [params.attendeeProviderId],
+    text: params.text,
+  };
+  return call(ctx, {
+    endpoint: "message.send",
+    method: "POST",
+    path: "/api/v1/chats",
+    body,
+  });
+}
+
+/**
+ * Envia convite de conexão no LinkedIn.
+ * `providerId` é o `provider_id` do destinatário.
+ */
+export async function sendLinkedinInvite(
+  ctx: ThrottleCtx,
+  params: { providerId: string; message?: string },
+) {
+  const body: Record<string, unknown> = {
+    account_id: ctx.unipileAccountId,
+    provider_id: params.providerId,
+  };
+  if (params.message?.trim()) body.message = params.message.trim();
+  return call(ctx, {
+    endpoint: "invite.send",
+    method: "POST",
+    path: "/api/v1/users/invite",
+    body,
+  });
+}
+
+/** Lista chats (inbox) da conta LinkedIn conectada. */
+export async function listLinkedinChats(
+  ctx: ThrottleCtx,
+  params: { cursor?: string; limit?: number } = {},
+) {
+  return call(ctx, {
+    endpoint: "chat.list",
+    method: "GET",
+    path: "/api/v1/chats",
+    query: {
+      account_id: ctx.unipileAccountId,
+      limit: params.limit ?? 20,
+      cursor: params.cursor,
+    },
+  });
+}
+
+/** Lista mensagens de um chat específico. */
+export async function listLinkedinChatMessages(
+  ctx: ThrottleCtx,
+  params: { chatId: string; cursor?: string; limit?: number },
+) {
+  return call(ctx, {
+    endpoint: "chat.list",
+    method: "GET",
+    path: `/api/v1/chats/${encodeURIComponent(params.chatId)}/messages`,
+    query: {
+      limit: params.limit ?? 50,
+      cursor: params.cursor,
+    },
+  });
+}
+
+

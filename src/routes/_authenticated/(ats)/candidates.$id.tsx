@@ -24,6 +24,7 @@ import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { CandidateCopilotPanel } from "@/components/ats/candidate-copilot-panel";
 import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
+import { SendLinkedinDialog } from "@/components/ats/send-linkedin-dialog";
 import {
   getCandidateDetail,
   removeCandidateFromPool,
@@ -241,6 +242,13 @@ function CandidateDetailPage() {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {c.linkedin_url && (
+          <SendLinkedinDialog
+            candidateId={c.id}
+            linkedinUrl={c.linkedin_url}
+            candidateName={c.full_name}
+          />
+        )}
         <Button variant="outline" size="sm" onClick={handleDelete}>
           <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
         </Button>

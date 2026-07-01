@@ -1,0 +1,266 @@
+// Server functions para envio de DM / convite LinkedIn via Unipile.
+// Import dinâmico de "*.server" nos handlers.
+
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { createHash } from "crypto";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+// ---------- helpers ----------
+
+function extractPublicIdentifier(linkedinUrl: string | null | undefined): string | null {
+  if (!linkedinUrl) return null;
+  const m = linkedinUrl.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  return m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
+}
+
+function idemKey(parts: Array<string | undefined | null>): string {
+  return createHash("sha256").update(parts.filter(Boolean).join("|")).digest("hex").slice(0, 40);
+}
+
+async function resolveProviderId(
+  ctx: any,
+  publicIdentifier: string,
+): Promise<{ providerId: string | null; raw: any }> {
+  const { fetchProfile } = await import("@/lib/unipile/client.server");
+  const profile = (await fetchProfile(ctx, publicIdentifier)) as any;
+  const providerId =
+    profile?.provider_id ??
+    profile?.user?.provider_id ??
+    profile?.public_profile_url_id ??
+    profile?.member_urn ??
+    null;
+  return { providerId: providerId ? String(providerId) : null, raw: profile };
+}
+
+// ---------- send message ----------
+
+const sendMessageInput = z.object({
+  candidateId: z.string().uuid().optional(),
+  linkedinUrl: z.string().url().optional(),
+  publicIdentifier: z.string().min(1).max(200).optional(),
+  providerId: z.string().min(1).max(200).optional(),
+  text: z.string().min(1).max(8000),
+});
+
+export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) => sendMessageInput.parse(v))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const {
+      loadAccountCtx,
+      sendLinkedinMessage,
+      UnipileError,
+    } = await import("@/lib/unipile/client.server");
+
+    const ctx = await loadAccountCtx(userId);
+
+    let providerId = data.providerId ?? null;
+    if (!providerId) {
+      const publicId =
+        data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
+      if (!publicId) {
+        return {
+          ok: false as const,
+          error: "Sem identificador do destinatário (linkedinUrl ou providerId).",
+        };
+      }
+      try {
+        const resolved = await resolveProviderId(ctx, publicId);
+        providerId = resolved.providerId;
+      } catch (err) {
+        if (err instanceof UnipileError) {
+          return { ok: false as const, error: err.message, code: err.code };
+        }
+        throw err;
+      }
+      if (!providerId) {
+        return { ok: false as const, error: "Não foi possível resolver o provider_id do perfil." };
+      }
+    }
+
+    const key = idemKey([ctx.accountId, "message", providerId, data.text]);
+
+    // idempotência: se já foi enviada, retornar sucesso do log anterior
+    const { data: existing } = await supabaseAdmin
+      .from("unipile_message_log")
+      .select("id, status, provider_message_id")
+      .eq("account_id", ctx.accountId)
+      .eq("idempotency_key", key)
+      .maybeSingle();
+    if (existing && existing.status === "sent") {
+      return {
+        ok: true as const,
+        deduped: true,
+        providerMessageId: existing.provider_message_id,
+      };
+    }
+
+    const { data: logRow } = await supabaseAdmin
+      .from("unipile_message_log")
+      .upsert(
+        {
+          account_id: ctx.accountId,
+          owner_id: userId,
+          kind: "message",
+          target_identifier: providerId,
+          candidate_id: data.candidateId ?? null,
+          body: data.text,
+          status: "queued",
+          idempotency_key: key,
+        },
+        { onConflict: "account_id,idempotency_key" },
+      )
+      .select("id")
+      .single();
+
+    try {
+      const res = (await sendLinkedinMessage(ctx, {
+        attendeeProviderId: providerId,
+        text: data.text,
+      })) as any;
+      const providerMessageId =
+        res?.message_id ?? res?.id ?? res?.chat_id ?? null;
+      await supabaseAdmin
+        .from("unipile_message_log")
+        .update({
+          status: "sent",
+          provider_message_id: providerMessageId ? String(providerMessageId) : null,
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", logRow!.id);
+      return { ok: true as const, providerMessageId };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const code = err instanceof UnipileError ? err.code : "provider_error";
+      await supabaseAdmin
+        .from("unipile_message_log")
+        .update({
+          status: "failed",
+          error: message.slice(0, 500),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", logRow!.id);
+      return { ok: false as const, error: message, code };
+    }
+  });
+
+// ---------- send invite ----------
+
+const sendInviteInput = z.object({
+  candidateId: z.string().uuid().optional(),
+  linkedinUrl: z.string().url().optional(),
+  publicIdentifier: z.string().min(1).max(200).optional(),
+  providerId: z.string().min(1).max(200).optional(),
+  message: z.string().max(300).optional(),
+});
+
+export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) => sendInviteInput.parse(v))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const {
+      loadAccountCtx,
+      sendLinkedinInvite,
+      UnipileError,
+    } = await import("@/lib/unipile/client.server");
+
+    const ctx = await loadAccountCtx(userId);
+
+    let providerId = data.providerId ?? null;
+    if (!providerId) {
+      const publicId =
+        data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
+      if (!publicId) {
+        return { ok: false as const, error: "Sem identificador do destinatário." };
+      }
+      try {
+        const resolved = await resolveProviderId(ctx, publicId);
+        providerId = resolved.providerId;
+      } catch (err) {
+        if (err instanceof UnipileError) {
+          return { ok: false as const, error: err.message, code: err.code };
+        }
+        throw err;
+      }
+      if (!providerId) {
+        return { ok: false as const, error: "Não foi possível resolver o provider_id." };
+      }
+    }
+
+    const key = idemKey([ctx.accountId, "invite", providerId, data.message ?? ""]);
+
+    const { data: existing } = await supabaseAdmin
+      .from("unipile_message_log")
+      .select("id, status")
+      .eq("account_id", ctx.accountId)
+      .eq("idempotency_key", key)
+      .maybeSingle();
+    if (existing && existing.status === "sent") {
+      return { ok: true as const, deduped: true };
+    }
+
+    const { data: logRow } = await supabaseAdmin
+      .from("unipile_message_log")
+      .upsert(
+        {
+          account_id: ctx.accountId,
+          owner_id: userId,
+          kind: "invite",
+          target_identifier: providerId,
+          candidate_id: data.candidateId ?? null,
+          body: data.message ?? null,
+          status: "queued",
+          idempotency_key: key,
+        },
+        { onConflict: "account_id,idempotency_key" },
+      )
+      .select("id")
+      .single();
+
+    try {
+      await sendLinkedinInvite(ctx, { providerId, message: data.message });
+      await supabaseAdmin
+        .from("unipile_message_log")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", logRow!.id);
+      return { ok: true as const };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const code = err instanceof UnipileError ? err.code : "provider_error";
+      await supabaseAdmin
+        .from("unipile_message_log")
+        .update({
+          status: "failed",
+          error: message.slice(0, 500),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", logRow!.id);
+      return { ok: false as const, error: message, code };
+    }
+  });
+
+// ---------- histórico ----------
+
+export const listCandidateOutreachFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) => z.object({ candidateId: z.string().uuid() }).parse(v))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows } = await supabase
+      .from("unipile_message_log")
+      .select("id, kind, status, body, target_identifier, error, sent_at, created_at")
+      .eq("candidate_id", data.candidateId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    return { items: rows ?? [] };
+  });
