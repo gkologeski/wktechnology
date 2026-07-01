@@ -20,11 +20,13 @@ export function DealsBoard({
   pipeline,
   deals,
   lookups,
+  nextActivities,
   onOpen,
 }: {
   pipeline: Pipeline;
   deals: Deal[];
   lookups: DealLookups;
+  nextActivities?: Map<string, string>;
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
@@ -132,6 +134,7 @@ export function DealsBoard({
                       }
                       ownerName={lookups.owners.get(d.owner_id) ?? "—"}
                       fields={pipeline.config?.card_fields}
+                      nextActivityDate={nextActivities?.get(d.id) ?? null}
                       onClick={() => onOpen(d)}
                     />
                   ))}

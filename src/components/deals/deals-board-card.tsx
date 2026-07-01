@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import type { Deal } from "@/lib/db-types";
-import { Building2, CalendarDays, User as UserIcon } from "lucide-react";
+import { Building2, CalendarDays, Clock, User as UserIcon } from "lucide-react";
 
 function initials(s?: string | null) {
   if (!s) return "??";
@@ -33,6 +33,7 @@ export function DealsBoardCard({
   ownerName,
   fields,
   columnId,
+  nextActivityDate,
   onClick,
 }: {
   deal: Deal;
@@ -41,6 +42,7 @@ export function DealsBoardCard({
   ownerName?: string;
   fields?: string[];
   columnId?: string;
+  nextActivityDate?: string | null;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -109,13 +111,29 @@ export function DealsBoardCard({
       {(has("close_date") || has("owner")) && (
         <div className="mt-2 flex items-center justify-between gap-2">
           {has("close_date") ? (
-            <div
-              className={`flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-[var(--hs-text-muted)]"}`}
-            >
-              <CalendarDays className="h-3 w-3" />
-              <span>
-                {deal.expected_close_date ? formatDate(deal.expected_close_date) : "Sem data"}
-              </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <div
+                className={`flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-[var(--hs-text-muted)]"}`}
+                title="Data prevista de fechamento"
+              >
+                <CalendarDays className="h-3 w-3" />
+                <span>
+                  {deal.expected_close_date ? formatDate(deal.expected_close_date) : "Sem data"}
+                </span>
+              </div>
+              {nextActivityDate && (
+                <div
+                  className={`flex items-center gap-1 text-xs ${
+                    new Date(nextActivityDate).getTime() < Date.now()
+                      ? "text-destructive"
+                      : "text-[var(--hs-text-muted)]"
+                  }`}
+                  title="Próxima atividade em aberto"
+                >
+                  <Clock className="h-3 w-3" />
+                  <span>{formatDate(nextActivityDate)}</span>
+                </div>
+              )}
             </div>
           ) : (
             <span />
