@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { TokenPills } from "@/components/ui/token-pills";
+import { HUNTING_TOKENS } from "@/lib/message-tokens-catalog";
+
 import {
   Select,
   SelectContent,
