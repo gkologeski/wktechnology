@@ -153,7 +153,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
           kind: "message",
           target_identifier: providerId,
           candidate_id: data.candidateId ?? null,
-          body: data.text,
+          body: renderedText,
           status: "queued",
           idempotency_key: key,
         },
