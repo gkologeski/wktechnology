@@ -42,7 +42,7 @@ export interface ObservabilityBudget {
 }
 
 export interface ObservabilityRequest {
-  id: string;
+  id: number;
   endpoint: string;
   method: string;
   status: number | null;
