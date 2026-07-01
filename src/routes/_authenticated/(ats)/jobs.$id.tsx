@@ -710,7 +710,8 @@ function JobDetailPage() {
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
             </TabsContent>
-            <TabsContent value="postings" className="mt-0">
+            <TabsContent value="postings" className="mt-0 space-y-4">
+              <LinkedinJobConfigPanel jobId={String(id)} />
               <JobPostingsPanel jobId={String(id)} />
             </TabsContent>
             <TabsContent value="activity" className="mt-0">
