@@ -255,7 +255,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
-      "id, owner_id, sequence_id, candidate_id, current_step, status, candidate:ats_candidates(id, full_name, email, phone)",
+      "id, owner_id, sequence_id, candidate_id, current_step, status, candidate:ats_candidates(id, full_name, email, phone, linkedin_url)",
     )
     .eq("status", "active")
     .lte("next_run_at", new Date().toISOString())
