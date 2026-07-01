@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { TokenPills } from "@/components/ui/token-pills";
+import { ATS_CANDIDATE_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 import {
   Select,
   SelectContent,
@@ -48,6 +52,16 @@ function StageEmailsPage() {
     subject: "Recebemos sua candidatura — {{job_title}}",
     body: "Olá {{candidate_name}},\n\nObrigado pelo interesse na vaga {{job_title}}. Em breve seguiremos com o próximo passo.\n\nAbraços,\nEquipe de recrutamento",
   });
+
+  const subjectInserter = useTokenInserter<HTMLInputElement>(
+    () => form.subject,
+    (v) => setForm((f) => ({ ...f, subject: v })),
+  );
+  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(
+    () => form.body,
+    (v) => setForm((f) => ({ ...f, body: v })),
+  );
+
 
   const onSelectStage = (v: string) => {
     setStage(v);
@@ -160,8 +174,14 @@ function StageEmailsPage() {
             <Label htmlFor="se-subject">Assunto</Label>
             <Input
               id="se-subject"
+              ref={subjectInserter.ref}
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            />
+            <TokenPills
+              className="mt-1.5"
+              tokens={ATS_CANDIDATE_TOKENS}
+              onInsert={subjectInserter.insert}
             />
           </div>
 
@@ -169,11 +189,18 @@ function StageEmailsPage() {
             <Label htmlFor="se-body">Corpo do e-mail</Label>
             <Textarea
               id="se-body"
+              ref={bodyInserter.ref}
               rows={10}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
             />
+            <TokenPills
+              className="mt-1.5"
+              tokens={ATS_CANDIDATE_TOKENS}
+              onInsert={bodyInserter.insert}
+            />
           </div>
+
 
           <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border-subtle">
             {current && (

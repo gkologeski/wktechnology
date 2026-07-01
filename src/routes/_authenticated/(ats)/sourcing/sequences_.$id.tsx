@@ -18,6 +18,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TokenPills } from "@/components/ui/token-pills";
+import {
+  ATS_CANDIDATE_TOKENS,
+  LINKEDIN_TOKENS,
+} from "@/lib/message-tokens-catalog";
+
 import {
   Select,
   SelectContent,
@@ -266,6 +272,13 @@ function SequenceDetailPage() {
                     value={draft.subject}
                     onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
                   />
+                  <TokenPills
+                    className="mt-1.5"
+                    tokens={ATS_CANDIDATE_TOKENS}
+                    onInsert={(t) =>
+                      setDraft((d) => ({ ...d, subject: (d.subject ?? "") + t }))
+                    }
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Corpo</Label>
@@ -273,6 +286,11 @@ function SequenceDetailPage() {
                     rows={4}
                     value={draft.body}
                     onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                  />
+                  <TokenPills
+                    className="mt-1.5"
+                    tokens={ATS_CANDIDATE_TOKENS}
+                    onInsert={(t) => setDraft((d) => ({ ...d, body: (d.body ?? "") + t }))}
                   />
                 </div>
               </>
@@ -291,6 +309,11 @@ function SequenceDetailPage() {
                   onChange={(e) => setDraft({ ...draft, body: e.target.value })}
                   placeholder="Olá {{first_name}}, ..."
                 />
+                <TokenPills
+                  className="mt-1.5"
+                  tokens={LINKEDIN_TOKENS}
+                  onInsert={(t) => setDraft((d) => ({ ...d, body: (d.body ?? "") + t }))}
+                />
                 <p className="text-xs text-muted-foreground">
                   Enviado automaticamente via Unipile. Requer LinkedIn conectado em Configurações → Integrações.
                 </p>
@@ -305,6 +328,7 @@ function SequenceDetailPage() {
                 />
               </div>
             )}
+
             <div className="flex justify-end">
               <Button onClick={() => addStep.mutate()} disabled={addStep.isPending}>
                 <Plus className="mr-1 h-4 w-4" />
