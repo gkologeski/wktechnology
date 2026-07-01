@@ -1714,6 +1714,15 @@ export type Database = {
           filled_at: string | null
           hiring_manager_id: string | null
           id: string
+          linkedin_apply_type: string | null
+          linkedin_apply_url: string | null
+          linkedin_company_id: string | null
+          linkedin_company_name: string | null
+          linkedin_employment_status: string | null
+          linkedin_location_id: string | null
+          linkedin_location_name: string | null
+          linkedin_notification_email: string | null
+          linkedin_workplace: string | null
           location: string | null
           metadata: Json
           opened_at: string | null
@@ -1740,6 +1749,15 @@ export type Database = {
           filled_at?: string | null
           hiring_manager_id?: string | null
           id?: string
+          linkedin_apply_type?: string | null
+          linkedin_apply_url?: string | null
+          linkedin_company_id?: string | null
+          linkedin_company_name?: string | null
+          linkedin_employment_status?: string | null
+          linkedin_location_id?: string | null
+          linkedin_location_name?: string | null
+          linkedin_notification_email?: string | null
+          linkedin_workplace?: string | null
           location?: string | null
           metadata?: Json
           opened_at?: string | null
@@ -1766,6 +1784,15 @@ export type Database = {
           filled_at?: string | null
           hiring_manager_id?: string | null
           id?: string
+          linkedin_apply_type?: string | null
+          linkedin_apply_url?: string | null
+          linkedin_company_id?: string | null
+          linkedin_company_name?: string | null
+          linkedin_employment_status?: string | null
+          linkedin_location_id?: string | null
+          linkedin_location_name?: string | null
+          linkedin_notification_email?: string | null
+          linkedin_workplace?: string | null
           location?: string | null
           metadata?: Json
           opened_at?: string | null
