@@ -97,6 +97,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
+    let profileRaw: any = null;
     if (!providerId) {
       const publicId =
         data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
@@ -109,6 +110,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       try {
         const resolved = await resolveProviderId(ctx, publicId);
         providerId = resolved.providerId;
+        profileRaw = resolved.raw;
       } catch (err) {
         if (err instanceof UnipileError) {
           return { ok: false as const, error: err.message, code: err.code };
@@ -120,7 +122,12 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       }
     }
 
-    const key = idemKey([ctx.accountId, "message", providerId, data.text]);
+    const renderedText = await renderLinkedinTokens(data.text, {
+      candidateId: data.candidateId ?? null,
+      profileRaw,
+    });
+
+    const key = idemKey([ctx.accountId, "message", providerId, renderedText]);
 
     // idempotência: se já foi enviada, retornar sucesso do log anterior
     const { data: existing } = await supabaseAdmin
