@@ -406,6 +406,7 @@ function ActionCard({
         <div className="space-y-2">
           <div className="grid grid-cols-[1fr_120px] gap-2">
             <Input
+              ref={subjectInserter.ref}
               value={action.subject}
               onChange={(e) => onChange({ ...action, subject: e.target.value })}
               placeholder="Assunto"
@@ -427,10 +428,19 @@ function ActionCard({
             </Select>
           </div>
           <Textarea
+            ref={bodyInserter.ref}
             value={action.body ?? ""}
             onChange={(e) => onChange({ ...action, body: e.target.value })}
             placeholder="Descrição (opcional)"
             rows={2}
+          />
+          <TokenPills
+            tokens={WORKFLOW_TOKENS}
+            onInsert={(t) => {
+              const active = typeof document !== "undefined" ? document.activeElement : null;
+              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
+              else subjectInserter.insert(t);
+            }}
           />
           <div className="flex items-center gap-2">
             <Label className="text-xs">Vence em (dias)</Label>
@@ -450,6 +460,7 @@ function ActionCard({
           </div>
         </div>
       )}
+
 
       {action.type === "assign_to" && (
         <UserPicker value={action.user_id} onChange={(v) => onChange({ ...action, user_id: v })} />
