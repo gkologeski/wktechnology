@@ -85,6 +85,31 @@ function DealsPage() {
     refetchOnMount: "always",
   });
 
+  const { data: nextActivities = new Map<string, string>() } = useQuery({
+    queryKey: ["deals", "next-activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activities")
+        .select("related_deal_id,due_date")
+        .eq("completed", false)
+        .not("related_deal_id", "is", null)
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: true })
+        .range(0, 2000);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const a of (data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
+        if (a.related_deal_id && a.due_date && !map.has(a.related_deal_id)) {
+          map.set(a.related_deal_id, a.due_date);
+        }
+      }
+      return map;
+    },
+    staleTime: 60_000,
+  });
+
+
+
 
 
   const { data: companies = [] } = useQuery({
