@@ -20,11 +20,13 @@ export function DealsBoard({
   pipeline,
   deals,
   lookups,
+  nextActivities,
   onOpen,
 }: {
   pipeline: Pipeline;
   deals: Deal[];
   lookups: DealLookups;
+  nextActivities?: Map<string, string>;
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
