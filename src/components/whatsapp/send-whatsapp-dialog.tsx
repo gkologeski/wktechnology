@@ -31,6 +31,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
+import { TokenPills } from "@/components/ui/token-pills";
+import { WHATSAPP_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 
 type Props = {
   defaultTo?: string;
@@ -64,6 +68,8 @@ export function SendWhatsAppDialog({
   );
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(() => body, setBody);
+
 
   async function handlePickFile(file: File) {
     setUploading(true);
@@ -225,7 +231,18 @@ export function SendWhatsAppDialog({
                   onApply={setBody}
                 />
               </div>
-              <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
+              <Textarea
+                ref={bodyInserter.ref}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={4}
+              />
+              <TokenPills
+                className="mt-2"
+                tokens={WHATSAPP_TOKENS}
+                onInsert={bodyInserter.insert}
+              />
+
             </div>
           )}
 

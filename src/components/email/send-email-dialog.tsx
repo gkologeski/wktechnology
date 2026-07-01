@@ -29,6 +29,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
+import { TokenPills } from "@/components/ui/token-pills";
+import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 
 type Props = {
   defaultTo?: string;
@@ -66,6 +70,22 @@ export function SendEmailDialog({
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+
+  const subjectInserter = useTokenInserter<HTMLInputElement>(() => subject, setSubject);
+  const insertBodyToken = (token: string) => {
+    const sel = typeof window !== "undefined" ? window.getSelection() : null;
+    const active = typeof document !== "undefined" ? document.activeElement : null;
+    if (active && (active as HTMLElement).isContentEditable && sel && sel.rangeCount > 0) {
+      try {
+        document.execCommand("insertText", false, token);
+        return;
+      } catch {
+        /* fallback below */
+      }
+    }
+    setBody((prev) => (prev ?? "") + token);
+  };
+
 
   const listAccounts = useServerFn(listEmailAccounts);
   const listTemplates = useServerFn(listEmailTemplates);
@@ -218,8 +238,18 @@ export function SendEmailDialog({
             </div>
             <div>
               <Label>Assunto</Label>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+              <Input
+                ref={subjectInserter.ref}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+              <TokenPills
+                className="mt-2"
+                tokens={EMAIL_TOKENS}
+                onInsert={subjectInserter.insert}
+              />
             </div>
+
             <div>
               <div className="flex items-center justify-between">
                 <Label>
@@ -236,6 +266,8 @@ export function SendEmailDialog({
                 />
               </div>
               <RichHtmlEditor value={body} onChange={setBody} minHeight={220} placeholder="Escreva sua mensagem…" />
+              <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyToken} />
+
             </div>
           </div>
         )}

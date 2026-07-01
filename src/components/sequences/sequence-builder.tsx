@@ -28,6 +28,9 @@ import {
   type SequenceStep,
   type SequenceEntity,
 } from "@/lib/sequences/types";
+import { TokenPills } from "@/components/ui/token-pills";
+import { SEQUENCE_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 export interface SequenceDraft {
   id?: string;
@@ -193,8 +196,26 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
                         minHeight={140}
                         placeholder="Conteúdo (opcional). Use {{first_name}} para tokens."
                       />
+                      <TokenPills
+                        tokens={SEQUENCE_TOKENS}
+                        onInsert={(t) => {
+                          const active =
+                            typeof document !== "undefined" ? document.activeElement : null;
+                          if (active && (active as HTMLElement).isContentEditable) {
+                            try {
+                              document.execCommand("insertText", false, t);
+                              return;
+                            } catch {
+                              /* fallback */
+                            }
+                          }
+                          const current = "body" in step ? (step.body ?? "") : "";
+                          updateStep(i, { body: current + t });
+                        }}
+                      />
                     </div>
                   )}
+
                 </Card>
               ))}
             </div>

@@ -17,6 +17,10 @@ import { Plus, Trash2, GripVertical, Zap, Filter, ArrowDown, PlayCircle } from "
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { TokenPills } from "@/components/ui/token-pills";
+import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
+import { useTokenInserter } from "@/lib/token-insert";
+
 import {
   ENTITY_FIELDS,
   ENTITY_LABELS,
@@ -308,13 +312,13 @@ export function WorkflowBuilder({
           </section>
 
           <p className="text-xs text-muted-foreground">
-            Dica: use tokens como <code>{`{{first_name}}`}</code>, <code>{`{{email}}`}</code>,{" "}
-            <code>{`{{name}}`}</code> em assuntos e corpos de ação — são substituídos pelos campos
-            do registro.
+            Use os pills de variáveis abaixo dos campos de assunto e corpo para inserir tokens do
+            registro.
           </p>
 
           {/* Preview do fluxo */}
           <FlowPreview state={state} />
+
         </div>
 
         <SheetFooter>
@@ -346,8 +350,21 @@ function ActionCard({
   onRemove: () => void;
   onMoveUp?: () => void;
 }) {
+  const subjectInserter = useTokenInserter<HTMLInputElement>(
+    () => ("subject" in action ? (action.subject ?? "") : ""),
+    (v) => onChange({ ...action, subject: v } as WorkflowAction),
+  );
+  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(
+    () => ("body" in action ? (action.body ?? "") : ""),
+    (v) => onChange({ ...action, body: v } as WorkflowAction),
+  );
+  const titleInserter = useTokenInserter<HTMLInputElement>(
+    () => ("title" in action ? (action.title ?? "") : ""),
+    (v) => onChange({ ...action, title: v } as WorkflowAction),
+  );
   return (
     <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -389,6 +406,7 @@ function ActionCard({
         <div className="space-y-2">
           <div className="grid grid-cols-[1fr_120px] gap-2">
             <Input
+              ref={subjectInserter.ref}
               value={action.subject}
               onChange={(e) => onChange({ ...action, subject: e.target.value })}
               placeholder="Assunto"
@@ -410,10 +428,19 @@ function ActionCard({
             </Select>
           </div>
           <Textarea
+            ref={bodyInserter.ref}
             value={action.body ?? ""}
             onChange={(e) => onChange({ ...action, body: e.target.value })}
             placeholder="Descrição (opcional)"
             rows={2}
+          />
+          <TokenPills
+            tokens={WORKFLOW_TOKENS}
+            onInsert={(t) => {
+              const active = typeof document !== "undefined" ? document.activeElement : null;
+              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
+              else subjectInserter.insert(t);
+            }}
           />
           <div className="flex items-center gap-2">
             <Label className="text-xs">Vence em (dias)</Label>
@@ -433,6 +460,7 @@ function ActionCard({
           </div>
         </div>
       )}
+
 
       {action.type === "assign_to" && (
         <UserPicker value={action.user_id} onChange={(v) => onChange({ ...action, user_id: v })} />
@@ -460,16 +488,27 @@ function ActionCard({
       {action.type === "send_notification" && (
         <div className="space-y-2">
           <Input
+            ref={titleInserter.ref}
             value={action.title}
             onChange={(e) => onChange({ ...action, title: e.target.value })}
             placeholder="Título"
           />
           <Textarea
+            ref={bodyInserter.ref}
             value={action.body ?? ""}
             onChange={(e) => onChange({ ...action, body: e.target.value })}
             placeholder="Corpo (opcional)"
             rows={2}
           />
+          <TokenPills
+            tokens={WORKFLOW_TOKENS}
+            onInsert={(t) => {
+              const active = typeof document !== "undefined" ? document.activeElement : null;
+              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
+              else titleInserter.insert(t);
+            }}
+          />
+
         </div>
       )}
 

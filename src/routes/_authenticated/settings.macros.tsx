@@ -19,6 +19,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { TokenPills } from "@/components/ui/token-pills";
+import { MACRO_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 export const Route = createFileRoute("/_authenticated/settings/macros")({
   component: MacrosPage,
@@ -206,7 +209,23 @@ function MacrosPage() {
                 minHeight={200}
                 placeholder="Olá {{contact_first_name}}, recebemos seu chamado…"
               />
+              <TokenPills
+                tokens={MACRO_TOKENS}
+                onInsert={(t) => {
+                  const active = typeof document !== "undefined" ? document.activeElement : null;
+                  if (active && (active as HTMLElement).isContentEditable) {
+                    try {
+                      document.execCommand("insertText", false, t);
+                      return;
+                    } catch {
+                      /* fallback */
+                    }
+                  }
+                  setDraft((prev) => ({ ...prev, body: (prev.body ?? "") + t }));
+                }}
+              />
             </div>
+
             <div className="flex items-center gap-2">
               <Switch
                 checked={draft.enabled ?? true}

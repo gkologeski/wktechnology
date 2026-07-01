@@ -19,6 +19,9 @@ import {
   upsertEmailSnippet,
   deleteEmailSnippet,
 } from "@/lib/email-templates.functions";
+import { TokenPills } from "@/components/ui/token-pills";
+import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 export const Route = createFileRoute("/_authenticated/settings/email-templates")({
   component: EmailTemplatesPage,
@@ -145,6 +148,13 @@ function TemplatesSection() {
                 onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
                 placeholder="Olá {{first_name}}"
               />
+              <TokenPills
+                className="mt-2"
+                tokens={EMAIL_TOKENS}
+                onInsert={(t) =>
+                  setEditing((prev) => ({ ...(prev ?? {}), subject: (prev?.subject ?? "") + t }))
+                }
+              />
             </div>
             <div>
               <Label>Mensagem</Label>
@@ -154,7 +164,27 @@ function TemplatesSection() {
                 minHeight={260}
                 placeholder="Escreva a mensagem do template…"
               />
+              <TokenPills
+                className="mt-2"
+                tokens={EMAIL_TOKENS}
+                onInsert={(t) => {
+                  const active = typeof document !== "undefined" ? document.activeElement : null;
+                  if (active && (active as HTMLElement).isContentEditable) {
+                    try {
+                      document.execCommand("insertText", false, t);
+                      return;
+                    } catch {
+                      /* fallback */
+                    }
+                  }
+                  setEditing((prev) => ({
+                    ...(prev ?? {}),
+                    body_html: (prev?.body_html ?? prev?.body_text ?? "") + t,
+                  }));
+                }}
+              />
             </div>
+
             <div className="flex justify-between gap-2">
               {editing.id ? (
                 <Button variant="destructive" size="sm" onClick={() => del.mutate(editing.id!)}>
@@ -263,7 +293,15 @@ function SnippetsSection() {
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                 rows={8}
               />
+              <TokenPills
+                className="mt-2"
+                tokens={EMAIL_TOKENS}
+                onInsert={(t) =>
+                  setEditing((prev) => ({ ...(prev ?? {}), body: (prev?.body ?? "") + t }))
+                }
+              />
             </div>
+
             <div className="flex justify-between gap-2">
               {editing.id ? (
                 <Button variant="destructive" size="sm" onClick={() => del.mutate(editing.id!)}>
