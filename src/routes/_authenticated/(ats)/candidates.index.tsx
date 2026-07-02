@@ -147,7 +147,6 @@ function CandidatesPage() {
   );
 
   const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
-  const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -155,6 +154,13 @@ function CandidatesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [open, setOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<"chooser" | "manual" | "linkedin" | "cv">(
+    "chooser",
+  );
+  const [linkedinUrlInput, setLinkedinUrlInput] = useState("");
+  const [linkedinLoading, setLinkedinLoading] = useState(false);
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
+  const [importedFromLinkedin, setImportedFromLinkedin] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -166,6 +172,84 @@ function CandidatesPage() {
     skills: "",
     notes: "",
   });
+
+  const resetForm = () =>
+    setForm({
+      full_name: "",
+      email: "",
+      phone: "",
+      linkedin_url: "",
+      location: "",
+      current_position: "",
+      current_company: "",
+      skills: "",
+      notes: "",
+    });
+
+  const resetCreateDialog = () => {
+    setCreateMode("chooser");
+    setLinkedinUrlInput("");
+    setLinkedinError(null);
+    setLinkedinLoading(false);
+    setImportedFromLinkedin(false);
+    setCvText("");
+    setCvUrl(null);
+    setParsing(false);
+    resetForm();
+  };
+
+  const LINKEDIN_URL_RE = /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\/[^/?#]+\/?/i;
+  const canSearchLinkedin = LINKEDIN_URL_RE.test(linkedinUrlInput.trim());
+
+  const handleImportLinkedin = async () => {
+    const url = linkedinUrlInput.trim();
+    if (!LINKEDIN_URL_RE.test(url)) {
+      setLinkedinError("URL inválida. Use o formato https://linkedin.com/in/usuario");
+      return;
+    }
+    setLinkedinLoading(true);
+    setLinkedinError(null);
+    try {
+      const res = await previewLinkedin({ data: { url } });
+      if (!res.ok) {
+        setLinkedinError(res.message);
+        if (res.code === "unipile_not_connected") {
+          toast.error(res.message, {
+            action: {
+              label: "Conectar",
+              onClick: () => {
+                window.location.href = "/settings/integrations/linkedin";
+              },
+            },
+          });
+        } else {
+          toast.error(res.message);
+        }
+        return;
+      }
+      const d = res.data;
+      setForm({
+        full_name: d.full_name || "",
+        email: d.email || "",
+        phone: d.phone || "",
+        linkedin_url: d.linkedin_url || url,
+        location: d.location || "",
+        current_position: d.current_position || d.headline || "",
+        current_company: d.current_company || "",
+        skills: (d.skills ?? []).join(", "),
+        notes: d.notes_seed || "",
+      });
+      setImportedFromLinkedin(true);
+      setCreateMode("manual");
+      toast.success("Perfil importado do LinkedIn — revise os dados e salve");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao buscar perfil";
+      setLinkedinError(msg);
+      toast.error(msg);
+    } finally {
+      setLinkedinLoading(false);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
