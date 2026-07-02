@@ -208,6 +208,9 @@ function Content({ data }: { data: AccessBundle }) {
 // -------------- Roles Tab --------------
 function RolesTab({ data }: { data: AccessBundle }) {
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<AccessBundle["job_roles"][number] | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<AccessBundle["job_roles"][number] | null>(null);
   const setsById = useMemo(
     () => new Map(data.permission_sets.map((s) => [s.id, s])),
     [data.permission_sets],
@@ -221,10 +224,15 @@ function RolesTab({ data }: { data: AccessBundle }) {
 
   return (
     <>
-      <SectionHeader
-        title="Cargos (Job Roles)"
-        description="Cada cargo agrupa um ou mais pacotes de permissões e representa um papel/função dentro do TechERP."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader
+          title="Cargos (Job Roles)"
+          description="Cada cargo agrupa um ou mais pacotes de permissões e representa um papel/função dentro do TechERP."
+        />
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Novo cargo
+        </Button>
+      </div>
       <Input
         placeholder="Buscar cargo..."
         value={q}
@@ -248,13 +256,35 @@ function RolesTab({ data }: { data: AccessBundle }) {
                     />
                     {role.name}
                   </CardTitle>
-                  {role.is_system ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Sistema
-                    </Badge>
-                  ) : (
-                    <Badge className="text-[10px]">Custom</Badge>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {role.is_system ? (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Sistema
+                      </Badge>
+                    ) : (
+                      <Badge className="text-[10px]">Custom</Badge>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setEditing(role)}
+                      aria-label="Editar cargo"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    {!role.is_system ? (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => setDeleting(role)}
+                        aria-label="Excluir cargo"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
                 {role.description ? (
                   <CardDescription>{role.description}</CardDescription>
@@ -282,6 +312,24 @@ function RolesTab({ data }: { data: AccessBundle }) {
           );
         })}
       </div>
+      <RoleEditorDialog
+        open={creating || Boolean(editing)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
+        role={editing}
+        data={data}
+      />
+      <DeleteAccessRowDialog
+        open={Boolean(deleting)}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        kind="role"
+        id={deleting?.id ?? null}
+        label={deleting?.name ?? ""}
+      />
     </>
   );
 }
