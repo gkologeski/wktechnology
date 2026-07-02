@@ -61,7 +61,7 @@ export const listInterviews = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("ats_interviews")
       .select(
-        "id, kind, status, scheduled_at, duration_min, meet_url, location, notes, interviewer_id, self_schedule_token, self_schedule_expires_at, created_at",
+        "id, kind, status, scheduled_at, duration_min, meet_url, location, notes, interviewer_id, self_schedule_token, self_schedule_expires_at, meeting_id, created_at",
       )
       .eq("application_id", data.application_id)
       .order("scheduled_at", { ascending: false, nullsFirst: false })
@@ -136,6 +136,136 @@ export const scheduleInterview = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    // --- Integração com o motor de reuniões do CRM (Jitsi + timeline + Google Calendar) ---
+    // Para entrevistas de vídeo, criamos uma sala Jitsi + registro em `meetings`,
+    // uma `activity` na timeline (mesmo padrão do MeetingDialog do TechSales) e,
+    // se houver Google Calendar conectado, empurramos o evento.
+    let meetingId: string | null = null;
+    let meetUrlFinal: string | null = data.meet_url ?? null;
+    let calendarPushed = false;
+
+    if (data.kind === "video") {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+        const workspaceId = await resolveActiveWorkspace(userId);
+
+        // Nome do candidato para o título da reunião
+        const { data: cand } = await supabaseAdmin
+          .from("ats_candidates")
+          .select("full_name, email")
+          .eq("id", app.candidate_id as string)
+          .maybeSingle();
+        const candidateName = (cand?.full_name as string) || "Candidato(a)";
+        const candidateEmail = (cand?.email as string) || null;
+
+        // Sala Jitsi (mesmo formato do createMeeting)
+        const roomBytes = new Uint8Array(20);
+        crypto.getRandomValues(roomBytes);
+        const roomSuffix = Array.from(roomBytes, (b) =>
+          b.toString(36).padStart(2, "0"),
+        )
+          .join("")
+          .slice(0, 20);
+        const roomName = `wkt-${workspaceId.slice(0, 8)}-${roomSuffix}`;
+        const publicTokenBytes = new Uint8Array(28);
+        crypto.getRandomValues(publicTokenBytes);
+        const publicToken = Array.from(publicTokenBytes, (b) =>
+          b.toString(36).padStart(2, "0"),
+        )
+          .join("")
+          .slice(0, 28);
+
+        const { data: meeting, error: mErr } = await supabaseAdmin
+          .from("meetings")
+          .insert({
+            owner_id: workspaceId,
+            host_user_id: userId,
+            title: `Entrevista — ${candidateName}`,
+            room_name: roomName,
+            public_token: publicToken,
+            provider: "jitsi",
+            status: "scheduled",
+            recording_consent: true,
+            scheduled_at: data.scheduled_at,
+          } as never)
+          .select("id, public_token, room_name")
+          .single();
+        if (mErr) throw new Error(mErr.message);
+
+        meetingId = meeting.id as string;
+        const publicLink = `${process.env.APP_URL || process.env.VITE_APP_URL || "https://ats.wktechnology.com.br"}/meet/${meeting.public_token}`;
+        // Respeita meet_url manual; senão usa o link da sala Jitsi
+        if (!meetUrlFinal) meetUrlFinal = publicLink;
+
+        // Atualiza a entrevista com o link e o meeting_id
+        await supabaseAdmin
+          .from("ats_interviews")
+          .update({ meeting_id: meetingId, meet_url: meetUrlFinal } as never)
+          .eq("id", ins.id as string);
+
+        // Activity na timeline unificada (mesmo shape do MeetingDialog)
+        const durationMs = (data.duration_min ?? 45) * 60_000;
+        const endIso = new Date(
+          new Date(data.scheduled_at).getTime() + durationMs,
+        ).toISOString();
+        const attendeesPayload = [
+          ...(candidateEmail ? [{ email: candidateEmail, name: candidateName }] : []),
+          ...(data.panel_interviewer_ids ?? []).map((uid) => ({ user_id: uid })),
+        ];
+        const { data: actIns } = await supabaseAdmin
+          .from("activities")
+          .insert({
+            owner_id: userId,
+            workspace_id: workspaceId,
+            created_by: userId,
+            type: "meeting",
+            subject: `Entrevista — ${candidateName}`,
+            body: data.notes ?? null,
+            due_date: data.scheduled_at,
+            meeting_location: meetUrlFinal,
+            attachments: {
+              attendees: attendeesPayload,
+              end_at: endIso,
+              meet_link: publicLink,
+            },
+            external_ids: {
+              interview_id: ins.id,
+              meeting_id: meetingId,
+              application_id: data.application_id,
+              provider: "jitsi",
+              room_name: meeting.room_name,
+            },
+          } as never)
+          .select("id")
+          .single();
+
+        // Google Calendar push (best-effort, mesmo padrão do MeetingDialog)
+        if (actIns?.id) {
+          try {
+            const { data: acct } = await supabaseAdmin
+              .from("calendar_accounts")
+              .select("id")
+              .eq("owner_id", userId)
+              .eq("sync_enabled", true)
+              .maybeSingle();
+            if (acct?.id) {
+              const { pushSingleActivity } = await import(
+                "@/lib/calendar/engine.server"
+              );
+              await pushSingleActivity(acct.id as string, actIns.id as string);
+              calendarPushed = true;
+            }
+          } catch (e) {
+            // não bloqueia o agendamento
+            console.warn("[interviews] calendar push falhou:", e);
+          }
+        }
+      } catch (e) {
+        console.warn("[interviews] falha ao criar sala de vídeo:", e);
+      }
+    }
+
     await recordEvent(supabase, {
       ownerId: userId,
       applicationId: data.application_id,
@@ -146,6 +276,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         interview_id: ins.id,
         kind: data.kind,
         scheduled_at: data.scheduled_at,
+        meeting_id: meetingId,
       },
     });
     await recordAtsEvent(supabase, {
@@ -160,9 +291,15 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         scheduledAt: data.scheduled_at,
         kind: data.kind,
         source: "manual",
+        meetingId,
       },
     }).catch(() => undefined);
-    return { id: ins.id as string };
+    return {
+      id: ins.id as string,
+      meeting_id: meetingId,
+      meet_url: meetUrlFinal,
+      calendar_pushed: calendarPushed,
+    };
   });
 
 // ---------- reagendar -------------------------------------------------------

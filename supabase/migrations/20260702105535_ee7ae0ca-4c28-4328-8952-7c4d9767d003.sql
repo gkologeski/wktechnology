@@ -1,0 +1,2 @@
+ALTER TABLE public.ats_interviews ADD COLUMN IF NOT EXISTS meeting_id uuid REFERENCES public.meetings(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS ats_interviews_meeting_id_idx ON public.ats_interviews(meeting_id);
