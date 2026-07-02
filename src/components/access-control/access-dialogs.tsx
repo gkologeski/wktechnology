@@ -159,6 +159,26 @@ export function RoleEditorDialog({
             />
           </div>
           <div>
+            <Label htmlFor="role-scope">Escopo de dados</Label>
+            <select
+              id="role-scope"
+              className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+              value={dataScope}
+              onChange={(e) =>
+                setDataScope(e.target.value as "own" | "team" | "workspace" | "custom")
+              }
+              disabled={isSystem}
+            >
+              <option value="own">Somente meus registros</option>
+              <option value="team">Registros do meu time (grupos)</option>
+              <option value="workspace">Workspace inteiro</option>
+              <option value="custom">Personalizado</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Define quais registros o cargo enxerga. Owner e admins veem tudo por padrão.
+            </p>
+          </div>
+          <div>
             <Label>Pacotes de permissões</Label>
             <ScrollArea className="mt-2 h-64 rounded-md border p-3">
               {setsByModule.map(([mod, sets]) => (
