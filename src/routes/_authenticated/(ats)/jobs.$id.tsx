@@ -542,7 +542,17 @@ function JobDetailPage() {
     </div>
   );
 
-  const applicantsForScheduling = apps.filter((a) => (a.status ?? "active") === "active");
+  const [schedSearch, setSchedSearch] = useState("");
+  const [schedActiveOnly, setSchedActiveOnly] = useState(true);
+  const applicantsForScheduling = apps.filter((a) => {
+    if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
+    if (!schedSearch.trim()) return true;
+    const q = schedSearch.trim().toLowerCase();
+    const cand = (a as unknown as { candidate?: { full_name?: string | null } | null }).candidate;
+    const name = (cand?.full_name ?? "").toLowerCase();
+    const stage = (a.stage_value ?? "").toLowerCase();
+    return name.includes(q) || stage.includes(q);
+  });
 
   const interviewsSection = (
     <div className="space-y-4">
@@ -551,17 +561,34 @@ function JobDetailPage() {
           <div>
             <AtsSectionHeader
               title="Agendar entrevista"
-              description="Selecione um candidato aplicado para marcar entrevista."
+              description={`Selecione um candidato para marcar entrevista. ${applicantsForScheduling.length} candidato(s).`}
             />
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <Input
+            value={schedSearch}
+            onChange={(e) => setSchedSearch(e.target.value)}
+            placeholder="Buscar por nome ou estágio…"
+            className="h-8 max-w-xs"
+          />
+          <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={schedActiveOnly}
+              onChange={(e) => setSchedActiveOnly(e.target.checked)}
+              className="h-3.5 w-3.5"
+            />
+            Somente ativos
+          </label>
+        </div>
         {applicantsForScheduling.length === 0 ? (
           <p className="text-xs text-text-tertiary">
-            Nenhum candidato aplicado nesta vaga ainda. Assim que aparecerem na aba Candidatos, você poderá agendar entrevistas aqui.
+            Nenhum candidato encontrado. Assim que aparecerem na aba Candidatos, você poderá agendar entrevistas aqui.
           </p>
         ) : (
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-            {applicantsForScheduling.slice(0, 12).map((a) => {
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 max-h-[420px] overflow-y-auto pr-1">
+            {applicantsForScheduling.map((a) => {
               const cand = (a as unknown as { candidate?: { full_name?: string | null } | null })
                 .candidate;
               const name = cand?.full_name ?? "Candidato";
@@ -584,12 +611,8 @@ function JobDetailPage() {
             })}
           </div>
         )}
-        {applicantsForScheduling.length > 12 && (
-          <p className="mt-2 text-[11px] text-text-tertiary">
-            Mostrando 12 de {applicantsForScheduling.length}. Use a aba Candidatos para ver todos.
-          </p>
-        )}
       </div>
+
 
       {interviews.length === 0 ? (
         <EmptyState
