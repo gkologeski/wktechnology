@@ -159,6 +159,7 @@ import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_aut
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
+import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
@@ -1123,6 +1124,11 @@ const AuthenticatedInboxChatRoute = AuthenticatedInboxChatRouteImport.update({
   path: '/inbox/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => AuthenticatedHomeRoute,
+} as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1870,7 +1876,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/home': typeof AuthenticatedHomeRoute
+  '/home': typeof AuthenticatedHomeRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -1931,6 +1937,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -2146,7 +2153,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/home': typeof AuthenticatedHomeRoute
+  '/home': typeof AuthenticatedHomeRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
@@ -2204,6 +2211,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -2420,7 +2428,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/_authenticated/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2481,6 +2489,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -2759,6 +2768,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/deals/$id'
+    | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -3032,6 +3042,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/deals/$id'
+    | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -3308,6 +3319,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/deals/$id'
+    | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -4655,6 +4667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/home/access': {
+      id: '/_authenticated/home/access'
+      path: '/access'
+      fullPath: '/home/access'
+      preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
+      parentRoute: typeof AuthenticatedHomeRoute
+    }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
       path: '/$id'
@@ -5571,6 +5590,17 @@ const AuthenticatedDealsRouteChildren: AuthenticatedDealsRouteChildren = {
 const AuthenticatedDealsRouteWithChildren =
   AuthenticatedDealsRoute._addFileChildren(AuthenticatedDealsRouteChildren)
 
+interface AuthenticatedHomeRouteChildren {
+  AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
+}
+
+const AuthenticatedHomeRouteChildren: AuthenticatedHomeRouteChildren = {
+  AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
+}
+
+const AuthenticatedHomeRouteWithChildren =
+  AuthenticatedHomeRoute._addFileChildren(AuthenticatedHomeRouteChildren)
+
 interface AuthenticatedIntegrationsRouteChildren {
   AuthenticatedIntegrationsSlugRoute: typeof AuthenticatedIntegrationsSlugRoute
   AuthenticatedIntegrationsIndexRoute: typeof AuthenticatedIntegrationsIndexRoute
@@ -5927,7 +5957,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedDeiAnalyticsRoute: typeof AuthenticatedDeiAnalyticsRoute
   AuthenticatedFraudFlagsRoute: typeof AuthenticatedFraudFlagsRoute
-  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
@@ -6006,7 +6036,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedDeiAnalyticsRoute: AuthenticatedDeiAnalyticsRoute,
   AuthenticatedFraudFlagsRoute: AuthenticatedFraudFlagsRoute,
-  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,

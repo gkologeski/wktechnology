@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/home.access")({
+export const Route = createFileRoute("/_authenticated/home/access")({
   component: AccessCenter,
 });
 
