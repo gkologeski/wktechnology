@@ -285,6 +285,20 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
 
 // ---------- candidates -----------------------------------------------------
 
+const ExperienceEntrySchema = z.object({
+  title: z.string().trim().max(200).optional().default(""),
+  company: z.string().trim().max(200).optional().default(""),
+  start: z.string().trim().max(40).optional().default(""),
+  end: z.string().trim().max(40).optional().default(""),
+  description: z.string().trim().max(1000).optional().default(""),
+});
+const EducationEntrySchema = z.object({
+  school: z.string().trim().max(200).optional().default(""),
+  degree: z.string().trim().max(200).optional().default(""),
+  start: z.string().trim().max(40).optional().default(""),
+  end: z.string().trim().max(40).optional().default(""),
+});
+
 const CandidateSaveSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().trim().min(1).max(200),
@@ -296,6 +310,8 @@ const CandidateSaveSchema = z.object({
   current_company: z.string().max(200).optional().nullable(),
   skills: z.array(z.string().max(60)).max(100).optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),
+  experiences: z.array(ExperienceEntrySchema).max(20).optional(),
+  education: z.array(EducationEntrySchema).max(20).optional(),
   source: z.enum(["manual", "career_page", "linkedin_easy_apply", "referral", "import"]).default("manual"),
   notes: z.string().max(5000).optional().nullable(),
 });
@@ -336,6 +352,8 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       current_company: data.current_company ?? null,
       skills: data.skills ?? [],
       tags: data.tags ?? [],
+      experiences: (data.experiences ?? []) as unknown as never,
+      education: (data.education ?? []) as unknown as never,
       source: data.source,
       notes: data.notes ?? null,
       created_by: userId,
