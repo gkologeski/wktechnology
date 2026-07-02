@@ -48,6 +48,7 @@ import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/s
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
+import { ScheduleInterviewDialog } from "@/components/ats/schedule-interview-dialog";
 import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
 import { LinkedinJobConfigPanel } from "@/components/ats/linkedin-job-config-panel";
 import { JobCopilotPanel } from "@/components/ats/job-copilot-panel";
