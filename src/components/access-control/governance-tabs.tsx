@@ -202,7 +202,7 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
                 onClick={() => run(m.user_id)}
               >
                 <span className="truncate text-sm">
-                  {m.name ?? m.email ?? m.user_id.slice(0, 8)}
+                  {m.full_name ?? m.email ?? m.user_id.slice(0, 8)}
                 </span>
               </Button>
             ))}
