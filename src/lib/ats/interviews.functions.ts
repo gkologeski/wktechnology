@@ -246,7 +246,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
             const { data: acct } = await supabaseAdmin
               .from("calendar_accounts")
               .select("id")
-              .eq("user_id", userId)
+              .eq("owner_id", userId)
               .eq("sync_enabled", true)
               .maybeSingle();
             if (acct?.id) {
