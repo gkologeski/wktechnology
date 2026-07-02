@@ -85,19 +85,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-3 py-4 gap-3">
-        <Link to={activeModule.defaultRoute} className="flex items-center gap-2.5">
+        <Link to={shellBrand.defaultRoute} className="flex items-center gap-2.5">
           <div
             className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
-            style={{ backgroundColor: activeModule.defaultColor, boxShadow: `0 4px 12px ${activeModule.defaultColor}33` }}
+            style={{ backgroundColor: shellBrand.defaultColor, boxShadow: `0 4px 12px ${shellBrand.defaultColor}33` }}
           >
-            {activeModule.productName.slice(0, 2).toUpperCase()}
+            {shellBrand.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
             <h2 className="text-base font-bold tracking-tight leading-tight truncate">
-              {activeModule.productName} {activeModule.name}
+              {shellBrand.productName} {shellBrand.name}
             </h2>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">
-              {activeModule.shortDescription}
+              {shellBrand.shortDescription}
             </p>
           </div>
         </Link>
