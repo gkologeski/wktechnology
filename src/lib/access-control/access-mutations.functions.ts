@@ -247,6 +247,7 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
         .update(payload)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      await logAudit(supabase, userId, "field_rule.update", "field_rule", data.id, null, payload);
       return { id: data.id };
     }
     const { data: row, error } = await supabase
@@ -255,7 +256,9 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    const newId = row.id as string;
+    await logAudit(supabase, userId, "field_rule.create", "field_rule", newId, null, payload);
+    return { id: newId };
   });
 
 export const deleteFieldRule = createServerFn({ method: "POST" })
@@ -267,6 +270,7 @@ export const deleteFieldRule = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "field_permission_rules", data.id);
     const { error } = await supabase.from("field_permission_rules").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "field_rule.delete", "field_rule", data.id, null);
     return { ok: true };
   });
 
