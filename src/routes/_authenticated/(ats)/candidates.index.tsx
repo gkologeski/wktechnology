@@ -241,7 +241,20 @@ function CandidatesPage() {
         current_position: d.current_position || d.headline || "",
         current_company: d.current_company || "",
         skills: (d.skills ?? []).join(", "),
-        notes: d.notes_seed || "",
+        notes: "",
+        experiences: (d.experiences ?? []).map((e) => ({
+          title: e.title || "",
+          company: e.company || "",
+          start: e.start || "",
+          end: e.end || "",
+          description: e.description || "",
+        })),
+        education: (d.education ?? []).map((e) => ({
+          school: e.school || "",
+          degree: e.degree || "",
+          start: e.start || "",
+          end: e.end || "",
+        })),
       });
       setImportedFromLinkedin(true);
       setCreateMode("manual");
