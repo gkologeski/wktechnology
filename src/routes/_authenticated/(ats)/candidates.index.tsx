@@ -15,7 +15,11 @@ import {
   Rows3,
   Columns3,
   ExternalLink,
-
+  Linkedin,
+  FileText,
+  UserPlus,
+  ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +53,7 @@ import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidat
 
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
+import { previewLinkedinProfile } from "@/lib/ats/candidates-linkedin-preview.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
 import {
   getCandidateStatuses,
@@ -122,6 +127,7 @@ function CandidatesPage() {
   const del = useServerFn(deleteAtsCandidate);
   const parse = useServerFn(parseCv);
   const parsePdf = useServerFn(parseCvFromPdf);
+  const previewLinkedin = useServerFn(previewLinkedinProfile);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
   const archiveCandidate = useServerFn(setCandidateArchived);
@@ -141,7 +147,6 @@ function CandidatesPage() {
   );
 
   const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
-  const [parseOpen, setParseOpen] = useState(false);
   const [cvText, setCvText] = useState("");
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -149,6 +154,13 @@ function CandidatesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [open, setOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<"chooser" | "manual" | "linkedin" | "cv">(
+    "chooser",
+  );
+  const [linkedinUrlInput, setLinkedinUrlInput] = useState("");
+  const [linkedinLoading, setLinkedinLoading] = useState(false);
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
+  const [importedFromLinkedin, setImportedFromLinkedin] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -160,6 +172,84 @@ function CandidatesPage() {
     skills: "",
     notes: "",
   });
+
+  const resetForm = () =>
+    setForm({
+      full_name: "",
+      email: "",
+      phone: "",
+      linkedin_url: "",
+      location: "",
+      current_position: "",
+      current_company: "",
+      skills: "",
+      notes: "",
+    });
+
+  const resetCreateDialog = () => {
+    setCreateMode("chooser");
+    setLinkedinUrlInput("");
+    setLinkedinError(null);
+    setLinkedinLoading(false);
+    setImportedFromLinkedin(false);
+    setCvText("");
+    setCvUrl(null);
+    setParsing(false);
+    resetForm();
+  };
+
+  const LINKEDIN_URL_RE = /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\/[^/?#]+\/?/i;
+  const canSearchLinkedin = LINKEDIN_URL_RE.test(linkedinUrlInput.trim());
+
+  const handleImportLinkedin = async () => {
+    const url = linkedinUrlInput.trim();
+    if (!LINKEDIN_URL_RE.test(url)) {
+      setLinkedinError("URL inválida. Use o formato https://linkedin.com/in/usuario");
+      return;
+    }
+    setLinkedinLoading(true);
+    setLinkedinError(null);
+    try {
+      const res = await previewLinkedin({ data: { url } });
+      if (!res.ok) {
+        setLinkedinError(res.message);
+        if (res.code === "unipile_not_connected") {
+          toast.error(res.message, {
+            action: {
+              label: "Conectar",
+              onClick: () => {
+                window.location.href = "/settings/integrations/linkedin";
+              },
+            },
+          });
+        } else {
+          toast.error(res.message);
+        }
+        return;
+      }
+      const d = res.data;
+      setForm({
+        full_name: d.full_name || "",
+        email: d.email || "",
+        phone: d.phone || "",
+        linkedin_url: d.linkedin_url || url,
+        location: d.location || "",
+        current_position: d.current_position || d.headline || "",
+        current_company: d.current_company || "",
+        skills: (d.skills ?? []).join(", "),
+        notes: d.notes_seed || "",
+      });
+      setImportedFromLinkedin(true);
+      setCreateMode("manual");
+      toast.success("Perfil importado do LinkedIn — revise os dados e salve");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao buscar perfil";
+      setLinkedinError(msg);
+      toast.error(msg);
+    } finally {
+      setLinkedinLoading(false);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -230,17 +320,7 @@ function CandidatesPage() {
         },
       });
       setOpen(false);
-      setForm({
-        full_name: "",
-        email: "",
-        phone: "",
-        linkedin_url: "",
-        location: "",
-        current_position: "",
-        current_company: "",
-        skills: "",
-        notes: "",
-      });
+      resetCreateDialog();
       refresh();
       toast.success("Candidato salvo");
     } catch (e) {
@@ -275,9 +355,8 @@ function CandidatesPage() {
         await supabase.from("ats_candidates").update({ cv_url: cvUrl }).eq("id", newId);
       }
       toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
-      setParseOpen(false);
-      setCvText("");
-      setCvUrl(null);
+      setOpen(false);
+      resetCreateDialog();
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao processar CV");
@@ -314,23 +393,151 @@ function CandidatesPage() {
         description={descriptionText}
         descriptionLive
         secondaryActions={
-          <>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
-              CSV
-            </Button>
-            <Dialog open={parseOpen} onOpenChange={setParseOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Sparkles className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Parsing de CV (IA)
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Extrair dados de currículo com IA</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+            CSV
+          </Button>
+        }
+        primaryAction={
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) resetCreateDialog();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Novo candidato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {createMode === "chooser"
+                    ? "Como deseja cadastrar o candidato?"
+                    : createMode === "linkedin"
+                      ? "Importar do LinkedIn"
+                      : createMode === "cv"
+                        ? "Extrair de um currículo (PDF)"
+                        : "Novo candidato"}
+                </DialogTitle>
+              </DialogHeader>
+
+              {createMode === "chooser" && (
+                <div className="grid gap-3 sm:grid-cols-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateMode("manual")}
+                    className="group flex flex-col items-start gap-2 rounded-lg border border-border-subtle bg-surface-1 p-4 text-left transition-all hover:border-border-strong hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-sunken text-text-secondary group-hover:text-text-primary">
+                      <UserPlus className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-text-primary">
+                        Preencher manualmente
+                      </div>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Formulário rápido com nome, contatos e cargo.
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCreateMode("linkedin")}
+                    className="group flex flex-col items-start gap-2 rounded-lg border border-border-subtle bg-surface-1 p-4 text-left transition-all hover:border-border-strong hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-sunken text-text-secondary group-hover:text-text-primary">
+                      <Linkedin className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-text-primary">
+                        Importar do LinkedIn
+                      </div>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Cole a URL do perfil e o ATS baixa via Unipile.
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCreateMode("cv")}
+                    className="group flex flex-col items-start gap-2 rounded-lg border border-border-subtle bg-surface-1 p-4 text-left transition-all hover:border-border-strong hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-sunken text-text-secondary group-hover:text-text-primary">
+                      <FileText className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-text-primary">
+                        Extrair de um CV (PDF)
+                      </div>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        A IA lê o currículo e cria o candidato.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {createMode === "linkedin" && (
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="li-url">URL do perfil no LinkedIn</Label>
+                    <Input
+                      id="li-url"
+                      value={linkedinUrlInput}
+                      onChange={(e) => {
+                        setLinkedinUrlInput(e.target.value);
+                        setLinkedinError(null);
+                      }}
+                      placeholder="https://www.linkedin.com/in/usuario"
+                      autoFocus
+                      disabled={linkedinLoading}
+                    />
+                    <p className="text-xs text-text-tertiary">
+                      Requer conexão LinkedIn ativa em Integrações. Nada é salvo até você revisar.
+                    </p>
+                    {linkedinError && (
+                      <p className="text-xs text-destructive" role="alert">
+                        {linkedinError}
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateMode("chooser")}
+                      disabled={linkedinLoading}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Voltar
+                    </Button>
+                    <Button
+                      onClick={handleImportLinkedin}
+                      disabled={!canSearchLinkedin || linkedinLoading}
+                    >
+                      {linkedinLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                          Baixando perfil…
+                        </>
+                      ) : (
+                        <>
+                          <Linkedin className="h-4 w-4 mr-2" aria-hidden="true" />
+                          Buscar perfil
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              )}
+
+              {createMode === "cv" && (
+                <div className="space-y-2 py-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="cv-text">Cole o texto do currículo</Label>
                     <CvPdfUploadButton
@@ -356,115 +563,130 @@ function CandidatesPage() {
                   <p className="text-xs text-text-tertiary">
                     A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
                   </p>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateMode("chooser")}
+                      disabled={parsing}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Voltar
+                    </Button>
+                    <Button onClick={handleParseCv} disabled={parsing}>
+                      {parsing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                          Processando…
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" aria-hidden="true" />
+                          Extrair e salvar
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setParseOpen(false)} disabled={parsing}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleParseCv} disabled={parsing}>
-                    {parsing ? "Processando…" : "Extrair e salvar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        }
-        primaryAction={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-                Novo candidato
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Novo candidato</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <Label htmlFor="cand-name">Nome *</Label>
-                  <Input
-                    id="cand-name"
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cand-email">Email</Label>
-                  <Input
-                    id="cand-email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cand-phone">Telefone</Label>
-                  <Input
-                    id="cand-phone"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="cand-linkedin">LinkedIn</Label>
-                  <Input
-                    id="cand-linkedin"
-                    value={form.linkedin_url}
-                    onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
-                    placeholder="https://linkedin.com/in/..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cand-location">Localização</Label>
-                  <Input
-                    id="cand-location"
-                    value={form.location}
-                    onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cand-position">Cargo atual</Label>
-                  <Input
-                    id="cand-position"
-                    value={form.current_position}
-                    onChange={(e) => setForm({ ...form, current_position: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="cand-company">Empresa atual</Label>
-                  <Input
-                    id="cand-company"
-                    value={form.current_company}
-                    onChange={(e) => setForm({ ...form, current_company: e.target.value })}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="cand-skills">Skills (separadas por vírgula)</Label>
-                  <Input
-                    id="cand-skills"
-                    value={form.skills}
-                    onChange={(e) => setForm({ ...form, skills: e.target.value })}
-                    placeholder="React, Node.js, PostgreSQL"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="cand-notes">Notas</Label>
-                  <Textarea
-                    id="cand-notes"
-                    rows={3}
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreate}>Salvar</Button>
-              </DialogFooter>
+              )}
+
+              {createMode === "manual" && (
+                <>
+                  {importedFromLinkedin && (
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-sunken px-2 py-1 text-[11px] text-text-secondary">
+                      <Linkedin className="h-3 w-3" aria-hidden="true" />
+                      Importado do LinkedIn — revise e salve
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label htmlFor="cand-name">Nome *</Label>
+                      <Input
+                        id="cand-name"
+                        value={form.full_name}
+                        onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cand-email">Email</Label>
+                      <Input
+                        id="cand-email"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cand-phone">Telefone</Label>
+                      <Input
+                        id="cand-phone"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="cand-linkedin">LinkedIn</Label>
+                      <Input
+                        id="cand-linkedin"
+                        value={form.linkedin_url}
+                        onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                        placeholder="https://linkedin.com/in/..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cand-location">Localização</Label>
+                      <Input
+                        id="cand-location"
+                        value={form.location}
+                        onChange={(e) => setForm({ ...form, location: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cand-position">Cargo atual</Label>
+                      <Input
+                        id="cand-position"
+                        value={form.current_position}
+                        onChange={(e) => setForm({ ...form, current_position: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="cand-company">Empresa atual</Label>
+                      <Input
+                        id="cand-company"
+                        value={form.current_company}
+                        onChange={(e) => setForm({ ...form, current_company: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="cand-skills">Skills (separadas por vírgula)</Label>
+                      <Input
+                        id="cand-skills"
+                        value={form.skills}
+                        onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                        placeholder="React, Node.js, PostgreSQL"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="cand-notes">Notas</Label>
+                      <Textarea
+                        id="cand-notes"
+                        rows={3}
+                        value={form.notes}
+                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateMode("chooser")}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Voltar
+                    </Button>
+                    <Button onClick={handleCreate}>Salvar</Button>
+                  </DialogFooter>
+                </>
+              )}
             </DialogContent>
           </Dialog>
         }

@@ -1,80 +1,72 @@
 ## Objetivo
 
-Hoje, ao agendar uma entrevista no TechHire (`ScheduleInterviewDialog` → `scheduleInterview`), apenas gravamos uma linha em `ats_interviews` com um `meet_url` opcional digitado pelo recrutador. Não há sala de vídeo automática, não há push pro Google Calendar do host, e o evento não aparece na timeline padrão de reuniões.
+No botão "+ Novo candidato" em `/candidates`, oferecer **três opções** no passo inicial (chooser):
 
-O TechSales já resolve isso em `MeetingDialog` + `createMeeting` (Jitsi room + `public_token` + `/meet/:token`, opcionalmente empurrado pro Google Calendar via `pushActivityToCalendar`, e registrado em `activities` como `type: "meeting"`).
+1. **Preencher manualmente** — fluxo atual.
+2. **Importar do LinkedIn** — via Unipile (`fetchProfile`), pré-preenche o formulário editável.
+3. **Extrair de um CV (PDF)** — reaproveita o fluxo atual de Parse de CV que hoje vive num botão separado da toolbar.
 
-O plano é fazer a entrevista do TechHire usar exatamente essa mesma lógica, mantendo tudo que já existe no ATS (kit de perguntas, panel, self-schedule, status, eventos ATS, lembretes).
+Nada é persistido sem confirmação do usuário: LinkedIn e CV apenas pré-preenchem o formulário editável do modo Manual.
 
 ## Escopo
 
-Somente o fluxo de agendamento **manual** de entrevista (aba "Agendamento manual" do `ScheduleInterviewDialog` + server fn `scheduleInterview`). Fluxos que continuam iguais nesta etapa:
+- Frontend: `src/routes/_authenticated/(ats)/candidates.index.tsx`.
+- Nova server function `previewLinkedinProfile` (não persiste).
+- Reaproveita `loadAccountCtx` + `fetchProfile` de `unipile-hunting.functions.ts`.
+- Reaproveita o dialog/lógica atual de Parse de CV (o `parseOpen` / `handleParseCv` existentes) — apenas move o gatilho para dentro do chooser e remove o botão externo da toolbar.
+- Sem migrations, sem mudanças de RLS.
 
-- Self-schedule / link ao candidato (`createSelfScheduleLink`) — quando o candidato escolhe o horário, criamos a reunião naquele momento (fase 2, fora deste plano se não for pedido).
-- Async video, kits, panel, reagendar/cancelar/marcar status, lembretes, eventos ATS.
+Fora do escopo: bulk import, hunting, sequências, alterações no comportamento de extração da IA sobre o CV.
 
-## Mudanças
+## Fluxo UX
 
-### 1. `src/lib/ats/interviews.functions.ts` — `scheduleInterview`
+Ao clicar em "+ Novo candidato", o dialog abre em modo **chooser** com três cards clicáveis (ícones `UserPlus`, `Linkedin`, `FileText`):
 
-Depois de inserir a linha em `ats_interviews`, e apenas quando `kind` for `video`:
+- **Manual** → formulário atual.
+- **LinkedIn** → input de URL + "Buscar perfil".
+  - Loading, erros tratados (Unipile não conectado → toast + CTA `/settings/integrations/linkedin`; perfil privado; rate limit).
+  - Sucesso → transita para `manual` com `setForm(...)` pré-preenchido; badge "Importado do LinkedIn".
+- **CV (PDF)** → mesmo conteúdo do dialog atual de Parse (upload, indicador "IA extrai…").
+  - Sucesso → hoje o Parse já cria o candidato diretamente; **manteremos esse comportamento** (não regride o fluxo), apenas movendo o gatilho para dentro do chooser. Toast e navegação continuam iguais.
 
-1. Chamar internamente a mesma lógica de `createMeeting` (Jitsi room + `public_token`), com:
-   - `title`: `"Entrevista — {candidato}"` (buscar nome do candidato pra manter padrão TechSales).
-   - `scheduled_at`: o mesmo horário da entrevista.
-   - `recording_consent: true`, `skip_activity: true` (a activity será criada no passo 3 pra ficar idêntica ao TechSales).
-   - Sem `entity/entity_id` — entrevista não tem `related_*_id` em `meetings`. Vamos linkar via `external_ids` na activity.
-2. Se `data.meet_url` foi informado manualmente, respeitamos ele (não sobrescreve). Senão, `meet_url` da entrevista passa a ser `${appUrl}/meet/{public_token}`.
-3. Inserir uma linha em `activities` com `type: "meeting"`, `subject`, `due_date`, `meeting_location = meet_url`, `attachments.attendees` (candidato + interviewer + panel), `attachments.end_at`, `external_ids: { interview_id, meeting_id, provider: "jitsi", room_name }`. Isso alimenta a timeline unificada da mesma forma que reuniões do TechSales.
-4. Se o host tem `calendar_accounts.sync_enabled = true`, chamar `pushActivityToCalendar` com o `activity_id` recém-criado para criar o evento no Google Calendar do recrutador (mesmo comportamento do TechSales — best-effort, não bloqueia se falhar).
-5. Persistir `meet_url` e (novo campo opcional) `meeting_id` na linha de `ats_interviews`, pra permitir navegar do detalhe da entrevista pra sala/gravação.
+Ao fechar o dialog, resetar para `chooser`.
 
-Detalhes técnicos:
+## Backend
 
-- Não duplicar código: extrair um helper `createInterviewMeeting({ userId, title, scheduledAt })` no próprio `interviews.functions.ts` (ou usar `createMeeting` como server fn — como já é ".middleware([requireSupabaseAuth])", usar o helper de baixo nível via `supabaseAdmin` evita duplicar auth).
-- `kind === "phone" | "onsite" | "async"` continua igual ao atual (sem sala, sem push pro Calendar; `location` respeitado; opcionalmente ainda criamos a `activity` pra aparecer na timeline).
-- Falha do Google Calendar não pode derrubar o agendamento — envolver em try/catch, logar e retornar `{ id, meeting_id?, meet_url?, calendar_pushed: boolean }` para o dialog exibir o toast correto.
+`src/lib/ats/candidates-linkedin-preview.functions.ts` (novo):
 
-### 2. Migration mínima
+- `previewLinkedinProfile` com `requireSupabaseAuth`, input `{ url: string }`.
+- Normaliza URL, extrai `public_identifier` (`/in/([^/?#]+)`).
+- `loadAccountCtx(userId)`; falha → `{ ok: false, code: "unipile_not_connected" }`.
+- `fetchProfile(ctx, publicIdentifier)`; mapeia os mesmos campos já extraídos em `unipile-hunting.functions.ts` (headline, location, photo_url, contact_info email/phone, primeira experiência → current_company/current_position, skills, education, languages, experiences).
+- Retorna DTO plano `{ ok: true, data: { full_name, headline, current_position, current_company, location, email, phone, linkedin_url, skills[], photo_url, notes_seed, raw_meta } }`.
+- Erros do Unipile viram `{ ok: false, code, message }`.
 
-Adicionar coluna nullable `meeting_id uuid references public.meetings(id) on delete set null` em `ats_interviews`, mantendo compat com registros antigos. Sem alterar RLS existente.
+Sem novas server functions para CV — mantém o `handleParseCv` atual.
 
-```sql
-alter table public.ats_interviews
-  add column if not exists meeting_id uuid references public.meetings(id) on delete set null;
-create index if not exists ats_interviews_meeting_id_idx on public.ats_interviews(meeting_id);
-```
+## Frontend
 
-### 3. `src/components/ats/schedule-interview-dialog.tsx`
+`candidates.index.tsx`:
 
-- Manter tudo como está; apenas ajustar o toast de sucesso para refletir o novo retorno ("Entrevista agendada. Link da sala: /meet/…", "Sincronizado com Google Calendar", etc.), no mesmo padrão do `MeetingDialog`.
-- Quando `kind !== "video"`, comportamento visual inalterado.
-- (Opcional, curto) mostrar aviso "Nenhum Google Calendar conectado — geraremos link automaticamente" reutilizando o listing `listCalendarAccounts`, igual ao `MeetingDialog`. Sem bloquear o fluxo.
+- Estado `createMode: "chooser" | "manual" | "linkedin" | "cv"` no dialog principal.
+- Passo `chooser`: 3 cards no design system, com título, descrição curta e ícone.
+- Passo `linkedin`: input de URL + botão "Buscar perfil" (disabled/loading), link "Voltar".
+- Passo `cv`: reaproveita o conteúdo atual do dialog de Parse (input file, mensagens, botão "Extrair e salvar") — movido para dentro do chooser; remover o botão externo "Extrair CV" (`parseOpen` isolado) da toolbar.
+- Passo `manual`: formulário atual + badge sutil "Importado do LinkedIn" quando aplicável.
+- Reset de `createMode` e limpeza do file/URL ao fechar o dialog.
 
-### 4. Exibição no detalhe da vaga / entrevistas
+Validações e estados: URL regex `^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\/[^\/?#]+\/?`; loading e erro inline em LinkedIn e CV; toasts padronizados via `sonner`.
 
-Onde já listamos entrevistas (`listInterviews` já devolve `meet_url`), incluir `meeting_id` no `select` para que a UI (ex.: aba "Entrevistas" em `jobs.$id`) possa oferecer botões "Entrar na sala" e "Ver gravação" (esta última quando `meeting.status = ended` e houver `recording_storage_path`). Zero mudança de RLS; leitura via server fn autenticada como já é hoje.
+## Riscos e pendências
 
-## Fora de escopo (fica pra depois)
-
-- Aplicar o mesmo fluxo ao `createSelfScheduleLink` (criar `meetings` só quando o candidato confirma o slot). Pode virar um passo dedicado depois.
-- Convite de calendário para o candidato por e-mail (hoje TechSales também depende do Google Calendar do host — mesma limitação).
-- Alterações em `meetings` schema, RLS, `activities` schema.
-
-## Riscos e mitigação
-
-- Push pro Google pode falhar silenciosamente: já tratamos no `MeetingDialog`; replicamos o mesmo padrão (`toast.warning`).
-- Duplicidade de activity: garantimos `skip_activity: true` no `createMeeting` e criamos uma única activity com `external_ids` contendo tanto `meeting_id` quanto `interview_id`.
-- Reagendar/cancelar: nesta fase, `rescheduleInterview` e `cancelInterview` não sincronizam com `meetings`/`activities` (comportamento atual preservado). Fica documentado como próximo passo.
+- Perfis LinkedIn de 2º/3º grau podem não expor email/telefone (esperado).
+- Requer Unipile conectado; sem isso, usuário é orientado a Integrations → LinkedIn.
+- Parse de CV continua criando o candidato direto (comportamento atual); se quiser alinhar 100% com "preview antes de salvar", é um passo futuro fora deste escopo.
 
 ## Validação manual
 
-1. Ir em `/jobs/:id` → aba Entrevistas → agendar entrevista `video` para um candidato.
-2. Confirmar que aparece toast com link `/meet/{token}` e, se houver Google conectado, "Sincronizado com Google Calendar".
-3. Abrir a timeline do candidato/vaga e confirmar que a reunião aparece como `type: "meeting"`.
-4. Abrir o link `/meet/{token}` e confirmar acesso à sala Jitsi.
-5. Agendar entrevista `phone`/`onsite` e confirmar que continua funcionando sem sala.
-
-## Relatório final
-
-Ao concluir, entrego resumo, arquivos alterados, migration executada, validações e pendências (self-schedule / reschedule / cancel).
+1. Chooser exibe as três opções e navega corretamente entre elas / volta.
+2. Manual continua funcionando exatamente como hoje.
+3. LinkedIn: sem Unipile → toast + CTA; URL válida com Unipile → formulário preenchido e editável; URL inválida → botão desabilitado.
+4. CV: upload de PDF cria candidato como hoje; botão externo removido; nenhum caminho antigo perdido.
+5. Fechar e reabrir o dialog reseta o chooser.
