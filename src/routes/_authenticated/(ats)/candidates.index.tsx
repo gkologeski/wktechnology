@@ -171,6 +171,8 @@ function CandidatesPage() {
     current_company: "",
     skills: "",
     notes: "",
+    experiences: [] as Array<{ title: string; company: string; start: string; end: string; description: string }>,
+    education: [] as Array<{ school: string; degree: string; start: string; end: string }>,
   });
 
   const resetForm = () =>
@@ -184,6 +186,8 @@ function CandidatesPage() {
       current_company: "",
       skills: "",
       notes: "",
+      experiences: [],
+      education: [],
     });
 
   const resetCreateDialog = () => {
