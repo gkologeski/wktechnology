@@ -1,115 +1,138 @@
+# Mapa de Permissões Multi-Módulo — TechERP
 
-# Home unificada do ERP
+> Correção: o ERP se chama **TechERP**. TechHire é o módulo de ATS. TechSales é o módulo de CRM. Este plano trata do sistema de acessos do TechERP.
 
-Criar uma tela principal que funcione como **home da aplicação** ao entrar no sistema (host neutro / workspace), aglutinando:
+## Modelo escolhido (padrão de mercado)
 
-1. **Módulos contratados** (TechSales/CRM, TechHire/ATS e futuros) — cada um como cartão de entrada premium, com status (ativo, disponível, bloqueado), KPIs curtos e ação "Entrar".
-2. **Configurações do workspace** — todas as configurações comuns a todos os módulos (membros, papéis, billing, branding, API keys, idioma, webhooks, audit log, módulos contratados).
-3. **Identidade do workspace** — nome, logo, plano vigente, ambiente (produção/sandbox) e atalhos rápidos.
+Combinação vencedora Salesforce + Odoo + Dynamics 365:
+**RBAC hierárquico + Permission Sets aditivos + Scope ABAC + Field-Level Security**.
 
-## Escopo
-
-- Nova rota `/_authenticated/home` como **home oficial da aplicação em host neutro** (workspace).
-- Redirecionar `/` (raiz autenticada) para `/home` quando o usuário estiver em host neutro/workspace. Em hosts de módulo (crm.*, ats.*) continua indo para o `defaultRoute` do módulo — não altera comportamento existente.
-- Reaproveitar e ampliar o conteúdo de `/workspace` (hoje `workspace.index.tsx`), tornando-o parte da nova home. Manter `/workspace` como alias que redireciona para `/home` para não quebrar links.
-- Não altera RLS, schema, autenticação, server functions nem regras de negócio.
-
-## Estrutura da tela
+### 4 camadas
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ HERO: logo + nome workspace | plano | ambiente | ações      │
-├─────────────────────────────────────────────────────────────┤
-│ MÓDULOS                                                     │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐               │
-│  │ TechSales  │ │ TechHire   │ │ + Explorar │               │
-│  │ CRM        │ │ ATS        │ │ marketplace│               │
-│  │ [Entrar]   │ │ [Entrar]   │ │            │               │
-│  └────────────┘ └────────────┘ └────────────┘               │
-├─────────────────────────────────────────────────────────────┤
-│ CONFIGURAÇÕES DO WORKSPACE (grid por grupos)                │
-│  Pessoas       Faturamento     Identidade    Segurança      │
-│  · Membros     · Plano         · Branding    · Papéis       │
-│  · Times       · Faturas       · Idioma      · API Keys     │
-│  · Convites    · Uso           · Domínio     · Audit Log    │
-│                                              · Webhooks     │
-│  Integrações   Dados                                        │
-│  · Módulos     · Importação                                 │
-│  · Marketplace · Exportação                                 │
-│                · Residência                                 │
-├─────────────────────────────────────────────────────────────┤
-│ ATIVIDADE RECENTE (opcional, leve): últimos convites,       │
-│ últimas faturas, últimas alterações de configuração         │
-└─────────────────────────────────────────────────────────────┘
+1. MODULES      TechSales(CRM) │ TechHire(ATS) │ Contratos │ Financeiro │ Projetos
+2. RESOURCES    leads, deals, jobs, candidates, contracts, invoices...
+3. PERMISSIONS  <module>.<resource>.<action>.<scope>
+                ex: techhire.jobs.update.team
+4. ROLES        Job Role (cargo) = N Permission Sets  +  Field-Level rules
 ```
 
-## Componentes (design system TechHire / quiet premium)
+### Conceitos
 
-Usar apenas componentes oficiais e tokens semânticos de `src/styles.css`:
+- **Module** — TechSales, TechHire, Contratos, Financeiro, Projetos
+- **Resource** — entidade (`techhire.jobs`, `techsales.deals`)
+- **Action** — `view | create | update | delete | export | approve | assign`
+- **Scope (ABAC)** — `own | team | workspace | org`
+- **Permission** — `<module>.<resource>.<action>.<scope>`
+- **Permission Set** — pacote reutilizável (ex: "TechHire Recruiter Base")
+- **Job Role** — cargo que agrega Permission Sets (ex: "Recrutador Sênior")
+- **Field Rule** — mask/hide/readonly de campo específico por role (ex: esconder `candidate.expected_salary` de não-Managers)
+- **User Assignment** — 1 Job Role principal + N Sets extras (aditivo)
 
-- `PageHeader` (ou `ProductPageHeader` neutro do workspace) para o hero.
-- `SectionHeader` para "Módulos", "Configurações", "Atividade recente".
-- `MetricCard` para KPIs opcionais do workspace (membros ativos, módulos ativos, plano).
-- Cartões de módulo com `StatusBadge` (Ativo / Disponível / Não contratado).
-- Grid responsivo (1 / 2 / 4 colunas) para configurações agrupadas.
-- `EmptyState`, `LoadingSkeleton` fiel ao layout e `ErrorState` com próxima ação.
-- `Link` do TanStack Router com `to` tipado (sem `<a href>`).
+### Roles padrão por módulo
 
-## Fonte de dados (apenas leitura, sem novas mutações)
+Viewer · User · Manager · Admin (padrão Odoo/Dynamics)
 
-Reutilizar server functions já existentes; nada de queries em componente presentacional:
+Cross-module: Workspace Owner · Workspace Admin · Auditor · External Collaborator
 
-- Módulos contratados: `src/lib/modules/workspace-modules.functions.ts`.
-- Branding e nome do workspace: `src/lib/modules/module-branding.functions.ts` + hook/service já usado por `ProductPageHeader`.
-- Plano/uso: server functions já usadas em `/settings/billing` (só leitura resumida).
-- Membros: contagem via server function usada em `/settings/workspace-team`.
+## Fases de implementação (executar direto, sem parar)
 
-Se algum resumo ainda não tiver server function pronta, o cartão entra com `EmptyState` ("Configurar") apontando para a tela responsável — sem criar backend novo neste escopo.
+### Fase 1 — Catálogo + UI de leitura
+- Migration: tabelas `permissions`, `permission_sets`, `permission_set_items`, `job_roles`, `job_role_sets`, `user_job_roles`, `user_permission_sets`, `field_permission_rules`
+- Seed: catálogo canônico de permissions para TechSales + TechHire (todas ações atuais)
+- Seed: Permission Sets padrão Viewer/User/Manager/Admin por módulo
+- Seed: Job Roles templates (Vendedor, Gerente Comercial, Recrutador, Head de RH, Financeiro, Diretor, Auditor, Workspace Owner/Admin)
+- UI `/home/settings/access` (só leitura): tabs Papéis · Permission Sets · Matriz · Membros
 
-## Roteamento
+### Fase 2 — CRUD + atribuição
+- CRUD de Job Roles e Permission Sets (workspace-level)
+- Tela Membros: atribuir Job Role principal + Sets extras + escopo padrão
+- Field Rules editor: por role, marcar campos como `hidden | masked | readonly`
+- Simulador "Ver como…" (impersonate read-only)
 
-- Novo arquivo: `src/routes/_authenticated/home.tsx` → `createFileRoute("/_authenticated/home")`.
-- Ajustar `src/routes/_authenticated/index.tsx` (ou criar, se ausente) para redirecionar `/` autenticado para `/home` **apenas em host neutro**; em hosts de módulo, redirecionar para `MODULES[id].defaultRoute` (lógica já existente em `src/lib/modules/active-module.ts` / `src/lib/hosts.ts`).
-- `src/routes/_authenticated/workspace.index.tsx` passa a redirecionar para `/home` (mantém URL antiga funcionando).
-- Atualizar `ModuleSwitcher` e sidebar para incluir link "Home" apontando para `/home` no shell neutro.
+### Fase 3 — Enforcement backend
+- Função SQL `public.user_has_permission(_user, _perm, _owner, _team) → boolean` (SECURITY DEFINER, stable)
+- Função SQL `public.user_field_visibility(_user, _resource, _field) → text` (`full|masked|hidden`)
+- Helper server-fn `requirePermission(context, perm, row)` e `maskFields(row, rules)`
+- Manter `has_role()` como shim durante migração
+
+### Fase 4 — Migração módulo TechSales (CRM)
+- Refatorar RLS de leads/deals/contacts/companies/tickets para `user_has_permission`
+- Aplicar field masking em campos sensíveis (ex: `deal.value` para Viewer)
+
+### Fase 5 — Migração módulo TechHire (ATS)
+- Refatorar RLS de jobs/candidates/interviews/offers
+- Field masking: `candidate.expected_salary`, `offer.amount`, `candidate.email/phone` para roles restritas
+
+### Fase 6 — Auditoria
+- Audit log de mudanças em roles/sets/atribuições
+- Página de auditoria de acessos por usuário
+- Matriz exportável (CSV)
 
 ## Detalhes técnicos
 
-- **Host-aware**: usar `src/lib/hosts.ts` para decidir se é workspace neutro. Não quebrar deep links de módulos.
-- **Permissões**: cartões de configuração sensíveis (Billing, Papéis, API Keys, Audit) só aparecem para `admin` — checar via hook de role já existente (`useWorkspaceRole` / `has_role`). Não é gate de segurança, apenas UX; RLS continua sendo a fonte de verdade.
-- **Estados**: cada seção com `LoadingSkeleton` próprio; hero com skeleton para nome/logo do workspace.
-- **Acessibilidade**: foco visível, `aria-label` em cartões clicáveis, ordem de tabulação lógica, contraste em light/dark.
-- **Sem novas dependências**, sem mudanças em `src/integrations/supabase/*`, sem migrations.
+### Schema resumido
 
-## Arquivos previstos
+```sql
+-- Catálogo canônico
+permissions (key PK, module, resource, action, scope, label_pt, description, is_system)
+permission_sets (id, workspace_id NULL=system, module, name, description, is_system)
+permission_set_items (set_id, permission_key)
 
-Criados:
-- `src/routes/_authenticated/home.tsx`
-- `src/components/workspace/home-hero.tsx`
-- `src/components/workspace/modules-grid.tsx`
-- `src/components/workspace/workspace-settings-grid.tsx`
-- `src/components/workspace/recent-activity-card.tsx` (opcional)
+-- Cargos
+job_roles (id, workspace_id NULL=system, name, description, is_system)
+job_role_sets (role_id, set_id)
 
-Alterados:
-- `src/routes/_authenticated/index.tsx` (redirecionamento host-aware para `/home`)
-- `src/routes/_authenticated/workspace.index.tsx` (redireciona para `/home`)
-- Sidebar/`ModuleSwitcher` para incluir atalho "Home".
+-- Atribuições
+user_job_roles (user_id, workspace_id, role_id, is_primary)
+user_permission_sets (user_id, workspace_id, set_id)
 
-Removidos: nenhum.
+-- Field-level
+field_permission_rules (id, role_id NULL, set_id NULL, resource, field, mode)
+  -- mode: 'hidden' | 'masked' | 'readonly'
 
-## Fora de escopo
+-- Cache (opcional)
+user_permission_cache (user_id, workspace_id, permissions text[], updated_at)
+```
 
-- Não altera módulos internos (TechSales/TechHire).
-- Não cria novas server functions, migrations ou RLS.
-- Não altera fluxo de convites, billing ou branding — apenas os expõe como cartões navegáveis.
-- Não mexe em rotas de módulo (`(ats)`, `/dashboard` do CRM etc.).
+Todas com GRANT ao `authenticated`+`service_role`, RLS habilitado, políticas escopadas por `workspace_id` + `has_role('admin')` para escrita.
 
-## Como validar manualmente
+### Convenção de keys
 
-1. Login em host neutro → cai em `/home` com hero + módulos + configurações.
-2. Login em `crm.*` ou `ats.*` → continua indo para o `defaultRoute` do módulo (sem regressão).
-3. Clique em cada cartão de módulo → entra no módulo correto.
-4. Clique em cada cartão de configuração → abre a tela existente correspondente.
-5. `/workspace` redireciona para `/home`.
-6. Usuário não-admin não vê cartões restritos.
-7. Light/dark, desktop/tablet/mobile ok.
+- `techsales.leads.view.own`
+- `techsales.deals.update.team`
+- `techhire.jobs.delete.workspace`
+- `techhire.candidates.export.workspace`
+- `finance.invoices.approve.team` (futuro)
+- `system.members.manage.workspace`
+- `system.billing.manage.workspace`
+
+### Field masking no frontend
+
+- Hook `useFieldVisibility(resource)` → `{ isHidden, isMasked, isReadonly }`
+- Componente `<MaskedValue value={...} field="candidate.expected_salary" />`
+- Backend sempre é fonte da verdade: server fns aplicam `maskFields()` antes de retornar
+
+### Migração de dados atuais
+
+- Script mapeia `user_roles` (admin/manager/user) → Job Roles equivalentes por workspace
+- Mantém `has_role()` funcionando (não quebra RLS existente)
+- Migração módulo-a-módulo, com feature flag `use_new_permissions_v2` por módulo
+
+## Nomenclatura confirmada
+Vendedor · Gerente Comercial · Recrutador · Head de RH · Financeiro · Diretor · Auditor · Workspace Owner · Workspace Admin · External Collaborator
+
+## Field-Level MVP (Fase 2+)
+
+Campos sensíveis já mapeados:
+- **TechHire**: `candidates.expected_salary`, `candidates.email`, `candidates.phone`, `offers.amount`, `offers.equity`, `interviews.private_notes`
+- **TechSales**: `deals.value`, `deals.probability`, `contacts.email`, `contacts.phone`, `leads.score`
+- **Sistema**: `profiles.email`, `workspace_members.role`
+
+Modo `masked` renderiza `••••` ou `R$ ***`; `hidden` remove do payload; `readonly` desabilita edição.
+
+## Como validar (ao final)
+- `/home/settings/access` mostra Papéis, Sets, Matriz e Membros
+- Criar role customizado, atribuir a um usuário teste, usar "Ver como…" para conferir efeito
+- Verificar que campos sensíveis aparecem mascarados para role Viewer no TechHire/TechSales
+- Auditoria mostra histórico de atribuições
