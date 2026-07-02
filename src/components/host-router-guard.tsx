@@ -23,6 +23,9 @@ const WORKSPACE_PATH_PREFIXES = [
   "/settings",
   "/account",
   "/admin",
+  "/home",
+  "/marketplace",
+  "/invoices",
 ];
 
 const LOOP_KEY = "techhire:host-redirects";

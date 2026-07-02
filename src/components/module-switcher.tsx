@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useActiveModule } from "@/lib/modules/active-module";
-import { buildModuleUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
+import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 export function ModuleSwitcher({ className }: { className?: string }) {
@@ -68,7 +68,21 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           type="button"
           onClick={() => {
             setOpen(false);
-            navigate({ to: "/home" });
+            const url = buildWorkspaceUrl("/home");
+            if (isCrossHostUrl(url)) {
+              try {
+                const targetHost = new URL(url).hostname;
+                if (!isReachableHost(targetHost)) {
+                  navigate({ to: "/home" });
+                  return;
+                }
+              } catch {
+                /* ignore */
+              }
+              window.location.assign(url);
+            } else {
+              navigate({ to: "/home" });
+            }
           }}
           className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors"
         >

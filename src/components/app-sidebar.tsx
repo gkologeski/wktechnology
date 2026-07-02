@@ -20,6 +20,8 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
+import { ERP_SIDEBAR_GROUPS, isWorkspacePathname } from "@/lib/menu-config-erp";
+
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
 
@@ -36,12 +38,32 @@ export function AppSidebar() {
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
+  // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
+  const workspaceShell = isWorkspacePathname(path);
   // `useActiveModule` já é path-first com fallback de host — usa direto.
-  // (Antes forçávamos pelo host em produção, mas isso impedia o sidebar de
-  // refletir o módulo escolhido no switcher quando a navegação acabava
-  // ficando same-host — ex.: cross-host inacessível por DNS/SSL.)
   const effectiveModuleId = activeModuleId;
-  const groupsSource = effectiveModuleId === "ats" ? ATS_SIDEBAR_GROUPS : SIDEBAR_GROUPS;
+  const groupsSource = workspaceShell
+    ? ERP_SIDEBAR_GROUPS
+    : effectiveModuleId === "ats"
+      ? ATS_SIDEBAR_GROUPS
+      : SIDEBAR_GROUPS;
+
+  // Header/branding neutro no shell de workspace.
+  const shellBrand = workspaceShell
+    ? {
+        productName: "TechERP",
+        name: "Workspace",
+        shortDescription: "Módulos e configurações",
+        defaultColor: "#0f172a",
+        defaultRoute: "/home",
+      }
+    : {
+        productName: activeModule.productName,
+        name: activeModule.name,
+        shortDescription: activeModule.shortDescription,
+        defaultColor: activeModule.defaultColor,
+        defaultRoute: activeModule.defaultRoute,
+      };
 
   const visibleGroups = useMemo(() => {
     const q = normalizeSearch(query);
@@ -63,19 +85,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-3 py-4 gap-3">
-        <Link to={activeModule.defaultRoute} className="flex items-center gap-2.5">
+        <Link to={shellBrand.defaultRoute} className="flex items-center gap-2.5">
           <div
             className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
-            style={{ backgroundColor: activeModule.defaultColor, boxShadow: `0 4px 12px ${activeModule.defaultColor}33` }}
+            style={{ backgroundColor: shellBrand.defaultColor, boxShadow: `0 4px 12px ${shellBrand.defaultColor}33` }}
           >
-            {activeModule.productName.slice(0, 2).toUpperCase()}
+            {shellBrand.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
             <h2 className="text-base font-bold tracking-tight leading-tight truncate">
-              {activeModule.productName} {activeModule.name}
+              {shellBrand.productName} {shellBrand.name}
             </h2>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">
-              {activeModule.shortDescription}
+              {shellBrand.shortDescription}
             </p>
           </div>
         </Link>

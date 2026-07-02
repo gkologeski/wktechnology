@@ -186,6 +186,7 @@ import { Route as AuthenticatedatsInterviewKitsRouteImport } from './routes/_aut
 import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenticated/(ats)/insights'
 import { Route as AuthenticatedatsCopilotRouteImport } from './routes/_authenticated/(ats)/copilot'
 import { Route as AuthenticatedatsBriefingRouteImport } from './routes/_authenticated/(ats)/briefing'
+import { Route as AuthenticatedatsAtsDashboardRouteImport } from './routes/_authenticated/(ats)/ats-dashboard'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
@@ -1279,6 +1280,12 @@ const AuthenticatedatsBriefingRoute =
     path: '/briefing',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedatsAtsDashboardRoute =
+  AuthenticatedatsAtsDashboardRouteImport.update({
+    id: '/(ats)/ats-dashboard',
+    path: '/ats-dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRolesIndexRoute =
   AuthenticatedSettingsRolesIndexRouteImport.update({
     id: '/',
@@ -1911,6 +1918,7 @@ export interface FileRoutesByFullPath {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
+  '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
@@ -2185,6 +2193,7 @@ export interface FileRoutesByTo {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
+  '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
   '/insights': typeof AuthenticatedatsInsightsRoute
@@ -2463,6 +2472,7 @@ export interface FileRoutesById {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
+  '/_authenticated/(ats)/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/_authenticated/(ats)/briefing': typeof AuthenticatedatsBriefingRoute
   '/_authenticated/(ats)/copilot': typeof AuthenticatedatsCopilotRoute
   '/_authenticated/(ats)/insights': typeof AuthenticatedatsInsightsRoute
@@ -2742,6 +2752,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
+    | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
     | '/insights'
@@ -3016,6 +3027,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers'
     | '/kb'
+    | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
     | '/insights'
@@ -3293,6 +3305,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
+    | '/_authenticated/(ats)/ats-dashboard'
     | '/_authenticated/(ats)/briefing'
     | '/_authenticated/(ats)/copilot'
     | '/_authenticated/(ats)/insights'
@@ -4856,6 +4869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsBriefingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/(ats)/ats-dashboard': {
+      id: '/_authenticated/(ats)/ats-dashboard'
+      path: '/ats-dashboard'
+      fullPath: '/ats-dashboard'
+      preLoaderRoute: typeof AuthenticatedatsAtsDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/roles/': {
       id: '/_authenticated/settings/roles/'
       path: '/'
@@ -5972,6 +5992,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
+  AuthenticatedatsAtsDashboardRoute: typeof AuthenticatedatsAtsDashboardRoute
   AuthenticatedatsBriefingRoute: typeof AuthenticatedatsBriefingRoute
   AuthenticatedatsCopilotRoute: typeof AuthenticatedatsCopilotRoute
   AuthenticatedatsInsightsRoute: typeof AuthenticatedatsInsightsRoute
@@ -6051,6 +6072,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
+  AuthenticatedatsAtsDashboardRoute: AuthenticatedatsAtsDashboardRoute,
   AuthenticatedatsBriefingRoute: AuthenticatedatsBriefingRoute,
   AuthenticatedatsCopilotRoute: AuthenticatedatsCopilotRoute,
   AuthenticatedatsInsightsRoute: AuthenticatedatsInsightsRoute,

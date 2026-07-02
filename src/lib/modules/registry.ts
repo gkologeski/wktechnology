@@ -67,9 +67,10 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     defaultColor: "#7c3aed",
     icon: Users,
     hostSuffix: "ats",
-    defaultRoute: "/jobs",
+    defaultRoute: "/ats-dashboard",
     menu: [
-      { title: "Insights", url: "/insights", icon: LayoutDashboard },
+      { title: "Dashboard", url: "/ats-dashboard", icon: LayoutDashboard },
+      { title: "Insights", url: "/insights", icon: BarChart3 },
       { title: "Vagas", url: "/jobs", icon: Briefcase },
       { title: "Candidatos", url: "/candidates", icon: Users },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
