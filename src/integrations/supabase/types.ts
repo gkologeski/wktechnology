@@ -100,6 +100,42 @@ export type Database = {
         }
         Relationships: []
       }
+      access_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+          target_user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          target_user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          target_user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       access_profile_permissions: {
         Row: {
           create_enabled: boolean

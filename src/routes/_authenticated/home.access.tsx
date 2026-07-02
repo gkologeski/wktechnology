@@ -18,6 +18,9 @@ import {
   Pencil,
   Trash2,
   UserCog,
+  ClipboardList,
+  UserSearch,
+  BarChart3,
 } from "lucide-react";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
 import {
@@ -27,6 +30,11 @@ import {
   MemberAssignmentDialog,
   DeleteAccessRowDialog,
 } from "@/components/access-control/access-dialogs";
+import {
+  AuditTab,
+  SimulationTab,
+  ReportsTab,
+} from "@/components/access-control/governance-tabs";
 import { PageHeader, SectionHeader, MetricCard, EmptyState } from "@/components/techhire/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -179,6 +187,15 @@ function Content({ data }: { data: AccessBundle }) {
           <TabsTrigger value="members">
             <Users className="mr-2 h-4 w-4" /> Membros ({stats.members})
           </TabsTrigger>
+          <TabsTrigger value="audit">
+            <ClipboardList className="mr-2 h-4 w-4" /> Auditoria
+          </TabsTrigger>
+          <TabsTrigger value="simulate">
+            <UserSearch className="mr-2 h-4 w-4" /> Simular
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            <BarChart3 className="mr-2 h-4 w-4" /> Relatórios
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="space-y-4">
@@ -199,6 +216,18 @@ function Content({ data }: { data: AccessBundle }) {
 
         <TabsContent value="members" className="space-y-4">
           <MembersTab data={data} />
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-4">
+          <AuditTab />
+        </TabsContent>
+
+        <TabsContent value="simulate" className="space-y-4">
+          <SimulationTab data={data} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+          <ReportsTab />
         </TabsContent>
       </Tabs>
     </>

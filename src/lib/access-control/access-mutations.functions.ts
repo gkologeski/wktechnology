@@ -8,6 +8,31 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
 
+// Fire-and-forget audit writer used by every mutation in this file.
+async function logAudit(
+  supabase: SB,
+  userId: string,
+  action: string,
+  entity_type: string,
+  entity_id: string | null,
+  target_user_id: string | null,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await supabase.from("access_audit_log").insert({
+      workspace_id: userId,
+      actor_id: userId,
+      action,
+      entity_type,
+      entity_id,
+      target_user_id,
+      details,
+    });
+  } catch {
+    /* audit failures never block the mutation */
+  }
+}
+
 async function assertWorkspaceOwner(supabase: SB, userId: string): Promise<void> {
   // With RLS scoped to workspace_id = auth.uid(), the owner is the user themself.
   // We still call this to keep intent obvious and to future-proof if we widen access.
@@ -91,6 +116,11 @@ export const upsertJobRole = createServerFn({ method: "POST" })
         .insert(data.set_ids.map((sid) => ({ role_id: roleId!, set_id: sid })));
       if (insErr) throw new Error(insErr.message);
     }
+    await logAudit(supabase, userId, data.id ? "role.update" : "role.create", "job_role", roleId, null, {
+      name: data.name,
+      data_scope: data.data_scope,
+      set_ids: data.set_ids,
+    });
     return { id: roleId };
   });
 
@@ -103,6 +133,7 @@ export const deleteJobRole = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "job_roles", data.id);
     const { error } = await supabase.from("job_roles").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "role.delete", "job_role", data.id, null);
     return { ok: true };
   });
 
@@ -160,6 +191,11 @@ export const upsertPermissionSet = createServerFn({ method: "POST" })
         .insert(data.permission_keys.map((k) => ({ set_id: setId!, permission_key: k })));
       if (insErr) throw new Error(insErr.message);
     }
+    await logAudit(supabase, userId, data.id ? "set.update" : "set.create", "permission_set", setId, null, {
+      name: data.name,
+      module: data.module,
+      permission_keys: data.permission_keys,
+    });
     return { id: setId };
   });
 
@@ -172,6 +208,7 @@ export const deletePermissionSet = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "permission_sets", data.id);
     const { error } = await supabase.from("permission_sets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "set.delete", "permission_set", data.id, null);
     return { ok: true };
   });
 
@@ -210,6 +247,7 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
         .update(payload)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      await logAudit(supabase, userId, "field_rule.update", "field_rule", data.id, null, payload);
       return { id: data.id };
     }
     const { data: row, error } = await supabase
@@ -218,7 +256,9 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    const newId = row.id as string;
+    await logAudit(supabase, userId, "field_rule.create", "field_rule", newId, null, payload);
+    return { id: newId };
   });
 
 export const deleteFieldRule = createServerFn({ method: "POST" })
@@ -230,6 +270,7 @@ export const deleteFieldRule = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "field_permission_rules", data.id);
     const { error } = await supabase.from("field_permission_rules").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "field_rule.delete", "field_rule", data.id, null);
     return { ok: true };
   });
 
@@ -316,5 +357,18 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    await logAudit(
+      supabase,
+      userId,
+      "member.assign",
+      "workspace_member",
+      null,
+      data.user_id,
+      {
+        primary_role_id: data.primary_role_id,
+        extra_role_ids: data.extra_role_ids,
+        extra_set_ids: data.extra_set_ids,
+      },
+    );
     return { ok: true };
   });
