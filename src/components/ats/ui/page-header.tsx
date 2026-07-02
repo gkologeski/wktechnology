@@ -32,8 +32,8 @@ export function AtsPageHeader({
 }: AtsPageHeaderProps) {
   return (
     <header className={cn("flex flex-col gap-4 pb-5 border-b border-border-subtle", className)}>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
           {eyebrow ? (
             <p className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary mb-1.5">
               {eyebrow}
