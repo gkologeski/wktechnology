@@ -38,12 +38,32 @@ export function AppSidebar() {
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
+  // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
+  const workspaceShell = isWorkspacePathname(path);
   // `useActiveModule` já é path-first com fallback de host — usa direto.
-  // (Antes forçávamos pelo host em produção, mas isso impedia o sidebar de
-  // refletir o módulo escolhido no switcher quando a navegação acabava
-  // ficando same-host — ex.: cross-host inacessível por DNS/SSL.)
   const effectiveModuleId = activeModuleId;
-  const groupsSource = effectiveModuleId === "ats" ? ATS_SIDEBAR_GROUPS : SIDEBAR_GROUPS;
+  const groupsSource = workspaceShell
+    ? ERP_SIDEBAR_GROUPS
+    : effectiveModuleId === "ats"
+      ? ATS_SIDEBAR_GROUPS
+      : SIDEBAR_GROUPS;
+
+  // Header/branding neutro no shell de workspace.
+  const shellBrand = workspaceShell
+    ? {
+        productName: "TechERP",
+        name: "Workspace",
+        shortDescription: "Módulos e configurações",
+        defaultColor: "#0f172a",
+        defaultRoute: "/home",
+      }
+    : {
+        productName: activeModule.productName,
+        name: activeModule.name,
+        shortDescription: activeModule.shortDescription,
+        defaultColor: activeModule.defaultColor,
+        defaultRoute: activeModule.defaultRoute,
+      };
 
   const visibleGroups = useMemo(() => {
     const q = normalizeSearch(query);
