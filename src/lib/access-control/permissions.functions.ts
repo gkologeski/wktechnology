@@ -3,35 +3,44 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/**
- * Lista todas as permission_keys efetivas do usuário atual em um workspace.
- * Considera owner do workspace, cargos e pacotes extras.
- */
-export const getMyPermissions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { workspaceId: string }) => input)
-  .handler(async ({ data, context }): Promise<string[]> => {
-    const { supabase } = context;
-    const { data: rows, error } = await supabase.rpc("current_user_permissions", {
-      _workspace_id: data.workspaceId,
-    });
-    if (error) throw new Error(error.message);
-    return (rows as unknown as string[] | null) ?? [];
-  });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
+  const m = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (m.data?.workspace_id) return m.data.workspace_id as string;
+  const w = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("created_by", userId)
+    .limit(1)
+    .maybeSingle();
+  return (w.data?.id as string) ?? null;
+}
+
+export type MyPermissionsResult = {
+  workspace_id: string | null;
+  permissions: string[];
+};
 
 /**
- * Checa uma permissão específica. Retorna boolean.
+ * Retorna todas as permission_keys efetivas do usuário atual no workspace ativo.
  */
-export const checkPermission = createServerFn({ method: "POST" })
+export const getMyPermissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { workspaceId: string; permissionKey: string }) => input)
-  .handler(async ({ data, context }): Promise<boolean> => {
+  .handler(async ({ context }): Promise<MyPermissionsResult> => {
     const { supabase, userId } = context;
-    const { data: allowed, error } = await supabase.rpc("user_has_permission", {
-      _user_id: userId,
-      _workspace_id: data.workspaceId,
-      _permission_key: data.permissionKey,
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    if (!workspaceId) return { workspace_id: null, permissions: [] };
+    const { data, error } = await supabase.rpc("current_user_permissions", {
+      _workspace_id: workspaceId,
     });
     if (error) throw new Error(error.message);
-    return Boolean(allowed);
+    const perms = ((data ?? []) as Array<string | { current_user_permissions: string }>).map(
+      (r) => (typeof r === "string" ? r : r.current_user_permissions),
+    );
+    return { workspace_id: workspaceId, permissions: perms };
   });
