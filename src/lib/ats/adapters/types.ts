@@ -57,6 +57,25 @@ export type JobPostPayload = {
 export type JobPostResult = { externalId: string; url: string };
 
 
+export type JobApplicantRecord = {
+  providerApplicantId: string;
+  fullName: string | null;
+  headline: string | null;
+  linkedinUrl: string | null;
+  profilePublicId: string | null;
+  email: string | null;
+  phone: string | null;
+  location: string | null;
+  resumeUrl: string | null;
+  appliedAt: string | null;
+  raw?: Record<string, unknown>;
+};
+
+export type ListApplicantsResult = {
+  applicants: JobApplicantRecord[];
+  nextCursor: string | null;
+};
+
 export interface JobBoardAdapter {
   capabilities: AdapterCapability[];
   postJob(ctx: AdapterContext, input: JobPostPayload): Promise<AdapterResult<JobPostResult>>;
@@ -69,6 +88,11 @@ export interface JobBoardAdapter {
     ctx: AdapterContext,
     externalId: string,
   ): Promise<AdapterResult<{ candidates: Array<Record<string, unknown>> }>>;
+  /** Onda 5 — sync automático de aplicantes por posting. */
+  listApplicants?(
+    ctx: AdapterContext,
+    input: { externalId: string; cursor?: string | null; limit?: number },
+  ): Promise<AdapterResult<ListApplicantsResult>>;
 }
 
 /** --- Assessments (HackerRank, Codility, iMocha) --- */
