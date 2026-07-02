@@ -191,6 +191,11 @@ export const upsertPermissionSet = createServerFn({ method: "POST" })
         .insert(data.permission_keys.map((k) => ({ set_id: setId!, permission_key: k })));
       if (insErr) throw new Error(insErr.message);
     }
+    await logAudit(supabase, userId, data.id ? "set.update" : "set.create", "permission_set", setId, null, {
+      name: data.name,
+      module: data.module,
+      permission_keys: data.permission_keys,
+    });
     return { id: setId };
   });
 
@@ -203,6 +208,7 @@ export const deletePermissionSet = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "permission_sets", data.id);
     const { error } = await supabase.from("permission_sets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "set.delete", "permission_set", data.id, null);
     return { ok: true };
   });
 
