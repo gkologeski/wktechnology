@@ -1,9 +1,9 @@
-// Input no header que abre o CopilotCmdK (atalho ⌘K).
+// Input no header que abre o GlobalSearch (atalho ⌘K).
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-function openCopilot() {
-  window.dispatchEvent(new CustomEvent("copilot:open"));
+function openSearch() {
+  window.dispatchEvent(new CustomEvent("global-search:open"));
 }
 
 export function GlobalSearchTrigger() {
@@ -11,7 +11,7 @@ export function GlobalSearchTrigger() {
     <>
       <button
         type="button"
-        onClick={openCopilot}
+        onClick={openSearch}
         aria-label="Buscar ou perguntar"
         className="hidden md:flex items-center gap-2 h-9 w-[360px] max-w-[40vw] px-3 rounded-md border bg-muted/40 hover:bg-muted text-sm text-muted-foreground transition-colors"
       >
@@ -24,7 +24,7 @@ export function GlobalSearchTrigger() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={openCopilot}
+        onClick={openSearch}
         aria-label="Buscar"
         className="md:hidden"
       >

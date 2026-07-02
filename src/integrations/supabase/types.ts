@@ -10149,6 +10149,66 @@ export type Database = {
         }
         Relationships: []
       }
+      search_pinned: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          id: string
+          pinned_at: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          id?: string
+          pinned_at?: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          pinned_at?: string
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_recent: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          id: string
+          opened_at: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          id?: string
+          opened_at?: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          opened_at?: string
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_scan_findings: {
         Row: {
           category: string
