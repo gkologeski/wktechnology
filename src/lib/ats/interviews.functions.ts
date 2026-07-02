@@ -61,7 +61,7 @@ export const listInterviews = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("ats_interviews")
       .select(
-        "id, kind, status, scheduled_at, duration_min, meet_url, location, notes, interviewer_id, self_schedule_token, self_schedule_expires_at, created_at",
+        "id, kind, status, scheduled_at, duration_min, meet_url, location, notes, interviewer_id, self_schedule_token, self_schedule_expires_at, meeting_id, created_at",
       )
       .eq("application_id", data.application_id)
       .order("scheduled_at", { ascending: false, nullsFirst: false })
