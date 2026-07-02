@@ -46,6 +46,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
   const list = useServerFn(listJobPostings);
   const publish = useServerFn(publishJobToProvider);
   const unpublish = useServerFn(unpublishJobFromProvider);
+  const syncNow = useServerFn(syncPostingApplicantsNow);
 
   const [postings, setPostings] = useState<Posting[]>([]);
   const [loading, setLoading] = useState(true);
