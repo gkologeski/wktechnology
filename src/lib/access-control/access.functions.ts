@@ -1,0 +1,198 @@
+// Server functions for the TechERP access control system.
+// Read-only in Phase 1 (Fase 1). CRUD arrives in Phase 2.
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type PermissionRow = {
+  key: string;
+  module: string;
+  resource: string;
+  action: string;
+  scope: string;
+  label_pt: string;
+  description: string | null;
+};
+
+export type PermissionSetRow = {
+  id: string;
+  workspace_id: string | null;
+  module: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  permission_keys: string[];
+};
+
+export type JobRoleRow = {
+  id: string;
+  workspace_id: string | null;
+  name: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  is_system: boolean;
+  set_ids: string[];
+};
+
+export type FieldRuleRow = {
+  id: string;
+  workspace_id: string | null;
+  role_id: string | null;
+  set_id: string | null;
+  resource: string;
+  field: string;
+  mode: "hidden" | "masked" | "readonly";
+  is_system: boolean;
+};
+
+export type MemberAssignmentRow = {
+  user_id: string;
+  full_name: string;
+  email: string;
+  primary_role_id: string | null;
+  role_ids: string[];
+  extra_set_ids: string[];
+};
+
+export type AccessBundle = {
+  permissions: PermissionRow[];
+  permission_sets: PermissionSetRow[];
+  job_roles: JobRoleRow[];
+  field_rules: FieldRuleRow[];
+  members: MemberAssignmentRow[];
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
+  const m = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (m.data?.workspace_id) return m.data.workspace_id as string;
+  const w = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("created_by", userId)
+    .limit(1)
+    .maybeSingle();
+  return (w.data?.id as string) ?? null;
+}
+
+export const getAccessBundle = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AccessBundle> => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+
+    const [perms, sets, items, roles, roleSets, rules, members] = await Promise.all([
+      supabase.from("permissions").select("*").order("module").order("key"),
+      supabase.from("permission_sets").select("*").order("module").order("name"),
+      supabase.from("permission_set_items").select("set_id, permission_key"),
+      supabase.from("job_roles").select("*").order("is_system", { ascending: false }).order("name"),
+      supabase.from("job_role_sets").select("role_id, set_id"),
+      supabase.from("field_permission_rules").select("*"),
+      workspaceId
+        ? supabase
+            .from("workspace_members")
+            .select("user_id, role")
+            .eq("workspace_id", workspaceId)
+        : Promise.resolve({ data: [] as Array<{ user_id: string; role: string }> }),
+    ]);
+
+    // Group items and role_sets
+    const itemsBySet = new Map<string, string[]>();
+    for (const it of (items.data ?? []) as Array<{ set_id: string; permission_key: string }>) {
+      const arr = itemsBySet.get(it.set_id) ?? [];
+      arr.push(it.permission_key);
+      itemsBySet.set(it.set_id, arr);
+    }
+
+    const setsByRole = new Map<string, string[]>();
+    for (const rs of (roleSets.data ?? []) as Array<{ role_id: string; set_id: string }>) {
+      const arr = setsByRole.get(rs.role_id) ?? [];
+      arr.push(rs.set_id);
+      setsByRole.set(rs.role_id, arr);
+    }
+
+    // Load member assignments (only for workspace users)
+    const memberUserIds = ((members.data ?? []) as Array<{ user_id: string }>).map(
+      (m) => m.user_id,
+    );
+    let userJobRoles: Array<{ user_id: string; role_id: string; is_primary: boolean }> = [];
+    let userPermissionSets: Array<{ user_id: string; set_id: string }> = [];
+    let profiles: Array<{ id: string; full_name: string | null }> = [];
+    const emailMap = new Map<string, string>();
+
+    if (workspaceId && memberUserIds.length > 0) {
+      const [ujrRes, upsRes, profRes] = await Promise.all([
+        supabase
+          .from("user_job_roles")
+          .select("user_id, role_id, is_primary")
+          .eq("workspace_id", workspaceId),
+        supabase
+          .from("user_permission_sets")
+          .select("user_id, set_id")
+          .eq("workspace_id", workspaceId),
+        supabase.from("profiles").select("id, full_name").in("id", memberUserIds),
+      ]);
+      userJobRoles = (ujrRes.data ?? []) as typeof userJobRoles;
+      userPermissionSets = (upsRes.data ?? []) as typeof userPermissionSets;
+      profiles = (profRes.data ?? []) as typeof profiles;
+
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await Promise.all(
+          memberUserIds.map(async (id) => {
+            try {
+              const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+              if (u.user?.email) emailMap.set(id, u.user.email);
+            } catch {
+              /* ignore */
+            }
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const profileMap = new Map(profiles.map((p) => [p.id, p.full_name ?? ""]));
+    const rolesByUser = new Map<string, { primary: string | null; all: string[] }>();
+    for (const r of userJobRoles) {
+      const entry = rolesByUser.get(r.user_id) ?? { primary: null, all: [] };
+      entry.all.push(r.role_id);
+      if (r.is_primary) entry.primary = r.role_id;
+      rolesByUser.set(r.user_id, entry);
+    }
+    const setsByUser = new Map<string, string[]>();
+    for (const s of userPermissionSets) {
+      const arr = setsByUser.get(s.user_id) ?? [];
+      arr.push(s.set_id);
+      setsByUser.set(s.user_id, arr);
+    }
+
+    return {
+      permissions: (perms.data ?? []) as PermissionRow[],
+      permission_sets: ((sets.data ?? []) as Array<Omit<PermissionSetRow, "permission_keys">>).map(
+        (s) => ({ ...s, permission_keys: itemsBySet.get(s.id) ?? [] }),
+      ),
+      job_roles: ((roles.data ?? []) as Array<Omit<JobRoleRow, "set_ids">>).map((r) => ({
+        ...r,
+        set_ids: setsByRole.get(r.id) ?? [],
+      })),
+      field_rules: (rules.data ?? []) as FieldRuleRow[],
+      members: memberUserIds.map((uid) => {
+        const rby = rolesByUser.get(uid);
+        return {
+          user_id: uid,
+          full_name: profileMap.get(uid) ?? "",
+          email: emailMap.get(uid) ?? "",
+          primary_role_id: rby?.primary ?? null,
+          role_ids: rby?.all ?? [],
+          extra_set_ids: setsByUser.get(uid) ?? [],
+        };
+      }),
+    };
+  });
