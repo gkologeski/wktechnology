@@ -1,4 +1,4 @@
-// /home/access — TechERP Access Control Center (Fase 1: read-only)
+// /home/access — TechERP Access Control Center (Fase 2: CRUD)
 // Central de Cargos, Pacotes, Matriz e Membros.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -10,13 +10,23 @@ import {
   Package,
   Grid3x3,
   Lock,
-  Info,
   CheckCircle2,
   EyeOff,
   Asterisk,
   Ban,
+  Plus,
+  Pencil,
+  Trash2,
+  UserCog,
 } from "lucide-react";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
+import {
+  RoleEditorDialog,
+  PermissionSetEditorDialog,
+  FieldRuleEditorDialog,
+  MemberAssignmentDialog,
+  DeleteAccessRowDialog,
+} from "@/components/access-control/access-dialogs";
 import { PageHeader, SectionHeader, MetricCard, EmptyState } from "@/components/techhire/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -27,9 +37,9 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
