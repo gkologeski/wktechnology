@@ -111,12 +111,6 @@ export function ScheduleInterviewDialog({
       setSaving(false);
     }
   };
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao agendar");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleSelfLink = async () => {
     const slots = slotsText
