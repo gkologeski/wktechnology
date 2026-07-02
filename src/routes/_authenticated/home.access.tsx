@@ -702,6 +702,8 @@ function MembersTab({ data }: { data: AccessBundle }) {
     [data.permission_sets],
   );
 
+  const [managing, setManaging] = useState<AccessBundle["members"][number] | null>(null);
+
   return (
     <>
       <SectionHeader
@@ -723,6 +725,7 @@ function MembersTab({ data }: { data: AccessBundle }) {
                 <TableHead>E-mail</TableHead>
                 <TableHead>Cargo principal</TableHead>
                 <TableHead>Pacotes extras</TableHead>
+                <TableHead className="w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -767,6 +770,16 @@ function MembersTab({ data }: { data: AccessBundle }) {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setManaging(m)}
+                        className="gap-1.5"
+                      >
+                        <UserCog className="h-3.5 w-3.5" /> Gerenciar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -774,6 +787,12 @@ function MembersTab({ data }: { data: AccessBundle }) {
           </Table>
         </div>
       )}
+      <MemberAssignmentDialog
+        open={Boolean(managing)}
+        onOpenChange={(v) => !v && setManaging(null)}
+        member={managing}
+        data={data}
+      />
     </>
   );
 }
