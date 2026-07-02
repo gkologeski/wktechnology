@@ -48,6 +48,7 @@ import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/s
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
+import { ScheduleInterviewDialog } from "@/components/ats/schedule-interview-dialog";
 import { JobPostingsPanel } from "@/components/ats/job-postings-panel";
 import { LinkedinJobConfigPanel } from "@/components/ats/linkedin-job-config-panel";
 import { JobCopilotPanel } from "@/components/ats/job-copilot-panel";
@@ -150,6 +151,7 @@ function JobDetailPage() {
   >({});
   const [evalApp, setEvalApp] = useState<App | null>(null);
   const [tab, setTab] = useState<string>("pipeline");
+  const [scheduleApp, setScheduleApp] = useState<App | null>(null);
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
@@ -540,40 +542,91 @@ function JobDetailPage() {
     </div>
   );
 
-  const interviewsSection = interviews.length === 0 ? (
-    <EmptyState
-      icon={Calendar}
-      title="Nenhuma entrevista agendada"
-      description="As entrevistas dos candidatos desta vaga aparecerão aqui."
-    />
-  ) : (
-    <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
-      {interviews.map((iv) => (
-        <div key={iv.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium text-text-primary truncate">
-              {iv.candidate_name ?? "Candidato"}
-            </div>
-            <div className="text-xs text-text-tertiary truncate">
-              {iv.kind ?? "Entrevista"} · {iv.stage_value ?? "—"}
-              {iv.location ? ` · ${iv.location}` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <MetaPill>{iv.status}</MetaPill>
-            <span className="text-xs text-text-tertiary tabular-nums">
-              {iv.scheduled_at
-                ? new Date(iv.scheduled_at).toLocaleString("pt-BR", {
-                    day: "2-digit",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "—"}
-            </span>
+  const applicantsForScheduling = apps.filter((a) => (a.status ?? "active") === "active");
+
+  const interviewsSection = (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border-subtle bg-surface-1 p-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <AtsSectionHeader
+              title="Agendar entrevista"
+              description="Selecione um candidato aplicado para marcar entrevista."
+            />
           </div>
         </div>
-      ))}
+        {applicantsForScheduling.length === 0 ? (
+          <p className="text-xs text-text-tertiary">
+            Nenhum candidato aplicado nesta vaga ainda. Assim que aparecerem na aba Candidatos, você poderá agendar entrevistas aqui.
+          </p>
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+            {applicantsForScheduling.slice(0, 12).map((a) => {
+              const cand = (a as unknown as { candidate?: { full_name?: string | null } | null })
+                .candidate;
+              const name = cand?.full_name ?? "Candidato";
+              return (
+                <button
+                  key={a.id as string}
+                  type="button"
+                  onClick={() => setScheduleApp(a)}
+                  className="flex items-center justify-between gap-2 rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-left text-sm hover:border-border-strong hover:bg-surface-3 transition"
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium text-text-primary truncate">{name}</div>
+                    <div className="text-[11px] text-text-tertiary truncate">
+                      {a.stage_value ?? "applied"}
+                    </div>
+                  </div>
+                  <Calendar className="h-4 w-4 text-text-tertiary shrink-0" aria-hidden />
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {applicantsForScheduling.length > 12 && (
+          <p className="mt-2 text-[11px] text-text-tertiary">
+            Mostrando 12 de {applicantsForScheduling.length}. Use a aba Candidatos para ver todos.
+          </p>
+        )}
+      </div>
+
+      {interviews.length === 0 ? (
+        <EmptyState
+          icon={Calendar}
+          title="Nenhuma entrevista agendada"
+          description="As entrevistas agendadas para esta vaga aparecerão aqui."
+        />
+      ) : (
+        <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
+          {interviews.map((iv) => (
+            <div key={iv.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-text-primary truncate">
+                  {iv.candidate_name ?? "Candidato"}
+                </div>
+                <div className="text-xs text-text-tertiary truncate">
+                  {iv.kind ?? "Entrevista"} · {iv.stage_value ?? "—"}
+                  {iv.location ? ` · ${iv.location}` : ""}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <MetaPill>{iv.status}</MetaPill>
+                <span className="text-xs text-text-tertiary tabular-nums">
+                  {iv.scheduled_at
+                    ? new Date(iv.scheduled_at).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -749,6 +802,24 @@ function JobDetailPage() {
         onClose={() => setEvalApp(null)}
         refresh={refresh}
       />
+      {scheduleApp && (
+        <ScheduleInterviewDialog
+          open={!!scheduleApp}
+          onOpenChange={(v) => !v && setScheduleApp(null)}
+          applicationId={scheduleApp.id as string}
+          candidateName={
+            (scheduleApp as unknown as { candidate?: { full_name?: string | null } | null })
+              .candidate?.full_name ?? "Candidato"
+          }
+          onSaved={() => {
+            setScheduleApp(null);
+            void refresh();
+            listInterviewsFn({ data: { jobId: id, limit: 100 } })
+              .then((rs) => setInterviews(rs))
+              .catch(() => undefined);
+          }}
+        />
+      )}
     </>
   );
 }

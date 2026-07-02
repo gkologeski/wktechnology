@@ -19,9 +19,11 @@ import type {
   AdapterCapability,
   AdapterContext,
   AdapterResult,
+  JobApplicantRecord,
   JobBoardAdapter,
   JobPostPayload,
   JobPostResult,
+  ListApplicantsResult,
 } from "../types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -29,6 +31,7 @@ const CAPABILITIES: AdapterCapability[] = [
   "job_board.post",
   "job_board.update",
   "job_board.close",
+  "job_board.candidates_pull",
 ];
 
 type LinkedinJobConfig = {
@@ -186,12 +189,101 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
       };
     }
   },
+
+  async listApplicants(ctx, input) {
+    const connected = await hasConnectedAccount(ctx.ownerId);
+    if (!connected) {
+      return { ok: false, error: "no_unipile_account", retriable: false };
+    }
+    try {
+      const { loadAccountCtx, listLinkedinJobApplicants } = await import(
+        "@/lib/unipile/client.server"
+      );
+      const upCtx = await loadAccountCtx(ctx.ownerId);
+      const res = await listLinkedinJobApplicants(upCtx, {
+        providerJobId: input.externalId,
+        cursor: input.cursor ?? undefined,
+        limit: input.limit ?? 50,
+      });
+      const items = (res?.items ?? res?.data ?? []) as Array<Record<string, unknown>>;
+      const applicants: JobApplicantRecord[] = items
+        .map((raw) => normalizeApplicant(raw))
+        .filter((a): a is JobApplicantRecord => a !== null);
+      const nextCursor =
+        (res?.next_cursor as string | null | undefined) ??
+        (res?.cursor as string | null | undefined) ??
+        null;
+      const result: ListApplicantsResult = { applicants, nextCursor: nextCursor ?? null };
+      return { ok: true, data: result };
+    } catch (e) {
+      return { ok: false, error: (e as Error).message, retriable: true };
+    }
+  },
 };
 
-/**
- * Live = há conta Unipile conectada. A verificação real é assíncrona
- * (depende do banco), então esta função síncrona indica apenas que o
- * adapter está pronto para tentar. O modo mock definitivo é decidido no
- * `postJob` via `hasConnectedAccount`.
- */
-export const __linkedinIsLive = () => true;
+function pickString(...vals: unknown[]): string | null {
+  for (const v of vals) {
+    if (typeof v === "string" && v.trim().length > 0) return v.trim();
+  }
+  return null;
+}
+
+function normalizeApplicant(raw: Record<string, unknown>): JobApplicantRecord | null {
+  const providerApplicantId = pickString(
+    raw.id,
+    raw.applicant_id,
+    raw.application_id,
+    (raw.applicant as Record<string, unknown> | undefined)?.id,
+    (raw.profile as Record<string, unknown> | undefined)?.id,
+  );
+  if (!providerApplicantId) return null;
+
+  const profile = (raw.profile ?? raw.applicant ?? raw.candidate ?? raw) as Record<string, unknown>;
+
+  const firstName = pickString(profile.first_name, (profile.name as Record<string, unknown> | undefined)?.first);
+  const lastName = pickString(profile.last_name, (profile.name as Record<string, unknown> | undefined)?.last);
+  const fullName =
+    pickString(profile.full_name, profile.name, raw.name) ??
+    ([firstName, lastName].filter(Boolean).join(" ").trim() || null);
+
+  const publicId = pickString(
+    profile.public_identifier,
+    profile.public_id,
+    profile.provider_id,
+    profile.username,
+  );
+  const linkedinUrl =
+    pickString(profile.linkedin_url, profile.url, raw.linkedin_url) ??
+    (publicId ? `https://www.linkedin.com/in/${publicId}` : null);
+
+  const contact = (profile.contact_info ?? profile.contact ?? {}) as Record<string, unknown>;
+  const email = pickString(profile.email, contact.email, raw.email);
+  const phone = pickString(
+    profile.phone,
+    (contact.phone as Record<string, unknown> | undefined)?.number,
+    contact.phone,
+    raw.phone,
+  );
+  const location = pickString(
+    profile.location,
+    (profile.location as Record<string, unknown> | undefined)?.name,
+    profile.city,
+  );
+  const headline = pickString(profile.headline, profile.title, profile.occupation);
+  const resumeUrl = pickString(raw.resume_url, raw.cv_url, (raw.resume as Record<string, unknown> | undefined)?.url);
+  const appliedAt = pickString(raw.applied_at, raw.created_at, raw.timestamp);
+
+  return {
+    providerApplicantId,
+    fullName: fullName || null,
+    headline,
+    linkedinUrl,
+    profilePublicId: publicId,
+    email,
+    phone,
+    location,
+    resumeUrl,
+    appliedAt,
+    raw,
+  };
+}

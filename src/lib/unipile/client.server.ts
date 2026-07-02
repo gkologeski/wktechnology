@@ -708,5 +708,35 @@ export async function closeLinkedinJob(
   }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
 
+/**
+ * Lista aplicantes de uma vaga LinkedIn publicada via Unipile.
+ * Endpoint: GET /api/v1/linkedin/jobs/{provider_job_id}/applicants
+ *
+ * Paginação por cursor. Retorna estrutura crua da Unipile — normalização
+ * fica no adapter.
+ */
+export async function listLinkedinJobApplicants(
+  ctx: ThrottleCtx,
+  params: { providerJobId: string; cursor?: string | null; limit?: number },
+) {
+  return call(ctx, {
+    endpoint: "chat.list", // budget leve — leitura
+    method: "GET",
+    path: `/api/v1/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
+    query: {
+      account_id: ctx.unipileAccountId,
+      limit: params.limit ?? 50,
+      cursor: params.cursor ?? undefined,
+    },
+  }) as Promise<{
+    items?: Array<Record<string, unknown>>;
+    data?: Array<Record<string, unknown>>;
+    cursor?: string | null;
+    next_cursor?: string | null;
+    [k: string]: unknown;
+  }>;
+}
+
+
 
 

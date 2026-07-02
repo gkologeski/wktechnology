@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Loader2, Send, X, Share2 } from "lucide-react";
+import { ExternalLink, Loader2, Send, X, Share2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   listJobPostings,
   publishJobToProvider,
   unpublishJobFromProvider,
+  syncPostingApplicantsNow,
 } from "@/lib/ats/job-postings.functions";
 import { listAdaptersByCategory } from "@/lib/ats/adapters/registry";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ type Posting = {
   last_synced_at: string | null;
   last_error: string | null;
   updated_at: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 const STATUS_CLS: Record<string, string> = {
@@ -44,6 +46,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
   const list = useServerFn(listJobPostings);
   const publish = useServerFn(publishJobToProvider);
   const unpublish = useServerFn(unpublishJobFromProvider);
+  const syncNow = useServerFn(syncPostingApplicantsNow);
 
   const [postings, setPostings] = useState<Posting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +97,25 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
     }
   };
 
+  const handleSyncApplicants = async (postingId: string) => {
+    setBusy(`sync:${postingId}`);
+    try {
+      const r = await syncNow({ data: { posting_id: postingId } });
+      if (r.error) {
+        toast.error(`Sync com erros: ${r.error}`);
+      } else {
+        toast.success(
+          `${r.createdApplications} nova(s) candidatura(s) importada(s) · ${r.createdCandidates} candidato(s) criado(s)`,
+        );
+      }
+      await reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-3">
       <AtsSectionHeader
@@ -117,7 +139,17 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
         <div className="grid gap-2 md:grid-cols-3">
           {providers.map((p) => {
             const posting = byProvider.get(p.slug);
-            const isBusy = busy === p.slug || (posting && busy === posting.id);
+            const isBusy =
+              busy === p.slug ||
+              (posting && (busy === posting.id || busy === `sync:${posting.id}`));
+            const isSyncing = posting && busy === `sync:${posting.id}`;
+            const canSync =
+              p.slug === "linkedin" &&
+              posting?.status === "published" &&
+              !posting.is_mock;
+            const syncMeta = (posting?.metadata ?? {}) as Record<string, unknown>;
+            const lastSyncAt = syncMeta.last_applicants_sync_at as string | undefined;
+            const syncedCount = Number(syncMeta.applicants_synced_count ?? 0);
             const statusKey = posting?.status ?? "draft";
             return (
               <div
@@ -154,6 +186,30 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                   </div>
                 )}
 
+                {canSync && (
+                  <div className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-[11px] text-text-secondary flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {lastSyncAt
+                        ? `Última sync: ${new Date(lastSyncAt).toLocaleString("pt-BR")}`
+                        : "Aguardando primeira sync (a cada 1h)"}
+                      {syncedCount > 0 && ` · ${syncedCount} candidato(s)`}
+                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-text-primary hover:underline disabled:opacity-50 shrink-0"
+                      disabled={Boolean(isBusy)}
+                      onClick={() => posting && handleSyncApplicants(posting.id)}
+                    >
+                      {isSyncing ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" aria-hidden />
+                      )}
+                      Sincronizar
+                    </button>
+                  </div>
+                )}
+
                 {posting?.external_url && (
                   <a
                     href={posting.external_url}
@@ -166,6 +222,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                     <span className="truncate font-mono">{posting.external_url}</span>
                   </a>
                 )}
+
 
                 <div className="flex gap-2 mt-auto">
                   {posting?.status === "published" ? (

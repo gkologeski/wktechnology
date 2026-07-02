@@ -231,6 +231,7 @@ import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
 import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
+import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
@@ -1535,6 +1536,12 @@ const ApiPublicHooksPlatformAlertsTickRoute =
     path: '/api/public/hooks/platform-alerts-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLinkedinApplicantsSyncRoute =
+  ApiPublicHooksLinkedinApplicantsSyncRouteImport.update({
+    id: '/api/public/hooks/linkedin-applicants-sync',
+    path: '/api/public/hooks/linkedin-applicants-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksHubspotTickRoute =
   ApiPublicHooksHubspotTickRouteImport.update({
     id: '/api/public/hooks/hubspot-tick',
@@ -2042,6 +2049,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -2312,6 +2320,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -2588,6 +2597,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
+  '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -2864,6 +2874,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -3134,6 +3145,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -3409,6 +3421,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
+    | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -3524,6 +3537,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
+  ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -5133,6 +5147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPlatformAlertsTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/linkedin-applicants-sync': {
+      id: '/api/public/hooks/linkedin-applicants-sync'
+      path: '/api/public/hooks/linkedin-applicants-sync'
+      fullPath: '/api/public/hooks/linkedin-applicants-sync'
+      preLoaderRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/hubspot-tick': {
       id: '/api/public/hooks/hubspot-tick'
       path: '/api/public/hooks/hubspot-tick'
@@ -6165,6 +6186,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
+  ApiPublicHooksLinkedinApplicantsSyncRoute:
+    ApiPublicHooksLinkedinApplicantsSyncRoute,
   ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:
     ApiPublicHooksProspectingDialTickRoute,
