@@ -357,5 +357,18 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    await logAudit(
+      supabase,
+      userId,
+      "member.assign",
+      "workspace_member",
+      null,
+      data.user_id,
+      {
+        primary_role_id: data.primary_role_id,
+        extra_role_ids: data.extra_role_ids,
+        extra_set_ids: data.extra_set_ids,
+      },
+    );
     return { ok: true };
   });
