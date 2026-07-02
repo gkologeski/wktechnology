@@ -1,79 +1,92 @@
-# Publicação de vagas no LinkedIn via Unipile
+## Objetivo
 
-Confirmado na documentação Unipile: endpoint `POST /api/v1/linkedin/jobs` cria Job Postings nativos no LinkedIn (aparece em `/jobs`, com filtros oficiais), usando a mesma conta já conectada via Unipile. Isso substitui o adapter atual em modo mock.
+Após uma vaga ser publicada no LinkedIn via TechHire, sincronizar automaticamente (de hora em hora) os candidatos que se aplicaram, criando-os na aba **Candidatos** da vaga, e permitir agendar entrevistas para eles diretamente pela aba **Entrevistas**.
 
 ## Escopo
 
-Trocar o `LinkedInJobBoardAdapter` (hoje mock com URL fake) por integração real via Unipile, mantendo o fluxo do `JobPostingsPanel` (Publicar/Despublicar) sem mudar UX.
+1. Sync automático de aplicantes LinkedIn → `ats_applications` da vaga.
+2. Ação "Agendar entrevista" na aba Entrevistas (`/jobs/:id`).
 
-## Requisitos por vaga (LinkedIn exige)
+Fora do escopo: mudanças em RLS, publicação de vagas, hunting, sequences.
 
-- `company.id` — ID numérico da Company Page (ex: `10108877`). O usuário precisa administrar essa página.
-- `location` — geo ID do LinkedIn (ex: `105157835` = Brasil). Não é texto livre.
-- `workplace` — `REMOTE` | `HYBRID` | `ON_SITE`.
-- `employment_status` — `FULL_TIME` | `PART_TIME` | `CONTRACT` | `INTERNSHIP` | `TEMPORARY` | `VOLUNTEER` | `OTHER`.
-- `apply_method` — `{ type: "linkedin", notification_email }` (candidatura no próprio LinkedIn) ou `{ type: "external", url }` (redireciona para site da empresa).
-- `description` — texto/HTML da vaga.
+---
 
-Como esses IDs não são triviais, precisamos capturá-los na configuração da vaga (não inventar).
+## 1. Sync horário de aplicantes LinkedIn
 
-## Implementação
+### 1.1 Adapter (backend, servidor)
+- Adicionar método `listApplicants(ctx, { externalId, since })` ao `JobBoardAdapter` (`src/lib/ats/adapters/types.ts`).
+- Implementar em `src/lib/ats/adapters/linkedin/job-board.ts` chamando Unipile `GET /api/v1/linkedin/jobs/{external_id}/applicants` (paginado por cursor). Retorna: `provider_applicant_id`, `full_name`, `headline`, `linkedin_url`, `profile_public_id`, `applied_at`, `email?`, `phone?`, `resume_url?`.
+- Adicionar wrapper no `src/lib/unipile/client.server.ts`: `listLinkedinJobApplicants(accountId, jobExternalId, cursor?)`.
+- Se workspace não tem conta Unipile conectada → retorna `{ ok: false, reason: "no_account" }` (não quebra cron).
 
-### 1. Cliente Unipile — novos helpers em `src/lib/unipile/client.server.ts`
-- `createLinkedinJob(ctx, payload)` → `POST /api/v1/linkedin/jobs`, retorna `{ provider_id, url }`.
-- `closeLinkedinJob(ctx, providerId)` → `DELETE /api/v1/linkedin/jobs/{id}` (ou `PATCH` status closed — confirmar no retorno da criação).
-- `searchLinkedinLocations(ctx, query)` → helper para geo ID (usar `/linkedin/search/parameters` com `type=LOCATION`).
-- `searchLinkedinCompanies(ctx, query)` → helper para company ID (mesmo endpoint com `type=COMPANY`).
-- Novo `UnipileEndpoint` `"job.publish"` com budget conservador (5/dia, min interval 30s) — LinkedIn é rigoroso com jobs.
+### 1.2 Schema (migration)
+- `ats_applications`: adicionar `provider` (text), `provider_applicant_id` (text), unique `(job_id, provider, provider_applicant_id)`.
+- `ats_job_postings`: adicionar `last_applicants_sync_at` (timestamptz), `applicants_sync_cursor` (text), `applicants_synced_count` (int default 0).
 
-### 2. Schema
-Migration adicionando a `ats_jobs` (nullable, só preenchidos quando a vaga vai ao LinkedIn):
-- `linkedin_company_id text`
-- `linkedin_location_id text`
-- `linkedin_workplace text check (in REMOTE/HYBRID/ON_SITE)`
-- `linkedin_employment_status text`
-- `linkedin_apply_type text default 'linkedin'`
-- `linkedin_apply_url text`
-- `linkedin_notification_email text`
+### 1.3 Server function de sync
+- Criar `src/lib/ats/linkedin-applicants-sync.server.ts` com `syncPostingApplicants(postingId)`:
+  1. Carrega `ats_job_postings` + `ats_jobs` (owner_id, external_id, provider='linkedin', status='posted').
+  2. Chama adapter `listApplicants` com cursor incremental.
+  3. Para cada aplicante:
+     - Dedupe candidato via `linkedin_url` no `ats_candidates` (mesmo padrão do hunting). Se não existir, cria com `source='linkedin_apply'`.
+     - Upsert `ats_applications` por `(job_id, provider, provider_applicant_id)`. Se novo → stage inicial do pipeline da vaga, dispara `domain_events` `ats.application.received`.
+  4. Atualiza `last_applicants_sync_at`, cursor e `applicants_synced_count`.
+- Erros por posting isolados (try/catch) para não afetar demais postings.
 
-`ats_job_postings` já tem `external_id`/`external_url` — reaproveitar.
+### 1.4 Cron hook
+- Criar `src/routes/api/public/hooks/linkedin-applicants-sync.ts` (padrão `/api/public/hooks/*` com verificação `apikey`).
+- Busca postings ativos: `provider='linkedin'`, `status='posted'`, `is_mock=false`, `last_applicants_sync_at IS NULL OR < now() - interval '55 minutes'`, limite 100 por execução.
+- Chama `syncPostingApplicants` sequencial (respeitando rate limit Unipile).
+- Agendar `pg_cron` `linkedin-applicants-sync-hourly` a cada hora chamando a URL estável do projeto.
 
-### 3. Adapter — reescrever `src/lib/ats/adapters/linkedin/job-board.ts`
-- `isLive()` passa a checar se o workspace tem `unipile_accounts` ativa (não mais env vars).
-- `postJob` monta payload a partir de `JobPostPayload` + campos LinkedIn da vaga, chama `createLinkedinJob`, retorna `{ externalId, url }` reais.
-- Fallback para mock só quando faltarem campos LinkedIn obrigatórios (com erro claro, não silencioso).
-- `closeJob` chama `closeLinkedinJob`.
+### 1.5 UX na vaga
+- Em `src/components/ats/job-postings-panel.tsx`: mostrar chip "Última sync de aplicantes: há Xm" + botão "Sincronizar agora" (chama a mesma função server pontualmente).
+- Aba **Candidatos** já lista `ats_applications` → aplicantes novos aparecem automaticamente com badge de origem `LinkedIn`.
 
-### 4. Payload extendido
-`JobPostPayload` em `src/lib/ats/adapters/types.ts` ganha `providerConfig?: Record<string, unknown>` opcional. `publishJobToProvider` (em `src/lib/ats/job-postings.functions.ts`) monta o `providerConfig` com os campos LinkedIn quando `provider === "linkedin"`.
+---
 
-### 5. UI — configuração LinkedIn na vaga
-Novo bloco no formulário da vaga (`src/routes/_authenticated/(ats)/jobs_.$id.edit.tsx` ou drawer equivalente):
-- Combobox de Company Page (busca via Unipile companies).
-- Combobox de Location (busca via Unipile locations).
-- Select workplace / employment_status.
-- Radio "Candidatura via LinkedIn" (com email) ou "URL externa".
+## 2. Agendar entrevista na aba Entrevistas
 
-Sem esses campos preenchidos, o botão **Publicar** no LinkedIn dentro do `JobPostingsPanel` mostra tooltip "Configure dados do LinkedIn na vaga" e fica desabilitado (em vez de cair em mock silencioso).
+Hoje `interviewsSection` (linhas 543–570 de `jobs.$id.tsx`) é read-only. Precisa de ação de criação restrita aos candidatos aplicados na vaga.
 
-### 6. Observabilidade
-Toda chamada já passa por `unipile_request_log` e `unipile_message_log`. Adicionar `entity_type='job'` para diferenciar de outreach.
+### 2.1 UI
+- Adicionar botão primário "Agendar entrevista" no header da aba Entrevistas.
+- Reaproveitar `ScheduleInterviewDialog` (já existente em `src/components/ats/`). Passar `jobId` fixo e `candidateOptions` = lista de `ats_applications` da vaga (ativas, não hired/rejected).
+- Ao concluir → invalida `listJobInterviews` e refetch.
 
-## Fora de escopo
+### 2.2 Server function
+- Se `ScheduleInterviewDialog` já usa `createInterview({ jobId, candidateId, ... })`, apenas garantir que aceita `jobId` pré-preenchido; caso contrário, adicionar variante `createJobInterview` reutilizando a mesma pipeline (kit, painel, calendário).
 
-- Update de vaga já publicada (LinkedIn não permite editar todos campos; deixar como "despublicar e republicar").
-- Multi-company (uma Company Page por vaga por enquanto).
-- Sincronização de candidaturas do LinkedIn de volta para `ats_applications` — planejar em onda separada (precisa webhook `EASY_APPLY` do Unipile).
+### 2.3 Fallback
+- Se a vaga não tem candidatos aplicados → botão desabilitado com tooltip "Adicione ou sincronize candidatos primeiro".
 
-## Riscos
+---
 
-- LinkedIn cobra créditos de Job Slot da conta. Deixar aviso claro na UI antes do primeiro publish.
-- Endpoint pode exigir Recruiter/Premium — validar no primeiro teste real; se falhar, capturar erro e mostrar mensagem exata do Unipile ao usuário.
-- Rate limit: máximo 5 jobs/dia por conta (configurável).
+## Arquivos previstos
 
-## Como validar manualmente
+**Novos**
+- `src/lib/ats/linkedin-applicants-sync.server.ts`
+- `src/routes/api/public/hooks/linkedin-applicants-sync.ts`
+- migration `add_linkedin_applicants_sync`
 
-1. Configurar Company Page ID em uma vaga teste.
-2. Clicar Publicar → LinkedIn dentro do JobPostingsPanel.
-3. Conferir vaga no LinkedIn `/jobs/view/{id}` e log em `unipile_request_log`.
-4. Despublicar e conferir status.
+**Alterados**
+- `src/lib/ats/adapters/types.ts` (+ `listApplicants`)
+- `src/lib/ats/adapters/linkedin/job-board.ts`
+- `src/lib/unipile/client.server.ts`
+- `src/components/ats/job-postings-panel.tsx`
+- `src/routes/_authenticated/(ats)/jobs.$id.tsx` (botão agendar)
+- `src/components/ats/schedule-interview-dialog.tsx` (se preciso aceitar `jobId` fixo)
+
+---
+
+## Riscos / pendências
+
+- Endpoint exato de aplicantes na Unipile precisa confirmação (assumindo `GET /linkedin/jobs/{id}/applicants`; se indisponível, adapter fica `no_account`-like e logamos aviso, sem quebrar).
+- Rate limit Unipile: cron sequencial + cursor mitigam.
+- Deduplicação de candidato: por `linkedin_url` (fallback `email`), padrão já usado no hunting.
+
+## Validação manual
+
+1. Publicar vaga LinkedIn real → esperar ≤ 1h ou clicar "Sincronizar agora".
+2. Ver candidatos aplicados aparecerem na aba Candidatos com origem `LinkedIn`.
+3. Na aba Entrevistas, clicar "Agendar entrevista", selecionar um aplicante, confirmar e ver a entrevista listada.
