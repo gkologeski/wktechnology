@@ -19,9 +19,11 @@ import type {
   AdapterCapability,
   AdapterContext,
   AdapterResult,
+  JobApplicantRecord,
   JobBoardAdapter,
   JobPostPayload,
   JobPostResult,
+  ListApplicantsResult,
 } from "../types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -29,6 +31,7 @@ const CAPABILITIES: AdapterCapability[] = [
   "job_board.post",
   "job_board.update",
   "job_board.close",
+  "job_board.candidates_pull",
 ];
 
 type LinkedinJobConfig = {
