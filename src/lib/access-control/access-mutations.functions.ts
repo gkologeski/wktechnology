@@ -41,6 +41,7 @@ const RoleInput = z.object({
   description: z.string().max(400).nullish(),
   color: z.string().max(24).nullish(),
   icon: z.string().max(40).nullish(),
+  data_scope: z.enum(["own", "team", "workspace", "custom"]).default("workspace"),
   set_ids: z.array(z.string().uuid()).default([]),
 });
 
