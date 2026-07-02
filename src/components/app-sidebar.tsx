@@ -20,6 +20,8 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
+import { ERP_SIDEBAR_GROUPS, isWorkspacePathname } from "@/lib/menu-config-erp";
+import { MODULES } from "@/lib/modules/registry";
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
 
