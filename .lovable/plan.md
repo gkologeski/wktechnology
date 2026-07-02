@@ -1,72 +1,115 @@
-## Objetivo
 
-No botão "+ Novo candidato" em `/candidates`, oferecer **três opções** no passo inicial (chooser):
+# Home unificada do ERP
 
-1. **Preencher manualmente** — fluxo atual.
-2. **Importar do LinkedIn** — via Unipile (`fetchProfile`), pré-preenche o formulário editável.
-3. **Extrair de um CV (PDF)** — reaproveita o fluxo atual de Parse de CV que hoje vive num botão separado da toolbar.
+Criar uma tela principal que funcione como **home da aplicação** ao entrar no sistema (host neutro / workspace), aglutinando:
 
-Nada é persistido sem confirmação do usuário: LinkedIn e CV apenas pré-preenchem o formulário editável do modo Manual.
+1. **Módulos contratados** (TechSales/CRM, TechHire/ATS e futuros) — cada um como cartão de entrada premium, com status (ativo, disponível, bloqueado), KPIs curtos e ação "Entrar".
+2. **Configurações do workspace** — todas as configurações comuns a todos os módulos (membros, papéis, billing, branding, API keys, idioma, webhooks, audit log, módulos contratados).
+3. **Identidade do workspace** — nome, logo, plano vigente, ambiente (produção/sandbox) e atalhos rápidos.
 
 ## Escopo
 
-- Frontend: `src/routes/_authenticated/(ats)/candidates.index.tsx`.
-- Nova server function `previewLinkedinProfile` (não persiste).
-- Reaproveita `loadAccountCtx` + `fetchProfile` de `unipile-hunting.functions.ts`.
-- Reaproveita o dialog/lógica atual de Parse de CV (o `parseOpen` / `handleParseCv` existentes) — apenas move o gatilho para dentro do chooser e remove o botão externo da toolbar.
-- Sem migrations, sem mudanças de RLS.
+- Nova rota `/_authenticated/home` como **home oficial da aplicação em host neutro** (workspace).
+- Redirecionar `/` (raiz autenticada) para `/home` quando o usuário estiver em host neutro/workspace. Em hosts de módulo (crm.*, ats.*) continua indo para o `defaultRoute` do módulo — não altera comportamento existente.
+- Reaproveitar e ampliar o conteúdo de `/workspace` (hoje `workspace.index.tsx`), tornando-o parte da nova home. Manter `/workspace` como alias que redireciona para `/home` para não quebrar links.
+- Não altera RLS, schema, autenticação, server functions nem regras de negócio.
 
-Fora do escopo: bulk import, hunting, sequências, alterações no comportamento de extração da IA sobre o CV.
+## Estrutura da tela
 
-## Fluxo UX
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ HERO: logo + nome workspace | plano | ambiente | ações      │
+├─────────────────────────────────────────────────────────────┤
+│ MÓDULOS                                                     │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐               │
+│  │ TechSales  │ │ TechHire   │ │ + Explorar │               │
+│  │ CRM        │ │ ATS        │ │ marketplace│               │
+│  │ [Entrar]   │ │ [Entrar]   │ │            │               │
+│  └────────────┘ └────────────┘ └────────────┘               │
+├─────────────────────────────────────────────────────────────┤
+│ CONFIGURAÇÕES DO WORKSPACE (grid por grupos)                │
+│  Pessoas       Faturamento     Identidade    Segurança      │
+│  · Membros     · Plano         · Branding    · Papéis       │
+│  · Times       · Faturas       · Idioma      · API Keys     │
+│  · Convites    · Uso           · Domínio     · Audit Log    │
+│                                              · Webhooks     │
+│  Integrações   Dados                                        │
+│  · Módulos     · Importação                                 │
+│  · Marketplace · Exportação                                 │
+│                · Residência                                 │
+├─────────────────────────────────────────────────────────────┤
+│ ATIVIDADE RECENTE (opcional, leve): últimos convites,       │
+│ últimas faturas, últimas alterações de configuração         │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Ao clicar em "+ Novo candidato", o dialog abre em modo **chooser** com três cards clicáveis (ícones `UserPlus`, `Linkedin`, `FileText`):
+## Componentes (design system TechHire / quiet premium)
 
-- **Manual** → formulário atual.
-- **LinkedIn** → input de URL + "Buscar perfil".
-  - Loading, erros tratados (Unipile não conectado → toast + CTA `/settings/integrations/linkedin`; perfil privado; rate limit).
-  - Sucesso → transita para `manual` com `setForm(...)` pré-preenchido; badge "Importado do LinkedIn".
-- **CV (PDF)** → mesmo conteúdo do dialog atual de Parse (upload, indicador "IA extrai…").
-  - Sucesso → hoje o Parse já cria o candidato diretamente; **manteremos esse comportamento** (não regride o fluxo), apenas movendo o gatilho para dentro do chooser. Toast e navegação continuam iguais.
+Usar apenas componentes oficiais e tokens semânticos de `src/styles.css`:
 
-Ao fechar o dialog, resetar para `chooser`.
+- `PageHeader` (ou `ProductPageHeader` neutro do workspace) para o hero.
+- `SectionHeader` para "Módulos", "Configurações", "Atividade recente".
+- `MetricCard` para KPIs opcionais do workspace (membros ativos, módulos ativos, plano).
+- Cartões de módulo com `StatusBadge` (Ativo / Disponível / Não contratado).
+- Grid responsivo (1 / 2 / 4 colunas) para configurações agrupadas.
+- `EmptyState`, `LoadingSkeleton` fiel ao layout e `ErrorState` com próxima ação.
+- `Link` do TanStack Router com `to` tipado (sem `<a href>`).
 
-## Backend
+## Fonte de dados (apenas leitura, sem novas mutações)
 
-`src/lib/ats/candidates-linkedin-preview.functions.ts` (novo):
+Reutilizar server functions já existentes; nada de queries em componente presentacional:
 
-- `previewLinkedinProfile` com `requireSupabaseAuth`, input `{ url: string }`.
-- Normaliza URL, extrai `public_identifier` (`/in/([^/?#]+)`).
-- `loadAccountCtx(userId)`; falha → `{ ok: false, code: "unipile_not_connected" }`.
-- `fetchProfile(ctx, publicIdentifier)`; mapeia os mesmos campos já extraídos em `unipile-hunting.functions.ts` (headline, location, photo_url, contact_info email/phone, primeira experiência → current_company/current_position, skills, education, languages, experiences).
-- Retorna DTO plano `{ ok: true, data: { full_name, headline, current_position, current_company, location, email, phone, linkedin_url, skills[], photo_url, notes_seed, raw_meta } }`.
-- Erros do Unipile viram `{ ok: false, code, message }`.
+- Módulos contratados: `src/lib/modules/workspace-modules.functions.ts`.
+- Branding e nome do workspace: `src/lib/modules/module-branding.functions.ts` + hook/service já usado por `ProductPageHeader`.
+- Plano/uso: server functions já usadas em `/settings/billing` (só leitura resumida).
+- Membros: contagem via server function usada em `/settings/workspace-team`.
 
-Sem novas server functions para CV — mantém o `handleParseCv` atual.
+Se algum resumo ainda não tiver server function pronta, o cartão entra com `EmptyState` ("Configurar") apontando para a tela responsável — sem criar backend novo neste escopo.
 
-## Frontend
+## Roteamento
 
-`candidates.index.tsx`:
+- Novo arquivo: `src/routes/_authenticated/home.tsx` → `createFileRoute("/_authenticated/home")`.
+- Ajustar `src/routes/_authenticated/index.tsx` (ou criar, se ausente) para redirecionar `/` autenticado para `/home` **apenas em host neutro**; em hosts de módulo, redirecionar para `MODULES[id].defaultRoute` (lógica já existente em `src/lib/modules/active-module.ts` / `src/lib/hosts.ts`).
+- `src/routes/_authenticated/workspace.index.tsx` passa a redirecionar para `/home` (mantém URL antiga funcionando).
+- Atualizar `ModuleSwitcher` e sidebar para incluir link "Home" apontando para `/home` no shell neutro.
 
-- Estado `createMode: "chooser" | "manual" | "linkedin" | "cv"` no dialog principal.
-- Passo `chooser`: 3 cards no design system, com título, descrição curta e ícone.
-- Passo `linkedin`: input de URL + botão "Buscar perfil" (disabled/loading), link "Voltar".
-- Passo `cv`: reaproveita o conteúdo atual do dialog de Parse (input file, mensagens, botão "Extrair e salvar") — movido para dentro do chooser; remover o botão externo "Extrair CV" (`parseOpen` isolado) da toolbar.
-- Passo `manual`: formulário atual + badge sutil "Importado do LinkedIn" quando aplicável.
-- Reset de `createMode` e limpeza do file/URL ao fechar o dialog.
+## Detalhes técnicos
 
-Validações e estados: URL regex `^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\/[^\/?#]+\/?`; loading e erro inline em LinkedIn e CV; toasts padronizados via `sonner`.
+- **Host-aware**: usar `src/lib/hosts.ts` para decidir se é workspace neutro. Não quebrar deep links de módulos.
+- **Permissões**: cartões de configuração sensíveis (Billing, Papéis, API Keys, Audit) só aparecem para `admin` — checar via hook de role já existente (`useWorkspaceRole` / `has_role`). Não é gate de segurança, apenas UX; RLS continua sendo a fonte de verdade.
+- **Estados**: cada seção com `LoadingSkeleton` próprio; hero com skeleton para nome/logo do workspace.
+- **Acessibilidade**: foco visível, `aria-label` em cartões clicáveis, ordem de tabulação lógica, contraste em light/dark.
+- **Sem novas dependências**, sem mudanças em `src/integrations/supabase/*`, sem migrations.
 
-## Riscos e pendências
+## Arquivos previstos
 
-- Perfis LinkedIn de 2º/3º grau podem não expor email/telefone (esperado).
-- Requer Unipile conectado; sem isso, usuário é orientado a Integrations → LinkedIn.
-- Parse de CV continua criando o candidato direto (comportamento atual); se quiser alinhar 100% com "preview antes de salvar", é um passo futuro fora deste escopo.
+Criados:
+- `src/routes/_authenticated/home.tsx`
+- `src/components/workspace/home-hero.tsx`
+- `src/components/workspace/modules-grid.tsx`
+- `src/components/workspace/workspace-settings-grid.tsx`
+- `src/components/workspace/recent-activity-card.tsx` (opcional)
 
-## Validação manual
+Alterados:
+- `src/routes/_authenticated/index.tsx` (redirecionamento host-aware para `/home`)
+- `src/routes/_authenticated/workspace.index.tsx` (redireciona para `/home`)
+- Sidebar/`ModuleSwitcher` para incluir atalho "Home".
 
-1. Chooser exibe as três opções e navega corretamente entre elas / volta.
-2. Manual continua funcionando exatamente como hoje.
-3. LinkedIn: sem Unipile → toast + CTA; URL válida com Unipile → formulário preenchido e editável; URL inválida → botão desabilitado.
-4. CV: upload de PDF cria candidato como hoje; botão externo removido; nenhum caminho antigo perdido.
-5. Fechar e reabrir o dialog reseta o chooser.
+Removidos: nenhum.
+
+## Fora de escopo
+
+- Não altera módulos internos (TechSales/TechHire).
+- Não cria novas server functions, migrations ou RLS.
+- Não altera fluxo de convites, billing ou branding — apenas os expõe como cartões navegáveis.
+- Não mexe em rotas de módulo (`(ats)`, `/dashboard` do CRM etc.).
+
+## Como validar manualmente
+
+1. Login em host neutro → cai em `/home` com hero + módulos + configurações.
+2. Login em `crm.*` ou `ats.*` → continua indo para o `defaultRoute` do módulo (sem regressão).
+3. Clique em cada cartão de módulo → entra no módulo correto.
+4. Clique em cada cartão de configuração → abre a tela existente correspondente.
+5. `/workspace` redireciona para `/home`.
+6. Usuário não-admin não vê cartões restritos.
+7. Light/dark, desktop/tablet/mobile ok.
