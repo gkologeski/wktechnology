@@ -734,6 +734,8 @@ export type Database = {
           moved_at: string
           owner_id: string
           position: number
+          provider: string | null
+          provider_applicant_id: string | null
           rejection_reason: string | null
           source: string
           stage_value: string
@@ -751,6 +753,8 @@ export type Database = {
           moved_at?: string
           owner_id: string
           position?: number
+          provider?: string | null
+          provider_applicant_id?: string | null
           rejection_reason?: string | null
           source?: string
           stage_value?: string
@@ -768,6 +772,8 @@ export type Database = {
           moved_at?: string
           owner_id?: string
           position?: number
+          provider?: string | null
+          provider_applicant_id?: string | null
           rejection_reason?: string | null
           source?: string
           stage_value?: string
