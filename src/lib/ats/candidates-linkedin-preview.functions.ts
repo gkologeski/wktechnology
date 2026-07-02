@@ -206,7 +206,22 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
     const location = (p.location as string) ?? (p.location_name as string) ?? null;
     const photoUrl = (p.profile_picture_url as string) ?? (p.picture_url as string) ?? null;
 
-    // Notes seed: resumo formatado de experiências + formação.
+    // Structured experiences/education DTOs for the form.
+    const experiencesDTO: LinkedinExperienceDTO[] = exps.slice(0, 20).map((e: any) => ({
+      title: String(e.position ?? e.role ?? e.title ?? "").trim().slice(0, 200),
+      company: String(e.company ?? e.company_name ?? "").trim().slice(0, 200),
+      start: String(e.start ?? e.date_start ?? e.start_date ?? "").trim().slice(0, 40),
+      end: String(e.end ?? e.date_end ?? e.end_date ?? "").trim().slice(0, 40),
+      description: String(e.description ?? e.summary ?? "").trim().slice(0, 1000),
+    }));
+    const educationDTO: LinkedinEducationDTO[] = edu.slice(0, 20).map((e: any) => ({
+      school: String(e.school ?? e.institution ?? e.school_name ?? "").trim().slice(0, 200),
+      degree: String(e.degree ?? e.field_of_study ?? e.field ?? "").trim().slice(0, 200),
+      start: String(e.start ?? e.date_start ?? e.start_date ?? "").trim().slice(0, 40),
+      end: String(e.end ?? e.date_end ?? e.end_date ?? "").trim().slice(0, 40),
+    }));
+
+    // Notes seed: fallback resumo formatado (mantido para compatibilidade).
     const lines: string[] = [];
     if (exps.length) {
       lines.push("Experiência:");
@@ -244,6 +259,8 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
         linkedin_url: normalizedUrl,
         photo_url: photoUrl,
         skills,
+        experiences: experiencesDTO,
+        education: educationDTO,
         notes_seed: notesSeed,
       },
     };
