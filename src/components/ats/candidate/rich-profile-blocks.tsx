@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { cn } from "@/lib/utils";
+import { OwnerField } from "@/components/entity/owner-field";
 import type { CandidateDetail, RichJson } from "@/lib/ats/candidate-detail.functions";
 
 type Candidate = CandidateDetail["candidate"];
