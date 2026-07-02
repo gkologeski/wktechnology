@@ -243,7 +243,7 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
 
   await supabaseAdmin
     .from("ats_job_postings")
-    .update({ metadata: nextMeta, last_synced_at: new Date().toISOString() })
+    .update({ metadata: nextMeta as never, last_synced_at: new Date().toISOString() })
     .eq("id", postingId);
 
   return result;
