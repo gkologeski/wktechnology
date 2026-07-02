@@ -151,6 +151,8 @@ function JobDetailPage() {
   >({});
   const [evalApp, setEvalApp] = useState<App | null>(null);
   const [tab, setTab] = useState<string>("pipeline");
+  const [schedSearch, setSchedSearch] = useState("");
+  const [schedActiveOnly, setSchedActiveOnly] = useState(true);
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
@@ -542,8 +544,6 @@ function JobDetailPage() {
     </div>
   );
 
-  const [schedSearch, setSchedSearch] = useState("");
-  const [schedActiveOnly, setSchedActiveOnly] = useState(true);
   const applicantsForScheduling = apps.filter((a) => {
     if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
     if (!schedSearch.trim()) return true;
