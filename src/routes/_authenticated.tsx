@@ -8,7 +8,7 @@ import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
 import { NotificationsBell } from "@/components/notifications-bell";
-import { CopilotCmdK } from "@/components/copilot-cmdk";
+import { GlobalSearch } from "@/components/global-search/global-search";
 import { GlobalSearchTrigger } from "@/components/global-search-trigger";
 import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SettingsMenu } from "@/components/settings-menu";
@@ -135,7 +135,7 @@ function AuthenticatedLayout() {
       </div>
       <BugReportButton />
       <ChatTrigger />
-      <CopilotCmdK />
+      <GlobalSearch />
     </SidebarProvider>
   );
 }
