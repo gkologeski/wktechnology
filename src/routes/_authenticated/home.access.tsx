@@ -187,6 +187,15 @@ function Content({ data }: { data: AccessBundle }) {
           <TabsTrigger value="members">
             <Users className="mr-2 h-4 w-4" /> Membros ({stats.members})
           </TabsTrigger>
+          <TabsTrigger value="audit">
+            <ClipboardList className="mr-2 h-4 w-4" /> Auditoria
+          </TabsTrigger>
+          <TabsTrigger value="simulate">
+            <UserSearch className="mr-2 h-4 w-4" /> Simular
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            <BarChart3 className="mr-2 h-4 w-4" /> Relatórios
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="space-y-4">
@@ -207,6 +216,18 @@ function Content({ data }: { data: AccessBundle }) {
 
         <TabsContent value="members" className="space-y-4">
           <MembersTab data={data} />
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-4">
+          <AuditTab />
+        </TabsContent>
+
+        <TabsContent value="simulate" className="space-y-4">
+          <SimulationTab data={data} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+          <ReportsTab />
         </TabsContent>
       </Tabs>
     </>
