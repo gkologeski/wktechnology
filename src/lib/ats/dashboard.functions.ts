@@ -88,7 +88,7 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
       ((candNames.data ?? []) as Array<{ id: string; full_name: string | null }>).map((c) => [c.id, c.full_name]),
     );
     const jobMap = new Map<string, string | null>(
-      (jobNames.data ?? []).map((j) => [j.id as string, (j.title as string) ?? null]),
+      ((jobNames.data ?? []) as Array<{ id: string; title: string | null }>).map((j) => [j.id, j.title]),
     );
 
     const upcomingInterviews: UpcomingInterview[] = interviewsRaw.map((i) => ({
