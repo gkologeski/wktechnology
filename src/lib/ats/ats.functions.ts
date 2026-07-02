@@ -352,6 +352,8 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       current_company: data.current_company ?? null,
       skills: data.skills ?? [],
       tags: data.tags ?? [],
+      experiences: (data.experiences ?? []) as unknown as never,
+      education: (data.education ?? []) as unknown as never,
       source: data.source,
       notes: data.notes ?? null,
       created_by: userId,
