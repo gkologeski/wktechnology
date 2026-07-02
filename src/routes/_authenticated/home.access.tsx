@@ -681,7 +681,7 @@ function FieldsTab({ data }: { data: AccessBundle }) {
       <DeleteAccessRowDialog
         open={Boolean(deleting)}
         onOpenChange={(v) => !v && setDeleting(null)}
-        kind="field-rule"
+        kind="field_rule"
         id={deleting?.id ?? null}
         label={
           deleting ? `${deleting.resource}.${deleting.field}` : ""
