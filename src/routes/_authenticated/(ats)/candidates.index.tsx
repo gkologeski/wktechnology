@@ -15,7 +15,11 @@ import {
   Rows3,
   Columns3,
   ExternalLink,
-
+  Linkedin,
+  FileText,
+  UserPlus,
+  ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
