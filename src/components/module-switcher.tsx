@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useActiveModule } from "@/lib/modules/active-module";
-import { buildModuleUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
+import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 export function ModuleSwitcher({ className }: { className?: string }) {
