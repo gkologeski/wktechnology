@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Loader2, Send, X, Share2 } from "lucide-react";
+import { ExternalLink, Loader2, Send, X, Share2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   listJobPostings,
   publishJobToProvider,
   unpublishJobFromProvider,
+  syncPostingApplicantsNow,
 } from "@/lib/ats/job-postings.functions";
 import { listAdaptersByCategory } from "@/lib/ats/adapters/registry";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ type Posting = {
   last_synced_at: string | null;
   last_error: string | null;
   updated_at: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 const STATUS_CLS: Record<string, string> = {
