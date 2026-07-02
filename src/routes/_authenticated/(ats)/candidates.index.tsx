@@ -701,6 +701,190 @@ function CandidatesPage() {
                         placeholder="React, Node.js, PostgreSQL"
                       />
                     </div>
+                    <div className="col-span-2 rounded-md border border-border-subtle p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+                          Experiência ({form.experiences.length})
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              experiences: [
+                                ...form.experiences,
+                                { title: "", company: "", start: "", end: "", description: "" },
+                              ],
+                            })
+                          }
+                        >
+                          + Adicionar
+                        </Button>
+                      </div>
+                      {form.experiences.length === 0 ? (
+                        <p className="text-xs text-text-secondary">Nenhuma experiência adicionada.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {form.experiences.map((exp, idx) => (
+                            <div key={idx} className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                  placeholder="Cargo"
+                                  value={exp.title}
+                                  onChange={(e) => {
+                                    const next = [...form.experiences];
+                                    next[idx] = { ...next[idx], title: e.target.value };
+                                    setForm({ ...form, experiences: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Empresa"
+                                  value={exp.company}
+                                  onChange={(e) => {
+                                    const next = [...form.experiences];
+                                    next[idx] = { ...next[idx], company: e.target.value };
+                                    setForm({ ...form, experiences: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Início (ex.: 2020)"
+                                  value={exp.start}
+                                  onChange={(e) => {
+                                    const next = [...form.experiences];
+                                    next[idx] = { ...next[idx], start: e.target.value };
+                                    setForm({ ...form, experiences: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Fim (ex.: 2023 ou atual)"
+                                  value={exp.end}
+                                  onChange={(e) => {
+                                    const next = [...form.experiences];
+                                    next[idx] = { ...next[idx], end: e.target.value };
+                                    setForm({ ...form, experiences: next });
+                                  }}
+                                />
+                              </div>
+                              <Textarea
+                                rows={2}
+                                placeholder="Descrição / responsabilidades"
+                                value={exp.description}
+                                onChange={(e) => {
+                                  const next = [...form.experiences];
+                                  next[idx] = { ...next[idx], description: e.target.value };
+                                  setForm({ ...form, experiences: next });
+                                }}
+                              />
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setForm({
+                                      ...form,
+                                      experiences: form.experiences.filter((_, i) => i !== idx),
+                                    })
+                                  }
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="col-span-2 rounded-md border border-border-subtle p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+                          Formação ({form.education.length})
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              education: [
+                                ...form.education,
+                                { school: "", degree: "", start: "", end: "" },
+                              ],
+                            })
+                          }
+                        >
+                          + Adicionar
+                        </Button>
+                      </div>
+                      {form.education.length === 0 ? (
+                        <p className="text-xs text-text-secondary">Nenhuma formação adicionada.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {form.education.map((edu, idx) => (
+                            <div key={idx} className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                  placeholder="Instituição"
+                                  value={edu.school}
+                                  onChange={(e) => {
+                                    const next = [...form.education];
+                                    next[idx] = { ...next[idx], school: e.target.value };
+                                    setForm({ ...form, education: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Curso / grau"
+                                  value={edu.degree}
+                                  onChange={(e) => {
+                                    const next = [...form.education];
+                                    next[idx] = { ...next[idx], degree: e.target.value };
+                                    setForm({ ...form, education: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Início"
+                                  value={edu.start}
+                                  onChange={(e) => {
+                                    const next = [...form.education];
+                                    next[idx] = { ...next[idx], start: e.target.value };
+                                    setForm({ ...form, education: next });
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Fim"
+                                  value={edu.end}
+                                  onChange={(e) => {
+                                    const next = [...form.education];
+                                    next[idx] = { ...next[idx], end: e.target.value };
+                                    setForm({ ...form, education: next });
+                                  }}
+                                />
+                              </div>
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setForm({
+                                      ...form,
+                                      education: form.education.filter((_, i) => i !== idx),
+                                    })
+                                  }
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="col-span-2">
                       <Label htmlFor="cand-notes">Notas</Label>
                       <Textarea
