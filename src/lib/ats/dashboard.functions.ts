@@ -77,15 +77,15 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
 
     const [candNames, jobNames] = await Promise.all([
       candIds.length
-        ? supabase.from("ats_candidates").select("id, name").in("id", candIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; name: string | null }> }),
+        ? supabase.from("ats_candidates").select("id, full_name").in("id", candIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
       jobIds.length
         ? supabase.from("ats_jobs").select("id, title").in("id", jobIds)
         : Promise.resolve({ data: [] as Array<{ id: string; title: string | null }> }),
     ]);
 
     const candMap = new Map<string, string | null>(
-      (candNames.data ?? []).map((c) => [c.id as string, (c.name as string) ?? null]),
+      ((candNames.data ?? []) as Array<{ id: string; full_name: string | null }>).map((c) => [c.id, c.full_name]),
     );
     const jobMap = new Map<string, string | null>(
       (jobNames.data ?? []).map((j) => [j.id as string, (j.title as string) ?? null]),
