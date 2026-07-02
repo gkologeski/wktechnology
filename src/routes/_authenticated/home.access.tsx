@@ -102,15 +102,6 @@ function AccessCenter() {
         description="Cargos, pacotes de permissões e regras de campo do TechERP"
       />
 
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Fase 1 — Modo consulta</AlertTitle>
-        <AlertDescription>
-          Este é o catálogo do novo sistema de permissões do TechERP. Cargos, pacotes e regras
-          exibidos aqui ainda não substituem o controle de acesso ativo. A edição e o enforcement
-          serão liberados nas próximas fases.
-        </AlertDescription>
-      </Alert>
 
       {isLoading || !data ? <LoadingState /> : <Content data={data} />}
     </div>
