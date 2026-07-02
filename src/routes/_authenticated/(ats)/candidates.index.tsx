@@ -53,6 +53,7 @@ import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidat
 
 import { parseCv } from "@/lib/ats/cv-parse.functions";
 import { parseCvFromPdf } from "@/lib/ats/cv-parse-pdf.functions";
+import { previewLinkedinProfile } from "@/lib/ats/candidates-linkedin-preview.functions";
 import { exportAtsCandidatesCsv } from "@/lib/ats/export.functions";
 import {
   getCandidateStatuses,
