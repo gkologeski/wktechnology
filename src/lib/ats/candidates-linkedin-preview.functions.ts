@@ -94,9 +94,11 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
             ? "Limite diário do LinkedIn atingido. Tente novamente mais tarde."
             : e.code === "rate_limited"
               ? "Muitas requisições ao LinkedIn. Aguarde alguns segundos e tente de novo."
-              : e.code === "not_found"
-                ? "Perfil não encontrado ou privado no LinkedIn."
-                : e.message || "Falha ao buscar perfil no LinkedIn.";
+              : e.code === "account_disconnected"
+                ? "Sua conta LinkedIn foi desconectada. Reconecte em Integrações → LinkedIn."
+                : e.status === 404
+                  ? "Perfil não encontrado ou privado no LinkedIn."
+                  : e.message || "Falha ao buscar perfil no LinkedIn.";
         return { ok: false, code: e.code, message: friendly };
       }
       return {
