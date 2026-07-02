@@ -13045,6 +13045,10 @@ export type Database = {
           value: string
         }[]
       }
+      current_user_permissions: {
+        Args: { _workspace_id: string }
+        Returns: string[]
+      }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
@@ -13229,14 +13233,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_effective_permissions: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: string[]
+      }
       user_field_visibility: {
         Args: { _field: string; _resource: string; _user: string }
         Returns: Database["public"]["Enums"]["field_mode"]
       }
-      user_has_permission: {
-        Args: { _perm: string; _user: string }
-        Returns: boolean
-      }
+      user_has_permission:
+        | { Args: { _perm: string; _user: string }; Returns: boolean }
+        | {
+            Args: {
+              _permission_key: string
+              _user_id: string
+              _workspace_id: string
+            }
+            Returns: boolean
+          }
       user_scope_for: {
         Args: {
           _action: string
