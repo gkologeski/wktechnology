@@ -332,7 +332,25 @@ function CandidatesPage() {
           skills: form.skills
             ? form.skills.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 100)
             : [],
-
+          experiences: form.experiences
+            .map((e) => ({
+              title: e.title.trim(),
+              company: e.company.trim(),
+              start: e.start.trim(),
+              end: e.end.trim(),
+              description: e.description.trim(),
+            }))
+            .filter((e) => e.title || e.company || e.description)
+            .slice(0, 20),
+          education: form.education
+            .map((e) => ({
+              school: e.school.trim(),
+              degree: e.degree.trim(),
+              start: e.start.trim(),
+              end: e.end.trim(),
+            }))
+            .filter((e) => e.school || e.degree)
+            .slice(0, 20),
           source: "manual",
           notes: form.notes || null,
         },
