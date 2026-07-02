@@ -313,8 +313,9 @@ function CandidatesPage() {
           current_position: form.current_position || null,
           current_company: form.current_company || null,
           skills: form.skills
-            ? form.skills.split(",").map((s) => s.trim()).filter(Boolean)
+            ? form.skills.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 100)
             : [],
+
           source: "manual",
           notes: form.notes || null,
         },

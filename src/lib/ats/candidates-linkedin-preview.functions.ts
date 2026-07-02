@@ -176,7 +176,7 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
     const skills = skillsRaw
       .map((s: any) => (typeof s === "string" ? s : (s?.name as string)))
       .filter((v: string | undefined): v is string => !!v && v.trim().length > 0)
-      .slice(0, 50);
+      .slice(0, 100);
 
     const edu: any[] = Array.isArray(p.education) ? p.education : [];
 

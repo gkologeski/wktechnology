@@ -294,7 +294,7 @@ const CandidateSaveSchema = z.object({
   location: z.string().max(120).optional().nullable(),
   current_position: z.string().max(200).optional().nullable(),
   current_company: z.string().max(200).optional().nullable(),
-  skills: z.array(z.string().max(60)).max(40).optional(),
+  skills: z.array(z.string().max(60)).max(100).optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),
   source: z.enum(["manual", "career_page", "linkedin_easy_apply", "referral", "import"]).default("manual"),
   notes: z.string().max(5000).optional().nullable(),
