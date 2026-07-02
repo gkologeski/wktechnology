@@ -81,7 +81,7 @@ export function ScheduleInterviewDialog({
     }
     setSaving(true);
     try {
-      await schedule({
+      const res = await schedule({
         data: {
           application_id: applicationId,
           interviewer_id: interviewer || null,
@@ -94,9 +94,23 @@ export function ScheduleInterviewDialog({
           interview_kit_id: kitId || null,
         },
       });
-      toast.success("Entrevista agendada");
+      if (kind === "video" && res.meet_url) {
+        if (res.calendar_pushed) {
+          toast.success("Entrevista agendada e sincronizada com o Google Calendar");
+        } else {
+          toast.success(`Entrevista agendada. Sala: ${res.meet_url}`);
+        }
+      } else {
+        toast.success("Entrevista agendada");
+      }
       onSaved?.();
       onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao agendar");
+    } finally {
+      setSaving(false);
+    }
+  };
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao agendar");
     } finally {
