@@ -244,8 +244,7 @@ function normalizeApplicant(raw: Record<string, unknown>): JobApplicantRecord | 
   const lastName = pickString(profile.last_name, (profile.name as Record<string, unknown> | undefined)?.last);
   const fullName =
     pickString(profile.full_name, profile.name, raw.name) ??
-    [firstName, lastName].filter(Boolean).join(" ").trim() ||
-    null;
+    ([firstName, lastName].filter(Boolean).join(" ").trim() || null);
 
   const publicId = pickString(
     profile.public_identifier,
