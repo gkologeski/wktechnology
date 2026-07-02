@@ -68,6 +68,7 @@ export function RoleEditorDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#94a3b8");
+  const [dataScope, setDataScope] = useState<"own" | "team" | "workspace" | "custom">("workspace");
   const [selectedSets, setSelectedSets] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export function RoleEditorDialog({
     setName(role?.name ?? "");
     setDescription(role?.description ?? "");
     setColor(role?.color ?? "#94a3b8");
+    setDataScope((role?.data_scope as "own" | "team" | "workspace" | "custom") ?? "workspace");
     setSelectedSets(new Set(role?.set_ids ?? []));
   }, [open, role]);
 
@@ -96,6 +98,7 @@ export function RoleEditorDialog({
           name: name.trim(),
           description: description.trim() || null,
           color,
+          data_scope: dataScope,
           set_ids: Array.from(selectedSets),
         },
       }),
