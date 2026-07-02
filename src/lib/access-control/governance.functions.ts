@@ -55,7 +55,7 @@ export type AuditRow = {
   entity_type: string;
   entity_id: string | null;
   target_user_id: string | null;
-  details: Record<string, unknown>;
+  details: Record<string, string | number | boolean | null>;
   created_at: string;
 };
 
