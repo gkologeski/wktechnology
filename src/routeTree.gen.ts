@@ -57,6 +57,7 @@ import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFraudFlagsRouteImport } from './routes/_authenticated/fraud-flags'
 import { Route as AuthenticatedDeiAnalyticsRouteImport } from './routes/_authenticated/dei-analytics'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -528,6 +529,11 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFraudFlagsRoute = AuthenticatedFraudFlagsRouteImport.update({
   id: '/fraud-flags',
   path: '/fraud-flags',
@@ -1864,6 +1870,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2139,6 +2146,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
@@ -2412,6 +2420,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/_authenticated/fraud-flags': typeof AuthenticatedFraudFlagsRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2689,6 +2698,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/dei-analytics'
     | '/fraud-flags'
+    | '/home'
     | '/integrations'
     | '/invoices'
     | '/leads'
@@ -2964,6 +2974,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/dei-analytics'
     | '/fraud-flags'
+    | '/home'
     | '/invoices'
     | '/leads'
     | '/marketplace'
@@ -3236,6 +3247,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/dei-analytics'
     | '/_authenticated/fraud-flags'
+    | '/_authenticated/home'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
@@ -3927,6 +3939,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/integrations'
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/fraud-flags': {
@@ -5908,6 +5927,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedDeiAnalyticsRoute: typeof AuthenticatedDeiAnalyticsRoute
   AuthenticatedFraudFlagsRoute: typeof AuthenticatedFraudFlagsRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
@@ -5986,6 +6006,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedDeiAnalyticsRoute: AuthenticatedDeiAnalyticsRoute,
   AuthenticatedFraudFlagsRoute: AuthenticatedFraudFlagsRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,

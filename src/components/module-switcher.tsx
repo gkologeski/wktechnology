@@ -4,7 +4,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, LayoutGrid } from "lucide-react";
+import { Check, ChevronsUpDown, LayoutGrid, Home } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -63,9 +64,29 @@ export function ModuleSwitcher({ className }: { className?: string }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            navigate({ to: "/home" });
+          }}
+          className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors"
+        >
+          <span className="h-8 w-8 rounded-lg grid place-items-center bg-muted text-foreground">
+            <Home className="h-4 w-4" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <div className="font-medium leading-tight truncate">ERP Home</div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              Módulos e configurações do workspace
+            </div>
+          </span>
+        </button>
+        <div className="my-1 h-px bg-border" />
         <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
           Módulos do ERP
         </div>
+
         {MODULE_LIST.map((m) => {
           const Icon = m.icon;
           const isActive = m.id === active;
