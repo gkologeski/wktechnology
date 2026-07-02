@@ -68,7 +68,21 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           type="button"
           onClick={() => {
             setOpen(false);
-            navigate({ to: "/home" });
+            const url = buildWorkspaceUrl("/home");
+            if (isCrossHostUrl(url)) {
+              try {
+                const targetHost = new URL(url).hostname;
+                if (!isReachableHost(targetHost)) {
+                  navigate({ to: "/home" });
+                  return;
+                }
+              } catch {
+                /* ignore */
+              }
+              window.location.assign(url);
+            } else {
+              navigate({ to: "/home" });
+            }
           }}
           className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors"
         >
