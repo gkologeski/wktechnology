@@ -32,6 +32,20 @@ function normalizeLinkedinUrl(url: string): string {
   }
 }
 
+export type LinkedinExperienceDTO = {
+  title: string;
+  company: string;
+  start: string;
+  end: string;
+  description: string;
+};
+export type LinkedinEducationDTO = {
+  school: string;
+  degree: string;
+  start: string;
+  end: string;
+};
+
 export type LinkedinPreviewResult =
   | {
       ok: true;
@@ -46,6 +60,8 @@ export type LinkedinPreviewResult =
         linkedin_url: string;
         photo_url: string | null;
         skills: string[];
+        experiences: LinkedinExperienceDTO[];
+        education: LinkedinEducationDTO[];
         notes_seed: string;
       };
     }
