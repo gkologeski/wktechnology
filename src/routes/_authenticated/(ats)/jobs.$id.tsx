@@ -63,6 +63,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { OwnerField } from "@/components/entity/owner-field";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
