@@ -198,6 +198,7 @@ const SETTING_GROUPS: SettingGroup[] = [
       { to: "/settings/workspace-team", title: "Membros", desc: "Convites e acessos.", icon: UsersRound },
       { to: "/settings/teams", title: "Times", desc: "Grupos operacionais.", icon: Users },
       { to: "/settings/roles", title: "Papéis e permissões", desc: "Admin, gestor, membro.", icon: ShieldCheck },
+      { to: "/home/access", title: "Controle de Acesso (TechERP)", desc: "Cargos, pacotes e regras de campo.", icon: ShieldCheck },
     ],
   },
   {

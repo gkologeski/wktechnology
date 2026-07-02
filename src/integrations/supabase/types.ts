@@ -6178,6 +6178,57 @@ export type Database = {
         }
         Relationships: []
       }
+      field_permission_rules: {
+        Row: {
+          created_at: string
+          field: string
+          id: string
+          is_system: boolean
+          mode: Database["public"]["Enums"]["field_mode"]
+          resource: string
+          role_id: string | null
+          set_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          field: string
+          id?: string
+          is_system?: boolean
+          mode: Database["public"]["Enums"]["field_mode"]
+          resource: string
+          role_id?: string | null
+          set_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          field?: string
+          id?: string
+          is_system?: boolean
+          mode?: Database["public"]["Enums"]["field_mode"]
+          resource?: string
+          role_id?: string | null
+          set_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_permission_rules_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_permission_rules_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_submissions: {
         Row: {
           contact_id: string | null
@@ -6540,6 +6591,75 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
           workspace_id?: string
+        }
+        Relationships: []
+      }
+      job_role_sets: {
+        Row: {
+          created_at: string
+          role_id: string
+          set_id: string
+        }
+        Insert: {
+          created_at?: string
+          role_id: string
+          set_id: string
+        }
+        Update: {
+          created_at?: string
+          role_id?: string
+          set_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_role_sets_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_sets_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_roles: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -7877,6 +7997,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      permission_set_items: {
+        Row: {
+          created_at: string
+          permission_key: string
+          set_id: string
+        }
+        Insert: {
+          created_at?: string
+          permission_key: string
+          set_id: string
+        }
+        Update: {
+          created_at?: string
+          permission_key?: string
+          set_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_set_items_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "permission_set_items_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_sets: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          module: string
+          name: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          module: string
+          name: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          module?: string
+          name?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          action: Database["public"]["Enums"]["perm_action"]
+          created_at: string
+          description: string | null
+          is_system: boolean
+          key: string
+          label_pt: string
+          module: string
+          resource: string
+          scope: Database["public"]["Enums"]["perm_scope"]
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["perm_action"]
+          created_at?: string
+          description?: string | null
+          is_system?: boolean
+          key: string
+          label_pt: string
+          module: string
+          resource: string
+          scope: Database["public"]["Enums"]["perm_scope"]
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["perm_action"]
+          created_at?: string
+          description?: string | null
+          is_system?: boolean
+          key?: string
+          label_pt?: string
+          module?: string
+          resource?: string
+          scope?: Database["public"]["Enums"]["perm_scope"]
+        }
+        Relationships: []
       }
       pipelines: {
         Row: {
@@ -11253,6 +11475,73 @@ export type Database = {
         }
         Relationships: []
       }
+      user_job_roles: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          role_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          role_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          role_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_job_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permission_sets: {
+        Row: {
+          created_at: string
+          id: string
+          set_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          set_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          set_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_sets_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -12940,6 +13229,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_field_visibility: {
+        Args: { _field: string; _resource: string; _user: string }
+        Returns: Database["public"]["Enums"]["field_mode"]
+      }
+      user_has_permission: {
+        Args: { _perm: string; _user: string }
+        Returns: boolean
+      }
       user_scope_for: {
         Args: {
           _action: string
@@ -13005,6 +13302,7 @@ export type Database = {
       esign_signer_status: "pending" | "viewed" | "signed" | "declined"
       export_format: "csv"
       export_frequency: "daily" | "weekly" | "monthly"
+      field_mode: "hidden" | "masked" | "readonly"
       goal_metric:
         | "deals_won_count"
         | "deals_won_value"
@@ -13019,6 +13317,16 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      perm_action:
+        | "view"
+        | "create"
+        | "update"
+        | "delete"
+        | "export"
+        | "approve"
+        | "assign"
+        | "manage"
+      perm_scope: "own" | "team" | "workspace" | "org"
       proposal_approval_status: "pending" | "approved" | "rejected"
       proposal_status:
         | "draft"
@@ -13235,6 +13543,7 @@ export const Constants = {
       esign_signer_status: ["pending", "viewed", "signed", "declined"],
       export_format: ["csv"],
       export_frequency: ["daily", "weekly", "monthly"],
+      field_mode: ["hidden", "masked", "readonly"],
       goal_metric: [
         "deals_won_count",
         "deals_won_value",
@@ -13250,6 +13559,17 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      perm_action: [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export",
+        "approve",
+        "assign",
+        "manage",
+      ],
+      perm_scope: ["own", "team", "workspace", "org"],
       proposal_approval_status: ["pending", "approved", "rejected"],
       proposal_status: [
         "draft",
