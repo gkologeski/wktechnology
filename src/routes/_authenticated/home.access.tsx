@@ -336,6 +336,9 @@ function RolesTab({ data }: { data: AccessBundle }) {
 
 // -------------- Sets Tab --------------
 function SetsTab({ data }: { data: AccessBundle }) {
+  const [editing, setEditing] = useState<AccessBundle["permission_sets"][number] | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<AccessBundle["permission_sets"][number] | null>(null);
   const permsByKey = useMemo(
     () => new Map(data.permissions.map((p) => [p.key, p])),
     [data.permissions],
@@ -352,10 +355,15 @@ function SetsTab({ data }: { data: AccessBundle }) {
 
   return (
     <>
-      <SectionHeader
-        title="Pacotes de permissões"
-        description="Blocos reutilizáveis de permissões. Um pacote pode ser atribuído a vários cargos e a usuários específicos."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader
+          title="Pacotes de permissões"
+          description="Blocos reutilizáveis de permissões. Um pacote pode ser atribuído a vários cargos e a usuários específicos."
+        />
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Novo pacote
+        </Button>
+      </div>
       <div className="space-y-6">
         {byModule.map(([mod, sets]) => (
           <div key={mod} className="space-y-3">
@@ -367,13 +375,35 @@ function SetsTab({ data }: { data: AccessBundle }) {
               {sets.map((s) => (
                 <Card key={s.id}>
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <CardTitle className="text-sm">{s.name}</CardTitle>
-                      {s.is_system ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Sistema
-                        </Badge>
-                      ) : null}
+                      <div className="flex items-center gap-1">
+                        {s.is_system ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Sistema
+                          </Badge>
+                        ) : null}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditing(s)}
+                          aria-label="Editar pacote"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {!s.is_system ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => setDeleting(s)}
+                            aria-label="Excluir pacote"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                     {s.description ? (
                       <CardDescription className="text-xs">{s.description}</CardDescription>
@@ -409,6 +439,24 @@ function SetsTab({ data }: { data: AccessBundle }) {
           </div>
         ))}
       </div>
+      <PermissionSetEditorDialog
+        open={creating || Boolean(editing)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
+        set={editing}
+        data={data}
+      />
+      <DeleteAccessRowDialog
+        open={Boolean(deleting)}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        kind="set"
+        id={deleting?.id ?? null}
+        label={deleting?.name ?? ""}
+      />
     </>
   );
 }
