@@ -4,7 +4,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, LayoutGrid } from "lucide-react";
+import { Check, ChevronsUpDown, LayoutGrid, Home } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
