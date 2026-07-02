@@ -355,9 +355,8 @@ function CandidatesPage() {
         await supabase.from("ats_candidates").update({ cv_url: cvUrl }).eq("id", newId);
       }
       toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
-      setParseOpen(false);
-      setCvText("");
-      setCvUrl(null);
+      setOpen(false);
+      resetCreateDialog();
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao processar CV");
