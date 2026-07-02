@@ -18,6 +18,9 @@ import {
   Pencil,
   Trash2,
   UserCog,
+  ClipboardList,
+  UserSearch,
+  BarChart3,
 } from "lucide-react";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
 import {
