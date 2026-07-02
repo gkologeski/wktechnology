@@ -68,6 +68,7 @@ export function RoleEditorDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#94a3b8");
+  const [dataScope, setDataScope] = useState<"own" | "team" | "workspace" | "custom">("workspace");
   const [selectedSets, setSelectedSets] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export function RoleEditorDialog({
     setName(role?.name ?? "");
     setDescription(role?.description ?? "");
     setColor(role?.color ?? "#94a3b8");
+    setDataScope((role?.data_scope as "own" | "team" | "workspace" | "custom") ?? "workspace");
     setSelectedSets(new Set(role?.set_ids ?? []));
   }, [open, role]);
 
@@ -96,6 +98,7 @@ export function RoleEditorDialog({
           name: name.trim(),
           description: description.trim() || null,
           color,
+          data_scope: dataScope,
           set_ids: Array.from(selectedSets),
         },
       }),
@@ -154,6 +157,26 @@ export function RoleEditorDialog({
               rows={2}
               disabled={isSystem}
             />
+          </div>
+          <div>
+            <Label htmlFor="role-scope">Escopo de dados</Label>
+            <select
+              id="role-scope"
+              className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+              value={dataScope}
+              onChange={(e) =>
+                setDataScope(e.target.value as "own" | "team" | "workspace" | "custom")
+              }
+              disabled={isSystem}
+            >
+              <option value="own">Somente meus registros</option>
+              <option value="team">Registros do meu time (grupos)</option>
+              <option value="workspace">Workspace inteiro</option>
+              <option value="custom">Personalizado</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Define quais registros o cargo enxerga. Owner e admins veem tudo por padrão.
+            </p>
           </div>
           <div>
             <Label>Pacotes de permissões</Label>

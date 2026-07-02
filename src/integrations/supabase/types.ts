@@ -6631,6 +6631,7 @@ export type Database = {
         Row: {
           color: string | null
           created_at: string
+          data_scope: Database["public"]["Enums"]["data_scope"]
           description: string | null
           icon: string | null
           id: string
@@ -6642,6 +6643,7 @@ export type Database = {
         Insert: {
           color?: string | null
           created_at?: string
+          data_scope?: Database["public"]["Enums"]["data_scope"]
           description?: string | null
           icon?: string | null
           id?: string
@@ -6653,6 +6655,7 @@ export type Database = {
         Update: {
           color?: string | null
           created_at?: string
+          data_scope?: Database["public"]["Enums"]["data_scope"]
           description?: string | null
           icon?: string | null
           id?: string
@@ -13233,6 +13236,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_can_view_owner: {
+        Args: { _owner_id: string; _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
+      user_data_scope: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: Database["public"]["Enums"]["data_scope"]
+      }
       user_effective_permissions: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: string[]
@@ -13283,6 +13294,7 @@ export type Database = {
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
       booking_status: "confirmed" | "canceled"
+      data_scope: "own" | "team" | "workspace" | "custom"
       deal_stage:
         | "new"
         | "qualified"
@@ -13520,6 +13532,7 @@ export const Constants = {
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
       booking_status: ["confirmed", "canceled"],
+      data_scope: ["own", "team", "workspace", "custom"],
       deal_stage: [
         "new",
         "qualified",

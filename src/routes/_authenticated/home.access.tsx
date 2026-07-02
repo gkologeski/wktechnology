@@ -291,13 +291,23 @@ function RolesTab({ data }: { data: AccessBundle }) {
                 ) : null}
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
                     <Package className="h-3.5 w-3.5" /> {sets.length} pacotes
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <CheckCircle2 className="h-3.5 w-3.5" /> {permCount} permissões
                   </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    Escopo:{" "}
+                    {role.data_scope === "own"
+                      ? "Meus registros"
+                      : role.data_scope === "team"
+                        ? "Meu time"
+                        : role.data_scope === "workspace"
+                          ? "Workspace"
+                          : "Personalizado"}
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {sets.map((s) => (
