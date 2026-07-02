@@ -160,7 +160,7 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
   const [loading, setLoading] = useState(false);
 
   const members = data.members.filter((m) =>
-    (m.name ?? m.email ?? m.user_id).toLowerCase().includes(q.toLowerCase()),
+    (m.full_name ?? m.email ?? m.user_id).toLowerCase().includes(q.toLowerCase()),
   );
 
   async function run(userId: string) {
