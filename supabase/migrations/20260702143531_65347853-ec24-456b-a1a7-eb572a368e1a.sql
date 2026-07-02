@@ -1,0 +1,1 @@
+CREATE POLICY "ats_jobs_workspace_shared_select" ON public.ats_jobs FOR SELECT USING (public.shares_workspace_with(owner_id));
