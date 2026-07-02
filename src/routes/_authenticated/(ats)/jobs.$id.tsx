@@ -542,8 +542,6 @@ function JobDetailPage() {
     </div>
   );
 
-  const [schedSearch, setSchedSearch] = useState("");
-  const [schedActiveOnly, setSchedActiveOnly] = useState(true);
   const applicantsForScheduling = apps.filter((a) => {
     if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
     if (!schedSearch.trim()) return true;
