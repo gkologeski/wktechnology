@@ -139,7 +139,17 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
         <div className="grid gap-2 md:grid-cols-3">
           {providers.map((p) => {
             const posting = byProvider.get(p.slug);
-            const isBusy = busy === p.slug || (posting && busy === posting.id);
+            const isBusy =
+              busy === p.slug ||
+              (posting && (busy === posting.id || busy === `sync:${posting.id}`));
+            const isSyncing = posting && busy === `sync:${posting.id}`;
+            const canSync =
+              p.slug === "linkedin" &&
+              posting?.status === "published" &&
+              !posting.is_mock;
+            const syncMeta = (posting?.metadata ?? {}) as Record<string, unknown>;
+            const lastSyncAt = syncMeta.last_applicants_sync_at as string | undefined;
+            const syncedCount = Number(syncMeta.applicants_synced_count ?? 0);
             const statusKey = posting?.status ?? "draft";
             return (
               <div
