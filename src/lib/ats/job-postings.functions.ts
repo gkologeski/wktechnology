@@ -274,3 +274,36 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
 
     return { posting: row };
   });
+
+/**
+ * Dispara manualmente a sync de aplicantes de um posting LinkedIn.
+ * Restrito ao owner do posting (RLS na leitura + verificação explícita).
+ */
+export const syncPostingApplicantsNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ posting_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    // Verifica se o posting pertence ao workspace do usuário (RLS aplica).
+    const { data: posting, error } = await context.supabase
+      .from("ats_job_postings")
+      .select("id, provider, status, is_mock")
+      .eq("id", data.posting_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!posting) throw new Error("Publicação não encontrada");
+    if (posting.provider !== "linkedin") {
+      throw new Error("Sync automático disponível apenas para LinkedIn");
+    }
+    if (posting.status !== "published" || posting.is_mock) {
+      throw new Error("Publique a vaga no LinkedIn antes de sincronizar aplicantes");
+    }
+
+    const { syncPostingApplicants } = await import(
+      "./linkedin-applicants-sync.server"
+    );
+    const result = await syncPostingApplicants(data.posting_id);
+    return result;
+  });
+
