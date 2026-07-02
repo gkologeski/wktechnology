@@ -151,6 +151,7 @@ function JobDetailPage() {
   >({});
   const [evalApp, setEvalApp] = useState<App | null>(null);
   const [tab, setTab] = useState<string>("pipeline");
+  const [scheduleApp, setScheduleApp] = useState<App | null>(null);
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
