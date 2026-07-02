@@ -87,9 +87,9 @@ function AccessCenter() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 lg:px-8">
       <PageHeader
+        eyebrow="TechERP"
         title="Controle de Acesso"
         description="Cargos, pacotes de permissões e regras de campo do TechERP"
-        icon={Shield}
       />
 
       <Alert>
