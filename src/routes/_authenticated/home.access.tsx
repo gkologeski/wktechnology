@@ -1,4 +1,4 @@
-// /home/access — TechERP Access Control Center (Fase 1: read-only)
+// /home/access — TechERP Access Control Center (Fase 2: CRUD)
 // Central de Cargos, Pacotes, Matriz e Membros.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -10,13 +10,23 @@ import {
   Package,
   Grid3x3,
   Lock,
-  Info,
   CheckCircle2,
   EyeOff,
   Asterisk,
   Ban,
+  Plus,
+  Pencil,
+  Trash2,
+  UserCog,
 } from "lucide-react";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
+import {
+  RoleEditorDialog,
+  PermissionSetEditorDialog,
+  FieldRuleEditorDialog,
+  MemberAssignmentDialog,
+  DeleteAccessRowDialog,
+} from "@/components/access-control/access-dialogs";
 import { PageHeader, SectionHeader, MetricCard, EmptyState } from "@/components/techhire/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -27,9 +37,9 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -92,15 +102,6 @@ function AccessCenter() {
         description="Cargos, pacotes de permissões e regras de campo do TechERP"
       />
 
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Fase 1 — Modo consulta</AlertTitle>
-        <AlertDescription>
-          Este é o catálogo do novo sistema de permissões do TechERP. Cargos, pacotes e regras
-          exibidos aqui ainda não substituem o controle de acesso ativo. A edição e o enforcement
-          serão liberados nas próximas fases.
-        </AlertDescription>
-      </Alert>
 
       {isLoading || !data ? <LoadingState /> : <Content data={data} />}
     </div>
@@ -207,6 +208,9 @@ function Content({ data }: { data: AccessBundle }) {
 // -------------- Roles Tab --------------
 function RolesTab({ data }: { data: AccessBundle }) {
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<AccessBundle["job_roles"][number] | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<AccessBundle["job_roles"][number] | null>(null);
   const setsById = useMemo(
     () => new Map(data.permission_sets.map((s) => [s.id, s])),
     [data.permission_sets],
@@ -220,10 +224,15 @@ function RolesTab({ data }: { data: AccessBundle }) {
 
   return (
     <>
-      <SectionHeader
-        title="Cargos (Job Roles)"
-        description="Cada cargo agrupa um ou mais pacotes de permissões e representa um papel/função dentro do TechERP."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader
+          title="Cargos (Job Roles)"
+          description="Cada cargo agrupa um ou mais pacotes de permissões e representa um papel/função dentro do TechERP."
+        />
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Novo cargo
+        </Button>
+      </div>
       <Input
         placeholder="Buscar cargo..."
         value={q}
@@ -247,13 +256,35 @@ function RolesTab({ data }: { data: AccessBundle }) {
                     />
                     {role.name}
                   </CardTitle>
-                  {role.is_system ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Sistema
-                    </Badge>
-                  ) : (
-                    <Badge className="text-[10px]">Custom</Badge>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {role.is_system ? (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Sistema
+                      </Badge>
+                    ) : (
+                      <Badge className="text-[10px]">Custom</Badge>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setEditing(role)}
+                      aria-label="Editar cargo"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    {!role.is_system ? (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => setDeleting(role)}
+                        aria-label="Excluir cargo"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
                 {role.description ? (
                   <CardDescription>{role.description}</CardDescription>
@@ -281,12 +312,33 @@ function RolesTab({ data }: { data: AccessBundle }) {
           );
         })}
       </div>
+      <RoleEditorDialog
+        open={creating || Boolean(editing)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
+        role={editing}
+        data={data}
+      />
+      <DeleteAccessRowDialog
+        open={Boolean(deleting)}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        kind="role"
+        id={deleting?.id ?? null}
+        label={deleting?.name ?? ""}
+      />
     </>
   );
 }
 
 // -------------- Sets Tab --------------
 function SetsTab({ data }: { data: AccessBundle }) {
+  const [editing, setEditing] = useState<AccessBundle["permission_sets"][number] | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<AccessBundle["permission_sets"][number] | null>(null);
   const permsByKey = useMemo(
     () => new Map(data.permissions.map((p) => [p.key, p])),
     [data.permissions],
@@ -303,10 +355,15 @@ function SetsTab({ data }: { data: AccessBundle }) {
 
   return (
     <>
-      <SectionHeader
-        title="Pacotes de permissões"
-        description="Blocos reutilizáveis de permissões. Um pacote pode ser atribuído a vários cargos e a usuários específicos."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader
+          title="Pacotes de permissões"
+          description="Blocos reutilizáveis de permissões. Um pacote pode ser atribuído a vários cargos e a usuários específicos."
+        />
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Novo pacote
+        </Button>
+      </div>
       <div className="space-y-6">
         {byModule.map(([mod, sets]) => (
           <div key={mod} className="space-y-3">
@@ -318,13 +375,35 @@ function SetsTab({ data }: { data: AccessBundle }) {
               {sets.map((s) => (
                 <Card key={s.id}>
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <CardTitle className="text-sm">{s.name}</CardTitle>
-                      {s.is_system ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Sistema
-                        </Badge>
-                      ) : null}
+                      <div className="flex items-center gap-1">
+                        {s.is_system ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Sistema
+                          </Badge>
+                        ) : null}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditing(s)}
+                          aria-label="Editar pacote"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {!s.is_system ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => setDeleting(s)}
+                            aria-label="Excluir pacote"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                     {s.description ? (
                       <CardDescription className="text-xs">{s.description}</CardDescription>
@@ -360,6 +439,24 @@ function SetsTab({ data }: { data: AccessBundle }) {
           </div>
         ))}
       </div>
+      <PermissionSetEditorDialog
+        open={creating || Boolean(editing)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
+        set={editing}
+        data={data}
+      />
+      <DeleteAccessRowDialog
+        open={Boolean(deleting)}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        kind="set"
+        id={deleting?.id ?? null}
+        label={deleting?.name ?? ""}
+      />
     </>
   );
 }
@@ -467,6 +564,9 @@ function MatrixTab({ data }: { data: AccessBundle }) {
 
 // -------------- Fields Tab --------------
 function FieldsTab({ data }: { data: AccessBundle }) {
+  const [editing, setEditing] = useState<AccessBundle["field_rules"][number] | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<AccessBundle["field_rules"][number] | null>(null);
   const setsById = useMemo(
     () => new Map(data.permission_sets.map((s) => [s.id, s])),
     [data.permission_sets],
@@ -478,15 +578,20 @@ function FieldsTab({ data }: { data: AccessBundle }) {
 
   return (
     <>
-      <SectionHeader
-        title="Regras de campo (Field-Level Security)"
-        description="Campos sensíveis mascarados, ocultados ou marcados como somente leitura conforme cargo ou pacote."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <SectionHeader
+          title="Regras de campo (Field-Level Security)"
+          description="Campos sensíveis mascarados, ocultados ou marcados como somente leitura conforme cargo ou pacote."
+        />
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Nova regra
+        </Button>
+      </div>
       {data.field_rules.length === 0 ? (
         <EmptyState
           icon={Lock}
           title="Nenhuma regra de campo"
-          description="Regras aparecerão aqui quando cadastradas."
+          description="Clique em Nova regra para adicionar."
         />
       ) : (
         <div className="rounded-md border">
@@ -497,6 +602,7 @@ function FieldsTab({ data }: { data: AccessBundle }) {
                 <TableHead>Campo</TableHead>
                 <TableHead>Modo</TableHead>
                 <TableHead>Aplica-se a</TableHead>
+                <TableHead className="w-[100px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -532,6 +638,28 @@ function FieldsTab({ data }: { data: AccessBundle }) {
                         </Badge>
                       ) : null}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditing(r)}
+                        aria-label="Editar regra"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      {!r.is_system ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => setDeleting(r)}
+                          aria-label="Excluir regra"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      ) : null}
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -539,6 +667,26 @@ function FieldsTab({ data }: { data: AccessBundle }) {
           </Table>
         </div>
       )}
+      <FieldRuleEditorDialog
+        open={creating || Boolean(editing)}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
+        rule={editing}
+        data={data}
+      />
+      <DeleteAccessRowDialog
+        open={Boolean(deleting)}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        kind="field_rule"
+        id={deleting?.id ?? null}
+        label={
+          deleting ? `${deleting.resource}.${deleting.field}` : ""
+        }
+      />
     </>
   );
 }
@@ -553,6 +701,8 @@ function MembersTab({ data }: { data: AccessBundle }) {
     () => new Map(data.permission_sets.map((s) => [s.id, s])),
     [data.permission_sets],
   );
+
+  const [managing, setManaging] = useState<AccessBundle["members"][number] | null>(null);
 
   return (
     <>
@@ -575,6 +725,7 @@ function MembersTab({ data }: { data: AccessBundle }) {
                 <TableHead>E-mail</TableHead>
                 <TableHead>Cargo principal</TableHead>
                 <TableHead>Pacotes extras</TableHead>
+                <TableHead className="w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -619,6 +770,16 @@ function MembersTab({ data }: { data: AccessBundle }) {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setManaging(m)}
+                        className="gap-1.5"
+                      >
+                        <UserCog className="h-3.5 w-3.5" /> Gerenciar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -626,6 +787,12 @@ function MembersTab({ data }: { data: AccessBundle }) {
           </Table>
         </div>
       )}
+      <MemberAssignmentDialog
+        open={Boolean(managing)}
+        onOpenChange={(v) => !v && setManaging(null)}
+        member={managing}
+        data={data}
+      />
     </>
   );
 }
