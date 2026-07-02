@@ -320,17 +320,7 @@ function CandidatesPage() {
         },
       });
       setOpen(false);
-      setForm({
-        full_name: "",
-        email: "",
-        phone: "",
-        linkedin_url: "",
-        location: "",
-        current_position: "",
-        current_company: "",
-        skills: "",
-        notes: "",
-      });
+      resetCreateDialog();
       refresh();
       toast.success("Candidato salvo");
     } catch (e) {
