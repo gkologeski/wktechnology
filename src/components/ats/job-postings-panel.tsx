@@ -97,6 +97,25 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
     }
   };
 
+  const handleSyncApplicants = async (postingId: string) => {
+    setBusy(`sync:${postingId}`);
+    try {
+      const r = await syncNow({ data: { posting_id: postingId } });
+      if (r.error) {
+        toast.error(`Sync com erros: ${r.error}`);
+      } else {
+        toast.success(
+          `${r.createdApplications} nova(s) candidatura(s) importada(s) · ${r.createdCandidates} candidato(s) criado(s)`,
+        );
+      }
+      await reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-3">
       <AtsSectionHeader
