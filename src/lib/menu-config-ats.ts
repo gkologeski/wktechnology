@@ -26,6 +26,7 @@ import {
   Search,
   Activity,
   Shield,
+  LayoutDashboard,
 } from "lucide-react";
 
 
@@ -35,6 +36,12 @@ import type { SidebarGroup } from "@/lib/menu-config";
 // papéis, billing, idioma, API keys) ficam no Workspace Hub (/workspace),
 // acessível pelo menu "Workspace" no header.
 export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    label: "Visão geral",
+    items: [
+      { title: "Dashboard", url: "/ats-dashboard", icon: LayoutDashboard },
+    ],
+  },
   {
     label: "Recrutamento",
     items: [
