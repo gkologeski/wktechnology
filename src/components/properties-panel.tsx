@@ -386,6 +386,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     </div>
   );
 
+  const hasOwner = Object.prototype.hasOwnProperty.call(row, "owner_id");
   return (
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60 space-y-5">
       <div className="flex items-center justify-between">
@@ -399,6 +400,17 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <History className="h-3 w-3 mr-1" /> Histórico
         </Button>
       </div>
+      {hasOwner && (
+        <div className="pb-4 border-b border-border/60">
+          <OwnerField
+            table={table}
+            rowId={row.id}
+            ownerId={(row as Record<string, unknown>).owner_id as string | null | undefined}
+            onChanged={() => onSaved?.()}
+          />
+        </div>
+      )}
+
       {useSections ? (
         <div className="space-y-5">
           {renderableSections.map((s) => (
