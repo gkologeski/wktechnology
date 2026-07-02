@@ -127,6 +127,7 @@ function CandidatesPage() {
   const del = useServerFn(deleteAtsCandidate);
   const parse = useServerFn(parseCv);
   const parsePdf = useServerFn(parseCvFromPdf);
+  const previewLinkedin = useServerFn(previewLinkedinProfile);
   const exportCsv = useServerFn(exportAtsCandidatesCsv);
   const getStatuses = useServerFn(getCandidateStatuses);
   const archiveCandidate = useServerFn(setCandidateArchived);
