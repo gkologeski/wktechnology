@@ -186,6 +186,30 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                   </div>
                 )}
 
+                {canSync && (
+                  <div className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-[11px] text-text-secondary flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {lastSyncAt
+                        ? `Última sync: ${new Date(lastSyncAt).toLocaleString("pt-BR")}`
+                        : "Aguardando primeira sync (a cada 1h)"}
+                      {syncedCount > 0 && ` · ${syncedCount} candidato(s)`}
+                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-text-primary hover:underline disabled:opacity-50 shrink-0"
+                      disabled={Boolean(isBusy)}
+                      onClick={() => posting && handleSyncApplicants(posting.id)}
+                    >
+                      {isSyncing ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" aria-hidden />
+                      )}
+                      Sincronizar
+                    </button>
+                  </div>
+                )}
+
                 {posting?.external_url && (
                   <a
                     href={posting.external_url}
@@ -198,6 +222,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                     <span className="truncate font-mono">{posting.external_url}</span>
                   </a>
                 )}
+
 
                 <div className="flex gap-2 mt-auto">
                   {posting?.status === "published" ? (
