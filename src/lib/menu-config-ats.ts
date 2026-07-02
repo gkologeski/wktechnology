@@ -128,6 +128,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
 // `buildWorkspaceUrl(...)` (cross-host em produção, SPA em preview).
 function collectPrefixes(): string[] {
   const set = new Set<string>([
+    "/ats-dashboard",
     "/jobs",
     "/candidates",
     "/ats",
