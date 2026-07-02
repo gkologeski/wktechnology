@@ -116,6 +116,11 @@ export const upsertJobRole = createServerFn({ method: "POST" })
         .insert(data.set_ids.map((sid) => ({ role_id: roleId!, set_id: sid })));
       if (insErr) throw new Error(insErr.message);
     }
+    await logAudit(supabase, userId, data.id ? "role.update" : "role.create", "job_role", roleId, null, {
+      name: data.name,
+      data_scope: data.data_scope,
+      set_ids: data.set_ids,
+    });
     return { id: roleId };
   });
 
@@ -128,6 +133,7 @@ export const deleteJobRole = createServerFn({ method: "POST" })
     await assertNotSystemRow(supabase, "job_roles", data.id);
     const { error } = await supabase.from("job_roles").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit(supabase, userId, "role.delete", "job_role", data.id, null);
     return { ok: true };
   });
 
