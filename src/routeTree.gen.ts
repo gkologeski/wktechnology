@@ -57,7 +57,6 @@ import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
-import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFraudFlagsRouteImport } from './routes/_authenticated/fraud-flags'
 import { Route as AuthenticatedDeiAnalyticsRouteImport } from './routes/_authenticated/dei-analytics'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
@@ -74,6 +73,7 @@ import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
+import { Route as AuthenticatedHomeIndexRouteImport } from './routes/_authenticated/home.index'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
@@ -531,11 +531,6 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedFraudFlagsRoute = AuthenticatedFraudFlagsRouteImport.update({
   id: '/fraud-flags',
   path: '/fraud-flags',
@@ -621,6 +616,11 @@ const AuthenticatedIntegrationsIndexRoute =
 const AuthenticatedInboxIndexRoute = AuthenticatedInboxIndexRouteImport.update({
   id: '/inbox/',
   path: '/inbox/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedHomeIndexRoute = AuthenticatedHomeIndexRouteImport.update({
+  id: '/home/',
+  path: '/home/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAtsIndexRoute = AuthenticatedAtsIndexRouteImport.update({
@@ -1126,9 +1126,9 @@ const AuthenticatedInboxChatRoute = AuthenticatedInboxChatRouteImport.update({
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
-  id: '/access',
-  path: '/access',
-  getParentRoute: () => AuthenticatedHomeRoute,
+  id: '/home/access',
+  path: '/home/access',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
@@ -1883,7 +1883,6 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/home': typeof AuthenticatedHomeRouteWithChildren
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2031,6 +2030,7 @@ export interface FileRoutesByFullPath {
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
+  '/home/': typeof AuthenticatedHomeIndexRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
@@ -2161,7 +2161,6 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/home': typeof AuthenticatedHomeRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
@@ -2305,6 +2304,7 @@ export interface FileRoutesByTo {
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
+  '/home': typeof AuthenticatedHomeIndexRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
@@ -2437,7 +2437,6 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
   '/_authenticated/fraud-flags': typeof AuthenticatedFraudFlagsRoute
-  '/_authenticated/home': typeof AuthenticatedHomeRouteWithChildren
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2585,6 +2584,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
+  '/_authenticated/home/': typeof AuthenticatedHomeIndexRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
@@ -2717,7 +2717,6 @@ export interface FileRouteTypes {
     | '/deals'
     | '/dei-analytics'
     | '/fraud-flags'
-    | '/home'
     | '/integrations'
     | '/invoices'
     | '/leads'
@@ -2865,6 +2864,7 @@ export interface FileRouteTypes {
     | '/workspace/modules'
     | '/lovable/email/suppression'
     | '/ats/'
+    | '/home/'
     | '/inbox/'
     | '/integrations/'
     | '/landing-pages/'
@@ -2995,7 +2995,6 @@ export interface FileRouteTypes {
     | '/deals'
     | '/dei-analytics'
     | '/fraud-flags'
-    | '/home'
     | '/invoices'
     | '/leads'
     | '/marketplace'
@@ -3139,6 +3138,7 @@ export interface FileRouteTypes {
     | '/workspace/modules'
     | '/lovable/email/suppression'
     | '/ats'
+    | '/home'
     | '/inbox'
     | '/integrations'
     | '/landing-pages'
@@ -3270,7 +3270,6 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/dei-analytics'
     | '/_authenticated/fraud-flags'
-    | '/_authenticated/home'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
@@ -3418,6 +3417,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/modules'
     | '/lovable/email/suppression'
     | '/_authenticated/ats/'
+    | '/_authenticated/home/'
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
@@ -3966,13 +3966,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/home': {
-      id: '/_authenticated/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof AuthenticatedHomeRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/fraud-flags': {
       id: '/_authenticated/fraud-flags'
       path: '/fraud-flags'
@@ -4083,6 +4076,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/inbox/'
       preLoaderRoute: typeof AuthenticatedInboxIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/home/': {
+      id: '/_authenticated/home/'
+      path: '/home'
+      fullPath: '/home/'
+      preLoaderRoute: typeof AuthenticatedHomeIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ats/': {
@@ -4682,10 +4682,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/home/access': {
       id: '/_authenticated/home/access'
-      path: '/access'
+      path: '/home/access'
       fullPath: '/home/access'
       preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
-      parentRoute: typeof AuthenticatedHomeRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
@@ -5610,17 +5610,6 @@ const AuthenticatedDealsRouteChildren: AuthenticatedDealsRouteChildren = {
 const AuthenticatedDealsRouteWithChildren =
   AuthenticatedDealsRoute._addFileChildren(AuthenticatedDealsRouteChildren)
 
-interface AuthenticatedHomeRouteChildren {
-  AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
-}
-
-const AuthenticatedHomeRouteChildren: AuthenticatedHomeRouteChildren = {
-  AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
-}
-
-const AuthenticatedHomeRouteWithChildren =
-  AuthenticatedHomeRoute._addFileChildren(AuthenticatedHomeRouteChildren)
-
 interface AuthenticatedIntegrationsRouteChildren {
   AuthenticatedIntegrationsSlugRoute: typeof AuthenticatedIntegrationsSlugRoute
   AuthenticatedIntegrationsIndexRoute: typeof AuthenticatedIntegrationsIndexRoute
@@ -5977,7 +5966,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedDeiAnalyticsRoute: typeof AuthenticatedDeiAnalyticsRoute
   AuthenticatedFraudFlagsRoute: typeof AuthenticatedFraudFlagsRoute
-  AuthenticatedHomeRoute: typeof AuthenticatedHomeRouteWithChildren
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
@@ -6016,6 +6004,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAuthExtensionLinkRoute: typeof AuthenticatedAuthExtensionLinkRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -6023,6 +6012,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
+  AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
@@ -6057,7 +6047,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedDeiAnalyticsRoute: AuthenticatedDeiAnalyticsRoute,
   AuthenticatedFraudFlagsRoute: AuthenticatedFraudFlagsRoute,
-  AuthenticatedHomeRoute: AuthenticatedHomeRouteWithChildren,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
@@ -6097,6 +6086,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthExtensionLinkRoute: AuthenticatedAuthExtensionLinkRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
@@ -6104,6 +6094,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
+  AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
