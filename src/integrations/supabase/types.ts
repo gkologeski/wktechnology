@@ -1514,6 +1514,7 @@ export type Database = {
           kind: string
           location: string | null
           meet_url: string | null
+          meeting_id: string | null
           notes: string | null
           offered_slots: Json
           owner_id: string
@@ -1553,6 +1554,7 @@ export type Database = {
           kind?: string
           location?: string | null
           meet_url?: string | null
+          meeting_id?: string | null
           notes?: string | null
           offered_slots?: Json
           owner_id: string
@@ -1592,6 +1594,7 @@ export type Database = {
           kind?: string
           location?: string | null
           meet_url?: string | null
+          meeting_id?: string | null
           notes?: string | null
           offered_slots?: Json
           owner_id?: string
@@ -1643,6 +1646,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_interviews_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
           {
