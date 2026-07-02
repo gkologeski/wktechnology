@@ -9,9 +9,8 @@ export const Route = createFileRoute("/_authenticated/")({
     const hostname =
       typeof window !== "undefined" ? window.location.hostname : null;
     const mod = detectModuleFromHost(hostname);
-    if (mod) {
-      throw redirect({ to: MODULES[mod].defaultRoute });
-    }
-    throw redirect({ to: "/home" });
+    const target = mod ? MODULES[mod].defaultRoute : "/home";
+    throw redirect({ href: target });
   },
 });
+
