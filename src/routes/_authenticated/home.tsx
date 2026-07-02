@@ -328,17 +328,17 @@ function ErpHome() {
         <MetricCard
           label="Módulos ativos"
           value={String(activeCount)}
-          icon={<CheckCircle2 className="h-4 w-4" />}
+          icon={CheckCircle2}
         />
         <MetricCard
           label="Módulos contratados"
           value={String(contractedCount)}
-          icon={<Boxes className="h-4 w-4" />}
+          icon={Boxes}
         />
         <MetricCard
           label="Status"
           value="Operacional"
-          icon={<Building2 className="h-4 w-4" />}
+          icon={Building2}
         />
       </div>
 
@@ -358,12 +358,11 @@ function ErpHome() {
         <SettingsGrid />
       </section>
 
-      <div className="text-xs text-muted-foreground pt-6 border-t">
-        <StatusBadge status="active">Workspace</StatusBadge>
-        <span className="ml-2">
-          As configurações acima se aplicam a todos os módulos do ERP.
-        </span>
+      <div className="text-xs text-muted-foreground pt-6 border-t flex items-center gap-2">
+        <StatusBadge status="open" label="Workspace" />
+        <span>As configurações acima se aplicam a todos os módulos do ERP.</span>
       </div>
+
     </div>
   );
 }
