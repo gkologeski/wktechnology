@@ -63,6 +63,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { OwnerField } from "@/components/entity/owner-field";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
@@ -948,10 +949,20 @@ function JobPropertiesPanel({
     }
   };
 
+  const jobRow = job as unknown as { id: string; owner_id: string | null };
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
       <AtsSectionHeader title="Propriedades" />
+      <div className="pb-3 border-b border-border-subtle">
+        <OwnerField
+          table="ats_jobs"
+          rowId={jobRow.id}
+          ownerId={jobRow.owner_id}
+          onChanged={onSaved}
+        />
+      </div>
       <div className="space-y-2 text-sm">
+
         <div>
           <Label htmlFor="prop-title" className="text-xs text-text-tertiary">
             Título

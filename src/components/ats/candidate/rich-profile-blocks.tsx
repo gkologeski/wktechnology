@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { cn } from "@/lib/utils";
+import { OwnerField } from "@/components/entity/owner-field";
 import type { CandidateDetail, RichJson } from "@/lib/ats/candidate-detail.functions";
 
 type Candidate = CandidateDetail["candidate"];
@@ -196,8 +197,12 @@ export function ExternalLinksBlock({ candidate }: { candidate: Candidate }) {
 // ---------- About ----------
 export function AboutBlock({ candidate }: { candidate: Candidate }) {
   const about = candidate.about?.trim();
+  const c = candidate as unknown as { id: string; owner_id: string | null };
   return (
     <Card title="Sobre" icon={<UserCheck className="h-4 w-4 text-text-secondary" />}>
+      <div className="px-4 py-3 border-b border-border-subtle">
+        <OwnerField table="ats_candidates" rowId={c.id} ownerId={c.owner_id} />
+      </div>
       {about ? (
         <p className="px-4 py-3 text-sm text-text-secondary whitespace-pre-wrap leading-relaxed">
           {about}
@@ -208,6 +213,7 @@ export function AboutBlock({ candidate }: { candidate: Candidate }) {
     </Card>
   );
 }
+
 
 // ---------- Experiences ----------
 export function ExperienceBlock({ candidate }: { candidate: Candidate }) {

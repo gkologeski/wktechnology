@@ -138,7 +138,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const { data: cand, error: candErr } = await supabase
       .from("ats_candidates")
       .select(
-        "id, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at, headline, about, photo_url, open_to_work, connection_degree, capture_version, captured_at, experiences, education, certifications, languages, skills_detailed, projects, publications, volunteering, external_links, available_actions, current_company_data, recent_activity, recommendations",
+        "id, owner_id, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at, headline, about, photo_url, open_to_work, connection_degree, capture_version, captured_at, experiences, education, certifications, languages, skills_detailed, projects, publications, volunteering, external_links, available_actions, current_company_data, recent_activity, recommendations",
       )
       .eq("id", data.id)
       .eq("owner_id", userId)
