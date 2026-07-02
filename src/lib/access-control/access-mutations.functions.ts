@@ -61,6 +61,7 @@ export const upsertJobRole = createServerFn({ method: "POST" })
           description: data.description ?? null,
           color: data.color ?? null,
           icon: data.icon ?? null,
+          data_scope: data.data_scope,
         })
         .eq("id", roleId);
       if (error) throw new Error(error.message);
@@ -73,6 +74,7 @@ export const upsertJobRole = createServerFn({ method: "POST" })
           description: data.description ?? null,
           color: data.color ?? null,
           icon: data.icon ?? null,
+          data_scope: data.data_scope,
           is_system: false,
         })
         .select("id")
