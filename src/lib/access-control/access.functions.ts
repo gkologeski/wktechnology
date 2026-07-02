@@ -23,6 +23,8 @@ export type PermissionSetRow = {
   permission_keys: string[];
 };
 
+export type DataScope = "own" | "team" | "workspace" | "custom";
+
 export type JobRoleRow = {
   id: string;
   workspace_id: string | null;
@@ -31,6 +33,7 @@ export type JobRoleRow = {
   color: string | null;
   icon: string | null;
   is_system: boolean;
+  data_scope: DataScope;
   set_ids: string[];
 };
 
