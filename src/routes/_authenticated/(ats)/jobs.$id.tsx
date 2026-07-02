@@ -802,6 +802,24 @@ function JobDetailPage() {
         onClose={() => setEvalApp(null)}
         refresh={refresh}
       />
+      {scheduleApp && (
+        <ScheduleInterviewDialog
+          open={!!scheduleApp}
+          onOpenChange={(v) => !v && setScheduleApp(null)}
+          applicationId={scheduleApp.id as string}
+          candidateName={
+            (scheduleApp as unknown as { candidate?: { full_name?: string | null } | null })
+              .candidate?.full_name ?? "Candidato"
+          }
+          onSaved={() => {
+            setScheduleApp(null);
+            void refresh();
+            listInterviewsFn({ data: { jobId: id, limit: 100 } })
+              .then((rs) => setInterviews(rs))
+              .catch(() => undefined);
+          }}
+        />
+      )}
     </>
   );
 }
