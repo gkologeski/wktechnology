@@ -27,6 +27,11 @@ import {
   MemberAssignmentDialog,
   DeleteAccessRowDialog,
 } from "@/components/access-control/access-dialogs";
+import {
+  AuditTab,
+  SimulationTab,
+  ReportsTab,
+} from "@/components/access-control/governance-tabs";
 import { PageHeader, SectionHeader, MetricCard, EmptyState } from "@/components/techhire/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
