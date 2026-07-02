@@ -8,6 +8,31 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
 
+// Fire-and-forget audit writer used by every mutation in this file.
+async function logAudit(
+  supabase: SB,
+  userId: string,
+  action: string,
+  entity_type: string,
+  entity_id: string | null,
+  target_user_id: string | null,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await supabase.from("access_audit_log").insert({
+      workspace_id: userId,
+      actor_id: userId,
+      action,
+      entity_type,
+      entity_id,
+      target_user_id,
+      details,
+    });
+  } catch {
+    /* audit failures never block the mutation */
+  }
+}
+
 async function assertWorkspaceOwner(supabase: SB, userId: string): Promise<void> {
   // With RLS scoped to workspace_id = auth.uid(), the owner is the user themself.
   // We still call this to keep intent obvious and to future-proof if we widen access.
