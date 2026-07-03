@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -87,6 +88,7 @@ function TasksPage() {
 function TasksHubspotView() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  useRealtimeInvalidate([{ table: "activities", queryKeys: [["tasks"]] }]);
   const navigate = useNavigate();
 
   const [activeView, setActiveView] = useState<ViewId>("all");

@@ -2,6 +2,7 @@ import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useServerFn } from "@tanstack/react-start";
 import { Video, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,10 @@ export const Route = createFileRoute("/_authenticated/meetings")({
 function MeetingsLibrary() {
   const list = useServerFn(listMeetings);
   const qc = useQueryClient();
+  useRealtimeInvalidate([
+    { table: "calendar_events", queryKeys: [["meetings"]] },
+    { table: "meetings", queryKeys: [["meetings"]] },
+  ]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "scheduled" | "live" | "ended" | "cancelled">("all");
   const [openId, setOpenId] = useState<string | null>(null);

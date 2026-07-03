@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -113,6 +114,7 @@ function ContactsHubspotView() {
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();
+  useRealtimeInvalidate([{ table: "contacts", queryKeys: [["contacts"]] }]);
   const navigate = useNavigate();
 
   const [activeView, setActiveView] = useState<ViewId>("all");

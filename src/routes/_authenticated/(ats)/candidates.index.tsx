@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import {
   Plus,
   Trash2,
@@ -132,6 +133,7 @@ function CandidatesPage() {
   const getStatuses = useServerFn(getCandidateStatuses);
   const archiveCandidate = useServerFn(setCandidateArchived);
   const queryClient = useQueryClient();
+  useRealtimeInvalidate([{ table: "ats_candidates", queryKeys: [["ats-candidates"]] }]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<DerivedCandidateStatus | null>(null);
   const [associateState, setAssociateState] = useState<{

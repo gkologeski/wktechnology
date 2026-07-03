@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -183,6 +184,7 @@ function LeadsHubspotView() {
   const hsOwners = useHubspotOwners().data ?? { list: [], byId: new Map() };
 
   const qc = useQueryClient();
+  useRealtimeInvalidate([{ table: "leads", queryKeys: [["leads"]] }]);
   const navigate = useNavigate();
 
   const [activeView, setActiveView] = useState<ViewId>("all");

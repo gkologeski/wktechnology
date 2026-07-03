@@ -62,6 +62,7 @@ import {
 import { MetaPill } from "@/components/techhire/ui";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/")({
   component: AtsJobsPage,
@@ -306,6 +307,9 @@ function AtsJobsPage() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  // Realtime: quando outro usuário/automação criar/editar vagas, recarrega a lista.
+  useRealtimeInvalidate([{ table: "ats_jobs", onChange: () => void refresh() }]);
 
   const handleCreate = async () => {
     if (!form.title.trim()) {

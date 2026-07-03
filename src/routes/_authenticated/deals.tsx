@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +35,12 @@ function DealsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
+
+  useRealtimeInvalidate([
+    { table: "deals", queryKeys: [["deals", "list"]] },
+    { table: "activities", queryKeys: [["deals", "next-activities"]] },
+  ]);
+
 
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
