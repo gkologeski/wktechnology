@@ -1129,8 +1129,8 @@ function StepConfigForm({
             </SelectTrigger>
             <SelectContent>
               {entityFields.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {f}
+                <SelectItem key={f.name} value={f.name}>
+                  {f.label}
                 </SelectItem>
               ))}
             </SelectContent>
