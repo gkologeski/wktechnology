@@ -14,10 +14,10 @@ function assignFieldFor(entity: WorkflowEntity): string {
       return "assignee_id";
     case "ats_jobs":
       return "recruiter_id";
-    case "ats_applications":
-      return "candidate_id"; // aplicações não têm dono direto — cai no owner_id via fallback abaixo
     case "ats_interviews":
       return "interviewer_id";
+    case "ats_applications":
+    case "ats_candidates":
     default:
       return "owner_id";
   }
