@@ -256,8 +256,10 @@ async function runAction(
               title,
               slug,
               status: "draft",
-              deal_id: ctx.entityId,
-              company_id: ((after as AnyRow).company_id as string) ?? null,
+              deal_id: ctx.entity === "deals" ? ctx.entityId : null,
+              company_id:
+                (((after as AnyRow).company_id as string) ??
+                  (ctx.entity === "companies" ? ctx.entityId : null)) as string | null,
               hiring_manager_id: action.hiring_manager_id ?? null,
               recruiter_id: action.recruiter_id ?? null,
               metadata: action.department ? { department: action.department } : {},
@@ -267,22 +269,108 @@ async function runAction(
           if (error) throw new Error(error.message);
           createdIds.push(inserted.id as string);
         }
-        // Notifica aprovador se configurado
         if (action.notify_user_id) {
           await supabase.from("notifications").insert({
             owner_id: ctx.ownerId,
             user_id: action.notify_user_id,
             type: "workflow",
             title: `Nova vaga em rascunho: ${title}`,
-            body: `Origem: negócio fechado. Revise e publique para abrir a vaga.`,
-            link: `/jobs`,
-            entity: "ats_job",
+            body: `Origem: ${ctx.entity}. Revise e publique para abrir a vaga.`,
+            link: `/ats/jobs`,
+            entity: "ats_jobs",
             entity_id: createdIds[0] ?? null,
           } as never);
         }
         return { at, ok: true, action: "create_ats_job", detail: { ids: createdIds, headcount } };
       }
+      case "advance_ats_application_stage": {
+        if (ctx.entity !== "ats_applications") {
+          throw new Error("advance_ats_application_stage exige workflow sobre Aplicações (ATS)");
+        }
+        const stageValue = renderTokens(action.stage_value, ctx.after) as string;
+        if (!stageValue) throw new Error("stage_value obrigatório");
+        const { error } = await supabase
+          .from("ats_applications")
+          .update({ stage_value: stageValue, moved_at: new Date().toISOString() })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "advance_ats_application_stage",
+          detail: { stage_value: stageValue },
+        };
+      }
+      case "create_ats_candidate": {
+        const fullName = (renderTokens(action.full_name, ctx.after) as string).trim();
+        if (!fullName) throw new Error("full_name obrigatório");
+        const email = action.email
+          ? ((renderTokens(action.email, ctx.after) as string) || null)
+          : null;
+        const phone = action.phone
+          ? ((renderTokens(action.phone, ctx.after) as string) || null)
+          : null;
+        const { data: inserted, error } = await supabase
+          .from("ats_candidates")
+          .insert({
+            owner_id: ctx.ownerId,
+            full_name: fullName,
+            email,
+            phone,
+            source: action.source ?? "workflow",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "create_ats_candidate",
+          detail: { id: inserted.id, full_name: fullName },
+        };
+      }
+      case "assign_recruiter": {
+        // Escolhe alvo automaticamente pela entidade do gatilho quando não informado.
+        const target =
+          action.target && action.target !== "auto"
+            ? action.target
+            : ctx.entity === "ats_jobs"
+              ? "job"
+              : ctx.entity === "ats_candidates"
+                ? "candidate"
+                : ctx.entity === "ats_applications"
+                  ? "application"
+                  : ctx.entity === "ats_interviews"
+                    ? "interview"
+                    : "job";
+        const table =
+          target === "job"
+            ? "ats_jobs"
+            : target === "candidate"
+              ? "ats_candidates"
+              : target === "application"
+                ? "ats_applications"
+                : "ats_interviews";
+        const column =
+          target === "job"
+            ? "recruiter_id"
+            : target === "interview"
+              ? "interviewer_id"
+              : "owner_id";
+        const { error } = await supabase
+          .from(table)
+          .update({ [column]: action.user_id })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "assign_recruiter",
+          detail: { target, user_id: action.user_id, column },
+        };
+      }
     }
+
   } catch (e) {
     return {
       at,
