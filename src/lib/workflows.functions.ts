@@ -122,8 +122,13 @@ const SaveSchema = z.object({
   entity: EntityEnum,
   enabled: z.boolean(),
   trigger: TriggerSchema,
-  actions: z.array(ActionSchema).min(1).max(20),
+  actions: z
+    .array(z.unknown())
+    .min(1)
+    .max(20)
+    .transform((arr) => parseActionsAtDepth(arr, 0)),
 });
+
 
 export const listWorkflows = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
