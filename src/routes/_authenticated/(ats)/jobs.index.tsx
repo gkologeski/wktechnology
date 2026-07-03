@@ -308,6 +308,9 @@ function AtsJobsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
+  // Realtime: quando outro usuário/automação criar/editar vagas, recarrega a lista.
+  useRealtimeInvalidate([{ table: "ats_jobs", onChange: () => void refresh() }]);
+
   const handleCreate = async () => {
     if (!form.title.trim()) {
       toast.error("Informe o título da vaga");
