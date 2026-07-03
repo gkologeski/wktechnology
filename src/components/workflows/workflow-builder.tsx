@@ -510,9 +510,73 @@ function ActionCard({
               else titleInserter.insert(t);
             }}
           />
-
+          <div>
+            <Label className="text-xs">Notificar (opcional — padrão: você)</Label>
+            <UserPicker
+              value={action.user_id ?? ""}
+              onChange={(v) => onChange({ ...action, user_id: v })}
+            />
+          </div>
         </div>
       )}
+
+      {action.type === "create_ats_job" && (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Título da vaga</Label>
+            <Input
+              value={action.title}
+              onChange={(e) => onChange({ ...action, title: e.target.value })}
+              placeholder="Vaga para {{name}}"
+            />
+            <TokenPills
+              tokens={WORKFLOW_TOKENS}
+              onInsert={(t) => onChange({ ...action, title: (action.title ?? "") + t })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Departamento (opcional)</Label>
+              <Input
+                value={action.department ?? ""}
+                onChange={(e) => onChange({ ...action, department: e.target.value })}
+                placeholder="Ex: Engenharia"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Quantidade</Label>
+              <Input
+                type="number"
+                min={1}
+                max={50}
+                value={action.headcount ?? 1}
+                onChange={(e) =>
+                  onChange({ ...action, headcount: Math.max(1, Number(e.target.value) || 1) })
+                }
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Hiring manager (opcional)</Label>
+            <UserPicker
+              value={action.hiring_manager_id ?? ""}
+              onChange={(v) => onChange({ ...action, hiring_manager_id: v })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Notificar aprovador (Head de RH)</Label>
+            <UserPicker
+              value={action.notify_user_id ?? ""}
+              onChange={(v) => onChange({ ...action, notify_user_id: v })}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            A vaga será criada como <strong>rascunho</strong> vinculada ao negócio. O aprovador
+            publica no ATS para abrir oficialmente.
+          </p>
+        </div>
+      )}
+
 
       {action.type === "webhook" && (
         <div className="space-y-2">
