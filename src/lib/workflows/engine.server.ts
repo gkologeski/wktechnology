@@ -78,13 +78,18 @@ async function runAction(
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
       case "assign_to": {
-        const assignField = ctx.entity === "tickets" ? "assignee_id" : "owner_id";
+        const assignField = assignFieldFor(ctx.entity);
         const { error } = await supabase
           .from(ctx.entity)
           .update({ [assignField]: action.user_id })
           .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "assign_to", detail: { user_id: action.user_id } };
+        return {
+          at,
+          ok: true,
+          action: "assign_to",
+          detail: { user_id: action.user_id, field: assignField },
+        };
       }
       case "rotate_assign": {
         if (ctx.entity !== "leads" && ctx.entity !== "deals" && ctx.entity !== "tickets") {
